@@ -21,10 +21,31 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@v11.2.0`.
 
+
 # We, 24 July 2019 | v11.2.1
 
 - https://github.com/kataras/iris/issues/1298
 - https://github.com/kataras/iris/issues/1207
+
+## v11.2.2
+
+Sessions as middleware:
+
+```go
+import "github.com/kataras/iris/sessions"
+// [...]
+
+app := iris.New()
+sess := sessions.New(sessions.Config{...})
+
+app.Get("/path", func(ctx iris.Context){
+    session := sessions.Get(ctx)
+    // [work with session...]
+})
+```
+
+- Add `Session.Len() int` to return the total number of stored values/entries.
+- Make `Context.HTML` and `Context.Text` to accept an optional, variadic, `args ...interface{}` input arg(s) too.
 
 # Tu, 23 July 2019 | v11.2.0
 

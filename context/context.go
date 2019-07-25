@@ -1743,9 +1743,26 @@ func (ctx *context) Header(name string, value string) {
 	ctx.writer.Header().Add(name, value)
 }
 
+const contentTypeContextKey = "_iris_content_type"
+
+func (ctx *context) contentTypeOnce(cType string, charset string) {
+	if charset == "" {
+		charset = ctx.Application().ConfigurationReadOnly().GetCharset()
+	}
+
+	cType += "; charset=" + charset
+
+	ctx.Values().Set(contentTypeContextKey, cType)
+	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
+}
+
 // ContentType sets the response writer's header key "Content-Type" to the 'cType'.
 func (ctx *context) ContentType(cType string) {
 	if cType == "" {
+		return
+	}
+
+	if _, wroteOnce := ctx.Values().GetEntry(contentTypeContextKey); wroteOnce {
 		return
 	}
 
@@ -2014,20 +2031,19 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 	*/
 
 	var (
-		bodyCopy []byte
 		keepBody = ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal()
+		bodyCopy []byte
 	)
 
 	if keepBody {
 		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
 		if m := ctx.Method(); m == "POST" || m == "PUT" || m == "PATCH" {
-			body, err := ioutil.ReadAll(ctx.request.Body)
-			if err != nil {
+			bodyCopy, _ = ctx.GetBody()
+			if len(bodyCopy) == 0 {
 				return nil, false
 			}
-
-			bodyCopy = body
-		} else { // else we don't need this behavior.
+			// ctx.request.Body = ioutil.NopCloser(io.TeeReader(ctx.request.Body, buf))
+		} else {
 			keepBody = false
 		}
 	}
@@ -2036,10 +2052,12 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 	// therefore we don't need to call it here, although it doesn't hurt.
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
-	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
-
+	err := ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	if keepBody {
 		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	}
+	if err != nil && err != http.ErrNotMultipart {
+		return nil, false
 	}
 
 	if form := ctx.request.Form; len(form) > 0 {
@@ -2863,11 +2881,137 @@ const (
 	ContentTextHeaderValue = "text/plain"
 	// ContentXMLHeaderValue header value for XML data.
 	ContentXMLHeaderValue = "text/xml"
+	// ContentXMLUnreadableHeaderValue obselete header value for XML.
+	ContentXMLUnreadableHeaderValue = "application/xml"
 	// ContentMarkdownHeaderValue custom key/content type, the real is the text/html.
 	ContentMarkdownHeaderValue = "text/markdown"
 	// ContentYAMLHeaderValue header value for YAML data.
 	ContentYAMLHeaderValue = "application/x-yaml"
+	// ContentFormHeaderValue header value for post form data.
+	ContentFormHeaderValue = "application/x-www-form-urlencoded"
+	// ContentFormMultipartHeaderValue header value for post multipart form data.
+	ContentFormMultipartHeaderValue = "multipart/form-data"
 )
+
+// TODO:
+// const negotitationContextKey = "_iris_accept_negotitation_builder"
+
+// func (ctx *context) Accept() *Negotitation {
+// 	if n := ctx.Values().Get(negotitationContextKey); n != nil {
+// 		return n.(*Negotitation)
+// 	}
+
+// 	n := new(Negotitation)
+// 	n.accept = parseHeader(ctx.GetHeader("Accept"))
+// 	n.charset = parseHeader(ctx.GetHeader("Accept-Charset"))
+
+// 	ctx.Values().Set(negotitationContextKey, n)
+// 	return n
+// }
+
+// func parseHeader(headerValue string) []string {
+// 	in := strings.Split(headerValue, ",")
+// 	out := make([]string, 0, len(in))
+
+// 	for _, value := range in {
+// 		// remove any spaces and quality values such as ;q=0.8.
+// 		// */* or * means accept everything.
+// 		v := strings.TrimSpace(strings.Split(value, ";")[0])
+// 		if v != "" {
+// 			out = append(out, v)
+// 		}
+// 	}
+
+// 	return out
+// }
+
+// // Negotitation builds the accepted mime types and charset
+// //
+// // and "Accept-Charset" headers respectfully.
+// // The default values are set by the client side, server can append or override those.
+// // The end result will be challenged with runtime preffered set of content types and charsets.
+// //
+// // See `Negotitate`.
+// type Negotitation struct {
+// 	// initialized with "Accept" header values.
+// 	accept []string
+// 	// initialized with "Accept-Charset" and if was empty then the
+// 	// application's default (which defaults to utf-8).
+// 	charset []string
+
+// 	// To support override in request life cycle.
+// 	// We need slice when data is the same format
+// 	// for one or more mime types,
+// 	// i.e text/xml and obselete application/xml.
+// 	lastAccept  []string
+// 	lastCharset []string
+// }
+
+// func (n *Negotitation) Override() *Negotitation {
+// 	// when called first.
+// 	n.accept = n.accept[0:0]
+// 	n.charset = n.charset[0:0]
+
+// 	// when called after.
+// 	if len(n.lastAccept) > 0 {
+// 		n.accept = append(n.accept, n.lastAccept...)
+// 		n.lastAccept = n.lastAccept[0:0]
+// 	}
+
+// 	if len(n.lastCharset) > 0 {
+// 		n.charset = append(n.charset, n.lastCharset...)
+// 		n.lastCharset = n.lastCharset[0:0]
+// 	}
+
+// 	return n
+// }
+
+// func (n *Negotitation) MIME(mimeType ...string) *Negotitation {
+// 	n.lastAccept = mimeType
+// 	n.accept = append(n.accept, mimeType...)
+// 	return n
+// }
+
+// func (n *Negotitation) JSON() *Negotitation {
+// 	return n.MIME(ContentJSONHeaderValue)
+// }
+
+// func (n *Negotitation) XML() *Negotitation {
+// 	return n.MIME(ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue)
+// }
+
+// func (n *Negotitation) HTML() *Negotitation {
+// 	return n.MIME(ContentHTMLHeaderValue)
+// }
+
+// func (n *Negotitation) Charset(charset ...string) *Negotitation {
+// 	n.lastCharset = charset
+// 	n.charset = append(n.charset, charset...)
+
+// 	return n
+// }
+
+// func (n *Negotitation) build(preferences []string) (contentType, charset string) {
+// 	return
+// }
+
+// // https://www.w3.org/Protocols/rfc2616/rfc2616-sec12.html
+// // https://developer.mozilla.org/en-US/docs/tag/Content%20Negotiation
+// // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept
+// // https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation/List_of_default_Accept_values
+// func (ctx *context) Negotiate(v interface{}, preferences ...string) (int, error) {
+// 	contentType, charset := ctx.Accept().build(preferences)
+
+// 	// // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Charset
+// 	// If the server cannot serve any matching character set,
+// 	// it can theoretically send back a 406 (Not Acceptable) error code.
+// 	ctx.contentTypeOnce(contentType, charset)
+
+// 	switch contentType {
+
+// 	}
+// 	return -1, nil
+// }
 
 // Binary writes out the raw bytes as binary data.
 func (ctx *context) Binary(data []byte) (int, error) {
