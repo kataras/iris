@@ -42,7 +42,7 @@ func newApp() *iris.Application {
 	})
 
 	// Delete A Cookie.
-	app.Delete("/cookies/{name}", func(ctx iris.Context) {
+	app.Get("/cookies/delete/{name}", func(ctx iris.Context) {
 		name := ctx.Params().Get("name")
 
 		ctx.RemoveCookie(name) // <--
