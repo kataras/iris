@@ -8,12 +8,12 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 Learn what [others say about Iris](https://iris-go.com/testimonials/) and **star** this github repository.
 
-> Version 11.2 released! [Spread the news](https://dev.to/kataras/iris-version-11-2-released-22bc).
+> Version 11.2 **released!** [Spread the news](https://dev.to/kataras/iris-version-11-2-released-22bc).
 
 ## Learning Iris
 
 <details>
-<summary>Qick start</summary>
+<summary>Quick start</summary>
 
 ```sh
 # assume the following code in example.go file
