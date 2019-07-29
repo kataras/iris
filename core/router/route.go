@@ -40,6 +40,8 @@ type Route struct {
 	// route, manually or automatic by the framework,
 	// get the route by `Application#GetRouteByPath(staticSite.RequestPath)`.
 	StaticSites []context.StaticSite `json:"staticSites"`
+
+	topLink *Route
 }
 
 // NewRoute returns a new route based on its method,

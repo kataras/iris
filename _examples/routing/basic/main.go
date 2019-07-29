@@ -6,6 +6,7 @@ import (
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
 
 	// registers a custom handler for 404 not found http (error) status code,
 	// fires when route not found or manually by ctx.StatusCode(iris.StatusNotFound).
@@ -25,6 +26,42 @@ func main() {
 	app.Get("/home", func(ctx iris.Context) {
 		ctx.Writef(`Same as app.Handle("GET", "/", [...])`)
 	})
+
+	// Different path parameters types in the same path.
+	app.Get("/u/{username:string}", func(ctx iris.Context) {
+		ctx.Writef("before username (string), current route name: %s\n", ctx.RouteName())
+		ctx.Next()
+	}, func(ctx iris.Context) {
+		ctx.Writef("username (string): %s", ctx.Params().Get("username"))
+	})
+
+	app.Get("/u/{id:int}", func(ctx iris.Context) {
+		ctx.Writef("before id (int), current route name: %s\n", ctx.RouteName())
+		ctx.Next()
+	}, func(ctx iris.Context) {
+		ctx.Writef("id (int): %d", ctx.Params().GetIntDefault("id", 0))
+	})
+
+	app.Get("/u/{uid:uint}", func(ctx iris.Context) {
+		ctx.Writef("before uid (uint), current route name: %s\n", ctx.RouteName())
+		ctx.Next()
+	}, func(ctx iris.Context) {
+		ctx.Writef("uid (uint): %d", ctx.Params().GetUintDefault("uid", 0))
+	})
+
+	app.Get("/u/{firstname:alphabetical}", func(ctx iris.Context) {
+		ctx.Writef("before firstname (alphabetical), current route name: %s\n", ctx.RouteName())
+		ctx.Next()
+	}, func(ctx iris.Context) {
+		ctx.Writef("firstname (alphabetical): %s", ctx.Params().Get("firstname"))
+	})
+
+	/*
+		/u/abcd maps to :alphabetical (if :alphabetical registered otherwise :string)
+		/u/42 maps to :uint (if :uint registered otherwise :int)
+		/u/-1 maps to :int (if :int registered otherwise :string)
+		/u/abcd123 maps to :string
+	*/
 
 	app.Get("/donate", donateHandler, donateFinishHandler)
 
@@ -127,6 +164,11 @@ func main() {
 	// http://localhost:8080/api/users/0
 	// http://localhost:8080/api/users/blabla
 	// http://localhost:8080/wontfound
+	//
+	// http://localhost:8080/u/abcd
+	// http://localhost:8080/u/42
+	// http://localhost:8080/u/-1
+	// http://localhost:8080/u/abcd123
 	//
 	// if hosts edited:
 	//  http://v1.localhost:8080
