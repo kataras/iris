@@ -85,6 +85,13 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	rp := errors.NewReporter()
 	registeredRoutes := provider.GetRoutes()
 
+	// before sort.
+	for _, r := range registeredRoutes {
+		if r.topLink != nil {
+			bindMultiParamTypesHandler(r.topLink, r)
+		}
+	}
+
 	// sort, subdomains go first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
 		first, second := registeredRoutes[i], registeredRoutes[j]
@@ -115,12 +122,6 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		// the rest are handled inside the node
 		return lsub1 > lsub2
 	})
-
-	for _, r := range registeredRoutes {
-		if r.topLink != nil {
-			bindMultiParamTypesHandler(r.topLink, r)
-		}
-	}
 
 	for _, r := range registeredRoutes {
 		if r.Subdomain != "" {

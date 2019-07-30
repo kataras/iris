@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris"
 )
 
-func main() {
+func newApp() *iris.Application {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
@@ -62,8 +62,6 @@ func main() {
 		/u/-1 maps to :int (if :int registered otherwise :string)
 		/u/abcd123 maps to :string
 	*/
-
-	app.Get("/donate", donateHandler, donateFinishHandler)
 
 	// Pssst, don't forget dynamic-path example for more "magic"!
 	app.Get("/api/users/{userid:uint64 min(1)}", func(ctx iris.Context) {
@@ -129,8 +127,9 @@ func main() {
 	{ // braces are optional, it's just type of style, to group the routes visually.
 
 		// http://v1.localhost:8080
+		// Note: for versioning-specific features checkout the _examples/versioning instead.
 		v1.Get("/", func(ctx iris.Context) {
-			ctx.HTML("Version 1 API. go to <a href='" + ctx.Path() + "/api" + "'>/api/users</a>")
+			ctx.HTML(`Version 1 API. go to <a href="/api/users">/api/users</a>`)
 		})
 
 		usersAPI := v1.Party("/api/users")
@@ -154,9 +153,14 @@ func main() {
 		})
 	}
 
+	return app
+}
+
+func main() {
+	app := newApp()
+
 	// http://localhost:8080
 	// http://localhost:8080/home
-	// http://localhost:8080/donate
 	// http://localhost:8080/api/users/42
 	// http://localhost:8080/admin
 	// http://localhost:8080/admin/login
@@ -181,24 +185,6 @@ func main() {
 func adminMiddleware(ctx iris.Context) {
 	// [...]
 	ctx.Next() // to move to the next handler, or don't that if you have any auth logic.
-}
-
-func donateHandler(ctx iris.Context) {
-	ctx.Writef("Just like an inline handler, but it can be " +
-		"used by other package, anywhere in your project.")
-
-	// let's pass a value to the next handler
-	// Values is the way handlers(or middleware) are communicating between each other.
-	ctx.Values().Set("donate_url", "https://github.com/kataras/iris#-people")
-	ctx.Next() // in order to execute the next handler in the chain, look donate route.
-}
-
-func donateFinishHandler(ctx iris.Context) {
-	// values can be any type of object so we could cast the value to a string
-	// but iris provides an easy to do that, if donate_url is not defined, then it returns an empty string instead.
-	donateURL := ctx.Values().GetString("donate_url")
-	ctx.Application().Logger().Infof("donate_url value was: " + donateURL)
-	ctx.Writef("\n\nDonate sent(?).")
 }
 
 func notFoundHandler(ctx iris.Context) {
