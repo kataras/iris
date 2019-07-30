@@ -55,4 +55,4 @@ app.Get("/path", func(ctx iris.Context){
 
 # Tu, 23 July 2019 | v11.2.0
 
-Read about the new release at: https://dev.to/kataras/iris-version-11-2-released-22bc
+Read about the new release at: https://www.facebook.com/iris.framework/posts/3276606095684693

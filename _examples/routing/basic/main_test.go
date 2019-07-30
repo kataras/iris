@@ -29,6 +29,7 @@ func TestRoutingBasic(t *testing.T) {
 		expectedIndexResponse = "Hello from /"
 		expectedHomeResponse  = `Same as app.Handle("GET", "/", [...])`
 
+		expectedUpathResponse         = ":string, :int, :uint, :alphabetical and :path in the same path pattern."
 		expectedUStringResponse       = expectedUResponse("username", "string", "abcd123")
 		expectedUIntResponse          = expectedUResponse("id", "int", "-1")
 		expectedUUintResponse         = expectedUResponse("uid", "uint", "42")
@@ -56,6 +57,8 @@ func TestRoutingBasic(t *testing.T) {
 	e.GET("/home").Expect().Status(httptest.StatusOK).
 		Body().Equal(expectedHomeResponse)
 
+	e.GET("/u/some/path/here").Expect().Status(httptest.StatusOK).
+		Body().Equal(expectedUpathResponse)
 	e.GET("/u/abcd123").Expect().Status(httptest.StatusOK).
 		Body().Equal(expectedUStringResponse)
 	e.GET("/u/-1").Expect().Status(httptest.StatusOK).

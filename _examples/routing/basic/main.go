@@ -18,8 +18,8 @@ func newApp() *iris.Application {
 	//
 	// Third receiver should contains the route's handler(s), they are executed by order.
 	app.Handle("GET", "/", func(ctx iris.Context) {
-		// navigate to the middle of $GOPATH/src/github.com/kataras/iris/context/context.go
-		// to overview all context's method (there a lot of them, read that and you will learn how iris works too)
+		// navigate to the https://github.com/kataras/iris/wiki/Routing-context-methods
+		// to overview all context's method.
 		ctx.HTML("Hello from " + ctx.Path()) // Hello from /
 	})
 
@@ -28,6 +28,10 @@ func newApp() *iris.Application {
 	})
 
 	// Different path parameters types in the same path.
+	app.Get("/u/{p:path}", func(ctx iris.Context) {
+		ctx.Writef(":string, :int, :uint, :alphabetical and :path in the same path pattern.")
+	})
+
 	app.Get("/u/{username:string}", func(ctx iris.Context) {
 		ctx.Writef("before username (string), current route name: %s\n", ctx.RouteName())
 		ctx.Next()
@@ -57,6 +61,7 @@ func newApp() *iris.Application {
 	})
 
 	/*
+		/u/some/path/here maps to :path
 		/u/abcd maps to :alphabetical (if :alphabetical registered otherwise :string)
 		/u/42 maps to :uint (if :uint registered otherwise :int)
 		/u/-1 maps to :int (if :int registered otherwise :string)
@@ -173,6 +178,7 @@ func main() {
 	// http://localhost:8080/u/42
 	// http://localhost:8080/u/-1
 	// http://localhost:8080/u/abcd123
+	// http://localhost:8080/u/some/path/here
 	//
 	// if hosts edited:
 	//  http://v1.localhost:8080
