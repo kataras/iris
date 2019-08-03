@@ -20,6 +20,11 @@ type Template struct {
 	Params []TemplateParam `json:"params"`
 }
 
+// IsTrailing reports whether this Template is a traling one.
+func (t *Template) IsTrailing() bool {
+	return len(t.Params) > 0 && ast.IsTrailing(t.Params[len(t.Params)-1].Type)
+}
+
 // TemplateParam is the parsed macro parameter's template
 // they are being used to describe the param's syntax result.
 type TemplateParam struct {

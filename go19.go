@@ -90,4 +90,12 @@ type (
 	//
 	// An alias for the `context/Context#CookieOption`.
 	CookieOption = context.CookieOption
+	// N is a struct which can be passed on the `Context.Negotiate` method.
+	// It contains fields which should be filled based on the `Context.Negotiation()`
+	// server side values. If no matched mime then its "Other" field will be sent,
+	// which should be a string or []byte.
+	// It completes the `context/context.ContentSelector` interface.
+	//
+	// An alias for the `context/Context#N`.
+	N = context.N
 )

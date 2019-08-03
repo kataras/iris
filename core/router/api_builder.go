@@ -10,6 +10,7 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/macro"
+	macroHandler "github.com/kataras/iris/macro/handler"
 )
 
 // MethodNone is a Virtual method
@@ -106,6 +107,20 @@ func (repo *repository) get(routeName string) *Route {
 			return r
 		}
 	}
+	return nil
+}
+
+func (repo *repository) getRelative(r *Route) *Route {
+	if r.tmpl.IsTrailing() || !macroHandler.CanMakeHandler(r.tmpl) {
+		return nil
+	}
+
+	for _, route := range repo.routes {
+		if r.Subdomain == route.Subdomain && r.Method == route.Method && r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
+			return route
+		}
+	}
+
 	return nil
 }
 
@@ -345,6 +360,8 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	var route *Route // the last one is returned.
 	for _, route = range routes {
 		// global
+
+		route.topLink = api.routes.getRelative(route)
 		api.routes.register(route)
 	}
 

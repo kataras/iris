@@ -8,7 +8,7 @@ Iris 是基于 Go 编写的一个快速，简单但功能齐全且非常高效�
 
 看看 [其他人如何评价 Iris](https://iris-go.com/testimonials/)，同时欢迎各位点亮 **star**。
 
-> 新版本 11.2 发布! [散布消息](https://dev.to/kataras/iris-version-11-2-released-22bc).
+> 新版本 11.2 发布! [散布消息](https://www.facebook.com/iris.framework/posts/3276606095684693).
 
 ## 学习 Iris
 

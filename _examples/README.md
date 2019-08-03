@@ -224,6 +224,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Read JSON](http_request/read-json/main.go)
     * [Struct Validation](http_request/read-json-struct-validation/main.go)
 - [Read XML](http_request/read-xml/main.go)
+- [Read YAML](http_request/read-yaml/main.go) **NEW**
 - [Read Form](http_request/read-form/main.go)
 - [Read Query](http_request/read-query/main.go) **NEW**
 - [Read Custom per type](http_request/read-custom-per-type/main.go)
@@ -237,6 +238,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### How to Write to `context.ResponseWriter() http.ResponseWriter`
 
+- [Content Negotiation](http_responsewriter/content-negotiation) **NEW**
 - [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
 - [Write `shiyanhui/hero` templates](http_responsewriter/herotemplate)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
-
 	"github.com/kataras/iris"
 )
 
@@ -108,7 +106,7 @@ func newApp() *iris.Application {
 	// to protect ourselves from "over heating".
 	app.Post("/", iris.LimitRequestBodySize(maxBodySize), func(ctx iris.Context) {
 		// get request body
-		b, err := ioutil.ReadAll(ctx.Request().Body)
+		b, err := ctx.GetBody()
 		// if is larger then send a bad request status
 		if err != nil {
 			ctx.StatusCode(iris.StatusBadRequest)
