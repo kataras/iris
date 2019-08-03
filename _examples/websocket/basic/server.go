@@ -68,8 +68,17 @@ func main() {
 		SigningMethod: jwt.SigningMethodHS256,
 	})
 
+	idGen := func(ctx iris.Context) string {
+		if username := ctx.GetHeader("X-Username"); username != "" {
+			return username
+		}
+
+		return websocket.DefaultIDGenerator(ctx)
+	}
+
 	// serves the endpoint of ws://localhost:8080/echo
-	websocketRoute := app.Get("/echo", websocket.Handler(websocketServer))
+	// with optional custom ID generator.
+	websocketRoute := app.Get("/echo", websocket.Handler(websocketServer, idGen))
 
 	if enableJWT {
 		// Register the jwt middleware (on handshake):
