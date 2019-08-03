@@ -8,7 +8,9 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 Learn what [others say about Iris](https://iris-go.com/testimonials/) and **star** this github repository.
 
-> Version 11.2 **released!** [Spread the news](https://www.facebook.com/iris.framework/posts/3276606095684693).
+> Version 11.2 **released!**
+
+[![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
 
 ## Learning Iris
 

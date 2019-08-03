@@ -21,6 +21,7 @@ func main() {
 		Password:  "",
 		Database:  "",
 		Prefix:    "",
+		Delim:     "-",
 	}) // optionally configure the bridge between your redis server.
 
 	// close connection when control+C/cmd+C

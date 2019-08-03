@@ -812,7 +812,7 @@ type Context interface {
 	// Set mime type priorities by `Negotiation().JSON().XML().HTML()...`.
 	// Set charset priorities by `Negotiation().Charset(...)`.
 	// Set encoding algorithm priorities by `Negotiation().Encoding(...)`.
-	// Amend the accepted by
+	// Modify the accepted by
 	// `Negotiation().Accept./Override()/.XML().JSON().Charset(...).Encoding(...)...`.
 	//
 	// It returns `ErrContentNotSupported` when not matched mime type(s).
@@ -825,7 +825,7 @@ type Context interface {
 	//
 	// Supports the above without quality values.
 	//
-	// Example at: https://github.com/kataras/iris/blob/master/_examples/http_responsewriter/content-negotiation
+	// Read more at: https://github.com/kataras/iris/wiki/Content-negotiation
 	Negotiate(v interface{}) (int, error)
 
 	//  +------------------------------------------------------------+
@@ -3335,8 +3335,8 @@ func (n N) SelectContent(mime string) interface{} {
 const negotiationContextKey = "_iris_negotiation_builder"
 
 // Negotiation creates once and returns the negotiation builder
-// to build server-side available content for specific mime type(s)
-// and charset(s).
+// to build server-side available prioritized content
+// for specific content type(s), charset(s) and encoding algorithm(s).
 //
 // See `Negotiate` method too.
 func (ctx *context) Negotiation() *NegotiationBuilder {
@@ -3385,7 +3385,7 @@ func parseHeader(headerValue string) []string {
 // Set mime type priorities by `Negotiation().JSON().XML().HTML()...`.
 // Set charset priorities by `Negotiation().Charset(...)`.
 // Set encoding algorithm priorities by `Negotiation().Encoding(...)`.
-// Amend the accepted by
+// Modify the accepted by
 // `Negotiation().Accept./Override()/.XML().JSON().Charset(...).Encoding(...)...`.
 //
 // It returns `ErrContentNotSupported` when not matched mime type(s).
@@ -3398,7 +3398,7 @@ func parseHeader(headerValue string) []string {
 //
 // Supports the above without quality values.
 //
-// Example at: https://github.com/kataras/iris/blob/master/_examples/http_responsewriter/content-negotiation
+// Read more at: https://github.com/kataras/iris/wiki/Content-negotiation
 func (ctx *context) Negotiate(v interface{}) (int, error) {
 	contentType, charset, encoding, content := ctx.Negotiation().Build()
 	if v == nil {
