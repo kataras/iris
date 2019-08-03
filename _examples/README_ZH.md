@@ -330,6 +330,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 - [读取JSON](http_request/read-json/main.go)
 - [读取XML](http_request/read-xml/main.go)
+- [读取YAML](http_request/read-yaml/main.go) **更新**
 - [读取Form](http_request/read-form/main.go)
 - [读取Query](http_request/read-query/main.go) **更新**
 - [读取每个类型的自定义结果Custom per type](http_request/read-custom-per-type/main.go)
@@ -342,6 +343,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### 如何写入`context.ResponseWriter() http.ResponseWriter`
 
+- [Content Negotiation](http_responsewriter/content-negotiation) **更新**
 - [`valyala/quicktemplate`模版](http_responsewriter/quicktemplate)
 - [`shiyanhui/hero`模版](http_responsewriter/herotemplate)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
