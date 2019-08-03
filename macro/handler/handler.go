@@ -34,23 +34,54 @@ func CanMakeHandler(tmpl macro.Template) (needsMacroHandler bool) {
 // If the template does not contain any dynamic attributes and a special handler is NOT required
 // then it returns a nil handler.
 func MakeHandler(tmpl macro.Template) context.Handler {
+	filter := MakeFilter(tmpl)
+
+	return func(ctx context.Context) {
+		if !filter(ctx) {
+			ctx.StopExecution()
+			return
+		}
+
+		// if all passed, just continue.
+		ctx.Next()
+	}
+}
+
+// MakeFilter returns a Filter which reports whether a specific macro template
+// and its parameters pass the serve-time validation.
+func MakeFilter(tmpl macro.Template) context.Filter {
 	if !CanMakeHandler(tmpl) {
 		return nil
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx context.Context) bool {
 		for _, p := range tmpl.Params {
 			if !p.CanEval() {
 				continue // allow.
 			}
 
-			if !p.Eval(ctx.Params().Get(p.Name), &ctx.Params().Store) {
+			// 07-29-2019
+			// changed to retrieve by param index in order to support
+			// different parameter names for routes with
+			// different param types (and probably different param names i.e {name:string}, {id:uint64})
+			// in the exact same path pattern.
+			//
+			// Same parameter names are not allowed, different param types in the same path
+			// should have different name e.g. {name} {id:uint64};
+			// something like {name} and {name:uint64}
+			// is bad API design and we do NOT allow it by-design.
+			entry, found := ctx.Params().Store.GetEntryAt(p.Index)
+			if !found {
+				// should never happen.
+				return false
+			}
+
+			if !p.Eval(entry.String(), &ctx.Params().Store) {
 				ctx.StatusCode(p.ErrCode)
-				ctx.StopExecution()
-				return
+				return false
 			}
 		}
-		// if all passed, just continue.
-		ctx.Next()
+
+		return true
 	}
 }

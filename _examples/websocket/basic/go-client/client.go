@@ -42,7 +42,10 @@ func main() {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(dialAndConnectTimeout))
 	defer cancel()
 
-	client, err := websocket.Dial(ctx, websocket.DefaultGorillaDialer, endpoint, clientEvents)
+	// username := "my_username"
+	// dialer := websocket.GobwasDialer(websocket.GobwasDialerOptions{Header: websocket.GobwasHeader{"X-Username": []string{username}}})
+	dialer := websocket.DefaultGobwasDialer
+	client, err := websocket.Dial(ctx, dialer, endpoint, clientEvents)
 	if err != nil {
 		panic(err)
 	}

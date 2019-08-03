@@ -586,6 +586,10 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
 	ReadXML(xmlObjectPtr interface{}) error
+	// ReadYAML reads YAML from request's body and binds it to the "outPtr" value.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-yaml/main.go
+	ReadYAML(outPtr interface{}) error
 	// ReadForm binds the formObject  with the form data
 	// it supports any kind of type, including custom structs.
 	// It will return nothing if request data are empty.
@@ -781,6 +785,49 @@ type Context interface {
 	Markdown(markdownB []byte, options ...Markdown) (int, error)
 	// YAML parses the "v" using the yaml parser and renders its result to the client.
 	YAML(v interface{}) (int, error)
+
+	//  +-----------------------------------------------------------------------+
+	//  | Content Νegotiation                                                   |
+	//  | https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation |                                       |
+	//  +-----------------------------------------------------------------------+
+
+	// Negotiation creates once and returns the negotiation builder
+	// to build server-side available content for specific mime type(s)
+	// and charset(s).
+	//
+	// See `Negotiate` method too.
+	Negotiation() *NegotiationBuilder
+	// Negotiate used for serving different representations of a resource at the same URI.
+	//
+	// The "v" can be a single `N` struct value.
+	// The "v" can be any value completes the `ContentSelector` interface.
+	// The "v" can be any value completes the `ContentNegotiator` interface.
+	// The "v" can be any value of struct(JSON, JSONP, XML, YAML) or
+	// string(TEXT, HTML) or []byte(Markdown, Binary) or []byte with any matched mime type.
+	//
+	// If the "v" is nil, the `Context.Negotitation()` builder's
+	// content will be used instead, otherwise "v" overrides builder's content
+	// (server mime types are still retrieved by its registered, supported, mime list)
+	//
+	// Set mime type priorities by `Negotiation().JSON().XML().HTML()...`.
+	// Set charset priorities by `Negotiation().Charset(...)`.
+	// Set encoding algorithm priorities by `Negotiation().Encoding(...)`.
+	// Modify the accepted by
+	// `Negotiation().Accept./Override()/.XML().JSON().Charset(...).Encoding(...)...`.
+	//
+	// It returns `ErrContentNotSupported` when not matched mime type(s).
+	//
+	// Resources:
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Charset
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
+	//
+	// Supports the above without quality values.
+	//
+	// Read more at: https://github.com/kataras/iris/wiki/Content-negotiation
+	Negotiate(v interface{}) (int, error)
+
 	//  +------------------------------------------------------------+
 	//  | Serve files                                                |
 	//  +------------------------------------------------------------+
@@ -1743,9 +1790,28 @@ func (ctx *context) Header(name string, value string) {
 	ctx.writer.Header().Add(name, value)
 }
 
+const contentTypeContextKey = "_iris_content_type"
+
+func (ctx *context) contentTypeOnce(cType string, charset string) {
+	if charset == "" {
+		charset = ctx.Application().ConfigurationReadOnly().GetCharset()
+	}
+
+	if cType != ContentBinaryHeaderValue {
+		cType += "; charset=" + charset
+	}
+
+	ctx.Values().Set(contentTypeContextKey, cType)
+	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
+}
+
 // ContentType sets the response writer's header key "Content-Type" to the 'cType'.
 func (ctx *context) ContentType(cType string) {
 	if cType == "" {
+		return
+	}
+
+	if _, wroteOnce := ctx.Values().GetEntry(contentTypeContextKey); wroteOnce {
 		return
 	}
 
@@ -2014,20 +2080,19 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 	*/
 
 	var (
-		bodyCopy []byte
 		keepBody = ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal()
+		bodyCopy []byte
 	)
 
 	if keepBody {
 		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
 		if m := ctx.Method(); m == "POST" || m == "PUT" || m == "PATCH" {
-			body, err := ioutil.ReadAll(ctx.request.Body)
-			if err != nil {
+			bodyCopy, _ = ctx.GetBody()
+			if len(bodyCopy) == 0 {
 				return nil, false
 			}
-
-			bodyCopy = body
-		} else { // else we don't need this behavior.
+			// ctx.request.Body = ioutil.NopCloser(io.TeeReader(ctx.request.Body, buf))
+		} else {
 			keepBody = false
 		}
 	}
@@ -2036,10 +2101,12 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 	// therefore we don't need to call it here, although it doesn't hurt.
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
-	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
-
+	err := ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	if keepBody {
 		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	}
+	if err != nil && err != http.ErrNotMultipart {
+		return nil, false
 	}
 
 	if form := ctx.request.Form; len(form) > 0 {
@@ -2378,19 +2445,26 @@ func (ctx *context) shouldOptimize() bool {
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
-func (ctx *context) ReadJSON(jsonObject interface{}) error {
+func (ctx *context) ReadJSON(outPtr interface{}) error {
 	var unmarshaler = json.Unmarshal
 	if ctx.shouldOptimize() {
 		unmarshaler = jsoniter.Unmarshal
 	}
-	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(unmarshaler))
+	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(unmarshaler))
 }
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
-func (ctx *context) ReadXML(xmlObject interface{}) error {
-	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
+func (ctx *context) ReadXML(outPtr interface{}) error {
+	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(xml.Unmarshal))
+}
+
+// ReadYAML reads YAML from request's body and binds it to the "outPtr" value.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-yaml/main.go
+func (ctx *context) ReadYAML(outPtr interface{}) error {
+	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(yaml.Unmarshal))
 }
 
 // IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
@@ -2863,10 +2937,16 @@ const (
 	ContentTextHeaderValue = "text/plain"
 	// ContentXMLHeaderValue header value for XML data.
 	ContentXMLHeaderValue = "text/xml"
+	// ContentXMLUnreadableHeaderValue obselete header value for XML.
+	ContentXMLUnreadableHeaderValue = "application/xml"
 	// ContentMarkdownHeaderValue custom key/content type, the real is the text/html.
 	ContentMarkdownHeaderValue = "text/markdown"
 	// ContentYAMLHeaderValue header value for YAML data.
 	ContentYAMLHeaderValue = "application/x-yaml"
+	// ContentFormHeaderValue header value for post form data.
+	ContentFormHeaderValue = "application/x-www-form-urlencoded"
+	// ContentFormMultipartHeaderValue header value for post multipart form data.
+	ContentFormMultipartHeaderValue = "multipart/form-data"
 )
 
 // Binary writes out the raw bytes as binary data.
@@ -3173,6 +3253,627 @@ func (ctx *context) YAML(v interface{}) (int, error) {
 
 	ctx.ContentType(ContentYAMLHeaderValue)
 	return ctx.Write(out)
+}
+
+//  +-----------------------------------------------------------------------+
+//  | Content Νegotiation                                                   |
+//  | https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation |                                       |
+//  +-----------------------------------------------------------------------+
+
+// ErrContentNotSupported returns from the `Negotiate` method
+// when server responds with 406.
+var ErrContentNotSupported = errors.New("unsupported content")
+
+// ContentSelector is the interface which structs can implement
+// to manually choose a content based on the negotiated mime (content type).
+// It can be passed to the `Context.Negotiate` method.
+//
+// See the `N` struct too.
+type ContentSelector interface {
+	SelectContent(mime string) interface{}
+}
+
+// ContentNegotiator is the interface which structs can implement
+// to override the `Context.Negotiate` default implementation and
+// manually respond to the client based on a manuall call of `Context.Negotiation().Build()`
+// to get the final negotiated mime and charset.
+// It can be passed to the `Context.Negotiate` method.
+type ContentNegotiator interface {
+	// mime and charset can be retrieved by:
+	// mime, charset := Context.Negotiation().Build()
+	// Pass this method to `Context.Negotiate` method
+	// to write custom content.
+	// Overriding the existing behavior of Context.Negotiate for selecting values based on
+	// content types, although it can accept any custom mime type with []byte.
+	// Content type is already set.
+	// Use it with caution, 99.9% you don't need this but it's here for extreme cases.
+	Negotiate(ctx Context) (int, error)
+}
+
+// N is a struct which can be passed on the `Context.Negotiate` method.
+// It contains fields which should be filled based on the `Context.Negotiation()`
+// server side values. If no matched mime then its "Other" field will be sent,
+// which should be a string or []byte.
+// It completes the `ContentSelector` interface.
+type N struct {
+	Text, HTML string
+	Markdown   []byte
+	Binary     []byte
+
+	JSON  interface{}
+	JSONP interface{}
+	XML   interface{}
+	YAML  interface{}
+
+	Other []byte // custom content types.
+}
+
+// SelectContent returns a content based on the matched negotiated "mime".
+func (n N) SelectContent(mime string) interface{} {
+	switch mime {
+	case ContentTextHeaderValue:
+		return n.Text
+	case ContentHTMLHeaderValue:
+		return n.HTML
+	case ContentMarkdownHeaderValue:
+		return n.Markdown
+	case ContentBinaryHeaderValue:
+		return n.Binary
+	case ContentJSONHeaderValue:
+		return n.JSON
+	case ContentJavascriptHeaderValue:
+		return n.JSONP
+	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
+		return n.XML
+	case ContentYAMLHeaderValue:
+		return n.YAML
+	default:
+		return n.Other
+	}
+}
+
+const negotiationContextKey = "_iris_negotiation_builder"
+
+// Negotiation creates once and returns the negotiation builder
+// to build server-side available prioritized content
+// for specific content type(s), charset(s) and encoding algorithm(s).
+//
+// See `Negotiate` method too.
+func (ctx *context) Negotiation() *NegotiationBuilder {
+	if n := ctx.Values().Get(negotiationContextKey); n != nil {
+		return n.(*NegotiationBuilder)
+	}
+
+	acceptBuilder := NegotiationAcceptBuilder{}
+	acceptBuilder.accept = parseHeader(ctx.GetHeader("Accept"))
+	acceptBuilder.charset = parseHeader(ctx.GetHeader("Accept-Charset"))
+
+	n := &NegotiationBuilder{Accept: acceptBuilder}
+
+	ctx.Values().Set(negotiationContextKey, n)
+
+	return n
+}
+
+func parseHeader(headerValue string) []string {
+	in := strings.Split(headerValue, ",")
+	out := make([]string, 0, len(in))
+
+	for _, value := range in {
+		// remove any spaces and quality values such as ;q=0.8.
+		v := strings.TrimSpace(strings.Split(value, ";")[0])
+		if v != "" {
+			out = append(out, v)
+		}
+	}
+
+	return out
+}
+
+// Negotiate used for serving different representations of a resource at the same URI.
+//
+// The "v" can be a single `N` struct value.
+// The "v" can be any value completes the `ContentSelector` interface.
+// The "v" can be any value completes the `ContentNegotiator` interface.
+// The "v" can be any value of struct(JSON, JSONP, XML, YAML) or
+// string(TEXT, HTML) or []byte(Markdown, Binary) or []byte with any matched mime type.
+//
+// If the "v" is nil, the `Context.Negotitation()` builder's
+// content will be used instead, otherwise "v" overrides builder's content
+// (server mime types are still retrieved by its registered, supported, mime list)
+//
+// Set mime type priorities by `Negotiation().JSON().XML().HTML()...`.
+// Set charset priorities by `Negotiation().Charset(...)`.
+// Set encoding algorithm priorities by `Negotiation().Encoding(...)`.
+// Modify the accepted by
+// `Negotiation().Accept./Override()/.XML().JSON().Charset(...).Encoding(...)...`.
+//
+// It returns `ErrContentNotSupported` when not matched mime type(s).
+//
+// Resources:
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Charset
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
+//
+// Supports the above without quality values.
+//
+// Read more at: https://github.com/kataras/iris/wiki/Content-negotiation
+func (ctx *context) Negotiate(v interface{}) (int, error) {
+	contentType, charset, encoding, content := ctx.Negotiation().Build()
+	if v == nil {
+		v = content
+	}
+
+	if contentType == "" {
+		// If the server cannot serve any matching set,
+		// it can send back a 406 (Not Acceptable) error code.
+		ctx.StatusCode(http.StatusNotAcceptable)
+		return -1, ErrContentNotSupported
+	}
+
+	if charset == "" {
+		charset = ctx.Application().ConfigurationReadOnly().GetCharset()
+	}
+
+	if encoding == "gzip" {
+		ctx.Gzip(true)
+	}
+
+	ctx.contentTypeOnce(contentType, charset)
+
+	if n, ok := v.(ContentNegotiator); ok {
+		return n.Negotiate(ctx)
+	}
+
+	if s, ok := v.(ContentSelector); ok {
+		v = s.SelectContent(contentType)
+	}
+
+	// switch v := value.(type) {
+	// case []byte:
+	// 	if contentType == ContentMarkdownHeaderValue {
+	// 		return ctx.Markdown(v)
+	// 	}
+
+	// 	return ctx.Write(v)
+	// case string:
+	// 	return ctx.WriteString(v)
+	// default:
+	// make it switch by content-type only, but we lose custom mime types capability that way:
+	//                                                 ^ solved with []byte on default case and
+	//                                                 ^ N.Other and
+	//                                                 ^ ContentSelector and ContentNegotiator interfaces.
+
+	switch contentType {
+	case ContentTextHeaderValue, ContentHTMLHeaderValue:
+		return ctx.WriteString(v.(string))
+	case ContentMarkdownHeaderValue:
+		return ctx.Markdown(v.([]byte))
+	case ContentJSONHeaderValue:
+		return ctx.JSON(v)
+	case ContentJavascriptHeaderValue:
+		return ctx.JSONP(v)
+	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
+		return ctx.XML(v)
+	case ContentYAMLHeaderValue:
+		return ctx.YAML(v)
+	default:
+		// maybe "Other" or v is []byte or string but not a built-in framework mime,
+		// for custom content types,
+		// panic if not correct usage.
+		switch vv := v.(type) {
+		case []byte:
+			return ctx.Write(vv)
+		case string:
+			return ctx.WriteString(vv)
+		default:
+			ctx.StatusCode(http.StatusNotAcceptable)
+			return -1, ErrContentNotSupported
+		}
+
+	}
+}
+
+// NegotiationBuilder returns from the `Context.Negotitation`
+// and can be used inside chain of handlers to build server-side
+// mime type(s), charset(s) and encoding algorithm(s)
+// that should match with the client's
+// Accept, Accept-Charset and Accept-Encoding headers (by-default).
+// To modify the client's accept use its "Accept" field
+// which it's the `NegotitationAcceptBuilder`.
+//
+// See the `Negotiate` method too.
+type NegotiationBuilder struct {
+	Accept NegotiationAcceptBuilder
+
+	mime     []string               // we need order.
+	contents map[string]interface{} // map to the "mime" and content should be rendered if that mime requested.
+	charset  []string
+	encoding []string
+}
+
+// MIME registers a mime type and optionally the value that should be rendered
+// through `Context.Negotiate` when this mime type is accepted by client.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) MIME(mime string, content interface{}) *NegotiationBuilder {
+	mimes := parseHeader(mime) // if contains more than one sep by commas ",".
+	if content == nil {
+		n.mime = append(n.mime, mimes...)
+		return n
+	}
+
+	if n.contents == nil {
+		n.contents = make(map[string]interface{})
+	}
+
+	for _, m := range mimes {
+		n.mime = append(n.mime, m)
+		n.contents[m] = content
+	}
+
+	return n
+}
+
+// Text registers the "text/plain" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "text/plain" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Text(v ...string) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentTextHeaderValue, content)
+}
+
+// HTML registers the "text/html" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "text/html" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) HTML(v ...string) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentHTMLHeaderValue, content)
+}
+
+// Markdown registers the "text/markdown" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "text/markdown" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Markdown(v ...[]byte) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v
+	}
+	return n.MIME(ContentMarkdownHeaderValue, content)
+}
+
+// Binary registers the "application/octet-stream" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/octet-stream" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Binary(v ...[]byte) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentBinaryHeaderValue, content)
+}
+
+// JSON registers the "application/json" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/json" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) JSON(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentJSONHeaderValue, content)
+}
+
+// JSONP registers the "application/javascript" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/javascript" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) JSONP(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentJavascriptHeaderValue, content)
+}
+
+// XML registers the "text/xml" and "application/xml" content types and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts one of the "text/xml" or "application/xml" content types.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) XML(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentXMLHeaderValue+","+ContentXMLUnreadableHeaderValue, content)
+}
+
+// YAML registers the "application/x-yaml" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/x-yaml" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) YAML(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentYAMLHeaderValue, content)
+}
+
+// Any registers a wildcard that can match any client's accept content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Any(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME("*", content)
+}
+
+// Charset overrides the application's config's charset (which defaults to "utf-8")
+// that a client should match for
+// (through Accept-Charset header or custom through `NegotitationBuilder.Accept.Override().Charset(...)` call).
+// Do not set it if you don't know what you're doing.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Charset(charset ...string) *NegotiationBuilder {
+	n.charset = append(n.charset, charset...)
+	return n
+}
+
+// Encoding registers one or more encoding algorithms by name, i.e gzip, deflate.
+// that a client should match for (through Accept-Encoding header).
+//
+// Only the "gzip" can be handlded automatically as it's the only builtin encoding algorithm
+// to serve resources.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Encoding(encoding ...string) *NegotiationBuilder {
+	n.encoding = append(n.encoding, encoding...)
+	return n
+}
+
+// EncodingGzip registers the "gzip" encoding algorithm
+// that a client should match for (through Accept-Encoding header or call of Accept.Encoding(enc)).
+//
+// It will make resources to served by "gzip" if Accept-Encoding contains the "gzip" as well.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) EncodingGzip() *NegotiationBuilder {
+	return n.Encoding(GzipHeaderValue)
+}
+
+// Build calculates the client's and server's mime type(s), charset(s) and encoding
+// and returns the final content type, charset and encoding that server should render
+// to the client. It does not clear the fields, use the `Clear` method if neeeded.
+//
+// The returned "content" can be nil if the matched "contentType" does not provide any value,
+// in that case the `Context.Negotiate(v)` must be called with a non-nil value.
+func (n *NegotiationBuilder) Build() (contentType, charset, encoding string, content interface{}) {
+	contentType = negotiationMatch(n.Accept.accept, n.mime)
+	charset = negotiationMatch(n.Accept.charset, n.charset)
+	encoding = negotiationMatch(n.Accept.encoding, n.encoding)
+
+	if n.contents != nil {
+		if data, ok := n.contents[contentType]; ok {
+			content = data
+		}
+	}
+
+	return
+}
+
+// Clear clears the prioritized mime type(s), charset(s) and any contents
+// relative to those mime type(s).
+// The "Accept" field is stay as it is, use its `Override` method
+// to clear out the client's accepted mime type(s) and charset(s).
+func (n *NegotiationBuilder) Clear() *NegotiationBuilder {
+	n.mime = n.mime[0:0]
+	n.contents = nil
+	n.charset = n.charset[0:0]
+	return n
+}
+
+func negotiationMatch(in []string, priorities []string) string {
+	// e.g.
+	// match json:
+	// 	in: text/html, application/json
+	// 	prioritities: application/json
+	// not match:
+	// 	in: text/html, application/json
+	// 	prioritities: text/xml
+	// match html:
+	// 	in: text/html, application/json
+	// 	prioritities: */*
+	// not match:
+	// 	in: application/json
+	// 	prioritities: text/xml
+	// match json:
+	// 	in: text/html, application/*
+	// 	prioritities: application/json
+
+	if len(priorities) == 0 {
+		return ""
+	}
+
+	if len(in) == 0 {
+		return priorities[0]
+	}
+
+	for _, accepted := range in {
+		for _, p := range priorities {
+			// wildcard is */* or text/* and etc.
+			// so loop through each char.
+			for i, n := 0, len(accepted); i < n; i++ {
+				if accepted[i] != p[i] {
+					break
+				}
+
+				if accepted[i] == '*' || p[i] == '*' {
+					return p
+				}
+
+				if i == n-1 {
+					return p
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+// NegotiationAcceptBuilder builds the accepted mime types and charset
+//
+// and "Accept-Charset" headers respectfully.
+// The default values are set by the client side, server can append or override those.
+// The end result will be challenged with runtime preffered set of content types and charsets.
+//
+// See the `Negotiate` method too.
+type NegotiationAcceptBuilder struct {
+	// initialized with "Accept" request header values.
+	accept []string
+	// initialized with "Accept-Encoding" request header. and if was empty then the
+	// application's default (which defaults to utf-8).
+	charset []string
+	// initialized with "Accept-Encoding" request header values.
+	encoding []string
+
+	// To support override in request life cycle.
+	// We need slice when data is the same format
+	// for one or more mime types,
+	// i.e text/xml and obselete application/xml.
+	lastAccept   []string
+	lastCharset  []string
+	lastEncoding []string
+}
+
+// Override clears the default values for accept and accept charset.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Override() *NegotiationAcceptBuilder {
+	// when called first.
+	n.accept = n.accept[0:0]
+	n.charset = n.charset[0:0]
+	n.encoding = n.encoding[0:0]
+
+	// when called after.
+	if len(n.lastAccept) > 0 {
+		n.accept = append(n.accept, n.lastAccept...)
+		n.lastAccept = n.lastAccept[0:0]
+	}
+
+	if len(n.lastCharset) > 0 {
+		n.charset = append(n.charset, n.lastCharset...)
+		n.lastCharset = n.lastCharset[0:0]
+	}
+
+	if len(n.lastEncoding) > 0 {
+		n.encoding = append(n.encoding, n.lastEncoding...)
+		n.lastEncoding = n.lastEncoding[0:0]
+	}
+
+	return n
+}
+
+// MIME adds accepted client's mime type(s).
+// Returns itself.
+func (n *NegotiationAcceptBuilder) MIME(mimeType ...string) *NegotiationAcceptBuilder {
+	n.lastAccept = mimeType
+	n.accept = append(n.accept, mimeType...)
+	return n
+}
+
+// Text adds the "text/plain" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Text() *NegotiationAcceptBuilder {
+	return n.MIME(ContentTextHeaderValue)
+}
+
+// HTML adds the "text/html" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) HTML() *NegotiationAcceptBuilder {
+	return n.MIME(ContentHTMLHeaderValue)
+}
+
+// Markdown adds the "text/markdown" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Markdown() *NegotiationAcceptBuilder {
+	return n.MIME(ContentMarkdownHeaderValue)
+}
+
+// Binary adds the "application/octet-stream" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Binary() *NegotiationAcceptBuilder {
+	return n.MIME(ContentBinaryHeaderValue)
+}
+
+// JSON adds the "application/json" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) JSON() *NegotiationAcceptBuilder {
+	return n.MIME(ContentJSONHeaderValue)
+}
+
+// JSONP adds the "application/javascript" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) JSONP() *NegotiationAcceptBuilder {
+	return n.MIME(ContentJavascriptHeaderValue)
+}
+
+// XML adds the "text/xml" and "application/xml" as accepted client content types.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) XML() *NegotiationAcceptBuilder {
+	return n.MIME(ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue)
+}
+
+// YAML adds the "application/x-yaml" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) YAML() *NegotiationAcceptBuilder {
+	return n.MIME(ContentYAMLHeaderValue)
+}
+
+// Charset adds one or more client accepted charsets.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Charset(charset ...string) *NegotiationAcceptBuilder {
+	n.lastCharset = charset
+	n.charset = append(n.charset, charset...)
+
+	return n
+}
+
+// Encoding adds one or more client accepted encoding algorithms.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Encoding(encoding ...string) *NegotiationAcceptBuilder {
+	n.lastEncoding = encoding
+	n.encoding = append(n.encoding, encoding...)
+
+	return n
+}
+
+// EncodingGzip adds the "gzip" as accepted encoding.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) EncodingGzip() *NegotiationAcceptBuilder {
+	return n.Encoding(GzipHeaderValue)
 }
 
 //  +------------------------------------------------------------+

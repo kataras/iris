@@ -53,6 +53,8 @@
         };
     }
 
+    const username = window.prompt("Your username?");
+
     async function runExample() {
         // You can omit the "default" and simply define only Events, the namespace will be an empty string"",
         // however if you decide to make any changes on this example make sure the changes are reflecting inside the ../server.go file as well.
@@ -69,6 +71,10 @@
                     chat: function (nsConn, msg) { // "chat" event.
                         addMessage(msg.Body);
                     }
+                }
+            },{
+                headers: {
+                    "X-Username": username,
                 }
             });
 
