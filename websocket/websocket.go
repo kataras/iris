@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"net/http"
+
 	"github.com/kataras/iris/context"
 
 	"github.com/kataras/neffos"
@@ -138,6 +140,14 @@ func SetDefaultUnmarshaler(fn func(data []byte, v interface{}) error) {
 // IDGenerator is an iris-specific IDGenerator for new connections.
 type IDGenerator func(context.Context) string
 
+func wrapIDGenerator(idGen IDGenerator) func(ctx context.Context) neffos.IDGenerator {
+	return func(ctx context.Context) neffos.IDGenerator {
+		return func(w http.ResponseWriter, r *http.Request) string {
+			return idGen(ctx)
+		}
+	}
+}
+
 // Handler returns an Iris handler to be served in a route of an Iris application.
 // Accepts the neffos websocket server as its first input argument
 // and optionally an Iris-specific `IDGenerator` as its second one.
@@ -151,19 +161,19 @@ func Handler(s *neffos.Server, IDGenerator ...IDGenerator) context.Handler {
 		if ctx.IsStopped() {
 			return
 		}
-		Upgrade(ctx, idGen(ctx), s)
+		Upgrade(ctx, idGen, s)
 	}
 }
 
 // Upgrade upgrades the request and returns a new websocket Conn.
 // Use `Handler` for higher-level implementation instead.
-func Upgrade(ctx context.Context, customID string, s *neffos.Server) *neffos.Conn {
+func Upgrade(ctx context.Context, idGen IDGenerator, s *neffos.Server) *neffos.Conn {
 	conn, _ := s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
 		return &socketWrapper{
 			Socket: socket,
 			ctx:    ctx,
 		}
-	}, customID)
+	}, wrapIDGenerator(idGen)(ctx))
 
 	return conn
 }

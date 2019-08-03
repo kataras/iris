@@ -17,6 +17,9 @@ type (
 	GorillaDialerOptions = gorilla.Options
 	// GobwasDialerOptions is just an alias for the `gorilla/websocket.Dialer` struct type.
 	GobwasDialerOptions = gobwas.Options
+	// GobwasHeader is an alias to the adapter that allows the use of `http.Header` as
+	// handshake headers.
+	GobwasHeader = gobwas.Header
 
 	// Conn describes the main websocket connection's functionality.
 	// Its `Connection` will return a new `NSConn` instance.

@@ -284,5 +284,10 @@ func main() {
 	// Last, do not confuse `ctx.Params()` with `ctx.Values()`.
 	// Path parameter's values can be retrieved from `ctx.Params()`,
 	// context's local storage that can be used to communicate between handlers and middleware(s) can be stored to `ctx.Values()`.
+	//
+	// When registering different parameter types in the same exact path pattern, the path parameter's name
+	// should differ e.g.
+	// /path/{name:string}
+	// /path/{id:uint}
 	app.Run(iris.Addr(":8080"))
 }

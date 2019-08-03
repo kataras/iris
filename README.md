@@ -8,7 +8,9 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 Learn what [others say about Iris](https://iris-go.com/testimonials/) and **star** this github repository.
 
-> Version 11.2 **released!** [Spread the news](https://dev.to/kataras/iris-version-11-2-released-22bc).
+> Version 11.2 **released!**
+
+[![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
 
 ## Learning Iris
 
@@ -53,9 +55,10 @@ For a more detailed technical documentation you can head over to our [godocs](ht
 
 ### Do you like to read while traveling?
 
+<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover.jpg" width="200" /> </a>
+
 You can [request](https://bit.ly/iris-req-book) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
 
-[![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-req-book)
 
 ## Contributing
 
