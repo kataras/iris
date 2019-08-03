@@ -1502,7 +1502,7 @@ func (ctx *context) Translate(format string, args ...interface{}) string {
 
 // Method returns the request.Method, the client's http method to the server.
 func (ctx *context) Method() string {
-	return ctx.request.Method
+	return strings.ToUpper(ctx.request.Method)
 }
 
 // Path returns the full request path,
