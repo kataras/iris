@@ -369,7 +369,7 @@ var (
 		return v, true
 	})
 
-	alphabeticalEval = MustRegexp("^[a-zA-Z ]+$")
+	alphabeticalEval = MustRegexp("^[a-zA-Z]+$")
 	// Alphabetical letter type
 	// letters only (upper or lowercase)
 	Alphabetical = NewMacro("alphabetical", "", false, false, func(paramValue string) (interface{}, bool) {
