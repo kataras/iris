@@ -594,7 +594,7 @@ type Configuration struct {
 
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
-	Tunneling TunnelingConfiguration `json:"tunneling,omitempty" yaml:"Tunneling" toml"Tunneling"`
+	Tunneling TunnelingConfiguration `json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
 
 	// IgnoreServerErrors will cause to ignore the matched "errors"
 	// from the main application's `Run` function.
