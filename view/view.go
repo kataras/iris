@@ -3,6 +3,7 @@ package view
 import (
 	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/kataras/iris/core/errors"
 )
@@ -21,11 +22,10 @@ func (v *View) Register(e Engine) {
 
 // Find receives a filename, gets its extension and returns the view engine responsible for that file extension
 func (v *View) Find(filename string) Engine {
-	extension := filepath.Ext(filename)
 	// Read-Only no locks needed, at serve/runtime-time the library is not supposed to add new view engines
 	for i, n := 0, len(v.engines); i < n; i++ {
 		e := v.engines[i]
-		if e.Ext() == extension {
+		if strings.HasSuffix(filename, e.Ext()) {
 			return e
 		}
 	}
