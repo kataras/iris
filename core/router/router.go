@@ -81,6 +81,8 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 	// the important
 	router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
 		ctx := cPool.Acquire(w, r)
+		// Note: we can't get all r.Context().Value key-value pairs
+		// and save them to ctx.values.
 		router.requestHandler.HandleRequest(ctx)
 		cPool.Release(ctx)
 	}

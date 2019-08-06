@@ -256,6 +256,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### Miscellaneous
 
+- [Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **NEW**
 - [Request Logger](http_request/request-logger/main.go)
     * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
 - [Localization and Internationalization](miscellaneous/i18n/main.go)
