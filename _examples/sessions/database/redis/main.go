@@ -22,7 +22,15 @@ func main() {
 		Database:  "",
 		Prefix:    "",
 		Delim:     "-",
-	}) // optionally configure the bridge between your redis server.
+		Driver:    redis.Redigo(), // redis.Radix() can be used instead.
+	})
+
+	// optionally configure the underline driver:
+	// driver := redis.Redigo()
+	// driver.MaxIdle = ...
+	// driver.IdleTimeout = ...
+	// driver.Wait = ...
+	// redis.Config {Driver: driver}
 
 	// close connection when control+C/cmd+C
 	iris.RegisterOnInterrupt(func() {
