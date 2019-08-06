@@ -2050,6 +2050,16 @@ func (ctx *context) FormValueDefault(name string, def string) string {
 	return def
 }
 
+// FormValueDefault retruns a single parsed form value.
+func FormValueDefault(r *http.Request, name string, def string, postMaxMemory int64, resetBody bool) string {
+	if form, has := GetForm(r, postMaxMemory, resetBody); has {
+		if v := form[name]; len(v) > 0 {
+			return v[0]
+		}
+	}
+	return def
+}
+
 // FormValue returns a single parsed form value by its "name",
 // including both the URL field's query parameters and the POST or PUT form data.
 func (ctx *context) FormValue(name string) string {
@@ -2070,6 +2080,11 @@ func (ctx *context) FormValues() map[string][]string {
 // Form contains the parsed form data, including both the URL
 // field's query parameters and the POST or PUT form data.
 func (ctx *context) form() (form map[string][]string, found bool) {
+	return GetForm(ctx.request, ctx.Application().ConfigurationReadOnly().GetPostMaxMemory(), ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+}
+
+// GetForm returns the request form (url queries, post or multipart) values.
+func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[string][]string, found bool) {
 	/*
 		net/http/request.go#1219
 		for k, v := range f.Value {
@@ -2079,21 +2094,34 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 		}
 	*/
 
+	if form := r.Form; len(form) > 0 {
+		return form, true
+	}
+
+	if form := r.PostForm; len(form) > 0 {
+		return form, true
+	}
+
+	if m := r.MultipartForm; m != nil {
+		if len(m.Value) > 0 {
+			return m.Value, true
+		}
+	}
+
 	var (
-		keepBody = ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal()
 		bodyCopy []byte
 	)
 
-	if keepBody {
+	if resetBody {
 		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
-		if m := ctx.Method(); m == "POST" || m == "PUT" || m == "PATCH" {
-			bodyCopy, _ = ctx.GetBody()
+		if m := r.Method; m == "POST" || m == "PUT" || m == "PATCH" {
+			bodyCopy, _ = GetBody(r, resetBody)
 			if len(bodyCopy) == 0 {
 				return nil, false
 			}
-			// ctx.request.Body = ioutil.NopCloser(io.TeeReader(ctx.request.Body, buf))
+			// r.Body = ioutil.NopCloser(io.TeeReader(r.Body, buf))
 		} else {
-			keepBody = false
+			resetBody = false
 		}
 	}
 
@@ -2101,23 +2129,23 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 	// therefore we don't need to call it here, although it doesn't hurt.
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
-	err := ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
-	if keepBody {
-		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	err := r.ParseMultipartForm(postMaxMemory)
+	if resetBody {
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
 	}
 	if err != nil && err != http.ErrNotMultipart {
 		return nil, false
 	}
 
-	if form := ctx.request.Form; len(form) > 0 {
+	if form := r.Form; len(form) > 0 {
 		return form, true
 	}
 
-	if form := ctx.request.PostForm; len(form) > 0 {
+	if form := r.PostForm; len(form) > 0 {
 		return form, true
 	}
 
-	if m := ctx.request.MultipartForm; m != nil {
+	if m := r.MultipartForm; m != nil {
 		if len(m.Value) > 0 {
 			return m.Value, true
 		}
@@ -2387,15 +2415,20 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 //
 // However, whenever you can use the `ctx.Request().Body` instead.
 func (ctx *context) GetBody() ([]byte, error) {
-	data, err := ioutil.ReadAll(ctx.request.Body)
+	return GetBody(ctx.request, ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+}
+
+// GetBody reads and returns the request body.
+func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	if ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
+	if resetBody {
 		// * remember, Request.Body has no Bytes(), we have to consume them first
 		// and after re-set them to the body, this is the only solution.
-		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 	}
 
 	return data, nil
