@@ -3,90 +3,22 @@ package redis
 import (
 	"fmt"
 	"strconv"
-	"time"
-
-	"github.com/kataras/iris/core/errors"
 
 	"github.com/mediocregopher/radix/v3"
 )
 
-const (
-	// DefaultRedisNetwork the redis network option, "tcp".
-	DefaultRedisNetwork = "tcp"
-	// DefaultRedisAddr the redis address option, "127.0.0.1:6379".
-	DefaultRedisAddr = "127.0.0.1:6379"
-	// DefaultRedisTimeout the redis idle timeout option, time.Duration(30) * time.Second
-	DefaultRedisTimeout = time.Duration(30) * time.Second
-	// DefaultDelim ths redis delim option, "-".
-	DefaultDelim = "-"
-)
-
-// Config the redis configuration used inside sessions
-type Config struct {
-	// Network protocol. Defaults to "tcp".
-	Network string
-	// Addr of the redis server. Defaults to "127.0.0.1:6379".
-	Addr string
-	// Password string .If no password then no 'AUTH'. Defaults to "".
-	Password string
-	// If Database is empty "" then no 'SELECT'. Defaults to "".
-	Database string
-	// MaxActive. Defaults to 10.
-	MaxActive int
-	// Timeout for connect, write and read, defaults to 30 seconds, 0 means no timeout.
-	Timeout time.Duration
-	// Prefix "myprefix-for-this-website". Defaults to "".
-	Prefix string
-	// Delim the delimeter for the keys on the sessiondb. Defaults to "-".
-	Delim string
-}
-
-// DefaultConfig returns the default configuration for Redis service.
-func DefaultConfig() Config {
-	return Config{
-		Network:   DefaultRedisNetwork,
-		Addr:      DefaultRedisAddr,
-		Password:  "",
-		Database:  "",
-		MaxActive: 10,
-		Timeout:   DefaultRedisTimeout,
-		Prefix:    "",
-		Delim:     DefaultDelim,
-	}
-}
-
-var (
-	// ErrRedisClosed an error with message 'Redis is already closed'
-	ErrRedisClosed = errors.New("Redis is already closed")
-	// ErrKeyNotFound an error with message 'Key $thekey doesn't found'
-	ErrKeyNotFound = errors.New("Key '%s' doesn't found")
-)
-
-// Service the Redis service, contains the config and the redis pool
-type Service struct {
+// RadixDriver the Redis service based on the radix go client,
+// contains the config and the redis pool.
+type RadixDriver struct {
 	// Connected is true when the Service has already connected
 	Connected bool
-	// Config the redis config for this redis
-	Config *Config
+	// Config the read-only redis database config.
+	Config Config
 	pool   *radix.Pool
 }
 
-// newService returns a Redis service filled by the passed config
-// to connect call the .Connect().
-func newService(cfg ...Config) *Service {
-	c := DefaultConfig()
-	if len(cfg) > 0 {
-		c = cfg[0]
-	}
-
-	r := &Service{Config: &c}
-	return r
-}
-
 // Connect connects to the redis, called only once
-func (r *Service) Connect() error {
-	c := r.Config
-
+func (r *RadixDriver) Connect(c Config) error {
 	if c.Timeout < 0 {
 		c.Timeout = DefaultRedisTimeout
 	}
@@ -139,11 +71,12 @@ func (r *Service) Connect() error {
 
 	r.Connected = true
 	r.pool = pool
+	r.Config = c
 	return nil
 }
 
 // PingPong sends a ping and receives a pong, if no pong received then returns false and filled error
-func (r *Service) PingPong() (bool, error) {
+func (r *RadixDriver) PingPong() (bool, error) {
 	var msg string
 	err := r.pool.Do(radix.Cmd(&msg, "PING"))
 	if err != nil {
@@ -152,8 +85,8 @@ func (r *Service) PingPong() (bool, error) {
 	return (msg == "PONG"), nil
 }
 
-// CloseConnection closes the redis connection
-func (r *Service) CloseConnection() error {
+// CloseConnection closes the redis connection.
+func (r *RadixDriver) CloseConnection() error {
 	if r.pool != nil {
 		return r.pool.Close()
 	}
@@ -161,8 +94,8 @@ func (r *Service) CloseConnection() error {
 }
 
 // Set sets a key-value to the redis store.
-// The expiration is setted by the MaxAgeSeconds.
-func (r *Service) Set(key string, value interface{}, secondsLifetime int64) error {
+// The expiration is setted by the secondsLifetime.
+func (r *RadixDriver) Set(key string, value interface{}, secondsLifetime int64) error {
 	// fmt.Printf("%#+v. %T. %s\n", value, value, value)
 
 	// if vB, ok := value.([]byte); ok && secondsLifetime <= 0 {
@@ -182,7 +115,7 @@ func (r *Service) Set(key string, value interface{}, secondsLifetime int64) erro
 
 // Get returns value, err by its key
 //returns nil and a filled error if something bad happened.
-func (r *Service) Get(key string) (interface{}, error) {
+func (r *RadixDriver) Get(key string) (interface{}, error) {
 	var redisVal interface{}
 	mn := radix.MaybeNil{Rcv: &redisVal}
 
@@ -199,7 +132,7 @@ func (r *Service) Get(key string) (interface{}, error) {
 
 // TTL returns the seconds to expire, if the key has expiration and error if action failed.
 // Read more at: https://redis.io/commands/ttl
-func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, found bool) {
+func (r *RadixDriver) TTL(key string) (seconds int64, hasExpiration bool, found bool) {
 	var redisVal interface{}
 	err := r.pool.Do(radix.Cmd(&redisVal, "TTL", r.Config.Prefix+key))
 	if err != nil {
@@ -213,7 +146,7 @@ func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, found bool
 	return
 }
 
-func (r *Service) updateTTLConn(key string, newSecondsLifeTime int64) error {
+func (r *RadixDriver) updateTTLConn(key string, newSecondsLifeTime int64) error {
 	var reply int
 	err := r.pool.Do(radix.FlatCmd(&reply, "EXPIRE", r.Config.Prefix+key, newSecondsLifeTime))
 	if err != nil {
@@ -237,14 +170,14 @@ func (r *Service) updateTTLConn(key string, newSecondsLifeTime int64) error {
 // UpdateTTL will update the ttl of a key.
 // Using the "EXPIRE" command.
 // Read more at: https://redis.io/commands/expire#refreshing-expires
-func (r *Service) UpdateTTL(key string, newSecondsLifeTime int64) error {
+func (r *RadixDriver) UpdateTTL(key string, newSecondsLifeTime int64) error {
 	return r.updateTTLConn(key, newSecondsLifeTime)
 }
 
 // UpdateTTLMany like `UpdateTTL` but for all keys starting with that "prefix",
 // it is a bit faster operation if you need to update all sessions keys (although it can be even faster if we used hash but this will limit other features),
 // look the `sessions/Database#OnUpdateExpiration` for example.
-func (r *Service) UpdateTTLMany(prefix string, newSecondsLifeTime int64) error {
+func (r *RadixDriver) UpdateTTLMany(prefix string, newSecondsLifeTime int64) error {
 	keys, err := r.getKeys(prefix)
 	if err != nil {
 		return err
@@ -260,7 +193,7 @@ func (r *Service) UpdateTTLMany(prefix string, newSecondsLifeTime int64) error {
 }
 
 // GetAll returns all redis entries using the "SCAN" command (2.8+).
-func (r *Service) GetAll() (interface{}, error) {
+func (r *RadixDriver) GetAll() (interface{}, error) {
 	var redisVal []interface{}
 	mn := radix.MaybeNil{Rcv: &redisVal}
 	err := r.pool.Do(radix.Cmd(&mn, "SCAN", strconv.Itoa(0))) // 0 -> cursor
@@ -276,7 +209,7 @@ func (r *Service) GetAll() (interface{}, error) {
 	return redisVal, nil
 }
 
-func (r *Service) getKeys(prefix string) ([]string, error) {
+func (r *RadixDriver) getKeys(prefix string) ([]string, error) {
 	var keys []string
 	// err := r.pool.Do(radix.Cmd(&keys, "MATCH", r.Config.Prefix+prefix+"*"))
 	// if err != nil {
@@ -297,41 +230,12 @@ func (r *Service) getKeys(prefix string) ([]string, error) {
 		return nil, err
 	}
 
-	// if err := c.Send("SCAN", 0, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", 9999999999); err != nil {
-	// 	return nil, err
-	// }
-
-	// if err := c.Flush(); err != nil {
-	// 	return nil, err
-	// }
-
-	// reply, err := c.Receive()
-	// if err != nil || reply == nil {
-	// 	return nil, err
-	// }
-
-	// it returns []interface, with two entries, the first one is "0" and the second one is a slice of the keys as []interface{uint8....}.
-
-	// if keysInterface, ok := reply.([]interface{}); ok {
-	// 	if len(keysInterface) == 2 {
-	// 		// take the second, it must contain the slice of keys.
-	// 		if keysSliceAsBytes, ok := keysInterface[1].([]interface{}); ok {
-	// 			keys := make([]string, len(keysSliceAsBytes), len(keysSliceAsBytes))
-	// 			for i, k := range keysSliceAsBytes {
-	// 				keys[i] = fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
-	// 			}
-
-	// 			return keys, nil
-	// 		}
-	// 	}
-	// }
-
 	return keys, nil
 }
 
 // GetKeys returns all redis keys using the "SCAN" with MATCH command.
 // Read more at:  https://redis.io/commands/scan#the-match-option.
-func (r *Service) GetKeys(prefix string) ([]string, error) {
+func (r *RadixDriver) GetKeys(prefix string) ([]string, error) {
 	return r.getKeys(prefix)
 }
 
@@ -351,7 +255,7 @@ func (r *Service) GetKeys(prefix string) ([]string, error) {
 // }
 
 // Delete removes redis entry by specific key
-func (r *Service) Delete(key string) error {
+func (r *RadixDriver) Delete(key string) error {
 	err := r.pool.Do(radix.Cmd(nil, "DEL", r.Config.Prefix+key))
 	return err
 }

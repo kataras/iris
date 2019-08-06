@@ -23,6 +23,7 @@ require (
 	github.com/kataras/golog v0.0.0-20190624001437-99c81de45f40
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/mediocregopher/radix/v3 v3.3.0
+	github.com/gomodule/redigo v1.7.1-0.20190724094224-574c33c3df38
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/iris-contrib/schema v0.0.1
