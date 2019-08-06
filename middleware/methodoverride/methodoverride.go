@@ -34,7 +34,7 @@ func (o *options) canOverride(method string) bool {
 func (o *options) get(w http.ResponseWriter, r *http.Request) string {
 	for _, getter := range o.getters {
 		if v := getter(w, r); v != "" {
-			return v
+			return strings.ToUpper(v)
 		}
 	}
 
@@ -198,7 +198,7 @@ func New(opt ...Option) router.WrapperFunc {
 	return func(w http.ResponseWriter, r *http.Request, proceed http.HandlerFunc) {
 		originalMethod := strings.ToUpper(r.Method)
 		if opts.canOverride(originalMethod) {
-			newMethod := strings.ToUpper(opts.get(w, r))
+			newMethod := opts.get(w, r)
 			if newMethod != "" {
 				if opts.saveOriginalMethodContextKey != nil {
 					r = r.WithContext(stdContext.WithValue(r.Context(), opts.saveOriginalMethodContextKey, originalMethod))
