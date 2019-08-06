@@ -198,7 +198,7 @@ func New(opt ...Option) router.WrapperFunc {
 	return func(w http.ResponseWriter, r *http.Request, proceed http.HandlerFunc) {
 		originalMethod := strings.ToUpper(r.Method)
 		if opts.canOverride(originalMethod) {
-			newMethod := opts.get(w, r)
+			newMethod := strings.ToUpper(opts.get(w, r))
 			if newMethod != "" {
 				if opts.saveOriginalMethodContextKey != nil {
 					r = r.WithContext(stdContext.WithValue(r.Context(), opts.saveOriginalMethodContextKey, originalMethod))
