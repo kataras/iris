@@ -78,8 +78,9 @@ func Jet(directory, extension string) *JetEngine {
 // Also it wont check if a value is already a reflect.Value (jet expects this type as values).
 //
 // Defaults to empty.
-func (s *JetEngine) DisableViewDataTypeCheck(jetDataContextKey string) {
+func (s *JetEngine) DisableViewDataTypeCheck(jetDataContextKey string) *JetEngine {
 	s.jetRendererRangerContextKey = jetDataContextKey
+	return s
 }
 
 // String returns the name of this view engine, the "jet".
