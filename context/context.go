@@ -1018,8 +1018,8 @@ var Gzip = func(ctx Context) {
 	ctx.Next()
 }
 
-// Map is just a shortcut of the map[string]interface{}.
-type Map map[string]interface{}
+// Map is just a type alias of the map[string]interface{} type.
+type Map = map[string]interface{}
 
 //  +------------------------------------------------------------+
 //  | Context Implementation                                     |
