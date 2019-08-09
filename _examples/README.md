@@ -2,14 +2,14 @@
 
 Please do learn how [net/http](https://golang.org/pkg/net/http/) std package works, first.
 
-This folder provides easy to understand code snippets on how to get started with [iris](https://github.com/kataras/iris) micro web framework.
+This folder provides easy to understand code snippets on how to get started with [iris](https://github.com/kataras/iris) web framework.
 
 It doesn't always contain the "best ways" but it does cover each important feature that will make you so excited to GO with iris!
 
 ## Running the examples
 
-1. Install the Go Programming Language, version 1.9+ from [here](https://golang.org/dl).
-2. Install Iris: `go get -u github.com/kataras/iris`
+1. Install the Go Programming Language, version 1.12+ from https://golang.org/dl.
+2. [Install Iris](https://github.com/kataras/iris/wiki/installation)
 3. Install any external packages that required by the examples
 
 <details>
@@ -21,14 +21,14 @@ cd _examples && go get ./...
 
 </details>
 
-And execute
+And run each example you wanna see, e.g.
 
 ```sh
 $ cd $GOPATH/src/github.com/kataras/iris/_examples/overview
 $ go run main.go
 ```
 
-> Test the examples by opening a terminal window and execute: `GOCACHE=off && cd _examples && go test -v ./...`
+> Test the examples by opening a terminal window and execute: `go test -v ./...`
 
 ### Overview
 
@@ -256,7 +256,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### Miscellaneous
 
-- [Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **NEW**
+- [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **NEW**
 - [Request Logger](http_request/request-logger/main.go)
     * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
 - [Localization and Internationalization](miscellaneous/i18n/main.go)

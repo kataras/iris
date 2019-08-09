@@ -32,7 +32,7 @@ type JetEngine struct {
 	// If AddFunc or AddVar called before `Load` then these will be set here to be used via `Load` and clear.
 	vars map[string]interface{}
 
-	jetRendererRangerContextKey string
+	jetRangerRendererContextKey string
 }
 
 var _ Engine = (*JetEngine)(nil)
@@ -78,8 +78,8 @@ func Jet(directory, extension string) *JetEngine {
 // Also it wont check if a value is already a reflect.Value (jet expects this type as values).
 //
 // Defaults to empty.
-func (s *JetEngine) DisableViewDataTypeCheck(jetDataContextKey string) *JetEngine {
-	s.jetRendererRangerContextKey = jetDataContextKey
+func (s *JetEngine) DisableViewDataTypeCheck(jetRangerRendererContextKey string) *JetEngine {
+	s.jetRangerRendererContextKey = jetRangerRendererContextKey
 	return s
 }
 
@@ -437,8 +437,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 
 	if m, ok := bindingData.(context.Map); ok {
 		for k, v := range m {
-			if s.jetRendererRangerContextKey == "" {
-
+			if s.jetRangerRendererContextKey == "" {
 				switch value := v.(type) {
 				case jet.Ranger, jet.Renderer:
 					jetRangerRenderer, _ = rangerRenderer(value)
@@ -458,7 +457,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 				continue
 			}
 
-			if k == s.jetRendererRangerContextKey {
+			if k == s.jetRangerRendererContextKey {
 				jetRangerRenderer = v
 				continue
 			}
