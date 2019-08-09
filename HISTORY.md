@@ -21,12 +21,21 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@master`.
 
+# Fr, 09 August 2019 | v11.2.4
+
+- Fixes [iris.Jet: no view engine found for '.jet' or '.html'](https://github.com/kataras/iris/issues/1327)
+- Fixes [ctx.ViewData not work with JetEngine](https://github.com/kataras/iris/issues/1330)
+- **New Feature**: [HTTP Method Override](https://github.com/kataras/iris/issues/1325)
+- Fixes [Poor performance of session.UpdateExpiration on 200 thousands+ keys with new radix lib](https://github.com/kataras/iris/issues/1328) by introducing the `sessions.Config.Driver` configuration field which defaults to `Redigo()` but can be set to `Radix()` too, future additions are welcomed.
+
+Commit log: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
+
 # Tu, 30 July 2019 | v11.2.3
 
-TODO:
-
-- Different parameter types in the same path (done).
-- [Content negotiation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation) (in-progress)
+- [New Feature: Handle different parameter types in the same path](https://github.com/kataras/iris/issues/1315)
+- [New Feature: Content Negotiation](https://github.com/kataras/iris/issues/1319)
+- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/http_request/read-yaml)
+- Fixes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
 
 # We, 24 July 2019 | v11.2.2
 

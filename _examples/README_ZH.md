@@ -363,7 +363,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### 其他
 
-- [Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **更新**
+- [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **更新**
 - [请求记录器](http_request/request-logger/main.go)
     * [将请求记录到文件](http_request/request-logger/request-logger-file/main.go)
 - [本地化和多语言支持](miscellaneous/i18n/main.go)
