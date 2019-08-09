@@ -129,8 +129,8 @@ func main() {
 		// However, you can enable it for better performance.
 		// In order to enable key mapping for
 		// jet specific renderer and ranger types
-		// then initialize the View Engine
-		// by `tmpl.DisableViewDataTypeCheck("_jet")`.
+		// you have to initialize the View Engine
+		// with `tmpl.DisableViewDataTypeCheck("_jet")`.
 		//
 		// Defaults to type checks, empty key.
 		ctx.ViewData("_jet", (&doneTODOs{}).New(todos))
