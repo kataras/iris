@@ -114,10 +114,27 @@ func main() {
 		ctx.View("todos/show.jet", todo)
 	})
 	app.Get("/all-done", func(ctx iris.Context) {
-		vars := make(view.JetRuntimeVars) // <-- or keep use the jet.VarMap, decision up to you, it refers to the same type.
-		vars.Set("showingAllDone", true)
-		view.AddJetRuntimeVars(ctx, vars) // <--
-		ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
+		// vars := make(view.JetRuntimeVars)
+		// vars.Set("showingAllDone", true)
+		// vars.Set("title", "Todos - All Done")
+		// view.AddJetRuntimeVars(ctx, vars)
+		// ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
+		//
+		// OR
+
+		ctx.ViewData("showingAllDone", true)
+		ctx.ViewData("title", "Todos - All Done")
+
+		// Key does not actual matters at all here.
+		// However, you can enable it for better performance.
+		// In order to enable key mapping for
+		// jet specific renderer and ranger types
+		// then initialize the View Engine
+		// by `tmpl.DisableViewDataTypeCheck("_jet")`.
+		//
+		// Defaults to type checks, empty key.
+		ctx.ViewData("_jet", (&doneTODOs{}).New(todos))
+		ctx.View("todos/index.jet")
 	})
 
 	port := os.Getenv("PORT")

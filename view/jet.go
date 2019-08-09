@@ -31,6 +31,8 @@ type JetEngine struct {
 	// Note that global vars and functions are set in a single spot on the jet parser.
 	// If AddFunc or AddVar called before `Load` then these will be set here to be used via `Load` and clear.
 	vars map[string]interface{}
+
+	jetRendererRangerContextKey string
 }
 
 var _ Engine = (*JetEngine)(nil)
@@ -64,6 +66,20 @@ func Jet(directory, extension string) *JetEngine {
 	}
 
 	return s
+}
+
+// DisableViewDataTypeCheck accepts a context key name to use
+// to map the jet specific renderer and ranger over context's view data.
+//
+// If "jetDataContextKey" is not empty then `ExecuteWriter` will not check for
+// types to check if an element passed through `Context.ViewData`
+// contains a jet.Renderer or jet.Ranger or both.
+// Instead will map those with simple key data naming (faster).
+// Also it wont check if a value is already a reflect.Value (jet expects this type as values).
+//
+// Defaults to empty.
+func (s *JetEngine) DisableViewDataTypeCheck(jetDataContextKey string) {
+	s.jetRendererRangerContextKey = jetDataContextKey
 }
 
 // String returns the name of this view engine, the "jet".
@@ -358,7 +374,40 @@ func (rr rangerAndRenderer) Render(jetRuntime *jet.Runtime) {
 	rr.renderer.Render(jetRuntime)
 }
 
+func rangerRenderer(bindingData interface{}) (interface{}, bool) {
+	if ranger, ok := bindingData.(jet.Ranger); ok {
+		// Externally fixes a BUG on the jet template parser:
+		// eval.go#executeList(list *ListNode):NodeRange.isSet.getRanger(expression = st.evalPrimaryExpressionGroup)
+		// which does not act the "ranger" as element, instead is converted to a value of struct, which makes a jet.Ranger func(*myStruct) Range...
+		// not a compatible jet.Ranger.
+		// getRanger(st.context) should work but author of the jet library is not currently available,
+		// to allow a recommentation or a PR and I don't really want to vendor it because
+		// some end-users may use the jet import path to pass things like Global Funcs and etc.
+		// So to fix  it (at least temporarily and only for ref Ranger) we ptr the ptr the "ranger", not the bindingData, and this may
+		// have its downside because the same bindingData may be compatible with other node actions like range or custom Render
+		// but we have no other way at the moment. The same problem exists on the `Renderer` too!
+		// The solution below fixes the above issue but any fields of the struct are not available,
+		// this is ok because most of the times if not always, the users of jet don't use fields on Ranger and custom Renderer inside the templates.
+
+		if renderer, ok := bindingData.(jet.Renderer); ok {
+			// this can make a Ranger and Renderer both work together, unlike the jet parser itself.
+			return rangerAndRenderer{ranger, renderer}, true
+		}
+
+		return &ranger, true
+	}
+
+	if renderer, ok := bindingData.(jet.Renderer); ok {
+		// Here the fields are not available but usually if completes the jet.Renderer no
+		// fields are used in the template.
+		return &renderer, true // see above ^.
+	}
+
+	return nil, false
+}
+
 // ExecuteWriter should execute a template by its filename with an optional layout and bindingData.
+// See `DisableViewDataTypeCheck` too.
 func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
 	tmpl, err := s.Set.GetTemplate(filename)
 	if err != nil {
@@ -376,32 +425,51 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 		}
 	}
 
-	if ranger, ok := bindingData.(jet.Ranger); ok {
-		// Externally fixes a BUG on the jet template parser:
-		// eval.go#executeList(list *ListNode):NodeRange.isSet.getRanger(expression = st.evalPrimaryExpressionGroup)
-		// which does not act the "ranger" as element, instead is converted to a value of struct, which makes a jet.Ranger func(*myStruct) Range...
-		// not a compatible jet.Ranger.
-		// getRanger(st.context) should work but author of the jet library is not currently available,
-		// to allow a recommentation or a PR and I don't really want to vendor it because
-		// some end-users may use the jet import path to pass things like Global Funcs and etc.
-		// So to fix  it (at least temporarily and only for ref Ranger) we ptr the ptr the "ranger", not the bindingData, and this may
-		// have its downside because the same bindingData may be compatible with other node actions like range or custom Render
-		// but we have no other way at the moment. The same problem exists on the `Renderer` too!
-		// The solution below fixes the above issue but any fields of the struct are not available,
-		// this is ok because most of the times if not always, the users of jet don't use fields on Ranger and custom Renderer inside the templates.
-
-		if renderer, ok := bindingData.(jet.Renderer); ok {
-			// this can make a Ranger and Renderer both work together, unlike the jet parser itself.
-			return tmpl.Execute(w, vars, rangerAndRenderer{ranger, renderer})
-		}
-
-		return tmpl.Execute(w, vars, &ranger)
+	if bindingData == nil {
+		return tmpl.Execute(w, vars, nil)
 	}
 
-	if renderer, ok := bindingData.(jet.Renderer); ok {
-		// Here the fields are not available but usually if completes the jet.Renderer no
-		// fields are used in the template.
-		return tmpl.Execute(w, vars, &renderer) // see above ^.
+	jetRangerRenderer, ok := rangerRenderer(bindingData)
+	if ok {
+		return tmpl.Execute(w, vars, jetRangerRenderer)
+	}
+
+	if m, ok := bindingData.(context.Map); ok {
+		for k, v := range m {
+			if s.jetRendererRangerContextKey == "" {
+
+				switch value := v.(type) {
+				case jet.Ranger, jet.Renderer:
+					jetRangerRenderer, _ = rangerRenderer(value)
+				case reflect.Value:
+					if vars == nil {
+						vars = make(JetRuntimeVars)
+					}
+					// if it's already a reflect value.
+					vars[k] = value
+				default:
+					if vars == nil {
+						vars = make(JetRuntimeVars)
+					}
+					vars.Set(k, v)
+				}
+
+				continue
+			}
+
+			if k == s.jetRendererRangerContextKey {
+				jetRangerRenderer = v
+				continue
+			}
+
+			if vars == nil {
+				vars = make(JetRuntimeVars)
+			}
+
+			vars.Set(k, v)
+		}
+
+		return tmpl.Execute(w, vars, jetRangerRenderer)
 	}
 
 	return tmpl.Execute(w, vars, bindingData)
