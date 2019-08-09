@@ -125,7 +125,7 @@ func main() {
 		ctx.ViewData("showingAllDone", true)
 		ctx.ViewData("title", "Todos - All Done")
 
-		// Key does not actual matters at all here.
+		// Key does not actual matter at all here.
 		// However, you can enable it for better performance.
 		// In order to enable key mapping for
 		// jet specific renderer and ranger types
