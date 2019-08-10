@@ -3,7 +3,7 @@ module github.com/kataras/iris
 go 1.12
 
 require (
-	github.com/kataras/neffos v0.0.9
+	github.com/kataras/neffos v0.0.10
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CloudyKit/jet v2.1.3-0.20180809161101-62edd43e4f88+incompatible // indirect
 	github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7 // indirect
