@@ -4,17 +4,16 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 )
 
 /* A Router should contain all three of the following methods:
    - HandleRequest should handle the request based on the Context.
-	  HandleRequest(ctx context.Context)
+	  HandleRequest(ctx iris.Context)
    - Build should builds the handler, it's being called on router's BuildRouter.
 	  Build(provider router.RoutesProvider) error
    - RouteExists reports whether a particular route exists.
-      RouteExists(ctx context.Context, method, path string) bool
+      RouteExists(ctx iris.Context, method, path string) bool
 
 For a more detailed, complete and useful example
 you can take a look at the iris' router itself which is located at:
@@ -30,7 +29,7 @@ type customRouter struct {
 
 // HandleRequest a silly example which finds routes based only on the first part of the requested path
 // which must be a static one as well, the rest goes to fill the parameters.
-func (r *customRouter) HandleRequest(ctx context.Context) {
+func (r *customRouter) HandleRequest(ctx iris.Context) {
 	path := ctx.Path()
 	ctx.Application().Logger().Infof("Requested resource path: %s", path)
 
@@ -67,7 +66,7 @@ func (r *customRouter) Build(provider router.RoutesProvider) error {
 	return nil
 }
 
-func (r *customRouter) RouteExists(ctx context.Context, method, path string) bool {
+func (r *customRouter) RouteExists(ctx iris.Context, method, path string) bool {
 	// [...]
 	return false
 }
@@ -79,12 +78,12 @@ func main() {
 	// your custom router if you fetch by the Route's Handler
 	// because they are middlewares under the hood, so you don't have to implement the logic of handling them manually,
 	// though you have to match what requested path is what route and fill the ctx.Params(), this is the work of your custom router.
-	app.Get("/hello/{name}", func(ctx context.Context) {
+	app.Get("/hello/{name}", func(ctx iris.Context) {
 		name := ctx.Params().Get("name")
 		ctx.Writef("Hello %s\n", name)
 	})
 
-	app.Get("/cs/{num:uint64 min(10) else 400}", func(ctx context.Context) {
+	app.Get("/cs/{num:uint64 min(10) else 400}", func(ctx iris.Context) {
 		num := ctx.Params().GetUint64Default("num", 0)
 		ctx.Writef("num is: %d\n", num)
 	})

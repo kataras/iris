@@ -26,7 +26,7 @@ func newApp() *iris.Application {
 		// List the files inside the current requested directory if `IndexName` not found.
 		ShowList: false,
 		// If `ShowList` is true then this function will be used instead of the default one to show the list of files of a current requested directory(dir).
-		// DirList: func(ctx context.Context, dirName string, dir http.File) error { ... }
+		// DirList: func(ctx iris.Context, dirName string, dir http.File) error { ... }
 		//
 		// Optional validator that loops through each requested resource.
 		// AssetValidator:  func(ctx iris.Context, name string) bool { ... }

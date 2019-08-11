@@ -663,7 +663,7 @@ func internalServerError(ctx iris.Context) {
     ctx.WriteString("Oups something went wrong, try again")
 }
 
-func index(ctx context.Context) {
+func index(ctx iris.Context) {
     ctx.View("index.html")
 }
 ```
@@ -1149,7 +1149,7 @@ type Context interface {
     // to be executed. Next handlers are being executed on iris because you can alt the
     // error code and change it to a more specific one, i.e
     // users := app.Party("/users")
-    // users.Done(func(ctx context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
+    // users.Done(func(ctx iris.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
     NotFound()
 
     //  +------------------------------------------------------------+

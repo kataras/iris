@@ -10,7 +10,7 @@ func main() {
 
 	// subdomains works with all available routers, like other features too.
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.BeginTransaction(func(t *context.Transaction) {
 			// OPTIONAl STEP: , if true then the next transictions will not be executed if this transiction fails
 			// t.SetScope(context.RequestTransactionScope)

@@ -8,6 +8,7 @@ Example:
 import (
     "github.com/kataras/iris/_examples/mvc/overview/datamodels"
 
+    "github.com/kataras/iris"
     "github.com/kataras/iris/context"
 )
 
@@ -41,7 +42,7 @@ so theoretically, something like the following is permitted if it's really neces
 // This is called where the return value from a controller's method functions
 // is type of `Movie`.
 // For example the `controllers/movie_controller.go#GetBy`.
-func (m Movie) Dispatch(ctx context.Context) {
+func (m Movie) Dispatch(ctx iris.Context) {
     if !m.IsValid() {
         ctx.NotFound()
         return

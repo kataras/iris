@@ -2,23 +2,22 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) /* or iris.Context, it's the same for Go 1.9+. */ {
+	app.Get("/", func(ctx iris.Context) {
 		// GetReferrer extracts and returns the information from the "Referer" header as specified
 		// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy or by the URL query parameter "referer".
 		r := ctx.GetReferrer()
 		switch r.Type {
-		case context.ReferrerSearch:
+		case iris.ReferrerSearch:
 			ctx.Writef("Search %s: %s\n", r.Label, r.Query)
 			ctx.Writef("Google: %s\n", r.GoogleType)
-		case context.ReferrerSocial:
+		case iris.ReferrerSocial:
 			ctx.Writef("Social %s\n", r.Label)
-		case context.ReferrerIndirect:
+		case iris.ReferrerIndirect:
 			ctx.Writef("Indirect: %s\n", r.URL)
 		}
 	})
