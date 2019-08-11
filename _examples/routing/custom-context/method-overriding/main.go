@@ -15,10 +15,10 @@ import (
 // Create your own custom Context, put any fields you wanna need.
 type MyContext struct {
 	// Optional Part 1: embed (optional but required if you don't want to override all context's methods)
-	context.Context // it's the context/context.go#context struct but you don't need to know it.
+	iris.Context
 }
 
-var _ context.Context = &MyContext{} // optionally: validate on compile-time if MyContext implements context.Context.
+var _ iris.Context = &MyContext{} // optionally: validate on compile-time if MyContext implements context.Context.
 
 // The only one important if you will override the Context
 // with an embedded context.Context inside it.
@@ -51,7 +51,7 @@ func main() {
 	// The only one Required:
 	// here is how you define how your own context will
 	// be created and acquired from the iris' generic context pool.
-	app.ContextPool.Attach(func() context.Context {
+	app.ContextPool.Attach(func() iris.Context {
 		return &MyContext{
 			// Optional Part 3:
 			Context: context.NewContext(app),
@@ -62,14 +62,14 @@ func main() {
 	app.RegisterView(iris.HTML("./view", ".html"))
 
 	// register your route, as you normally do
-	app.Handle("GET", "/", recordWhichContextJustForProofOfConcept, func(ctx context.Context) {
+	app.Handle("GET", "/", recordWhichContextJustForProofOfConcept, func(ctx iris.Context) {
 		// use the context's overridden HTML method.
 		ctx.HTML("<h1> Hello from my custom context's HTML! </h1>")
 	})
 
 	// this will be executed by the MyContext.Context
 	// if MyContext is not directly define the View function by itself.
-	app.Handle("GET", "/hi/{firstname:alphabetical}", recordWhichContextJustForProofOfConcept, func(ctx context.Context) {
+	app.Handle("GET", "/hi/{firstname:alphabetical}", recordWhichContextJustForProofOfConcept, func(ctx iris.Context) {
 		firstname := ctx.Values().GetString("firstname")
 
 		ctx.ViewData("firstname", firstname)
@@ -82,7 +82,7 @@ func main() {
 }
 
 // should always print "($PATH) Handler is executing from 'MyContext'"
-func recordWhichContextJustForProofOfConcept(ctx context.Context) {
+func recordWhichContextJustForProofOfConcept(ctx iris.Context) {
 	ctx.Application().Logger().Infof("(%s) Handler is executing from: '%s'", ctx.Path(), reflect.TypeOf(ctx).Elem().Name())
 	ctx.Next()
 }

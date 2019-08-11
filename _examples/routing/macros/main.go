@@ -42,7 +42,7 @@ func main() {
 	// The new value and its type(from string to your new custom type) it is stored only once now,
 	// you don't have to do any conversions for simple cases like this.
 	context.ParamResolvers[reflect.TypeOf([]string{})] = func(paramIndex int) interface{} {
-		return func(ctx context.Context) []string {
+		return func(ctx iris.Context) []string {
 			// When you want to retrieve a parameter with a value type that it is not supported by-default, such as ctx.Params().GetInt
 			// then you can use the `GetEntry` or `GetEntryAt` and cast its underline `ValueRaw` to the desired type.
 			// The type should be the same as the macro's evaluator function (last argument on the Macros#Register) return value.
@@ -65,7 +65,7 @@ func main() {
 		http://localhost:8080/test_slice_contains/value1/value2 ->
 		myparam's value (a trailing path parameter type) is: []string{"value1", "value2"}
 	*/
-	app.Get("/test_slice_contains/{myparam:slice contains([value1,value2])}", func(ctx context.Context) {
+	app.Get("/test_slice_contains/{myparam:slice contains([value1,value2])}", func(ctx iris.Context) {
 		// When it is not a builtin function available to retrieve your value with the type you want, such as ctx.Params().GetInt
 		// then you can use the `GetEntry.ValueRaw` to get the real value, which is set-ed by your macro above.
 		myparam := ctx.Params().GetEntry("myparam").ValueRaw.([]string)
