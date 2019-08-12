@@ -21,6 +21,13 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@master`.
 
+# Mo, 12 August 2019 | v11.2.5
+
+- [New Feature: Problem Details for HTTP APIs based](https://github.com/kataras/iris/pull/1336)
+- [Add Context.AbsoluteURI](https://github.com/kataras/iris/pull/1336/files#diff-15cce7299aae8810bcab9b0bf9a2fdb1R2368)
+
+Commit log: https://github.com/kataras/iris/compare/v11.2.4...v11.2.5
+
 # Fr, 09 August 2019 | v11.2.4
 
 - Fixes [iris.Jet: no view engine found for '.jet' or '.html'](https://github.com/kataras/iris/issues/1327)

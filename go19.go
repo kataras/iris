@@ -48,8 +48,16 @@ type (
 	// See `NewConditionalHandler` for more.
 	// An alias for the `context/Filter`.
 	Filter = context.Filter
-	// A Map is a shortcut of the map[string]interface{}.
+	// A Map is an alias of map[string]interface{}.
 	Map = context.Map
+	// Problem Details for HTTP APIs.
+	// Pass a Problem value to `context.Problem` to
+	// write an "application/problem+json" response.
+	//
+	// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+	//
+	// It is an alias of `context.Problem` type.
+	Problem = context.Problem
 
 	// Supervisor is a shortcut of the `host#Supervisor`.
 	// Used to add supervisor configurators on common Runners
