@@ -37,7 +37,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "11.2.4"
+	Version = "11.2.5"
 )
 
 // HTTP status codes as registered with IANA.
@@ -453,7 +453,6 @@ var (
 	//
 	// A shortcut of the `cache#Cache304`.
 	Cache304 = cache.Cache304
-
 	// CookiePath is a `CookieOption`.
 	// Use it to change the cookie's Path field.
 	//
@@ -499,6 +498,11 @@ var (
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
+	// NewProblem retruns a new Problem.
+	// Head over to the `Problem` type godoc for more.
+	//
+	// A shortcut for the `context#NewProblem`.
+	NewProblem = context.NewProblem
 )
 
 // Contains the enum values of the `Context.GetReferrer()` method,
