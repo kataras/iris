@@ -385,6 +385,8 @@ type Context interface {
 	// Look `StatusCode` too.
 	GetStatusCode() int
 
+	// AbsoluteURI parses the "s" and returns its absolute URI form.
+	AbsoluteURI(s string) string
 	// Redirect sends a redirect response to the client
 	// to a specific url or relative path.
 	// accepts 2 parameters string and an optional int
@@ -395,7 +397,6 @@ type Context interface {
 	// or 303 (StatusSeeOther) if POST method,
 	// or StatusTemporaryRedirect(307) if that's nessecery.
 	Redirect(urlToRedirect string, statusHeader ...int)
-
 	//  +------------------------------------------------------------+
 	//  | Various Request and Post Data                              |
 	//  +------------------------------------------------------------+
@@ -777,6 +778,14 @@ type Context interface {
 	HTML(format string, args ...interface{}) (int, error)
 	// JSON marshals the given interface object and writes the JSON response.
 	JSON(v interface{}, options ...JSON) (int, error)
+	// Problem writes a JSON problem response.
+	// Order of fields are not always the same.
+	//
+	// Behaves exactly like `Context.JSON`
+	// but with indent of " " and a content type of "application/problem+json" instead.
+	//
+	// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+	Problem(v interface{}, opts ...JSON) (int, error)
 	// JSONP marshals the given interface object and writes the JSON response.
 	JSONP(v interface{}, options ...JSONP) (int, error)
 	// XML marshals the given interface object and writes the XML response.
@@ -1612,19 +1621,7 @@ func (ctx *context) IsWWW() bool {
 // FullRqeuestURI returns the full URI,
 // including the scheme, the host and the relative requested path/resource.
 func (ctx *context) FullRequestURI() string {
-	scheme := ctx.request.URL.Scheme
-	if scheme == "" {
-		if ctx.request.TLS != nil {
-			scheme = "https:"
-		} else {
-			scheme = "http:"
-		}
-	}
-
-	host := ctx.Host()
-	path := ctx.Path()
-
-	return scheme + "//" + host + path
+	return ctx.AbsoluteURI(ctx.Path())
 }
 
 const xForwardedForHeaderKey = "X-Forwarded-For"
@@ -2367,6 +2364,59 @@ func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
 	return io.Copy(out, src)
 }
 
+// AbsoluteURI parses the "s" and returns its absolute URI form.
+func (ctx *context) AbsoluteURI(s string) string {
+	if s == "" {
+		return ""
+	}
+
+	if s[0] == '/' {
+		scheme := ctx.request.URL.Scheme
+		if scheme == "" {
+			if ctx.request.TLS != nil {
+				scheme = "https:"
+			} else {
+				scheme = "http:"
+			}
+		}
+
+		host := ctx.Host()
+
+		return scheme + "//" + host + path.Clean(s)
+	}
+
+	if u, err := url.Parse(s); err == nil {
+		r := ctx.request
+
+		if u.Scheme == "" && u.Host == "" {
+			oldpath := r.URL.Path
+			if oldpath == "" {
+				oldpath = "/"
+			}
+
+			if s == "" || s[0] != '/' {
+				olddir, _ := path.Split(oldpath)
+				s = olddir + s
+			}
+
+			var query string
+			if i := strings.Index(s, "?"); i != -1 {
+				s, query = s[:i], s[i:]
+			}
+
+			// clean up but preserve trailing slash
+			trailing := strings.HasSuffix(s, "/")
+			s = path.Clean(s)
+			if trailing && !strings.HasSuffix(s, "/") {
+				s += "/"
+			}
+			s += query
+		}
+	}
+
+	return s
+}
+
 // Redirect sends a redirect response to the client
 // to a specific url or relative path.
 // accepts 2 parameters string and an optional int
@@ -2964,6 +3014,9 @@ const (
 	ContentHTMLHeaderValue = "text/html"
 	// ContentJSONHeaderValue header value for JSON data.
 	ContentJSONHeaderValue = "application/json"
+	// ContentJSONProblemHeaderValue header value for API problem error.
+	// Read more at: https://tools.ietf.org/html/rfc7807
+	ContentJSONProblemHeaderValue = "application/problem+json"
 	// ContentJavascriptHeaderValue header value for JSONP & Javascript data.
 	ContentJavascriptHeaderValue = "application/javascript"
 	// ContentTextHeaderValue header value for Text data.
@@ -3131,6 +3184,30 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	}
 
 	return n, err
+}
+
+// Problem writes a JSON problem response.
+// Order of fields are not always the same.
+//
+// Behaves exactly like `Context.JSON`
+// but with indent of " " and a content type of "application/problem+json" instead.
+//
+// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+func (ctx *context) Problem(v interface{}, opts ...JSON) (int, error) {
+	options := DefaultJSONOptions
+	if len(opts) > 0 {
+		options = opts[0]
+	} else {
+		options.Indent = "  "
+	}
+
+	ctx.contentTypeOnce(ContentJSONProblemHeaderValue, "")
+
+	if p, ok := v.(Problem); ok {
+		p.updateTypeToAbsolute(ctx)
+	}
+
+	return ctx.JSON(v, options)
 }
 
 var (
@@ -3333,10 +3410,11 @@ type N struct {
 	Markdown   []byte
 	Binary     []byte
 
-	JSON  interface{}
-	JSONP interface{}
-	XML   interface{}
-	YAML  interface{}
+	JSON    interface{}
+	Problem Problem
+	JSONP   interface{}
+	XML     interface{}
+	YAML    interface{}
 
 	Other []byte // custom content types.
 }
@@ -3354,6 +3432,8 @@ func (n N) SelectContent(mime string) interface{} {
 		return n.Binary
 	case ContentJSONHeaderValue:
 		return n.JSON
+	case ContentJSONProblemHeaderValue:
+		return n.Problem
 	case ContentJavascriptHeaderValue:
 		return n.JSONP
 	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
@@ -3485,6 +3565,8 @@ func (ctx *context) Negotiate(v interface{}) (int, error) {
 		return ctx.Markdown(v.([]byte))
 	case ContentJSONHeaderValue:
 		return ctx.JSON(v)
+	case ContentJSONProblemHeaderValue:
+		return ctx.Problem(v)
 	case ContentJavascriptHeaderValue:
 		return ctx.JSONP(v)
 	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
@@ -3612,6 +3694,19 @@ func (n *NegotiationBuilder) JSON(v ...interface{}) *NegotiationBuilder {
 		content = v[0]
 	}
 	return n.MIME(ContentJSONHeaderValue, content)
+}
+
+// Problem registers the "application/problem+json" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/problem+json" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Problem(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentJSONProblemHeaderValue, content)
 }
 
 // JSONP registers the "application/javascript" content type and, optionally,
@@ -3865,6 +3960,12 @@ func (n *NegotiationAcceptBuilder) Binary() *NegotiationAcceptBuilder {
 // Returns itself.
 func (n *NegotiationAcceptBuilder) JSON() *NegotiationAcceptBuilder {
 	return n.MIME(ContentJSONHeaderValue)
+}
+
+// Problem adds the "application/problem+json" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Problem() *NegotiationAcceptBuilder {
+	return n.MIME(ContentJSONProblemHeaderValue)
 }
 
 // JSONP adds the "application/javascript" as accepted client content type.
