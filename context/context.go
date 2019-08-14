@@ -3201,11 +3201,13 @@ func (ctx *context) Problem(v interface{}, opts ...JSON) (int, error) {
 		options.Indent = "  "
 	}
 
-	ctx.contentTypeOnce(ContentJSONProblemHeaderValue, "")
-
 	if p, ok := v.(Problem); ok {
 		p.updateTypeToAbsolute(ctx)
+		code, _ := p.getStatus()
+		ctx.StatusCode(code)
 	}
+
+	ctx.contentTypeOnce(ContentJSONProblemHeaderValue, "")
 
 	return ctx.JSON(v, options)
 }
