@@ -21,6 +21,17 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@master`.
 
+# We, 14 August 2019 | v11.2.6
+
+Allow [handle more than one route with the same paths and parameter types but different macro validation functions](https://github.com/kataras/iris/issues/1058#issuecomment-521110639).
+
+```go
+app.Get("/{alias:string regexp(^[a-z0-9]{1,10}\\.xml$)}", PanoXML)
+app.Get("/{alias:string regexp(^[a-z0-9]{1,10}$)}", Tour)
+```
+
+Commit log: https://github.com/kataras/iris/compare/v11.2.5...v11.2.6
+
 # Mo, 12 August 2019 | v11.2.5
 
 - [New Feature: Problem Details for HTTP APIs based](https://github.com/kataras/iris/pull/1336)
