@@ -142,7 +142,9 @@ func (repo *repository) getAll() []*Route {
 
 func (repo *repository) register(route *Route) {
 	for i, r := range repo.routes {
-		if route.Equal(r) {
+		// 14 August 2019 allow register same path pattern with different macro functions,
+		// see #1058
+		if route.DeepEqual(r) {
 			// replace existing with the latest one.
 			repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
 			continue

@@ -80,6 +80,7 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 		MainHandlerName: mainHandlerName,
 		FormattedPath:   formattedPath,
 	}
+
 	return route, nil
 }
 
@@ -157,11 +158,18 @@ func (r Route) String() string {
 		r.Method, r.Subdomain, r.Tmpl().Src)
 }
 
-// Equal compares the method, subdomaind and the
+// Equal compares the method, subdomain and the
 // underline representation of the route's path,
 // instead of the `String` function which returns the front representation.
 func (r *Route) Equal(other *Route) bool {
 	return r.Method == other.Method && r.Subdomain == other.Subdomain && r.Path == other.Path
+}
+
+// DeepEqual compares the method, subdomain, the
+// underline representation of the route's path,
+// and the template source.
+func (r *Route) DeepEqual(other *Route) bool {
+	return r.Equal(other) && r.tmpl.Src == other.tmpl.Src
 }
 
 // Tmpl returns the path template,
