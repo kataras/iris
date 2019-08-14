@@ -1,8 +1,5 @@
 name: Go
-on:
-  push:
-    branches:
-    - master
+on: [push]
 jobs:
 
   build:
@@ -18,12 +15,9 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@master
-      path: ${{ go.module-path }}
 
     - name: Get dependencies
-      working-directory: ${{ go.module-path }}
       run: |
         go get -v -t -d ./...
     - name: Build
-      working-directory: ${{ go.module-path }}
       run: go build -v .
