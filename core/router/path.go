@@ -234,10 +234,10 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 	slashIdx := strings.IndexByte(s, '/')
 	if slashIdx == 0 {
 		// no subdomain
-		return "", cleanPath(s)
+		return "", s // cleanPath(s)
 	}
 
-	return s[0:slashIdx], cleanPath(s[slashIdx:]) // return subdomain without slash, path with slash
+	return s[0:slashIdx], s[slashIdx:] // cleanPath(s[slashIdx:]) // return subdomain without slash, path with slash
 }
 
 // RoutePathReverserOption option signature for the RoutePathReverser.
