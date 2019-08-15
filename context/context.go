@@ -1907,7 +1907,7 @@ func (ctx *context) URLParamTrim(name string) string {
 	return strings.TrimSpace(ctx.URLParam(name))
 }
 
-// URLParamTrim returns the escaped url query parameter from a request.
+// URLParamEscape returns the escaped url query parameter from a request.
 func (ctx *context) URLParamEscape(name string) string {
 	return DecodeQuery(ctx.URLParam(name))
 }
