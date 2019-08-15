@@ -56,8 +56,17 @@ type (
 	//
 	// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
 	//
-	// It is an alias of `context.Problem` type.
+	// It is an alias of the `context#Problem` type.
 	Problem = context.Problem
+	// ProblemOptions the optional settings when server replies with a Problem.
+	// See `Context.Problem` method and `Problem` type for more details.
+	//
+	// It is an alias of the `context#ProblemOptions` type.
+	ProblemOptions = context.ProblemOptions
+	// JSON the optional settings for JSON renderer.
+	//
+	// It is an alias of the `context#JSON` type.
+	JSON = context.JSON
 
 	// Supervisor is a shortcut of the `host#Supervisor`.
 	// Used to add supervisor configurators on common Runners
