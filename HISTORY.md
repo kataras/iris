@@ -21,6 +21,23 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@master`.
 
+# Th, 15 August 2019 | v11.2.7
+
+This minor version contains improvements on the Problem Details for HTTP APIs implemented on [v11.2.5](#mo-12-august-2019--v1125).
+
+- Fix https://github.com/kataras/iris/issues/1335#issuecomment-521319721
+- Add `ProblemOptions` with `RetryAfter` as requested at: https://github.com/kataras/iris/issues/1335#issuecomment-521330994.
+- Add `iris.JSON` alias for `context#JSON` options type.
+
+[Example](https://github.com/kataras/iris/blob/45d7c6fedb5adaef22b9730592255f7bb375e809/_examples/routing/http-errors/main.go#L85) and [wikis](https://github.com/kataras/iris/wiki/Routing-error-handlers#the-problem-type) updated. 
+
+References:
+
+- https://tools.ietf.org/html/rfc7231#section-7.1.3
+- https://tools.ietf.org/html/rfc7807
+
+Commit log: https://github.com/kataras/iris/compare/v11.2.6...v11.2.7
+
 # We, 14 August 2019 | v11.2.6
 
 Allow [handle more than one route with the same paths and parameter types but different macro validation functions](https://github.com/kataras/iris/issues/1058#issuecomment-521110639).
@@ -34,7 +51,7 @@ Commit log: https://github.com/kataras/iris/compare/v11.2.5...v11.2.6
 
 # Mo, 12 August 2019 | v11.2.5
 
-- [New Feature: Problem Details for HTTP APIs based](https://github.com/kataras/iris/pull/1336)
+- [New Feature: Problem Details for HTTP APIs](https://github.com/kataras/iris/pull/1336)
 - [Add Context.AbsoluteURI](https://github.com/kataras/iris/pull/1336/files#diff-15cce7299aae8810bcab9b0bf9a2fdb1R2368)
 
 Commit log: https://github.com/kataras/iris/compare/v11.2.4...v11.2.5
