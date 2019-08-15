@@ -275,5 +275,7 @@ func (o *ProblemOptions) Apply(ctx Context) {
 		retryAfterHeaderValue = o.parseRetryAfter(o.RetryAfter, timeLayout)
 	}
 
-	ctx.Header("Retry-After", retryAfterHeaderValue)
+	if retryAfterHeaderValue != "" {
+		ctx.Header("Retry-After", retryAfterHeaderValue)
+	}
 }
