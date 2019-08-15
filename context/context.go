@@ -410,7 +410,7 @@ type Context interface {
 	URLParam(name string) string
 	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
 	URLParamTrim(name string) string
-	// URLParamTrim returns the escaped url query parameter from a request.
+	// URLParamEscape returns the escaped url query parameter from a request.
 	URLParamEscape(name string) string
 	// URLParamInt returns the url query parameter as int value from a request,
 	// returns -1 and an error if parse failed.
