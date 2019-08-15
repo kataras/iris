@@ -2,7 +2,10 @@ package context
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 // Problem Details for HTTP APIs.
@@ -82,6 +85,28 @@ func (p Problem) updateTypeToAbsolute(ctx Context) {
 			causeP.updateTypeToAbsolute(ctx)
 		}
 	}
+}
+
+const (
+	problemTempKeyPrefix = "@temp_"
+)
+
+// TempKey sets a temporary key-value pair, which is being removed
+// on the its first get.
+func (p Problem) TempKey(key string, value interface{}) Problem {
+	return p.Key(problemTempKeyPrefix+key, value)
+}
+
+// GetTempKey returns the temp value based on "key" and removes it.
+func (p Problem) GetTempKey(key string) interface{} {
+	key = problemTempKeyPrefix + key
+	v, ok := p[key]
+	if ok {
+		delete(p, key)
+		return v
+	}
+
+	return nil
 }
 
 // Key sets a custom key-value pair.
@@ -169,4 +194,86 @@ func (p Problem) Error() string {
 	}
 
 	return fmt.Sprintf("[%d] %s", p["status"], p["title"])
+}
+
+// DefaultProblemOptions the default options for `Context.Problem` method.
+var DefaultProblemOptions = ProblemOptions{
+	JSON: JSON{Indent: "  "},
+}
+
+// ProblemOptions the optional settings when server replies with a Problem.
+// See `Context.Problem` method and `Problem` type for more details.
+type ProblemOptions struct {
+	// JSON are the optional JSON renderer options.
+	JSON JSON
+
+	// RetryAfter sets the Retry-After response header.
+	// https://tools.ietf.org/html/rfc7231#section-7.1.3
+	// The value can be one of those:
+	// time.Time
+	// time.Duration for seconds
+	// int64, int, float64 for seconds
+	// string for duration string or for datetime string.
+	//
+	// Examples:
+	// time.Now().Add(5 * time.Minute),
+	// 300 * time.Second,
+	// "5m",
+	// 300
+	RetryAfter interface{}
+	// A function that, if specified, can dynamically set
+	// retry-after based on the request. Useful for ProblemOptions reusability.
+	// Should return time.Time, time.Duration, int64, int, float64 or string.
+	//
+	// Overrides the RetryAfter field.
+	RetryAfterFunc func(Context) interface{}
+}
+
+func parseDurationToSeconds(dur time.Duration) int64 {
+	return int64(math.Round(dur.Seconds()))
+}
+
+func (o *ProblemOptions) parseRetryAfter(value interface{}, timeLayout string) string {
+	// https://tools.ietf.org/html/rfc7231#section-7.1.3
+	// Retry-After = HTTP-date / delay-seconds
+	switch v := value.(type) {
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case int:
+		return o.parseRetryAfter(int64(v), timeLayout)
+	case float64:
+		return o.parseRetryAfter(int64(math.Round(v)), timeLayout)
+	case time.Time:
+		return v.Format(timeLayout)
+	case time.Duration:
+		return o.parseRetryAfter(parseDurationToSeconds(v), timeLayout)
+	case string:
+		dur, err := time.ParseDuration(v)
+		if err != nil {
+			t, err := time.Parse(timeLayout, v)
+			if err != nil {
+				return ""
+			}
+
+			return o.parseRetryAfter(t, timeLayout)
+		}
+
+		return o.parseRetryAfter(parseDurationToSeconds(dur), timeLayout)
+	}
+
+	return ""
+}
+
+// Apply accepts a Context and applies specific response-time options.
+func (o *ProblemOptions) Apply(ctx Context) {
+	retryAfterHeaderValue := ""
+	timeLayout := ctx.Application().ConfigurationReadOnly().GetTimeFormat()
+
+	if o.RetryAfterFunc != nil {
+		retryAfterHeaderValue = o.parseRetryAfter(o.RetryAfterFunc(ctx), timeLayout)
+	} else if o.RetryAfter != nil {
+		retryAfterHeaderValue = o.parseRetryAfter(o.RetryAfter, timeLayout)
+	}
+
+	ctx.Header("Retry-After", retryAfterHeaderValue)
 }
