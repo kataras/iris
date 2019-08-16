@@ -778,19 +778,23 @@ type Context interface {
 	HTML(format string, args ...interface{}) (int, error)
 	// JSON marshals the given interface object and writes the JSON response.
 	JSON(v interface{}, options ...JSON) (int, error)
-	// Problem writes a JSON problem response.
+	// JSONP marshals the given interface object and writes the JSON response.
+	JSONP(v interface{}, options ...JSONP) (int, error)
+	// XML marshals the given interface object and writes the XML response.
+	// To render maps as XML see the `XMLMap` package-level function.
+	XML(v interface{}, options ...XML) (int, error)
+	// Problem writes a JSON or XML problem response.
 	// Order of Problem fields are not always rendered the same.
 	//
 	// Behaves exactly like `Context.JSON`
 	// but with default ProblemOptions.JSON indent of " " and
 	// a response content type of "application/problem+json" instead.
 	//
+	// Use the options.RenderXML and XML fields to change this behavior and
+	// send a response of content type "application/problem+xml" instead.
+	//
 	// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
 	Problem(v interface{}, opts ...ProblemOptions) (int, error)
-	// JSONP marshals the given interface object and writes the JSON response.
-	JSONP(v interface{}, options ...JSONP) (int, error)
-	// XML marshals the given interface object and writes the XML response.
-	XML(v interface{}, options ...XML) (int, error)
 	// Markdown parses the markdown to html and renders its result to the client.
 	Markdown(markdownB []byte, options ...Markdown) (int, error)
 	// YAML parses the "v" using the yaml parser and renders its result to the client.
@@ -3015,9 +3019,12 @@ const (
 	ContentHTMLHeaderValue = "text/html"
 	// ContentJSONHeaderValue header value for JSON data.
 	ContentJSONHeaderValue = "application/json"
-	// ContentJSONProblemHeaderValue header value for API problem error.
+	// ContentJSONProblemHeaderValue header value for JSON API problem error.
 	// Read more at: https://tools.ietf.org/html/rfc7807
 	ContentJSONProblemHeaderValue = "application/problem+json"
+	// ContentXMLProblemHeaderValue header value for XML API problem error.
+	// Read more at: https://tools.ietf.org/html/rfc7807
+	ContentXMLProblemHeaderValue = "application/problem+xml"
 	// ContentJavascriptHeaderValue header value for JSONP & Javascript data.
 	ContentJavascriptHeaderValue = "application/javascript"
 	// ContentTextHeaderValue header value for Text data.
@@ -3187,35 +3194,6 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	return n, err
 }
 
-// Problem writes a JSON problem response.
-// Order of Problem fields are not always rendered the same.
-//
-// Behaves exactly like `Context.JSON`
-// but with default ProblemOptions.JSON indent of " " and
-// a response content type of "application/problem+json" instead.
-//
-// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
-func (ctx *context) Problem(v interface{}, opts ...ProblemOptions) (int, error) {
-	options := DefaultProblemOptions
-	if len(opts) > 0 {
-		options = opts[0]
-		// Currently apply only if custom options passsed, otherwise,
-		// with the current settings, it's not required.
-		// This may change in the future though.
-		options.Apply(ctx)
-	}
-
-	if p, ok := v.(Problem); ok {
-		p.updateTypeToAbsolute(ctx)
-		code, _ := p.getStatus()
-		ctx.StatusCode(code)
-	}
-
-	ctx.contentTypeOnce(ContentJSONProblemHeaderValue, "")
-
-	return ctx.JSON(v, options.JSON)
-}
-
 var (
 	finishCallbackB = []byte(");")
 )
@@ -3279,6 +3257,46 @@ func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
 	return n, err
 }
 
+type xmlMapEntry struct {
+	XMLName xml.Name
+	Value   interface{} `xml:",chardata"`
+}
+
+// XMLMap wraps a map[string]interface{} to compatible xml marshaler,
+// in order to be able to render maps as XML on the `Context.XML` method.
+//
+// Example: `Context.XML(XMLMap("Root", map[string]interface{}{...})`.
+func XMLMap(elementName string, v Map) xml.Marshaler {
+	return xmlMap{
+		entries:     v,
+		elementName: elementName,
+	}
+}
+
+type xmlMap struct {
+	entries     Map
+	elementName string
+}
+
+// MarshalXML marshals a map to XML.
+func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if len(m.entries) == 0 {
+		return nil
+	}
+
+	start.Name = xml.Name{Local: m.elementName}
+	err := e.EncodeToken(start)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range m.entries {
+		e.Encode(xmlMapEntry{XMLName: xml.Name{Local: k}, Value: v})
+	}
+
+	return e.EncodeToken(start.End())
+}
+
 // WriteXML marshals the given interface object and writes the XML response to the writer.
 func WriteXML(writer io.Writer, v interface{}, options XML) (int, error) {
 	if prefix := options.Prefix; prefix != "" {
@@ -3306,6 +3324,7 @@ func WriteXML(writer io.Writer, v interface{}, options XML) (int, error) {
 var DefaultXMLOptions = XML{}
 
 // XML marshals the given interface object and writes the XML response to the client.
+// To render maps as XML see the `XMLMap` package-level function.
 func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 	options := DefaultXMLOptions
 
@@ -3323,6 +3342,47 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 	}
 
 	return n, err
+}
+
+// Problem writes a JSON or XML problem response.
+// Order of Problem fields are not always rendered the same.
+//
+// Behaves exactly like `Context.JSON`
+// but with default ProblemOptions.JSON indent of " " and
+// a response content type of "application/problem+json" instead.
+//
+// Use the options.RenderXML and XML fields to change this behavior and
+// send a response of content type "application/problem+xml" instead.
+//
+// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+func (ctx *context) Problem(v interface{}, opts ...ProblemOptions) (int, error) {
+	options := DefaultProblemOptions
+	if len(opts) > 0 {
+		options = opts[0]
+		// Currently apply only if custom options passsed, otherwise,
+		// with the current settings, it's not required.
+		// This may change in the future though.
+		options.Apply(ctx)
+	}
+
+	if p, ok := v.(Problem); ok {
+		// if !p.Validate() {
+		// 	ctx.StatusCode(http.StatusInternalServerError)
+		// 	return ErrNotValidProblem
+		// }
+		p.updateURIsToAbs(ctx)
+		code, _ := p.getStatus()
+		ctx.StatusCode(code)
+
+		if options.RenderXML {
+			ctx.contentTypeOnce(ContentXMLProblemHeaderValue, "")
+			// Problem is an xml Marshaler already, don't use `XMLMap`.
+			return ctx.XML(v, options.XML)
+		}
+	}
+
+	ctx.contentTypeOnce(ContentJSONProblemHeaderValue, "")
+	return ctx.JSON(v, options.JSON)
 }
 
 // WriteMarkdown parses the markdown to html and writes these contents to the writer.
@@ -3571,7 +3631,7 @@ func (ctx *context) Negotiate(v interface{}) (int, error) {
 		return ctx.Markdown(v.([]byte))
 	case ContentJSONHeaderValue:
 		return ctx.JSON(v)
-	case ContentJSONProblemHeaderValue:
+	case ContentJSONProblemHeaderValue, ContentXMLProblemHeaderValue:
 		return ctx.Problem(v)
 	case ContentJavascriptHeaderValue:
 		return ctx.JSONP(v)
@@ -3702,9 +3762,9 @@ func (n *NegotiationBuilder) JSON(v ...interface{}) *NegotiationBuilder {
 	return n.MIME(ContentJSONHeaderValue, content)
 }
 
-// Problem registers the "application/problem+json" content type and, optionally,
+// Problem registers the "application/problem+xml" or "application/problem+xml" content type and, optionally,
 // a value that `Context.Negotiate` will render
-// when a client accepts the "application/problem+json" content type.
+// when a client accepts the "application/problem+json" or the "application/problem+xml" content type.
 //
 // Returns itself for recursive calls.
 func (n *NegotiationBuilder) Problem(v ...interface{}) *NegotiationBuilder {
@@ -3712,7 +3772,7 @@ func (n *NegotiationBuilder) Problem(v ...interface{}) *NegotiationBuilder {
 	if len(v) > 0 {
 		content = v[0]
 	}
-	return n.MIME(ContentJSONProblemHeaderValue, content)
+	return n.MIME(ContentJSONProblemHeaderValue+","+ContentXMLProblemHeaderValue, content)
 }
 
 // JSONP registers the "application/javascript" content type and, optionally,
@@ -3968,10 +4028,11 @@ func (n *NegotiationAcceptBuilder) JSON() *NegotiationAcceptBuilder {
 	return n.MIME(ContentJSONHeaderValue)
 }
 
-// Problem adds the "application/problem+json" as accepted client content type.
+// Problem adds the "application/problem+json" and "application/problem-xml"
+// as accepted client content types.
 // Returns itself.
 func (n *NegotiationAcceptBuilder) Problem() *NegotiationAcceptBuilder {
-	return n.MIME(ContentJSONProblemHeaderValue)
+	return n.MIME(ContentJSONProblemHeaderValue, ContentXMLProblemHeaderValue)
 }
 
 // JSONP adds the "application/javascript" as accepted client content type.

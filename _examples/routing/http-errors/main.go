@@ -87,6 +87,11 @@ func problemExample(ctx iris.Context) {
 		JSON: iris.JSON{
 			Indent: "  ",
 		},
+		// OR
+		// Render as XML:
+		// RenderXML: true,
+		// XML:       iris.XML{Indent: "  "},
+		//
 		// Sets the "Retry-After" response header.
 		//
 		// Can accept:

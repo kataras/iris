@@ -1,10 +1,12 @@
 package context
 
 import (
+	"encoding/xml"
 	"fmt"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -57,10 +59,10 @@ func isEmptyTypeURI(uri string) bool {
 	return uri == "" || uri == "about:blank"
 }
 
-func (p Problem) getType() string {
-	typeField, found := p["type"]
+func (p Problem) getURI(key string) string {
+	f, found := p[key]
 	if found {
-		if typ, ok := typeField.(string); ok {
+		if typ, ok := f.(string); ok {
 			if !isEmptyTypeURI(typ) {
 				return typ
 			}
@@ -71,18 +73,22 @@ func (p Problem) getType() string {
 }
 
 // Updates "type" field to absolute URI, recursively.
-func (p Problem) updateTypeToAbsolute(ctx Context) {
+func (p Problem) updateURIsToAbs(ctx Context) {
 	if p == nil {
 		return
 	}
 
-	if uriRef := p.getType(); uriRef != "" {
+	if uriRef := p.getURI("type"); uriRef != "" {
 		p.Type(ctx.AbsoluteURI(uriRef))
+	}
+
+	if uriRef := p.getURI("instance"); uriRef != "" {
+		p.Instance(ctx.AbsoluteURI(uriRef))
 	}
 
 	if cause, ok := p["cause"]; ok {
 		if causeP, ok := cause.(Problem); ok {
-			causeP.updateTypeToAbsolute(ctx)
+			causeP.updateURIsToAbs(ctx)
 		}
 	}
 }
@@ -163,6 +169,14 @@ func (p Problem) Detail(detail string) Problem {
 	return p.Key("detail", detail)
 }
 
+// Instance sets the problem's instance field.
+// A URI reference that identifies the specific
+// occurrence of the problem.  It may or may not yield further
+// information if dereferenced.
+func (p Problem) Instance(instanceURI string) Problem {
+	return p.Key("instance", instanceURI)
+}
+
 // Cause sets the problem's cause field.
 // Any chain of problems.
 func (p Problem) Cause(cause Problem) Problem {
@@ -196,9 +210,29 @@ func (p Problem) Error() string {
 	return fmt.Sprintf("[%d] %s", p["status"], p["title"])
 }
 
+// MarshalXML makes this Problem XML-compatible content to render.
+func (p Problem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if len(p) == 0 {
+		return nil
+	}
+
+	err := e.EncodeToken(start)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range p {
+		// convert keys like "type" to "Type", "productName" to "ProductName" and e.t.c. when xml.
+		e.Encode(xmlMapEntry{XMLName: xml.Name{Local: strings.Title(k)}, Value: v})
+	}
+
+	return e.EncodeToken(start.End())
+}
+
 // DefaultProblemOptions the default options for `Context.Problem` method.
 var DefaultProblemOptions = ProblemOptions{
 	JSON: JSON{Indent: "  "},
+	XML:  XML{Indent: "  "},
 }
 
 // ProblemOptions the optional settings when server replies with a Problem.
@@ -206,6 +240,13 @@ var DefaultProblemOptions = ProblemOptions{
 type ProblemOptions struct {
 	// JSON are the optional JSON renderer options.
 	JSON JSON
+
+	// RenderXML set to true if want to render as XML doc.
+	// See `XML` option field too.
+	RenderXML bool
+	// XML are the optional XML renderer options.
+	// Affect only when `RenderXML` field is set to true.
+	XML XML
 
 	// RetryAfter sets the Retry-After response header.
 	// https://tools.ietf.org/html/rfc7231#section-7.1.3
