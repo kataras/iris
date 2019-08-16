@@ -7,40 +7,50 @@
 // (because it used "context" to define the user but we don't need that so a simple iris.FromStd wouldn't work as expected.)
 package main
 
-// $ go get -u github.com/dgrijalva/jwt-go
-// $ go run main.go
-
 import (
 	"github.com/kataras/iris"
 
-	"github.com/dgrijalva/jwt-go"
-	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
+	"github.com/iris-contrib/middleware/jwt"
 )
 
-func myHandler(ctx iris.Context) {
+func getTokenHandler(ctx iris.Context) {
+	token := jwt.NewTokenWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"foo": "bar",
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, _ := token.SignedString([]byte("My Secret"))
+
+	ctx.HTML(`Token: ` + tokenString + `<br/><br/>
+    <a href="/secured?token=` + tokenString + `">/secured?token=` + tokenString + `</a>`)
+}
+
+func myAuthenticatedHandler(ctx iris.Context) {
 	user := ctx.Values().Get("jwt").(*jwt.Token)
 
 	ctx.Writef("This is an authenticated request\n")
 	ctx.Writef("Claim content:\n")
 
-	ctx.Writef("%s", user.Signature)
+	foobar := user.Claims.(jwt.MapClaims)
+	for key, value := range foobar {
+		ctx.Writef("%s = %s", key, value)
+	}
 }
 
 func main() {
 	app := iris.New()
 
-	jwtHandler := jwtmiddleware.New(jwtmiddleware.Config{
+	j := jwt.New(jwt.Config{
+		// Extract by "token" url parameter.
+		Extractor: jwt.FromParameter("token"),
+
 		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 			return []byte("My Secret"), nil
 		},
-		// When set, the middleware verifies that tokens are signed with the specific signing algorithm
-		// If the signing method is not constant the ValidationKeyGetter callback can be used to implement additional checks
-		// Important to avoid security issues described here: https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
 		SigningMethod: jwt.SigningMethodHS256,
 	})
 
-	app.Use(jwtHandler.Serve)
-
-	app.Get("/ping", myHandler)
-	app.Run(iris.Addr("localhost:3001"))
-} // don't forget to look ../jwt_test.go to see how to set your own custom claims
+	app.Get("/", getTokenHandler)
+	app.Get("/secured", j.Serve, myAuthenticatedHandler)
+	app.Run(iris.Addr(":8080"))
+}
