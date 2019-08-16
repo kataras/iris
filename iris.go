@@ -503,6 +503,13 @@ var (
 	//
 	// A shortcut for the `context#NewProblem`.
 	NewProblem = context.NewProblem
+	// XMLMap wraps a map[string]interface{} to compatible xml marshaler,
+	// in order to be able to render maps as XML on the `Context.XML` method.
+	//
+	// Example: `Context.XML(XMLMap("Root", map[string]interface{}{...})`.
+	//
+	// A shortcut for the `context#XMLMap`.
+	XMLMap = context.XMLMap
 )
 
 // Contains the enum values of the `Context.GetReferrer()` method,

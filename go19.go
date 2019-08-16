@@ -67,7 +67,10 @@ type (
 	//
 	// It is an alias of the `context#JSON` type.
 	JSON = context.JSON
-
+	// XML the optional settings for XML renderer.
+	//
+	// It is an alias of the `context#XML` type.
+	XML = context.XML
 	// Supervisor is a shortcut of the `host#Supervisor`.
 	// Used to add supervisor configurators on common Runners
 	// without the need of importing the `core/host` package.
