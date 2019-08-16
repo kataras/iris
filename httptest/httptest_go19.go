@@ -4,5 +4,9 @@ package httptest
 
 import "github.com/gavv/httpexpect"
 
-// Request type alias.
-type Request = httpexpect.Request
+type (
+	// Request type alias.
+	Request = httpexpect.Request
+	// Expect type alias.
+	Expect = httpexpect.Expect
+)

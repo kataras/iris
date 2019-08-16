@@ -253,6 +253,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### ORM
 
 - [Using xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
+- [Using gorm](orm/gorm/main.go)
 
 ### Miscellaneous
 
