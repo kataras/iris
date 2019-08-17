@@ -11,7 +11,6 @@ import (
 // You can use the .WrapRouter to add custom logic when or when not the router should
 // be executed in order to execute the registered routes' handlers.
 func newApp() *iris.Application {
-
 	app := iris.New()
 
 	app.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {

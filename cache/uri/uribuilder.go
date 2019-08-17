@@ -71,7 +71,6 @@ func (r URIBuilder) String() string {
 }
 
 func (r URIBuilder) build() string {
-
 	remoteURL := r.serverAddr
 
 	// fasthttp appends the "/" in the last uri (with query args also, that's probably a fasthttp bug which I'll fix later)

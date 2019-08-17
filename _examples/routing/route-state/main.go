@@ -16,7 +16,6 @@ func main() {
 	})
 
 	app.Get("/change", func(ctx iris.Context) {
-
 		if none.IsOnline() {
 			none.Method = iris.MethodNone
 		} else {

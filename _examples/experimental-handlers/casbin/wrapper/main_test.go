@@ -71,7 +71,6 @@ func TestCasbinWrapper(t *testing.T) {
 	for _, tt := range ttAdminDeleted {
 		check(e, tt.method, tt.path, tt.username, tt.status)
 	}
-
 }
 
 func check(e *httptest.Expect, method, path, username string, status int) {

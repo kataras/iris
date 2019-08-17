@@ -96,7 +96,6 @@ func (c *UserController) PostRegister() mvc.Result {
 		// but it's good to know you can set a custom code;
 		// Code: 303,
 	}
-
 }
 
 var loginStaticView = mvc.View{

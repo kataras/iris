@@ -35,10 +35,8 @@ import (
 	"github.com/kataras/iris/middleware/recover"
 )
 
-var (
-	// Version is the current version number of the Iris Web Framework.
-	Version = "11.2.8"
-)
+// Version is the current version number of the Iris Web Framework.
+const Version = "11.2.8"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml

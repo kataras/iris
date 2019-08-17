@@ -91,7 +91,7 @@ func main() {
 	})
 	app.RegisterView(tmpl) // <--
 
-	var todos = map[string]*tTODO{
+	todos := map[string]*tTODO{
 		"example-todo-1": {Text: "Add an show todo page to the example project", Done: true},
 		"example-todo-2": {Text: "Add an add todo page to the example project"},
 		"example-todo-3": {Text: "Add an update todo page to the example project"},

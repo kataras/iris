@@ -375,5 +375,4 @@ func getTopicConsumeSSEHandler(ctx iris.Context) {
 			flusher.Flush()
 		}
 	}
-
 }

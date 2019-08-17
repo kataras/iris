@@ -93,7 +93,8 @@ func TestParseParam(t *testing.T) {
 		valid             bool
 		expectedStatement ast.ParamStatement
 	}{
-		{true,
+		{
+			true,
 			ast.ParamStatement{
 				Src:  "{id:int min(1) max(5) else 404}",
 				Name: "id",
@@ -101,15 +102,19 @@ func TestParseParam(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
-						Args: []string{"1"}},
+						Args: []string{"1"},
+					},
 					{
 						Name: "max",
-						Args: []string{"5"}},
+						Args: []string{"5"},
+					},
 				},
 				ErrorCode: 404,
-			}}, // 0
+			},
+		}, // 0
 
-		{true,
+		{
+			true,
 			ast.ParamStatement{
 				// test alias of int.
 				Src:  "{id:number range(1,5)}",
@@ -118,11 +123,14 @@ func TestParseParam(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
-						Args: []string{"1", "5"}},
+						Args: []string{"1", "5"},
+					},
 				},
 				ErrorCode: 404,
-			}}, // 1
-		{true,
+			},
+		}, // 1
+		{
+			true,
 			ast.ParamStatement{
 				Src:  "{file:path contains(.)}",
 				Name: "file",
@@ -130,84 +138,107 @@ func TestParseParam(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
-						Args: []string{"."}},
+						Args: []string{"."},
+					},
 				},
 				ErrorCode: 404,
-			}}, // 2
-		{true,
+			},
+		}, // 2
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{username:alphabetical}",
 				Name:      "username",
 				Type:      mustLookupParamType("alphabetical"),
 				ErrorCode: 404,
-			}}, // 3
-		{true,
+			},
+		}, // 3
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{myparam}",
 				Name:      "myparam",
 				Type:      mustLookupParamType("string"),
 				ErrorCode: 404,
-			}}, // 4
-		{false,
+			},
+		}, // 4
+		{
+			false,
 			ast.ParamStatement{
 				Src:       "{myparam_:thisianunexpected}",
 				Name:      "myparam_",
 				Type:      nil,
 				ErrorCode: 404,
-			}}, // 5
-		{true,
+			},
+		}, // 5
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{myparam2}",
 				Name:      "myparam2", // we now allow integers to the parameter names.
 				Type:      ast.GetMasterParamType(testParamTypes...),
 				ErrorCode: 404,
-			}}, // 6
-		{true,
+			},
+		}, // 6
+		{
+			true,
 			ast.ParamStatement{
 				Src:  "{id:int even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
 				Name: "id",
 				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
-						Name: "even"},
+						Name: "even",
+					},
 				},
 				ErrorCode: 404,
-			}}, // 7
-		{true,
+			},
+		}, // 7
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{id:int64 else 404}",
 				Name:      "id",
 				Type:      mustLookupParamType("int64"),
 				ErrorCode: 404,
-			}}, // 8
-		{true,
+			},
+		}, // 8
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{id:long else 404}", // backwards-compatible test.
 				Name:      "id",
 				Type:      mustLookupParamType("int64"),
 				ErrorCode: 404,
-			}}, // 9
-		{true,
+			},
+		}, // 9
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{id:long else 404}",
 				Name:      "id",
 				Type:      mustLookupParamType("int64"), // backwards-compatible test of LookupParamType.
 				ErrorCode: 404,
-			}}, // 10
-		{true,
+			},
+		}, // 10
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{has:bool else 404}",
 				Name:      "has",
 				Type:      mustLookupParamType("bool"),
 				ErrorCode: 404,
-			}}, // 11
-		{true,
+			},
+		}, // 11
+		{
+			true,
 			ast.ParamStatement{
 				Src:       "{has:boolean else 404}", // backwards-compatible test.
 				Name:      "has",
 				Type:      mustLookupParamType("bool"),
 				ErrorCode: 404,
-			}}, // 12
+			},
+		}, // 12
 
 	}
 
@@ -237,88 +268,116 @@ func TestParse(t *testing.T) {
 		valid              bool
 		expectedStatements []ast.ParamStatement
 	}{
-		{"/api/users/{id:int min(1) max(5) else 404}", true,
-			[]ast.ParamStatement{{
-				Src:  "{id:int min(1) max(5) else 404}",
-				Name: "id",
-				Type: paramTypeNumber,
-				Funcs: []ast.ParamFunc{
-					{
-						Name: "min",
-						Args: []string{"1"}},
-					{
-						Name: "max",
-						Args: []string{"5"}},
+		{
+			"/api/users/{id:int min(1) max(5) else 404}", true,
+			[]ast.ParamStatement{
+				{
+					Src:  "{id:int min(1) max(5) else 404}",
+					Name: "id",
+					Type: paramTypeNumber,
+					Funcs: []ast.ParamFunc{
+						{
+							Name: "min",
+							Args: []string{"1"},
+						},
+						{
+							Name: "max",
+							Args: []string{"5"},
+						},
+					},
+					ErrorCode: 404,
 				},
-				ErrorCode: 404,
 			},
-			}}, // 0
-		{"/admin/{id:uint64 range(1,5)}", true,
-			[]ast.ParamStatement{{
-				Src:  "{id:uint64 range(1,5)}",
-				Name: "id",
-				Type: paramTypeUint64,
-				Funcs: []ast.ParamFunc{
-					{
-						Name: "range",
-						Args: []string{"1", "5"}},
+		}, // 0
+		{
+			"/admin/{id:uint64 range(1,5)}", true,
+			[]ast.ParamStatement{
+				{
+					Src:  "{id:uint64 range(1,5)}",
+					Name: "id",
+					Type: paramTypeUint64,
+					Funcs: []ast.ParamFunc{
+						{
+							Name: "range",
+							Args: []string{"1", "5"},
+						},
+					},
+					ErrorCode: 404,
 				},
-				ErrorCode: 404,
 			},
-			}}, // 1
-		{"/files/{file:path contains(.)}", true,
-			[]ast.ParamStatement{{
-				Src:  "{file:path contains(.)}",
-				Name: "file",
-				Type: paramTypePath,
-				Funcs: []ast.ParamFunc{
-					{
-						Name: "contains",
-						Args: []string{"."}},
+		}, // 1
+		{
+			"/files/{file:path contains(.)}", true,
+			[]ast.ParamStatement{
+				{
+					Src:  "{file:path contains(.)}",
+					Name: "file",
+					Type: paramTypePath,
+					Funcs: []ast.ParamFunc{
+						{
+							Name: "contains",
+							Args: []string{"."},
+						},
+					},
+					ErrorCode: 404,
 				},
-				ErrorCode: 404,
 			},
-			}}, // 2
-		{"/profile/{username:alphabetical}", true,
-			[]ast.ParamStatement{{
-				Src:       "{username:alphabetical}",
-				Name:      "username",
-				Type:      paramTypeAlphabetical,
-				ErrorCode: 404,
+		}, // 2
+		{
+			"/profile/{username:alphabetical}", true,
+			[]ast.ParamStatement{
+				{
+					Src:       "{username:alphabetical}",
+					Name:      "username",
+					Type:      paramTypeAlphabetical,
+					ErrorCode: 404,
+				},
 			},
-			}}, // 3
-		{"/something/here/{myparam}", true,
-			[]ast.ParamStatement{{
-				Src:       "{myparam}",
-				Name:      "myparam",
-				Type:      paramTypeString,
-				ErrorCode: 404,
+		}, // 3
+		{
+			"/something/here/{myparam}", true,
+			[]ast.ParamStatement{
+				{
+					Src:       "{myparam}",
+					Name:      "myparam",
+					Type:      paramTypeString,
+					ErrorCode: 404,
+				},
 			},
-			}}, // 4
-		{"/unexpected/{myparam_:thisianunexpected}", false,
-			[]ast.ParamStatement{{
-				Src:       "{myparam_:thisianunexpected}",
-				Name:      "myparam_",
-				Type:      nil,
-				ErrorCode: 404,
+		}, // 4
+		{
+			"/unexpected/{myparam_:thisianunexpected}", false,
+			[]ast.ParamStatement{
+				{
+					Src:       "{myparam_:thisianunexpected}",
+					Name:      "myparam_",
+					Type:      nil,
+					ErrorCode: 404,
+				},
 			},
-			}}, // 5
-		{"/p2/{myparam2}", true,
-			[]ast.ParamStatement{{
-				Src:       "{myparam2}",
-				Name:      "myparam2", // we now allow integers to the parameter names.
-				Type:      paramTypeString,
-				ErrorCode: 404,
+		}, // 5
+		{
+			"/p2/{myparam2}", true,
+			[]ast.ParamStatement{
+				{
+					Src:       "{myparam2}",
+					Name:      "myparam2", // we now allow integers to the parameter names.
+					Type:      paramTypeString,
+					ErrorCode: 404,
+				},
 			},
-			}}, // 6
-		{"/assets/{file:path}/invalid", false, // path should be in the end segment
-			[]ast.ParamStatement{{
-				Src:       "{file:path}",
-				Name:      "file",
-				Type:      paramTypePath,
-				ErrorCode: 404,
+		}, // 6
+		{
+			"/assets/{file:path}/invalid", false, // path should be in the end segment
+			[]ast.ParamStatement{
+				{
+					Src:       "{file:path}",
+					Name:      "file",
+					Type:      paramTypePath,
+					ErrorCode: 404,
+				},
 			},
-			}}, // 7
+		}, // 7
 	}
 	for i, tt := range tests {
 		statements, err := Parse(tt.path, testParamTypes)

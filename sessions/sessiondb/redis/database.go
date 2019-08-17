@@ -134,7 +134,6 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 
 	if !hasExpiration {
 		return sessions.LifeTime{}
-
 	}
 
 	return sessions.LifeTime{Time: time.Now().Add(time.Duration(seconds) * time.Second)}

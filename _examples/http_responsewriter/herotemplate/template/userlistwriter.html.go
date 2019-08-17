@@ -40,5 +40,4 @@ func UserListToWriter(userList []string, w io.Writer) (int, error) {
 </html>
 `)
 	return w.Write(_buffer.Bytes())
-
 }

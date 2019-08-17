@@ -7,11 +7,9 @@ import (
 	"time"
 )
 
-var (
-	// nodeModulesPath is the path of the root npm modules
-	// Ex: C:\\Users\\iris\\AppData\\Roaming\\npm\\node_modules
-	nodeModulesPath string
-)
+// nodeModulesPath is the path of the root npm modules
+// Ex: C:\\Users\\iris\\AppData\\Roaming\\npm\\node_modules
+var nodeModulesPath string
 
 type (
 	// NodeModuleResult holds Message and Error, if error != nil then the npm command has failed
@@ -26,7 +24,7 @@ type (
 // NodeModulesPath sets the root directory for the node_modules and returns that
 func NodeModulesPath() string {
 	if nodeModulesPath == "" {
-		nodeModulesPath = MustCommand("npm", "root", "-g") //here it ends with \n we have to remove it
+		nodeModulesPath = MustCommand("npm", "root", "-g") // here it ends with \n we have to remove it
 		nodeModulesPath = nodeModulesPath[0 : len(nodeModulesPath)-1]
 	}
 	return nodeModulesPath
@@ -64,11 +62,10 @@ func NodeModuleInstall(moduleName string) NodeModuleResult {
 			case v := <-finish:
 				{
 					if v {
-						print("\010\010\010") //remove the loading chars
+						print("\010\010\010") // remove the loading chars
 						close(finish)
 						return
 					}
-
 				}
 			default:
 				print("\010\010-")
@@ -84,7 +81,6 @@ func NodeModuleInstall(moduleName string) NodeModuleResult {
 				print("|")
 			}
 		}
-
 	}()
 	out, err := Command("npm", "install", moduleName, "-g")
 	finish <- true
@@ -93,7 +89,6 @@ func NodeModuleInstall(moduleName string) NodeModuleResult {
 	}
 
 	return success("\n%s installed %s", moduleName, out)
-
 }
 
 // NodeModuleUnistall removes a module
@@ -103,7 +98,6 @@ func NodeModuleUnistall(moduleName string) NodeModuleResult {
 		return fail("Error unstalling module %s. Trace: %s", moduleName, err.Error())
 	}
 	return success("\n %s unistalled %s", moduleName, out)
-
 }
 
 // NodeModuleAbs returns the absolute path of the global node_modules directory + relative
@@ -113,8 +107,8 @@ func NodeModuleAbs(relativePath string) string {
 
 // NodeModuleExists returns true if a module exists
 // here we have two options
-//1 . search by command something like npm -ls -g --depth=x
-//2.  search on files, we choose the second
+// 1 . search by command something like npm -ls -g --depth=x
+// 2.  search on files, we choose the second
 func NodeModuleExists(execPath string) bool {
 	if !filepath.IsAbs(execPath) {
 		execPath = NodeModuleAbs(execPath)

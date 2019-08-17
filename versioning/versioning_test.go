@@ -31,6 +31,7 @@ func TestIf(t *testing.T) {
 		t.Fatalf("expected %s to be %s", "1.2.3", "> 1.2")
 	}
 }
+
 func TestNewMatcher(t *testing.T) {
 	app := iris.New()
 

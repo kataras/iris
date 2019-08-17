@@ -45,5 +45,4 @@ func TestI18n(t *testing.T) {
 		Body().Equal(elgrMulti)
 	e.GET("/multi").WithQueryString("lang=en-US").Expect().Status(httptest.StatusOK).
 		Body().Equal(enusMulti)
-
 }

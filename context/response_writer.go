@@ -298,7 +298,6 @@ func (w *responseWriter) WriteTo(to ResponseWriter) {
 				}
 			}
 		}
-
 	}
 	// the body is not copied, this writer doesn't support recording
 }

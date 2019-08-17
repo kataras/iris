@@ -8,10 +8,8 @@ import (
 	"github.com/iris-contrib/go.uuid"
 )
 
-var (
-	// Prefix the error prefix, applies to each error's message.
-	Prefix = ""
-)
+// Prefix the error prefix, applies to each error's message.
+var Prefix = ""
 
 // Error holds the error message, this message never really changes
 type Error struct {

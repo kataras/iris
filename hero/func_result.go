@@ -95,7 +95,6 @@ func DispatchErr(ctx context.Context, status int, err error) {
 // commonly used data to the response writer with a smart way.
 func DispatchCommon(ctx context.Context,
 	statusCode int, contentType string, content []byte, v interface{}, err error, found bool) {
-
 	// if we have a false boolean as a return value
 	// then skip everything and fire a not found,
 	// we even don't care about the given status code or the object or the content.

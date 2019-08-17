@@ -76,6 +76,7 @@ func TestCache304(t *testing.T) {
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
 	r.Body().Equal("send")
 }
+
 func TestETag(t *testing.T) {
 	t.Parallel()
 

@@ -55,7 +55,6 @@ func New(path string, fileMode os.FileMode) (*Database, error) {
 	service, err := bolt.Open(path, fileMode,
 		&bolt.Options{Timeout: 20 * time.Second},
 	)
-
 	if err != nil {
 		golog.Errorf("unable to initialize the BoltDB-based session database: %v", err)
 		return nil, err
@@ -203,7 +202,6 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 		_, err = root.CreateBucketIfNotExists(bsid)
 		return
 	})
-
 	if err != nil {
 		golog.Debugf("unable to acquire session '%s': %v", sid, err)
 		return sessions.LifeTime{}
@@ -285,7 +283,6 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 
 		return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 	})
-
 	if err != nil {
 		golog.Debugf("session '%s' key '%s' not found", sid, key)
 	}

@@ -42,7 +42,6 @@ func main() {
 		s.Publish("messages", &sse.Event{
 			Data: []byte("third message"),
 		})
-
 	}() // ...
 
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))

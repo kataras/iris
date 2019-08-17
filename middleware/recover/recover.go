@@ -35,7 +35,6 @@ func New() context.Handler {
 					_, f, l, got := runtime.Caller(i)
 					if !got {
 						break
-
 					}
 
 					stacktrace += fmt.Sprintf("%s:%d\n", f, l)

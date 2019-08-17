@@ -69,7 +69,6 @@ func resolveTokenType(ch byte) token.Type {
 	default:
 		return token.IDENT //
 	}
-
 }
 
 // NextToken returns the next token in the series of characters.

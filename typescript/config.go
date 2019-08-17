@@ -105,8 +105,8 @@ func (tsconfig *Tsconfig) CompilerArgs() []string {
 		var valueField string
 		// only if it's string or int we need to put that
 		if valueFieldG.Kind() == reflect.String {
-			//if valueFieldG.String() != "" {
-			//valueField = strconv.QuoteToASCII(valueFieldG.String())
+			// if valueFieldG.String() != "" {
+			// valueField = strconv.QuoteToASCII(valueFieldG.String())
 			//	}
 			valueField = valueFieldG.String()
 		} else if valueFieldG.Kind() == reflect.Int {
@@ -174,7 +174,6 @@ func DefaultTsconfig() Tsconfig {
 		},
 		Exclude: []string{"node_modules"},
 	}
-
 }
 
 // DefaultConfig returns the default Options of the Typescript adaptor

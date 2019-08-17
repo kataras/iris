@@ -32,7 +32,6 @@ type uploadedFiles struct {
 }
 
 func scanUploads(dir string) *uploadedFiles {
-
 	f := new(uploadedFiles)
 
 	lindex := dir[len(dir)-1]
@@ -54,7 +53,6 @@ func scanUploads(dir string) *uploadedFiles {
 func (f *uploadedFiles) scan(dir string) {
 	f.dir = dir
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-
 		// if it's directory or a thumbnail we saved earlier, skip it.
 		if info.IsDir() || strings.HasPrefix(info.Name(), "thumbnail_") {
 			return nil
@@ -117,7 +115,6 @@ func (f *uploadedFiles) createThumbnail(uf uploadedFile) {
 		png.Encode(out, resized)
 	}
 	// and so on... you got the point, this code can be simplify, as a practise.
-
 }
 
 func main() {
@@ -152,7 +149,6 @@ func main() {
 		// assuming that you have a folder named 'uploads'
 		out, err := os.OpenFile(uploadsDir+fname,
 			os.O_WRONLY|os.O_CREATE, 0666)
-
 		if err != nil {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			ctx.Application().Logger().Warnf("Error while preparing the new file: %v", err.Error())

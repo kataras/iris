@@ -57,7 +57,7 @@ func (r resource) loadFromBase(dir string) string {
 }
 
 func TestFileServerBasic(t *testing.T) {
-	var urls = []resource{
+	urls := []resource{
 		"/static/css/main.css",
 		"/static/js/jquery-2.1.1.js",
 		"/static/favicon.ico",

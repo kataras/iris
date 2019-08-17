@@ -61,7 +61,6 @@ func TestOnAnyErrorCode(t *testing.T) {
 		Body().Equal(http.StatusText(iris.StatusNotAcceptable))
 
 	checkAndClearBuf(t, buff, expectedPrintBeforeExecuteErr)
-
 }
 
 func checkAndClearBuf(t *testing.T, buff *bytes.Buffer, expected string) {

@@ -2110,9 +2110,7 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 		}
 	}
 
-	var (
-		bodyCopy []byte
-	)
+	var bodyCopy []byte
 
 	if resetBody {
 		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
@@ -2360,7 +2358,6 @@ func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
 
 	out, err := os.OpenFile(filepath.Join(destDirectory, fh.Filename),
 		os.O_WRONLY|os.O_CREATE, os.FileMode(0666))
-
 	if err != nil {
 		return 0, err
 	}
@@ -2534,7 +2531,7 @@ func (ctx *context) shouldOptimize() bool {
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
 func (ctx *context) ReadJSON(outPtr interface{}) error {
-	var unmarshaler = json.Unmarshal
+	unmarshaler := json.Unmarshal
 	if ctx.shouldOptimize() {
 		unmarshaler = jsoniter.Unmarshal
 	}
@@ -2814,9 +2811,7 @@ func (ctx *context) ClientSupportsGzip() bool {
 	return false
 }
 
-var (
-	errClientDoesNotSupportGzip = errors.New("client doesn't support gzip compression")
-)
+var errClientDoesNotSupportGzip = errors.New("client doesn't support gzip compression")
 
 // WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
 // returns the number of bytes written and an error ( if the client doesn't support gzip compression)
@@ -3163,7 +3158,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 
 	if options.StreamingJSON {
 		if ctx.shouldOptimize() {
-			var jsoniterConfig = jsoniter.Config{
+			jsoniterConfig := jsoniter.Config{
 				EscapeHTML:    !options.UnescapeHTML,
 				IndentionStep: 4,
 			}.Froze()
@@ -3194,9 +3189,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	return n, err
 }
 
-var (
-	finishCallbackB = []byte(");")
-)
+var finishCallbackB = []byte(");")
 
 // WriteJSONP marshals the given interface object and writes the JSON response to the writer.
 func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimization ...bool) (int, error) {
@@ -4081,9 +4074,7 @@ func (n *NegotiationAcceptBuilder) EncodingGzip() *NegotiationAcceptBuilder {
 //  | Serve files                                                |
 //  +------------------------------------------------------------+
 
-var (
-	errServeContent = errors.New("while trying to serve content to the client. Trace %s")
-)
+var errServeContent = errors.New("while trying to serve content to the client. Trace %s")
 
 // ServeContent serves content, headers are autoset
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
@@ -4387,7 +4378,7 @@ func (ctx *context) Recorder() *ResponseRecorder {
 // when the response writer is recording the status code, body, headers and so on,
 // else returns nil and false.
 func (ctx *context) IsRecording() (*ResponseRecorder, bool) {
-	//NOTE:
+	// NOTE:
 	// two return values in order to minimize the if statement:
 	// if (Recording) then writer = Recorder()
 	// instead we do: recorder,ok = Recording()
@@ -4435,7 +4426,6 @@ func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 		// give back to the transaction the original writer (SetBeforeFlush works this way and only this way)
 		// this is tricky but nessecery if we want ctx.FireStatusCode to work inside transactions
 		t.Context().ResetResponseWriter(ctx.writer)
-
 	}()
 
 	// run the worker with its context clone inside.

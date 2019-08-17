@@ -54,5 +54,4 @@ func TestSubdomainWWW(t *testing.T) {
 			Status(httptest.StatusOK).
 			Body().Equal(test.response())
 	}
-
 }

@@ -104,7 +104,6 @@ func TestClientNoCache(t *testing.T) {
 	if err := runTest(e, "/", &n, expectedBodyStr, "/nocache"); err != nil {
 		t.Fatalf(t.Name()+": %v", err)
 	}
-
 }
 
 func TestCache(t *testing.T) {
@@ -136,7 +135,6 @@ func TestCache(t *testing.T) {
 	if err := runTest(e, "/other", &n2, expectedBodyStr2, ""); err != nil {
 		t.Fatalf(t.Name()+" other: %v", err)
 	}
-
 }
 
 func TestCacheHandlerParallel(t *testing.T) {
@@ -185,7 +183,6 @@ func TestCacheValidator(t *testing.T) {
 		atomic.AddUint32(&n, 1)
 		ctx.Header("DONT", "DO not cache that response even if it was claimed")
 		ctx.Write([]byte(expectedBodyStr))
-
 	})
 
 	e := httptest.New(t, app)

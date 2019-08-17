@@ -7,10 +7,8 @@ import (
 	"strings"
 )
 
-var (
-	// PathSeparator is the string of os.PathSeparator
-	PathSeparator = string(os.PathSeparator)
-)
+// PathSeparator is the string of os.PathSeparator
+var PathSeparator = string(os.PathSeparator)
 
 type (
 	// Cmd is a custom struch which 'implements' the *exec.Cmd
@@ -24,7 +22,7 @@ type (
 //
 // In typical use, both Path and args are set by calling Command.
 func (cmd *Cmd) Arguments(args ...string) *Cmd {
-	cmd.Cmd.Args = append(cmd.Cmd.Args[0:1], args...) //we need the first argument which is the command
+	cmd.Cmd.Args = append(cmd.Cmd.Args[0:1], args...) // we need the first argument which is the command
 	return cmd
 }
 
@@ -36,7 +34,7 @@ func (cmd *Cmd) AppendArguments(args ...string) *Cmd {
 
 // ResetArguments resets the arguments
 func (cmd *Cmd) ResetArguments() *Cmd {
-	cmd.Args = cmd.Args[0:1] //keep only the first because is the command
+	cmd.Args = cmd.Args[0:1] // keep only the first because is the command
 	return cmd
 }
 
@@ -58,12 +56,12 @@ func CommandBuilder(command string, args ...string) *Cmd {
 	return &Cmd{Cmd: exec.Command(command, args...)}
 }
 
-//the below is just for exec.Command:
+// the below is just for exec.Command:
 
 // Command executes a command in shell and returns it's output, it's block version
 func Command(command string, a ...string) (output string, err error) {
 	var out []byte
-	//if no args given, try to get them from the command
+	// if no args given, try to get them from the command
 	if len(a) == 0 {
 		commandArgs := strings.Split(command, " ")
 		for _, commandArg := range commandArgs {

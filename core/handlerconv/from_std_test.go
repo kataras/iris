@@ -36,7 +36,6 @@ func TestFromStd(t *testing.T) {
 }
 
 func TestFromStdWithNext(t *testing.T) {
-
 	basicauth := "secret"
 	passed := "ok"
 

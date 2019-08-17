@@ -26,7 +26,7 @@ func FromStd(handler interface{}) context.Handler {
 	case context.Handler:
 		{
 			//
-			//it's already a iris handler
+			// it's already a iris handler
 			//
 			return handler.(context.Handler)
 		}
@@ -67,7 +67,6 @@ func FromStd(handler interface{}) context.Handler {
 		}
 
 	}
-
 }
 
 // FromStdWithNext receives a standar handler - middleware form - and returns a

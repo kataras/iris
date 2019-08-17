@@ -199,7 +199,6 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {
-
 	if s.assetFn != nil && s.namesFn != nil {
 		// embedded
 		return s.loadAssets()
@@ -237,7 +236,6 @@ func (s *DjangoEngine) loadDirectory() (templateErr error) {
 		// them should be treat as normal.
 		// If is a dir, return immediately (dir is not a valid golang template).
 		if info == nil || info.IsDir() {
-
 		} else {
 
 			rel, err := filepath.Rel(dir, path)
@@ -272,7 +270,6 @@ func (s *DjangoEngine) loadDirectory() (templateErr error) {
 
 // loadAssets loads the templates by binary (go-bindata for embedded).
 func (s *DjangoEngine) loadAssets() error {
-
 	virtualDirectory, virtualExtension := s.directory, s.extension
 	assetFn, namesFn := s.assetFn, s.namesFn
 

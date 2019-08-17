@@ -3,13 +3,13 @@
 package router
 
 import (
-	"github.com/kataras/iris/macro"
-
 	"testing"
+
+	"github.com/kataras/iris/macro"
 )
 
 func TestRouteStaticPath(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		tmpl   string
 		static string
 	}{

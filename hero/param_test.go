@@ -44,5 +44,4 @@ func TestPathParams(t *testing.T) {
 	if got != expected {
 		t.Fatalf("expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
 	}
-
 }

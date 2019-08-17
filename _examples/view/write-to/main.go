@@ -34,7 +34,6 @@ func main() {
 		RefTitle: "Iris web framework",
 		RefLink:  "https://iris-go.com",
 	})
-
 	if err != nil {
 		app.Logger().Errorf("error from app.View: %v", err)
 	}

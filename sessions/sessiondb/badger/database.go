@@ -62,7 +62,6 @@ func New(directoryPath string) (*Database, error) {
 	opts := badger.DefaultOptions(directoryPath)
 
 	service, err := badger.Open(opts)
-
 	if err != nil {
 		golog.Errorf("unable to initialize the badger-based session database: %v", err)
 		return nil, err
@@ -97,7 +96,6 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 		if err == badger.ErrKeyNotFound {
 			// create it and set the expiration, we don't care about the value there.
 			err = txn.SetEntry(badger.NewEntry(bsid, bsid).WithTTL(expires))
-
 		}
 	}
 
@@ -192,7 +190,6 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 		err := item.Value(func(valueBytes []byte) error {
 			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 		})
-
 		if err != nil {
 			golog.Error(err)
 			continue

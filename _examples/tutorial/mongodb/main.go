@@ -26,7 +26,7 @@ import (
 const version = "0.0.1"
 
 func init() {
-	var envFileName = ".env"
+	envFileName := ".env"
 
 	flagset := flag.CommandLine
 	flagset.StringVar(&envFileName, "env", envFileName, "the env file which web app will use to extract its environment variables")

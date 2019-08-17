@@ -13,7 +13,8 @@ func (c *HomeController) GetAbout() mvc.Result {
 		Name: "about.html",
 		Data: map[string]interface{}{
 			"Title":   "About Page",
-			"Message": "Your application description page."},
+			"Message": "Your application description page.",
+		},
 	}
 }
 
@@ -22,6 +23,7 @@ func (c *HomeController) GetContact() mvc.Result {
 		Name: "contact.html",
 		Data: map[string]interface{}{
 			"Title":   "Contact Page",
-			"Message": "Your application description page."},
+			"Message": "Your application description page.",
+		},
 	}
 }

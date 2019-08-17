@@ -41,10 +41,10 @@ func main() {
 	})
 	app.Get("/set", func(ctx iris.Context) {
 		s := sess.Start(ctx)
-		//set session values
+		// set session values
 		s.Set("name", "iris")
 
-		//test if set here
+		// test if set here
 		ctx.Writef("All ok session value of the 'name' is: %s", s.GetString("name"))
 	})
 
@@ -83,7 +83,7 @@ func main() {
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
-		//destroy, removes the entire session data and cookie
+		// destroy, removes the entire session data and cookie
 		sess.Destroy(ctx)
 	})
 

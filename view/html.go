@@ -269,10 +269,10 @@ func (s *HTMLEngine) loadDirectory() error {
 					templateErr = err
 					return err
 				}
-				//s.mu.Lock()
+				// s.mu.Lock()
 				// Add our funcmaps.
 				_, err = tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
-				//s.mu.Unlock()
+				// s.mu.Unlock()
 				if err != nil {
 					templateErr = err
 					return err
@@ -409,10 +409,10 @@ func (s *HTMLEngine) layoutFuncsFor(name string, binding interface{}) {
 			}
 			return "", nil
 		},
-		//partial related to current page,
-		//it would be easier for adding pages' style/script inline
-		//for example when using partial_r '.script' in layout.html
-		//templates/users/index.html would load templates/users/index.script.html
+		// partial related to current page,
+		// it would be easier for adding pages' style/script inline
+		// for example when using partial_r '.script' in layout.html
+		// templates/users/index.html would load templates/users/index.script.html
 		"partial_r": func(partialName string) (template.HTML, error) {
 			ext := filepath.Ext(name)
 			root := name[:len(name)-len(ext)]

@@ -12,7 +12,6 @@ var (
 )
 
 func secret(ctx iris.Context) {
-
 	// Check if user is authenticated
 	if auth, _ := sess.Start(ctx).GetBoolean("authenticated"); !auth {
 		ctx.StatusCode(iris.StatusForbidden)

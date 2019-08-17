@@ -82,7 +82,7 @@ func New(c Config) context.Handler {
 	}
 	i := &i18nMiddleware{config: c}
 	firstlanguage := ""
-	//load the files
+	// load the files
 	for k, langFileOrFiles := range c.Languages {
 		// remove all spaces.
 		langFileOrFiles = strings.Replace(langFileOrFiles, " ", "", -1)

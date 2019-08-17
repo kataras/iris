@@ -13,21 +13,19 @@ import (
 	"github.com/kataras/golog"
 )
 
-var (
-	// HeroDependencies let you share bindable dependencies between
-	// package-level hero's registered dependencies and all MVC instances that comes later.
-	//
-	// `hero.Register(...)`
-	// `myMVC := mvc.New(app.Party(...))`
-	// the "myMVC" registers the dependencies provided by the `hero.Register` func
-	// automatically.
-	//
-	// Set it to false to disable that behavior, you have to use the `mvc#Register`
-	// even if you had register dependencies with the `hero` package.
-	//
-	// Defaults to true.
-	HeroDependencies = true
-)
+// HeroDependencies let you share bindable dependencies between
+// package-level hero's registered dependencies and all MVC instances that comes later.
+//
+// `hero.Register(...)`
+// `myMVC := mvc.New(app.Party(...))`
+// the "myMVC" registers the dependencies provided by the `hero.Register` func
+// automatically.
+//
+// Set it to false to disable that behavior, you have to use the `mvc#Register`
+// even if you had register dependencies with the `hero` package.
+//
+// Defaults to true.
+var HeroDependencies = true
 
 // Application is the high-level component of the "mvc" package.
 // It's the API that you will be using to register controllers among with their

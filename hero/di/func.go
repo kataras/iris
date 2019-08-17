@@ -88,7 +88,7 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 				// again, a next value even with the same type is able to be
 				// used to other input arg. One value per input argument, order
 				// matters if same type of course.
-				//if len(values) > j+1 {
+				// if len(values) > j+1 {
 				values = append(values[:j], values[j+1:]...)
 				//}
 
@@ -126,7 +126,6 @@ func (s *FuncInjector) addValue(inputIndex int, value reflect.Value) bool {
 
 	// the binded values to the func's inputs.
 	b, err := MakeBindObject(value, s.goodFunc)
-
 	if err != nil {
 		return false
 	}
@@ -197,7 +196,6 @@ func (s *FuncInjector) Inject(in *[]reflect.Value, ctx ...reflect.Value) {
 			// 	input.InputIndex, v.String(), v.Type().Name())
 			args[input.InputIndex] = v
 		})
-
 	}
 
 	*in = args

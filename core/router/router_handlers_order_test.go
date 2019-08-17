@@ -76,6 +76,7 @@ func TestMiddlewareByRouteDef(t *testing.T) {
 
 	testResponse(t, app, "/mypath")
 }
+
 func TestMiddlewareByUseAndDoneDef(t *testing.T) {
 	app := iris.New()
 	app.Use(firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler)

@@ -114,13 +114,12 @@ func (r *RadixDriver) Set(key string, value interface{}, secondsLifetime int64) 
 }
 
 // Get returns value, err by its key
-//returns nil and a filled error if something bad happened.
+// returns nil and a filled error if something bad happened.
 func (r *RadixDriver) Get(key string) (interface{}, error) {
 	var redisVal interface{}
 	mn := radix.MaybeNil{Rcv: &redisVal}
 
 	err := r.pool.Do(radix.Cmd(&mn, "GET", r.Config.Prefix+key))
-
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +196,6 @@ func (r *RadixDriver) GetAll() (interface{}, error) {
 	var redisVal []interface{}
 	mn := radix.MaybeNil{Rcv: &redisVal}
 	err := r.pool.Do(radix.Cmd(&mn, "SCAN", strconv.Itoa(0))) // 0 -> cursor
-
 	if err != nil {
 		return nil, err
 	}

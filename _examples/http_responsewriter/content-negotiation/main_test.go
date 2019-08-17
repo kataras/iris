@@ -74,5 +74,4 @@ func TestContentNegotiation(t *testing.T) {
 	if expected, got := expectedHTMLResponse, string(rawResponse); expected != got {
 		t.Fatalf("expected response to be:\n%s but got:\n%s", expected, got)
 	}
-
 }

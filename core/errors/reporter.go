@@ -78,7 +78,6 @@ func (r *Reporter) AddErr(err error) bool {
 //
 // Returns true if this "err" is not nil and it's added to the reporter's stack.
 func (r *Reporter) Add(format string, a ...interface{}) bool {
-
 	if format == "" && len(a) == 0 {
 		return false
 	}

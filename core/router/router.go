@@ -42,7 +42,6 @@ func (router *Router) RefreshRouter() error {
 //
 // Use of RefreshRouter to re-build the router if needed.
 func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHandler, routesProvider RoutesProvider, force bool) error {
-
 	if requestHandler == nil {
 		return errors.New("router: request handler is nil")
 	}

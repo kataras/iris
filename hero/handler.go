@@ -11,9 +11,7 @@ import (
 	"github.com/kataras/golog"
 )
 
-var (
-	contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
-)
+var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
 
 // IsContext returns true if the "inTyp" is a type of Context.
 func IsContext(inTyp reflect.Type) bool {
@@ -95,5 +93,4 @@ func makeHandler(handler interface{}, values ...reflect.Value) (context.Handler,
 	}
 
 	return h, nil
-
 }

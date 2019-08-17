@@ -34,12 +34,11 @@ func newApp() *iris.Application {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
 	app.Get("/set", func(ctx iris.Context) {
-
-		//set session values
+		// set session values
 		s := mySessions.Start(ctx)
 		s.Set("name", "iris")
 
-		//test if set here
+		// test if set here
 		ctx.Writef("All ok session set to: %s", s.GetString("name"))
 	})
 
@@ -68,7 +67,7 @@ func newApp() *iris.Application {
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
-		//destroy, removes the entire session data and cookie
+		// destroy, removes the entire session data and cookie
 		mySessions.Destroy(ctx)
 	})
 	// Note about destroy:
