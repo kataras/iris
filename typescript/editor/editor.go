@@ -52,10 +52,8 @@ type (
 	}
 )
 
-var (
-	// NoOpLogger can be used as the logger argument, it prints nothing.
-	NoOpLogger = func(string, ...interface{}) {}
-)
+// NoOpLogger can be used as the logger argument, it prints nothing.
+var NoOpLogger = func(string, ...interface{}) {}
 
 // New creates and returns an Editor Plugin instance
 func New(cfg ...Config) *Editor {

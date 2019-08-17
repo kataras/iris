@@ -17,22 +17,20 @@ import (
 // to store the "offline" routes.
 const MethodNone = "NONE"
 
-var (
-	// AllMethods contains the valid http methods:
-	// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
-	// "PATCH", "OPTIONS", "TRACE".
-	AllMethods = []string{
-		http.MethodGet,
-		http.MethodPost,
-		http.MethodPut,
-		http.MethodDelete,
-		http.MethodConnect,
-		http.MethodHead,
-		http.MethodPatch,
-		http.MethodOptions,
-		http.MethodTrace,
-	}
-)
+// AllMethods contains the valid http methods:
+// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
+// "PATCH", "OPTIONS", "TRACE".
+var AllMethods = []string{
+	http.MethodGet,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodDelete,
+	http.MethodConnect,
+	http.MethodHead,
+	http.MethodPatch,
+	http.MethodOptions,
+	http.MethodTrace,
+}
 
 // repository passed to all parties(subrouters), it's the object witch keeps
 // all the routes.
@@ -403,7 +401,6 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 				}
 				routes = append(routes, api.Handle(method, p, handlers...))
 			}
-
 		}
 	}
 	return
@@ -433,7 +430,6 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	// and we need that path to call the `StripPrefix`.
 	if _, fullpath := splitSubdomainAndPath(joinPath(api.relativePath, requestPath)); fullpath != "/" {
 		h = StripPrefix(fullpath, h)
-
 	}
 
 	requestPath = joinPath(requestPath, WildcardFileParam())

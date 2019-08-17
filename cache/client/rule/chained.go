@@ -36,7 +36,6 @@ func Chained(rule Rule, next ...Rule) Rule {
 	}
 
 	return c
-
 }
 
 // Claim validator

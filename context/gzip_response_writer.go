@@ -133,7 +133,6 @@ func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
 		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
 			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
-
 	}
 	return
 }

@@ -101,7 +101,6 @@ func CopyHeaders(dst map[string][]string, src map[string][]string) {
 // to re-set the response with the new handler's content result
 func (e *Entry) Reset(statusCode int, headers map[string][]string,
 	body []byte, lifeChanger LifeChanger) {
-
 	if e.response == nil {
 		e.response = &Response{}
 	}

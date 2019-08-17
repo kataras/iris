@@ -14,7 +14,6 @@ var userMail = "user1@mail.go"
 var expectedUserAlreadyExists = "User with mail: user1@mail.go already exists"
 
 func ExampleError() {
-
 	fmt.Print(errUserAlreadyExists.Format(userMail).Append("Please change your mail addr"))
 
 	// Output:
@@ -38,7 +37,6 @@ func TestFormat(t *testing.T) {
 }
 
 func TestAppendErr(t *testing.T) {
-
 	errChangeMailMsg := "Please change your mail addr"
 	errChangeMail := fmt.Errorf(errChangeMailMsg) // test go standard error
 	errAppended := errUserAlreadyExists.AppendErr(errChangeMail)

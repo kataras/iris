@@ -120,7 +120,6 @@ type (
 
 // Validate corrects missing fields configuration fields and returns the right configuration
 func (c Config) Validate() Config {
-
 	if c.Cookie == "" {
 		c.Cookie = DefaultCookieName
 	}

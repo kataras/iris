@@ -37,5 +37,4 @@ func UserList(userList []string, buffer *bytes.Buffer) {
     </body>
 </html>
 `)
-
 }

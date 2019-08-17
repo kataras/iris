@@ -88,7 +88,8 @@ func defaultErrorCodeHandlers() *ErrorCodeHandlers {
 	for _, statusCode := range []int{
 		http.StatusNotFound,
 		http.StatusMethodNotAllowed,
-		http.StatusInternalServerError} {
+		http.StatusInternalServerError,
+	} {
 		chs.Register(statusCode, statusText(statusCode))
 	}
 

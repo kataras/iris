@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-
 	app := iris.New()
 
 	// 1

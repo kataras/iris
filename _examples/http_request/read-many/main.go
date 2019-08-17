@@ -20,7 +20,6 @@ func main() {
 			ctx.WriteString(`The body was empty
 or iris.WithoutBodyConsumptionOnUnmarshal option is missing from app.Run.
 Check the terminal window for any queries logs.`)
-
 		} else {
 			ctx.WriteString("OK body is still:\n")
 			ctx.Write(body)

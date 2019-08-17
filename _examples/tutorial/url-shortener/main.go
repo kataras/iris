@@ -99,7 +99,6 @@ func newApp(db *DB) *iris.Application {
 					ctx.ViewData("FORM_RESULT",
 						template.HTML("<pre><a target='_new' href='"+shortenURL+"'>"+shortenURL+" </a></pre>"))
 				}
-
 			}
 		}
 

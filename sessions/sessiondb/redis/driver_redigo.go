@@ -70,7 +70,7 @@ func (r *RedigoDriver) Set(key string, value interface{}, secondsLifetime int64)
 }
 
 // Get returns value, err by its key
-//returns nil and a filled error if something bad happened.
+// returns nil and a filled error if something bad happened.
 func (r *RedigoDriver) Get(key string) (interface{}, error) {
 	c := r.pool.Get()
 	defer c.Close()
@@ -79,7 +79,6 @@ func (r *RedigoDriver) Get(key string) (interface{}, error) {
 	}
 
 	redisVal, err := c.Do("GET", r.Config.Prefix+key)
-
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +107,6 @@ func (r *RedigoDriver) TTL(key string) (seconds int64, hasExpiration bool, found
 
 func (r *RedigoDriver) updateTTLConn(c redis.Conn, key string, newSecondsLifeTime int64) error {
 	reply, err := c.Do("EXPIRE", r.Config.Prefix+key, newSecondsLifeTime)
-
 	if err != nil {
 		return err
 	}
@@ -175,7 +173,6 @@ func (r *RedigoDriver) GetAll() (interface{}, error) {
 	}
 
 	redisVal, err := c.Do("SCAN", 0) // 0 -> cursor
-
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +231,7 @@ func (r *RedigoDriver) GetKeys(prefix string) ([]string, error) {
 
 // GetBytes returns value, err by its key
 // you can use utils.Deserialize((.GetBytes("yourkey"),&theobject{})
-//returns nil and a filled error if something wrong happens
+// returns nil and a filled error if something wrong happens
 func (r *RedigoDriver) GetBytes(key string) ([]byte, error) {
 	c := r.pool.Get()
 	defer c.Close()
@@ -243,7 +240,6 @@ func (r *RedigoDriver) GetBytes(key string) ([]byte, error) {
 	}
 
 	redisVal, err := c.Do("GET", r.Config.Prefix+key)
-
 	if err != nil {
 		return nil, err
 	}

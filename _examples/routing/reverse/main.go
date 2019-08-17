@@ -36,5 +36,4 @@ func main() {
 	// See view/template_html_4 example for more reverse routing examples
 	// using the reverse router component and the {{url}} and {{urlpath}} template functions.
 	app.Run(iris.Addr(":8080"))
-
 }

@@ -14,8 +14,6 @@ type (
 	View = hero.View
 )
 
-var (
-	// Try is a type alias for the `hero#Try`,
-	// useful to return a result based on two cases: failure(including panics) and a succeess.
-	Try = hero.Try
-)
+// Try is a type alias for the `hero#Try`,
+// useful to return a result based on two cases: failure(including panics) and a succeess.
+var Try = hero.Try

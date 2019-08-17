@@ -76,7 +76,6 @@ func (m myTestTask) OnServe(host TaskHost) {
 				time.AfterFunc(startDelay, func() {
 					m.logger.Println("restart")
 					host.Serve() // restart
-
 				})
 
 			}

@@ -20,9 +20,7 @@ type Store interface {
 	Close()                             // release the store or ignore
 }
 
-var (
-	tableURLs = []byte("urls")
-)
+var tableURLs = []byte("urls")
 
 // DB representation of a Store.
 // Only one table/bucket which contains the urls, so it's not a fully Database,
@@ -44,7 +42,7 @@ func openDatabase(stumb string) *bolt.DB {
 	}
 
 	// create the buckets here
-	var tables = [...][]byte{
+	tables := [...][]byte{
 		tableURLs,
 	}
 
@@ -160,7 +158,6 @@ func (d *DB) GetByValue(value string) (keys []string) {
 // Len returns all the "shorted" urls length
 func (d *DB) Len() (num int) {
 	d.db.View(func(tx *bolt.Tx) error {
-
 		// Assume bucket exists and has keys
 		b := tx.Bucket(tableURLs)
 		if b == nil {

@@ -85,7 +85,6 @@ func UNIX(socketFile string, mode os.FileMode) (net.Listener, error) {
 
 // TLS returns a new TLS Listener and an error on failure.
 func TLS(addr, certFile, keyFile string) (net.Listener, error) {
-
 	if certFile == "" || keyFile == "" {
 		return nil, errCertKeyMissing
 	}

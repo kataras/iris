@@ -75,7 +75,7 @@ func TestRouting(t *testing.T) {
 	app := newApp()
 	e := httptest.New(t, app)
 
-	var tests = []troute{
+	tests := []troute{
 		// GET
 		newTroute("GET", "", "/healthcheck", httptest.StatusOK),
 		newTroute("GET", "", "/games/{gameID}/clans", httptest.StatusOK, "gameID", "42"),

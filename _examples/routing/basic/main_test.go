@@ -85,5 +85,4 @@ func TestRoutingBasic(t *testing.T) {
 
 	e.Request("GET", "/").WithURL("http://any-subdomain-here.example.com").Expect().Status(httptest.StatusOK).
 		Body().Equal(expectedSubdomainWildcardIndexResponse)
-
 }

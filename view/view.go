@@ -37,9 +37,7 @@ func (v *View) Len() int {
 	return len(v.engines)
 }
 
-var (
-	errNoViewEngineForExt = errors.New("no view engine found for '%s'")
-)
+var errNoViewEngineForExt = errors.New("no view engine found for '%s'")
 
 // ExecuteWriter calls the correct view Engine's ExecuteWriter func
 func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {

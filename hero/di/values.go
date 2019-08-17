@@ -124,9 +124,8 @@ func (bv *Values) AddOnce(value interface{}) bool {
 }
 
 func (bv *Values) addIfNotExists(v reflect.Value) bool {
-	var (
-		typ = v.Type() // no element, raw things here.
-	)
+
+	typ := v.Type() // no element, raw things here.
 
 	if !goodVal(v) {
 		return false

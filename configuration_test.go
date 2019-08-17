@@ -223,7 +223,6 @@ Other:
 	if expected, got := "Iris: https://github.com/kataras/iris", c.Other["MyServerName"]; expected != got {
 		t.Fatalf("error on TestConfigurationYAML: Expected Other['MyServerName'] %s but got %s", expected, got)
 	}
-
 }
 
 func TestConfigurationTOML(t *testing.T) {

@@ -14,14 +14,13 @@ import (
 // Read more at https://github.com/shiyanhui/hero/hero
 
 func main() {
-
 	app := iris.New()
 
 	app.Get("/users", func(ctx iris.Context) {
 		ctx.Gzip(true)
 		ctx.ContentType("text/html")
 
-		var userList = []string{
+		userList := []string{
 			"Alice",
 			"Bob",
 			"Tom",

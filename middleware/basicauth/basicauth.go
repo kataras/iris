@@ -107,7 +107,6 @@ func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {
 
 // Serve the actual middleware
 func (b *basicAuthMiddleware) Serve(ctx context.Context) {
-
 	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
 	if !found {
 		b.askForCredentials(ctx)

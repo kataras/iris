@@ -32,10 +32,8 @@ func New(cfg ...Config) *Typescript {
 	return &Typescript{Config: &c}
 }
 
-var (
-	// NoOpLogger can be used as the logger argument, it prints nothing.
-	NoOpLogger = func(string, ...interface{}) {}
-)
+// NoOpLogger can be used as the logger argument, it prints nothing.
+var NoOpLogger = func(string, ...interface{}) {}
 
 // Run starts the typescript filewatcher watcher and the typescript compiler.
 func (t *Typescript) Run(logger func(format string, a ...interface{})) {
@@ -68,7 +66,7 @@ func (t *Typescript) Run(logger func(format string, a ...interface{})) {
 
 func (t *Typescript) start() {
 	if t.hasTypescriptFiles() {
-		//Can't check if permission denied returns always exists = true....
+		// Can't check if permission denied returns always exists = true....
 
 		if !npm.NodeModuleExists(t.Config.Bin) {
 			t.log("installing typescript, please wait...")
@@ -85,7 +83,7 @@ func (t *Typescript) start() {
 			watchedProjects := 0
 			// typescript project (.tsconfig) found
 			for _, project := range projects {
-				cmd := npm.CommandBuilder("node", t.Config.Bin, "-p", project[0:strings.LastIndex(project, npm.PathSeparator)]) //remove the /tsconfig.json)
+				cmd := npm.CommandBuilder("node", t.Config.Bin, "-p", project[0:strings.LastIndex(project, npm.PathSeparator)]) // remove the /tsconfig.json)
 				projectConfig, perr := FromFile(project)
 				if perr != nil {
 					t.log("error while trying to read tsconfig: %s", perr.Error())
@@ -114,7 +112,7 @@ func (t *Typescript) start() {
 			}
 			return
 		}
-		//search for standalone typescript (.ts) files and compile them
+		// search for standalone typescript (.ts) files and compile them
 		files := t.getTypescriptFiles()
 		if len(files) > 0 {
 			/* watchedFiles := 0
@@ -144,12 +142,11 @@ func (t *Typescript) start() {
 				go func() {
 					compilerMsgB, _ := cmd.Output()
 					compilerMsg := string(compilerMsgB)
-					cmd.Args = cmd.Args[0 : len(cmd.Args)-1] //remove the last, which is the file
+					cmd.Args = cmd.Args[0 : len(cmd.Args)-1] // remove the last, which is the file
 
 					if strings.Contains(compilerMsg, "error") {
 						t.log(compilerMsg)
 					}
-
 				}()
 
 			}
@@ -211,7 +208,7 @@ func (t *Typescript) getTypescriptProjects() []string {
 	ignoreFolders := t.getIgnoreFolders()
 
 	root := t.Config.Dir
-	//t.logger.Printf("\nSearching for typescript projects in %s", root)
+	// t.logger.Printf("\nSearching for typescript projects in %s", root)
 
 	// ignore error
 	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
@@ -225,7 +222,7 @@ func (t *Typescript) getTypescriptProjects() []string {
 		}
 
 		if strings.HasSuffix(path, npm.PathSeparator+"tsconfig.json") {
-			//t.logger.Printf("\nTypescript project found in %s", path)
+			// t.logger.Printf("\nTypescript project found in %s", path)
 			projects = append(projects, path)
 		}
 
@@ -253,7 +250,7 @@ func (t *Typescript) getTypescriptFiles() []string {
 		}
 
 		if strings.HasSuffix(path, ".ts") {
-			//t.logger.Printf("\nTypescript file found in %s", path)
+			// t.logger.Printf("\nTypescript file found in %s", path)
 			files = append(files, path)
 		}
 

@@ -118,7 +118,6 @@ func (s *HandlebarsEngine) Load() error {
 
 // loadDirectory builds the handlebars templates from directory.
 func (s *HandlebarsEngine) loadDirectory() error {
-
 	// register the global helpers on the first load
 	if len(s.templateCache) == 0 && s.helpers != nil {
 		raymond.RegisterHelpers(s.helpers)
@@ -260,7 +259,7 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		binding := bindingData
 		if isLayout {
 			var context map[string]interface{}
-			if m, is := binding.(map[string]interface{}); is { //handlebars accepts maps,
+			if m, is := binding.(map[string]interface{}); is { // handlebars accepts maps,
 				context = m
 			} else {
 				return fmt.Errorf("Please provide a map[string]interface{} type as the binding instead of the %#v", binding)
@@ -279,7 +278,6 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		}
 
 		res, err := tmpl.Exec(binding)
-
 		if err != nil {
 			return err
 		}

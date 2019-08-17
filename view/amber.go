@@ -114,7 +114,7 @@ func (s *AmberEngine) loadDirectory() error {
 		funcs[k] = v
 	}
 
-	amber.FuncMap = funcs //set the funcs
+	amber.FuncMap = funcs // set the funcs
 	opt.Ext = extension
 
 	templates, err := amber.CompileDir(dir, opt, amber.DefaultOptions) // this returns the map with stripped extension, we want extension so we copy the map
@@ -154,7 +154,7 @@ func (s *AmberEngine) loadAssets() error {
 			virtualDirectory = virtualDirectory[1:]
 		}
 	}
-	amber.FuncMap = funcs //set the funcs
+	amber.FuncMap = funcs // set the funcs
 
 	names := namesFn()
 
@@ -177,7 +177,6 @@ func (s *AmberEngine) loadAssets() error {
 
 			name := filepath.ToSlash(rel)
 			tmpl, err := amber.CompileData(buf, name, amber.DefaultOptions)
-
 			if err != nil {
 				return err
 			}

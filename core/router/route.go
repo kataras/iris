@@ -51,7 +51,6 @@ type Route struct {
 // handlers are being changed to validate the macros at serve time, if needed.
 func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 	handlers context.Handlers, macros macro.Macros) (*Route, error) {
-
 	tmpl, err := macro.Parse(unparsedPath, macros)
 	if err != nil {
 		return nil, err

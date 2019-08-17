@@ -65,7 +65,6 @@ func SiteFerify(ctx context.Context, secret string) (response Response) {
 			// optional: let's no track our users "remoteip": {ctx.RemoteAddr()},
 		},
 	)
-
 	if err != nil {
 		response.ErrorCodes = append(response.ErrorCodes, err.Error())
 		return

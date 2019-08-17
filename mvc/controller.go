@@ -491,5 +491,4 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 
 		hero.DispatchFuncResult(ctx, errorHandler, ctrl.Method(m.Index).Call(emptyIn))
 	}
-
 }

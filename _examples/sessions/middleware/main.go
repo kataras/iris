@@ -46,12 +46,12 @@ func main() {
 		ctx.HTML("</ul>")
 	})
 
-	//set session values.
+	// set session values.
 	app.Get("/set", func(ctx iris.Context) {
 		session := sessions.Get(ctx)
 		session.Set("name", "iris")
 
-		//test if set here.
+		// test if set here.
 		ctx.Writef("All ok session set to: %s", session.GetString("name"))
 
 		// Set will set the value as-it-is,
@@ -97,7 +97,7 @@ func main() {
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
-		//destroy, removes the entire session data and cookie
+		// destroy, removes the entire session data and cookie
 		// sess.Destroy(ctx)
 		// or
 		sessions.Get(ctx).Destroy()
@@ -123,7 +123,6 @@ func main() {
 		// try to change it, if we used `Set` instead of `SetImmutable` this
 		// change will affect the underline array of the session's value "businessEdit", but now it will not.
 		businessGet[0].Name = "Gabriel"
-
 	})
 
 	app.Get("/get_immutable", func(ctx iris.Context) {

@@ -168,5 +168,4 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 	// fmt.Printf("key: %s\n", key)
 	// fmt.Printf("write content type: %s\n", response.Headers()["ContentType"])
 	// fmt.Printf("write body len: %d\n", len(response.Body()))
-
 }

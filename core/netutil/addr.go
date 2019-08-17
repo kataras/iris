@@ -30,7 +30,6 @@ var IsLoopbackSubdomain = func(s string) bool {
 		if !strings.Contains(machineHostname, ".") { // if machine name's is not a loopback by itself
 			valid = s == machineHostname
 		}
-
 	}
 	return valid
 }
@@ -96,10 +95,8 @@ const (
 	defaultServerPort = 8080
 )
 
-var (
-	// defaultServerAddr the default server addr which is: localhost:8080
-	defaultServerAddr = defaultServerHostname + ":" + strconv.Itoa(defaultServerPort)
-)
+// defaultServerAddr the default server addr which is: localhost:8080
+var defaultServerAddr = defaultServerHostname + ":" + strconv.Itoa(defaultServerPort)
 
 // ResolveAddr tries to convert a given string to an address which is compatible with net.Listener and server
 func ResolveAddr(addr string) string {

@@ -45,7 +45,6 @@ func TestListenAddr(t *testing.T) {
 	if got := log.String(); !strings.Contains(got, expectedMessage) {
 		t.Fatalf("expecting to log to contains the:\n'%s'\ninstead of:\n'%s'", expectedMessage, got)
 	}
-
 }
 
 func TestListenAddrWithoutServerErr(t *testing.T) {
