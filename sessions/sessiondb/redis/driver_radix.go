@@ -235,13 +235,14 @@ func (r *RadixDriver) getKeys(prefix string) ([]string, error) {
 	scanner := radix.NewScanner(r.pool, radix.ScanOpts{
 		Command: "SCAN",
 		Pattern: r.Config.Prefix + prefix + r.Config.Delim + "*", // get all of this session except its root sid.
-		//	Count: 9999999999,
+		Count:   300000,
 	})
 
 	var key string
 	for scanner.Next(&key) {
-		keys = append(keys, key)
+		keys = append(keys, key[len(r.Config.Prefix):])
 	}
+
 	if err := scanner.Close(); err != nil {
 		return nil, err
 	}

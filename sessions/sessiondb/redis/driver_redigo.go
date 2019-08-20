@@ -150,7 +150,7 @@ func (r *RedigoDriver) UpdateTTLMany(prefix string, newSecondsLifeTime int64) er
 		return err
 	}
 
-	keys, err := r.getKeysConn(c, prefix)
+	keys, err := r.getKeysConn(c, 0, prefix)
 	if err != nil {
 		return err
 	}
@@ -184,8 +184,8 @@ func (r *RedigoDriver) GetAll() (interface{}, error) {
 	return redisVal, nil
 }
 
-func (r *RedigoDriver) getKeysConn(c redis.Conn, prefix string) ([]string, error) {
-	if err := c.Send("SCAN", 0, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", 9999999999); err != nil {
+func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix string) ([]string, error) {
+	if err := c.Send("SCAN", cursor, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", 300000); err != nil {
 		return nil, err
 	}
 
@@ -198,19 +198,31 @@ func (r *RedigoDriver) getKeysConn(c redis.Conn, prefix string) ([]string, error
 		return nil, err
 	}
 
-	// it returns []interface, with two entries, the first one is "0" and the second one is a slice of the keys as []interface{uint8....}.
+	// it returns []interface, with two entries, the first one is the cursor, if "0" then full iteration
+	// and the second one is a slice of the keys as []interface{uint8....}.
 
-	if keysInterface, ok := reply.([]interface{}); ok {
-		if len(keysInterface) == 2 {
+	if replies, ok := reply.([]interface{}); ok {
+		if len(replies) == 2 {
 			// take the second, it must contain the slice of keys.
-			if keysSliceAsBytes, ok := keysInterface[1].([]interface{}); ok {
+			if keysSliceAsBytes, ok := replies[1].([]interface{}); ok {
 				keys := make([]string, len(keysSliceAsBytes), len(keysSliceAsBytes))
+
 				for i, k := range keysSliceAsBytes {
 					keys[i] = fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
 				}
 
+				if cur := fmt.Sprintf("%s", replies[0]); cur != "0" {
+					moreKeys, err := r.getKeysConn(c, cur, prefix)
+					if err != nil {
+						return nil, err
+					}
+
+					keys = append(keys, moreKeys...)
+				}
+
 				return keys, nil
 			}
+
 		}
 	}
 
@@ -226,7 +238,7 @@ func (r *RedigoDriver) GetKeys(prefix string) ([]string, error) {
 		return nil, err
 	}
 
-	return r.getKeysConn(c, prefix)
+	return r.getKeysConn(c, 0, prefix)
 }
 
 // GetBytes returns value, err by its key
