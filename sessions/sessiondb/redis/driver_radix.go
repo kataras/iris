@@ -2,6 +2,7 @@ package redis
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 
 	"github.com/mediocregopher/radix/v3"
@@ -39,32 +40,49 @@ func (r *RadixDriver) Connect(c Config) error {
 		c.Delim = DefaultDelim
 	}
 
-	customConnFunc := func(network, addr string) (radix.Conn, error) {
-		var options []radix.DialOpt
+	var options []radix.DialOpt
 
-		if c.Password != "" {
-			options = append(options, radix.DialAuthPass(c.Password))
-		}
-
-		if c.Timeout > 0 {
-			options = append(options, radix.DialTimeout(c.Timeout))
-		}
-
-		if c.Database != "" { //  *dialOpts.selectDb is not exported on the 3rd-party library,
-			// but on its `DialSelectDB` option it does this:
-			// do.selectDB = strconv.Itoa(db) -> (string to int)
-			// so we can pass that string as int and it should work.
-			dbIndex, err := strconv.Atoi(c.Database)
-			if err == nil {
-				options = append(options, radix.DialSelectDB(dbIndex))
-			}
-
-		}
-
-		return radix.Dial(network, addr, options...)
+	if c.Password != "" {
+		options = append(options, radix.DialAuthPass(c.Password))
 	}
 
-	pool, err := radix.NewPool(c.Network, c.Addr, c.MaxActive, radix.PoolConnFunc(customConnFunc))
+	if c.Timeout > 0 {
+		options = append(options, radix.DialTimeout(c.Timeout))
+	}
+
+	if c.Database != "" { //  *dialOpts.selectDb is not exported on the 3rd-party library,
+		// but on its `DialSelectDB` option it does this:
+		// do.selectDB = strconv.Itoa(db) -> (string to int)
+		// so we can pass that string as int and it should work.
+		dbIndex, err := strconv.Atoi(c.Database)
+		if err == nil {
+			options = append(options, radix.DialSelectDB(dbIndex))
+		}
+
+	}
+
+	var connFunc radix.ConnFunc
+
+	if len(c.Clusters) > 0 {
+		cluster, err := radix.NewCluster(c.Clusters)
+		if err != nil {
+			// maybe an
+			// ERR This instance has cluster support disabled
+			return err
+		}
+
+		connFunc = func(network, addr string) (radix.Conn, error) {
+			topo := cluster.Topo()
+			node := topo[rand.Intn(len(topo))]
+			return radix.Dial(c.Network, node.Addr, options...)
+		}
+	} else {
+		connFunc = func(network, addr string) (radix.Conn, error) {
+			return radix.Dial(c.Network, c.Addr, options...)
+		}
+	}
+
+	pool, err := radix.NewPool(c.Network, c.Addr, c.MaxActive, radix.PoolConnFunc(connFunc))
 	if err != nil {
 		return err
 	}
