@@ -24,8 +24,14 @@ const (
 type Config struct {
 	// Network protocol. Defaults to "tcp".
 	Network string
-	// Addr of the redis server. Defaults to "127.0.0.1:6379".
+	// Addr of a single redis server instance.
+	// See "Clusters" field for clusters support.
+	// Defaults to "127.0.0.1:6379".
 	Addr string
+	// Clusters a list of network addresses for clusters.
+	// If not empty "Addr" is ignored.
+	// Currently only Radix() Driver supports it.
+	Clusters []string
 	// Password string .If no password then no 'AUTH'. Defaults to "".
 	Password string
 	// If Database is empty "" then no 'SELECT'. Defaults to "".
