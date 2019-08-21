@@ -7,7 +7,7 @@
 
 Iris es un framework web rápido, simple pero con muchas funcionalidades y muy eficiente para Go. Proporciona una base bellamente expresiva y fácil de usar para su próximo sitio web o API.
 
-Aprenda lo que [otros dicen sobre Iris](https://iris-go.com/testimonials/) y **siga** :star: este repositorio github.
+Descubra lo que [otros dicen sobre Iris](https://iris-go.com/testimonials/) y **siga** :star: este repositorio github.
 
 > Version 11.2 **liberado!**
 
@@ -63,7 +63,7 @@ Puedes [solicitar](https://bit.ly/iris-req-book) una versión en PDF y acceso en
 
 ## Contribuir
 
-¡Nos encantaría ver su contribución al Framework Web Iris! Para obtener más información sobre cómo contribuir al proyecto Iris, consulte el archivo CONTRIBUTING.md.
+¡Nos encantaría ver su contribución al Framework Web Iris! Para obtener más información sobre cómo contribuir al proyecto Iris, consulte el archivo [CONTRIBUTING.md](CONTRIBUTING).
 
 [Lista de todos los contribuyentes](https://github.com/kataras/iris/graphs/contributors)
 

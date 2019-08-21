@@ -21,69 +21,69 @@ Los desarrolladores no están obligados a actualizar si realmente no lo necesita
 
 **Cómo actualizar**: Abra su línea de comandos y ejecute este comando: `go get github.com/kataras/iris@master`.
 
-# Viernes, 16 de Augusto 2019 | v11.2.8
+# Viernes, 16 de agosto 2019 | v11.2.8
 
 - Establecer `Cookie.SameSite` como ` Lax` cuando el uso compartido de sesiones de subdominios esté habilitado[*](https://github.com/kataras/iris/commit/6bbdd3db9139f9038641ce6f00f7b4bab6e62550)
 - Agregados y actualizados todos los [Handlers experimentales](https://github.com/kataras/iris/tree/master/_examples/experimental-handlers)
 - Nueva función `XMLMap` que envuelve un `map[string]interface{}` y la convierte en un contenido xml válido para representarlo a través del método `Context.XML`
-- Add new `ProblemOptions.XML` and `RenderXML` fields to render the `Problem` as XML(application/problem+xml) instead of JSON("application/problem+json) and enrich the `Negotiate` to easily accept the `application/problem+xml` mime.
+- Se agregaron nuevos campos `ProblemOptions.XML` y ` RenderXML` para renderizar `Problem` como XML(application/problem+xml) en lugar de JSON("application/problem+json) y enriquezca el `Negotiate` para aceptar fácilmente el mime type `application/problem+xml`.
 
-Commit log: https://github.com/kataras/iris/compare/v11.2.7...v11.2.8
+Registro de commits: https://github.com/kataras/iris/compare/v11.2.7...v11.2.8
 
-# Th, 15 August 2019 | v11.2.7
+# Jueves, 15 de agosto 2019 | v11.2.7
 
-This minor version contains improvements on the Problem Details for HTTP APIs implemented on [v11.2.5](#mo-12-august-2019--v1125).
+Esta versión menor contiene mejoras en los Detalles del problema para las API HTTP implementadas en [v11.2.5](#lunes-12-de-agosto-2019--v1125).
 
-- Fix https://github.com/kataras/iris/issues/1335#issuecomment-521319721
-- Add `ProblemOptions` with `RetryAfter` as requested at: https://github.com/kataras/iris/issues/1335#issuecomment-521330994.
-- Add `iris.JSON` alias for `context#JSON` options type.
+- Ajuste https://github.com/kataras/iris/issues/1335#issuecomment-521319721
+- Agregado `ProblemOptions` con `RetryAfter` como se solicitó en: https://github.com/kataras/iris/issues/1335#issuecomment-521330994.
+- Agregado alias `iris.JSON` para el tipo de opciones `context#JSON`.
 
-[Example](https://github.com/kataras/iris/blob/45d7c6fedb5adaef22b9730592255f7bb375e809/_examples/routing/http-errors/main.go#L85) and [wikis](https://github.com/kataras/iris/wiki/Routing-error-handlers#the-problem-type) updated.
+[Ejemplos](https://github.com/kataras/iris/blob/45d7c6fedb5adaef22b9730592255f7bb375e809/_examples/routing/http-errors/main.go#L85) y [wikis](https://github.com/kataras/iris/wiki/Routing-error-handlers#the-problem-type) actualizados.
 
-References:
+Referencias:
 
 - https://tools.ietf.org/html/rfc7231#section-7.1.3
 - https://tools.ietf.org/html/rfc7807
 
-Commit log: https://github.com/kataras/iris/compare/v11.2.6...v11.2.7
+Registro de commits: https://github.com/kataras/iris/compare/v11.2.6...v11.2.7
 
-# We, 14 August 2019 | v11.2.6
+# Miércoles, 14 de agosto 2019 | v11.2.6
 
-Allow [handle more than one route with the same paths and parameter types but different macro validation functions](https://github.com/kataras/iris/issues/1058#issuecomment-521110639).
+Permitir [manejar más de una ruta con las mismas rutas y tipos de parámetros pero diferentes funciones de validación de macros](https://github.com/kataras/iris/issues/1058#issuecomment-521110639).
 
 ```go
 app.Get("/{alias:string regexp(^[a-z0-9]{1,10}\\.xml$)}", PanoXML)
 app.Get("/{alias:string regexp(^[a-z0-9]{1,10}$)}", Tour)
 ```
 
-Commit log: https://github.com/kataras/iris/compare/v11.2.5...v11.2.6
+Registro de commits: https://github.com/kataras/iris/compare/v11.2.5...v11.2.6
 
-# Mo, 12 August 2019 | v11.2.5
+# Lunes, 12 de agosto 2019 | v11.2.5
 
-- [New Feature: Problem Details for HTTP APIs](https://github.com/kataras/iris/pull/1336)
-- [Add Context.AbsoluteURI](https://github.com/kataras/iris/pull/1336/files#diff-15cce7299aae8810bcab9b0bf9a2fdb1R2368)
+- [Nueva característica: Detalle del problemas para las APIs HTTP](https://github.com/kataras/iris/pull/1336)
+- [Agregado Context.AbsoluteURI](https://github.com/kataras/iris/pull/1336/files#diff-15cce7299aae8810bcab9b0bf9a2fdb1R2368)
 
-Commit log: https://github.com/kataras/iris/compare/v11.2.4...v11.2.5
+Registro de commits: https://github.com/kataras/iris/compare/v11.2.4...v11.2.5
 
-# Fr, 09 August 2019 | v11.2.4
+# Viernes, 09 de agosto 2019 | v11.2.4
 
-- Fixes [iris.Jet: no view engine found for '.jet' or '.html'](https://github.com/kataras/iris/issues/1327)
-- Fixes [ctx.ViewData not work with JetEngine](https://github.com/kataras/iris/issues/1330)
-- **New Feature**: [HTTP Method Override](https://github.com/kataras/iris/issues/1325)
-- Fixes [Poor performance of session.UpdateExpiration on 200 thousands+ keys with new radix lib](https://github.com/kataras/iris/issues/1328) by introducing the `sessions.Config.Driver` configuration field which defaults to `Redigo()` but can be set to `Radix()` too, future additions are welcomed.
+- Ajustes [iris.Jet: no view engine found for '.jet' or '.html'](https://github.com/kataras/iris/issues/1327)
+- Ajustes [ctx.ViewData no funciona con JetEngine](https://github.com/kataras/iris/issues/1330)
+- **Nueva característica**: [Override de métodos HTTP](https://github.com/kataras/iris/issues/1325)
+- Ajustes [Bajo rendimiento en session.UpdateExpiration en más de 200 mil keys con nueva librería radix](https://github.com/kataras/iris/issues/1328) al introducir el campo de configuración `sessions.Config.Driver` que se establece de forma predeterminada en `Redigo()` pero también se puede establecer en  `Radix()`, futuras adiciones son bienvenidas.
 
-Commit log: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
+Registro de commits: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
 
-# Tu, 30 July 2019 | v11.2.3
+# Martes, 30 de julio 2019 | v11.2.3
 
-- [New Feature: Handle different parameter types in the same path](https://github.com/kataras/iris/issues/1315)
-- [New Feature: Content Negotiation](https://github.com/kataras/iris/issues/1319)
+- [Nueva característica: Manejar diferentes tipos de parámetros en la misma ruta](https://github.com/kataras/iris/issues/1315)
+- [Nueva característica: Negociación de contenido](https://github.com/kataras/iris/issues/1319)
 - [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/http_request/read-yaml)
-- Fixes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
+- Ajustes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
 
-# We, 24 July 2019 | v11.2.2
+# Miércoles, 24 de julio 2019 | v11.2.2
 
-Sessions as middleware:
+Sesiones como middleware:
 
 ```go
 import "github.com/kataras/iris/sessions"
@@ -98,14 +98,14 @@ app.Get("/path", func(ctx iris.Context){
 })
 ```
 
-- Add `Session.Len() int` to return the total number of stored values/entries.
-- Make `Context.HTML` and `Context.Text` to accept an optional, variadic, `args ...interface{}` input arg(s) too.
+- Agregado `Session.Len() int` para devolver el número total de valores/entradas almacenados.
+- Permitir que `Context.HTML` y `Context.Text` acepten tambien un argumento `args ...interface{}` opcional y variable.
 
 ## v11.1.1
 
 - https://github.com/kataras/iris/issues/1298
 - https://github.com/kataras/iris/issues/1207
 
-# Tu, 23 July 2019 | v11.2.0
+# Martes, 23 de julio 2019 | v11.2.0
 
-Read about the new release at: https://www.facebook.com/iris.framework/posts/3276606095684693
+Lea sobre la nueva versión liberada en: https://www.facebook.com/iris.framework/posts/3276606095684693
