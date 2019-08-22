@@ -1,11 +1,14 @@
 package redis
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
 
 	"github.com/mediocregopher/radix/v3"
+	"github.com/mediocregopher/radix/v3/resp/resp2"
 )
 
 // RadixDriver the Redis service based on the radix go client,
@@ -195,7 +198,7 @@ func (r *RadixDriver) UpdateTTL(key string, newSecondsLifeTime int64) error {
 // it is a bit faster operation if you need to update all sessions keys (although it can be even faster if we used hash but this will limit other features),
 // look the `sessions/Database#OnUpdateExpiration` for example.
 func (r *RadixDriver) UpdateTTLMany(prefix string, newSecondsLifeTime int64) error {
-	keys, err := r.getKeys(prefix)
+	keys, err := r.getKeys("0", prefix)
 	if err != nil {
 		return err
 	}
@@ -225,26 +228,45 @@ func (r *RadixDriver) GetAll() (interface{}, error) {
 	return redisVal, nil
 }
 
-func (r *RadixDriver) getKeys(prefix string) ([]string, error) {
-	var keys []string
-	// err := r.pool.Do(radix.Cmd(&keys, "MATCH", r.Config.Prefix+prefix+"*"))
-	// if err != nil {
-	// 	return nil, err
-	// }
+type scanResult struct {
+	cur  string
+	keys []string
+}
 
-	scanner := radix.NewScanner(r.pool, radix.ScanOpts{
-		Command: "SCAN",
-		Pattern: r.Config.Prefix + prefix + r.Config.Delim + "*", // get all of this session except its root sid.
-		Count:   300000,
-	})
-
-	var key string
-	for scanner.Next(&key) {
-		keys = append(keys, key[len(r.Config.Prefix):])
+func (s *scanResult) UnmarshalRESP(br *bufio.Reader) error {
+	var ah resp2.ArrayHeader
+	if err := ah.UnmarshalRESP(br); err != nil {
+		return err
+	} else if ah.N != 2 {
+		return errors.New("not enough parts returned")
 	}
 
-	if err := scanner.Close(); err != nil {
+	var c resp2.BulkString
+	if err := c.UnmarshalRESP(br); err != nil {
+		return err
+	}
+
+	s.cur = c.S
+	s.keys = s.keys[:0]
+
+	return (resp2.Any{I: &s.keys}).UnmarshalRESP(br)
+}
+
+func (r *RadixDriver) getKeys(cursor, prefix string) ([]string, error) {
+	var res scanResult
+	err := r.pool.Do(radix.Cmd(&res, "SCAN", cursor, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", "300000"))
+	if err != nil {
 		return nil, err
+	}
+
+	keys := res.keys[0:]
+	if res.cur != "0" {
+		moreKeys, err := r.getKeys(res.cur, prefix)
+		if err != nil {
+			return nil, err
+		}
+
+		keys = append(keys, moreKeys...)
 	}
 
 	return keys, nil
@@ -253,7 +275,7 @@ func (r *RadixDriver) getKeys(prefix string) ([]string, error) {
 // GetKeys returns all redis keys using the "SCAN" with MATCH command.
 // Read more at:  https://redis.io/commands/scan#the-match-option.
 func (r *RadixDriver) GetKeys(prefix string) ([]string, error) {
-	return r.getKeys(prefix)
+	return r.getKeys("0", prefix)
 }
 
 // // GetBytes returns bytes representation of a value based on given "key".
