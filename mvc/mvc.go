@@ -39,7 +39,12 @@ var HeroDependencies = true
 //
 // See `mvc#New` for more.
 type Application struct {
-	Dependencies         di.Values
+	Dependencies di.Values
+	// Sorter is a `di.Sorter`, can be used to customize the order of controller's fields
+	// and their available bindable values to set.
+	// Sorting matters only when a field can accept more than one registered value.
+	// Defaults to nil; order of registration matters when more than one field can accept the same value.
+	Sorter               di.Sorter
 	Router               router.Party
 	Controllers          []*ControllerActivator
 	websocketControllers []websocket.ConnHandler
@@ -126,6 +131,15 @@ Set the Logger's Level to "debug" to view the active dependencies per controller
 
 	app.Dependencies.Add(values...)
 
+	return app
+}
+
+// SortByNumMethods is the same as `app.Sorter = di.SortByNumMethods` which
+// prioritize fields and their available values (only if more than one)
+// with the highest number of methods,
+// this way an empty interface{} is getting the "thinnest" available value.
+func (app *Application) SortByNumMethods() *Application {
+	app.Sorter = di.SortByNumMethods
 	return app
 }
 
@@ -218,7 +232,7 @@ func (app *Application) GetNamespaces() websocket.Namespaces {
 
 func (app *Application) handle(controller interface{}) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
-	c := newControllerActivator(app.Router, controller, app.Dependencies, app.ErrorHandler)
+	c := newControllerActivator(app.Router, controller, app.Dependencies, app.Sorter, app.ErrorHandler)
 
 	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
 	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods

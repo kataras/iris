@@ -86,6 +86,7 @@ type ControllerActivator struct {
 	// Can be bind-ed to the the new controller's fields and method that is fired
 	// on incoming requests.
 	dependencies di.Values
+	sorter       di.Sorter
 
 	errorHandler hero.ErrorHandler
 
@@ -108,7 +109,7 @@ func NameOf(v interface{}) string {
 	return fullname
 }
 
-func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value, errorHandler hero.ErrorHandler) *ControllerActivator {
+func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value, sorter di.Sorter, errorHandler hero.ErrorHandler) *ControllerActivator {
 	typ := reflect.TypeOf(controller)
 
 	c := &ControllerActivator{
@@ -128,6 +129,7 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		routes: whatReservedMethods(typ),
 		// CloneWithFieldsOf: include the manual fill-ed controller struct's fields to the dependencies.
 		dependencies: di.Values(dependencies).CloneWithFieldsOf(controller),
+		sorter:       sorter,
 		errorHandler: errorHandler,
 	}
 
@@ -386,7 +388,14 @@ var emptyIn = []reflect.Value{}
 
 func (c *ControllerActivator) attachInjector() {
 	if c.injector == nil {
-		c.injector = di.Struct(c.Value, c.dependencies...)
+		c.injector = di.MakeStructInjector(
+			di.ValueOf(c.Value),
+			di.DefaultHijacker,
+			di.DefaultTypeChecker,
+			c.sorter,
+			di.Values(c.dependencies).CloneWithFieldsOf(c.Value)...,
+		)
+		// c.injector = di.Struct(c.Value, c.dependencies...)
 		if !c.servesWebsocket {
 			golog.Debugf("MVC Controller [%s] [Scope=%s]", c.fullName, c.injector.Scope)
 		} else {

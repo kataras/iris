@@ -178,11 +178,6 @@ type field struct {
 	Name   string // the actual name.
 	Index  []int  // the index of the field, slice if it's part of a embedded struct
 	CanSet bool   // is true if it's exported.
-
-	// this could be empty, but in our cases it's not,
-	// it's filled with the bind object (as service which means as static value)
-	// and it's filled from the lookupFields' caller.
-	AnyValue reflect.Value
 }
 
 // NumFields returns the total number of fields, and the embedded, even if the embedded struct is not exported,

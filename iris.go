@@ -39,15 +39,13 @@ import (
 const Version = "11.2.8"
 
 // HTTP status codes as registered with IANA.
-// See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-// Raw Copy from the net/http std package in order to recude the import path of "net/http" for the users.
-//
-// Copied from `net/http` package.
+// See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
+// Raw Copy from the future(tip) net/http std package in order to recude the import path of "net/http" for the users.
 const (
-	StatusContinue           = 100 // RFC 7231, 6.2.1
-	StatusSwitchingProtocols = 101 // RFC 7231, 6.2.2
-	StatusProcessing         = 102 // RFC 2518, 10.1
-
+	StatusContinue             = 100 // RFC 7231, 6.2.1
+	StatusSwitchingProtocols   = 101 // RFC 7231, 6.2.2
+	StatusProcessing           = 102 // RFC 2518, 10.1
+	StatusEarlyHints           = 103 // RFC 8297
 	StatusOK                   = 200 // RFC 7231, 6.3.1
 	StatusCreated              = 201 // RFC 7231, 6.3.2
 	StatusAccepted             = 202 // RFC 7231, 6.3.3
