@@ -33,6 +33,7 @@ func Struct(s interface{}, values ...reflect.Value) *StructInjector {
 		ValueOf(s),
 		DefaultHijacker,
 		DefaultTypeChecker,
+		SortByNumMethods,
 		Values(values).CloneWithFieldsOf(s)...,
 	)
 }
@@ -64,6 +65,7 @@ type D struct {
 
 	hijacker Hijacker
 	goodFunc TypeChecker
+	sorter   Sorter
 }
 
 // New creates and returns a new Dependency Injection container.
@@ -85,13 +87,20 @@ func (d *D) GoodFunc(fn TypeChecker) *D {
 	return d
 }
 
+// Sort sets the fields and valid bindable values sorter for struct injection.
+func (d *D) Sort(with Sorter) *D {
+	d.sorter = with
+	return d
+}
+
 // Clone returns a new Dependency Injection container, it adopts the
-// parent's (current "D") hijacker, good func type checker and all dependencies values.
+// parent's (current "D") hijacker, good func type checker, sorter and all dependencies values.
 func (d *D) Clone() *D {
 	return &D{
 		Values:   d.Values.Clone(),
 		hijacker: d.hijacker,
 		goodFunc: d.goodFunc,
+		sorter:   d.sorter,
 	}
 }
 
@@ -108,6 +117,7 @@ func (d *D) Struct(s interface{}) *StructInjector {
 		ValueOf(s),
 		d.hijacker,
 		d.goodFunc,
+		d.sorter,
 		d.Values.CloneWithFieldsOf(s)...,
 	)
 }
