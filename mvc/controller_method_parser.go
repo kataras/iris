@@ -128,6 +128,14 @@ var errSkip = errors.New("skip")
 
 var allMethods = append(router.AllMethods[0:], []string{"ALL", "ANY"}...)
 
+func addPathWord(path, w string) string {
+	if path[len(path)-1] != '/' {
+		path += "/"
+	}
+	path += strings.ToLower(w)
+	return path
+}
+
 func (p *methodParser) parse() (method, path string, err error) {
 	funcArgPos := 0
 	path = "/"
@@ -173,7 +181,7 @@ func (p *methodParser) parse() (method, path string, err error) {
 			continue
 		}
 		// static path.
-		path += "/" + strings.ToLower(w)
+		path = addPathWord(path, w)
 	}
 	return
 }
@@ -184,7 +192,7 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 	if typ.NumIn() <= funcArgPos {
 
 		// By found but input arguments are not there, so act like /by path without restricts.
-		path += "/" + strings.ToLower(w)
+		path = addPathWord(path, w)
 		return path, funcArgPos, nil
 	}
 
@@ -228,7 +236,10 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 	}
 
 	// /{argfirst:path}, /{argfirst:long}...
-	path += fmt.Sprintf("/{%s:%s}", paramKey, m.Indent())
+	if path[len(path)-1] != '/' {
+		path += "/"
+	}
+	path += fmt.Sprintf("{%s:%s}", paramKey, m.Indent())
 
 	if nextWord == "" && typ.NumIn() > funcArgPos+1 {
 		// By is the latest word but func is expected
