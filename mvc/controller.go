@@ -70,6 +70,9 @@ type ControllerActivator struct {
 	// to register any custom controller's methods as handlers.
 	router router.Party
 
+	macros              macro.Macros
+	tmplParamStartIndex int
+
 	// initRef BaseController // the BaseController as it's passed from the end-dev.
 	Value reflect.Value // the BaseController's Value.
 	Type  reflect.Type  // raw type of the BaseController (initRef).
@@ -116,6 +119,7 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		// give access to the Router to the end-devs if they need it for some reason,
 		// i.e register done handlers.
 		router: router,
+		macros: *router.Macros(),
 		Value:  reflect.ValueOf(controller),
 		Type:   typ,
 		// the full name of the controller: its type including the package path.
@@ -133,6 +137,8 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		errorHandler: errorHandler,
 	}
 
+	fpath, _ := macro.Parse(c.router.GetRelPath(), c.macros)
+	c.tmplParamStartIndex = len(fpath.Params)
 	return c
 }
 
@@ -339,7 +345,7 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 	}
 
 	// parse a route template which contains the parameters organised.
-	tmpl, err := macro.Parse(path, *c.router.Macros())
+	tmpl, err := macro.Parse(path, c.macros)
 	if err != nil {
 		c.addErr(fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.fullName, funcName, err))
 		return nil
@@ -350,7 +356,7 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 	// get the path parameters bindings from the template,
 	// use the function's input except the receiver which is the
 	// end-dev's controller pointer.
-	pathParams := getPathParamsForInput(tmpl.Params, funcIn[1:]...)
+	pathParams := getPathParamsForInput(c.tmplParamStartIndex, tmpl.Params, funcIn[1:]...)
 	// get the function's input arguments' bindings.
 	funcDependencies := c.dependencies.Clone()
 	funcDependencies.AddValues(pathParams...)

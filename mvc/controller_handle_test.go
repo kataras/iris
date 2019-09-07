@@ -166,3 +166,20 @@ func TestControllerHandle(t *testing.T) {
 	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")
 }
+
+type testControllerHandleWithDynamicPathPrefix struct {
+	Ctx iris.Context
+}
+
+func (c *testControllerHandleWithDynamicPathPrefix) GetBy(id string) string {
+	params := c.Ctx.Params()
+	return params.Get("model") + params.Get("action") + id
+}
+
+func TestControllerHandleWithDynamicPathPrefix(t *testing.T) {
+	app := iris.New()
+	New(app.Party("/api/data/{model:string}/{action:string}")).Handle(new(testControllerHandleWithDynamicPathPrefix))
+	e := httptest.New(t, app)
+	e.GET("/api/data/mymodel/myaction/myid").Expect().Status(httptest.StatusOK).
+		Body().Equal("mymodelmyactionmyid")
+}
