@@ -7,7 +7,7 @@ import (
 	"github.com/kataras/iris/macro"
 )
 
-func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type) (values []reflect.Value) {
+func getPathParamsForInput(startParamIndex int, params []macro.TemplateParam, funcIn ...reflect.Type) (values []reflect.Value) {
 	if len(funcIn) == 0 || len(params) == 0 {
 		return
 	}
@@ -42,7 +42,7 @@ func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type)
 				continue
 			}
 
-			funcDep, ok := context.ParamResolverByTypeAndIndex(in, param.Index)
+			funcDep, ok := context.ParamResolverByTypeAndIndex(in, startParamIndex+param.Index)
 			if !ok {
 				continue
 			}
