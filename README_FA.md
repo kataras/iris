@@ -62,21 +62,26 @@ $ go run example.go
 <div>
 
 
->ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع ترین پروژه مسیریابی در GO می باشد استفاده می کند.
+> ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع ترین پروژه مسیریابی در GO می باشد استفاده می کند.
 
 
 </details>
 
-Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wiki)** making it easy to get started with the framework.
+آیریس داری **[wiki](https://github.com/kataras/iris/wiki)** بسیار کامل و گسترده ای میباشد که یادگیری ان را ساده می کند.
 
-For a more detailed technical documentation you can head over to our [godocs](https://godoc.org/github.com/kataras/iris). And for executable code you can always visit the [_examples](_examples/) repository's subdirectory.
 
-### Do you like to read while traveling?
+شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://godoc.org/github.com/kataras/iris) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [_examples](_examples/) repository's subdirectory. استفادهده کنید . 
+
+
+### آیا شما مطالعه کردن در طول سفر را دوست دارید ؟
+
+<div dir="ltr" align="left">
 
 <a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
 
-You can [request](https://bit.ly/iris-req-book) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
+</div>
 
+شما می توانید درخواست یک نسخه PDF آن را از  اینجا [درخواست](https://bit.ly/iris-req-book) بدهید . رایگان.
 
 ## Contributing
 
