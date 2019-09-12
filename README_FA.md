@@ -18,13 +18,13 @@
 [![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
 </div>
 
-## Learning Iris
+## آموزش آیریس
 
 <details>
-<summary>Quick start</summary>
+<summary>شروع سریع</summary>
 
 ```sh
-# assume the following code in example.go file
+# <p> </p>
 $ cat example.go
 ```
 
