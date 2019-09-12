@@ -11,9 +11,10 @@
 
 برای این که بدانید دیگران در مورد آیریس چه می گویند لطفا در این لینک کلیک کنید [دیگران در مورد آیریس چه می گویند](https://iris-go.com/testimonials/) لطفا این پروژه را در گیتاب **استار** کنید.
 
-<div dir="ltr" align="left">
 
 > نسخه 11.2 **آماده شد**
+
+<div dir="ltr" align="left">
 
 [![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
 </div>
@@ -61,9 +62,11 @@ $ go run example.go
 ```
 <div>
 
+<div dir="rtl" align="right" >
 
 > ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع ترین پروژه مسیریابی در GO می باشد استفاده می کند.
 
+<div>
 
 </details>
 
@@ -74,6 +77,7 @@ $ go run example.go
 
 
 ### آیا شما مطالعه کردن در طول سفر را دوست دارید ؟
+
 
 <div dir="ltr" align="left">
 
