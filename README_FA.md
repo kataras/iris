@@ -23,8 +23,13 @@
 <details>
 <summary>شروع سریع</summary>
 <div dir="ltr" align="left">
+
 ```sh
+
+<p dir="rtl.">
 # 
+</p>
+
 $ cat example.go
 ```
 
