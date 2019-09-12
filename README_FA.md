@@ -73,7 +73,7 @@ $ go run example.go
 آیریس داری **[wiki](https://github.com/kataras/iris/wiki)** بسیار کامل و گسترده ای میباشد که یادگیری ان را ساده می کند.
 
 
-شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://godoc.org/github.com/kataras/iris) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [_examples](_examples/) repository's subdirectory. استفادهده کنید . 
+شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://godoc.org/github.com/kataras/iris) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [مثال ها](_examples/) استفادهده کنید . 
 
 
 ### آیا شما مطالعه کردن در طول سفر را دوست دارید ؟
@@ -88,20 +88,20 @@ $ go run example.go
 
 شما میتوانید در خواست یک نسخه PDF داکیومنت ر ا به صورت رایگان از اینجا بدهید [درخواست](https://bit.ly/iris-req-book)
 
-## Contributing
+## مشارکت کردن
 
-We'd love to see your contribution to the Iris Web Framework! For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+ما دوست داریم که شما در فریمورک آیریس مشارکت کنید و کد ها را توسعه و بهبود ببخشید ! برای اطلاع بیشتر در مورد نحوه ی مشارکت کردن در این پروژه لطفا اینجا را بررسی کنید  [CONTRIBUTING.md](CONTRIBUTING.md)
 
-[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
+[مشاهده ی همه ی مشارکت کننده ها](https://github.com/kataras/iris/graphs/contributors)
 
-## Security Vulnerabilities
+## باگ های امنیتی
 
-If you discover a security vulnerability within Iris, please send an e-mail to [iris-go@outlook.com](mailto:iris-go@outlook.com). All security vulnerabilities will be promptly addressed.
+اگر شما باگ های امنیتی در آیریس پیدا کردید لطفا یک ایمیل به [iris-go@outlook.com](mailto:iris-go@outlook.com) ارسال کنید. همه ی باگ های امنیتی بلافاصله برطرف میشود.
 
-## License
+## مجوز
 
-The project name "Iris" was inspired by the Greek mythology.
+نام پروژه آیریس ریشه ای یونانی دارد.
 
-Iris Web Framework is free and open-source software licensed under the [3-Clause BSD License](LICENSE).
+فریمورک آیریس رایگان و سورس باز و تحت مجوز [3-Clause BSD License](LICENSE) می باشد.
 
 <div>
