@@ -26,8 +26,8 @@
 
 ```sh
 
-<p dir="rtl.">
-# 
+<p dir="rtl">
+# فرض کنید همچین کدی را در فایل example.go نوشته اید 
 </p>
 
 $ cat example.go
