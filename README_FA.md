@@ -31,7 +31,7 @@
 
 # فرض کنید همچین کدی را در فایل example.go نوشته اید 
 ```
-<div dir="rtl">
+<div dir="rtl" align="left">
 
 ```sh
 $ cat example.go
