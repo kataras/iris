@@ -62,7 +62,7 @@ $ go run example.go
 <div>
 
 
->ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع پروژه مسیریابی در GO می باشد استفاده می کند.
+>ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع ترین پروژه مسیریابی در GO می باشد استفاده می کند.
 
 
 </details>
