@@ -22,9 +22,9 @@
 
 <details>
 <summary>شروع سریع</summary>
-
+<div dir="ltr" align="left">
 ```sh
-# <p> </p>
+# 
 $ cat example.go
 ```
 
@@ -50,7 +50,7 @@ func main() {
 # visit http://localhost:8080/ping on browser
 $ go run example.go
 ```
-
+<div>
 > Routing is powered by [muxie](https://github.com/kataras/muxie), the most powerful and fastest trie-based software written in Go.
 
 </details>
