@@ -81,7 +81,8 @@ $ go run example.go
 
 </div>
 
-شما می توانید درخواست یک نسخه PDF آن را از  اینجا [درخواست](https://bit.ly/iris-req-book) بدهید . رایگان.
+
+شما میتوانید در خواست یک نسخه PDF داکیومنت ر ا به صورت رایگان از اینجا بدهید [درخواست](https://bit.ly/iris-req-book)
 
 ## Contributing
 
