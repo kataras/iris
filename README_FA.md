@@ -60,7 +60,10 @@ func main() {
 $ go run example.go
 ```
 <div>
-> Routing is powered by [muxie](https://github.com/kataras/muxie), the most powerful and fastest trie-based software written in Go.
+
+
+>ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع پروژه مسیریابی در GO می باشد استفاده می کند.
+
 
 </details>
 
