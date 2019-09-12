@@ -24,12 +24,14 @@
 <summary>شروع سریع</summary>
 <div dir="ltr" align="left">
 
+<div dir="rtl" align="right">
+
 ```sh
-
-<p dir="rtl">
 # فرض کنید همچین کدی را در فایل example.go نوشته اید 
-</p>
+```
+<div dir="rtl">
 
+```sh
 $ cat example.go
 ```
 
