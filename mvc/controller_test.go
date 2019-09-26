@@ -409,6 +409,9 @@ func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int) {}
 func (c *testControllerRelPathFromFunc) GetSomethingNewBy(string, int)      {} // two input arguments, one By which is the latest word.
 func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 
+func (c *testControllerRelPathFromFunc) GetLocationX(){}
+func (c *testControllerRelPathFromFunc) GetLocationXBy(int){}
+
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
 	New(app).Handle(new(testControllerRelPathFromFunc))
