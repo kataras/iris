@@ -51,7 +51,7 @@ func (l *methodLexer) reset(s string) {
 		}
 
 		if end > 0 && len(s) >= end {
-			words = append(words, s[start:end])
+			words = append(words, s[start:])
 		}
 	}
 
