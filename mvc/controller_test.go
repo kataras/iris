@@ -409,8 +409,9 @@ func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int) {}
 func (c *testControllerRelPathFromFunc) GetSomethingNewBy(string, int)      {} // two input arguments, one By which is the latest word.
 func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 
-func (c *testControllerRelPathFromFunc) GetLocationX(){}
-func (c *testControllerRelPathFromFunc) GetLocationXBy(int){}
+func (c *testControllerRelPathFromFunc) GetLocationX()      {}
+func (c *testControllerRelPathFromFunc) GetLocationXY()     {}
+func (c *testControllerRelPathFromFunc) GetLocationZBy(int) {}
 
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
@@ -452,6 +453,13 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 		Body().Equal("GET:/42")
 	e.GET("/anything/here").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/anything/here")
+
+	e.GET("/location/x").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/location/x")
+	e.GET("/location/x/y").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/location/x/y")
+	e.GET("/location/z/42").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/location/z/42")
 }
 
 type testControllerActivateListener struct {
