@@ -53,9 +53,9 @@ Iris 包含详细而完整的 **[文档](https://github.com/kataras/iris/wiki)**
 
 ### 你喜欢在旅行中看书吗？
 
-你现在可以 [获取](https://bit.ly/iris-req-book) PDF版本和在线访问我们的 **电子书** 并参与 Iris 的开发。
+你现在可以 [获取](https://bit.ly/iris-request-book) PDF版本和在线访问我们的 **电子书** 并参与 Iris 的开发。
 
-[![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-req-book)
+[![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-request-book)
 
 ## 贡献
 

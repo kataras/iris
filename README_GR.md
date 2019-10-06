@@ -53,9 +53,9 @@ $ go run example.go
 
 ### Σας αρέσει να διαβάζετε ενώ ταξιδεύετε;
 
-Μπορείτε να [ζητήσετε](https://bit.ly/iris-req-book) σήμερα την PDF έκδοση και την online πρόσβαση στο Ηλεκτρονικό μας **Βιβλίο(E-Book)** και να συμμετάσχετε στην ανάπτυξη του Iris.
+Μπορείτε να [ζητήσετε](https://bit.ly/iris-request-book) σήμερα την PDF έκδοση και την online πρόσβαση στο Ηλεκτρονικό μας **Βιβλίο(E-Book)** και να συμμετάσχετε στην ανάπτυξη του Iris.
 
-[![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-req-book)
+[![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-request-book)
 
 ## Συνεισφορά
 

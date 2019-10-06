@@ -56,9 +56,9 @@ Iris는 광범위하고 꼼꼼한 **[wiki](https://github.com/kataras/iris/wiki)
 
 ### 여행하면서 독서를 즐기세요?
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
+<a href="https://bit.ly/iris-request-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
 
-PDF 버전과 **E-Book** 에 대한 온라인 접근을 [요청](https://bit.ly/iris-req-book)하시고 Iris의 개발에 참가하실 수 있습니다.
+PDF 버전과 **E-Book** 에 대한 온라인 접근을 [요청](https://bit.ly/iris-request-book)하시고 Iris의 개발에 참가하실 수 있습니다.
 
 
 ## 기여하기
