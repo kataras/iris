@@ -56,9 +56,9 @@ Para obtener una documentación técnica más detallada, puede dirigirse a nuest
 
 ### ¿Te gusta leer mientras viajas?
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
+<a href="https://bit.ly/iris-request-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
 
-Puedes [solicitar](https://bit.ly/iris-req-book) una versión en PDF y acceso en línea del **E-Book** hoy y participar en el desarrollo de Iris.
+Puedes [solicitar](https://bit.ly/iris-request-book) una versión en PDF y acceso en línea del **E-Book** hoy y participar en el desarrollo de Iris.
 
 ## Contribuir
 
