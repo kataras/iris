@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 type mailData struct {

@@ -3,7 +3,7 @@ package sessions
 import (
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 
 	uuid "github.com/iris-contrib/go.uuid"
 )

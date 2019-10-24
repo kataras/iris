@@ -3,9 +3,9 @@ package methodoverride_test
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
-	"github.com/kataras/iris/middleware/methodoverride"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v12/middleware/methodoverride"
 )
 
 func TestMethodOverrideWrapper(t *testing.T) {

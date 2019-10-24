@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"github.com/kataras/iris/macro/interpreter/token"
+	"github.com/kataras/iris/v12/macro/interpreter/token"
 )
 
 // Lexer helps us to read/scan characters of a source and resolve their token types.

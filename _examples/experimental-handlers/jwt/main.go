@@ -8,7 +8,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"github.com/iris-contrib/middleware/jwt"
 )

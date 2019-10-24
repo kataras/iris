@@ -11,13 +11,13 @@ import (
 	"os"
 
 	// APIs
-	storeapi "github.com/kataras/iris/_examples/tutorial/mongodb/api/store"
+	storeapi "github.com/kataras/iris/v12/_examples/tutorial/mongodb/api/store"
 
 	//
-	"github.com/kataras/iris/_examples/tutorial/mongodb/env"
-	"github.com/kataras/iris/_examples/tutorial/mongodb/store"
+	"github.com/kataras/iris/v12/_examples/tutorial/mongodb/env"
+	"github.com/kataras/iris/v12/_examples/tutorial/mongodb/store"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

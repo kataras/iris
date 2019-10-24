@@ -6,10 +6,10 @@ Example:
 
 ```go
 import (
-    "github.com/kataras/iris/_examples/mvc/login/datamodels"
+    "github.com/kataras/iris/v12/_examples/mvc/login/datamodels"
 
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/context"
+    "github.com/kataras/iris/v12"
+    "github.com/kataras/iris/v12/context"
 )
 
 type User struct {

@@ -86,7 +86,7 @@ Registro de commits: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
 Sesiones como middleware:
 
 ```go
-import "github.com/kataras/iris/sessions"
+import "github.com/kataras/iris/v12/sessions"
 // [...]
 
 app := iris.New()

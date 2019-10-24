@@ -4,7 +4,7 @@
 // Check the 'hosts' file to see how to test the 'mydomain.com' on your local machine.
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 const addr = "mydomain.com:80"
 

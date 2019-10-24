@@ -9,8 +9,8 @@ Example code:
 		 import (
 		 	"time"
 
-		 	"github.com/kataras/iris"
-		 	"github.com/kataras/iris/cache"
+		 	"github.com/kataras/iris/v12"
+		 	"github.com/kataras/iris/v12/cache"
 		 )
 
 		 func main(){
@@ -30,8 +30,8 @@ package cache
 import (
 	"time"
 
-	"github.com/kataras/iris/cache/client"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/cache/client"
+	"github.com/kataras/iris/v12/context"
 )
 
 // Cache accepts the cache expiration duration.

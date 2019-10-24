@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 	// $ go get gopkg.in/go-playground/validator.v9
 	"gopkg.in/go-playground/validator.v9"
 )

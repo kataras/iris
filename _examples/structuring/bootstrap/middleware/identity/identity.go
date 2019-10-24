@@ -3,9 +3,9 @@ package identity
 import (
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
-	"github.com/kataras/iris/_examples/structuring/bootstrap/bootstrap"
+	"github.com/kataras/iris/v12/_examples/structuring/bootstrap/bootstrap"
 )
 
 // New returns a new handler which adds some headers and view data

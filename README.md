@@ -8,10 +8,6 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 Learn what [others say about Iris](https://iris-go.com/testimonials/) and **star** this github repository.
 
-> Version 11.2 **released!**
-
-[![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
-
 ## Learning Iris
 
 <details>
@@ -25,7 +21,7 @@ $ cat example.go
 ```go
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.Default()

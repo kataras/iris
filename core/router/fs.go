@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 const indexName = "/index.html"

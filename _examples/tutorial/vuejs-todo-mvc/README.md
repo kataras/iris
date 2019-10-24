@@ -417,10 +417,10 @@ package controllers
 import (
     "vuejs-todo-mvc/todo"
 
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/mvc"
-    "github.com/kataras/iris/sessions"
-    "github.com/kataras/iris/websocket"
+    "github.com/kataras/iris/v12"
+    "github.com/kataras/iris/v12/mvc"
+    "github.com/kataras/iris/v12/sessions"
+    "github.com/kataras/iris/v12/websocket"
 )
 
 // TodoController is our TODO app's web controller.
@@ -485,11 +485,11 @@ import (
     "vuejs-todo-mvc/todo"
     "vuejs-todo-mvc/web/controllers"
 
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/sessions"
-    "github.com/kataras/iris/websocket"
+    "github.com/kataras/iris/v12"
+    "github.com/kataras/iris/v12/sessions"
+    "github.com/kataras/iris/v12/websocket"
 
-    "github.com/kataras/iris/mvc"
+    "github.com/kataras/iris/v12/mvc"
 )
 
 func main() {

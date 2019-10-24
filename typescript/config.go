@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/kataras/iris/typescript/npm"
+	"github.com/kataras/iris/v12/typescript/npm"
 )
 
 var (

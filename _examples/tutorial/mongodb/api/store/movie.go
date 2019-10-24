@@ -1,10 +1,10 @@
 package storeapi
 
 import (
-	"github.com/kataras/iris/_examples/tutorial/mongodb/httputil"
-	"github.com/kataras/iris/_examples/tutorial/mongodb/store"
+	"github.com/kataras/iris/v12/_examples/tutorial/mongodb/httputil"
+	"github.com/kataras/iris/v12/_examples/tutorial/mongodb/store"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 type MovieHandler struct {

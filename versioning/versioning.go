@@ -1,7 +1,7 @@
 package versioning
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/hashicorp/go-version"
 )

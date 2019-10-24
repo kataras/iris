@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 // same as embedded-single-page-application but without go-bindata, the files are "physical" stored in the

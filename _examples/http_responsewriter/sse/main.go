@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/kataras/golog"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 // A Broker holds open client connections,

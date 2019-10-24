@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12/sessions"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/kataras/golog"

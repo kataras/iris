@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/core/netutil"
+	"github.com/kataras/iris/v12/core/netutil"
 )
 
 func singleJoiningSlash(a, b string) string {

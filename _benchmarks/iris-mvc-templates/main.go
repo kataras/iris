@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/kataras/iris/_benchmarks/iris-mvc-templates/controllers"
+	"github.com/kataras/iris/v12/_benchmarks/iris-mvc-templates/controllers"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 const (
