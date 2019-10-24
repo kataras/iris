@@ -4,6 +4,7 @@ import (
 	// std packages
 
 	stdContext "context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -17,8 +18,8 @@ import (
 
 	// context for the handlers
 	"github.com/kataras/iris/context"
-	// core packages, needed to build the application
-	"github.com/kataras/iris/core/errors"
+	// core packages, required to build the application
+	"github.com/kataras/iris/core/errgroup"
 	"github.com/kataras/iris/core/host"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
@@ -804,19 +805,31 @@ func Raw(f func() error) Runner {
 // Build sets up, once, the framework.
 // It builds the default router with its default macros
 // and the template functions that are very-closed to iris.
+//
+// If error occured while building the Application, the returns type of error will be an *errgroup.Group
+// which let the callers to inspect the errors and cause, usage:
+//
+// import "github.com/kataras/iris/core/errgroup"
+//
+// errgroup.Walk(app.Build(), func(typ interface{}, err error) {
+// 	app.Logger().Errorf("%s: %s", typ, err)
+// })
 func (app *Application) Build() error {
-	rp := errors.NewReporter()
+	rp := errgroup.New("Application Builder")
 
 	app.once.Do(func() {
-		rp.Describe("api builder: %v", app.APIBuilder.GetReport())
+		rp.Err(app.APIBuilder.GetReporter())
 
 		if !app.Router.Downgraded() {
 			// router
 			// create the request handler, the default routing handler
 			routerHandler := router.NewDefaultHandler()
+			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
+			if err != nil {
+				rp.Err(err)
+			}
 
-			rp.Describe("router: %v", app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false))
-			// re-build of the router from outside can be done with;
+			// re-build of the router from outside can be done with
 			// app.RefreshRouter()
 		}
 
@@ -828,11 +841,13 @@ func (app *Application) Build() error {
 			rv := router.NewRoutePathReverser(app.APIBuilder)
 			app.view.AddFunc("urlpath", rv.Path)
 			// app.view.AddFunc("url", rv.URL)
-			rp.Describe("view: %v", app.view.Load())
+			if err := app.view.Load(); err != nil {
+				rp.Group("View Builder").Err(err)
+			}
 		}
 	})
 
-	return rp.Return()
+	return errgroup.Check(rp)
 }
 
 // ErrServerClosed is returned by the Server's Serve, ServeTLS, ListenAndServe,
@@ -858,7 +873,8 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	// first Build because it doesn't need anything from configuration,
 	// this gives the user the chance to modify the router inside a configurator as well.
 	if err := app.Build(); err != nil {
-		return errors.PrintAndReturnErrors(err, app.logger.Errorf)
+		app.logger.Error(err)
+		return err
 	}
 
 	app.Configure(withOrWithout...)

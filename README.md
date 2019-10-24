@@ -12,26 +12,6 @@ Learn what [others say about Iris](https://iris-go.com/testimonials/) and **star
 
 [![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
 
-## It's your time to decide
-
-The Go Team released the go modules[...](https://github.com/kataras/iris/issues/1370)
-
-[![](https://api.gh-polls.com/poll/01DP9QJSMZK2FHP9K5CM712CQT/Keep%20the%20same%20import%20path)](https://api.gh-polls.com/poll/01DP9QJSMZK2FHP9K5CM712CQT/Keep%20the%20same%20import%20path/vote)
-[![](https://api.gh-polls.com/poll/01DP9QJSMZK2FHP9K5CM712CQT/Add%20version%20suffix)](https://api.gh-polls.com/poll/01DP9QJSMZK2FHP9K5CM712CQT/Add%20version%20suffix/vote)
-
-> Read how [we support you](https://github.com/kataras/iris/wiki/Support).
-
-[![Iris vs .NET Core(C#) vs Node.js (Express)](https://github.com/kataras/iris/raw/master/_benchmarks/benchmarks_graph_22_october_2018_gray.png)](https://github.com/kataras/iris/blob/master/_benchmarks/README.md)
-
-<details>
-<summary>Third-party benchmark</summary>
-
-[![](https://github.com/kataras/iris/raw/master/_benchmarks/benchmarks_third_party_source_snapshot_go_23_october_2018.png)](https://github.com/iris-contrib/third-party-benchmarks#full-table)
-
-> Last updated at: 01 March of 2019. Click to the image to view all results. You can run this in your own hardware by following the [steps here](https://github.com/iris-contrib/third-party-benchmarks#usage).
-
-</details>
-
 ## Learning Iris
 
 <details>

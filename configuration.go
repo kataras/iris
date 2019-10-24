@@ -3,6 +3,7 @@ package iris
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
 )
 
 const globalConfigurationKeyword = "~"
@@ -54,26 +54,24 @@ func homeDir() (home string) {
 	return
 }
 
-var errConfigurationDecode = errors.New("error while trying to decode configuration")
-
 func parseYAML(filename string) (Configuration, error) {
 	c := DefaultConfiguration()
 	// get the abs
 	// which will try to find the 'filename' from current workind dir too.
 	yamlAbsPath, err := filepath.Abs(filename)
 	if err != nil {
-		return c, errConfigurationDecode.AppendErr(err)
+		return c, fmt.Errorf("parse yaml: %w", err)
 	}
 
 	// read the raw contents of the file
 	data, err := ioutil.ReadFile(yamlAbsPath)
 	if err != nil {
-		return c, errConfigurationDecode.AppendErr(err)
+		return c, fmt.Errorf("parse yaml: %w", err)
 	}
 
 	// put the file's contents as yaml to the default configuration(c)
 	if err := yaml.Unmarshal(data, &c); err != nil {
-		return c, errConfigurationDecode.AppendErr(err)
+		return c, fmt.Errorf("parse yaml: %w", err)
 	}
 	return c, nil
 }
@@ -141,18 +139,18 @@ func TOML(filename string) Configuration {
 	// which will try to find the 'filename' from current workind dir too.
 	tomlAbsPath, err := filepath.Abs(filename)
 	if err != nil {
-		panic(errConfigurationDecode.AppendErr(err))
+		panic(fmt.Errorf("toml: %w", err))
 	}
 
 	// read the raw contents of the file
 	data, err := ioutil.ReadFile(tomlAbsPath)
 	if err != nil {
-		panic(errConfigurationDecode.AppendErr(err))
+		panic(fmt.Errorf("toml :%w", err))
 	}
 
 	// put the file's contents as toml to the default configuration(c)
 	if _, err := toml.Decode(string(data), &c); err != nil {
-		panic(errConfigurationDecode.AppendErr(err))
+		panic(fmt.Errorf("toml :%w", err))
 	}
 	// Author's notes:
 	// The toml's 'usual thing' for key naming is: the_config_key instead of TheConfigKey

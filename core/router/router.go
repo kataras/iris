@@ -1,11 +1,11 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"sync"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
 )
 
 // Router is the "director".

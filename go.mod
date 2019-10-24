@@ -20,7 +20,7 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
 	github.com/json-iterator/go v1.1.6
-	github.com/kataras/golog v0.0.0-20190624001437-99c81de45f40
+	github.com/kataras/golog v0.0.9
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/mediocregopher/radix/v3 v3.3.0
 	github.com/gomodule/redigo v1.7.1-0.20190724094224-574c33c3df38

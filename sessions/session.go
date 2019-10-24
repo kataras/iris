@@ -1,10 +1,11 @@
 package sessions
 
 import (
+	"reflect"
 	"strconv"
 	"sync"
 
-	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/memstore"
 )
 
 type (
@@ -165,7 +166,54 @@ func (s *Session) GetFlashStringDefault(key string, defaultValue string) string 
 	return defaultValue
 }
 
-var errFindParse = errors.New("Unable to find the %s with key: %s. Found? %#v")
+// ErrEntryNotFound similar to core/memstore#ErrEntryNotFound but adds
+// the value (if found) matched to the requested key-value pair of the session's memory storage.
+type ErrEntryNotFound struct {
+	Err   *memstore.ErrEntryNotFound
+	Value interface{}
+}
+
+func (e *ErrEntryNotFound) Error() string {
+	return e.Err.Error()
+}
+
+// Unwrap method implements the dynamic Unwrap interface of the std errors package.
+func (e *ErrEntryNotFound) Unwrap() error {
+	return e.Err
+}
+
+// As method implements the dynamic As interface of the std errors package.
+// As should be NOT used directly, use `errors.As` instead.
+func (e *ErrEntryNotFound) As(target interface{}) bool {
+	if v, ok := target.(*memstore.ErrEntryNotFound); ok && e.Err != nil {
+		return e.Err.As(v)
+	}
+
+	v, ok := target.(*ErrEntryNotFound)
+	if !ok {
+		return false
+	}
+
+	if v.Value != nil {
+		if v.Value != e.Value {
+			return false
+		}
+	}
+
+	if v.Err != nil {
+		if e.Err != nil {
+			return e.Err.As(v.Err)
+		}
+
+		return false
+	}
+
+	return true
+}
+
+func newErrEntryNotFound(key string, kind reflect.Kind, value interface{}) *ErrEntryNotFound {
+	return &ErrEntryNotFound{Err: &memstore.ErrEntryNotFound{Key: key, Kind: kind}, Value: value}
+}
 
 // GetInt same as `Get` but returns its int representation,
 // if key doesn't exist then it returns -1 and a non-nil error.
@@ -188,7 +236,7 @@ func (s *Session) GetInt(key string) (int, error) {
 		return strconv.Atoi(vstring)
 	}
 
-	return -1, errFindParse.Format("int", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Int, v)
 }
 
 // GetIntDefault same as `Get` but returns its int representation,
@@ -241,7 +289,7 @@ func (s *Session) GetInt64(key string) (int64, error) {
 		return strconv.ParseInt(vstring, 10, 64)
 	}
 
-	return -1, errFindParse.Format("int64", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Int64, v)
 }
 
 // GetInt64Default same as `Get` but returns its int64 representation,
@@ -283,7 +331,7 @@ func (s *Session) GetFloat32(key string) (float32, error) {
 		return float32(vfloat64), nil
 	}
 
-	return -1, errFindParse.Format("float32", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Float32, v)
 }
 
 // GetFloat32Default same as `Get` but returns its float32 representation,
@@ -321,7 +369,7 @@ func (s *Session) GetFloat64(key string) (float64, error) {
 		return strconv.ParseFloat(vstring, 32)
 	}
 
-	return -1, errFindParse.Format("float64", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Float64, v)
 }
 
 // GetFloat64Default same as `Get` but returns its float64 representation,
@@ -339,7 +387,7 @@ func (s *Session) GetFloat64Default(key string, defaultValue float64) float64 {
 func (s *Session) GetBoolean(key string) (bool, error) {
 	v := s.Get(key)
 	if v == nil {
-		return false, errFindParse.Format("bool", key, "nil")
+		return false, newErrEntryNotFound(key, reflect.Bool, nil)
 	}
 
 	// here we could check for "true", "false" and 0 for false and 1 for true
@@ -352,7 +400,7 @@ func (s *Session) GetBoolean(key string) (bool, error) {
 		return strconv.ParseBool(vstring)
 	}
 
-	return false, errFindParse.Format("bool", key, v)
+	return false, newErrEntryNotFound(key, reflect.Bool, v)
 }
 
 // GetBooleanDefault same as `Get` but returns its boolean representation,

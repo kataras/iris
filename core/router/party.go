@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/errgroup"
 	"github.com/kataras/iris/macro"
 )
 
@@ -16,8 +16,8 @@ type Party interface {
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
 	// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
 	GetRelPath() string
-	// GetReporter returns the reporter for adding errors
-	GetReporter() *errors.Reporter
+	// GetReporter returns the reporter for adding or receiving any errors caused when building the API.
+	GetReporter() *errgroup.Group
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
@@ -135,23 +135,6 @@ type Party interface {
 	//
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
 	HandleDir(requestPath, directory string, opts ...DirOptions) *Route
-	// StaticWeb is DEPRECATED. Use HandleDir(requestPath, directory) instead.
-	StaticWeb(requestPath string, directory string) *Route
-	// StaticHandler is DEPRECATED.
-	// Use iris.FileServer(directory, iris.DirOptions{ShowList: true, Gzip: true}) instead.
-	//
-	// Example https://github.com/kataras/iris/tree/master/_examples/file-server/basic
-	StaticHandler(directory string, showList bool, gzip bool) context.Handler
-	// StaticEmbedded is DEPRECATED.
-	// Use HandleDir(requestPath, directory, iris.DirOptions{Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames}) instead.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
-	StaticEmbedded(requestPath string, directory string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
-	// StaticEmbeddedGzip is DEPRECATED.
-	// Use HandleDir(requestPath, directory, iris.DirOptions{Gzip: true, Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames}) instead.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
-	StaticEmbeddedGzip(requestPath string, directory string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and

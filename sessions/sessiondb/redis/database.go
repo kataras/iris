@@ -1,9 +1,9 @@
 package redis
 
 import (
+	"errors"
 	"time"
 
-	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/sessions"
 
 	"github.com/kataras/golog"
@@ -252,8 +252,13 @@ func closeDB(db *Database) error {
 }
 
 var (
-	// ErrRedisClosed an error with message 'Redis is already closed'
-	ErrRedisClosed = errors.New("Redis is already closed")
-	// ErrKeyNotFound an error with message 'Key $thekey doesn't found'
-	ErrKeyNotFound = errors.New("Key '%s' doesn't found")
+	// ErrRedisClosed an error with message 'redis: already closed'
+	ErrRedisClosed = errors.New("redis: already closed")
+	// ErrKeyNotFound a type of error of non-existing redis keys.
+	// The producers(the library) of this error will dynamically wrap this error(fmt.Errorf) with the key name.
+	// Usage:
+	// if err != nil && errors.Is(err, ErrKeyNotFound) {
+	// [...]
+	// }
+	ErrKeyNotFound = errors.New("key not found")
 )

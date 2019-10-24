@@ -273,7 +273,11 @@ func (c *ControllerActivator) activate() {
 }
 
 func (c *ControllerActivator) addErr(err error) bool {
-	return c.router.GetReporter().AddErr(err)
+	if c.router.GetReporter().Err(err) != nil {
+		return true
+	}
+
+	return false
 }
 
 // register all available, exported methods to handlers if possible.
