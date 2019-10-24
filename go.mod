@@ -1,6 +1,6 @@
-module github.com/kataras/iris
+module github.com/kataras/iris/v12
 
-go 1.12
+go 1.13
 
 require (
 	github.com/kataras/neffos v0.0.10

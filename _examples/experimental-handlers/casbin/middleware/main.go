@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"github.com/casbin/casbin/v2"
 	cm "github.com/iris-contrib/middleware/casbin"

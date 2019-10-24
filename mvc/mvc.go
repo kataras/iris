@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/hero"
-	"github.com/kataras/iris/hero/di"
-	"github.com/kataras/iris/websocket"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/hero/di"
+	"github.com/kataras/iris/v12/websocket"
 
 	"github.com/kataras/golog"
 )

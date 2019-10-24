@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 // Get a filename based on the date, just for the sugar.

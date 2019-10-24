@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/hero/di"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/hero/di"
 
 	"github.com/fatih/structs"
 )

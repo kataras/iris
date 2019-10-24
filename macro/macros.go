@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/v12/macro/interpreter/ast"
 )
 
 var (

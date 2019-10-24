@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
-	"github.com/kataras/iris/websocket"
+	"github.com/kataras/iris/v12/websocket"
 )
 
 var events = websocket.Namespaces{

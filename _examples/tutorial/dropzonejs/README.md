@@ -89,7 +89,7 @@ import (
     "io"
     "strings"
 
-    "github.com/kataras/iris"
+    "github.com/kataras/iris/v12"
 )
 
 const uploadsDir = "./public/uploads/"

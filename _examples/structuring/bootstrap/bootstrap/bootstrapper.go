@@ -5,11 +5,11 @@ import (
 
 	"github.com/gorilla/securecookie"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
-	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/websocket"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/logger"
+	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/kataras/iris/v12/sessions"
+	"github.com/kataras/iris/v12/websocket"
 )
 
 type Configurator func(*Bootstrapper)

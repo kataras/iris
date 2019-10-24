@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 	"github.com/r3labs/sse"
 )
 

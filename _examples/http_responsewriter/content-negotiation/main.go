@@ -1,7 +1,7 @@
 // Package main contains three different ways to render content based on the client's accepted.
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 type testdata struct {
 	Name string `json:"name" xml:"Name"`

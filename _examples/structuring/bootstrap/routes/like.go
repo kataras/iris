@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 // GetLikeHandler handles the GET: /like/{id}

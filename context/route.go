@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/v12/macro"
 )
 
 // RouteReadOnly allows decoupled access to the current route

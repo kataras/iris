@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 // A Sessions manager should be responsible to Start a sesion, based

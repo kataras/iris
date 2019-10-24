@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 func TestSessionsEncodeDecode(t *testing.T) {

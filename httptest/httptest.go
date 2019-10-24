@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"github.com/gavv/httpexpect"
 )

@@ -3,9 +3,9 @@ package versioning_test
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
-	"github.com/kataras/iris/versioning"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v12/versioning"
 )
 
 func TestGetVersion(t *testing.T) {

@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/cache"
-	"github.com/kataras/iris/cache/client"
-	"github.com/kataras/iris/cache/client/rule"
+	"github.com/kataras/iris/v12/cache"
+	"github.com/kataras/iris/v12/cache/client"
+	"github.com/kataras/iris/v12/cache/client/rule"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 var (

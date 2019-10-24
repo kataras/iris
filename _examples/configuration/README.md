@@ -15,7 +15,7 @@ which completes this can be passed at `Application#Configure` and/or `Applicatio
 package main
 
 import (
-    "github.com/kataras/iris"
+    "github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 package main
 
 import (
-    "github.com/kataras/iris"
+    "github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -87,7 +87,7 @@ Charset = "UTF-8"
 package main
 
 import (
-    "github.com/kataras/iris"
+    "github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -119,7 +119,7 @@ Charset: UTF-8
 package main
 
 import (
-    "github.com/kataras/iris"
+    "github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -237,8 +237,8 @@ package counter
 import (
     "time"
 
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/core/host"
+    "github.com/kataras/iris/v12"
+    "github.com/kataras/iris/v12/core/host"
 )
 
 func Configurator(app *iris.Application) {
@@ -271,7 +271,7 @@ package main
 import (
     "counter"
 
-    "github.com/kataras/iris"
+    "github.com/kataras/iris/v12"
 )
 
 func main() {

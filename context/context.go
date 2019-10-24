@@ -22,7 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kataras/iris/core/memstore"
+	"github.com/kataras/iris/v12/core/memstore"
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"

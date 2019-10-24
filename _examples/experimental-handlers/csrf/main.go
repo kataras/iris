@@ -13,7 +13,7 @@ package main
 // $ go get -u github.com/iris-contrib/middleware/...
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"github.com/iris-contrib/middleware/csrf"
 )

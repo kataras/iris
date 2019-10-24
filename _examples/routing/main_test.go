@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 func calculatePathAndResponse(method, subdomain, path string, paramKeyValue ...string) (string, string) {

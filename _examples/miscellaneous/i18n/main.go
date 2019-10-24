@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/i18n"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/i18n"
 )
 
 func newApp() *iris.Application {

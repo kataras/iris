@@ -6,7 +6,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/kataras/iris/_examples/hero/overview/datamodels"
+	"github.com/kataras/iris/v12/_examples/hero/overview/datamodels"
 )
 
 // Query represents the visitor and action queries.

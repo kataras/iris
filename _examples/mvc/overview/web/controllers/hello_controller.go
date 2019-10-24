@@ -5,7 +5,7 @@ package controllers
 import (
 	"errors"
 
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 // HelloController is our sample controller
