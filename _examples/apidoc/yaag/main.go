@@ -8,7 +8,7 @@ import (
 )
 
 /*
-	go get github.com/betacraft/yaag/...
+	go get github.com/betacraft/yaag@v1.0.1-0.20190930134538-3ebbf33677d5
 */
 
 type myXML struct {

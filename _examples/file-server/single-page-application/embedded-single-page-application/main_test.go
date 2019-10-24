@@ -35,8 +35,8 @@ func (r resource) strip(strip string) string {
 func (r resource) loadFromBase(dir string) string {
 	filename := r.String()
 
-	if filename == "/" {
-		filename = "/index.html"
+	if strings.HasSuffix(filename, "/") {
+		filename = filename + "index.html"
 	}
 
 	fullpath := filepath.Join(dir, filename)
@@ -57,6 +57,8 @@ var urls = []resource{
 	"/index.html",
 	"/app.js",
 	"/css/main.css",
+	"/app2/",
+	"/app2/index.html",
 }
 
 func TestSPAEmbedded(t *testing.T) {
