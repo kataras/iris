@@ -15,7 +15,8 @@ type User struct {
 
 func main() {
 	app := iris.New()
-	// app.Logger().SetLevel("disable") to disable the logger
+	app.Logger().SetLevel("debug")
+	// app.Logger().SetLevel("disable") to disable the logger.
 
 	// Define templates using the std html/template engine.
 	// Parse and load all files inside "./views" folder with ".html" file extension.
@@ -72,6 +73,14 @@ func main() {
 		// Method POST: http://localhost:8080/users/create
 		usersRoutes.Post("/create", createUser)
 	}
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.HTML("<html><head></head><body><ul>")
+		for _, link := range []string{"/encode", "/profile/username", "/users/42"} {
+			ctx.HTML(`<li><a href="%s">%s</a></li>`, link, link)
+		}
+		ctx.HTML("</ul></body></html>")
+	})
 
 	// Listen for incoming HTTP/1.x & HTTP/2 clients on localhost port 8080.
 	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"))

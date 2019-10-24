@@ -110,7 +110,6 @@ var _ http.FileSystem = (*embeddedFileSystem)(nil)
 
 func (fs *embeddedFileSystem) Open(name string) (http.File, error) {
 	// name = fs.vdir + name <- no need, check the TrimLeft(name, vdir) on names loop and the asset and assetInfo redefined on `HandleDir`.
-
 	if d, ok := fs.dirNames[name]; ok {
 		return d, nil
 	}
@@ -239,31 +238,28 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 
 		dirNames := make(map[string]*embeddedDir)
 
-		if options.ShowList {
-			// sort filenames by smaller path.
-			sort.Slice(names, func(i, j int) bool {
-				return strings.Count(names[j], "/") > strings.Count(names[i], "/")
-			})
+		// sort filenames by smaller path.
+		sort.Slice(names, func(i, j int) bool {
+			return strings.Count(names[j], "/") > strings.Count(names[i], "/")
+		})
 
-			for _, name := range names {
-				dirName := path.Dir(name)
-				d, ok := dirNames[dirName]
+		for _, name := range names {
+			dirName := path.Dir(name)
+			d, ok := dirNames[dirName]
 
-				if !ok {
-					d = &embeddedDir{
-						name:        dirName,
-						modTimeUnix: time.Now().Unix(),
-					}
-					dirNames[dirName] = d
+			if !ok {
+				d = &embeddedDir{
+					name:        dirName,
+					modTimeUnix: time.Now().Unix(),
 				}
-
-				info, err := assetInfo(name)
-				if err != nil {
-					panic(fmt.Sprintf("FileServer: report as bug: file info: %s not found in: %s", name, dirName))
-				}
-				d.list = append(d.list, &embeddedBaseFileInfo{path.Base(name), info})
+				dirNames[dirName] = d
 			}
 
+			info, err := assetInfo(name)
+			if err != nil {
+				panic(fmt.Sprintf("FileServer: report as bug: file info: %s not found in: %s", name, dirName))
+			}
+			d.list = append(d.list, &embeddedBaseFileInfo{path.Base(name), info})
 		}
 
 		fs = &embeddedFileSystem{

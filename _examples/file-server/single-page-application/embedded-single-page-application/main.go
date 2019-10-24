@@ -6,8 +6,7 @@ import (
 
 // $ go get -u github.com/shuLhan/go-bindata/...
 // $ go-bindata ./public/...
-// $ go build
-// $ ./embedded-single-page-application
+// $ go run .
 
 var page = struct {
 	Title string
@@ -35,8 +34,8 @@ func main() {
 	app := newApp()
 
 	// http://localhost:8080
-	// http://localhost:8080/index.html
 	// http://localhost:8080/app.js
 	// http://localhost:8080/css/main.css
+	// http://localhost:8080/app2
 	app.Run(iris.Addr(":8080"))
 }
