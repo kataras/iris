@@ -145,7 +145,7 @@ func (r *RadixDriver) Get(key string) (interface{}, error) {
 		return nil, err
 	}
 	if mn.Nil {
-		return nil, ErrKeyNotFound.Format(key)
+		return nil, fmt.Errorf("%s: %w", key, ErrKeyNotFound)
 	}
 	return redisVal, nil
 }

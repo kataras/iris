@@ -83,7 +83,7 @@ func (r *RedigoDriver) Get(key string) (interface{}, error) {
 		return nil, err
 	}
 	if redisVal == nil {
-		return nil, ErrKeyNotFound.Format(key)
+		return nil, fmt.Errorf("%s: %w", key, ErrKeyNotFound)
 	}
 	return redisVal, nil
 }
@@ -256,7 +256,7 @@ func (r *RedigoDriver) GetBytes(key string) ([]byte, error) {
 		return nil, err
 	}
 	if redisVal == nil {
-		return nil, ErrKeyNotFound.Format(key)
+		return nil, fmt.Errorf("%s: %w", key, ErrKeyNotFound)
 	}
 
 	return redis.Bytes(redisVal, err)

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/errgroup"
 	"github.com/kataras/iris/core/netutil"
 	macroHandler "github.com/kataras/iris/macro/handler"
 
@@ -82,7 +82,7 @@ type RoutesProvider interface { // api builder
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
-	rp := errors.NewReporter()
+	rp := errgroup.New("Routes Builder")
 	registeredRoutes := provider.GetRoutes()
 
 	// before sort.
@@ -138,7 +138,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			// the docs better. Or TODO: add a link here in order to help new users.
 			if err := h.addRoute(r); err != nil {
 				// node errors:
-				rp.Add("%v -> %s", err, r.String())
+				rp.Addf("%s: %w", r.String(), err)
 				continue
 			}
 		}
@@ -146,7 +146,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		golog.Debugf(r.Trace()) // keep log different parameter types in the same path as different routes.
 	}
 
-	return rp.Return()
+	return errgroup.Check(rp)
 }
 
 func bindMultiParamTypesHandler(top *Route, r *Route) {

@@ -1,10 +1,9 @@
 package sessions
 
 import (
+	"errors"
 	"sync"
 	"time"
-
-	"github.com/kataras/iris/core/errors"
 )
 
 type (
@@ -78,9 +77,13 @@ func (p *provider) Init(sid string, expires time.Duration) *Session {
 	return newSession
 }
 
-// ErrNotFound can be returned when calling `UpdateExpiration` on a non-existing or invalid session entry.
-// It can be matched directly, i.e: `isErrNotFound := sessions.ErrNotFound.Equal(err)`.
-var ErrNotFound = errors.New("not found")
+// ErrNotFound may be returned from `UpdateExpiration` of a non-existing or
+// invalid session entry from memory storage or databases.
+// Usage:
+// if err != nil && err.Is(err, sessions.ErrNotFound) {
+//     [handle error...]
+// }
+var ErrNotFound = errors.New("session not found")
 
 // UpdateExpiration resets the expiration of a session.
 // if expires > 0 then it will try to update the expiration and destroy task is delayed.

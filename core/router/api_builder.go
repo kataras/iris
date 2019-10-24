@@ -1,14 +1,17 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/errgroup"
 	"github.com/kataras/iris/macro"
 	macroHandler "github.com/kataras/iris/macro/handler"
 )
@@ -157,6 +160,15 @@ func (repo *repository) register(route *Route) {
 	repo.pos[route.tmpl.Src] = len(repo.routes) - 1
 }
 
+type apiError struct {
+	error
+}
+
+func (e *apiError) Is(err error) bool {
+	_, ok := err.(*apiError)
+	return ok
+}
+
 // APIBuilder the visible API for constructing the router
 // and child routers.
 type APIBuilder struct {
@@ -174,7 +186,7 @@ type APIBuilder struct {
 	// the list of possible errors that can be
 	// collected on the build state to log
 	// to the end-user.
-	reporter *errors.Reporter
+	errors *errgroup.Group
 
 	// the per-party handlers, order
 	// of handlers registration matters.
@@ -212,7 +224,7 @@ func NewAPIBuilder() *APIBuilder {
 	api := &APIBuilder{
 		macros:            macro.Defaults,
 		errorCodeHandlers: defaultErrorCodeHandlers(),
-		reporter:          errors.NewReporter(),
+		errors:            errgroup.New("API Builder"),
 		relativePath:      "/",
 		routes:            new(repository),
 	}
@@ -228,14 +240,9 @@ func (api *APIBuilder) GetRelPath() string {
 	return api.relativePath
 }
 
-// GetReport returns an error may caused by party's methods.
-func (api *APIBuilder) GetReport() error {
-	return api.reporter.Return()
-}
-
-// GetReporter returns the reporter for adding errors
-func (api *APIBuilder) GetReporter() *errors.Reporter {
-	return api.reporter
+// GetReporter returns the reporter for adding or receiving any errors caused when building the API.
+func (api *APIBuilder) GetReporter() *errgroup.Group {
+	return api.errors
 }
 
 // AllowMethods will re-register the future routes that will be registered
@@ -295,9 +302,11 @@ func (api *APIBuilder) createRoutes(methods []string, relativePath string, handl
 		}
 	}
 
+	filename, line := getCaller()
+
 	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
 	if len(handlers) == 0 {
-		api.reporter.Add("missing handlers for route %s: %s", strings.Join(methods, ", "), fullpath)
+		api.errors.Addf("missing handlers for route[%s:%d] %s: %s", filename, line, strings.Join(methods, ", "), fullpath)
 		return nil
 	}
 
@@ -336,9 +345,12 @@ func (api *APIBuilder) createRoutes(methods []string, relativePath string, handl
 	for i, m := range methods {
 		route, err := NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
-			api.reporter.Add("%v -> %s:%s:%s", err, m, subdomain, path)
+			api.errors.Addf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
 			continue
 		}
+
+		route.SourceFileName = filename
+		route.SourceLineNumber = line
 
 		// Add UseGlobal & DoneGlobal Handlers
 		route.Use(api.beginGlobalHandlers...)
@@ -348,6 +360,32 @@ func (api *APIBuilder) createRoutes(methods []string, relativePath string, handl
 	}
 
 	return routes
+}
+
+// https://golang.org/doc/go1.9#callersframes
+func getCaller() (string, int) {
+	var pcs [32]uintptr
+	n := runtime.Callers(1, pcs[:])
+	frames := runtime.CallersFrames(pcs[:n])
+	wd, _ := os.Getwd()
+	for {
+		frame, more := frames.Next()
+		file := frame.File
+
+		if !strings.Contains(file, "/kataras/iris") || strings.Contains(file, "/kataras/iris/_examples") || strings.Contains(file, "iris-contrib/examples") {
+			if relFile, err := filepath.Rel(wd, file); err == nil {
+				file = "./" + relFile
+			}
+
+			return file, frame.Line
+		}
+
+		if !more {
+			break
+		}
+	}
+
+	return "???", 0
 }
 
 // Handle registers a route to the server's api.
@@ -381,8 +419,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // 	app.Handle("GET", "/user/{id:uint64}", userByIDHandler)
 // 	app.Handle("GET", "/user/me", userMeHandler)
 //
-// This method is used behind the scenes at the `Controller` function
-// in order to handle more than one paths for the same controller instance.
+// app.HandleMany("GET POST", "/path", handler)
 func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti string, handlers ...context.Handler) (routes []*Route) {
 	// at least slash
 	// a space
@@ -502,7 +539,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		errorCodeHandlers:   api.errorCodeHandlers,
 		beginGlobalHandlers: api.beginGlobalHandlers,
 		doneGlobalHandlers:  api.doneGlobalHandlers,
-		reporter:            api.reporter,
+		errors:              api.errors,
 		// per-party/children
 		middleware:            middleware,
 		doneHandlers:          api.doneHandlers[0:],
@@ -542,7 +579,7 @@ func (api *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Pa
 func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler) Party {
 	if api.relativePath == SubdomainWildcardIndicator {
 		// cannot concat wildcard subdomain with something else
-		api.reporter.Add("cannot concat parent wildcard subdomain with anything else ->  %s , %s",
+		api.errors.Addf("cannot concat parent wildcard subdomain with anything else ->  %s , %s",
 			api.relativePath, subdomain)
 		return api
 	}
@@ -562,7 +599,7 @@ func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler
 func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
 	if hasSubdomain(api.relativePath) {
 		// cannot concat static subdomain with a dynamic one, wildcard should be at the root level
-		api.reporter.Add("cannot concat static subdomain with a dynamic one. Dynamic subdomains should be at the root level -> %s",
+		api.errors.Addf("cannot concat static subdomain with a dynamic one. Dynamic subdomains should be at the root level -> %s",
 			api.relativePath)
 		return api
 	}
@@ -831,7 +868,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 
 	f, err := os.Open(favPath)
 	if err != nil {
-		api.reporter.AddErr(errDirectoryFileNotFound.Format(favPath, err.Error()))
+		api.errors.Addf("favicon: file or directory %s not found: %w", favPath, err)
 		return nil
 	}
 
@@ -848,8 +885,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		// So we could panic but we don't,
 		// we just interrupt with a message
 		// to the (user-defined) logger.
-		api.reporter.AddErr(errDirectoryFileNotFound.
-			Format(favPath, "favicon: couldn't read the data bytes for file: "+err.Error()))
+		api.errors.Addf("favicon: couldn't read the data bytes for %s: %w", favPath, err)
 		return nil
 	}
 

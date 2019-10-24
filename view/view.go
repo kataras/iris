@@ -1,11 +1,10 @@
 package view
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
-
-	"github.com/kataras/iris/core/errors"
 )
 
 // View is responsible to
@@ -37,8 +36,6 @@ func (v *View) Len() int {
 	return len(v.engines)
 }
 
-var errNoViewEngineForExt = errors.New("no view engine found for '%s'")
-
 // ExecuteWriter calls the correct view Engine's ExecuteWriter func
 func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
 	if len(filename) > 2 {
@@ -49,7 +46,7 @@ func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindin
 
 	e := v.Find(filename)
 	if e == nil {
-		return errNoViewEngineForExt.Format(filepath.Ext(filename))
+		return fmt.Errorf("no view engine found for '%s'", filepath.Ext(filename))
 	}
 
 	return e.ExecuteWriter(w, filename, layout, bindingData)

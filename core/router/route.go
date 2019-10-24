@@ -34,6 +34,10 @@ type Route struct {
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string `json:"formattedPath"`
 
+	// the source code's filename:filenumber that this route was created from.
+	SourceFileName   string
+	SourceLineNumber int
+
 	// StaticSites if not empty, refers to the system (or virtual if embedded) directory
 	// and sub directories that this "GET" route was registered to serve files and folders
 	// that contain index.html (a site). The index handler may registered by other
@@ -276,7 +280,7 @@ func (r Route) ResolvePath(args ...string) string {
 // Trace returns some debug infos as a string sentence.
 // Should be called after Build.
 func (r Route) Trace() string {
-	printfmt := fmt.Sprintf("%s:", r.Method)
+	printfmt := fmt.Sprintf("[%s:%d] %s:", r.SourceFileName, r.SourceLineNumber, r.Method)
 	if r.Subdomain != "" {
 		printfmt += fmt.Sprintf(" %s", r.Subdomain)
 	}

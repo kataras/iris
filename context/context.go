@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,7 +22,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/memstore"
 
 	"github.com/Shopify/goreferrer"
@@ -656,7 +656,7 @@ type Context interface {
 	// like the HTTP Method is not "GET" or "HEAD" or if the "modtime" is zero
 	// or if parsing time from the header failed.
 	//
-	// It's mostly used internally, e.g. `context#WriteWithExpiration`.
+	// It's mostly used internally, e.g. `context#WriteWithExpiration`. See `ErrPreconditionFailed` too.
 	//
 	// Note that modtime.UTC() is being used instead of just modtime, so
 	// you don't have to know the internals in order to make that works.
@@ -1916,7 +1916,18 @@ func (ctx *context) URLParamEscape(name string) string {
 	return DecodeQuery(ctx.URLParam(name))
 }
 
-var errURLParamNotFound = errors.New("url param '%s' does not exist")
+// ErrNotFound is the type error which API users can make use of
+// to check if a `Context` action of a `Handler` is type of Not Found,
+// e.g. URL Query Parameters.
+// Example:
+//
+// n, err := context.URLParamInt("url_query_param_name")
+// if errors.Is(err, context.ErrNotFound) {
+// 	// [handle error...]
+// }
+// Another usage would be `err == context.ErrNotFound`
+// HOWEVER prefer use the new `errors.Is` as API details may change in the future.
+var ErrNotFound = errors.New("not found")
 
 // URLParamInt returns the url query parameter as int value from a request,
 // returns -1 and an error if parse failed or not found.
@@ -1929,7 +1940,7 @@ func (ctx *context) URLParamInt(name string) (int, error) {
 		return n, nil
 	}
 
-	return -1, errURLParamNotFound.Format(name)
+	return -1, ErrNotFound
 }
 
 // URLParamIntDefault returns the url query parameter as int value from a request,
@@ -1969,7 +1980,7 @@ func (ctx *context) URLParamInt64(name string) (int64, error) {
 		return n, nil
 	}
 
-	return -1, errURLParamNotFound.Format(name)
+	return -1, ErrNotFound
 }
 
 // URLParamInt64Default returns the url query parameter as int64 value from a request,
@@ -1994,7 +2005,7 @@ func (ctx *context) URLParamFloat64(name string) (float64, error) {
 		return n, nil
 	}
 
-	return -1, errURLParamNotFound.Format(name)
+	return -1, ErrNotFound
 }
 
 // URLParamFloat64Default returns the url query parameter as float64 value from a request,
@@ -2178,8 +2189,6 @@ func (ctx *context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-var errUnableToFindPostValue = errors.New("unable to find post value '%s'")
-
 // PostValueInt returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as int.
 //
@@ -2187,7 +2196,7 @@ var errUnableToFindPostValue = errors.New("unable to find post value '%s'")
 func (ctx *context) PostValueInt(name string) (int, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return -1, errUnableToFindPostValue.Format(name)
+		return -1, ErrNotFound
 	}
 	return strconv.Atoi(v)
 }
@@ -2211,7 +2220,7 @@ func (ctx *context) PostValueIntDefault(name string, def int) int {
 func (ctx *context) PostValueInt64(name string) (int64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return -1, errUnableToFindPostValue.Format(name)
+		return -1, ErrNotFound
 	}
 	return strconv.ParseInt(v, 10, 64)
 }
@@ -2235,7 +2244,7 @@ func (ctx *context) PostValueInt64Default(name string, def int64) int64 {
 func (ctx *context) PostValueFloat64(name string) (float64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return -1, errUnableToFindPostValue.Format(name)
+		return -1, ErrNotFound
 	}
 	return strconv.ParseFloat(v, 64)
 }
@@ -2259,7 +2268,7 @@ func (ctx *context) PostValueFloat64Default(name string, def float64) float64 {
 func (ctx *context) PostValueBool(name string) (bool, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return false, errUnableToFindPostValue.Format(name)
+		return false, ErrNotFound
 	}
 
 	return strconv.ParseBool(v)
@@ -2496,7 +2505,7 @@ func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
 // However you are still free to read the `ctx.Request().Body io.Reader` manually.
 func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error {
 	if ctx.request.Body == nil {
-		return errors.New("unmarshal: empty body")
+		return fmt.Errorf("unmarshal: empty body: %w", ErrNotFound)
 	}
 
 	rawData, err := ctx.GetBody()
@@ -2696,6 +2705,19 @@ func (ctx *context) SetLastModified(modtime time.Time) {
 	}
 }
 
+// ErrPreconditionFailed may be returned from `Context` methods
+// that has to perform one or more client side preconditions before the actual check, e.g. `CheckIfModifiedSince`.
+// Usage:
+// ok, err := context.CheckIfModifiedSince(modTime)
+// if err != nil {
+//    if errors.Is(err, context.ErrPreconditionFailed) {
+//         [handle missing client conditions,such as not valid request method...]
+//     }else {
+//         [the error is probably a time parse error...]
+//    }
+// }
+var ErrPreconditionFailed = errors.New("precondition failed")
+
 // CheckIfModifiedSince checks if the response is modified since the "modtime".
 // Note that it has nothing to do with server-side caching.
 // It does those checks by checking if the "If-Modified-Since" request header
@@ -2707,20 +2729,20 @@ func (ctx *context) SetLastModified(modtime time.Time) {
 // it's not modified since, because it may return false but without even
 // had the chance to check the client-side (request) header due to some errors,
 // like the HTTP Method is not "GET" or "HEAD" or if the "modtime" is zero
-// or if parsing time from the header failed.
+// or if parsing time from the header failed. See `ErrPreconditionFailed` too.
 //
 // It's mostly used internally, e.g. `context#WriteWithExpiration`.
 func (ctx *context) CheckIfModifiedSince(modtime time.Time) (bool, error) {
 	if method := ctx.Method(); method != http.MethodGet && method != http.MethodHead {
-		return false, errors.New("skip: method")
+		return false, fmt.Errorf("method: %w", ErrPreconditionFailed)
 	}
 	ims := ctx.GetHeader(IfModifiedSinceHeaderKey)
 	if ims == "" || IsZeroTime(modtime) {
-		return false, errors.New("skip: zero time")
+		return false, fmt.Errorf("zero time: %w", ErrPreconditionFailed)
 	}
 	t, err := ParseTime(ctx, ims)
 	if err != nil {
-		return false, errors.New("skip: " + err.Error())
+		return false, err
 	}
 	// sub-second precision, so
 	// use mtime < t+1s instead of mtime <= t to check for unmodified.
@@ -2811,7 +2833,9 @@ func (ctx *context) ClientSupportsGzip() bool {
 	return false
 }
 
-var errClientDoesNotSupportGzip = errors.New("client doesn't support gzip compression")
+// ErrGzipNotSupported may be returned from `WriteGzip` methods if
+// the client does not support the "gzip" compression.
+var ErrGzipNotSupported = errors.New("client does not support gzip compression")
 
 // WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
 // returns the number of bytes written and an error ( if the client doesn't support gzip compression)
@@ -2820,7 +2844,7 @@ var errClientDoesNotSupportGzip = errors.New("client doesn't support gzip compre
 // to write more data many times without any troubles.
 func (ctx *context) WriteGzip(b []byte) (int, error) {
 	if !ctx.ClientSupportsGzip() {
-		return 0, errClientDoesNotSupportGzip
+		return 0, ErrGzipNotSupported
 	}
 
 	return ctx.GzipResponseWriter().Write(b)
@@ -2832,7 +2856,7 @@ func (ctx *context) TryWriteGzip(b []byte) (int, error) {
 	n, err := ctx.WriteGzip(b)
 	if err != nil {
 		// check if the error came from gzip not allowed and not the writer itself
-		if _, ok := err.(errors.Error); ok {
+		if errors.Is(err, ErrGzipNotSupported) {
 			// client didn't supported gzip, write them uncompressed:
 			return ctx.writer.Write(b)
 		}
@@ -4074,8 +4098,6 @@ func (n *NegotiationAcceptBuilder) EncodingGzip() *NegotiationAcceptBuilder {
 //  | Serve files                                                |
 //  +------------------------------------------------------------+
 
-var errServeContent = errors.New("while trying to serve content to the client. Trace %s")
-
 // ServeContent serves content, headers are autoset
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
 //
@@ -4103,7 +4125,7 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 		out = ctx.writer
 	}
 	_, err := io.Copy(out, content)
-	return errServeContent.With(err) ///TODO: add an int64 as return value for the content length written like other writers or let it as it's in order to keep the stable api?
+	return err ///TODO: add an int64 as return value for the content length written like other writers or let it as it's in order to keep the stable api?
 }
 
 // ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)
@@ -4386,8 +4408,14 @@ func (ctx *context) IsRecording() (*ResponseRecorder, bool) {
 	return rr, ok
 }
 
-// non-detailed error log for transacton unexpected panic
-var errTransactionInterrupted = errors.New("transaction interrupted, recovery from panic:\n%s")
+// ErrPanicRecovery may be returned from `Context` actions of a `Handler`
+// which recovers from a manual panic.
+// var ErrPanicRecovery = errors.New("recovery from panic")
+
+// ErrTransactionInterrupt can be used to manually force-complete a Context's transaction
+// and log(warn) the wrapped error's message.
+// Usage: `... return fmt.Errorf("my custom error message: %w", context.ErrTransactionInterrupt)`.
+var ErrTransactionInterrupt = errors.New("transaction interrupted")
 
 // BeginTransaction starts a scoped transaction.
 //
@@ -4415,7 +4443,7 @@ func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 	t := newTransaction(ctx) // it calls this *context, so the overriding with a new pool's New of context.Context wil not work here.
 	defer func() {
 		if err := recover(); err != nil {
-			ctx.Application().Logger().Warn(errTransactionInterrupted.Format(err).Error())
+			ctx.Application().Logger().Warn(fmt.Errorf("recovery from panic: %w", ErrTransactionInterrupt))
 			// complete (again or not , doesn't matters) the scope without loud
 			t.Complete(nil)
 			// we continue as normal, no need to return here*

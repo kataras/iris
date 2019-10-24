@@ -1,19 +1,11 @@
 package handlerconv
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
 )
-
-var errHandler = errors.New(`
-	Passed argument is not a func(context.Context) neither one of these types:
-	- http.Handler
-	- func(w http.ResponseWriter, r *http.Request)
-	- func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
-	---------------------------------------------------------------------
-	It seems to be a  %T points to: %v`)
 
 // FromStd converts native http.Handler & http.HandlerFunc to context.Handler.
 //
@@ -63,7 +55,13 @@ func FromStd(handler interface{}) context.Handler {
 			//
 			// No valid handler passed
 			//
-			panic(errHandler.Format(handler, handler))
+			panic(fmt.Errorf(`
+			Passed argument is not a func(context.Context) neither one of these types:
+			- http.Handler
+			- func(w http.ResponseWriter, r *http.Request)
+			- func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
+			---------------------------------------------------------------------
+			It seems to be a  %T points to: %v`, handler, handler))
 		}
 
 	}

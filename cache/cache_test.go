@@ -1,6 +1,7 @@
 package cache_test
 
 import (
+	"fmt"
 	"net/http"
 	"sync/atomic"
 	"testing"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
 
 	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris/httptest"
@@ -21,8 +21,16 @@ import (
 var (
 	cacheDuration   = 2 * time.Second
 	expectedBodyStr = "Imagine it as a big message to achieve x20 response performance!"
-	errTestFailed   = errors.New("expected the main handler to be executed %d times instead of %d")
 )
+
+type testError struct {
+	expected int
+	got      uint32
+}
+
+func (h *testError) Error() string {
+	return fmt.Sprintf("expected the main handler to be executed %d times instead of %d", h.expected, h.got)
+}
 
 func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBodyStr string, nocache string) error {
 	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
@@ -31,7 +39,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	counter := atomic.LoadUint32(counterPtr)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
-		return errTestFailed.Format(1, counter)
+		return &testError{1, counter}
 	}
 	time.Sleep(cacheDuration)
 
@@ -42,7 +50,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 2 {
-		return errTestFailed.Format(2, counter)
+		return &testError{2, counter}
 	}
 
 	// we have cache response saved for the path, we have some time more here, but here
@@ -51,7 +59,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	e.GET(path).WithHeader("Authorization", "basic or anything").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 4 {
-		return errTestFailed.Format(4, counter)
+		return &testError{4, counter}
 	}
 
 	if nocache != "" {
@@ -69,14 +77,14 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 		e.GET(nocache).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr) // counter should be 6
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 { // 4 before, 5 with the first call to store the cache, and six with the no cache, again original handler executation
-			return errTestFailed.Format(6, counter)
+			return &testError{6, counter}
 		}
 
 		// let's call again the path the expiration is not passed so  it should be cached
 		e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 {
-			return errTestFailed.Format(6, counter)
+			return &testError{6, counter}
 		}
 
 		// but now check for the No
@@ -194,7 +202,7 @@ func TestCacheValidator(t *testing.T) {
 	counter := atomic.LoadUint32(&n)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
-		t.Fatal(errTestFailed.Format(1, counter))
+		t.Fatalf("%s: %v", t.Name(), &testError{1, counter})
 	}
 	// don't execute from cache, execute the original, counter should ++ here
 	e.GET("/invalid").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)  // counter = 2
@@ -203,6 +211,6 @@ func TestCacheValidator(t *testing.T) {
 	counter = atomic.LoadUint32(&n)
 	if counter != 3 {
 		// n should be 1 because it doesn't changed after the first call
-		t.Fatalf(t.Name()+": %v", errTestFailed.Format(3, counter))
+		t.Fatalf("%s: %v", t.Name(), &testError{3, counter})
 	}
 }

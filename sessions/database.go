@@ -1,10 +1,10 @@
 package sessions
 
 import (
+	"errors"
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/memstore"
 )
 
