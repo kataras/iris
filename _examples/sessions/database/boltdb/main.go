@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -91,9 +92,9 @@ func main() {
 	app.Get("/update", func(ctx iris.Context) {
 		// updates resets the expiration based on the session's `Expires` field.
 		if err := sess.ShiftExpiration(ctx); err != nil {
-			if sessions.ErrNotFound.Equal(err) {
+			if errors.Is(err, sessions.ErrNotFound) {
 				ctx.StatusCode(iris.StatusNotFound)
-			} else if sessions.ErrNotImplemented.Equal(err) {
+			} else if errors.Is(err, sessions.ErrNotImplemented) {
 				ctx.StatusCode(iris.StatusNotImplemented)
 			} else {
 				ctx.StatusCode(iris.StatusNotModified)
