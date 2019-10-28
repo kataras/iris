@@ -7,10 +7,6 @@ import (
 	"github.com/betacraft/yaag/yaag"
 )
 
-/*
-	go get github.com/betacraft/yaag v1.0.1-0.20191027021412-565f65e36090
-*/
-
 type myXML struct {
 	Result string `xml:"result"`
 }
