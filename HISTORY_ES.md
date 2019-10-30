@@ -21,9 +21,35 @@ Los desarrolladores no están obligados a actualizar si realmente no lo necesita
 
 **Cómo actualizar**: Abra su línea de comandos y ejecute este comando: `go get github.com/kataras/iris@master`.
 
+# Sábado, 26 de octubre 2019 | v12.0.0
+
+- Add version suffix of the **import path**, learn why and see what people voted at [issue #1370](https://github.com/kataras/iris/issues/1370)
+
+![](https://iris-go.com/images/vote-v12-version-suffix_26_oct_2019.png)
+
+
+- Todos los errores ahora son compatibles con `errors.Is`, `errors.As` y `fmt.Errorf` de go1.13 y ha sido creado un nuevo paquete `core/errgroup`
+- Corrección [#1383](https://github.com/kataras/iris/issues/1383)
+- Informar en cualquier sistema si no se logró encontrar directorio de plantillas para las vistas.
+- Se removió el método `Party#GetReport`, se mantuvo `Party#GetReporter` que es un `error` y `errgroup.Group`.
+- Se removieron métodos obsoletos del enrutador como StaticWeb y StaticEmbedded_XXX
+- `Context#CheckIfModifiedSince` ahora returna tipo error `context.ErrPreconditionFailed` cuando no se cumplen condiciones del cliente. Uso: `if errors.Is(err, context.ErrPreconditionFailed) { ... }`
+- Se agregó `SourceFileName` y `SourceLineNumber` a `Route`, informan la posición exacta de su registro dentro del código fuente de su proyecto.
+- Se corrige bug sobre enlace de ruta del paquete MVC, ver [PR #1364](https://github.com/kataras/iris/pull/1364)
+- Se agregó `mvc/Application#SortByNumMethods` solicitado en [#1343](https://github.com/kataras/iris/issues/1343#issuecomment-524868164)
+- Código de estado `103 Early Hints` agregado.
+- Se corrigió rendimiento de `session.UpdateExpiration` en nas de 200 mil registros con nuevo radix reportado en  [problema #1328](https://github.com/kataras/iris/issues/1328)
+- Nuevo campo de configuración de la base de datos de sesión de redis: `Driver: redis.Redigo()` o `redis.Radix()`, ver [ejemplos actualizados](_examples/sessions/database/redis/)
+- Se agregó soporte de Clusters para la base de datos de sesión redis: radix (`Driver: redis: Radix ()`) como se solicitó en [problema #1339](https://github.com/kataras/iris/issues/1339)
+- Se creó traducción en iraní [README_FA](README_FA.md) en [PR #1360](https://github.com/kataras/iris/pull/1360)
+- Se creó traducción en koreano [README_KO](README_KO.md) en [PR #1356](https://github.com/kataras/iris/pull/1356)
+- Se creó traducción en español [README_ES](README_ES.md) y [HISTORY_ES](HISTORY_ES.md) en [PR #1344](https://github.com/kataras/iris/pull/1344).
+
+iris-contrib/middleare y ejemplos se actualizaron para utilizar la nueva ruta de importación `github.com/kataras/iris/v12`.
+
 # Viernes, 16 de agosto 2019 | v11.2.8
 
-- Establecer `Cookie.SameSite` como ` Lax` cuando el uso compartido de sesiones de subdominios esté habilitado[*](https://github.com/kataras/iris/commit/6bbdd3db9139f9038641ce6f00f7b4bab6e62550)
+- Establecer `Cookie.SameSite` como `Lax` cuando el uso compartido de sesiones de subdominios esté habilitado[*](https://github.com/kataras/iris/commit/6bbdd3db9139f9038641ce6f00f7b4bab6e62550)
 - Agregados y actualizados todos los [Handlers experimentales](https://github.com/kataras/iris/tree/master/_examples/experimental-handlers)
 - Nueva función `XMLMap` que envuelve un `map[string]interface{}` y la convierte en un contenido xml válido para representarlo a través del método `Context.XML`
 - Se agregaron nuevos campos `ProblemOptions.XML` y ` RenderXML` para renderizar `Problem` como XML(application/problem+xml) en lugar de JSON("application/problem+json) y enriquezca el `Negotiate` para aceptar fácilmente el mime type `application/problem+xml`.
