@@ -8,9 +8,7 @@ Iris es un framework web rápido, simple pero con muchas funcionalidades y muy e
 
 Descubra lo que [otros dicen sobre Iris](https://iris-go.com/testimonials/) y **siga** :star: este repositorio github.
 
-> Version 11.2 **liberado!**
-
-[![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
+> Iris **version 12 liberado**. Lea mas [aquí](HISTORY_ES.md#sábado-26-de-octubre-2019--v1200).
 
 ## Aprende Iris
 
