@@ -85,6 +85,7 @@ $ go run example.go
 
 </div>
 
+[![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 
 شما میتوانید در خواست یک نسخه PDF داکیومنت ر ا به صورت رایگان از اینجا بدهید [درخواست](https://bit.ly/iris-req-book)
 

@@ -57,6 +57,8 @@ Iris 包含详细而完整的 **[文档](https://github.com/kataras/iris/wiki)**
 
 [![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-req-book)
 
+[![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
+
 ## 贡献
 
 我们很高兴看到你对 Iris Web 框架的贡献！有关为 Iris 做出贡献的更多信息，请查看 [CONTRIBUTING.md](CONTRIBUTING.md)。
