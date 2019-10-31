@@ -27,6 +27,7 @@ func main() {
 		ctx.Writef("Hello %s", ctx.Params().Get("firstname"))
 	})
 
+	// Read more at: https://github.com/kataras/iris/issues/1335
 	app.Get("/product-problem", problemExample)
 
 	app.Get("/product-error", func(ctx iris.Context) {
@@ -89,10 +90,12 @@ func problemExample(ctx iris.Context) {
 		},
 		// OR
 		// Render as XML:
+		//
 		// RenderXML: true,
 		// XML:       iris.XML{Indent: "  "},
+		// and ctx.StatusCode(200) to see the result on browser as a user.
 		//
-		// Sets the "Retry-After" response header.
+		// The below `RetryAfter` field sets the "Retry-After" response header.
 		//
 		// Can accept:
 		// time.Time for HTTP-Date,
