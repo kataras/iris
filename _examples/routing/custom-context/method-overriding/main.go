@@ -70,7 +70,7 @@ func main() {
 	// this will be executed by the MyContext.Context
 	// if MyContext is not directly define the View function by itself.
 	app.Handle("GET", "/hi/{firstname:alphabetical}", recordWhichContextJustForProofOfConcept, func(ctx iris.Context) {
-		firstname := ctx.Params().Get("firstname") // ctx.Values().GetString("firstname")
+		firstname := ctx.Params().Get("firstname")
 
 		ctx.ViewData("firstname", firstname)
 		ctx.Gzip(true)
