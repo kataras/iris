@@ -1,6 +1,6 @@
 # A Todo MVC Application using Iris and Vue.js
 
-## Hackernoon Article: https://twitter.com/vuejsdevelopers/status/954805901789224960
+## Hackernoon Article: https://medium.com/hackernoon/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064
 
 Vue.js is a front-end framework for building web applications using javascript. It has a blazing fast Virtual DOM renderer.
 
@@ -29,9 +29,9 @@ Many articles have been written, in the past, that lead developers not to use a 
 You’ll need two dependencies:
 
 1. Vue.js, for our client-side requirements. Download it from [here](https://vuejs.org/), latest v2.
-2. The Iris Web Framework, for our server-side requirements. Can be found [here](https://github.com/kataras/iris), latest v11.
+2. The Iris Web Framework, for our server-side requirements. Can be found [here](https://github.com/kataras/iris), latest v12.
 
-> If you have Go already installed then just execute `go get -u github.com/kataras/iris` to install the Iris Web Framework.
+> If you have Go already installed then just execute `go get github.com/kataras/iris/v12@latest` to install the Iris Web Framework.
 
 ## Start
 
@@ -58,15 +58,24 @@ _Read the comments in the source code, they may be very helpful_
 // Full spec-compliant TodoMVC with Iris
 // and hash-based routing in ~200 effective lines of JavaScript.
 
-var socket = new Ws("ws://localhost:8080/todos/sync");
+var ws;
 
-socket.On("saved", function () {
-  // console.log("receive: on saved");
-  fetchTodos(function (items) {
-    app.todos = items
-  });
-});
+((async () => {
+  const events = {
+    todos: {
+      saved: function (ns, msg) {
+        app.todos = msg.unmarshal()
+        // or make a new http fetch
+        // fetchTodos(function (items) {
+        //   app.todos = msg.unmarshal()
+        // });
+      }
+    }
+  };
 
+  const conn = await neffos.dial("ws://localhost:8080/todos/sync", events);
+  ws = await conn.connect("todos");
+})()).catch(console.error);
 
 function fetchTodos(onComplete) {
   axios.get("/todos").then(response => {
@@ -95,7 +104,7 @@ var todoStorage = {
         return;
       }
       // console.log("send: save");
-      socket.Emit("save")
+      ws.emit("save")
     });
   }
 }
@@ -259,7 +268,7 @@ window.addEventListener('hashchange', onHashChange)
 onHashChange()
 
 // mount
-app.$mount('.todoapp')
+app.$mount('.todoapp');
 ```
 
 Let's add our view, the static html.
@@ -279,9 +288,8 @@ Let's add our view, the static html.
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <!-- -->
   <script src="https://unpkg.com/director@1.2.8/build/director.js"></script>
-  <!-- websocket sync between multiple tabs -->
-  <script src="/todos/iris-ws.js"></script>
-  <!-- -->
+  <script src="https://cdn.jsdelivr.net/npm/neffos.js@latest/dist/neffos.min.js"></script>
+
   <style>
     [v-cloak] {
       display: none;
@@ -293,20 +301,22 @@ Let's add our view, the static html.
   <section class="todoapp">
     <header class="header">
       <h1>todos</h1>
-      <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" v-model="newTodo" @keyup.enter="addTodo">
+      <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" v-model="newTodo"
+        @keyup.enter="addTodo">
     </header>
     <section class="main" v-show="todos.length" v-cloak>
       <input class="toggle-all" type="checkbox" v-model="allDone">
       <ul class="todo-list">
-        <li v-for="todo in filteredTodos" class="todo" :key="todo.id" :class="{ completed: todo.completed, editing: todo == editedTodo }">
+        <li v-for="todo in filteredTodos" class="todo" :key="todo.id"
+          :class="{ completed: todo.completed, editing: todo == editedTodo }">
           <div class="view">
-             <!-- v-model="todo.completed" -->
+            <!-- v-model="todo.completed" -->
             <input class="toggle" type="checkbox" @click="completeTodo(todo)">
             <label @dblclick="editTodo(todo)">{{ todo.title }}</label>
             <button class="destroy" @click="removeTodo(todo)"></button>
           </div>
-          <input class="edit" type="text" v-model="todo.title" v-todo-focus="todo == editedTodo" @blur="doneEdit(todo)" @keyup.enter="doneEdit(todo)"
-            @keyup.esc="cancelEdit(todo)">
+          <input class="edit" type="text" v-model="todo.title" v-todo-focus="todo == editedTodo" @blur="doneEdit(todo)"
+            @keyup.enter="doneEdit(todo)" @keyup.esc="cancelEdit(todo)">
         </li>
       </ul>
     </section>
@@ -411,23 +421,25 @@ func (s *MemoryService) Save(sessionOwner string, newItems []Item) error {
 We are going to use some of the MVC functionalities of the iris web framework here but you can do the same with the standard API as well.
 
 ```go
-// file: vuejs-todo-mvc/controllers/todo_controller.go
+// file: vuejs-todo-mvc/web/controllers/todo_controller.go
 package controllers
 
 import (
-    "vuejs-todo-mvc/todo"
+	"vuejs-todo-mvc/todo"
 
-    "github.com/kataras/iris/v12"
-    "github.com/kataras/iris/v12/mvc"
-    "github.com/kataras/iris/v12/sessions"
-    "github.com/kataras/iris/v12/websocket"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
+	"github.com/kataras/iris/v12/sessions"
+	"github.com/kataras/iris/v12/websocket"
 )
 
 // TodoController is our TODO app's web controller.
 type TodoController struct {
-    Service todo.Service
+	Service todo.Service
 
-    Session *sessions.Session
+	Session *sessions.Session
+
+	NS *websocket.NSConn
 }
 
 // BeforeActivation called once before the server ran, and before
@@ -435,44 +447,48 @@ type TodoController struct {
 // You can bind custom things to the controller, add new methods, add middleware,
 // add dependencies to the struct or the method(s) and more.
 func (c *TodoController) BeforeActivation(b mvc.BeforeActivation) {
-    // this could be binded to a controller's function input argument
-    // if any, or struct field if any:
-    b.Dependencies().Add(func(ctx iris.Context) (items []todo.Item) {
-        ctx.ReadJSON(&items)
-        return
-    })
+	// this could be binded to a controller's function input argument
+	// if any, or struct field if any:
+	b.Dependencies().Add(func(ctx iris.Context) (items []todo.Item) {
+		ctx.ReadJSON(&items)
+		return
+	})
 }
 
 // Get handles the GET: /todos route.
 func (c *TodoController) Get() []todo.Item {
-    return c.Service.Get(c.Session.ID())
+	return c.Service.Get(c.Session.ID())
 }
 
 // PostItemResponse the response data that will be returned as json
 // after a post save action of all todo items.
 type PostItemResponse struct {
-    Success bool `json:"success"`
+	Success bool `json:"success"`
 }
 
 var emptyResponse = PostItemResponse{Success: false}
 
 // Post handles the POST: /todos route.
 func (c *TodoController) Post(newItems []todo.Item) PostItemResponse {
-    if err := c.Service.Save(c.Session.ID(), newItems); err != nil {
-        return emptyResponse
-    }
+	if err := c.Service.Save(c.Session.ID(), newItems); err != nil {
+		return emptyResponse
+	}
 
-    return PostItemResponse{Success: true}
+	return PostItemResponse{Success: true}
 }
 
-func (c *TodoController) GetSync(conn websocket.Connection) {
-    conn.Join(c.Session.ID())
-    conn.On("save", func() { // "save" event from client.
-        conn.To(c.Session.ID()).Emit("saved", nil) // fire a "saved" event to the rest of the clients w.
-    })
+func (c *TodoController) Save(msg websocket.Message) error {
+	id := c.Session.ID()
+	c.NS.Conn.Server().Broadcast(nil, websocket.Message{
+		Namespace: msg.Namespace,
+		Event:     "saved",
+		To:        id,
+		Body:      websocket.Marshal(c.Service.Get(id)),
+	})
 
-    conn.Wait()
+	return nil
 }
+
 ```
 
 And finally our main application's endpoint.
@@ -540,7 +556,7 @@ Run the Iris web server you've just created by executing `go run main.go` from y
 
 ```sh
 $ go run main.go
-Now listening on: http://localhost:8080
+Now listening on: http://0.0.0.0:8080
 Application Started. Press CTRL+C to shut down.
 _
 ```
