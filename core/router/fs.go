@@ -464,8 +464,8 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 // Usage:
 // fileserver := FileServer("./static_files", DirOptions {...})
 // h := StripPrefix("/static", fileserver)
-// app.Get("/static/{f:path}", h)
-// app.Head("/static/{f:path}", h)
+// app.Get("/static/{file:path}", h)
+// app.Head("/static/{file:path}", h)
 func StripPrefix(prefix string, h context.Handler) context.Handler {
 	if prefix == "" {
 		return h
