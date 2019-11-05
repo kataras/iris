@@ -383,8 +383,8 @@ var (
 	// Usage:
 	// fileserver := iris.FileServer("./static_files", DirOptions {...})
 	// h := iris.StripPrefix("/static", fileserver)
-	// app.Get("/static/{f:path}", h)
-	// app.Head("/static/{f:path}", h)
+	// app.Get("/static/{file:path}", h)
+	// app.Head("/static/{file:path}", h)
 	StripPrefix = router.StripPrefix
 	// Gzip is a middleware which enables writing
 	// using gzip compression, if client supports.
