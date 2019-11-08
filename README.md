@@ -1,7 +1,7 @@
 <div align="center">
   <!-- <a href="https://iris-go.com"><img src="https://iris-go.com/images/logo-sm.png" alt="iris-go.com logo" height="160"></a> -->
 
-  ![](https://media.giphy.com/media/jUKH7teYHOv40H1YZB/giphy.gif)
+  ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) ![](https://iris-go.com/images/star_single.png)
 
   # Iris Web Framework <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a>
 
