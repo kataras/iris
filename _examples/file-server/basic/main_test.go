@@ -9,6 +9,8 @@ import (
 	"github.com/kataras/iris/v12/httptest"
 )
 
+const prefixURL = "/v1"
+
 type resource string
 
 func (r resource) contentType() string {
@@ -85,7 +87,7 @@ func TestFileServerBasic(t *testing.T) {
 		url := u.String()
 		contents := u.loadFromBase("./assets")
 
-		e.GET(url).Expect().
+		e.GET(prefixURL+url).Expect().
 			Status(httptest.StatusOK).
 			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
 			Body().Equal(contents)
