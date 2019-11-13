@@ -15,7 +15,8 @@ func newApp() *iris.Application {
 	// app.HandleDir("/css", "./assets/css")
 	// app.HandleDir("/js", "./assets/js")
 
-	app.HandleDir("/static", "./assets", iris.DirOptions{
+	v1 := app.Party("/v1")
+	v1.HandleDir("/static", "./assets", iris.DirOptions{
 		// Defaults to "/index.html", if request path is ending with **/*/$IndexName
 		// then it redirects to **/*(/) which another handler is handling it,
 		// that another handler, called index handler, is auto-registered by the framework
@@ -33,15 +34,15 @@ func newApp() *iris.Application {
 	})
 
 	// You can also register any index handler manually, order of registration does not matter:
-	// app.Get("/static", [...custom middleware...], func(ctx iris.Context) {
+	// v1.Get("/static", [...custom middleware...], func(ctx iris.Context) {
 	//  [...custom code...]
 	// 	ctx.ServeFile("./assets/index.html", false)
 	// })
 
-	// http://localhost:8080/static
-	// http://localhost:8080/static/css/main.css
-	// http://localhost:8080/static/js/jquery-2.1.1.js
-	// http://localhost:8080/static/favicon.ico
+	// http://localhost:8080/v1/static
+	// http://localhost:8080/v1/static/css/main.css
+	// http://localhost:8080/v1/static/js/jquery-2.1.1.js
+	// http://localhost:8080/v1/static/favicon.ico
 	return app
 }
 
