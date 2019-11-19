@@ -705,14 +705,17 @@ type Configuration struct {
 
 	// Context values' keys for various features.
 	//
-	// TranslateLanguageContextKey & TranslateFunctionContextKey are used by i18n handlers/middleware
-	// currently we have only one: https://github.com/kataras/iris/tree/master/middleware/i18n.
+	// TranslateLanguageContextKey & TranslateLangFunctionContextKey & TranslateFunctionContextKey are used by i18n handlers/middleware to set the selected locale's translate function.
 	//
-	// Defaults to "iris.translate" and "iris.language"
+	// Defaults to "iris.translate".
 	TranslateFunctionContextKey string `json:"translateFunctionContextKey,omitempty" yaml:"TranslateFunctionContextKey" toml:"TranslateFunctionContextKey"`
-	// TranslateLanguageContextKey used for i18n.
+	// TranslateLangFunctionContextKey & TranslateFunctionContextKey & TranslateLanguageContextKey are used by i18n handlers/middleware to set the global translate function.
 	//
-	// Defaults to "iris.language"
+	// Defaults to "iris.languageGlobal".
+	TranslateLangFunctionContextKey string `json:"translateLangFunctionContextKey,omitempty" yaml:"TranslateLangFunctionContextKey" toml:"TranslateLangFunctionContextKey"`
+	// TranslateLanguageContextKey used to report the i18n selected locale.
+	//
+	// Defaults to "iris.language".
 	TranslateLanguageContextKey string `json:"translateLanguageContextKey,omitempty" yaml:"TranslateLanguageContextKey" toml:"TranslateLanguageContextKey"`
 
 	// GetViewLayoutContextKey is the key of the context's user values' key
@@ -842,9 +845,15 @@ func (c Configuration) GetPostMaxMemory() int64 {
 }
 
 // GetTranslateFunctionContextKey returns the configuration's TranslateFunctionContextKey value,
-// used for i18n.
+// used for i18n inside templates.
 func (c Configuration) GetTranslateFunctionContextKey() string {
 	return c.TranslateFunctionContextKey
+}
+
+// GetTranslateLangFunctionContextKey returns the configuration's TranslateLangFunctionContextKey value,
+// used for i18n inside templates.
+func (c Configuration) GetTranslateLangFunctionContextKey() string {
+	return c.TranslateLangFunctionContextKey
 }
 
 // GetTranslateLanguageContextKey returns the configuration's TranslateLanguageContextKey value,
@@ -1017,13 +1026,14 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:               32 << 20, // 32MB
-		TranslateFunctionContextKey: "iris.translate",
-		TranslateLanguageContextKey: "iris.language",
-		ViewLayoutContextKey:        "iris.viewLayout",
-		ViewDataContextKey:          "iris.viewData",
-		RemoteAddrHeaders:           make(map[string]bool),
-		EnableOptimizations:         false,
-		Other:                       make(map[string]interface{}),
+		PostMaxMemory:                   32 << 20, // 32MB
+		TranslateFunctionContextKey:     "iris.translate",
+		TranslateLangFunctionContextKey: "iris.translateLang",
+		TranslateLanguageContextKey:     "iris.language",
+		ViewLayoutContextKey:            "iris.viewLayout",
+		ViewDataContextKey:              "iris.viewData",
+		RemoteAddrHeaders:               make(map[string]bool),
+		EnableOptimizations:             false,
+		Other:                           make(map[string]interface{}),
 	}
 }

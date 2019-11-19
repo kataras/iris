@@ -68,9 +68,11 @@ type ConfigurationReadOnly interface {
 	GetPostMaxMemory() int64
 
 	// GetTranslateLanguageContextKey returns the configuration's TranslateFunctionContextKey value,
-	// used for i18n.
+	// used for i18n inside templates.
 	GetTranslateFunctionContextKey() string
-
+	// GetTranslateLangFunctionContextKey returns the configuration's TranslateLangFunctionContextKey value,
+	// used for i18n inside templates.
+	GetTranslateLangFunctionContextKey() string
 	// GetTranslateLanguageContextKey returns the configuration's TranslateLanguageContextKey value,
 	// used for i18n.
 	GetTranslateLanguageContextKey() string

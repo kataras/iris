@@ -81,3 +81,7 @@ If you discover a security vulnerability within Iris, please send an e-mail to [
 The project name "Iris" was inspired by the Greek mythology.
 
 Iris Web Framework is free and open-source software licensed under the [3-Clause BSD License](LICENSE).
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/kataras/iris.svg)](https://starchart.cc/kataras/iris)

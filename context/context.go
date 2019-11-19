@@ -294,10 +294,16 @@ type Context interface {
 	Values() *memstore.Store
 	// Translate is the i18n (localization) middleware's function,
 	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
-	// to execute the translate function and return the localized text value.
+	// to execute the translate function and returns the current localized text value.
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 	Translate(format string, args ...interface{}) string
+	// TranslateLang is the i18n (localization) middleware's function,
+	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey())
+	// to execute the translate function and returns the localized text value based on the "lang".
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
+	TranslateLang(lang, format string, args ...interface{}) string
 
 	//  +------------------------------------------------------------+
 	//  | Path, Host, Subdomain, IP, Headers etc...                  |
@@ -1499,12 +1505,25 @@ func (ctx *context) Values() *memstore.Store {
 
 // Translate is the i18n (localization) middleware's function,
 // it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
-// to execute the translate function and return the localized text value.
+// to execute the translate function and return the current localized text value.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 func (ctx *context) Translate(format string, args ...interface{}) string {
-	if cb, ok := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey()).(func(format string, args ...interface{}) string); ok {
+	if cb, ok := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey()).(func(string, ...interface{}) string); ok {
 		return cb(format, args...)
+	}
+
+	return ""
+}
+
+// TranslateLang is the i18n (localization) middleware's function,
+// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey())
+// to execute the translate function and returns the localized text value based on the "lang".
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
+func (ctx *context) TranslateLang(lang, format string, args ...interface{}) string {
+	if cb, ok := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey()).(func(string, string, ...interface{}) string); ok {
+		return cb(lang, format, args...)
 	}
 
 	return ""
