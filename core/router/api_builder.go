@@ -397,6 +397,9 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 
 	var route *Route // the last one is returned.
 	for _, route = range routes {
+		if route == nil {
+			break
+		}
 		// global
 
 		route.topLink = api.routes.getRelative(route)

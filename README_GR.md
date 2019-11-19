@@ -6,6 +6,8 @@
 
 Μάθετε τι [λένε οι άλλοι για το Iris](https://iris-go.com/testimonials/) και δώστε ένα **αστεράκι** στο GitHub.
 
+[![](https://media.giphy.com/media/eGku4UbilECflFjcNj/giphy.gif)](https://iris-go.com/testimonials/)
+
 ## Μαθαίνοντας το Iris
 
 <details>

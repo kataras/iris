@@ -11,13 +11,7 @@
 
 برای این که بدانید دیگران در مورد آیریس چه می گویند لطفا در این لینک کلیک کنید [دیگران در مورد آیریس چه می گویند](https://iris-go.com/testimonials/) لطفا این پروژه را در گیتاب **استار** کنید.
 
-
-> نسخه 11.2 **آماده شد**
-
-<div dir="ltr" align="left">
-
-[![https://www.facebook.com/iris.framework/posts/3276606095684693](https://iris-go.com/images/iris-112-released.png)](https://www.facebook.com/iris.framework/posts/3276606095684693)
-</div>
+[![](https://media.giphy.com/media/eGku4UbilECflFjcNj/giphy.gif)](https://iris-go.com/testimonials/)
 
 ## آموزش آیریس
 
