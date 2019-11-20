@@ -30,20 +30,15 @@ Go version 1.13 and above is required.
 
 More than 100 practical examples, tutorials and articles at:
 
-- https://github.com/kataras/iris#iris-starter-kits
-- https://github.com/kataras/iris/tree/master/_examples
+- https://iris-go.com/start
+- https://github.com/kataras/iris/wiki/Starter-kits
 - https://github.com/iris-contrib/examples
-- https://iris-go.com/v11/recipe
-- https://docs.iris-go.com (in-progress)
 - https://godoc.org/github.com/kataras/iris
-
-> [Stay tuned](https://github.com/kataras/iris/stargazers), community prepares even more tutorials.
-
-Want to help and join to the greatest community? Describe your skills and push your own sections at: https://github.com/kataras/build-a-better-web-together/issues/new
+- https://bit.ly/iris-req-book
 
 ## Active development mode
 
-Iris may have reached version 11, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+Iris may have reached version 12, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
 ## Can I find a job if I learn how to use Iris?
 
