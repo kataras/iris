@@ -110,3 +110,12 @@ func TestImmutableSetOnlyWithSetImmutable(t *testing.T) {
 		t.Fatalf("caller should be able to change the immutable entry with a `SetImmutable`")
 	}
 }
+
+func TestGetInt64Default(t *testing.T) {
+	var p Store
+
+	p.Set("a uint16", uint16(2))
+	if v := p.GetInt64Default("a uint16", 0); v != 2 {
+		t.Fatalf("unexpected value of %d", v)
+	}
+}
