@@ -7,10 +7,15 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/iris-contrib/i18n"
 	"github.com/kataras/iris/v12/context"
 )
+
+// If `Config.Default` is missing and `Config.Languages` or `Config.Alternatives` contains this key then it will set as the default locale,
+// no need to be exported(see `Config.Default`).
+const defLang = "en-US"
 
 // Config the i18n options.
 type Config struct {
@@ -71,6 +76,16 @@ func (c *Config) Exists(lang string) (string, bool) {
 	return i18n.IsExistSimilar(lang)
 }
 
+// all locale files passed, we keep them in order
+// to check if a file is already passed by `New` or `NewWrapper`,
+// because we don't have a way to check before the appending of
+// a locale file and the same locale code can be used more than one to register different file names (at runtime too).
+var (
+	localeFilesSet = make(map[string]struct{})
+	localesMutex   sync.RWMutex
+	once           sync.Once
+)
+
 func (c *Config) loadLanguages() {
 	if len(c.Languages) == 0 {
 		panic("field Languages is empty")
@@ -82,14 +97,8 @@ func (c *Config) loadLanguages() {
 		}
 	}
 
-	firstlanguage := ""
 	// load the files
 	for k, langFileOrFiles := range c.Languages {
-		if i18n.IsExist(k) {
-			// if it is already stored through middleware (`New`) then skip it.
-			continue
-		}
-
 		// remove all spaces.
 		langFileOrFiles = strings.Replace(langFileOrFiles, " ", "", -1)
 		// note: if only one, then the first element is the "v".
@@ -100,21 +109,34 @@ func (c *Config) loadLanguages() {
 				v += ".ini"
 			}
 
-			err := i18n.SetMessage(k, v)
-			if err != nil && err != i18n.ErrLangAlreadyExist {
-				panic(fmt.Sprintf("Failed to set locale file' %s' with error: %v", k, err))
+			localesMutex.RLock()
+			_, exists := localeFilesSet[v]
+			localesMutex.RUnlock()
+			if !exists {
+				localesMutex.Lock()
+				err := i18n.SetMessage(k, v)
+				// fmt.Printf("add %s = %s\n", k, v)
+				if err != nil && err != i18n.ErrLangAlreadyExist {
+					panic(fmt.Sprintf("Failed to set locale file' %s' with error: %v", k, err))
+				}
+
+				localeFilesSet[v] = struct{}{}
+				localesMutex.Unlock()
 			}
-			if firstlanguage == "" {
-				firstlanguage = k
-			}
+
 		}
 	}
-	// if not default language set then set to the first of the "Languages".
+
 	if c.Default == "" {
-		c.Default = firstlanguage
+		if lang, ok := c.Exists(defLang); ok {
+			c.Default = lang
+		}
 	}
 
-	i18n.SetDefaultLang(c.Default)
+	once.Do(func() { // set global default lang once.
+		// fmt.Printf("set default language: %s\n", c.Default)
+		i18n.SetDefaultLang(c.Default)
+	})
 }
 
 // test file: ../../_examples/miscellaneous/i18n/main_test.go
@@ -144,7 +166,6 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 		if language == "" {
 			// try to get by url parameter
 			language = ctx.URLParam(i.config.URLParameter)
-
 			if language == "" {
 				// then try to take the lang field from the cookie
 				language = ctx.GetCookie(langKey)
@@ -168,14 +189,14 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 		}
 	}
 
+	if language == "" {
+		language = i.config.Default
+	}
+
 	// returns the original key of the language and true
 	// when the language, or something similar exists (e.g. en-US maps to en).
 	if lc, ok := i.config.Exists(language); ok {
 		language = lc
-	} else {
-		// if unexpected language given, the middleware will translate to the default language,
-		// the language key should be also this language instead of the user-given.
-		language = i.config.Default
 	}
 
 	// if it was not taken by the cookie, then set the cookie in order to have it.
@@ -216,14 +237,16 @@ func NewWrapper(c Config) func(http.ResponseWriter, *http.Request, http.HandlerF
 			path = path[:idx]
 		}
 
-		if lang, ok := c.Exists(path); ok {
-			path = r.URL.Path[len(path)+1:]
-			if path == "" {
-				path = "/"
+		if path != "" {
+			if lang, ok := c.Exists(path); ok {
+				path = r.URL.Path[len(path)+1:]
+				if path == "" {
+					path = "/"
+				}
+				r.RequestURI = path
+				r.URL.Path = path
+				r.Header.Set("Accept-Language", lang)
 			}
-			r.RequestURI = path
-			r.URL.Path = path
-			r.Header.Set("Accept-Language", lang)
 		}
 
 		routerHandler(w, r)

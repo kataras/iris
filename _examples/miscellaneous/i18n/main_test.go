@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/kataras/iris/v12/httptest"
@@ -12,9 +13,11 @@ func TestI18n(t *testing.T) {
 
 	expectedf := "From the language %s translated output: %s"
 	var (
-		elgr = fmt.Sprintf(expectedf, "el-GR", "γεια, iris")
-		enus = fmt.Sprintf(expectedf, "en-US", "hello, iris")
-		zhcn = fmt.Sprintf(expectedf, "zh-CN", "您好，iris")
+		tests = map[string]string{
+			"en-US": fmt.Sprintf(expectedf, "en-US", "hello, iris"),
+			"el-GR": fmt.Sprintf(expectedf, "el-GR", "γεια, iris"),
+			"zh-CN": fmt.Sprintf(expectedf, "zh-CN", "您好，iris"),
+		}
 
 		elgrMulti = fmt.Sprintf("From the language: %s, translated output:\n%s=%s\n%s=%s", "el-GR",
 			"key1",
@@ -29,20 +32,43 @@ func TestI18n(t *testing.T) {
 	)
 
 	e := httptest.New(t, app)
-	// default is en-US
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal(enus)
-	// default is en-US if lang query unable to be found
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal(enus)
+	// default should be en-US.
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal(tests["en-US"])
 
-	e.GET("/").WithQueryString("lang=el-GR").Expect().Status(httptest.StatusOK).
-		Body().Equal(elgr)
-	e.GET("/").WithQueryString("lang=en-US").Expect().Status(httptest.StatusOK).
-		Body().Equal(enus)
-	e.GET("/").WithQueryString("lang=zh-CN").Expect().Status(httptest.StatusOK).
-		Body().Equal(zhcn)
+	for lang, body := range tests {
+		e.GET("/").WithQueryString("lang=" + lang).Expect().Status(httptest.StatusOK).
+			Body().Equal(body)
+
+		// test lowercase.
+		e.GET("/").WithQueryString("lang=" + strings.ToLower(lang)).Expect().Status(httptest.StatusOK).
+			Body().Equal(body)
+
+		// test first part (e.g. en instead of en-US).
+		langFirstPart := strings.Split(lang, "-")[0]
+		e.GET("/").WithQueryString("lang=" + langFirstPart).Expect().Status(httptest.StatusOK).
+			Body().Equal(body)
+
+		// test accept-language header prefix (i18n wrapper).
+		e.GET("/"+lang).WithHeader("Accept-Language", lang).Expect().Status(httptest.StatusOK).
+			Body().Equal(body)
+
+		// test path prefix (i18n router wrapper).
+		e.GET("/" + lang).Expect().Status(httptest.StatusOK).
+			Body().Equal(body)
+
+		// test path prefix with first part.
+		e.GET("/" + langFirstPart).Expect().Status(httptest.StatusOK).
+			Body().Equal(body)
+	}
 
 	e.GET("/multi").WithQueryString("lang=el-GR").Expect().Status(httptest.StatusOK).
 		Body().Equal(elgrMulti)
 	e.GET("/multi").WithQueryString("lang=en-US").Expect().Status(httptest.StatusOK).
+		Body().Equal(enusMulti)
+
+	// test path prefix (i18n router wrapper).
+	e.GET("/el-gr/multi").Expect().Status(httptest.StatusOK).
+		Body().Equal(elgrMulti)
+	e.GET("/en/multi").Expect().Status(httptest.StatusOK).
 		Body().Equal(enusMulti)
 }

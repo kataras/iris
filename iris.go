@@ -806,7 +806,7 @@ func Raw(f func() error) Runner {
 // It builds the default router with its default macros
 // and the template functions that are very-closed to iris.
 //
-// If error occured while building the Application, the returns type of error will be an *errgroup.Group
+// If error occurred while building the Application, the returns type of error will be an *errgroup.Group
 // which let the callers to inspect the errors and cause, usage:
 //
 // import "github.com/kataras/iris/v12/core/errgroup"

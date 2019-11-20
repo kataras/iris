@@ -5,25 +5,29 @@ import (
 	"github.com/kataras/iris/v12/middleware/i18n"
 )
 
+var i18nConfig = i18n.Config{
+	Default:       "en-US",
+	URLParameter:  "lang", // optional.
+	PathParameter: "lang", // optional.
+	Languages: map[string]string{
+		"en-US": "./locales/locale_en-US.ini", // maps to en-US, en-us and en.
+		"el-GR": "./locales/locale_el-GR.ini", // maps to el-GR, el-gr and el.
+		"zh-CN": "./locales/locale_zh-CN.ini", // maps to zh-CN, zh-cn and zh.
+	},
+	Alternatives: map[string]string{ // optional.
+		"english": "en-US", // now english maps to en-US
+		"greek":   "el-GR", // and greek to el-GR
+		"chinese": "zh-CN", // and chinese to zh-CN too.
+	},
+}
+
 func newApp() *iris.Application {
 	app := iris.New()
-	app.Logger().SetLevel("debug")
-
-	i18nConfig := i18n.Config{
-		Default:       "en-US",
-		URLParameter:  "lang",
-		PathParameter: "lang",
-		Languages: map[string]string{
-			"en-US": "./locales/locale_en-US.ini",
-			"el-GR": "./locales/locale_el-GR.ini",
-			"zh-CN": "./locales/locale_zh-CN.ini",
-		},
-		Alternatives: map[string]string{"greek": "el-GR"},
-	}
 
 	// See https://github.com/kataras/iris/issues/1369
-	// if you want to enable this (SEO) feature.
-	app.WrapRouter(i18n.NewWrapper(i18nConfig))
+	// if you want to enable this (SEO) feature (OPTIONAL).
+	i18nWrapper := i18n.NewWrapper(i18nConfig)
+	app.WrapRouter(i18nWrapper)
 
 	i18nMiddleware := i18n.New(i18nConfig)
 	app.Use(i18nMiddleware)
@@ -37,12 +41,10 @@ func newApp() *iris.Application {
 		// it tries to find the language by the "language" cookie
 		// if didn't found then it it set to the Default set on the configuration
 
-		// hi is the key, 'iris' is the %s on the .ini file
+		// hi is the key/word, 'iris' is the %s on the .ini file
 		// the second parameter is optional
 
-		// hi := ctx.Translate("hi", "iris")
-		// or:
-		hi := i18n.Translate(ctx, "hi", "iris")
+		hi := ctx.Translate("hi", "iris")
 
 		// GetTranslateLanguageContextKey() == "language"
 		language := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey())
@@ -61,6 +63,9 @@ func newApp() *iris.Application {
 		ctx.WriteString("sitemap")
 	})
 
+	// Note: It is highly recommended to use one and no more i18n middleware instances at a time,
+	// the first one was already passed by `app.Use` above.
+	// This middleware which registers on "/multi" route is here just for the shake of the example.
 	multiLocale := i18n.New(i18n.Config{
 		Default:      "en-US",
 		URLParameter: "lang",
@@ -73,8 +78,8 @@ func newApp() *iris.Application {
 	app.Get("/multi", multiLocale, func(ctx iris.Context) {
 		language := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey())
 
-		fromFirstFileValue := i18n.Translate(ctx, "key1")
-		fromSecondFileValue := i18n.Translate(ctx, "key2")
+		fromFirstFileValue := ctx.Translate("key1")
+		fromSecondFileValue := ctx.Translate("key2")
 		ctx.Writef("From the language: %s, translated output:\n%s=%s\n%s=%s",
 			language, "key1", fromFirstFileValue,
 			"key2", fromSecondFileValue)
