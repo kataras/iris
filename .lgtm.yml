@@ -1,3 +1,0 @@
-path_classifiers:
-  test:
-    - exclude: _examples
