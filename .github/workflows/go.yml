@@ -1,11 +1,21 @@
 name: Go
 on: [push]
+env:
+  GOPROXY: "https://goproxy.io"
 jobs:
 
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
+
+    - uses: actions/cache@v1
+      id: cache
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
