@@ -6,31 +6,34 @@ import (
 )
 
 var i18nConfig = i18n.Config{
-	Default:       "en-US",
-	URLParameter:  "lang", // optional.
-	PathParameter: "lang", // optional.
+	Default: "en-US",
 	Languages: map[string]string{
 		"en-US": "./locales/locale_en-US.ini", // maps to en-US, en-us and en.
 		"el-GR": "./locales/locale_el-GR.ini", // maps to el-GR, el-gr and el.
 		"zh-CN": "./locales/locale_zh-CN.ini", // maps to zh-CN, zh-cn and zh.
 	},
+	// Optionals.
 	Alternatives: map[string]string{ // optional.
 		"english": "en-US", // now english maps to en-US
 		"greek":   "el-GR", // and greek to el-GR
 		"chinese": "zh-CN", // and chinese to zh-CN too.
 	},
+	URLParameter: "lang",
+	Subdomain:    true,
+	// Cookie: "lang",
+	// SetCookie: false,
+	// Indentifier: func(ctx iris.Context) string { return "zh-CN" },
 }
 
 func newApp() *iris.Application {
 	app := iris.New()
 
+	i18nMiddleware := i18n.NewI18n(i18nConfig)
+	app.Use(i18nMiddleware.Handler())
+
 	// See https://github.com/kataras/iris/issues/1369
 	// if you want to enable this (SEO) feature (OPTIONAL).
-	i18nWrapper := i18n.NewWrapper(i18nConfig)
-	app.WrapRouter(i18nWrapper)
-
-	i18nMiddleware := i18n.New(i18nConfig)
-	app.Use(i18nMiddleware)
+	app.WrapRouter(i18nMiddleware.Wrapper())
 
 	app.Get("/", func(ctx iris.Context) {
 		// Ir tries to find the language by:
@@ -105,9 +108,10 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 
-	// go to http://localhost:8080/el-GR/some-path
-	// or http://localhost:8080/zh-cn/templates
-	// or http://localhost:8080/some-path?lang=el-GR
+	// go to http://localhost:8080/el-gr/some-path (by path prefix)
+	// or http://el.mydomain.com8080/some-path (by subdomain - test locally with the hosts file)
+	// or http://localhost:8080/zh-CN/templates (by path prefix with uppercase)
+	// or http://localhost:8080/some-path?lang=el-GR (by url parameter)
 	// or http://localhost:8080 (default is en-US)
 	// or http://localhost:8080/?lang=zh-CN
 	//
