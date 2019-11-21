@@ -34,7 +34,7 @@ type Config struct {
 	// Checked: Serving state, runtime.
 	Cookie string
 	// If SetCookie is true and Cookie field is not empty
-	// then it will set the cookie to the language found by y Context's Value's "lang" key or URLParameter or Cookie or Indentifier.
+	// then it will set the cookie to the language found by Context's Value's "lang" key or URLParameter or Cookie or Indentifier.
 	// Defaults to false.
 	SetCookie bool
 
