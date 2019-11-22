@@ -13,11 +13,11 @@ var i18nConfig = i18n.Config{
 		"zh-CN": "./locales/locale_zh-CN.ini", // maps to zh-CN, zh-cn and zh.
 	},
 	// Optionals.
-	Alternatives: map[string]string{ // optional.
-		"english": "en-US", // now english maps to en-US
-		"greek":   "el-GR", // and greek to el-GR
-		"chinese": "zh-CN", // and chinese to zh-CN too.
-	},
+	// LanguagesMap: i18n.Map{
+	// 	"en": "en-US", // now en maps to en-US
+	// 	"el": "el-GR",
+	// 	"zh": "zh-CN",
+	// } or a custom i18n.MapFunc, defaults to accept all lowercase and [en] as [en-US] and e.t.c.
 	URLParameter: "lang",
 	Subdomain:    true,
 	// Cookie: "lang",

@@ -19,7 +19,6 @@ require (
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
-	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
 	github.com/iris-contrib/schema v0.0.1
 	github.com/json-iterator/go v1.1.6
 	github.com/kataras/golog v0.0.9
@@ -32,5 +31,6 @@ require (
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.2.2
 )

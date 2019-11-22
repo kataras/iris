@@ -11,12 +11,19 @@ import (
 func TestI18n(t *testing.T) {
 	app := newApp()
 
-	expectedf := "From the language %s translated output: %s"
+	const (
+		expectedf = "From the language %s translated output: %s"
+
+		enUS = "hello, iris"
+		elGR = "γεια, iris"
+		zhCN = "您好，iris"
+	)
+
 	var (
 		tests = map[string]string{
-			"en-US": fmt.Sprintf(expectedf, "en-US", "hello, iris"),
-			"el-GR": fmt.Sprintf(expectedf, "el-GR", "γεια, iris"),
-			"zh-CN": fmt.Sprintf(expectedf, "zh-CN", "您好，iris"),
+			"en-US": fmt.Sprintf(expectedf, "en-US", enUS),
+			"el-GR": fmt.Sprintf(expectedf, "el-GR", elGR),
+			"zh-CN": fmt.Sprintf(expectedf, "zh-CN", zhCN),
 		}
 
 		elgrMulti = fmt.Sprintf("From the language: %s, translated output:\n%s=%s\n%s=%s", "el-GR",
@@ -71,4 +78,9 @@ func TestI18n(t *testing.T) {
 		Body().Equal(elgrMulti)
 	e.GET("/en/multi").Expect().Status(httptest.StatusOK).
 		Body().Equal(enusMulti)
+
+	e.GET("/el-GRtemplates").Expect().Status(httptest.StatusNotFound)
+	e.GET("/el-templates").Expect().Status(httptest.StatusNotFound)
+
+	e.GET("/el/templates").Expect().Status(httptest.StatusOK).Body().Contains(elGR).Contains(zhCN)
 }
