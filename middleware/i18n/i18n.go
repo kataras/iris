@@ -7,15 +7,11 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-	"sync"
 
-	"github.com/iris-contrib/i18n"
 	"github.com/kataras/iris/v12/context"
-)
 
-// If `Config.Default` is missing and `Config.Languages` or `Config.Alternatives` contains this key then it will set as the default locale,
-// no need to be exported(see `Config.Default`).
-const defLang = "en-US"
+	"gopkg.in/ini.v1"
+)
 
 // Config the i18n options.
 type Config struct {
@@ -39,7 +35,7 @@ type Config struct {
 	SetCookie bool
 
 	// If Subdomain is true then it will try to map a subdomain
-	// with a valid language from the language list or alternatives.
+	// with a valid language from the language list or a valid map to a language.
 	Subdomain bool
 
 	// Indentifier is a function which the language can be indentified if the above URLParameter and Cookie failed to.
@@ -50,102 +46,241 @@ type Config struct {
 	// Example of key is: 'en-US'.
 	// Example of value is: './locales/en-US.ini'.
 	Languages map[string]string
-	// Alternatives is a language map which if it's filled,
-	// it tries to associate its keys with a value of "Languages" field when a possible value of "Language" was not present.
-	// Example of
-	// Languages: map[string]string{"en-US": "./locales/en-US.ini"} set
-	// Alternatives: map[string]string{ "en":"en-US", "english": "en-US"}.
-	Alternatives map[string]string
+	// LanguagesMap is a language map which if it's filled,
+	// it tries to associate an incoming possible language code to a key of "Languages" field
+	// when the value of "Language" was not present as it is at serve-time.
+	//
+	// Defaults to a non-nil LanguagesMap which accepts all lowercase and [en] as [en-US] and e.t.c.
+	LanguagesMap LanguagesMap
 }
 
-// Exists returns true if the language, or something similar
-// exists (e.g. en-US maps to en or Alternatives[key] == lang).
-// it returns the found name and whether it was able to match something.
-func (c *Config) Exists(lang string) (string, bool) {
-	for k, v := range c.Alternatives {
-		if k == lang {
-			lang = v
-			break
-		}
-	}
-
-	return i18n.IsExistSimilar(lang)
+// LanguagesMap the type for mapping an incoming word to a locale.
+type LanguagesMap interface {
+	Map(lang string) (locale string, found bool)
 }
 
-// all locale files passed, we keep them in order
-// to check if a file is already passed by `New` or `NewWrapper`,
-// because we don't have a way to check before the appending of
-// a locale file and the same locale code can be used more than one to register different file names (at runtime too).
-var (
-	localeFilesSet = make(map[string]struct{})
-	localesMutex   sync.RWMutex
-	once           sync.Once
-)
+// Map is a Go map[string]string type which is a LanguagesMap that
+// matches literal key with value as the found locale.
+type Map map[string]string
 
-func (c *Config) loadLanguages() {
-	if len(c.Languages) == 0 {
-		panic("field Languages is empty")
-	}
+// Map loops through its registered alternative language codes
+// and reports if it is valid registered locale one.
+func (m Map) Map(lang string) (string, bool) {
+	locale, ok := m[lang]
+	return locale, ok
+}
 
-	for k, v := range c.Alternatives {
-		if _, ok := c.Languages[v]; !ok {
-			panic(fmt.Sprintf("language alternative '%s' does not map to a valid language '%s'", k, v))
-		}
-	}
+// MapFunc is a function shortcut for the LanguagesMap.
+type MapFunc func(lang string) (locale string, found bool)
 
-	// load the files
-	for k, langFileOrFiles := range c.Languages {
-		// remove all spaces.
-		langFileOrFiles = strings.Replace(langFileOrFiles, " ", "", -1)
-		// note: if only one, then the first element is the "v".
-		languages := strings.Split(langFileOrFiles, ",")
+// Map should report if a given "lang" is valid registered locale.
+func (m MapFunc) Map(lang string) (string, bool) {
+	return m(lang)
+}
 
-		for _, v := range languages { // loop each of the files separated by comma, if any.
-			if !strings.HasSuffix(v, ".ini") {
-				v += ".ini"
+func makeDefaultLanguagesMap(languages map[string]string) MapFunc {
+	return func(lang string) (string, bool) {
+		lang = strings.ToLower(lang)
+		for locale := range languages {
+			if lang == strings.ToLower(locale) {
+				return locale, true
 			}
 
-			localesMutex.RLock()
-			_, exists := localeFilesSet[v]
-			localesMutex.RUnlock()
-			if !exists {
-				localesMutex.Lock()
-				err := i18n.SetMessage(k, v)
-				// fmt.Printf("add %s = %s\n", k, v)
-				if err != nil && err != i18n.ErrLangAlreadyExist {
-					panic(fmt.Sprintf("Failed to set locale file' %s' with error: %v", k, err))
+			// this matches "en-anything" too, which can be accepted too on some cases, but not here.
+			// if sep := strings.IndexRune(lang, '-'); sep > 0 {
+			// 	lang = lang[0:sep]
+			// }
+
+			if len(lang) == 2 {
+				if strings.Contains(locale, lang) {
+					return locale, true
 				}
-
-				localeFilesSet[v] = struct{}{}
-				localesMutex.Unlock()
 			}
-
 		}
-	}
 
-	if c.Default == "" {
-		if lang, ok := c.Exists(defLang); ok {
-			c.Default = lang
-		}
+		return "", false
 	}
-
-	once.Do(func() { // set global default lang once.
-		// fmt.Printf("set default language: %s\n", c.Default)
-		i18n.SetDefaultLang(c.Default)
-	})
 }
 
 // I18n is the structure which keeps the i18n configuration and implement all Iris i18n features.
 type I18n struct {
 	config Config
+
+	locales map[string][]*ini.File
 }
+
+// If `Config.Default` is missing and `Config.Languages` or `Config.Map` contains this key then it will set as the default locale,
+// no need to be exported(see `Config.Default`).
+const defLangCode = "en-US"
 
 // NewI18n returns a new i18n middleware which contains
 // the middleware itself and a router wrapper.
-func NewI18n(config Config) *I18n {
-	config.loadLanguages()
-	return &I18n{config}
+func NewI18n(c Config) *I18n {
+	if len(c.Languages) == 0 {
+		panic("field Languages is empty")
+	}
+
+	// check and validate (if possible) languages map.
+	if c.LanguagesMap == nil {
+		c.LanguagesMap = makeDefaultLanguagesMap(c.Languages)
+	}
+
+	if mTyp, ok := c.LanguagesMap.(Map); ok {
+		for k, v := range mTyp {
+			if _, ok := c.Languages[v]; !ok {
+				panic(fmt.Sprintf("language alternative '%s' does not map to a valid language '%s'", k, v))
+			}
+		}
+	}
+
+	i := new(I18n)
+
+	// load messages.
+	i.locales = make(map[string][]*ini.File)
+	for locale, src := range c.Languages {
+		if err := i.AddSource(locale, src); err != nil {
+			panic(err)
+		}
+	}
+
+	// validate and set default lang code.
+	if c.Default == "" {
+		c.Default = defLangCode
+	}
+
+	if locale, _, ok := i.Exists(c.Default); !ok {
+		panic(fmt.Sprintf("default language '%s' does not match any of the registered language", c.Default))
+	} else {
+		c.Default = locale
+	}
+
+	i.config = c
+
+	return i
 }
+
+// AddSource adds a source file to the lang locale.
+// It is called on NewI18n, New and NewWrapper.
+//
+// If you wish to use this at serve-time please protect the process with a mutex.
+func (i *I18n) AddSource(locale, src string) error {
+	// remove all spaces.
+	src = strings.Replace(src, " ", "", -1)
+	// note: if only one, then the first element is the "v".
+	languageFiles := strings.Split(src, ",")
+
+	for _, fileName := range languageFiles {
+		if !strings.HasSuffix(fileName, ".ini") {
+			fileName += ".ini"
+		}
+
+		f, err := ini.Load(fileName)
+		if err != nil {
+			return err
+		}
+
+		i.locales[locale] = append(i.locales[locale], f)
+	}
+
+	return nil
+}
+
+// GetMessage returns a message from a locale, locale is case-sensitivity and languages map does not playing its part here.
+func (i *I18n) GetMessage(locale, section, format string, args ...interface{}) (string, bool) {
+	files, ok := i.locales[locale]
+	if !ok {
+		return "", false
+	}
+
+	return i.getMessage(files, section, format, args)
+}
+
+func (i *I18n) getMessage(files []*ini.File, section, format string, args []interface{}) (string, bool) {
+	for _, f := range files {
+		// returns the first available.
+		// section is the same for both files if key(format) exists.
+		s, err := f.GetSection(section)
+		if err != nil {
+			return "", false
+		}
+
+		k, err := s.GetKey(format)
+		if err != nil {
+			continue
+		}
+
+		format = k.Value()
+		if len(args) > 0 {
+			return fmt.Sprintf(format, args...), true
+		}
+
+		return format, true
+	}
+
+	return "", false
+}
+
+// Translate translates and returns a message based on any language code
+// and its key(format) with any optional arguments attached to it.
+func (i *I18n) Translate(lang, format string, args ...interface{}) string {
+	if _, files, ok := i.Exists(lang); ok {
+		return i.translate(files, format, args)
+	}
+
+	return ""
+}
+
+func (i *I18n) translate(files []*ini.File, format string, args []interface{}) string {
+	section := ""
+
+	if idx := strings.IndexRune(format, '.'); idx > 0 {
+		section = format[:idx]
+		format = format[idx+1:]
+	}
+
+	msg, ok := i.getMessage(files, section, format, args)
+	if !ok {
+		return fmt.Sprintf(format, args...)
+	}
+
+	return msg
+}
+
+// Exists reports whether a language code is a valid registered locale through its Languages list and Languages mapping.
+func (i *I18n) Exists(lang string) (string, []*ini.File, bool) {
+	if lang == "" {
+		return "", nil, false
+	}
+
+	files, ok := i.locales[lang]
+	if ok {
+		return lang, files, true
+	}
+
+	for locale, files := range i.locales {
+		if locale == lang {
+			return locale, files, true
+		}
+	}
+
+	if i.config.LanguagesMap != nil {
+		if locale, ok := i.config.LanguagesMap.Map(lang); ok {
+			if files, ok := i.locales[locale]; ok {
+				return locale, files, true
+			}
+		}
+	}
+
+	return "", nil, false
+}
+
+func (i *I18n) newTranslateLanguageFunc(files []*ini.File) func(format string, args ...interface{}) string {
+	return func(format string, args ...interface{}) string {
+		return i.translate(files, format, args)
+	}
+}
+
+const acceptLanguageHeaderKey = "Accept-Language"
 
 // Handler returns the middleware handler.
 func (i *I18n) Handler() context.Handler {
@@ -153,57 +288,46 @@ func (i *I18n) Handler() context.Handler {
 		wasByCookie := false
 
 		langKey := ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey()
-		language := ctx.Values().GetString(langKey)
 
-		if language == "" {
+		language, files, ok := i.Exists(ctx.Values().GetString(langKey))
+
+		if !ok {
 			if i.config.URLParameter != "" {
-				// try to get by url parameter
-				language = ctx.URLParam(i.config.URLParameter)
+				language, files, ok = i.Exists(ctx.URLParam(i.config.URLParameter))
 			}
 
-			if language == "" {
+			if !ok {
+				// then try to take the lang field from the cookie
 				if i.config.Cookie != "" {
-					// then try to take the lang field from the cookie
-					language = ctx.GetCookie(i.config.Cookie)
-					wasByCookie = language != ""
-				}
-
-				if language == "" && i.config.Subdomain {
-					if subdomain := ctx.Subdomain(); subdomain != "" {
-						if lang, ok := i.config.Exists(subdomain); ok {
-							language = lang
-						}
+					if language, files, ok = i.Exists(ctx.GetCookie(i.config.Cookie)); ok {
+						wasByCookie = true
 					}
 				}
 
-				if language == "" {
+				if !ok && i.config.Subdomain {
+					language, files, ok = i.Exists(ctx.Subdomain())
+				}
+
+				if !ok {
 					// try to get by the request headers.
-					langHeader := ctx.GetHeader("Accept-Language")
-					if len(langHeader) > 0 {
-						for _, langEntry := range strings.Split(langHeader, ",") {
-							lc := strings.Split(langEntry, ";")[0]
-							if lang, ok := i.config.Exists(lc); ok {
-								language = lang
-								break
-							}
+					if langHeader := ctx.GetHeader(acceptLanguageHeaderKey); langHeader != "" {
+						idx := strings.IndexRune(langHeader, ';')
+						if idx > 0 {
+							langHeader = langHeader[:idx]
 						}
+
+						language, files, ok = i.Exists(langHeader)
 					}
 				}
 
-				if language == "" && i.config.Indentifier != nil {
-					language = i.config.Indentifier(ctx)
+				if !ok && i.config.Indentifier != nil {
+					language, files, ok = i.Exists(i.config.Indentifier(ctx))
 				}
 			}
 		}
 
-		if language == "" {
-			language = i.config.Default
-		}
-
-		// returns the original key of the language and true
-		// when the language, or something similar exists (e.g. en-US maps to en).
-		if lc, ok := i.config.Exists(language); ok {
-			language = lc
+		if !ok {
+			language, files, ok = i.Exists(i.config.Default)
 		}
 
 		// if it was not taken by the cookie, then set the cookie in order to have it.
@@ -214,9 +338,8 @@ func (i *I18n) Handler() context.Handler {
 		ctx.Values().Set(langKey, language)
 
 		// Set iris.translate and iris.translateLang functions (they can be passed to templates as they are later on).
-		ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey(), getTranslateFunction(language))
-		// Note: translate (global) language function input argument should match exactly, case-sensitive and "Alternatives" field is not part of the fetch progress.
-		ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey(), i18n.Tr)
+		ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey(), i.newTranslateLanguageFunc(files))
+		ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey(), i.Translate)
 
 		ctx.Next()
 	}
@@ -232,21 +355,23 @@ func (i *I18n) Handler() context.Handler {
 func (i *I18n) Wrapper() func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
 	return func(w http.ResponseWriter, r *http.Request, routerHandler http.HandlerFunc) {
 		found := false
-		path := r.URL.Path[1:]
+		reqPath := r.URL.Path[1:]
+		path := reqPath
 
 		if idx := strings.IndexByte(path, '/'); idx > 0 {
 			path = path[:idx]
 		}
 
 		if path != "" {
-			if lang, ok := i.config.Exists(path); ok {
+			if lang, _, ok := i.Exists(path); ok {
 				path = r.URL.Path[len(path)+1:]
 				if path == "" {
 					path = "/"
 				}
+
 				r.RequestURI = path
 				r.URL.Path = path
-				r.Header.Set("Accept-Language", lang)
+				r.Header.Set(acceptLanguageHeaderKey, lang)
 				found = true
 			}
 		}
@@ -256,11 +381,11 @@ func (i *I18n) Wrapper() func(http.ResponseWriter, *http.Request, http.HandlerFu
 			if dotIdx := strings.IndexByte(host, '.'); dotIdx > 0 {
 				subdomain := host[0:dotIdx]
 				if subdomain != "" {
-					if lang, ok := i.config.Exists(subdomain); ok {
+					if lang, _, ok := i.Exists(subdomain); ok {
 						host = host[dotIdx+1:]
 						r.URL.Host = host
 						r.Host = host
-						r.Header.Set("Accept-Language", lang)
+						r.Header.Set(acceptLanguageHeaderKey, lang)
 					}
 				}
 			}
@@ -270,15 +395,9 @@ func (i *I18n) Wrapper() func(http.ResponseWriter, *http.Request, http.HandlerFu
 	}
 }
 
-func getTranslateFunction(lang string) func(string, ...interface{}) string {
-	return func(format string, args ...interface{}) string {
-		return i18n.Tr(lang, format, args...)
-	}
-}
-
 // New returns a new i18n middleware.
-func New(config Config) context.Handler {
-	return NewI18n(config).Handler()
+func New(c Config) context.Handler {
+	return NewI18n(c).Handler()
 }
 
 // NewWrapper accepts a Config and returns a new router wrapper.
@@ -288,8 +407,8 @@ func New(config Config) context.Handler {
 //
 // In order this to work as expected, it should be combined with `Application.Use(New)`
 // which registers the i18n middleware itself.
-func NewWrapper(config Config) func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
-	return NewI18n(config).Wrapper()
+func NewWrapper(c Config) func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
+	return NewI18n(c).Wrapper()
 }
 
 // Translate returns the translated word from a context based on the current selected locale.
