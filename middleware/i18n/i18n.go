@@ -109,7 +109,7 @@ type I18n struct {
 	locales map[string][]*ini.File
 }
 
-// If `Config.Default` is missing and `Config.Languages` or `Config.Map` contains this key then it will set as the default locale,
+// If `Config.Default` is missing and `Config.Languages` or `Config.LanguagesMap` contains this key then it will set as the default locale,
 // no need to be exported(see `Config.Default`).
 const defLangCode = "en-US"
 
