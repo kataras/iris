@@ -233,7 +233,7 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 
 	splitPath := strings.Split(s, ".")
 	if len(splitPath) == 2 && splitPath[1] == "" {
-		return splitPath[0] + ".", "/"
+		return splitPath[0], "/"
 	}
 
 	slashIdx := strings.IndexByte(s, '/')
