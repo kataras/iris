@@ -488,7 +488,11 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 			continue
 		}
 
-		requestPath := s.RequestPath[strings.Index(s.RequestPath, api.relativePath)+len(api.relativePath):]
+		slashIdx := strings.IndexByte(s.RequestPath, '/')
+		if slashIdx == -1 {
+			slashIdx = 0
+		}
+		requestPath = s.RequestPath[slashIdx:]
 		routes = append(routes, api.createRoutes([]string{http.MethodGet}, requestPath, h)...)
 		getRoute.StaticSites = append(getRoute.StaticSites, s)
 	}
