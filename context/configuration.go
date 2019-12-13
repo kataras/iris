@@ -67,15 +67,9 @@ type ConfigurationReadOnly interface {
 	// Defaults to 32MB or 32 << 20 if you prefer.
 	GetPostMaxMemory() int64
 
-	// GetTranslateLanguageContextKey returns the configuration's TranslateFunctionContextKey value,
-	// used for i18n inside templates.
-	GetTranslateFunctionContextKey() string
-	// GetTranslateLangFunctionContextKey returns the configuration's TranslateLangFunctionContextKey value,
-	// used for i18n inside templates.
-	GetTranslateLangFunctionContextKey() string
-	// GetTranslateLanguageContextKey returns the configuration's TranslateLanguageContextKey value,
-	// used for i18n.
-	GetTranslateLanguageContextKey() string
+	// GetTranslateLanguageContextKey returns the configuration's LocaleContextKey value,
+	// used for i18n. Defaults to "iris.locale".
+	GetLocaleContextKey() string
 
 	// GetViewLayoutContextKey returns the key of the context's user values' key
 	// which is being used to set the template

@@ -183,6 +183,11 @@ type Party interface {
 	// Any registers a route for ALL of the http methods
 	// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
 	Any(registeredPath string, handlers ...context.Handler) []*Route
+	// CreateRoutes returns a list of Party-based Routes.
+	// It does NOT registers the route. Use `Handle, Get...` methods instead.
+	// This method can be used for third-parties Iris helpers packages and tools
+	// that want a more detailed view of Party-based Routes before take the decision to register them.
+	CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route
 	// StaticContent registers a GET and HEAD method routes to the requestPath
 	// that are ready to serve raw static bytes, memory cached.
 	//

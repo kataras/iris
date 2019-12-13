@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/v12"
 
 	// optionally, registers filters like `timesince`.
-	_ "github.com/flosch/pongo2-addons"
+	_ "github.com/iris-contrib/pongo2-addons"
 )
 
 var startTime = time.Now()
@@ -26,7 +26,7 @@ func main() {
 	app.Get("/", hi)
 
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8")) // defaults to that but you can change it.
+	app.Run(iris.Addr(":8080"))
 }
 
 func hi(ctx iris.Context) {

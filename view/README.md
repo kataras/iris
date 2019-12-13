@@ -7,7 +7,7 @@ All of these six template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
 - The standard html, its template parser is the [golang.org/pkg/html/template/](https://golang.org/pkg/html/template/)
-- Django, its template parser is the [github.com/flosch/pongo2](https://github.com/flosch/pongo2)
+- Django, its template parser is the [github.com/iris-contrib/pongo2](https://github.com/iris-contrib/pongo2)
 - Pug(Jade), its template parser is the [github.com/Joker/jade](https://github.com/Joker/jade)
 - Handlebars, its template parser is the [github.com/aymerick/raymond](https://github.com/aymerick/raymond)
 - Amber, its template parser is the [github.com/eknkc/amber](https://github.com/eknkc/amber)

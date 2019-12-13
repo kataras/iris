@@ -147,7 +147,7 @@ EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
 DisableBodyConsumptionOnUnmarshal: true
-TimeFormat: "Mon, 01 Jan 2006 15:04:05 GMT"
+TimeFormat: "Mon, 02 Jan 2006 15:04:05 GMT"
 Charset: "UTF-8"
 
 RemoteAddrHeaders:
@@ -188,7 +188,7 @@ Other:
 		t.Fatalf("error on TestConfigurationYAML: Expected DisableBodyConsumptionOnUnmarshal %v but got %v", expected, c.DisableBodyConsumptionOnUnmarshal)
 	}
 
-	if expected := "Mon, 01 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
+	if expected := "Mon, 02 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
@@ -244,7 +244,7 @@ EnablePathEscape = false
 FireMethodNotAllowed = true
 EnableOptimizations = true
 DisableBodyConsumptionOnUnmarshal = true
-TimeFormat = "Mon, 01 Jan 2006 15:04:05 GMT"
+TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 Charset = "UTF-8"
 
 [RemoteAddrHeaders]
@@ -287,7 +287,7 @@ Charset = "UTF-8"
 		t.Fatalf("error on TestConfigurationTOML: Expected DisableBodyConsumptionOnUnmarshal %v but got %v", expected, c.DisableBodyConsumptionOnUnmarshal)
 	}
 
-	if expected := "Mon, 01 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
+	if expected := "Mon, 02 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 

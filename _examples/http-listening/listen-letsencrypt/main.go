@@ -22,6 +22,6 @@ func main() {
 
 	// NOTE: This will not work on domains like this,
 	// use real whitelisted domain(or domains split by whitespaces)
-	// and a non-public e-mail instead.
+	// and a non-public e-mail instead or edit your hosts file.
 	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com"))
 }
