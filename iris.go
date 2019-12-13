@@ -39,7 +39,7 @@ import (
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.0.1"
+const Version = "12.1.0"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
