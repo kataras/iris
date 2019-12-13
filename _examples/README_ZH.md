@@ -125,6 +125,10 @@ app.Get("{root:path}", rootWildcardHandler)
 - [Sessions](hero/sessions)
 - [另一种依赖注入的例子和通常的较好实践](hero/smart-contract/main.go) **新**
 
+### i18n
+
+- [本地化和多语言支持](i18n/main.go)
+
 ### MVC 模式
 
 ![](mvc/web_mvc_diagram.png)
@@ -366,7 +370,6 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **更新**
 - [请求记录器](http_request/request-logger/main.go)
     * [将请求记录到文件](http_request/request-logger/request-logger-file/main.go)
-- [本地化和多语言支持](miscellaneous/i18n/main.go)
 - [恢复](miscellaneous/recover/main.go)
 - [性能报告Profiling (pprof)](miscellaneous/pprof/main.go)
 - [内部文件记录Internal Application File Logger](miscellaneous/file-logger/main.go)
