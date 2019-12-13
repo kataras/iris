@@ -116,6 +116,8 @@ func TestSplitSubdomainAndPath(t *testing.T) {
 		path      string
 	}{
 		{"admin./users/42", "admin.", "/users/42"},
+		{"static.", "static.", "/"},
+		{"static./" + WildcardFileParam(), "static.", "/" + WildcardFileParam()},
 		{"//api/users\\42", "", "/api/users/42"},
 		{"admin./users//42", "admin.", "/users/42"},
 		{"*./users/42/", "*.", "/users/42"},
