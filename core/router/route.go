@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/macro"
@@ -44,8 +45,12 @@ type Route struct {
 	// route, manually or automatic by the framework,
 	// get the route by `Application#GetRouteByPath(staticSite.RequestPath)`.
 	StaticSites []context.StaticSite `json:"staticSites"`
+	topLink     *Route
 
-	topLink *Route
+	// Sitemap properties: https://www.sitemaps.org/protocol.html
+	LastMod    time.Time `json:"lastMod,omitempty"`
+	ChangeFreq string    `json:"changeFreq,omitempty"`
+	Priority   float32   `json:"priority,omitempty"`
 }
 
 // NewRoute returns a new route based on its method,
@@ -173,6 +178,32 @@ func (r *Route) Equal(other *Route) bool {
 // and the template source.
 func (r *Route) DeepEqual(other *Route) bool {
 	return r.Equal(other) && r.tmpl.Src == other.tmpl.Src
+}
+
+// SetLastMod sets the date of last modification of the file served by this static GET route.
+func (r *Route) SetLastMod(t time.Time) *Route {
+	r.LastMod = t
+	return r
+}
+
+// SetChangeFreq sets how frequently this static GET route's page is likely to change,
+// possible values:
+// - "always"
+// - "hourly"
+// - "daily"
+// - "weekly"
+// - "monthly"
+// - "yearly"
+// - "never"
+func (r *Route) SetChangeFreq(freq string) *Route {
+	r.ChangeFreq = freq
+	return r
+}
+
+// SetPriority sets the priority of this static GET route's URL relative to other URLs on your site.
+func (r *Route) SetPriority(prio float32) *Route {
+	r.Priority = prio
+	return r
 }
 
 // Tmpl returns the path template,
@@ -338,4 +369,16 @@ func (rd routeReadOnlyWrapper) MainHandlerName() string {
 
 func (rd routeReadOnlyWrapper) StaticSites() []context.StaticSite {
 	return rd.Route.StaticSites
+}
+
+func (rd routeReadOnlyWrapper) GetLastMod() time.Time {
+	return rd.Route.LastMod
+}
+
+func (rd routeReadOnlyWrapper) GetChangeFreq() string {
+	return rd.Route.ChangeFreq
+}
+
+func (rd routeReadOnlyWrapper) GetPriority() float32 {
+	return rd.Route.Priority
 }

@@ -5,6 +5,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/macro"
 )
@@ -56,6 +57,15 @@ type RouteReadOnly interface {
 	// route, manually or automatic by the framework,
 	// get the route by `Application#GetRouteByPath(staticSite.RequestPath)`.
 	StaticSites() []StaticSite
+
+	// Sitemap properties: https://www.sitemaps.org/protocol.html
+
+	// GetLastMod returns the date of last modification of the file served by this route.
+	GetLastMod() time.Time
+	// GetChangeFreq returns the the page frequently is likely to change.
+	GetChangeFreq() string
+	// GetPriority returns the priority of this route's URL relative to other URLs on your site.
+	GetPriority() float32
 }
 
 // StaticSite is a structure which is used as field on the `Route`

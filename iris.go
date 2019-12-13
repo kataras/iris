@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -30,14 +31,15 @@ import (
 	"github.com/kataras/iris/v12/cache"
 	// view
 	"github.com/kataras/iris/v12/view"
-	// middleware used in Default method
-
+	// i18n
+	"github.com/kataras/iris/v12/i18n"
+	// handlers used in `Default` function
 	requestLogger "github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.0.0"
+const Version = "12.0.1"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
@@ -143,10 +145,16 @@ type Application struct {
 	// the golog logger instance, defaults to "Info" level messages (all except "Debug")
 	logger *golog.Logger
 
+	// I18n contains localization and internationalization support.
+	// Use the `Load` or `LoadAssets` to locale language files.
+	//
+	// See `Context#Tr` method for request-based translations.
+	I18n *i18n.I18n
+
 	// view engine
 	view view.View
 	// used for build
-	once sync.Once
+	builded bool
 
 	mu sync.Mutex
 	// Hosts contains a list of all servers (Host Supervisors) that this app is running on.
@@ -168,6 +176,7 @@ func New() *Application {
 	app := &Application{
 		config:     &config,
 		logger:     golog.Default,
+		I18n:       i18n.New(),
 		APIBuilder: router.NewAPIBuilder(),
 		Router:     router.NewRouter(),
 	}
@@ -179,12 +188,36 @@ func New() *Application {
 	return app
 }
 
-// Default returns a new Application instance which, unlike `New`,
-// recovers on panics and logs the incoming http requests.
+// Default returns a new Application instance which preloads
+// html view engine on "./views" and
+// locales from "./locales/*/*" filepath glob pattern by current working directory.
+// The return instance recovers on panics and logs the incoming http requests too.
 func Default() *Application {
 	app := New()
 	app.Use(recover.New())
 	app.Use(requestLogger.New())
+
+	for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
+		if _, err := os.Stat(s); os.IsNotExist(err) {
+			continue
+		}
+
+		if err := app.I18n.Load(s); err != nil {
+			continue
+		}
+
+		app.I18n.SetDefault("en-US")
+		break
+	}
+
+	for _, s := range []string{"./views", "./templates", "./web/views"} {
+		if _, err := os.Stat(s); os.IsNotExist(err) {
+			continue
+		}
+
+		app.RegisterView(HTML(s, ".html"))
+		break
+	}
 
 	return app
 }
@@ -285,6 +318,12 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 // app.Logger().Logf(SuccessLevel, "a custom leveled log message")
 func (app *Application) Logger() *golog.Logger {
 	return app.logger
+}
+
+// I18nReadOnly returns the i18n's read-only features.
+// See `I18n` method for more.
+func (app *Application) I18nReadOnly() context.I18nReadOnly {
+	return app.I18n
 }
 
 var (
@@ -817,8 +856,15 @@ func Raw(f func() error) Runner {
 func (app *Application) Build() error {
 	rp := errgroup.New("Application Builder")
 
-	app.once.Do(func() {
+	if !app.builded {
+		app.builded = true
 		rp.Err(app.APIBuilder.GetReporter())
+
+		if app.I18n.Loaded() {
+			// {{ tr "lang" "key" arg1 arg2 }}
+			app.view.AddFunc("tr", app.I18n.Tr)
+			app.WrapRouter(app.I18n.Wrapper())
+		}
 
 		if !app.Router.Downgraded() {
 			// router
@@ -828,7 +874,6 @@ func (app *Application) Build() error {
 			if err != nil {
 				rp.Err(err)
 			}
-
 			// re-build of the router from outside can be done with
 			// app.RefreshRouter()
 		}
@@ -845,7 +890,7 @@ func (app *Application) Build() error {
 				rp.Group("View Builder").Err(err)
 			}
 		}
-	})
+	}
 
 	return errgroup.Check(rp)
 }
