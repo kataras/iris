@@ -5,3 +5,4 @@ node_modules
 package-lock.json
 _benchmarks/benchmarker/benchmarker.exe
 _benchmarks/benchmarker/platforms
+go.sum

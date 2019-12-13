@@ -34,6 +34,26 @@ func (router *Router) RefreshRouter() error {
 	return router.BuildRouter(router.cPool, router.requestHandler, router.routesProvider, true)
 }
 
+// ErrNotRouteAdder throws on `AddRouteUnsafe` when a registered `RequestHandler`
+// does not implements the optional `AddRoute(*Route) error` method.
+var ErrNotRouteAdder = errors.New("request handler does not implement AddRoute method")
+
+// AddRouteUnsafe adds a route directly to the router's request handler.
+// Works before or after Build state.
+// Mainly used for internal cases like `iris.WithSitemap`.
+// Do NOT use it on serve-time.
+func (router *Router) AddRouteUnsafe(r *Route) error {
+	if h := router.requestHandler; h != nil {
+		if v, ok := h.(interface {
+			AddRoute(*Route) error
+		}); ok {
+			return v.AddRoute(r)
+		}
+	}
+
+	return ErrNotRouteAdder
+}
+
 // BuildRouter builds the router based on
 // the context factory (explicit pool in this case),
 // the request handler which manages how the main handler will multiplexes the routes

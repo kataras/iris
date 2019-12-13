@@ -13,7 +13,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/flosch/pongo2"
+	"github.com/iris-contrib/pongo2"
 )
 
 type (
@@ -100,7 +100,7 @@ type DjangoEngine struct {
 	rmu sync.RWMutex // locks for filters, globals and `ExecuteWiter` when `reload` is true.
 	// filters for pongo2, map[name of the filter] the filter function . The filters are auto register
 	filters map[string]FilterFunction
-	// globals share context fields between templates. https://github.com/flosch/pongo2/issues/35
+	// globals share context fields between templates.
 	globals       map[string]interface{}
 	mu            sync.Mutex // locks for template cache
 	templateCache map[string]*pongo2.Template
