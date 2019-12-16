@@ -310,6 +310,12 @@ type Context interface {
 	// Subdomain returns the subdomain of this request, if any.
 	// Note that this is a fast method which does not cover all cases.
 	Subdomain() (subdomain string)
+	// FindClosest returns a list of "n" paths close to
+	// this request based on subdomain and request path.
+	//
+	// Order may change.
+	// Example: https://github.com/kataras/iris/tree/master/_examples/routing/not-found-suggests
+	FindClosest(n int) []string
 	// IsWWW returns true if the current subdomain (if any) is www.
 	IsWWW() bool
 	// FullRqeuestURI returns the full URI,
@@ -1598,6 +1604,15 @@ func (ctx *context) Subdomain() (subdomain string) {
 	}
 
 	return
+}
+
+// FindClosest returns a list of "n" paths close to
+// this request based on subdomain and request path.
+//
+// Order may change.
+// Example: https://github.com/kataras/iris/tree/master/_examples/routing/not-found-suggests
+func (ctx *context) FindClosest(n int) []string {
+	return ctx.Application().FindClosestPaths(ctx.Subdomain(), ctx.Path(), n)
 }
 
 // IsWWW returns true if the current subdomain (if any) is www.

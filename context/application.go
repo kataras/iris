@@ -60,4 +60,8 @@ type Application interface {
 	// RouteExists reports whether a particular route exists
 	// It will search from the current subdomain of context's host, if not inside the root domain.
 	RouteExists(ctx Context, method, path string) bool
+	// FindClosestPaths returns a list of "n" paths close to "path" under the given "subdomain".
+	//
+	// Order may change.
+	FindClosestPaths(subdomain, searchPath string, n int) []string
 }

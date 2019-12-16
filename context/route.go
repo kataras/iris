@@ -31,6 +31,10 @@ type RouteReadOnly interface {
 	// IsOnline returns true if the route is marked as "online" (state).
 	IsOnline() bool
 
+	// IsStatic reports whether this route is a static route.
+	// Does not contain dynamic path parameters,
+	// is online and registered on GET HTTP Method.
+	IsStatic() bool
 	// StaticPath returns the static part of the original, registered route path.
 	// if /user/{id} it will return /user
 	// if /user/{id}/friend/{friendid:uint64} it will return /user too

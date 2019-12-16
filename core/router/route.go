@@ -161,7 +161,7 @@ func (r *Route) BuildHandlers() {
 }
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
-func (r Route) String() string {
+func (r *Route) String() string {
 	return fmt.Sprintf("%s %s%s",
 		r.Method, r.Subdomain, r.Tmpl().Src)
 }
@@ -214,13 +214,13 @@ func (r *Route) SetPriority(prio float32) *Route {
 // Developer can get his registered path
 // via Tmpl().Src, Route.Path is the path
 // converted to match the underline router's specs.
-func (r Route) Tmpl() macro.Template {
+func (r *Route) Tmpl() macro.Template {
 	return r.tmpl
 }
 
 // RegisteredHandlersLen returns the end-developer's registered handlers, all except the macro evaluator handler
 // if was required by the build process.
-func (r Route) RegisteredHandlersLen() int {
+func (r *Route) RegisteredHandlersLen() int {
 	n := len(r.Handlers)
 	if handler.CanMakeHandler(r.tmpl) {
 		n--
@@ -230,7 +230,7 @@ func (r Route) RegisteredHandlersLen() int {
 }
 
 // IsOnline returns true if the route is marked as "online" (state).
-func (r Route) IsOnline() bool {
+func (r *Route) IsOnline() bool {
 	return r.Method != MethodNone
 }
 
@@ -270,11 +270,18 @@ func formatPath(path string) string {
 	return path
 }
 
+// IsStatic reports whether this route is a static route.
+// Does not contain dynamic path parameters,
+// is online and registered on GET HTTP Method.
+func (r *Route) IsStatic() bool {
+	return r.IsOnline() && len(r.Tmpl().Params) == 0 && r.Method == "GET"
+}
+
 // StaticPath returns the static part of the original, registered route path.
 // if /user/{id} it will return /user
 // if /user/{id}/friend/{friendid:uint64} it will return /user too
 // if /assets/{filepath:path} it will return /assets.
-func (r Route) StaticPath() string {
+func (r *Route) StaticPath() string {
 	src := r.tmpl.Src
 	bidx := strings.IndexByte(src, '{')
 	if bidx == -1 || len(src) <= bidx {
@@ -289,7 +296,7 @@ func (r Route) StaticPath() string {
 }
 
 // ResolvePath returns the formatted path's %v replaced with the args.
-func (r Route) ResolvePath(args ...string) string {
+func (r *Route) ResolvePath(args ...string) string {
 	rpath, formattedPath := r.Path, r.FormattedPath
 	if rpath == formattedPath {
 		// static, no need to pass args
@@ -310,7 +317,7 @@ func (r Route) ResolvePath(args ...string) string {
 
 // Trace returns some debug infos as a string sentence.
 // Should be called after Build.
-func (r Route) Trace() string {
+func (r *Route) Trace() string {
 	printfmt := fmt.Sprintf("[%s:%d] %s:", r.SourceFileName, r.SourceLineNumber, r.Method)
 	if r.Subdomain != "" {
 		printfmt += fmt.Sprintf(" %s", r.Subdomain)

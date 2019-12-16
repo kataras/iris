@@ -27,6 +27,7 @@ require (
 	github.com/mediocregopher/radix/v3 v3.3.0
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible
+	github.com/schollz/closestmatch v2.1.0+incompatible
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	golang.org/x/text v0.3.0
 	gopkg.in/ini.v1 v1.51.0

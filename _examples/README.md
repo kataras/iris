@@ -128,6 +128,7 @@ Navigate through examples for a better understanding.
 - [Basic](routing/basic/main.go)
 - [Controllers](mvc)
 - [Custom HTTP Errors](routing/http-errors/main.go)
+- [Not Found - Suggest Closest Paths](routing/not-found-suggests/main.go) **NEW**
 - [Dynamic Path](routing/dynamic-path/main.go)
     * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
 - [Write your own custom parameter types](routing/macros/main.go)
