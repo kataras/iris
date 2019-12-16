@@ -21,6 +21,33 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest`.
 
+# Mo, 16 December 2019 | v12.1.1
+
+Add [Context.FindClosest(n int) []string](https://github.com/kataras/iris/blob/master/_examples/routing/not-found-suggests/main.go#L22)
+
+```go
+app := iris.New()
+app.OnErrorCode(iris.StatusNotFound, notFound)
+```
+
+```go
+func notFound(ctx iris.Context) {
+    suggestPaths := ctx.FindClosest(3)
+    if len(suggestPaths) == 0 {
+        ctx.WriteString("404 not found")
+        return
+    }
+
+    ctx.HTML("Did you mean?<ul>")
+    for _, s := range suggestPaths {
+        ctx.HTML(`<li><a href="%s">%s</a></li>`, s, s)
+    }
+    ctx.HTML("</ul>")
+}
+```
+
+![](https://iris-go.com/images/iris-not-found-suggests.png)
+
 # Fr, 13 December 2019 | v12.1.0
 
 ## Breaking Changes
