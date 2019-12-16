@@ -388,19 +388,7 @@ func WithSitemap(startURL string) Configurator {
 		}
 
 		for _, r := range app.GetRoutes() {
-			if !r.IsOnline() {
-				continue
-			}
-
-			if r.Subdomain != "" {
-				continue
-			}
-
-			if r.Method != MethodGet {
-				continue
-			}
-
-			if len(r.Tmpl().Params) > 0 {
+			if !r.IsStatic() || r.Subdomain != "" {
 				continue
 			}
 
@@ -478,7 +466,7 @@ func WithSitemap(startURL string) Configurator {
 					}
 				}
 			} else {
-				app.HandleMany("GET HEAD", s.Path, handler)
+				app.HandleMany("GET HEAD OPTIONS", s.Path, handler)
 			}
 
 		}

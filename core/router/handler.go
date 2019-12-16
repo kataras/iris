@@ -77,8 +77,6 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
-	// GetStaticSites() []*StaticSite
-	// Macros() *macro.Macros
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {

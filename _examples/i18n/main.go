@@ -54,7 +54,7 @@ func newApp() *iris.Application {
 
 		// Note that,
 		// Iris automatically adds a "tr" global template function as well,
-		// the only differene is the way you call it inside your templates and
+		// the only difference is the way you call it inside your templates and
 		// that it accepts a language code as its first argument: {{ tr "el-GR" "hi" "iris"}}
 	})
 	//
@@ -65,10 +65,18 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 
-	// go to http://localhost:8080/el-gr/some-path (by path prefix)
-	// or http://el.mydomain.com8080/some-path (by subdomain - test locally with the hosts file)
-	// or http://localhost:8080/zh-CN/templates (by path prefix with uppercase)
-	// or http://localhost:8080/some-path?lang=el-GR (by url parameter)
+	// go to http://localhost:8080/el-gr/some-path
+	// ^ (by path prefix)
+	//
+	// or http://el.mydomain.com8080/some-path
+	// ^ (by subdomain - test locally with the hosts file)
+	//
+	// or http://localhost:8080/zh-CN/templates
+	// ^ (by path prefix with uppercase)
+	//
+	// or http://localhost:8080/some-path?lang=el-GR
+	// ^ (by url parameter)
+	//
 	// or http://localhost:8080 (default is en-US)
 	// or http://localhost:8080/?lang=zh-CN
 	//
@@ -77,6 +85,5 @@ func main() {
 	// or http://localhost:8080/other?lang=en-US
 	//
 	// or use cookies to set the language.
-	//
 	app.Run(iris.Addr(":8080"), iris.WithSitemap("http://localhost:8080"))
 }

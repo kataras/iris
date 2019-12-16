@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/kataras/iris/v12/context"
+
+	"github.com/schollz/closestmatch"
 )
 
 // Router is the "director".
@@ -23,10 +25,16 @@ type Router struct {
 
 	cPool          *context.Pool // used on RefreshRouter
 	routesProvider RoutesProvider
+
+	// key = subdomain
+	// value = closest of static routes, filled on `BuildRouter/RefreshRouter`.
+	closestPaths map[string]*closestmatch.ClosestMatch
 }
 
 // NewRouter returns a new empty Router.
-func NewRouter() *Router { return &Router{} }
+func NewRouter() *Router {
+	return &Router{}
+}
 
 // RefreshRouter re-builds the router. Should be called when a route's state
 // changed (i.e Method changed at serve-time).
@@ -52,6 +60,28 @@ func (router *Router) AddRouteUnsafe(r *Route) error {
 	}
 
 	return ErrNotRouteAdder
+}
+
+// FindClosestPaths returns a list of "n" paths close to "path" under the given "subdomain".
+//
+// Order may change.
+func (router *Router) FindClosestPaths(subdomain, searchPath string, n int) []string {
+	if router.closestPaths == nil {
+		return nil
+	}
+
+	cm, ok := router.closestPaths[subdomain]
+	if !ok {
+		return nil
+	}
+
+	list := cm.ClosestN(searchPath, n)
+	if len(list) == 1 && list[0] == "" {
+		// yes, it may return empty string as its first slice element when not found.
+		return nil
+	}
+
+	return list
 }
 
 // BuildRouter builds the router based on
@@ -108,6 +138,21 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 
 	if router.wrapperFunc != nil { // if wrapper used then attach that as the router service
 		router.mainHandler = NewWrapper(router.wrapperFunc, router.mainHandler).ServeHTTP
+	}
+
+	// build closest.
+	subdomainPaths := make(map[string][]string)
+	for _, r := range router.routesProvider.GetRoutes() {
+		if !r.IsStatic() {
+			continue
+		}
+
+		subdomainPaths[r.Subdomain] = append(subdomainPaths[r.Subdomain], r.Path)
+	}
+
+	router.closestPaths = make(map[string]*closestmatch.ClosestMatch)
+	for subdomain, paths := range subdomainPaths {
+		router.closestPaths[subdomain] = closestmatch.New(paths, []int{3, 4, 6})
 	}
 
 	return nil
