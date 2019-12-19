@@ -21,6 +21,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest`.
 
+# Th, 19 December 2019 | v12.1.2
+
+Fix [[BUG]Session works incorrectly when meets the multi-level TLDs](https://github.com/kataras/iris/issues/1407).
+
 # Mo, 16 December 2019 | v12.1.1
 
 Add [Context.FindClosest(n int) []string](https://github.com/kataras/iris/blob/master/_examples/routing/not-found-suggests/main.go#L22)
