@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 var (
@@ -90,32 +92,50 @@ func IsValidCookieDomain(domain string) bool {
 	return true
 }
 
+// func formatCookieDomain(ctx context.Context, disableSubdomainPersistence bool) string {
+// 	if disableSubdomainPersistence {
+// 		return ""
+// 	}
+
+// 	requestDomain := ctx.Host()
+// 	if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
+// 		requestDomain = requestDomain[0:portIdx]
+// 	}
+
+// 	if !IsValidCookieDomain(requestDomain) {
+// 		return ""
+// 	}
+
+// 	// RFC2109, we allow level 1 subdomains, but no further
+// 	// if we have localhost.com , we want the localhost.com.
+// 	// so if we have something like: mysubdomain.localhost.com we want the localhost here
+// 	// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
+// 	// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
+// 	if dotIdx := strings.IndexByte(requestDomain, '.'); dotIdx > 0 {
+// 		// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
+// 		if strings.IndexByte(requestDomain[dotIdx+1:], '.') > 0 {
+// 			requestDomain = requestDomain[dotIdx+1:]
+// 		}
+// 	}
+
+// 	// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
+// 	return "." + requestDomain // . to allow persistence
+// }
+
 func formatCookieDomain(ctx context.Context, disableSubdomainPersistence bool) string {
 	if disableSubdomainPersistence {
 		return ""
 	}
 
-	requestDomain := ctx.Host()
-	if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
-		requestDomain = requestDomain[0:portIdx]
+	host := ctx.Host()
+	if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
+		host = host[0:portIdx]
 	}
 
-	if !IsValidCookieDomain(requestDomain) {
-		return ""
+	domain, err := publicsuffix.EffectiveTLDPlusOne(host)
+	if err != nil {
+		return "." + host
 	}
 
-	// RFC2109, we allow level 1 subdomains, but no further
-	// if we have localhost.com , we want the localhost.com.
-	// so if we have something like: mysubdomain.localhost.com we want the localhost here
-	// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
-	// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
-	if dotIdx := strings.IndexByte(requestDomain, '.'); dotIdx > 0 {
-		// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
-		if strings.IndexByte(requestDomain[dotIdx+1:], '.') > 0 {
-			requestDomain = requestDomain[dotIdx+1:]
-		}
-	}
-
-	// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
-	return "." + requestDomain // . to allow persistence
+	return "." + domain
 }
