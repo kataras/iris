@@ -1,11 +1,12 @@
-<!-- <div align="center"> -->
-  <!-- <a href="https://iris-go.com"><img src="https://iris-go.com/images/logo-sm.png" alt="iris-go.com logo" height="160"></a> -->
+# ![](https://iris-go.com/images/santa.png) Merry Christmas everyone!
 
- <!-- [![](https://media.giphy.com/media/eipY4EabLhRQSIt5nV/giphy.gif)](https://github.com/kataras/iris/stargazers) -->
+![](https://iris-go.com/images/release.png) Iris version 12.1.2 has been [released](HISTORY.md#th-19-december-2019--v1212)!
+
+![](https://iris-go.com/images/cli.png) The official Iris Command Line Interface will soon be near you in 2020!
+
+![](https://iris-go.com/images/sponsor.png) Support your favorite web framework through [Github Sponsors Program](https://github.com/sponsors/kataras)!
 
 # Iris Web Framework <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a>
-
-<!-- </div> -->
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge&logo=travis)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://www.paypal.me/kataras) <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
@@ -14,8 +15,6 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
 
 [![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
-
-> **NEW:** Iris version 12.1.0 has been released. Follow [this link](HISTORY.md#fr-13-december-2019--v1210) to discover more
 
 ## Learning Iris
 
@@ -56,7 +55,7 @@ $ go run example.go
 
 Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wiki)** making it easy to get started with the framework.
 
-![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif)
+<!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
 For a more detailed technical documentation you can head over to our [godocs](https://godoc.org/github.com/kataras/iris). And for executable code you can always visit the [_examples](_examples/) repository's subdirectory.
 
