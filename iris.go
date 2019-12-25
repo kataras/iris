@@ -39,7 +39,7 @@ import (
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.1.2"
+const Version = "12.1.3"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
@@ -154,7 +154,8 @@ type Application struct {
 	// view engine
 	view view.View
 	// used for build
-	builded bool
+	builded     bool
+	defaultMode bool
 
 	mu sync.Mutex
 	// Hosts contains a list of all servers (Host Supervisors) that this app is running on.
@@ -188,36 +189,14 @@ func New() *Application {
 	return app
 }
 
-// Default returns a new Application instance which preloads
-// html view engine on "./views" and
-// locales from "./locales/*/*" filepath glob pattern by current working directory.
+// Default returns a new Application instance which on build state registers
+// html view engine on "./views" and load locales from "./locales/*/*".
 // The return instance recovers on panics and logs the incoming http requests too.
 func Default() *Application {
 	app := New()
 	app.Use(recover.New())
 	app.Use(requestLogger.New())
-
-	for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
-		if _, err := os.Stat(s); os.IsNotExist(err) {
-			continue
-		}
-
-		if err := app.I18n.Load(s); err != nil {
-			continue
-		}
-
-		app.I18n.SetDefault("en-US")
-		break
-	}
-
-	for _, s := range []string{"./views", "./templates", "./web/views"} {
-		if _, err := os.Stat(s); os.IsNotExist(err) {
-			continue
-		}
-
-		app.RegisterView(HTML(s, ".html"))
-		break
-	}
+	app.defaultMode = true
 
 	return app
 }
@@ -859,6 +838,34 @@ func (app *Application) Build() error {
 	if !app.builded {
 		app.builded = true
 		rp.Err(app.APIBuilder.GetReporter())
+
+		if app.defaultMode { // the app.I18n and app.View will be not available until Build.
+			if !app.I18n.Loaded() {
+				for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
+					if _, err := os.Stat(s); os.IsNotExist(err) {
+						continue
+					}
+
+					if err := app.I18n.Load(s); err != nil {
+						continue
+					}
+
+					app.I18n.SetDefault("en-US")
+					break
+				}
+			}
+
+			if app.view.Len() == 0 {
+				for _, s := range []string{"./views", "./templates", "./web/views"} {
+					if _, err := os.Stat(s); os.IsNotExist(err) {
+						continue
+					}
+
+					app.RegisterView(HTML(s, ".html"))
+					break
+				}
+			}
+		}
 
 		if app.I18n.Loaded() {
 			// {{ tr "lang" "key" arg1 arg2 }}
