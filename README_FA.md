@@ -1,10 +1,12 @@
 <div dir="rtl" align='right' >
 <!-- # Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a> -->
 
-# آیریس <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg" /></a>
+# آیریس <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a>
+
 <div dir="ltr" align='left' >
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge&logo=travis)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![release](https://img.shields.io/badge/release%20-v11.2-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases)
+
 </div>
 
 آیریس سریع ترین و ساده ترین و موثرترین فریمورک وب در زبان GO میباشد. آیریس ساختاری بسیار زیبا و کارآمد را فراهم کرده است تا شما از آن برای پروژه های بعدی تان استفاده کنید. .
@@ -24,8 +26,9 @@
 
 ```sh
 
-# فرض کنید همچین کدی را در فایل example.go نوشته اید 
+# فرض کنید همچین کدی را در فایل example.go نوشته اید
 ```
+
 </div>
 
 ```sh
@@ -54,6 +57,7 @@ func main() {
 # visit http://localhost:8080/ping on browser
 $ go run example.go
 ```
+
 <div>
 
 <div dir="rtl" align="right" >
@@ -66,12 +70,9 @@ $ go run example.go
 
 آیریس داری **[wiki](https://github.com/kataras/iris/wiki)** بسیار کامل و گسترده ای میباشد که یادگیری ان را ساده می کند.
 
-
-شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://godoc.org/github.com/kataras/iris) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [مثال ها](_examples/) استفاده کنید . 
-
+شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://godoc.org/github.com/kataras/iris) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [مثال ها](_examples/) استفاده کنید .
 
 ### آیا شما مطالعه کردن در طول سفر را دوست دارید ؟
-
 
 <div dir="ltr" align="left">
 
@@ -85,7 +86,7 @@ $ go run example.go
 
 ## مشارکت کردن
 
-ما دوست داریم که شما در فریمورک آیریس مشارکت کنید و کد ها را توسعه و بهبود ببخشید ! برای اطلاع بیشتر در مورد نحوه ی مشارکت کردن در این پروژه لطفا اینجا را بررسی کنید  [CONTRIBUTING.md](CONTRIBUTING.md)
+ما دوست داریم که شما در فریمورک آیریس مشارکت کنید و کد ها را توسعه و بهبود ببخشید ! برای اطلاع بیشتر در مورد نحوه ی مشارکت کردن در این پروژه لطفا اینجا را بررسی کنید [CONTRIBUTING.md](CONTRIBUTING.md)
 
 [مشاهده ی همه ی مشارکت کننده ها](https://github.com/kataras/iris/graphs/contributors)
 

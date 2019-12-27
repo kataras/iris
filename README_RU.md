@@ -1,0 +1,80 @@
+# Веб-фреймворк Iris <a href="README.md"><img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a>
+
+[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge&logo=travis)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://www.paypal.me/kataras) <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+
+Iris — это быстрый, простой, но полнофункциональный и эффективный веб-фреймворк для Go. Он обеспечивает красивую, выразительную и простую в использовании основу для вашего следующего веб-сайта или API.
+
+Узнайте, что [говорят другие люди об Iris](https://iris-go.com/testimonials/) и поставьте **[звёздочку](https://github.com/kataras/iris/stargazers)** этому проекту с открытым исходным кодом, чтобы поддержать его потенциал.
+
+[![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
+
+## Изучение Iris
+
+<details>
+<summary>Быстрый старт</summary>
+
+```sh
+# например, код в файле example.go будет таким:
+$ cat example.go
+```
+
+```go
+package main
+
+import "github.com/kataras/iris/v12"
+
+func main() {
+    app := iris.Default()
+    app.Get("/ping", func(ctx iris.Context) {
+        ctx.JSON(iris.Map{
+            "message": "pong",
+        })
+    })
+
+    app.Run(iris.Addr(":8080"))
+}
+```
+
+```sh
+# запустите example.go и перейдите в браузер
+# по адресу http://localhost:8080/ping
+$ go run example.go
+```
+
+> Система роутинга запросов работает на [muxie](https://github.com/kataras/muxie), мощное и быстрое trie-based ПО, написанное на Go.
+
+</details>
+
+У Iris есть исчерпывающий и тщательный **[wiki](https://github.com/kataras/iris/wiki)**, который позволит вам быстрее начать работу с фреймворком.
+
+<!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
+
+Для получения более подробной технической документации вы можете обратиться к нашему [godoc](https://godoc.org/github.com/kataras/iris). А для живых примеров кода — вы всегда можете посетить [\_examples](_examples/) в поддиректории этого репозитория.
+
+### Вы любите читать во время путешествий?
+
+<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
+
+<!-- [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos) -->
+
+Вы можете [запросить](https://bit.ly/iris-req-book) PDF версию и онлайн-доступ к **E-Book** сегодня и принять участие в разработке Iris.
+
+## Содействие
+
+Мы будем рады видеть ваш вклад в веб-фреймворк Iris! Для получения дополнительной информации о содействии проекту Iris, пожалуйста, проверьте файл [CONTRIBUTING.md](CONTRIBUTING.md).
+
+[Список всех участников](https://github.com/kataras/iris/graphs/contributors)
+
+## Уязвимость безопасности
+
+Если вы обнаружите уязвимость безопасности в Iris, отправьте электронное письмо по адресу [iris-go@outlook.com](mailto:iris-go@outlook.com). Все уязвимости безопасности будут оперативно устранены.
+
+## Лицензия
+
+Название проекта «Iris» было вдохновлено греческой мифологией.
+
+Веб-фреймворк Iris — это ПО с открытым исходным кодом под лицензией [3-Clause BSD License](LICENSE).
+
+## Накопление звёзд со временем
+
+[![Stargazers over time](https://starchart.cc/kataras/iris.svg)](https://starchart.cc/kataras/iris)
