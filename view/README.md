@@ -126,7 +126,7 @@ func hi(ctx iris.Context) {
 
 ## Embedded
 
-View engine supports bundled(https://github.com/shuLhan/go-bindata) template files too.
+View engine supports bundled(https://github.com/go-bindata/go-bindata) template files too.
 `go-bindata` gives you two functions, `Assset` and `AssetNames`,
 these can be set to each of the template engines using the `.Binary` function.
 
@@ -139,7 +139,7 @@ import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
-    // $ go get -u github.com/shuLhan/go-bindata/...
+    // $ go get -u github.com/go-bindata/go-bindata/...
     // $ go-bindata ./templates/...
     // $ go build
     // $ ./embedding-templates-into-app

@@ -1,6 +1,6 @@
-# ![](https://iris-go.com/images/santa.png) Merry Christmas everyone!
+# ![](https://iris-go.com/images/santa.png) Happy Holidays Everyone!
 
-![](https://iris-go.com/images/release.png) Iris version 12.1.3 has been [released](HISTORY.md#we-25-december-2019--v1213)!
+![](https://iris-go.com/images/release.png) Iris version **12.1.4** has been [released](HISTORY.md#su-29-december-2019--v1214)!
 
 ![](https://iris-go.com/images/cli.png) The official Iris Command Line Interface will soon be near you in 2020!
 
