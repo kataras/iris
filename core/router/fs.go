@@ -95,7 +95,7 @@ func (f *embeddedFile) Stat() (os.FileInfo, error) {
 }
 
 // func (f *embeddedFile) Name() string {
-// 	return strings.TrimLeft(f.vdir, f.FileInfo.Name())
+// 	return strings.TrimPrefix(f.vdir, f.FileInfo.Name())
 // }
 
 type embeddedFileSystem struct {
@@ -109,7 +109,7 @@ type embeddedFileSystem struct {
 var _ http.FileSystem = (*embeddedFileSystem)(nil)
 
 func (fs *embeddedFileSystem) Open(name string) (http.File, error) {
-	// name = fs.vdir + name <- no need, check the TrimLeft(name, vdir) on names loop and the asset and assetInfo redefined on `HandleDir`.
+	// name = fs.vdir + name <- no need, check the TrimPrefix(name, vdir) on names loop and the asset and assetInfo redefined on `HandleDir`.
 	if d, ok := fs.dirNames[name]; ok {
 		return d, nil
 	}
@@ -221,7 +221,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				continue
 			}
 
-			names = append(names, strings.TrimLeft(name, vdir))
+			names = append(names, strings.TrimPrefix(name, vdir))
 		}
 
 		if len(names) == 0 {

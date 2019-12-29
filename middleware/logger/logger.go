@@ -120,7 +120,13 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	if headerMessage != nil {
 		line += fmt.Sprintf(" %v", headerMessage)
 	}
+
+	// if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
+	// 	ctx.Application().Logger().Warn(line)
+	// } else {
 	ctx.Application().Logger().Info(line)
+	// }
+
 }
 
 // Columnize formats the given arguments as columns and returns the formatted output,

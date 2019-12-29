@@ -21,6 +21,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest`.
 
+# We, 29 December 2019 | v12.1.4
+
+Minor fix on serving [embedded files](https://github.com/kataras/iris/wiki/File-server).
+
 # We, 25 December 2019 | v12.1.3
 
 Fix [[BUG] [iris.Default] RegisterView](https://github.com/kataras/iris/issues/1410)
