@@ -1,4 +1,6 @@
-# ![](https://iris-go.com/images/santa.png) Happy Holidays Everyone!
+# Happy New Year!
+
+It's my **birthday today** and I wish good luck and well health to all and especially to those who are being tested!
 
 ![](https://iris-go.com/images/release.png) Iris version **12.1.4** has been [released](HISTORY.md#su-29-december-2019--v1214)!
 
