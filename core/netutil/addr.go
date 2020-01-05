@@ -157,7 +157,7 @@ func ResolveVHost(addr string) string {
 
 	if idx := strings.IndexByte(addr, ':'); idx == 0 {
 		// only port, then return the 0.0.0.0
-		return "0.0.0.0" + addr[idx:]
+		return /* "0.0.0.0" */ "localhost" + addr[idx:]
 	}
 
 	// with ':' in order to not replace the ipv6 loopback addresses
@@ -215,5 +215,9 @@ func ResolveSchemeFromVHost(vhost string) string {
 // and returns its URL, pure implementation but it does the job.
 func ResolveURL(scheme string, addr string) string {
 	host := ResolveVHost(addr)
+	if host == "0.0.0.0" {
+		host = "localhost"
+	}
+
 	return scheme + "://" + host
 }
