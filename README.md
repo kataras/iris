@@ -1,10 +1,8 @@
 # Happy New Year!
 
-It's my **birthday today** and I wish good luck and well health to all and especially to those who are being tested!
-
 ![](https://iris-go.com/images/release.png) Iris version **12.1.4** has been [released](HISTORY.md#su-29-december-2019--v1214)!
 
-![](https://iris-go.com/images/cli.png) The official Iris Command Line Interface will soon be near you in 2020!
+![](https://iris-go.com/images/cli.png) The official [Iris Command Line Interface](https://github.com/kataras/iris-cli) will soon be near you in 2020!
 
 ![](https://iris-go.com/images/sponsor.png) Support your favorite web framework through [Github Sponsors Program](https://github.com/sponsors/kataras)!
 
@@ -24,6 +22,8 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 <summary>Quick start</summary>
 
 ```sh
+# https://github.com/kataras/iris/wiki/Installation
+$ go get github.com/kataras/iris/v12@latest
 # assume the following code in example.go file
 $ cat example.go
 ```

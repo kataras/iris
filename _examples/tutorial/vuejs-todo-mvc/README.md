@@ -556,7 +556,7 @@ Run the Iris web server you've just created by executing `go run main.go` from y
 
 ```sh
 $ go run main.go
-Now listening on: http://0.0.0.0:8080
+Now listening on: http://localhost:8080
 Application Started. Press CTRL+C to shut down.
 _
 ```
