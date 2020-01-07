@@ -215,9 +215,5 @@ func ResolveSchemeFromVHost(vhost string) string {
 // and returns its URL, pure implementation but it does the job.
 func ResolveURL(scheme string, addr string) string {
 	host := ResolveVHost(addr)
-	if host == "0.0.0.0" {
-		host = "localhost"
-	}
-
 	return scheme + "://" + host
 }

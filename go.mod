@@ -19,18 +19,18 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
-	github.com/json-iterator/go v1.1.6
+	github.com/json-iterator/go v1.1.9
 	github.com/kataras/golog v0.0.10
 	github.com/kataras/neffos v0.0.12
 	github.com/kataras/sitemap v0.0.5
-	github.com/klauspost/compress v1.9.0
-	github.com/mediocregopher/radix/v3 v3.3.0
+	github.com/klauspost/compress v1.9.7
+	github.com/mediocregopher/radix/v3 v3.4.2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
-	golang.org/x/text v0.3.0
-	gopkg.in/ini.v1 v1.51.0
-	gopkg.in/yaml.v2 v2.2.2
+	golang.org/x/text v0.3.2
+	gopkg.in/ini.v1 v1.51.1
+	gopkg.in/yaml.v3 v3.0.0-20191120175047-4206685974f2
 )

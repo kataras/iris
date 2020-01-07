@@ -30,7 +30,7 @@ import (
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type (

@@ -19,7 +19,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/kataras/sitemap"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const globalConfigurationKeyword = "~"
