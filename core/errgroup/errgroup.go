@@ -284,7 +284,7 @@ func (g *Group) Addf(format string, args ...interface{}) error {
 	return err
 }
 
-// Err adds an error the the group, it transforms it to an Error type if necessary and returns it.
+// Err adds an error to the group, it transforms it to an Error type if necessary and returns it.
 func (g *Group) Err(err error) error {
 	if err == nil {
 		return nil
