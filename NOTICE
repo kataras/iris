@@ -69,10 +69,9 @@ Revision ID: 607b5b7cef034da2692f99a4c9bafb31a999ccda
  toml                3012a1dbe2e4bd1     https://github.com/BurntSushi/toml       
                      391d42b32f0577c                                              
                      b7bbc7f005                                                                                                                             
- yaml.v2             51d6538a90f86fe     https://gopkg.in/yaml.v2                 
-                     93ac480b35f37b2                                              
-                     be17fef232                                                   
-
+ yaml.v3             4206685974f28e3     https://gopkg.in/yaml.v3                 
+                     178b35fa198a598                                              
+                     99aa4dee3a                                                 
 
 
 ================================================================================
