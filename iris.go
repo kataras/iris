@@ -564,7 +564,7 @@ func (app *Application) ConfigureHost(configurators ...host.Configurator) *Appli
 	return app
 }
 
-// NewHost accepts a standar *http.Server object,
+// NewHost accepts a standard *http.Server object,
 // completes the necessary missing parts of that "srv"
 // and returns a new, ready-to-use, host (supervisor).
 func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
