@@ -706,7 +706,7 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 // It doesn't care about call order, it will prepend the handlers to all
 // existing routes and the future routes that may being registered.
 //
-// The difference from `.DoneGLobal` is that this/or these Handler(s) are being always running first.
+// The difference from `.DoneGlobal` is that this/or these Handler(s) are being always running first.
 // Use of `ctx.Next()` of those handler(s) is necessary to call the main handler or the next middleware.
 // It's always a good practise to call it right before the `Application#Run` function.
 func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
