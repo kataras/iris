@@ -257,7 +257,7 @@ var WithoutAutoFireStatusCode = func(app *Application) {
 	app.config.DisableAutoFireStatusCode = true
 }
 
-// WithPathEscape enanbles the PathEscape setting.
+// WithPathEscape enables the PathEscape setting.
 //
 // See `Configuration`.
 var WithPathEscape = func(app *Application) {
@@ -271,7 +271,7 @@ var WithOptimizations = func(app *Application) {
 	app.config.EnableOptimizations = true
 }
 
-// WithFireMethodNotAllowed enanbles the FireMethodNotAllowed setting.
+// WithFireMethodNotAllowed enables the FireMethodNotAllowed setting.
 //
 // See `Configuration`.
 var WithFireMethodNotAllowed = func(app *Application) {
