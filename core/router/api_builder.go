@@ -921,7 +921,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 
 // OnErrorCode registers an error http status code
 // based on the "statusCode" < 200 || >= 400 (came from `context.StatusCodeNotSuccessful`).
-// The handler is being wrapepd by a generic
+// The handler is being wrapped by a generic
 // handler which will try to reset
 // the body if recorder was enabled
 // and/or disable the gzip if gzip response recorder
