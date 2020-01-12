@@ -736,7 +736,7 @@ type Configuration struct {
 	// the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
-	// (permant)redirects the client to the correct path /home.
+	// (permanent)redirects the client to the correct path /home.
 	//
 	// See `DisablePathCorrectionRedirection` to enable direct handler execution instead of redirection.
 	//
