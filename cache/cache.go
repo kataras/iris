@@ -37,7 +37,7 @@ import (
 // Cache accepts the cache expiration duration.
 // If the "expiration" input argument is invalid, <=2 seconds,
 // then expiration is taken by the "cache-control's maxage" header.
-// Returns a Handler structure which you can use to customize cache furher.
+// Returns a Handler structure which you can use to customize cache further.
 //
 // All types of response can be cached, templates, json, text, anything.
 //
