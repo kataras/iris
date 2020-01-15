@@ -515,7 +515,7 @@ var (
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
-	// NewProblem retruns a new Problem.
+	// NewProblem returns a new Problem.
 	// Head over to the `Problem` type godoc for more.
 	//
 	// A shortcut for the `context#NewProblem`.
