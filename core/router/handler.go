@@ -42,7 +42,8 @@ func (h *routerHandler) getTree(method, subdomain string) *trie {
 	return nil
 }
 
-func (h *routerHandler) addRoute(r *Route) error {
+// AddRoute registers a route. See `Router.AddRouteUnsafe`.
+func (h *routerHandler) AddRoute(r *Route) error {
 	var (
 		routeName = r.Name
 		method    = r.Method
@@ -76,8 +77,6 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
-	// GetStaticSites() []*StaticSite
-	// Macros() *macro.Macros
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
@@ -136,7 +135,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			// on route, it will be stacked shown in this build state
 			// and no in the lines of the user's action, they should read
 			// the docs better. Or TODO: add a link here in order to help new users.
-			if err := h.addRoute(r); err != nil {
+			if err := h.AddRoute(r); err != nil {
 				// node errors:
 				rp.Addf("%s: %w", r.String(), err)
 				continue

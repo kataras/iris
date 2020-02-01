@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	// Context is the midle-man server's "object" for the clients.
+	// Context is the middle-man server's "object" for the clients.
 	//
 	// A New context is being acquired from a sync.Pool on each connection.
 	// The Context is the most important thing on the iris's http flow.

@@ -7,7 +7,7 @@ All of these six template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
 - The standard html, its template parser is the [golang.org/pkg/html/template/](https://golang.org/pkg/html/template/)
-- Django, its template parser is the [github.com/flosch/pongo2](https://github.com/flosch/pongo2)
+- Django, its template parser is the [github.com/iris-contrib/pongo2](https://github.com/iris-contrib/pongo2)
 - Pug(Jade), its template parser is the [github.com/Joker/jade](https://github.com/Joker/jade)
 - Handlebars, its template parser is the [github.com/aymerick/raymond](https://github.com/aymerick/raymond)
 - Amber, its template parser is the [github.com/eknkc/amber](https://github.com/eknkc/amber)
@@ -126,7 +126,7 @@ func hi(ctx iris.Context) {
 
 ## Embedded
 
-View engine supports bundled(https://github.com/shuLhan/go-bindata) template files too.
+View engine supports bundled(https://github.com/go-bindata/go-bindata) template files too.
 `go-bindata` gives you two functions, `Assset` and `AssetNames`,
 these can be set to each of the template engines using the `.Binary` function.
 
@@ -139,7 +139,7 @@ import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
-    // $ go get -u github.com/shuLhan/go-bindata/...
+    // $ go get -u github.com/go-bindata/go-bindata/...
     // $ go-bindata ./templates/...
     // $ go build
     // $ ./embedding-templates-into-app

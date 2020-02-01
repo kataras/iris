@@ -12,11 +12,14 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
-
-	"github.com/BurntSushi/toml"
-	"gopkg.in/yaml.v2"
+	"strings"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/netutil"
+
+	"github.com/BurntSushi/toml"
+	"github.com/kataras/sitemap"
+	"gopkg.in/yaml.v3"
 )
 
 const globalConfigurationKeyword = "~"
@@ -254,7 +257,7 @@ var WithoutAutoFireStatusCode = func(app *Application) {
 	app.config.DisableAutoFireStatusCode = true
 }
 
-// WithPathEscape enanbles the PathEscape setting.
+// WithPathEscape enables the PathEscape setting.
 //
 // See `Configuration`.
 var WithPathEscape = func(app *Application) {
@@ -268,7 +271,7 @@ var WithOptimizations = func(app *Application) {
 	app.config.EnableOptimizations = true
 }
 
-// WithFireMethodNotAllowed enanbles the FireMethodNotAllowed setting.
+// WithFireMethodNotAllowed enables the FireMethodNotAllowed setting.
 //
 // See `Configuration`.
 var WithFireMethodNotAllowed = func(app *Application) {
@@ -359,11 +362,122 @@ func WithOtherValue(key string, val interface{}) Configurator {
 	}
 }
 
+// WithSitemap enables the sitemap generator.
+// Use the Route's `SetLastMod`, `SetChangeFreq` and `SetPriority` to modify
+// the sitemap's URL child element properties.
+//
+// It accepts a "startURL" input argument which
+// is the prefix for the registered routes that will be included in the sitemap.
+//
+// If more than 50,000 static routes are registered then sitemaps will be splitted and a sitemap index will be served in
+// /sitemap.xml.
+//
+// If `Application.I18n.Load/LoadAssets` is called then the sitemap will contain translated links for each static route.
+//
+// If the result does not complete your needs you can take control
+// and use the github.com/kataras/sitemap package to generate a customized one instead.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/sitemap.
+func WithSitemap(startURL string) Configurator {
+	sitemaps := sitemap.New(startURL)
+	return func(app *Application) {
+		var defaultLang string
+		if tags := app.I18n.Tags(); len(tags) > 0 {
+			defaultLang = tags[0].String()
+			sitemaps.DefaultLang(defaultLang)
+		}
+
+		for _, r := range app.GetRoutes() {
+			if !r.IsStatic() || r.Subdomain != "" {
+				continue
+			}
+
+			loc := r.StaticPath()
+			var translatedLinks []sitemap.Link
+
+			for _, tag := range app.I18n.Tags() {
+				lang := tag.String()
+				langPath := lang
+				href := ""
+				if lang == defaultLang {
+					// http://domain.com/en-US/path to just http://domain.com/path if en-US is the default language.
+					langPath = ""
+				}
+
+				if app.I18n.PathRedirect {
+					// then use the path prefix.
+					// e.g. http://domain.com/el-GR/path
+					if langPath == "" { // fix double slashes http://domain.com// when self-included default language.
+						href = loc
+					} else {
+						href = "/" + langPath + loc
+					}
+
+				} else if app.I18n.Subdomain {
+					// then use the subdomain.
+					// e.g. http://el.domain.com/path
+					scheme := netutil.ResolveSchemeFromVHost(startURL)
+					host := strings.TrimLeft(startURL, scheme)
+					if langPath != "" {
+						href = scheme + strings.Split(langPath, "-")[0] + "." + host + loc
+					} else {
+						href = loc
+					}
+
+				} else if p := app.I18n.URLParameter; p != "" {
+					// then use the URL parameter.
+					// e.g. http://domain.com/path?lang=el-GR
+					href = loc + "?" + p + "=" + lang
+				} else {
+					// then skip it, we can't generate the link at this state.
+					continue
+				}
+
+				translatedLinks = append(translatedLinks, sitemap.Link{
+					Rel:      "alternate",
+					Hreflang: lang,
+					Href:     href,
+				})
+			}
+
+			sitemaps.URL(sitemap.URL{
+				Loc:        loc,
+				LastMod:    r.LastMod,
+				ChangeFreq: r.ChangeFreq,
+				Priority:   r.Priority,
+				Links:      translatedLinks,
+			})
+		}
+
+		for _, s := range sitemaps.Build() {
+			contentCopy := make([]byte, len(s.Content))
+			copy(contentCopy, s.Content)
+
+			handler := func(ctx Context) {
+				ctx.ContentType(context.ContentXMLHeaderValue)
+				ctx.Write(contentCopy)
+			}
+			if app.builded {
+				routes := app.CreateRoutes([]string{MethodGet, MethodHead, MethodOptions}, s.Path, handler)
+
+				for _, r := range routes {
+					if err := app.Router.AddRouteUnsafe(r); err != nil {
+						app.Logger().Errorf("sitemap route: %v", err)
+					}
+				}
+			} else {
+				app.HandleMany("GET HEAD OPTIONS", s.Path, handler)
+			}
+
+		}
+	}
+}
+
 // WithTunneling is the `iris.Configurator` for the `iris.Configuration.Tunneling` field.
 // It's used to enable http tunneling for an Iris Application, per registered host
 //
 // Alternatively use the `iris.WithConfiguration(iris.Configuration{Tunneling: iris.TunnelingConfiguration{ ...}}}`.
-func WithTunneling(app *Application) {
+var WithTunneling = func(app *Application) {
 	conf := TunnelingConfiguration{
 		Tunnels: []Tunnel{{}}, // create empty tunnel, its addr and name are set right before host serve.
 	}
@@ -622,7 +736,7 @@ type Configuration struct {
 	// the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
-	// (permant)redirects the client to the correct path /home.
+	// (permanent)redirects the client to the correct path /home.
 	//
 	// See `DisablePathCorrectionRedirection` to enable direct handler execution instead of redirection.
 	//
@@ -705,18 +819,10 @@ type Configuration struct {
 
 	// Context values' keys for various features.
 	//
-	// TranslateLanguageContextKey & TranslateLangFunctionContextKey & TranslateFunctionContextKey are used by i18n handlers/middleware to set the selected locale's translate function.
+	// LocaleContextKey is used by i18n to get the current request's locale, which contains a translate function too.
 	//
-	// Defaults to "iris.translate".
-	TranslateFunctionContextKey string `json:"translateFunctionContextKey,omitempty" yaml:"TranslateFunctionContextKey" toml:"TranslateFunctionContextKey"`
-	// TranslateLangFunctionContextKey & TranslateFunctionContextKey & TranslateLanguageContextKey are used by i18n handlers/middleware to set the global translate function.
-	//
-	// Defaults to "iris.languageGlobal".
-	TranslateLangFunctionContextKey string `json:"translateLangFunctionContextKey,omitempty" yaml:"TranslateLangFunctionContextKey" toml:"TranslateLangFunctionContextKey"`
-	// TranslateLanguageContextKey used to report the i18n selected locale.
-	//
-	// Defaults to "iris.language".
-	TranslateLanguageContextKey string `json:"translateLanguageContextKey,omitempty" yaml:"TranslateLanguageContextKey" toml:"TranslateLanguageContextKey"`
+	// Defaults to "iris.locale".
+	LocaleContextKey string `json:"localeContextKey,omitempty" yaml:"LocaleContextKey" toml:"LocaleContextKey"`
 
 	// GetViewLayoutContextKey is the key of the context's user values' key
 	// which is being used to set the template
@@ -773,7 +879,7 @@ func (c Configuration) GetVHost() string {
 // DisablePathCorrection corrects and redirects the requested path to the registered path
 // for example, if /home/ path is requested but no handler for this Route found,
 // then the Router checks if /home handler exists, if yes,
-// (permant)redirects the client to the correct path /home.
+// (permanent)redirects the client to the correct path /home.
 func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
@@ -844,22 +950,10 @@ func (c Configuration) GetPostMaxMemory() int64 {
 	return c.PostMaxMemory
 }
 
-// GetTranslateFunctionContextKey returns the configuration's TranslateFunctionContextKey value,
-// used for i18n inside templates.
-func (c Configuration) GetTranslateFunctionContextKey() string {
-	return c.TranslateFunctionContextKey
-}
-
-// GetTranslateLangFunctionContextKey returns the configuration's TranslateLangFunctionContextKey value,
-// used for i18n inside templates.
-func (c Configuration) GetTranslateLangFunctionContextKey() string {
-	return c.TranslateLangFunctionContextKey
-}
-
-// GetTranslateLanguageContextKey returns the configuration's TranslateLanguageContextKey value,
+// GetLocaleContextKey returns the configuration's LocaleContextKey value,
 // used for i18n.
-func (c Configuration) GetTranslateLanguageContextKey() string {
-	return c.TranslateLanguageContextKey
+func (c Configuration) GetLocaleContextKey() string {
+	return c.LocaleContextKey
 }
 
 // GetViewLayoutContextKey returns the key of the context's user values' key
@@ -972,12 +1066,8 @@ func WithConfiguration(c Configuration) Configurator {
 			main.PostMaxMemory = v
 		}
 
-		if v := c.TranslateFunctionContextKey; v != "" {
-			main.TranslateFunctionContextKey = v
-		}
-
-		if v := c.TranslateLanguageContextKey; v != "" {
-			main.TranslateLanguageContextKey = v
+		if v := c.LocaleContextKey; v != "" {
+			main.LocaleContextKey = v
 		}
 
 		if v := c.ViewLayoutContextKey; v != "" {
@@ -1018,7 +1108,7 @@ func DefaultConfiguration() Configuration {
 		FireMethodNotAllowed:              false,
 		DisableBodyConsumptionOnUnmarshal: false,
 		DisableAutoFireStatusCode:         false,
-		TimeFormat:                        "Mon, Jan 02 2006 15:04:05 GMT",
+		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
 		Charset:                           "UTF-8",
 
 		// PostMaxMemory is for post body max memory.
@@ -1026,14 +1116,12 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:                   32 << 20, // 32MB
-		TranslateFunctionContextKey:     "iris.translate",
-		TranslateLangFunctionContextKey: "iris.translateLang",
-		TranslateLanguageContextKey:     "iris.language",
-		ViewLayoutContextKey:            "iris.viewLayout",
-		ViewDataContextKey:              "iris.viewData",
-		RemoteAddrHeaders:               make(map[string]bool),
-		EnableOptimizations:             false,
-		Other:                           make(map[string]interface{}),
+		PostMaxMemory:        32 << 20, // 32MB
+		LocaleContextKey:     "iris.locale",
+		ViewLayoutContextKey: "iris.viewLayout",
+		ViewDataContextKey:   "iris.viewData",
+		RemoteAddrHeaders:    make(map[string]bool),
+		EnableOptimizations:  false,
+		Other:                make(map[string]interface{}),
 	}
 }

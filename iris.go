@@ -2,7 +2,7 @@ package iris
 
 import (
 	// std packages
-
+	"bytes"
 	stdContext "context"
 	"errors"
 	"fmt"
@@ -10,11 +10,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/kataras/golog"
 
 	// context for the handlers
 	"github.com/kataras/iris/v12/context"
@@ -30,14 +30,18 @@ import (
 	"github.com/kataras/iris/v12/cache"
 	// view
 	"github.com/kataras/iris/v12/view"
-	// middleware used in Default method
-
+	// i18n
+	"github.com/kataras/iris/v12/i18n"
+	// handlers used in `Default` function
 	requestLogger "github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
+
+	"github.com/kataras/golog"
+	"gopkg.in/yaml.v3"
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.0.0"
+const Version = "12.1.4"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
@@ -143,10 +147,17 @@ type Application struct {
 	// the golog logger instance, defaults to "Info" level messages (all except "Debug")
 	logger *golog.Logger
 
+	// I18n contains localization and internationalization support.
+	// Use the `Load` or `LoadAssets` to locale language files.
+	//
+	// See `Context#Tr` method for request-based translations.
+	I18n *i18n.I18n
+
 	// view engine
 	view view.View
 	// used for build
-	once sync.Once
+	builded     bool
+	defaultMode bool
 
 	mu sync.Mutex
 	// Hosts contains a list of all servers (Host Supervisors) that this app is running on.
@@ -168,6 +179,7 @@ func New() *Application {
 	app := &Application{
 		config:     &config,
 		logger:     golog.Default,
+		I18n:       i18n.New(),
 		APIBuilder: router.NewAPIBuilder(),
 		Router:     router.NewRouter(),
 	}
@@ -179,12 +191,14 @@ func New() *Application {
 	return app
 }
 
-// Default returns a new Application instance which, unlike `New`,
-// recovers on panics and logs the incoming http requests.
+// Default returns a new Application instance which on build state registers
+// html view engine on "./views" and load locales from "./locales/*/*".
+// The return instance recovers on panics and logs the incoming http requests too.
 func Default() *Application {
 	app := New()
 	app.Use(recover.New())
 	app.Use(requestLogger.New())
+	app.defaultMode = true
 
 	return app
 }
@@ -285,6 +299,12 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 // app.Logger().Logf(SuccessLevel, "a custom leveled log message")
 func (app *Application) Logger() *golog.Logger {
 	return app.logger
+}
+
+// I18nReadOnly returns the i18n's read-only features.
+// See `I18n` method for more.
+func (app *Application) I18nReadOnly() context.I18nReadOnly {
+	return app.I18n
 }
 
 var (
@@ -495,7 +515,7 @@ var (
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
-	// NewProblem retruns a new Problem.
+	// NewProblem returns a new Problem.
 	// Head over to the `Problem` type godoc for more.
 	//
 	// A shortcut for the `context#NewProblem`.
@@ -546,7 +566,7 @@ func (app *Application) ConfigureHost(configurators ...host.Configurator) *Appli
 	return app
 }
 
-// NewHost accepts a standar *http.Server object,
+// NewHost accepts a standard *http.Server object,
 // completes the necessary missing parts of that "srv"
 // and returns a new, ready-to-use, host (supervisor).
 func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
@@ -817,18 +837,57 @@ func Raw(f func() error) Runner {
 func (app *Application) Build() error {
 	rp := errgroup.New("Application Builder")
 
-	app.once.Do(func() {
+	if !app.builded {
+		app.builded = true
 		rp.Err(app.APIBuilder.GetReporter())
+
+		if app.defaultMode { // the app.I18n and app.View will be not available until Build.
+			if !app.I18n.Loaded() {
+				for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
+					if _, err := os.Stat(s); os.IsNotExist(err) {
+						continue
+					}
+
+					if err := app.I18n.Load(s); err != nil {
+						continue
+					}
+
+					app.I18n.SetDefault("en-US")
+					break
+				}
+			}
+
+			if app.view.Len() == 0 {
+				for _, s := range []string{"./views", "./templates", "./web/views"} {
+					if _, err := os.Stat(s); os.IsNotExist(err) {
+						continue
+					}
+
+					app.RegisterView(HTML(s, ".html"))
+					break
+				}
+			}
+		}
+
+		if app.I18n.Loaded() {
+			// {{ tr "lang" "key" arg1 arg2 }}
+			app.view.AddFunc("tr", app.I18n.Tr)
+			app.WrapRouter(app.I18n.Wrapper())
+		}
 
 		if !app.Router.Downgraded() {
 			// router
+
+			if err := app.tryInjectLiveReload(); err != nil {
+				rp.Errf("LiveReload: init: failed: %v", err)
+			}
+
 			// create the request handler, the default routing handler
 			routerHandler := router.NewDefaultHandler()
 			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
 			if err != nil {
 				rp.Err(err)
 			}
-
 			// re-build of the router from outside can be done with
 			// app.RefreshRouter()
 		}
@@ -845,7 +904,7 @@ func (app *Application) Build() error {
 				rp.Group("View Builder").Err(err)
 			}
 		}
-	})
+	}
 
 	return errgroup.Check(rp)
 }
@@ -889,6 +948,106 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	return err
+}
+
+// tryInjectLiveReload tries to check if this application
+// runs under https://github.com/kataras/iris-cli and if so
+// then it checks if the livereload is enabled and then injects
+// the watch listener (js script) on every HTML response.
+// It has a slight performance cost but
+// this (iris-cli with watch and livereload enabled)
+// is meant to be used only in development mode.
+// It does a full reload at the moment and if the port changed
+// at runtime it will fire 404 instead of redirecting to the correct port (that's a TODO).
+//
+// tryInjectLiveReload runs right before Build -> BuildRouter.
+func (app *Application) tryInjectLiveReload() error {
+	conf := struct {
+		Running    bool `yaml:"Running,omitempty"`
+		LiveReload struct {
+			Disable bool `yaml:"Disable"`
+			Port    int  `yaml:"Port"`
+		} `yaml:"LiveReload"`
+	}{}
+	// defaults to disabled here.
+	conf.LiveReload.Disable = true
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	for _, path := range []string{".iris.yml" /*, "../.iris.yml", "../../.iris.yml" */} {
+		path = filepath.Join(wd, path)
+
+		if _, err := os.Stat(path); err == nil {
+			inFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
+			if err != nil {
+				return err
+			}
+
+			dec := yaml.NewDecoder(inFile)
+			err = dec.Decode(&conf)
+			inFile.Close()
+			if err != nil {
+				return err
+			}
+
+			break
+		}
+	}
+
+	if !conf.Running || conf.LiveReload.Disable {
+		return nil
+	}
+
+	scriptReloadJS := []byte(fmt.Sprintf(`<script>(function () {
+    const scheme = document.location.protocol == "https:" ? "wss" : "ws";
+    const endpoint = scheme + "://" + document.location.hostname + ":%d/livereload";
+
+    w = new WebSocket(endpoint);
+    w.onopen = function () {
+        console.info("LiveReload: initialization");
+    };
+    w.onclose = function () {
+        console.info("LiveReload: terminated");
+    };
+    w.onmessage = function (message) {
+        // NOTE: full-reload, at least for the moment. Also if backend changed its port then we will get 404 here. 
+        window.location.reload();
+    };
+}());</script>`, conf.LiveReload.Port))
+
+	bodyCloseTag := []byte("</body>")
+
+	app.WrapRouter(func(w http.ResponseWriter, r *http.Request, _ http.HandlerFunc) {
+		ctx := app.ContextPool.Acquire(w, r)
+		rec := ctx.Recorder() // Record everything and write all in once at the Context release.
+		app.ServeHTTPC(ctx)   // We directly call request handler with Context.
+
+		if strings.HasPrefix(ctx.GetContentType(), "text/html") {
+			// delete(rec.Header(), context.ContentLengthHeaderKey)
+
+			body := rec.Body()
+
+			if idx := bytes.LastIndex(body, bodyCloseTag); idx > 0 {
+				// add the script right before last </body>.
+				body = append(body[:idx], bytes.Replace(body[idx:], bodyCloseTag, append(scriptReloadJS, bodyCloseTag...), 1)...)
+				rec.SetBody(body)
+			} else {
+				// Just append it.
+				rec.Write(scriptReloadJS)
+			}
+
+			if _, has := rec.Header()[context.ContentLengthHeaderKey]; has {
+				rec.Header().Set(context.ContentLengthHeaderKey, fmt.Sprintf("%d", len(rec.Body())))
+			}
+		}
+
+		app.ContextPool.Release(ctx)
+	})
+
+	return nil
 }
 
 // https://ngrok.com/docs

@@ -19,7 +19,92 @@
 
 Developers are not forced to upgrade if they don't really need it. Upgrade whenever you feel ready.
 
-**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@master`.
+**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest`.
+
+# Su, 29 December 2019 | v12.1.4
+
+Minor fix on serving [embedded files](https://github.com/kataras/iris/wiki/File-server).
+
+# We, 25 December 2019 | v12.1.3
+
+Fix [[BUG] [iris.Default] RegisterView](https://github.com/kataras/iris/issues/1410)
+
+# Th, 19 December 2019 | v12.1.2
+
+Fix [[BUG]Session works incorrectly when meets the multi-level TLDs](https://github.com/kataras/iris/issues/1407).
+
+# Mo, 16 December 2019 | v12.1.1
+
+Add [Context.FindClosest(n int) []string](https://github.com/kataras/iris/blob/master/_examples/routing/not-found-suggests/main.go#L22)
+
+```go
+app := iris.New()
+app.OnErrorCode(iris.StatusNotFound, notFound)
+```
+
+```go
+func notFound(ctx iris.Context) {
+    suggestPaths := ctx.FindClosest(3)
+    if len(suggestPaths) == 0 {
+        ctx.WriteString("404 not found")
+        return
+    }
+
+    ctx.HTML("Did you mean?<ul>")
+    for _, s := range suggestPaths {
+        ctx.HTML(`<li><a href="%s">%s</a></li>`, s, s)
+    }
+    ctx.HTML("</ul>")
+}
+```
+
+![](https://iris-go.com/images/iris-not-found-suggests.png)
+
+# Fr, 13 December 2019 | v12.1.0
+
+## Breaking Changes
+
+Minor as many of you don't even use them but, indeed, they need to be covered here.
+
+- Old i18n middleware(iris/middleware/i18n) was replaced by the [i18n](i18n) sub-package which lives as field at your application: `app.I18n.Load(globPathPattern string, languages ...string)` (see below)
+- Community-driven i18n middleware(iris-contrib/middleware/go-i18n) has a `NewLoader` function which returns a loader which can be passed at `app.I18n.Reset(loader i18n.Loader, languages ...string)` to change the locales parser
+- The Configuration's `TranslateFunctionContextKey` was replaced by `LocaleContextKey` which Context store's value (if i18n is used) returns the current Locale which contains the translate function, the language code, the language tag and the index position of it
+- The `context.Translate` method was replaced by `context.Tr` as a shortcut for the new `context.GetLocale().GetMessage(format, args...)` method and it matches the view's function `{{tr format args}}` too
+- If you used [Iris Django](https://github.com/kataras/iris/tree/master/_examples/view/template_django_0) view engine with `import _ github.com/flosch/pongo2-addons` you **must change** the import path to `_ github.com/iris-contrib/pongo2-addons` or add a [go mod replace](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive) to your `go.mod` file, e.g. `replace github.com/flosch/pongo2-addons => github.com/iris-contrib/pongo2-addons v0.0.1`.
+
+## Fixes
+
+All known issues.
+
+1. [#1395](https://github.com/kataras/iris/issues/1395) 
+2. [#1369](https://github.com/kataras/iris/issues/1369)
+3. [#1399](https://github.com/kataras/iris/issues/1399) with PR [#1400](https://github.com/kataras/iris/pull/1400)
+4. [#1401](https://github.com/kataras/iris/issues/1401) 
+5. [#1406](https://github.com/kataras/iris/issues/1406)
+6. [neffos/#20](https://github.com/kataras/neffos/issues/20)
+7. [pio/#5](https://github.com/kataras/pio/issues/5)
+
+## New Features
+
+### Internationalization and localization
+
+Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/wiki/Sitemap) and [views](https://github.com/kataras/iris/blob/master/_examples/i18n/main.go#L50).
+
+Refer to the wiki section: https://github.com/kataras/iris/wiki/Sitemap for details.
+
+### Sitemaps
+
+Iris generates and serves one or more [sitemap.xml](https://www.sitemaps.org/protocol.html) for your static routes.
+
+Navigate through: https://github.com/kataras/iris/wiki/Sitemap for more.
+
+## New Examples
+
+2. [_examples/i18n](_examples/i18n)
+1. [_examples/sitemap](_examples/sitemap)
+3. [_examples/desktop-app/blink](_examples/desktop-app/blink)
+4. [_examples/desktop-app/lorca](_examples/desktop-app/lorca)
+5. [_examples/desktop-app/webview](_examples/desktop-app/webview)
 
 # Sa, 26 October 2019 | v12.0.0
 

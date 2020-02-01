@@ -33,7 +33,7 @@ $ go run main.go
 ### Overview
 
 - [Hello world!](hello-world/main.go)
-- [Hello WebAssemply!](webassembly/basic/main.go)
+- [Hello WebAssembly!](webassembly/basic/main.go)
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
@@ -60,7 +60,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 ### HTTP Listening
 
 - [Common, with address](http-listening/listen-addr/main.go)
-    * [public domain address](http-listening/listen-addr-public/main.go) **NEW**
+    * [public domain address](http-listening/listen-addr-public/main.go)
     * [omit server errors](http-listening/listen-addr/omit-server-errors/main.go)
 - [UNIX socket file](http-listening/listen-unix/main.go)
 - [TLS](http-listening/listen-tls/main.go)
@@ -70,7 +70,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
     * [common net.Listener](http-listening/custom-listener/main.go)
     * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
 - Custom HTTP Server
-    * [HTTP/3 Quic](http-listening/http3-quic) **NEW**
+    * [HTTP/3 Quic](http-listening/http3-quic)
     * [easy way](http-listening/custom-httpserver/easy-way/main.go)
     * [std way](http-listening/custom-httpserver/std-way/main.go)
     * [multi server instances](http-listening/custom-httpserver/multi/main.go)
@@ -128,12 +128,13 @@ Navigate through examples for a better understanding.
 - [Basic](routing/basic/main.go)
 - [Controllers](mvc)
 - [Custom HTTP Errors](routing/http-errors/main.go)
+- [Not Found - Suggest Closest Paths](routing/not-found-suggests/main.go) **NEW**
 - [Dynamic Path](routing/dynamic-path/main.go)
     * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
 - [Write your own custom parameter types](routing/macros/main.go)
 - [Reverse routing](routing/reverse/main.go)
 - [Custom Router (high-level)](routing/custom-high-level-router/main.go)
-- [Custom Wrapper](routing/custom-wrapper/main.go) **UPDATED**
+- [Custom Wrapper](routing/custom-wrapper/main.go)
 - Custom Context
     * [method overriding](routing/custom-context/method-overriding/main.go)
     * [new implementation](routing/custom-context/new-implementation/main.go)
@@ -152,17 +153,17 @@ Navigate through examples for a better understanding.
 - [Basic](hero/basic/main.go)
 - [Overview](hero/overview)
 - [Sessions](hero/sessions)
-- [Yet another dependency injection example and good practises at general](hero/smart-contract/main.go) **NEW**
+- [Yet another dependency injection example and good practises at general](hero/smart-contract/main.go)
 
 ### MVC
 
 - [Hello world](mvc/hello-world/main.go)
-- [Regexp](mvc/regexp/main.go) **NEW**
+- [Regexp](mvc/regexp/main.go)
 - [Session Controller](mvc/session-controller/main.go)
 - [Overview - Plus Repository and Service layers](mvc/overview)
 - [Login showcase - Plus Repository and Service layers](mvc/login)
 - [Singleton](mvc/singleton)
-- [Websocket Controller](mvc/websocket) **UPDATED**
+- [Websocket Controller](mvc/websocket)
 - [Register Middleware](mvc/middleware)
 - [Vue.js Todo MVC](tutorial/vuejs-todo-mvc)
 
@@ -195,10 +196,24 @@ Navigate through examples for a better understanding.
 - [Pug (Jade) Actions`](view/template_pug_1)
 - [Pug (Jade) Includes`](view/template_pug_2)
 - [Pug (Jade) Extends`](view/template_pug_3)
-- [Jet](/view/template_jet_0) **NEW**
-- [Jet Embedded](view/template_jet_1_embedded) **NEW**
+- [Jet](/view/template_jet_0)
+- [Jet Embedded](view/template_jet_1_embedded)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
+
+### Localization and Internationalization
+
+- [I18n](i18n/main.go) **NEW**
+
+### Sitemap
+
+- [Sitemap](sitemap/main.go) **NEW**
+
+### Desktop App
+
+- [Using blink package](desktop-app/blink) **NEW**
+- [Using lorca package](desktop-app/lorca) **NEW**
+- [Using webview package](desktop-app/webview) **NEW**
 
 ### Authentication
 
@@ -210,23 +225,23 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### File Server
 
 - [Favicon](file-server/favicon/main.go)
-- [Basic](file-server/basic/main.go) **UPDATED**
-- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go) **UPDATED**
-- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go) **UPDATED**
+- [Basic](file-server/basic/main.go)
+- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
+- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
 - [Send/Force-Download Files](file-server/send-files/main.go)
 - Single Page Applications
-    * [single Page Application](file-server/single-page-application/basic/main.go) **UPDATED**
-    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go) **UPDATED**
-    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go) **UPDATED**
+    * [single Page Application](file-server/single-page-application/basic/main.go)
+    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
+    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
 
 ### How to Read from `context.Request() *http.Request`
 
 - [Read JSON](http_request/read-json/main.go)
     * [Struct Validation](http_request/read-json-struct-validation/main.go)
 - [Read XML](http_request/read-xml/main.go)
-- [Read YAML](http_request/read-yaml/main.go) **NEW**
+- [Read YAML](http_request/read-yaml/main.go)
 - [Read Form](http_request/read-form/main.go)
-- [Read Query](http_request/read-query/main.go) **NEW**
+- [Read Query](http_request/read-query/main.go)
 - [Read Custom per type](http_request/read-custom-per-type/main.go)
 - [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
 - [Read Many times](http_request/read-many/main.go)
@@ -238,7 +253,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### How to Write to `context.ResponseWriter() http.ResponseWriter`
 
-- [Content Negotiation](http_responsewriter/content-negotiation) **NEW**
+- [Content Negotiation](http_responsewriter/content-negotiation)
 - [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
 - [Write `shiyanhui/hero` templates](http_responsewriter/herotemplate)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
@@ -257,16 +272,15 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### Miscellaneous
 
-- [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) **NEW**
+- [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
 - [Request Logger](http_request/request-logger/main.go)
     * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
-- [Localization and Internationalization](miscellaneous/i18n/main.go)
 - [Recovery](miscellaneous/recover/main.go)
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
 - [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
 
-### Experimental Handlers
+### Community-based Handlers
 
 - [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
 - [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
@@ -324,12 +338,12 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 
 ### Websockets
 
-- [Basic](websocket/basic) **NEW**
+- [Basic](websocket/basic)
     * [Server](websocket/basic/server.go)
     * [Go Client](websocket/basic/go-client/client.go)
     * [Browser Client](websocket/basic/browser/index.html)
     * [Browser NPM Client (browserify)](websocket/basic/browserify/app.js)
-- [Native Messages](websocket/native-messages/main.go) **UPDATED**
+- [Native Messages](websocket/native-messages/main.go)
 - [TLS Enabled](websocket/secure/README.md)
 
 ### Typescript Automation Tools

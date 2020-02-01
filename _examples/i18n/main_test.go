@@ -68,15 +68,15 @@ func TestI18n(t *testing.T) {
 			Body().Equal(body)
 	}
 
-	e.GET("/multi").WithQueryString("lang=el-GR").Expect().Status(httptest.StatusOK).
+	e.GET("/other").WithQueryString("lang=el-GR").Expect().Status(httptest.StatusOK).
 		Body().Equal(elgrMulti)
-	e.GET("/multi").WithQueryString("lang=en-US").Expect().Status(httptest.StatusOK).
+	e.GET("/other").WithQueryString("lang=en-US").Expect().Status(httptest.StatusOK).
 		Body().Equal(enusMulti)
 
 	// test path prefix (i18n router wrapper).
-	e.GET("/el-gr/multi").Expect().Status(httptest.StatusOK).
+	e.GET("/el-gr/other").Expect().Status(httptest.StatusOK).
 		Body().Equal(elgrMulti)
-	e.GET("/en/multi").Expect().Status(httptest.StatusOK).
+	e.GET("/en/other").Expect().Status(httptest.StatusOK).
 		Body().Equal(enusMulti)
 
 	e.GET("/el-GRtemplates").Expect().Status(httptest.StatusNotFound)

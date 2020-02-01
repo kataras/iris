@@ -157,7 +157,7 @@ func ResolveVHost(addr string) string {
 
 	if idx := strings.IndexByte(addr, ':'); idx == 0 {
 		// only port, then return the 0.0.0.0
-		return "0.0.0.0" + addr[idx:]
+		return /* "0.0.0.0" */ "localhost" + addr[idx:]
 	}
 
 	// with ':' in order to not replace the ipv6 loopback addresses

@@ -283,7 +283,11 @@ func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
 	return api
 }
 
-func (api *APIBuilder) createRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
+// CreateRoutes returns a list of Party-based Routes.
+// It does NOT registers the route. Use `Handle, Get...` methods instead.
+// This method can be used for third-parties Iris helpers packages and tools
+// that want a more detailed view of Party-based Routes before take the decision to register them.
+func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
 	// if relativePath[0] != '/' {
 	// 	return nil, errors.New("path should start with slash and should not be empty")
 	// }
@@ -393,7 +397,7 @@ func getCaller() (string, int) {
 //
 // Returns a *Route, app will throw any errors later on.
 func (api *APIBuilder) Handle(method string, relativePath string, handlers ...context.Handler) *Route {
-	routes := api.createRoutes([]string{method}, relativePath, handlers...)
+	routes := api.CreateRoutes([]string{method}, relativePath, handlers...)
 
 	var route *Route // the last one is returned.
 	for _, route = range routes {
@@ -473,7 +477,7 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	}
 
 	requestPath = joinPath(requestPath, WildcardFileParam())
-	routes := api.createRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)
+	routes := api.CreateRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)
 	getRoute = routes[0]
 	// we get all index, including sub directories even if those
 	// are already managed by the static handler itself.
@@ -493,7 +497,7 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 			slashIdx = 0
 		}
 		requestPath = s.RequestPath[slashIdx:]
-		routes = append(routes, api.createRoutes([]string{http.MethodGet}, requestPath, h)...)
+		routes = append(routes, api.CreateRoutes([]string{http.MethodGet}, requestPath, h)...)
 		getRoute.StaticSites = append(getRoute.StaticSites, s)
 	}
 
@@ -702,7 +706,7 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 // It doesn't care about call order, it will prepend the handlers to all
 // existing routes and the future routes that may being registered.
 //
-// The difference from `.DoneGLobal` is that this/or these Handler(s) are being always running first.
+// The difference from `.DoneGlobal` is that this/or these Handler(s) are being always running first.
 // Use of `ctx.Next()` of those handler(s) is necessary to call the main handler or the next middleware.
 // It's always a good practise to call it right before the `Application#Run` function.
 func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
@@ -917,7 +921,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 
 // OnErrorCode registers an error http status code
 // based on the "statusCode" < 200 || >= 400 (came from `context.StatusCodeNotSuccessful`).
-// The handler is being wrapepd by a generic
+// The handler is being wrapped by a generic
 // handler which will try to reset
 // the body if recorder was enabled
 // and/or disable the gzip if gzip response recorder

@@ -426,7 +426,7 @@ func (r Response) Dispatch(ctx context.Context) {
 // wraps the template file name, layout, (any) view data, status code and error.
 // It's smart enough to complete the request and send the correct response to the client.
 //
-// Example at: https://github.com/kataras/iris/blob/master/_examples/hero/overview/web/controllers/hello_controller.go.
+// Example at: https://github.com/kataras/iris/blob/master/_examples/hero/overview/web/routes/hello.go.
 type View struct {
 	Name   string
 	Layout string

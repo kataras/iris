@@ -30,7 +30,7 @@ import (
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -76,7 +76,7 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 	return u(data, v)
 }
 
-// Context is the midle-man server's "object" for the clients.
+// Context is the midle-man server's "object" dealing with incoming requests.
 //
 // A New context is being acquired from a sync.Pool on each connection.
 // The Context is the most important thing on the iris's http flow.
@@ -292,21 +292,9 @@ type Context interface {
 	// You can use this function to Set and Get local values
 	// that can be used to share information between handlers and middleware.
 	Values() *memstore.Store
-	// Translate is the i18n (localization) middleware's function,
-	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
-	// to execute the translate function and returns the current localized text value.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
-	Translate(format string, args ...interface{}) string
-	// TranslateLang is the i18n (localization) middleware's function,
-	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey())
-	// to execute the translate function and returns the localized text value based on the "lang".
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
-	TranslateLang(lang, format string, args ...interface{}) string
 
 	//  +------------------------------------------------------------+
-	//  | Path, Host, Subdomain, IP, Headers etc...                  |
+	//  | Path, Host, Subdomain, IP, Headers, Localization etc...    |
 	//  +------------------------------------------------------------+
 
 	// Method returns the request.Method, the client's http method to the server.
@@ -322,6 +310,12 @@ type Context interface {
 	// Subdomain returns the subdomain of this request, if any.
 	// Note that this is a fast method which does not cover all cases.
 	Subdomain() (subdomain string)
+	// FindClosest returns a list of "n" paths close to
+	// this request based on subdomain and request path.
+	//
+	// Order may change.
+	// Example: https://github.com/kataras/iris/tree/master/_examples/routing/not-found-suggests
+	FindClosest(n int) []string
 	// IsWWW returns true if the current subdomain (if any) is www.
 	IsWWW() bool
 	// FullRqeuestURI returns the full URI,
@@ -365,6 +359,14 @@ type Context interface {
 	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 	// or by the URL query parameter "referer".
 	GetReferrer() Referrer
+	// GetLocale returns the current request's `Locale` found by i18n middleware.
+	// See `Tr` too.
+	GetLocale() Locale
+	// Tr returns a i18n localized message based on format with optional arguments.
+	// See `GetLocale` too.
+	// Example: https://github.com/kataras/iris/tree/master/_examples/i18n
+	Tr(format string, args ...interface{}) string
+
 	//  +------------------------------------------------------------+
 	//  | Headers helpers                                            |
 	//  +------------------------------------------------------------+
@@ -1503,32 +1505,6 @@ func (ctx *context) Values() *memstore.Store {
 	return &ctx.values
 }
 
-// Translate is the i18n (localization) middleware's function,
-// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
-// to execute the translate function and return the current localized text value.
-//
-// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
-func (ctx *context) Translate(format string, args ...interface{}) string {
-	if cb, ok := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey()).(func(string, ...interface{}) string); ok {
-		return cb(format, args...)
-	}
-
-	return ""
-}
-
-// TranslateLang is the i18n (localization) middleware's function,
-// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey())
-// to execute the translate function and returns the localized text value based on the "lang".
-//
-// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
-func (ctx *context) TranslateLang(lang, format string, args ...interface{}) string {
-	if cb, ok := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetTranslateLangFunctionContextKey()).(func(string, string, ...interface{}) string); ok {
-		return cb(lang, format, args...)
-	}
-
-	return ""
-}
-
 //  +------------------------------------------------------------+
 //  | Path, Host, Subdomain, IP, Headers etc...                  |
 //  +------------------------------------------------------------+
@@ -1628,6 +1604,15 @@ func (ctx *context) Subdomain() (subdomain string) {
 	}
 
 	return
+}
+
+// FindClosest returns a list of "n" paths close to
+// this request based on subdomain and request path.
+//
+// Order may change.
+// Example: https://github.com/kataras/iris/tree/master/_examples/routing/not-found-suggests
+func (ctx *context) FindClosest(n int) []string {
+	return ctx.Application().FindClosestPaths(ctx.Subdomain(), ctx.Path(), n)
 }
 
 // IsWWW returns true if the current subdomain (if any) is www.
@@ -1795,6 +1780,36 @@ func (ctx *context) GetReferrer() Referrer {
 	}
 
 	return emptyReferrer
+}
+
+// GetLocale returns the current request's `Locale` found by i18n middleware.
+// See `Tr` too.
+func (ctx *context) GetLocale() Locale {
+	contextKey := ctx.app.ConfigurationReadOnly().GetLocaleContextKey()
+	if v := ctx.Values().Get(contextKey); v != nil {
+		if locale, ok := v.(Locale); ok {
+			return locale
+		}
+	}
+
+	if locale := ctx.Application().I18nReadOnly().GetLocale(ctx); locale != nil {
+		ctx.Values().Set(contextKey, locale)
+		return locale
+	}
+
+	return nil
+}
+
+// Tr returns a i18n localized message based on format with optional arguments.
+// See `GetLocale` too.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/i18n
+func (ctx *context) Tr(format string, args ...interface{}) string { // other name could be: Localize.
+	if locale := ctx.GetLocale(); locale != nil { // TODO: here... I need to change the logic, if not found then call the i18n's get locale and set the value in order to be fastest on routes that are not using (no need to reigster a middleware.)
+		return locale.GetMessage(format, args...)
+	}
+
+	return fmt.Sprintf(format, args...)
 }
 
 //  +------------------------------------------------------------+
