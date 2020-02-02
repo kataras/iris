@@ -307,7 +307,10 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
 
 			ctx.ContentType(context.ContentHTMLHeaderValue)
-			ctx.WriteString("<pre>\n")
+			_, err = ctx.WriteString("<pre>\n")
+			if err != nil {
+				return err
+			}
 			for _, d := range dirs {
 				name := d.Name()
 				if d.IsDir() {
@@ -317,10 +320,13 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				// part of the URL path, and not indicate the start of a query
 				// string or fragment.
 				url := url.URL{Path: joinPath("./"+dirName, name)} // edit here to redirect correctly, standard library misses that.
-				ctx.Writef("<a href=\"%s\">%s</a>\n", url.String(), htmlReplacer.Replace(name))
+				_, err = ctx.Writef("<a href=\"%s\">%s</a>\n", url.String(), htmlReplacer.Replace(name))
+				if err != nil {
+					return err
+				}
 			}
-			ctx.WriteString("</pre>\n")
-			return nil
+			_, err = ctx.WriteString("</pre>\n")
+			return err
 		}
 	}
 

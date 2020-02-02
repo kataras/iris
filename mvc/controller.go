@@ -273,11 +273,7 @@ func (c *ControllerActivator) activate() {
 }
 
 func (c *ControllerActivator) addErr(err error) bool {
-	if c.router.GetReporter().Err(err) != nil {
-		return true
-	}
-
-	return false
+	return c.router.GetReporter().Err(err) != nil
 }
 
 // register all available, exported methods to handlers if possible.
@@ -492,7 +488,7 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 				ctxValue = reflect.ValueOf(ctx)
 			}
 
-			in := make([]reflect.Value, n, n)
+			in := make([]reflect.Value, n)
 			in[0] = ctrl
 			funcInjector.Inject(&in, ctxValue)
 

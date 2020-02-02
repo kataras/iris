@@ -121,7 +121,7 @@ func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, 
 	// 	}
 	// }
 
-	visited := make(map[int]struct{}, 0) // add a visited to not add twice a single value (09-Jul-2019).
+	visited := make(map[int]struct{}) // add a visited to not add twice a single value (09-Jul-2019).
 	fields := lookupFields(s.elemType, true, nil)
 
 	// for idx, val := range values {
@@ -286,7 +286,7 @@ func (s *StructInjector) String() (trace string) {
 }
 
 // Inject accepts a destination struct and any optional context value(s),
-// hero and mvc takes only one context value and this is the `context.Contex`.
+// hero and mvc takes only one context value and this is the `context.Context`.
 // It applies the bindings to the "dest" struct. It calls the InjectElem.
 func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
 	if dest == nil {
@@ -301,6 +301,11 @@ func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
 func (s *StructInjector) InjectElem(destElem reflect.Value, ctx ...reflect.Value) {
 	for _, f := range s.fields {
 		f.Object.Assign(ctx, func(v reflect.Value) {
+			ff := destElem.FieldByIndex(f.FieldIndex)
+			if !v.Type().AssignableTo(ff.Type()) {
+				return
+			}
+
 			destElem.FieldByIndex(f.FieldIndex).Set(v)
 		})
 	}

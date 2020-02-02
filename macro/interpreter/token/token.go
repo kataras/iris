@@ -37,8 +37,6 @@ const (
 	INT // 42
 )
 
-const eof rune = 0
-
 var keywords = map[string]Type{
 	"else": ELSE,
 }

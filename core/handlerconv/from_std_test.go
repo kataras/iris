@@ -15,7 +15,10 @@ import (
 func TestFromStd(t *testing.T) {
 	expected := "ok"
 	std := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(expected))
+		_, err := w.Write([]byte(expected))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	h := handlerconv.FromStd(http.HandlerFunc(std))

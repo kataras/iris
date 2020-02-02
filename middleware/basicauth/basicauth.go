@@ -116,7 +116,7 @@ func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 	}
 	// all ok
 	if b.expireEnabled {
-		if auth.logged == false {
+		if !auth.logged {
 			auth.expires = time.Now().Add(b.config.Expires)
 			auth.logged = true
 		}

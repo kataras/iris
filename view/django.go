@@ -113,9 +113,9 @@ func Django(directory, extension string) *DjangoEngine {
 	s := &DjangoEngine{
 		directory:     directory,
 		extension:     extension,
-		globals:       make(map[string]interface{}, 0),
-		filters:       make(map[string]FilterFunction, 0),
-		templateCache: make(map[string]*pongo2.Template, 0),
+		globals:       make(map[string]interface{}),
+		filters:       make(map[string]FilterFunction),
+		templateCache: make(map[string]*pongo2.Template),
 	}
 
 	return s
@@ -235,7 +235,7 @@ func (s *DjangoEngine) loadDirectory() (templateErr error) {
 	defer s.mu.Unlock()
 
 	// Walk the supplied directory and compile any files that match our extension list.
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		// Fix same-extension-dirs bug: some dir might be named to: "users.tmpl", "local.html".
 		// These dirs should be excluded as they are not valid golang templates, but files under
 		// them should be treat as normal.
@@ -270,6 +270,10 @@ func (s *DjangoEngine) loadDirectory() (templateErr error) {
 		return nil
 	})
 
+	if err != nil {
+		return err
+	}
+
 	return
 }
 
@@ -294,8 +298,6 @@ func (s *DjangoEngine) loadAssets() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var templateErr error
-
 	names := namesFn()
 	for _, path := range names {
 		if !strings.HasPrefix(path, virtualDirectory) {
@@ -304,7 +306,6 @@ func (s *DjangoEngine) loadAssets() error {
 
 		rel, err := filepath.Rel(virtualDirectory, path)
 		if err != nil {
-			templateErr = err
 			return err
 		}
 
@@ -313,18 +314,18 @@ func (s *DjangoEngine) loadAssets() error {
 
 			buf, err := assetFn(path)
 			if err != nil {
-				templateErr = err
 				return err
 			}
+
 			name := filepath.ToSlash(rel)
 			s.templateCache[name], err = set.FromString(string(buf))
 			if err != nil {
-				templateErr = err
 				return err
 			}
 		}
 	}
-	return templateErr
+
+	return nil
 }
 
 // getPongoContext returns the pongo2.Context from map[string]interface{} or from pongo2.Context, used internaly

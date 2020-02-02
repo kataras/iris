@@ -87,15 +87,6 @@ func (l *methodLexer) peekNext() (w string) {
 	return l.peek(l.cur + 1)
 }
 
-func (l *methodLexer) peekPrev() (w string) {
-	if l.cur > 0 {
-		cur := l.cur - 1
-		w = l.words[cur]
-	}
-
-	return w
-}
-
 func genParamKey(argIdx int) string {
 	return "param" + strconv.Itoa(argIdx) // param0, param1, param2...
 }

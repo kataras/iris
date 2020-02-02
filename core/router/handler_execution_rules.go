@@ -21,18 +21,6 @@ type ExecutionRules struct {
 	Main ExecutionOptions
 }
 
-func handlersNames(handlers context.Handlers) (names []string) {
-	for _, h := range handlers {
-		if h == nil {
-			continue
-		}
-
-		names = append(names, context.HandlerName(h))
-	}
-
-	return
-}
-
 func applyExecutionRules(rules ExecutionRules, begin, done, main *context.Handlers) {
 	if !rules.Begin.Force && !rules.Done.Force && !rules.Main.Force {
 		return // do not proceed and spend buld-time here if nothing changed.

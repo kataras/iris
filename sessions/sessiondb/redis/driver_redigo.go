@@ -205,7 +205,7 @@ func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix stri
 		if len(replies) == 2 {
 			// take the second, it must contain the slice of keys.
 			if keysSliceAsBytes, ok := replies[1].([]interface{}); ok {
-				keys := make([]string, len(keysSliceAsBytes), len(keysSliceAsBytes))
+				keys := make([]string, len(keysSliceAsBytes))
 
 				for i, k := range keysSliceAsBytes {
 					keys[i] = fmt.Sprintf("%s", k)[len(r.Config.Prefix):]

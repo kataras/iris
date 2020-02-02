@@ -26,7 +26,6 @@ Would be readily available to anyone who could intercept the HTTP request.
 */
 import (
 	"bufio"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -47,8 +46,7 @@ type (
 		log     func(format string, a ...interface{})
 		enabled bool // default true
 		// after alm started
-		process     *os.Process
-		debugOutput io.Writer
+		process *os.Process
 	}
 )
 
@@ -111,11 +109,6 @@ func (e *Editor) DisableOutput() {
 // GetDescription EditorPlugin is a bridge between iris and the alm-tools, the browser-based IDE for client-side sources.
 func (e *Editor) GetDescription() string {
 	return "A bridge between iris and the alm-tools, the browser-based IDE."
-}
-
-// we use that editorWriter to prefix the editor's output with "Editor Adaptor: "
-type editorWriter struct {
-	underline io.Writer
 }
 
 // Run starts the editor's server.
