@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 )
 
 // HTMLEngine contains the html view engine structure.
@@ -71,8 +70,8 @@ func HTML(directory, extension string) *HTMLEngine {
 		left:        "{{",
 		right:       "}}",
 		layout:      "",
-		layoutFuncs: make(map[string]interface{}, 0),
-		funcs:       make(map[string]interface{}, 0),
+		layoutFuncs: make(map[string]interface{}),
+		funcs:       make(map[string]interface{}),
 	}
 
 	return s
@@ -244,7 +243,7 @@ func (s *HTMLEngine) loadDirectory() error {
 	s.Templates = template.New(dir)
 	s.Templates.Delims(s.left, s.right)
 
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 		} else {
 			rel, err := filepath.Rel(dir, path)
@@ -287,6 +286,10 @@ func (s *HTMLEngine) loadDirectory() error {
 		}
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
 
 	return templateErr
 }
@@ -374,7 +377,10 @@ func (s *HTMLEngine) loadAssets() error {
 			}
 
 			// Add our funcmaps.
-			tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
+			if _, err = tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents); err != nil {
+				templateErr = err
+				continue
+			}
 		}
 	}
 	return templateErr
@@ -454,8 +460,6 @@ func (s *HTMLEngine) runtimeFuncsFor(name string, binding interface{}) {
 		tpl.Funcs(funcs)
 	}
 }
-
-var zero = time.Time{}
 
 // ExecuteWriter executes a template and writes its result to the w writer.
 func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bindingData interface{}) error {

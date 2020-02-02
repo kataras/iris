@@ -711,7 +711,7 @@ func (r *Store) Save(key string, value interface{}, immutable bool) (Entry, bool
 				// we should allow this
 				kv.ValueRaw = value
 				kv.immutable = immutable
-			} else if kv.immutable == false {
+			} else if !kv.immutable {
 				// if it was not immutable then user can alt it via `Set` and `SetImmutable`
 				kv.ValueRaw = value
 				kv.immutable = immutable

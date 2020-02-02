@@ -30,7 +30,7 @@ func NewHandler(expiration time.Duration) *Handler {
 	return &Handler{
 		rule:       DefaultRuleSet,
 		expiration: expiration,
-		entries:    make(map[string]*entry.Entry, 0),
+		entries:    make(map[string]*entry.Entry),
 	}
 }
 

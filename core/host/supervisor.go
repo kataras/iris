@@ -194,12 +194,8 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 	su.notifyErr(err)
 
 	if su.isWaiting() {
-	blockStatement:
-		for {
-			select {
-			case <-su.unblockChan:
-				break blockStatement
-			}
+		for range su.unblockChan {
+			break
 		}
 	}
 

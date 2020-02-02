@@ -182,7 +182,7 @@ const delim = "\n"
 
 func (g *Group) Error() (s string) {
 	if len(g.Errors) > 0 {
-		msgs := make([]string, len(g.Errors), len(g.Errors))
+		msgs := make([]string, len(g.Errors))
 		for i, err := range g.Errors {
 			msgs[i] = err.Error()
 		}
@@ -318,21 +318,6 @@ func sortGroups(groups []*Group) {
 	sort.Slice(groups, func(i, j int) bool {
 		return groups[i].index < groups[j].index
 	})
-}
-
-func tryGetTypeText(typ interface{}) string {
-	if typ == nil {
-		return ""
-	}
-
-	switch v := typ.(type) {
-	case string:
-		return v
-	case fmt.Stringer:
-		return v.String()
-	default:
-		return ""
-	}
 }
 
 func isNotNil(err error) bool {

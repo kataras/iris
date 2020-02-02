@@ -41,7 +41,7 @@ import (
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.1.4"
+const Version = "12.1.5"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
@@ -636,17 +636,9 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 // A shortcut for the `host#RegisterOnInterrupt`.
 var RegisterOnInterrupt = host.RegisterOnInterrupt
 
-// Shutdown gracefully terminates all the application's server hosts.
+// Shutdown gracefully terminates all the application's server hosts and any tunnels.
 // Returns an error on the first failure, otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
-	for _, t := range app.config.Tunneling.Tunnels {
-		if t.Name == "" {
-			continue
-		}
-
-		app.config.Tunneling.stopTunnel(t)
-	}
-
 	for i, su := range app.Hosts {
 		app.logger.Debugf("Host[%d]: Shutdown now", i)
 		if err := su.Shutdown(ctx); err != nil {
@@ -654,6 +646,17 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 			return err
 		}
 	}
+
+	for _, t := range app.config.Tunneling.Tunnels {
+		if t.Name == "" {
+			continue
+		}
+
+		if err := app.config.Tunneling.stopTunnel(t); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

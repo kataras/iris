@@ -34,8 +34,8 @@ func Handlebars(directory, extension string) *HandlebarsEngine {
 	s := &HandlebarsEngine{
 		directory:     directory,
 		extension:     extension,
-		templateCache: make(map[string]*raymond.Template, 0),
-		helpers:       make(map[string]interface{}, 0),
+		templateCache: make(map[string]*raymond.Template),
+		helpers:       make(map[string]interface{}),
 	}
 
 	// register the render helper here
@@ -133,7 +133,7 @@ func (s *HandlebarsEngine) loadDirectory() error {
 	// instead of the html/template engine which works like {{ render "myfile.html"}} and accepts the parent binding, with handlebars we can't do that because of lack of runtime helpers (dublicate error)
 
 	var templateErr error
-	filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
 		if info == nil || info.IsDir() {
 			return nil
 		}
@@ -165,6 +165,10 @@ func (s *HandlebarsEngine) loadDirectory() error {
 		return nil
 	})
 
+	if err != nil {
+		return err
+	}
+
 	return templateErr
 }
 
@@ -186,7 +190,6 @@ func (s *HandlebarsEngine) loadAssets() error {
 			virtualDirectory = virtualDirectory[1:]
 		}
 	}
-	var templateErr error
 
 	names := namesFn()
 	for _, path := range names {
@@ -198,28 +201,27 @@ func (s *HandlebarsEngine) loadAssets() error {
 
 			rel, err := filepath.Rel(virtualDirectory, path)
 			if err != nil {
-				templateErr = err
 				return err
 			}
 
 			buf, err := assetFn(path)
 			if err != nil {
-				templateErr = err
 				return err
 			}
+
 			contents := string(buf)
 			name := filepath.ToSlash(rel)
 
 			tmpl, err := raymond.Parse(contents)
 			if err != nil {
-				templateErr = err
 				return err
 			}
 			s.templateCache[name] = tmpl
 
 		}
 	}
-	return templateErr
+
+	return nil
 }
 
 func (s *HandlebarsEngine) fromCache(relativeName string) *raymond.Template {

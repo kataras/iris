@@ -29,15 +29,3 @@ type Engine interface {
 	// Ext should return the final file extension which this view engine is responsible to render.
 	Ext() string
 }
-
-type namedEngine interface {
-	String() string
-}
-
-func getEngineName(e Engine) string {
-	if n, ok := e.(namedEngine); ok {
-		return n.String()
-	}
-
-	return ""
-}

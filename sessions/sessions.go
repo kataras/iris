@@ -58,7 +58,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 		} else { // > 0
 			cookie.Expires = time.Now().Add(expires)
 		}
-		cookie.MaxAge = int(cookie.Expires.Sub(time.Now()).Seconds())
+		cookie.MaxAge = int(time.Until(cookie.Expires).Seconds())
 	}
 
 	// set the cookie to secure if this is a tls wrapped request

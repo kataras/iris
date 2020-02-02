@@ -14,13 +14,13 @@ import (
 // 		 .FromStd(func(w http.ResponseWriter, r *http.Request))
 // 		 .FromStd(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
 func FromStd(handler interface{}) context.Handler {
-	switch handler.(type) {
+	switch h := handler.(type) {
 	case context.Handler:
 		{
 			//
 			// it's already a iris handler
 			//
-			return handler.(context.Handler)
+			return h
 		}
 
 	case http.Handler:
@@ -28,7 +28,6 @@ func FromStd(handler interface{}) context.Handler {
 		// handlerFunc.ServeHTTP(w,r)
 		//
 		{
-			h := handler.(http.Handler)
 			return func(ctx context.Context) {
 				h.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 			}
@@ -39,7 +38,7 @@ func FromStd(handler interface{}) context.Handler {
 			//
 			// handlerFunc(w,r)
 			//
-			return FromStd(http.HandlerFunc(handler.(func(http.ResponseWriter, *http.Request))))
+			return FromStd(http.HandlerFunc(h))
 		}
 
 	case func(http.ResponseWriter, *http.Request, http.HandlerFunc):
@@ -47,7 +46,7 @@ func FromStd(handler interface{}) context.Handler {
 			//
 			// handlerFunc(w,r, http.HandlerFunc)
 			//
-			return FromStdWithNext(handler.(func(http.ResponseWriter, *http.Request, http.HandlerFunc)))
+			return FromStdWithNext(h)
 		}
 
 	default:

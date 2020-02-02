@@ -355,6 +355,8 @@ type Context interface {
 	//
 	// Keep note that this checks the "User-Agent" request header.
 	IsMobile() bool
+	// IsScript reports whether a client is a script.
+	IsScript() bool
 	// GetReferrer extracts and returns the information from the "Referer" header as specified
 	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 	// or by the URL query parameter "referer".
@@ -1700,7 +1702,7 @@ func (ctx *context) IsAjax() bool {
 	return ctx.GetHeader("X-Requested-With") == "XMLHttpRequest"
 }
 
-var isMobileRegex = regexp.MustCompile(`(?i)(android|avantgo|blackberry|bolt|boost|cricket|docomo|fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)`)
+var isMobileRegex = regexp.MustCompile("(?:hpw|i|web)os|alamofire|alcatel|amoi|android|avantgo|blackberry|blazer|cell|cfnetwork|darwin|dolfin|dolphin|fennec|htc|ip(?:hone|od|ad)|ipaq|j2me|kindle|midp|minimo|mobi|motorola|nec-|netfront|nokia|opera m(ob|in)i|palm|phone|pocket|portable|psp|silk-accelerated|skyfire|sony|ucbrowser|up.browser|up.link|windows ce|xda|zte|zune")
 
 // IsMobile checks if client is using a mobile device(phone or tablet) to communicate with this server.
 // If the return value is true that means that the http client using a mobile
@@ -1708,8 +1710,16 @@ var isMobileRegex = regexp.MustCompile(`(?i)(android|avantgo|blackberry|bolt|boo
 //
 // Keep note that this checks the "User-Agent" request header.
 func (ctx *context) IsMobile() bool {
-	s := ctx.GetHeader("User-Agent")
+	s := strings.ToLower(ctx.GetHeader("User-Agent"))
 	return isMobileRegex.MatchString(s)
+}
+
+var isScriptRegex = regexp.MustCompile("curl|wget|collectd|python|urllib|java|jakarta|httpclient|phpcrawl|libwww|perl|go-http|okhttp|lua-resty|winhttp|awesomium")
+
+// IsScript reports whether a client is a script.
+func (ctx *context) IsScript() bool {
+	s := strings.ToLower(ctx.GetHeader("User-Agent"))
+	return isScriptRegex.MatchString(s)
 }
 
 type (
@@ -3252,7 +3262,10 @@ var finishCallbackB = []byte(");")
 // WriteJSONP marshals the given interface object and writes the JSON response to the writer.
 func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimization ...bool) (int, error) {
 	if callback := options.Callback; callback != "" {
-		writer.Write([]byte(callback + "("))
+		n, err := writer.Write([]byte(callback + "("))
+		if err != nil {
+			return n, err
+		}
 		defer writer.Write(finishCallbackB)
 	}
 
@@ -3342,7 +3355,10 @@ func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	for k, v := range m.entries {
-		e.Encode(xmlMapEntry{XMLName: xml.Name{Local: k}, Value: v})
+		err = e.Encode(xmlMapEntry{XMLName: xml.Name{Local: k}, Value: v})
+		if err != nil {
+			return err
+		}
 	}
 
 	return e.EncodeToken(start.End())
@@ -3351,7 +3367,10 @@ func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 // WriteXML marshals the given interface object and writes the XML response to the writer.
 func WriteXML(writer io.Writer, v interface{}, options XML) (int, error) {
 	if prefix := options.Prefix; prefix != "" {
-		writer.Write([]byte(prefix))
+		n, err := writer.Write([]byte(prefix))
+		if err != nil {
+			return n, err
+		}
 	}
 
 	if indent := options.Indent; indent != "" {

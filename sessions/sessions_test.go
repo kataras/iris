@@ -31,7 +31,10 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 		s := sess.Start(ctx)
 		sessValues := s.GetAll()
 
-		ctx.JSON(sessValues)
+		_, err := ctx.JSON(sessValues)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if testEnableSubdomain {
@@ -40,7 +43,7 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 
 	app.Post("/set", func(ctx context.Context) {
 		s := sess.Start(ctx)
-		vals := make(map[string]interface{}, 0)
+		vals := make(map[string]interface{})
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot read JSON. Trace %s", err.Error())
 		}
@@ -74,7 +77,10 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 		ctx.Next()
 	}, func(ctx context.Context) {
 		s := sess.Start(ctx)
-		ctx.Writef(s.GetString("key"))
+		_, err := ctx.Writef(s.GetString("key"))
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	e := httptest.New(t, app, httptest.URL("http://example.com"))
@@ -123,7 +129,7 @@ func TestFlashMessages(t *testing.T) {
 	}
 
 	app.Post("/set", func(ctx context.Context) {
-		vals := make(map[string]interface{}, 0)
+		vals := make(map[string]interface{})
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot readjson. Trace %s", err.Error())
 		}

@@ -38,7 +38,7 @@ type testCustomResult struct {
 
 // The only one required function to make that a custom Response dispatcher.
 func (r testCustomResult) Dispatch(ctx context.Context) {
-	ctx.HTML(r.HTML)
+	_, _ = ctx.HTML(r.HTML)
 }
 
 func GetCustomResponse() testCustomResult {
@@ -90,7 +90,7 @@ func (e err) Dispatch(ctx context.Context) {
 	// write the status code based on the err's StatusCode.
 	ctx.StatusCode(e.Status)
 	// send to the client the whole object as json
-	ctx.JSON(e)
+	_, _ = ctx.JSON(e)
 }
 
 func GetCustomErrorAsDispatcher() err {

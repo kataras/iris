@@ -186,7 +186,7 @@ func AddGzipHeaders(w ResponseWriter) {
 // FlushResponse validates the response headers in order to be compatible with the gzip written data
 // and writes the data to the underline ResponseWriter.
 func (w *GzipResponseWriter) FlushResponse() {
-	w.WriteNow(w.chunks)
+	_, _ = w.WriteNow(w.chunks)
 	w.ResponseWriter.FlushResponse()
 }
 

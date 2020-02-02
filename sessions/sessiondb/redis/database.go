@@ -239,7 +239,10 @@ func (db *Database) Release(sid string) {
 	// clear all $sid-$key.
 	db.Clear(sid)
 	// and remove the $sid.
-	db.c.Driver.Delete(sid)
+	err := db.c.Driver.Delete(sid)
+	if err != nil {
+		golog.Debugf("Database.Release.Driver.Delete: %s: %v", sid, err)
+	}
 }
 
 // Close terminates the redis connection.

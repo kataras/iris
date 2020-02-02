@@ -62,13 +62,6 @@ func prefix(s string, prefix string) string {
 	return s
 }
 
-func suffix(s string, suffix string) string {
-	if !strings.HasSuffix(s, suffix) {
-		return s + suffix
-	}
-	return s
-}
-
 func splitMethod(methodMany string) []string {
 	methodMany = strings.Trim(methodMany, " ")
 	return strings.Split(methodMany, " ")
@@ -348,7 +341,7 @@ func toStringSlice(args []interface{}) (argsString []string) {
 		return
 	}
 
-	argsString = make([]string, argsSize, argsSize)
+	argsString = make([]string, argsSize)
 	for i, v := range args {
 		if s, ok := v.(string); ok {
 			argsString[i] = s

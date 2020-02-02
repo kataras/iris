@@ -321,7 +321,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler ErrorHandler, values [
 			if statusCode < 400 {
 				statusCode = DefaultErrStatusCode
 			}
-			break // break on first error, error should be in the end but we
+			// break on first error, error should be in the end but we
 			// need to know break the dispatcher if any error.
 			// at the end; we don't want to write anything to the response if error is not nil.
 
@@ -505,7 +505,7 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 			}
 		}
 
-		ctx.View(r.Name)
+		_ = ctx.View(r.Name)
 	}
 }
 

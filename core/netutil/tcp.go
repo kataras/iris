@@ -23,13 +23,17 @@ type tcpKeepAliveListener struct {
 }
 
 // Accept accepts tcp connections aka clients.
-func (l tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+func (l tcpKeepAliveListener) Accept() (net.Conn, error) {
 	tc, err := l.AcceptTCP()
 	if err != nil {
-		return
+		return tc, err
 	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(3 * time.Minute)
+	if err = tc.SetKeepAlive(true); err != nil {
+		return tc, err
+	}
+	if err = tc.SetKeepAlivePeriod(3 * time.Minute); err != nil {
+		return tc, err
+	}
 	return tc, nil
 }
 

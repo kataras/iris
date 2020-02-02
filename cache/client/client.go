@@ -153,7 +153,10 @@ func (h *ClientHandler) ServeHTTP(ctx context.Context) {
 			return
 		}
 		// go Client.Do(request)
-		Client.Do(request)
+		_, err = Client.Do(request)
+		if err != nil {
+			return
+		}
 	} else {
 		// get the status code , content type and the write the response body
 		ctx.ContentType(response.Header.Get(cfg.ContentTypeHeader))
@@ -163,7 +166,6 @@ func (h *ClientHandler) ServeHTTP(ctx context.Context) {
 		if err != nil {
 			return
 		}
-		ctx.Write(responseBody)
-
+		_, _ = ctx.Write(responseBody)
 	}
 }
