@@ -1838,12 +1838,16 @@ func (ctx *context) Header(name string, value string) {
 
 const contentTypeContextKey = "_iris_content_type"
 
+func shouldAppendCharset(cType string) bool {
+	return cType != ContentBinaryHeaderValue && cType != ContentWebassemblyHeaderValue
+}
+
 func (ctx *context) contentTypeOnce(cType string, charset string) {
 	if charset == "" {
 		charset = ctx.Application().ConfigurationReadOnly().GetCharset()
 	}
 
-	if cType != ContentBinaryHeaderValue {
+	if shouldAppendCharset(cType) {
 		cType += "; charset=" + charset
 	}
 
@@ -1869,7 +1873,7 @@ func (ctx *context) ContentType(cType string) {
 	}
 	// if doesn't contain a charset already then append it
 	if !strings.Contains(cType, "charset") {
-		if cType != ContentBinaryHeaderValue {
+		if shouldAppendCharset(cType) {
 			cType += "; charset=" + ctx.Application().ConfigurationReadOnly().GetCharset()
 		}
 	}
@@ -3078,6 +3082,8 @@ func (ctx *context) View(filename string, optionalViewModel ...interface{}) erro
 const (
 	// ContentBinaryHeaderValue header value for binary data.
 	ContentBinaryHeaderValue = "application/octet-stream"
+	// ContentWebassemblyHeaderValue header value for web assembly files.
+	ContentWebassemblyHeaderValue = "application/wasm"
 	// ContentHTMLHeaderValue is the  string of text/html response header's content type value.
 	ContentHTMLHeaderValue = "text/html"
 	// ContentJSONHeaderValue header value for JSON data.
