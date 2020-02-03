@@ -81,9 +81,9 @@ If you discover a security vulnerability within Iris, please send an e-mail to [
 
 ## License
 
-The project name "Iris" was inspired by the Greek mythology.
+This project is licensed under the [BSD 3-clause license](LICENSE), just like the Go project itself.
 
-Iris Web Framework is free and open-source software licensed under the [3-Clause BSD License](LICENSE).
+The project name "Iris" was inspired by the Greek mythology.
 
 ## Stargazers over time
 
