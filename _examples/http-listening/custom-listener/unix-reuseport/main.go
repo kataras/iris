@@ -19,9 +19,7 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// $ go get github.com/valyala/tcplisten
-// $ go run main.go
-
+// You can run the same app as many times as you want.
 func main() {
 	app := iris.New()
 
@@ -35,7 +33,7 @@ func main() {
 		FastOpen:    true,
 	}
 
-	l, err := listenerCfg.NewListener("tcp", ":8080")
+	l, err := listenerCfg.NewListener("tcp4", ":8080")
 	if err != nil {
 		panic(err)
 	}
