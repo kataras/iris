@@ -23,7 +23,7 @@ func main() {
 	mypath4Route.Name = "my-page4"
 
 	// same with Handle/Func
-	mypath5Route := app.Handle("GET", "/mypath5/{paramfirst}/statichere/{paramsecond}/{otherparam}/anything/{something:path}", writePathHandler)
+	mypath5Route := app.Handle("GET", "/mypath5/{paramfirst:int}/statichere/{paramsecond}/{otherparam}/anything/{something:path}", writePathHandlerPage5)
 	mypath5Route.Name = "my-page5"
 
 	mypath6Route := app.Get("/mypath6/{paramfirst}/{paramsecond}/statichere/{paramThirdAfterStatic}", writePathHandler)
@@ -63,4 +63,8 @@ func main() {
 
 func writePathHandler(ctx iris.Context) {
 	ctx.Writef("Hello from %s.", ctx.Path())
+}
+
+func writePathHandlerPage5(ctx iris.Context) {
+	ctx.Writef("Hello from %s.\nparamfirst(int)=%d", ctx.Path(), ctx.Params().GetIntDefault("paramfirst", 0))
 }
