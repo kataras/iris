@@ -1,6 +1,6 @@
 # News
 
-![](https://iris-go.com/images/release.png) Iris version **12.1.5** has been [released](HISTORY.md#su-02-february-2020--v1215)!
+![](https://iris-go.com/images/release.png) Iris version **12.1.6** has been [released](HISTORY.md#we-05-february-2020--v1216)!
 
 ![](https://iris-go.com/images/cli.png) The official [Iris Command Line Interface](https://github.com/kataras/iris-cli) will soon be near you in 2020!
 

@@ -125,16 +125,13 @@ func main() {
 		ctx.ViewData("showingAllDone", true)
 		ctx.ViewData("title", "Todos - All Done")
 
-		// Key does not actual matter at all here.
-		// However, you can enable it for better performance.
-		// In order to enable key mapping for
-		// jet specific renderer and ranger types
-		// you have to initialize the View Engine
-		// with `tmpl.DisableViewDataTypeCheck("_jet")`.
-		//
-		// Defaults to type checks, empty key.
-		ctx.ViewData("_jet", (&doneTODOs{}).New(todos))
-		ctx.View("todos/index.jet")
+		// Use ctx.ViewData("_jet", jetData)
+		// if using as middleware and you want
+		// to pre-set the value or even change it later on from another next middleware.
+		// ctx.ViewData("_jet", (&doneTODOs{}).New(todos))
+		// and ctx.View("todos/index.jet")
+		// OR
+		ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
 	})
 
 	port := os.Getenv("PORT")

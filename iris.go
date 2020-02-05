@@ -41,7 +41,7 @@ import (
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.1.5"
+const Version = "12.1.6"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
@@ -583,9 +583,17 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		srv.ErrorLog = log.New(app.logger.Printer.Output, "[HTTP Server] ", 0)
 	}
 
-	if srv.Addr == "" {
-		srv.Addr = ":8080"
+	if addr := srv.Addr; addr == "" {
+		addr = ":8080"
+		if len(app.Hosts) > 0 {
+			if v := app.Hosts[0].Server.Addr; v != "" {
+				addr = v
+			}
+		}
+
+		srv.Addr = addr
 	}
+
 	app.logger.Debugf("Host: addr is %s", srv.Addr)
 
 	// create the new host supervisor
