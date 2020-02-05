@@ -14,7 +14,7 @@
 <br />
 <br />
 
-<a href="{{urlpath("my-page5", "theParam1", "theParam2Afterstatichere", "otherParam", "matchAnythingAfterStatic")}}">
+<a href="{{urlpath("my-page5", "42", "theParam2Afterstatichere", "otherParam", "matchAnythingAfterStatic")}}">
   /mypath5/{paramfirst}/statichere/{paramsecond}/{otherparam}/anything/{anything:path}</a>
 <br />
 <br />
