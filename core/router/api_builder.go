@@ -479,6 +479,7 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	requestPath = joinPath(requestPath, WildcardFileParam())
 	routes := api.CreateRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)
 	getRoute = routes[0]
+	isSubdomain := hasSubdomain(api.relativePath)
 	// we get all index, including sub directories even if those
 	// are already managed by the static handler itself.
 	staticSites := context.GetStaticSites(directory, getRoute.StaticPath(), options.IndexName)
@@ -496,7 +497,13 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 		if slashIdx == -1 {
 			slashIdx = 0
 		}
-		requestPath = s.RequestPath[slashIdx:]
+
+		if isSubdomain { //subdomain
+			requestPath = s.RequestPath[slashIdx:]
+		} else {
+			requestPath = s.RequestPath[slashIdx + len(api.relativePath):]
+		}
+
 		routes = append(routes, api.CreateRoutes([]string{http.MethodGet}, requestPath, h)...)
 		getRoute.StaticSites = append(getRoute.StaticSites, s)
 	}

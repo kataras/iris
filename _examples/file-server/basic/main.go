@@ -33,11 +33,25 @@ func newApp() *iris.Application {
 		// AssetValidator:  func(ctx iris.Context, name string) bool { ... }
 	})
 
+	cdn := app.Party("cdn.")
+	{
+		cdn.HandleDir("/", "./assets", iris.DirOptions{
+			IndexName: "/index.html",
+			Gzip: false,
+			ShowList: false,
+		})
+	}
+
 	// You can also register any index handler manually, order of registration does not matter:
 	// v1.Get("/static", [...custom middleware...], func(ctx iris.Context) {
 	//  [...custom code...]
 	// 	ctx.ServeFile("./assets/index.html", false)
 	// })
+
+	// http://cdn.localhost:8080/
+	// http://cdn.localhost:8080/css/main.css
+	// http://cdn.localhost:8080/js/jquery-2.1.1.js
+	// http://cdn.localhost:8080/favicon.ico
 
 	// http://localhost:8080/v1/static
 	// http://localhost:8080/v1/static/css/main.css

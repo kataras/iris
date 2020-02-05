@@ -92,4 +92,25 @@ func TestFileServerBasic(t *testing.T) {
 			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
 			Body().Equal(contents)
 	}
+
+
+	subDomainUrls := []resource{
+		"css/main.css",
+		"js/jquery-2.1.1.js",
+		"app2",
+		"app2/app2app3",
+		"/",
+		"",
+	}
+
+	//test subdomain
+	e = httptest.New(t, app)
+	for _, u := range subDomainUrls {
+		url := u.String()
+		contents := u.loadFromBase("./assets")
+		e.GET(url).WithURL("http://cdn.localhost:8080").Expect().
+			Status(httptest.StatusOK).
+			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
+			Body().Equal(contents)
+	}
 }
