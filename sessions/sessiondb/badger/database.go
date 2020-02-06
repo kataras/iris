@@ -244,7 +244,11 @@ func (db *Database) Clear(sid string) {
 	defer iter.Close()
 
 	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
-		txn.Delete(iter.Item().Key())
+		key := iter.Item().Key()
+		if err := txn.Delete(key); err != nil {
+			golog.Warnf("Database.Clear: %s: %v", key, err)
+			continue
+		}
 	}
 }
 
@@ -255,8 +259,12 @@ func (db *Database) Release(sid string) {
 	db.Clear(sid)
 	// and remove the $sid.
 	txn := db.Service.NewTransaction(true)
-	txn.Delete([]byte(sid))
-	txn.Commit()
+	if err := txn.Delete([]byte(sid)); err != nil {
+		golog.Warnf("Database.Release.Delete: %s: %v", sid, err)
+	}
+	if err := txn.Commit(); err != nil {
+		golog.Debugf("Database.Release.Commit: %s: %v", sid, err)
+	}
 }
 
 // Close shutdowns the badger connection.

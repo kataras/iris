@@ -542,7 +542,7 @@ var types = map[string]string{
 func init() {
 	for ext, typ := range types {
 		// skip errors
-		mime.AddExtensionType(ext, typ)
+		_ = mime.AddExtensionType(ext, typ)
 	}
 }
 

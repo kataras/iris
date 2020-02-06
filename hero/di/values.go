@@ -14,7 +14,7 @@ func NewValues() Values {
 // Clone returns a copy of the current values.
 func (bv Values) Clone() Values {
 	if n := len(bv); n > 0 {
-		values := make(Values, n, n)
+		values := make(Values, n)
 		copy(values, bv)
 		return values
 	}

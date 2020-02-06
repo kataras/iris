@@ -165,10 +165,8 @@ func TestCacheValidator(t *testing.T) {
 	managedCache := cache.Cache(cacheDuration)
 	managedCache.AddRule(rule.Validator([]rule.PreValidator{
 		func(ctx context.Context) bool {
-			if ctx.Request().URL.Path == "/invalid" {
-				return false // should always invalid for cache, don't bother to go to try to get or set cache
-			}
-			return true
+			// should always invalid for cache, don't bother to go to try to get or set cache
+			return ctx.Request().URL.Path != "/invalid"
 		},
 	}, nil))
 
@@ -176,10 +174,8 @@ func TestCacheValidator(t *testing.T) {
 	managedCache2.AddRule(rule.Validator(nil,
 		[]rule.PostValidator{
 			func(ctx context.Context) bool {
-				if ctx.ResponseWriter().Header().Get("DONT") != "" {
-					return false // it's passed the Claim and now Valid checks if the response contains a header of "DONT"
-				}
-				return true
+				// it's passed the Claim and now Valid checks if the response contains a header of "DONT"
+				return ctx.ResponseWriter().Header().Get("DONT") == ""
 			},
 		},
 	))

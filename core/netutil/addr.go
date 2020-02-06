@@ -91,12 +91,7 @@ var IsLoopbackHost = func(requestHost string) bool {
 const (
 	// defaultServerHostname returns the default hostname which is "localhost"
 	defaultServerHostname = "localhost"
-	// defaultServerPort returns the default port which is 8080, not used
-	defaultServerPort = 8080
 )
-
-// defaultServerAddr the default server addr which is: localhost:8080
-var defaultServerAddr = defaultServerHostname + ":" + strconv.Itoa(defaultServerPort)
 
 // ResolveAddr tries to convert a given string to an address which is compatible with net.Listener and server
 func ResolveAddr(addr string) string {

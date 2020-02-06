@@ -83,19 +83,6 @@ const (
 	DefaultParamErrorCode = 404
 )
 
-// func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
-// 	if t.Type == token.INT {
-// 		return ast.ParamFuncArgToInt(t.Literal)
-// 	}
-// 	// act all as strings here, because of int vs int64 vs uint64 and etc.
-// 	return t.Literal, nil
-// }
-
-func parseParamFuncArg(t token.Token) (a string, err error) {
-	// act all as strings here, because of int vs int64 vs uint64 and etc.
-	return t.Literal, nil
-}
-
 func (p ParamParser) Error() error {
 	if len(p.errors) > 0 {
 		return fmt.Errorf(strings.Join(p.errors, "\n"))
@@ -180,7 +167,6 @@ func (p *ParamParser) Parse(paramTypes []ast.ParamType) (*ast.ParamStatement, er
 			if stmt.Name == "" {
 				p.appendErr("[%d:%d] illegal token: }, forgot '{' ?", t.Start, t.End)
 			}
-			break
 		case token.ILLEGAL:
 			p.appendErr("[%d:%d] illegal token: %s", t.Start, t.End, t.Literal)
 		default:

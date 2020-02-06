@@ -170,8 +170,8 @@ func (t *Typescript) hasTypescriptFiles() bool {
 		t.log("typescript error: directory '%s' couldn't be found,\nplease specify a valid path for your *.ts files", root)
 		return false
 	}
-	// ignore error
-	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+
+	err := filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 		if fi.IsDir() {
 			return nil
 		}
@@ -188,6 +188,9 @@ func (t *Typescript) hasTypescriptFiles() bool {
 
 		return nil
 	})
+	if err != nil {
+		t.log("typescript: hasTypescriptFiles: %v", err)
+	}
 	return hasTs
 }
 
@@ -210,8 +213,7 @@ func (t *Typescript) getTypescriptProjects() []string {
 	root := t.Config.Dir
 	// t.logger.Printf("\nSearching for typescript projects in %s", root)
 
-	// ignore error
-	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 		if fi.IsDir() {
 			return nil
 		}
@@ -228,6 +230,10 @@ func (t *Typescript) getTypescriptProjects() []string {
 
 		return nil
 	})
+
+	if err != nil {
+		t.log("typescript: getTypescriptProjects: %v", err)
+	}
 	return projects
 }
 
@@ -238,8 +244,7 @@ func (t *Typescript) getTypescriptFiles() []string {
 
 	root := t.Config.Dir
 
-	// ignore error
-	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 		if fi.IsDir() {
 			return nil
 		}
@@ -256,5 +261,10 @@ func (t *Typescript) getTypescriptFiles() []string {
 
 		return nil
 	})
+
+	if err != nil {
+		t.log("typescript: getTypescriptFiles: %v", err)
+	}
+
 	return files
 }

@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	responseFormValue = "g-recaptcha-response"
-	apiURL            = "https://www.google.com/recaptcha/api/siteverify"
+	// responseFormValue = "g-recaptcha-response"
+	apiURL = "https://www.google.com/recaptcha/api/siteverify"
 )
 
 // Response is the google's recaptcha response as JSON.

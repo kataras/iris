@@ -146,7 +146,9 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 	// implement this "expected" user handler's input argument.
 	if expected.Kind() == reflect.Interface {
 		// fmt.Printf("expected interface = %s and got to set on the arg is: %s\n", expected.String(), got.String())
-		return got.Implements(expected)
+		// return got.Implements(expected)
+		// return expected.AssignableTo(got)
+		return got.AssignableTo(expected)
 	}
 
 	// if got.String() == "interface {}"  {

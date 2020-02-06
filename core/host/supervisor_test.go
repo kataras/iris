@@ -61,7 +61,10 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(expectedBody))
+		_, err := w.Write([]byte(expectedBody))
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	// host (server wrapper and adapter) construction

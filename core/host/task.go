@@ -27,7 +27,7 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 		if runtime.GOOS == "darwin" {
 			interruptkey = "CMD"
 		}
-		w.Write([]byte(fmt.Sprintf("Now listening on: %s\nApplication started. Press %s+C to shut down.\n",
+		_, _ = w.Write([]byte(fmt.Sprintf("Now listening on: %s\nApplication started. Press %s+C to shut down.\n",
 			listeningURI, interruptkey)))
 	}
 }

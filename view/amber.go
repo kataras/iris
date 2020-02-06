@@ -33,8 +33,8 @@ func Amber(directory, extension string) *AmberEngine {
 	s := &AmberEngine{
 		directory:     directory,
 		extension:     extension,
-		templateCache: make(map[string]*template.Template, 0),
-		funcs:         make(map[string]interface{}, 0),
+		templateCache: make(map[string]*template.Template),
+		funcs:         make(map[string]interface{}),
 	}
 
 	return s

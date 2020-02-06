@@ -1,6 +1,6 @@
-# Happy New Year!
+# News
 
-![](https://iris-go.com/images/release.png) Iris version **12.1.4** has been [released](HISTORY.md#su-29-december-2019--v1214)!
+![](https://iris-go.com/images/release.png) Iris version **12.1.6** has been [released](HISTORY.md#we-05-february-2020--v1216)!
 
 ![](https://iris-go.com/images/cli.png) The official [Iris Command Line Interface](https://github.com/kataras/iris-cli) will soon be near you in 2020!
 
@@ -81,9 +81,9 @@ If you discover a security vulnerability within Iris, please send an e-mail to [
 
 ## License
 
-The project name "Iris" was inspired by the Greek mythology.
+This project is licensed under the [BSD 3-clause license](LICENSE), just like the Go project itself.
 
-Iris Web Framework is free and open-source software licensed under the [3-Clause BSD License](LICENSE).
+The project name "Iris" was inspired by the Greek mythology.
 
 ## Stargazers over time
 

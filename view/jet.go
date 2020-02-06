@@ -10,7 +10,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/CloudyKit/jet"
+	"github.com/CloudyKit/jet/v3"
 )
 
 const jetEngineName = "jet"
@@ -64,26 +64,12 @@ func Jet(directory, extension string) *JetEngine {
 	}
 
 	s := &JetEngine{
-		directory: directory,
-		extension: extension,
-		loader:    jet.NewOSFileSystemLoader(directory),
+		directory:                   directory,
+		extension:                   extension,
+		loader:                      jet.NewOSFileSystemLoader(directory),
+		jetRangerRendererContextKey: "_jet",
 	}
 
-	return s
-}
-
-// DisableViewDataTypeCheck accepts a context key name to use
-// to map the jet specific renderer and ranger over context's view data.
-//
-// If "jetDataContextKey" is not empty then `ExecuteWriter` will not check for
-// types to check if an element passed through `Context.ViewData`
-// contains a jet.Renderer or jet.Ranger or both.
-// Instead will map those with simple key data naming (faster).
-// Also it wont check if a value is already a reflect.Value (jet expects this type as values).
-//
-// Defaults to empty.
-func (s *JetEngine) DisableViewDataTypeCheck(jetRangerRendererContextKey string) *JetEngine {
-	s.jetRangerRendererContextKey = jetRangerRendererContextKey
 	return s
 }
 
@@ -118,7 +104,7 @@ func (s *JetEngine) AddFunc(funcName string, funcBody interface{}) {
 		// instead it wants:
 		// func(JetArguments) reflect.Value.
 
-		s.AddVar(funcName, func(args JetArguments) reflect.Value {
+		s.AddVar(funcName, jet.Func(func(args JetArguments) reflect.Value {
 			n := args.NumOfArguments()
 			if n == 0 { // no input, don't execute the function, panic instead.
 				panic(funcName + " expects one or more input arguments")
@@ -140,7 +126,7 @@ func (s *JetEngine) AddFunc(funcName string, funcBody interface{}) {
 			}
 
 			return reflect.ValueOf(generalFunc(firstInput, variadicInputs...))
-		})
+		}))
 
 		return
 	}
@@ -366,53 +352,7 @@ func (s *JetEngine) AddRuntimeVars(ctx context.Context, vars JetRuntimeVars) {
 	AddJetRuntimeVars(ctx, vars)
 }
 
-type rangerAndRenderer struct {
-	ranger   jet.Ranger
-	renderer jet.Renderer
-}
-
-func (rr rangerAndRenderer) Range() (reflect.Value, reflect.Value, bool) {
-	return rr.ranger.Range()
-}
-
-func (rr rangerAndRenderer) Render(jetRuntime *jet.Runtime) {
-	rr.renderer.Render(jetRuntime)
-}
-
-func rangerRenderer(bindingData interface{}) (interface{}, bool) {
-	if ranger, ok := bindingData.(jet.Ranger); ok {
-		// Externally fixes a BUG on the jet template parser:
-		// eval.go#executeList(list *ListNode):NodeRange.isSet.getRanger(expression = st.evalPrimaryExpressionGroup)
-		// which does not act the "ranger" as element, instead is converted to a value of struct, which makes a jet.Ranger func(*myStruct) Range...
-		// not a compatible jet.Ranger.
-		// getRanger(st.context) should work but author of the jet library is not currently available,
-		// to allow a recommentation or a PR and I don't really want to vendor it because
-		// some end-users may use the jet import path to pass things like Global Funcs and etc.
-		// So to fix  it (at least temporarily and only for ref Ranger) we ptr the ptr the "ranger", not the bindingData, and this may
-		// have its downside because the same bindingData may be compatible with other node actions like range or custom Render
-		// but we have no other way at the moment. The same problem exists on the `Renderer` too!
-		// The solution below fixes the above issue but any fields of the struct are not available,
-		// this is ok because most of the times if not always, the users of jet don't use fields on Ranger and custom Renderer inside the templates.
-
-		if renderer, ok := bindingData.(jet.Renderer); ok {
-			// this can make a Ranger and Renderer both work together, unlike the jet parser itself.
-			return rangerAndRenderer{ranger, renderer}, true
-		}
-
-		return &ranger, true
-	}
-
-	if renderer, ok := bindingData.(jet.Renderer); ok {
-		// Here the fields are not available but usually if completes the jet.Renderer no
-		// fields are used in the template.
-		return &renderer, true // see above ^.
-	}
-
-	return nil, false
-}
-
 // ExecuteWriter should execute a template by its filename with an optional layout and bindingData.
-// See `DisableViewDataTypeCheck` too.
 func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
 	tmpl, err := s.Set.GetTemplate(filename)
 	if err != nil {
@@ -434,46 +374,28 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 		return tmpl.Execute(w, vars, nil)
 	}
 
-	jetRangerRenderer, ok := rangerRenderer(bindingData)
-	if ok {
-		return tmpl.Execute(w, vars, jetRangerRenderer)
+	if vars == nil {
+		vars = make(JetRuntimeVars)
 	}
 
 	if m, ok := bindingData.(context.Map); ok {
+		var jetData interface{}
 		for k, v := range m {
-			if s.jetRangerRendererContextKey == "" {
-				switch value := v.(type) {
-				case jet.Ranger, jet.Renderer:
-					jetRangerRenderer, _ = rangerRenderer(value)
-				case reflect.Value:
-					if vars == nil {
-						vars = make(JetRuntimeVars)
-					}
-					// if it's already a reflect value.
-					vars[k] = value
-				default:
-					if vars == nil {
-						vars = make(JetRuntimeVars)
-					}
-					vars.Set(k, v)
-				}
-
-				continue
-			}
-
 			if k == s.jetRangerRendererContextKey {
-				jetRangerRenderer = v
+				jetData = v
 				continue
 			}
 
-			if vars == nil {
-				vars = make(JetRuntimeVars)
+			if value, ok := v.(reflect.Value); ok {
+				vars[k] = value
+			} else {
+				vars[k] = reflect.ValueOf(v)
 			}
-
-			vars.Set(k, v)
 		}
 
-		return tmpl.Execute(w, vars, jetRangerRenderer)
+		if jetData != nil {
+			bindingData = jetData
+		}
 	}
 
 	return tmpl.Execute(w, vars, bindingData)

@@ -2,7 +2,7 @@
 
 {{block documentBody()}}
   <h1>Show TODO</h1>
-  <p>This uses a custom renderer by implementing the jet.Renderer interface.
+  <p>This uses a custom renderer by implementing the jet.Renderer (or view.JetRenderer) interface.
   <p>
     {{.}}
   </p>

@@ -223,7 +223,10 @@ func (p Problem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 	for k, v := range p {
 		// convert keys like "type" to "Type", "productName" to "ProductName" and e.t.c. when xml.
-		e.Encode(xmlMapEntry{XMLName: xml.Name{Local: strings.Title(k)}, Value: v})
+		err = e.Encode(xmlMapEntry{XMLName: xml.Name{Local: strings.Title(k)}, Value: v})
+		if err != nil {
+			return err
+		}
 	}
 
 	return e.EncodeToken(start.End())

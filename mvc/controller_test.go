@@ -537,3 +537,51 @@ func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("my title")
 }
+
+type testControllerRequestScopedDependencies struct {
+	MyContext    *testMyContext
+	CustomStruct *testCustomStruct
+}
+
+func (c *testControllerRequestScopedDependencies) Get() *testCustomStruct {
+	return c.CustomStruct
+}
+
+func (c *testControllerRequestScopedDependencies) GetCustomContext() string {
+	return c.MyContext.OtherField
+}
+
+func newRequestDep1(ctx context.Context) *testCustomStruct {
+	return &testCustomStruct{
+		Name: ctx.URLParam("name"),
+		Age:  ctx.URLParamIntDefault("age", 0),
+	}
+}
+
+type testMyContext struct {
+	Context    context.Context
+	OtherField string
+}
+
+func newRequestDep2(ctx context.Context) *testMyContext {
+	return &testMyContext{
+		Context:    ctx,
+		OtherField: "test",
+	}
+}
+
+func TestControllerRequestScopedDependencies(t *testing.T) {
+	app := iris.New()
+	m := New(app)
+	m.Register(newRequestDep1)
+	m.Register(newRequestDep2)
+	m.Handle(new(testControllerRequestScopedDependencies))
+
+	e := httptest.New(t, app)
+	e.GET("/").WithQuery("name", "kataras").WithQuery("age", 27).
+		Expect().Status(httptest.StatusOK).JSON().Equal(&testCustomStruct{
+		Name: "kataras",
+		Age:  27,
+	})
+	e.GET("/custom/context").Expect().Status(httptest.StatusOK).Body().Equal("test")
+}

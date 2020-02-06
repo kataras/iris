@@ -27,8 +27,6 @@ type (
 		// performance reasons.
 		Has bool
 
-		trace string // for debug info.
-
 		lost []*missingInput // Author's note: don't change this to a map.
 	}
 )
@@ -208,7 +206,7 @@ func (s *FuncInjector) Inject(in *[]reflect.Value, ctx ...reflect.Value) {
 // the caller should be able to in[0] = receiver before injection,
 // then the `Inject` method should be used instead.
 func (s *FuncInjector) Call(ctx ...reflect.Value) []reflect.Value {
-	in := make([]reflect.Value, s.Length, s.Length)
+	in := make([]reflect.Value, s.Length)
 	s.Inject(&in, ctx...)
 	return s.fn.Call(in)
 }

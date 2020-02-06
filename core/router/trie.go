@@ -95,12 +95,6 @@ type trie struct {
 	subdomain string
 }
 
-func newTrie() *trie {
-	return &trie{
-		root: newTrieNode(),
-	}
-}
-
 const (
 	pathSep  = "/"
 	pathSepB = '/'

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"path"
@@ -40,66 +39,6 @@ var AllMethods = []string{
 type repository struct {
 	routes []*Route
 	pos    map[string]int
-}
-
-func (repo *repository) remove(route *Route) bool {
-	for i, r := range repo.routes {
-		if r == route {
-			return repo.removeByIndex(i)
-		}
-	}
-
-	return false
-}
-
-func (repo *repository) removeByPath(tmplPath string) bool {
-	if repo.pos != nil {
-		if idx, ok := repo.pos[tmplPath]; ok {
-			return repo.removeByIndex(idx)
-		}
-	}
-
-	return false
-}
-
-func (repo *repository) removeByName(routeName string) bool {
-	for i, r := range repo.routes {
-		if r.Name == routeName {
-			return repo.removeByIndex(i)
-		}
-	}
-
-	return false
-}
-
-func (repo *repository) removeByIndex(idx int) bool {
-	n := len(repo.routes)
-
-	if n == 0 {
-		return false
-	}
-
-	if idx >= n {
-		return false
-	}
-
-	if n == 1 && idx == 0 {
-		repo.routes = repo.routes[0:0]
-		repo.pos = nil
-		return true
-	}
-
-	r := repo.routes[idx]
-	if r == nil {
-		return false
-	}
-
-	repo.routes = append(repo.routes[:idx], repo.routes[idx+1:]...)
-	if repo.pos != nil {
-		delete(repo.pos, r.Path)
-	}
-
-	return true
 }
 
 func (repo *repository) get(routeName string) *Route {
@@ -160,15 +99,6 @@ func (repo *repository) register(route *Route) {
 	repo.pos[route.tmpl.Src] = len(repo.routes) - 1
 }
 
-type apiError struct {
-	error
-}
-
-func (e *apiError) Is(err error) bool {
-	_, ok := err.(*apiError)
-	return ok
-}
-
 // APIBuilder the visible API for constructing the router
 // and child routers.
 type APIBuilder struct {
@@ -179,9 +109,6 @@ type APIBuilder struct {
 	// the api builder global routes repository
 	routes *repository
 
-	// the api builder global route path reverser object
-	// used by the view engine but it can be used anywhere.
-	reverser *RoutePathReverser
 	// the api builder global errors, can be filled by the Subdomain, WildcardSubdomain, Handle...
 	// the list of possible errors that can be
 	// collected on the build state to log
@@ -344,7 +271,7 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	// if allowMethods are empty, then simply register with the passed, main, method.
 	methods = append(api.allowMethods, methods...)
 
-	routes := make([]*Route, len(methods), len(methods))
+	routes := make([]*Route, len(methods))
 
 	for i, m := range methods {
 		route, err := NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
@@ -867,9 +794,6 @@ func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byt
 
 	return api.registerResourceRoute(reqPath, h)
 }
-
-// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
-var errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
 
 // Favicon serves static favicon
 // accepts 2 parameters, second is optional

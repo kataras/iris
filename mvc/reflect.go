@@ -39,7 +39,7 @@ func hasErrorOutArgs(fn reflect.Method) bool {
 
 func getInputArgsFromFunc(funcTyp reflect.Type) []reflect.Type {
 	n := funcTyp.NumIn()
-	funcIn := make([]reflect.Type, n, n)
+	funcIn := make([]reflect.Type, n)
 	for i := 0; i < n; i++ {
 		funcIn[i] = funcTyp.In(i)
 	}

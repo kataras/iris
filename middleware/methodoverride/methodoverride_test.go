@@ -39,7 +39,10 @@ func TestMethodOverrideWrapper(t *testing.T) {
 	})
 
 	app.Delete("/path2", func(ctx iris.Context) {
-		ctx.Writef("%s%s", expectedDelResponse, ctx.Request().Context().Value("_originalMethod"))
+		_, err := ctx.Writef("%s%s", expectedDelResponse, ctx.Request().Context().Value("_originalMethod"))
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	e := httptest.New(t, app)

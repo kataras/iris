@@ -51,6 +51,9 @@ Revision ID: 607b5b7cef034da2692f99a4c9bafb31a999ccda
  jade                9ffefa50b5f3141     https://github.com/Joker/jade            
                      6ac643e9d9ad611                                              
                      6f4688705f                                                  
+ jet                 33cfc27b3e00072     github.com/CloudyKit/jet            
+                     655fdb3af24c325                                              
+                     3ea5bffb8f                                              
  json-iterator       08047c174c6c03e     https://github.com/json-iterator/go      
                      8ec963a411bde1b                                              
                      6d1ee67b26

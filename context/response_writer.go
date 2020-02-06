@@ -24,6 +24,8 @@ type ResponseWriter interface {
 	http.ResponseWriter
 	http.Flusher
 	http.Hijacker
+	// Note:
+	// The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
 	http.CloseNotifier
 	http.Pusher
 
@@ -99,6 +101,7 @@ type ResponseWriter interface {
 	Flusher() (http.Flusher, bool)
 
 	// CloseNotifier indicates if the protocol supports the underline connection closure notification.
+	// Warning: The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
 	CloseNotifier() (http.CloseNotifier, bool)
 }
 
