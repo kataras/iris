@@ -7,7 +7,9 @@ ENV GO111MODULE=on \
     GOOS=linux \
     GOARCH=amd64
 WORKDIR /go/src/app
-COPY . /go/src/app
+COPY go.mod .
+RUN go mod download
+COPY . .
 RUN go install
 
 FROM scratch

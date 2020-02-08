@@ -1,0 +1,5 @@
+{{ asset("./myasset.mp3")}}
+<br/>
+{{ style("my-stle.css")}}
+<br/>
+{{ script("my-script.js")}}

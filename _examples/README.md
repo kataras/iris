@@ -199,6 +199,8 @@ Navigate through examples for a better understanding.
 - [Pug (Jade) Extends`](view/template_pug_3)
 - [Jet](/view/template_jet_0)
 - [Jet Embedded](view/template_jet_1_embedded)
+- [Jet 'urlpath' tmpl func](/view/template_jet_2)
+- [Jet template funcs from structure](/view/template_jet_3)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
