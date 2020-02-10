@@ -143,6 +143,7 @@ Navigate through examples for a better understanding.
 - [Writing a middleware](routing/writing-a-middleware)
     * [per-route](routing/writing-a-middleware/per-route/main.go)
     * [globally](routing/writing-a-middleware/globally/main.go)
+- [Route Register Rule](routing/route-register-rule/main.go) **NEW**
 
 ### Versioning
 

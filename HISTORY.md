@@ -21,6 +21,15 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest`.
 
+# Mo, 10 February 2020 | v12.1.7
+
+Implement **new** `SetRegisterRule(iris.RouteOverride, RouteSkip, RouteError)` to resolve: https://github.com/kataras/iris/issues/1448
+
+New Examples:
+
+- [_examples/Docker](_examples/Docker)
+- [_examples/routing/route-register-rule](_examples/routing/route-register-rule)
+
 # We, 05 February 2020 | v12.1.6
 
 Fixes:

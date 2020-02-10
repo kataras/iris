@@ -41,7 +41,7 @@ import (
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.1.6"
+const Version = "12.1.7"
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
@@ -529,6 +529,18 @@ var (
 	XMLMap = context.XMLMap
 )
 
+// Constants for input argument at `router.RouteRegisterRule`.
+// See `Party#SetRegisterRule`.
+const (
+	// RouteOverride an existing route with the new one, the default rule.
+	RouteOverride = router.RouteOverride
+	// RouteSkip registering a new route twice.
+	RouteSkip = router.RouteSkip
+	// RouteError log when a route already exists, shown after the `Build` state,
+	// server never starts.
+	RouteError = router.RouteError
+)
+
 // Contains the enum values of the `Context.GetReferrer()` method,
 // shortcuts of the context subpackage.
 const (
@@ -666,6 +678,93 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 	}
 
 	return nil
+}
+
+// Build sets up, once, the framework.
+// It builds the default router with its default macros
+// and the template functions that are very-closed to iris.
+//
+// If error occurred while building the Application, the returns type of error will be an *errgroup.Group
+// which let the callers to inspect the errors and cause, usage:
+//
+// import "github.com/kataras/iris/v12/core/errgroup"
+//
+// errgroup.Walk(app.Build(), func(typ interface{}, err error) {
+// 	app.Logger().Errorf("%s: %s", typ, err)
+// })
+func (app *Application) Build() error {
+	rp := errgroup.New("Application Builder")
+
+	if !app.builded {
+		app.builded = true
+		rp.Err(app.APIBuilder.GetReporter())
+
+		if app.defaultMode { // the app.I18n and app.View will be not available until Build.
+			if !app.I18n.Loaded() {
+				for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
+					if _, err := os.Stat(s); os.IsNotExist(err) {
+						continue
+					}
+
+					if err := app.I18n.Load(s); err != nil {
+						continue
+					}
+
+					app.I18n.SetDefault("en-US")
+					break
+				}
+			}
+
+			if app.view.Len() == 0 {
+				for _, s := range []string{"./views", "./templates", "./web/views"} {
+					if _, err := os.Stat(s); os.IsNotExist(err) {
+						continue
+					}
+
+					app.RegisterView(HTML(s, ".html"))
+					break
+				}
+			}
+		}
+
+		if app.I18n.Loaded() {
+			// {{ tr "lang" "key" arg1 arg2 }}
+			app.view.AddFunc("tr", app.I18n.Tr)
+			app.WrapRouter(app.I18n.Wrapper())
+		}
+
+		if !app.Router.Downgraded() {
+			// router
+
+			if err := app.tryInjectLiveReload(); err != nil {
+				rp.Errf("LiveReload: init: failed: %v", err)
+			}
+
+			// create the request handler, the default routing handler
+			routerHandler := router.NewDefaultHandler()
+			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
+			if err != nil {
+				rp.Err(err)
+			}
+			// re-build of the router from outside can be done with
+			// app.RefreshRouter()
+		}
+
+		if app.view.Len() > 0 {
+			app.logger.Debugf("Application: %d registered view engine(s)", app.view.Len())
+			// view engine
+			// here is where we declare the closed-relative framework functions.
+			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
+			rv := router.NewRoutePathReverser(app.APIBuilder)
+			app.view.AddFunc("urlpath", rv.Path)
+			// app.view.AddFunc("url", rv.URL)
+			if err := app.view.Load(); err != nil {
+				rp.Group("View Builder").Err(err)
+			}
+		}
+	}
+
+	return errgroup.Check(rp)
 }
 
 // Runner is just an interface which accepts the framework instance
@@ -833,98 +932,25 @@ func Raw(f func() error) Runner {
 	}
 }
 
-// Build sets up, once, the framework.
-// It builds the default router with its default macros
-// and the template functions that are very-closed to iris.
-//
-// If error occurred while building the Application, the returns type of error will be an *errgroup.Group
-// which let the callers to inspect the errors and cause, usage:
-//
-// import "github.com/kataras/iris/v12/core/errgroup"
-//
-// errgroup.Walk(app.Build(), func(typ interface{}, err error) {
-// 	app.Logger().Errorf("%s: %s", typ, err)
-// })
-func (app *Application) Build() error {
-	rp := errgroup.New("Application Builder")
-
-	if !app.builded {
-		app.builded = true
-		rp.Err(app.APIBuilder.GetReporter())
-
-		if app.defaultMode { // the app.I18n and app.View will be not available until Build.
-			if !app.I18n.Loaded() {
-				for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
-					if _, err := os.Stat(s); os.IsNotExist(err) {
-						continue
-					}
-
-					if err := app.I18n.Load(s); err != nil {
-						continue
-					}
-
-					app.I18n.SetDefault("en-US")
-					break
-				}
-			}
-
-			if app.view.Len() == 0 {
-				for _, s := range []string{"./views", "./templates", "./web/views"} {
-					if _, err := os.Stat(s); os.IsNotExist(err) {
-						continue
-					}
-
-					app.RegisterView(HTML(s, ".html"))
-					break
-				}
-			}
-		}
-
-		if app.I18n.Loaded() {
-			// {{ tr "lang" "key" arg1 arg2 }}
-			app.view.AddFunc("tr", app.I18n.Tr)
-			app.WrapRouter(app.I18n.Wrapper())
-		}
-
-		if !app.Router.Downgraded() {
-			// router
-
-			if err := app.tryInjectLiveReload(); err != nil {
-				rp.Errf("LiveReload: init: failed: %v", err)
-			}
-
-			// create the request handler, the default routing handler
-			routerHandler := router.NewDefaultHandler()
-			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
-			if err != nil {
-				rp.Err(err)
-			}
-			// re-build of the router from outside can be done with
-			// app.RefreshRouter()
-		}
-
-		if app.view.Len() > 0 {
-			app.logger.Debugf("Application: %d registered view engine(s)", app.view.Len())
-			// view engine
-			// here is where we declare the closed-relative framework functions.
-			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
-			rv := router.NewRoutePathReverser(app.APIBuilder)
-			app.view.AddFunc("urlpath", rv.Path)
-			// app.view.AddFunc("url", rv.URL)
-			if err := app.view.Load(); err != nil {
-				rp.Group("View Builder").Err(err)
-			}
-		}
-	}
-
-	return errgroup.Check(rp)
-}
-
 // ErrServerClosed is returned by the Server's Serve, ServeTLS, ListenAndServe,
 // and ListenAndServeTLS methods after a call to Shutdown or Close.
 //
 // A shortcut for the `http#ErrServerClosed`.
 var ErrServerClosed = http.ErrServerClosed
+
+// Listen builds the application and starts the server
+// on the TCP network address "host:port" which
+// handles requests on incoming connections.
+//
+// Listen always returns a non-nil error.
+// Ignore specific errors by using an `iris.WithoutServerError(iris.ErrServerClosed)`
+// as a second input argument.
+//
+// Listen is a shortcut of `app.Run(iris.Addr(hostPort, withOrWithout...))`.
+// See `Run` for details.
+func (app *Application) Listen(hostPort string, withOrWithout ...Configurator) error {
+	return app.Run(Addr(hostPort), withOrWithout...)
+}
 
 // Run builds the framework and starts the desired `Runner` with or without configuration edits.
 //
