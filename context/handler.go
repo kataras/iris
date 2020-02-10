@@ -90,6 +90,7 @@ func NewConditionalHandler(filter Filter, handlers ...Handler) Handler {
 			// to check and modify the per-request handlers chain at runtime.
 			currIdx := ctx.HandlerIndex(-1)
 			currHandlers := ctx.Handlers()
+
 			if currIdx == len(currHandlers)-1 {
 				// if this is the last handler of the chain
 				// just add to the last the new handlers and call Next to fire those.
@@ -98,7 +99,7 @@ func NewConditionalHandler(filter Filter, handlers ...Handler) Handler {
 				return
 			}
 			// otherwise insert the new handlers in the middle of the current executed chain and the next chain.
-			newHandlers := append(currHandlers[:currIdx], append(handlers, currHandlers[currIdx+1:]...)...)
+			newHandlers := append(currHandlers[:currIdx+1], append(handlers, currHandlers[currIdx+1:]...)...)
 			ctx.SetHandlers(newHandlers)
 			ctx.Next()
 			return
