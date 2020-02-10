@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-func main() {
+func newApp() *iris.Application {
 	app := iris.New()
 	v1 := app.Party("/api/v1")
 
@@ -15,7 +15,8 @@ func main() {
 	}
 
 	onlyWhenFilter1 := func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("admin: %s", ctx.Params())
+		ctx.Application().Logger().Infof("admin: %#+v", ctx.URLParams())
+		ctx.Writef("<title>Admin</title>\n")
 		ctx.Next()
 	}
 
@@ -42,6 +43,12 @@ func main() {
 	v1UsersRouter.Get("/", func(ctx iris.Context) {
 		ctx.HTML("requested: <b>/api/v1/users</b>")
 	})
+
+	return app
+}
+
+func main() {
+	app := newApp()
 
 	// http://localhost:8080/api/v1/users
 	// http://localhost:8080/api/v1/users?admin=true
