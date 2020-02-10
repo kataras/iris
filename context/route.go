@@ -43,6 +43,9 @@ type RouteReadOnly interface {
 
 	// ResolvePath returns the formatted path's %v replaced with the args.
 	ResolvePath(args ...string) string
+	// Trace returns some debug infos as a string sentence.
+	// Should be called after Build.
+	Trace() string
 
 	// Tmpl returns the path template,
 	// it contains the parsed template

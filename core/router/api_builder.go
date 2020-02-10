@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -80,13 +81,20 @@ func (repo *repository) getAll() []*Route {
 	return repo.routes
 }
 
-func (repo *repository) register(route *Route) {
+func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, error) {
 	for i, r := range repo.routes {
 		// 14 August 2019 allow register same path pattern with different macro functions,
 		// see #1058
 		if route.DeepEqual(r) {
-			// replace existing with the latest one.
-			repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
+			if rule == RouteSkip {
+				return r, nil
+			} else if rule == RouteError {
+				return nil, fmt.Errorf("new route: %s conflicts with an already registered one: %s route", route.String(), r.String())
+			} else {
+				// replace existing with the latest one, the default behavior.
+				repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
+			}
+
 			continue
 		}
 	}
@@ -97,6 +105,7 @@ func (repo *repository) register(route *Route) {
 	}
 
 	repo.pos[route.tmpl.Src] = len(repo.routes) - 1
+	return route, nil
 }
 
 // APIBuilder the visible API for constructing the router
@@ -140,6 +149,8 @@ type APIBuilder struct {
 
 	// the per-party (and its children) execution rules for begin, main and done handlers.
 	handlerExecutionRules ExecutionRules
+	// the per-party (and its children) route registration rule, see `SetRegisterRule`.
+	routeRegisterRule RouteRegisterRule
 }
 
 var _ Party = (*APIBuilder)(nil)
@@ -210,15 +221,35 @@ func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
 	return api
 }
 
+// RouteRegisterRule is a type of uint8.
+// Defines the register rule for new routes that already exists.
+// Available values are: RouteOverride, RouteSkip and RouteError.
+//
+// See `Party#SetRegisterRule`.
+type RouteRegisterRule uint8
+
+const (
+	// RouteOverride an existing route with the new one, the default rule.
+	RouteOverride RouteRegisterRule = iota
+	// RouteSkip registering a new route twice.
+	RouteSkip
+	// RouteError log when a route already exists, shown after the `Build` state,
+	// server never starts.
+	RouteError
+)
+
+// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
+// Available values are: RouteOverride (the default one), RouteSkip and RouteError.
+func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
+	api.routeRegisterRule = rule
+	return api
+}
+
 // CreateRoutes returns a list of Party-based Routes.
 // It does NOT registers the route. Use `Handle, Get...` methods instead.
 // This method can be used for third-parties Iris helpers packages and tools
 // that want a more detailed view of Party-based Routes before take the decision to register them.
 func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
-	// if relativePath[0] != '/' {
-	// 	return nil, errors.New("path should start with slash and should not be empty")
-	// }
-
 	if len(methods) == 0 || methods[0] == "ALL" || methods[0] == "ANY" { // then use like it was .Any
 		return api.Any(relativePath, handlers...)
 	}
@@ -327,6 +358,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	routes := api.CreateRoutes([]string{method}, relativePath, handlers...)
 
 	var route *Route // the last one is returned.
+	var err error
 	for _, route = range routes {
 		if route == nil {
 			break
@@ -334,7 +366,10 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 		// global
 
 		route.topLink = api.routes.getRelative(route)
-		api.routes.register(route)
+		if route, err = api.routes.register(route, api.routeRegisterRule); err != nil {
+			api.errors.Add(err)
+			break
+		}
 	}
 
 	return route
@@ -441,7 +476,10 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 
 	for _, route := range routes {
 		route.MainHandlerName = `HandleDir(directory: "` + directory + `")`
-		api.routes.register(route)
+		if _, err := api.routes.register(route, api.routeRegisterRule); err != nil {
+			api.errors.Add(err)
+			break
+		}
 	}
 
 	return getRoute
@@ -496,6 +534,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		relativePath:          fullpath,
 		allowMethods:          allowMethods,
 		handlerExecutionRules: api.handlerExecutionRules,
+		routeRegisterRule:     api.routeRegisterRule,
 	}
 }
 
