@@ -23,7 +23,7 @@ type ExecutionRules struct {
 
 func applyExecutionRules(rules ExecutionRules, begin, done, main *context.Handlers) {
 	if !rules.Begin.Force && !rules.Done.Force && !rules.Main.Force {
-		return // do not proceed and spend buld-time here if nothing changed.
+		return // do not proceed and spend build-time here if nothing changed.
 	}
 
 	beginOK := rules.Begin.apply(begin)

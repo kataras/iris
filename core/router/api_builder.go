@@ -729,6 +729,7 @@ func (api *APIBuilder) Reset() Party {
 	api.middleware = api.middleware[0:0]
 	api.doneHandlers = api.doneHandlers[0:0]
 	api.handlerExecutionRules = ExecutionRules{}
+	api.routeRegisterRule = RouteOverride
 	return api
 }
 
