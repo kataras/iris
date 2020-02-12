@@ -21,7 +21,7 @@ require (
 	github.com/iris-contrib/schema v0.0.1
 	github.com/json-iterator/go v1.1.9
 	github.com/kataras/golog v0.0.10
-	github.com/kataras/neffos v0.0.12
+	github.com/kataras/neffos v0.0.14
 	github.com/kataras/sitemap v0.0.5
 	github.com/klauspost/compress v1.9.7
 	github.com/mediocregopher/radix/v3 v3.4.2
