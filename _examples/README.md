@@ -168,6 +168,7 @@ Navigate through examples for a better understanding.
 - [Websocket Controller](mvc/websocket)
 - [Register Middleware](mvc/middleware)
 - [Vue.js Todo MVC](tutorial/vuejs-todo-mvc)
+- [gRPC-compatible controller](mvc/grpc-compatible/main.go) **NEW**
 
 ### Subdomains
 
