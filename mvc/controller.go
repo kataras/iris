@@ -91,7 +91,7 @@ type ControllerActivator struct {
 	dependencies di.Values
 	sorter       di.Sorter
 
-	errorHandler hero.ErrorHandler
+	errorHandler di.ErrorHandler
 
 	// initialized on the first `Handle` or immediately when "servesWebsocket" is true.
 	injector *di.StructInjector
@@ -112,7 +112,7 @@ func NameOf(v interface{}) string {
 	return fullname
 }
 
-func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value, sorter di.Sorter, errorHandler hero.ErrorHandler) *ControllerActivator {
+func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value, sorter di.Sorter, errorHandler di.ErrorHandler) *ControllerActivator {
 	typ := reflect.TypeOf(controller)
 
 	c := &ControllerActivator{
@@ -425,8 +425,9 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	c.attachInjector()
 
 	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
-
 	funcInjector := di.Func(m.Func, funcDependencies...)
+	funcInjector.ErrorHandler(c.errorHandler)
+
 	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
 	if funcInjector.Has {
 		golog.Debugf("MVC dependencies of method '%s.%s':\n%s", c.fullName, m.Name, funcInjector.String())
@@ -452,15 +453,13 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	return func(ctx context.Context) {
 		var (
 			ctrl         = c.injector.Acquire()
-			ctxValue     reflect.Value
 			errorHandler = c.errorHandler
 		)
 
 		// inject struct fields first before the BeginRequest and EndRequest, if any,
 		// in order to be able to have access there.
 		if hasBindableFields {
-			ctxValue = reflect.ValueOf(ctx)
-			c.injector.InjectElem(ctrl.Elem(), ctxValue)
+			c.injector.InjectElem(ctx, ctrl.Elem())
 		}
 
 		// check if has BeginRequest & EndRequest, before try to bind the method's inputs.
@@ -479,18 +478,15 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 		}
 
 		if funcHasErrorOut && implementsErrorHandler {
-			errorHandler = ctrl.Interface().(hero.ErrorHandler)
+			errorHandler = ctrl.Interface().(di.ErrorHandler)
 		}
 
 		if hasBindableFuncInputs {
 			// means that ctxValue is not initialized before by the controller's struct injector.
-			if !hasBindableFields {
-				ctxValue = reflect.ValueOf(ctx)
-			}
 
 			in := make([]reflect.Value, n)
 			in[0] = ctrl
-			funcInjector.Inject(&in, ctxValue)
+			funcInjector.Inject(ctx, &in)
 
 			if ctx.IsStopped() {
 				return // stop as soon as possible, although it would stop later on if `ctx.StopExecution` called.

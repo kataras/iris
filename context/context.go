@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -993,6 +994,10 @@ type Context interface {
 	// RouteExists reports whether a particular route exists
 	// It will search from the current subdomain of context's host, if not inside the root domain.
 	RouteExists(method, path string) bool
+
+	// ReflectValue caches and returns a []reflect.Value{reflect.ValueOf(ctx)}.
+	// It's just a helper to maintain variable inside the context itself.
+	ReflectValue() []reflect.Value
 
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
@@ -4606,6 +4611,22 @@ func (ctx *context) Exec(method string, path string) {
 // It will search from the current subdomain of context's host, if not inside the root domain.
 func (ctx *context) RouteExists(method, path string) bool {
 	return ctx.Application().RouteExists(ctx, method, path)
+}
+
+const (
+	reflectValueContextKey = "_iris_context_reflect_value"
+)
+
+// ReflectValue caches and returns a []reflect.Value{reflect.ValueOf(ctx)}.
+// It's just a helper to maintain variable inside the context itself.
+func (ctx *context) ReflectValue() []reflect.Value {
+	if v := ctx.Values().Get(reflectValueContextKey); v != nil {
+		return v.([]reflect.Value)
+	}
+
+	v := []reflect.Value{reflect.ValueOf(ctx)}
+	ctx.Values().Set(reflectValueContextKey, v)
+	return v
 }
 
 // Application returns the iris app instance which belongs to this context.

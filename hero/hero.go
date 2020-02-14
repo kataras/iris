@@ -1,10 +1,10 @@
 package hero
 
 import (
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/hero/di"
 
 	"github.com/kataras/golog"
-	"github.com/kataras/iris/v12/context"
 )
 
 // def is the default hero value which can be used for dependencies share.
@@ -22,7 +22,8 @@ var def = New()
 //
 // For a more high-level structure please take a look at the "mvc.go#Application".
 type Hero struct {
-	values di.Values
+	values       di.Values
+	errorHandler di.ErrorHandler
 }
 
 // New returns a new Hero, a container for dependencies and a factory
@@ -30,7 +31,8 @@ type Hero struct {
 // Please take a look at the structure's documentation for more information.
 func New() *Hero {
 	return &Hero{
-		values: di.NewValues(),
+		values:       di.NewValues(),
+		errorHandler: di.DefaultErrorHandler,
 	}
 }
 
@@ -83,6 +85,14 @@ func (h *Hero) Clone() *Hero {
 	return child
 }
 
+// ErrorHandler sets a handler for this hero instance
+// which will be fired when a handler's second output argument is error and it's not nil
+// or when a request-scoped dynamic function dependency's second output argument is error and it's not nil.
+func (h *Hero) ErrorHandler(errorHandler func(ctx context.Context, err error)) *Hero {
+	h.errorHandler = di.ErrorHandlerFunc(errorHandler)
+	return h
+}
+
 // Handler accepts a "handler" function which can accept any input arguments that match
 // with the Hero's `Dependencies` and any output result; like string, int (string,int),
 // custom structs, Result(View | Response) and anything you can imagine.
@@ -98,7 +108,7 @@ func Handler(handler interface{}) context.Handler {
 // It returns a standard `iris/context.Handler` which can be used anywhere in an Iris Application,
 // as middleware or as simple route handler or subdomain's handler.
 func (h *Hero) Handler(fn interface{}) context.Handler {
-	handler, err := makeHandler(fn, h.values.Clone()...)
+	handler, err := makeHandler(fn, h.errorHandler, h.values.Clone()...)
 	if err != nil {
 		golog.Errorf("hero handler: %v", err)
 	}

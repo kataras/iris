@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 // Scope is the struct injector's struct value scope/permant state.
@@ -155,7 +157,7 @@ func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, 
 			}
 
 			// the binded values to the struct's fields.
-			b, err := MakeBindObject(val, goodFunc)
+			b, err := MakeBindObject(val, goodFunc, nil)
 			if err != nil {
 				return s // if error stop here.
 			}
@@ -288,17 +290,17 @@ func (s *StructInjector) String() (trace string) {
 // Inject accepts a destination struct and any optional context value(s),
 // hero and mvc takes only one context value and this is the `context.Context`.
 // It applies the bindings to the "dest" struct. It calls the InjectElem.
-func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
+func (s *StructInjector) Inject(ctx context.Context, dest interface{}) {
 	if dest == nil {
 		return
 	}
 
 	v := IndirectValue(ValueOf(dest))
-	s.InjectElem(v, ctx...)
+	s.InjectElem(ctx, v)
 }
 
 // InjectElem same as `Inject` but accepts a reflect.Value and bind the necessary fields directly.
-func (s *StructInjector) InjectElem(destElem reflect.Value, ctx ...reflect.Value) {
+func (s *StructInjector) InjectElem(ctx context.Context, destElem reflect.Value) {
 	for _, f := range s.fields {
 		f.Object.Assign(ctx, func(v reflect.Value) {
 			ff := destElem.FieldByIndex(f.FieldIndex)

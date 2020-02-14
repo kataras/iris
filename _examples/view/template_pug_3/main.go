@@ -2,10 +2,13 @@ package main
 
 import "github.com/kataras/iris/v12"
 
+// $ go get -u github.com/go-bindata/go-bindata/...
+// $ go-bindata ./templates/...
+// $ go build
 func main() {
 	app := iris.New()
 
-	tmpl := iris.Pug("./templates", ".pug")
+	tmpl := iris.Pug("./templates", ".pug").Binary(Asset, AssetNames)
 
 	app.RegisterView(tmpl)
 

@@ -340,7 +340,7 @@ func (s *HTMLEngine) loadAssets() error {
 			rel, err := filepath.Rel(virtualDirectory, path)
 			if err != nil {
 				templateErr = err
-				continue
+				break
 			}
 
 			// // take the current working directory
@@ -358,7 +358,7 @@ func (s *HTMLEngine) loadAssets() error {
 			buf, err := assetFn(path)
 			if err != nil {
 				templateErr = fmt.Errorf("%v for path '%s'", err, path)
-				continue
+				break
 			}
 
 			contents := string(buf)
@@ -372,14 +372,14 @@ func (s *HTMLEngine) loadAssets() error {
 				contents, err = s.middleware(name, buf)
 				if err != nil {
 					templateErr = fmt.Errorf("%v for name '%s'", err, name)
-					continue
+					break
 				}
 			}
 
 			// Add our funcmaps.
 			if _, err = tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents); err != nil {
 				templateErr = err
-				continue
+				break
 			}
 		}
 	}

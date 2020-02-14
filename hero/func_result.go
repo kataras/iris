@@ -20,23 +20,6 @@ type Result interface {
 	Dispatch(ctx context.Context)
 }
 
-type (
-	// ErrorHandler is the optional interface to handle errors per hero func,
-	// see `mvc/Application#HandleError` for MVC application-level error handler registration too.
-	ErrorHandler interface {
-		HandleError(ctx context.Context, err error)
-	}
-
-	// ErrorHandlerFunc implements the `ErrorHandler`.
-	// It describes the type defnition for an error handler.
-	ErrorHandlerFunc func(ctx context.Context, err error)
-)
-
-// HandleError fires when the `DispatchFuncResult` returns a non-nil error.
-func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
-	fn(ctx, err)
-}
-
 var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
 
 // Try will check if "fn" ran without any panics,
@@ -180,7 +163,7 @@ func DispatchCommon(ctx context.Context,
 // Result or (Result, error) and so on...
 //
 // where Get is an HTTP METHOD.
-func DispatchFuncResult(ctx context.Context, errorHandler ErrorHandler, values []reflect.Value) {
+func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, values []reflect.Value) {
 	if len(values) == 0 {
 		return
 	}
@@ -314,7 +297,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler ErrorHandler, values [
 
 			if errorHandler != nil {
 				errorHandler.HandleError(ctx, value)
-				break
+				return
 			}
 
 			err = value

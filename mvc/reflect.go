@@ -3,12 +3,12 @@ package mvc
 import (
 	"reflect"
 
-	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/hero/di"
 )
 
 var (
 	baseControllerTyp = reflect.TypeOf((*BaseController)(nil)).Elem()
-	errorHandlerTyp   = reflect.TypeOf((*hero.ErrorHandler)(nil)).Elem()
+	errorHandlerTyp   = reflect.TypeOf((*di.ErrorHandler)(nil)).Elem()
 	errorTyp          = reflect.TypeOf((*error)(nil)).Elem()
 )
 
