@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/hero/di"
 )
 
 // weak because we don't have access to the path, neither
@@ -17,7 +18,7 @@ type params struct {
 	next int
 }
 
-func (p *params) resolve(index int, typ reflect.Type) (reflect.Value, bool) {
+func (p *params) resolve(index int, typ reflect.Type, _ di.Values) (reflect.Value, bool) {
 	currentParamIndex := p.next
 	v, ok := context.ParamResolverByTypeAndIndex(typ, currentParamIndex)
 

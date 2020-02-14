@@ -1,8 +1,12 @@
 // Package di provides dependency injection for the Iris Hero and Iris MVC new features.
-// It's used internally by "hero" and "mvc" packages directly.
+// It's used internally by "hero" and "mvc" packages.
 package di
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/kataras/iris/v12/context"
+)
 
 type (
 	// Hijacker is a type which is used to catch fields or function's input argument
@@ -11,13 +15,33 @@ type (
 	// TypeChecker checks if a specific field's or function input argument's
 	// is valid to be binded.
 	TypeChecker func(reflect.Type) bool
+	// ErrorHandler is the optional interface to handle errors per hero func,
+	// see `mvc/Application#HandleError` for MVC application-level error handler registration too.
+	//
+	// Handles non-nil errors return from a hero handler or a controller's method (see `DispatchFuncResult`)
+	// and (from v12.1.8) the error may return from a request-scoped dynamic dependency (see `MakeReturnValue`).
+	ErrorHandler interface {
+		HandleError(ctx context.Context, err error)
+	}
+
+	// ErrorHandlerFunc implements the `ErrorHandler`.
+	// It describes the type defnition for an error handler.
+	ErrorHandlerFunc func(ctx context.Context, err error)
 )
+
+// HandleError fires when the `DispatchFuncResult` or `MakereturnValue` return a non-nil error.
+func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
+	fn(ctx, err)
+}
 
 var (
 	// DefaultHijacker is the hijacker used on the package-level Struct & Func functions.
 	DefaultHijacker Hijacker
 	// DefaultTypeChecker is the typechecker used on the package-level Struct & Func functions.
 	DefaultTypeChecker TypeChecker
+	// DefaultErrorHandler is the error handler used on the package-level `Func` function
+	// to catch any errors from dependencies or handlers.
+	DefaultErrorHandler ErrorHandler
 )
 
 // Struct is being used to return a new injector based on
@@ -26,7 +50,7 @@ var (
 // with the injector's `Inject` and `InjectElem` methods.
 func Struct(s interface{}, values ...reflect.Value) *StructInjector {
 	if s == nil {
-		return &StructInjector{Has: false}
+		return &StructInjector{}
 	}
 
 	return MakeStructInjector(
@@ -45,13 +69,14 @@ func Struct(s interface{}, values ...reflect.Value) *StructInjector {
 // with the injector's `Inject` method.
 func Func(fn interface{}, values ...reflect.Value) *FuncInjector {
 	if fn == nil {
-		return &FuncInjector{Has: false}
+		return &FuncInjector{}
 	}
 
 	return MakeFuncInjector(
 		ValueOf(fn),
 		DefaultHijacker,
 		DefaultTypeChecker,
+		DefaultErrorHandler,
 		values...,
 	)
 }
@@ -63,9 +88,10 @@ func Func(fn interface{}, values ...reflect.Value) *FuncInjector {
 type D struct {
 	Values
 
-	hijacker Hijacker
-	goodFunc TypeChecker
-	sorter   Sorter
+	hijacker     Hijacker
+	goodFunc     TypeChecker
+	errorHandler ErrorHandler
+	sorter       Sorter
 }
 
 // New creates and returns a new Dependency Injection container.
@@ -87,6 +113,13 @@ func (d *D) GoodFunc(fn TypeChecker) *D {
 	return d
 }
 
+// ErrorHandler adds a handler which will be fired when a handler's second output argument is error and it's not nil
+// or when a request-scoped dynamic function dependency's second output argument is error and it's not nil.
+func (d *D) ErrorHandler(errorHandler ErrorHandler) *D {
+	d.errorHandler = errorHandler
+	return d
+}
+
 // Sort sets the fields and valid bindable values sorter for struct injection.
 func (d *D) Sort(with Sorter) *D {
 	d.sorter = with
@@ -97,10 +130,11 @@ func (d *D) Sort(with Sorter) *D {
 // parent's (current "D") hijacker, good func type checker, sorter and all dependencies values.
 func (d *D) Clone() *D {
 	return &D{
-		Values:   d.Values.Clone(),
-		hijacker: d.hijacker,
-		goodFunc: d.goodFunc,
-		sorter:   d.sorter,
+		Values:       d.Values.Clone(),
+		hijacker:     d.hijacker,
+		goodFunc:     d.goodFunc,
+		errorHandler: d.errorHandler,
+		sorter:       d.sorter,
 	}
 }
 
@@ -136,6 +170,7 @@ func (d *D) Func(fn interface{}) *FuncInjector {
 		ValueOf(fn),
 		d.hijacker,
 		d.goodFunc,
+		d.errorHandler,
 		d.Values...,
-	)
+	).ErrorHandler(d.errorHandler)
 }

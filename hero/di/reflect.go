@@ -138,10 +138,14 @@ func IsFunc(kindable interface {
 	return kindable.Kind() == reflect.Func
 }
 
+var reflectValueType = reflect.TypeOf(reflect.Value{})
+
 func equalTypes(got reflect.Type, expected reflect.Type) bool {
 	if got == expected {
 		return true
 	}
+
+	// fmt.Printf("got: %s expected: %s\n", got.String(), expected.String())
 	// if accepts an interface, check if the given "got" type does
 	// implement this "expected" user handler's input argument.
 	if expected.Kind() == reflect.Interface {
@@ -150,10 +154,6 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 		// return expected.AssignableTo(got)
 		return got.AssignableTo(expected)
 	}
-
-	// if got.String() == "interface {}"  {
-	// 	return true
-	// }
 
 	return false
 }

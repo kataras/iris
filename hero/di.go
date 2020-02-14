@@ -3,22 +3,12 @@ package hero
 import (
 	"reflect"
 
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/hero/di"
 )
 
 func init() {
 	di.DefaultHijacker = func(fieldOrFuncInput reflect.Type) (*di.BindObject, bool) {
-		// if IsExpectingStore(fieldOrFuncInput) {
-		// 	return &di.BindObject{
-		// 		Type:     memstoreTyp,
-		// 		BindType: di.Dynamic,
-		// 		ReturnValue: func(ctxValue []reflect.Value) reflect.Value {
-		// 			// return ctxValue[0].MethodByName("Params").Call(di.EmptyIn)[0]
-		// 			return ctxValue[0].MethodByName("Params").Call(di.EmptyIn)[0].Field(0) // the Params' memstore.Store.
-		// 		},
-		// 	}, true
-		// }
-
 		if !IsContext(fieldOrFuncInput) {
 			return nil, false
 		}
@@ -29,8 +19,8 @@ func init() {
 		return &di.BindObject{
 			Type:     contextTyp,
 			BindType: di.Dynamic,
-			ReturnValue: func(ctxValue []reflect.Value) reflect.Value {
-				return ctxValue[0]
+			ReturnValue: func(ctx context.Context) reflect.Value {
+				return ctx.ReflectValue()[0]
 			},
 		}, true
 	}
@@ -40,4 +30,14 @@ func init() {
 		// or first argument is context.Context and second argument is a variadic, which is ignored (i.e new sessions#Start).
 		return (fn.NumIn() == 1 || (fn.NumIn() == 2 && fn.IsVariadic())) && IsContext(fn.In(0))
 	}
+
+	di.DefaultErrorHandler = di.ErrorHandlerFunc(func(ctx context.Context, err error) {
+		if err == nil {
+			return
+		}
+
+		ctx.StatusCode(400)
+		ctx.WriteString(err.Error())
+		ctx.StopExecution()
+	})
 }

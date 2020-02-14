@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CloudyKit/jet/v3 v3.0.0
-	github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
 	github.com/dgraph-io/badger v1.6.0
@@ -19,6 +18,7 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
+	github.com/iris-contrib/jade v1.1.1
 	github.com/json-iterator/go v1.1.9
 	github.com/kataras/golog v0.0.10
 	github.com/kataras/neffos v0.0.14

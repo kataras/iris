@@ -1,7 +1,11 @@
 package view
 
 import (
-	"github.com/Joker/jade"
+	"bytes"
+	"io/ioutil"
+	"path"
+
+	"github.com/iris-contrib/jade"
 )
 
 // Pug (or Jade) returns a new pug view engine.
@@ -9,7 +13,7 @@ import (
 // html view engine, it uses the same exactly configuration.
 // It has got some features and a lot of functions
 // which will make your life easier.
-// Read more about the Jade Go Template: https://github.com/Joker/jade
+// Read more about the Jade Go Parser: https://github.com/Joker/jade
 //
 // Examples:
 // https://github.com/kataras/iris/tree/master/_examples/view/template_pug_0
@@ -18,6 +22,29 @@ import (
 // https://github.com/kataras/iris/tree/master/_examples/view/template_pug_3
 func Pug(directory, extension string) *HTMLEngine {
 	s := HTML(directory, extension)
-	s.middleware = jade.Parse
+	s.middleware = func(name string, text []byte) (contents string, err error) {
+		tmpl := jade.New(name)
+		// Fixes: https://github.com/kataras/iris/issues/1450
+		// by adding a custom ReadFunc inside the jade parser.
+		// And Also able to use relative paths on "extends" and "include" directives:
+		// e.g. instead of extends "templates/layout.pug" we use "layout.pug"
+		// so contents of templates are independent of their root location.
+		tmpl.ReadFunc = func(name string) ([]byte, error) {
+			name = path.Join(directory, name)
+			if s.assetFn != nil {
+				return s.assetFn(name)
+			}
+			return ioutil.ReadFile(name)
+		}
+
+		tmpl, err = tmpl.Parse(text)
+		if err != nil {
+			return
+		}
+
+		b := new(bytes.Buffer)
+		tmpl.WriteIn(b)
+		return b.String(), nil
+	}
 	return s
 }
