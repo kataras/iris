@@ -18,7 +18,7 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
-	github.com/iris-contrib/jade v1.1.2
+	github.com/iris-contrib/jade v1.1.3
 	github.com/json-iterator/go v1.1.9
 	github.com/kataras/golog v0.0.10
 	github.com/kataras/neffos v0.0.14
