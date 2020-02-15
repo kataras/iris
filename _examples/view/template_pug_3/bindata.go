@@ -93,7 +93,7 @@ func templatesIndexPug() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/index.pug", size: 90, mode: os.FileMode(438), modTime: time.Unix(1581711973, 0)}
+	info := bindataFileInfo{name: "templates/index.pug", size: 90, mode: os.FileMode(438), modTime: time.Unix(1581790962, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -113,7 +113,7 @@ func templatesLayoutPug() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/layout.pug", size: 97, mode: os.FileMode(438), modTime: time.Unix(1565946441, 0)}
+	info := bindataFileInfo{name: "templates/layout.pug", size: 97, mode: os.FileMode(438), modTime: time.Unix(1581790962, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -215,9 +215,9 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"templates": {nil, map[string]*bintree{
-		"index.pug":  {templatesIndexPug, map[string]*bintree{}},
-		"layout.pug": {templatesLayoutPug, map[string]*bintree{}},
+	"templates": &bintree{nil, map[string]*bintree{
+		"index.pug":  &bintree{templatesIndexPug, map[string]*bintree{}},
+		"layout.pug": &bintree{templatesLayoutPug, map[string]*bintree{}},
 	}},
 }}
 
