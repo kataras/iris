@@ -4,7 +4,6 @@ package hero_test
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/kataras/iris/v12"
@@ -128,37 +127,23 @@ func TestBindFunctionAsFunctionInputArgument(t *testing.T) {
 		Expect().Status(iris.StatusOK).Body().Equal(expectedUsername)
 }
 
-func TestBindReflectValue(t *testing.T) {
-	// TODO: THINK of simplify this,
-	// as 'hero' and 'mvc' are not depend on the root kataras/iris/v12 package, smart decision back then.
-	// e.g.
-	// app := iris.New()
-	// app.RegisterDependency(...)
-	// app.HandleFunc("GET POST", "/", func(input MyInput) MyOutput {})
-	// instead of:
-	// app := iris.New()
-	// h := hero.New()
-	// h.Register(...) or hero.Register for shared deps across Iris different applications.
-	// handler := h.Handler(func(input MyInput) MyOutput {})
-	// app.HandleMany("GET POST", "/", handler)
-
+func TestAutoBinding(t *testing.T) {
 	h := New()
-	h.Register(func(ctx iris.Context) reflect.Value {
-		var v interface{}
-		err := ctx.ReadJSON(&v)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return reflect.ValueOf(v)
-		// return reflect.Value{}
+	h.Register(AutoBinding)
+
+	postHandler := h.Handler(func(input *testUserStruct /* ptr */) string {
+		return input.Username
 	})
-	postHandler := h.Handler(func(input testUserStruct) string {
+
+	postHandler2 := h.Handler(func(input testUserStruct) string {
 		return input.Username
 	})
 
 	app := iris.New()
 	app.Post("/", postHandler)
+	app.Post("/2", postHandler2)
 
 	e := httptest.New(t, app)
 	e.POST("/").WithJSON(iris.Map{"username": "makis"}).Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	e.POST("/2").WithJSON(iris.Map{"username": "kataras"}).Expect().Status(httptest.StatusOK).Body().Equal("kataras")
 }

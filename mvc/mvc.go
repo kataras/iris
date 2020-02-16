@@ -104,6 +104,12 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 	return app
 }
 
+// AutoBinding used to be registered as dependency to try to automatically
+// map and bind the inputs that are not already binded with a dependency.
+//
+// A shortcut of `hero.AutoBinding`. Read more at: `hero#DefaultFallbackBinder`.
+var AutoBinding = hero.AutoBinding
+
 // Register appends one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be

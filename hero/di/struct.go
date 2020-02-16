@@ -61,6 +61,9 @@ type (
 		Has       bool
 		CanInject bool // if any bindable fields when the state is NOT singleton.
 		Scope     Scope
+
+		FallbackBinder FallbackBinder
+		ErrorHandler   ErrorHandler
 	}
 )
 
@@ -103,11 +106,13 @@ var SortByNumMethods Sorter = func(t1 reflect.Type, t2 reflect.Type) bool {
 // of the "v" struct value or pointer.
 //
 // The hijack and the goodFunc are optional, the "values" is the dependencies collection.
-func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, sorter Sorter, values ...reflect.Value) *StructInjector {
+func MakeStructInjector(v reflect.Value, sorter Sorter, values ...reflect.Value) *StructInjector {
 	s := &StructInjector{
 		initRef:        v,
 		initRefAsSlice: []reflect.Value{v},
 		elemType:       IndirectType(v.Type()),
+		FallbackBinder: DefaultFallbackBinder,
+		ErrorHandler:   DefaultErrorHandler,
 	}
 
 	// Optionally check and keep good values only here,
@@ -138,15 +143,12 @@ func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, 
 
 	for _, f := range fields {
 		// fmt.Printf("[%d] field type [%s] value name [%s]\n", idx, f.Type.String(), f.Name)
-		if hijack != nil {
-			if b, ok := hijack(f.Type); ok && b != nil {
-				s.fields = append(s.fields, &targetStructField{
-					FieldIndex: f.Index,
-					Object:     b,
-				})
-
-				continue
-			}
+		if b, ok := tryBindContext(f.Type); ok {
+			s.fields = append(s.fields, &targetStructField{
+				FieldIndex: f.Index,
+				Object:     b,
+			})
+			continue
 		}
 
 		var possibleValues []*targetStructField
@@ -157,9 +159,10 @@ func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, 
 			}
 
 			// the binded values to the struct's fields.
-			b, err := MakeBindObject(val, goodFunc, nil)
+			b, err := MakeBindObject(val, nil)
 			if err != nil {
-				return s // if error stop here.
+				panic(err)
+				// return s // if error stop here.
 			}
 
 			if b.IsAssignable(f.Type) {

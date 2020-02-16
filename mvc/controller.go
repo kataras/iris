@@ -396,8 +396,6 @@ func (c *ControllerActivator) attachInjector() {
 	if c.injector == nil {
 		c.injector = di.MakeStructInjector(
 			di.ValueOf(c.Value),
-			di.DefaultHijacker,
-			di.DefaultTypeChecker,
 			c.sorter,
 			di.Values(c.dependencies).CloneWithFieldsOf(c.Value)...,
 		)
@@ -426,7 +424,7 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 
 	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
 	funcInjector := di.Func(m.Func, funcDependencies...)
-	funcInjector.ErrorHandler(c.errorHandler)
+	funcInjector.ErrorHandler = c.errorHandler
 
 	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
 	if funcInjector.Has {
@@ -491,10 +489,6 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 			if ctx.IsStopped() {
 				return // stop as soon as possible, although it would stop later on if `ctx.StopExecution` called.
 			}
-
-			// for idxx, inn := range in {
-			// 	println("controller.go: execution: in.Value = "+inn.String()+" and in.Type = "+inn.Type().Kind().String()+" of index: ", idxx)
-			// }
 
 			hero.DispatchFuncResult(ctx, errorHandler, call(in))
 			return

@@ -48,6 +48,12 @@ func (h *Hero) Dependencies() *di.Values {
 	return &h.values
 }
 
+// AutoBinding used to be registered as dependency to try to automatically
+// map and bind the inputs that are not already binded with a dependency.
+//
+// See `DefaultFallbackBinder`.
+var AutoBinding = di.AutoBindingValue{}
+
 // Register adds one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be

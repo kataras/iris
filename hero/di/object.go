@@ -45,10 +45,10 @@ type BindObject struct {
 // or the input arguments (if "v.elem()" is func)
 // are valid to be included as the final object's dependencies, even if the caller added more
 // the "di" is smart enough to select what each "v" needs and what not before serve time.
-func MakeBindObject(v reflect.Value, goodFunc TypeChecker, errorHandler ErrorHandler) (b BindObject, err error) {
+func MakeBindObject(v reflect.Value, errorHandler ErrorHandler) (b BindObject, err error) {
 	if IsFunc(v) {
 		b.BindType = Dynamic
-		b.ReturnValue, b.Type, err = MakeReturnValue(v, goodFunc, errorHandler)
+		b.ReturnValue, b.Type, err = MakeReturnValue(v, errorHandler)
 	} else {
 		b.BindType = Static
 		b.Type = v.Type()
@@ -56,6 +56,23 @@ func MakeBindObject(v reflect.Value, goodFunc TypeChecker, errorHandler ErrorHan
 	}
 
 	return
+}
+
+func tryBindContext(fieldOrFuncInput reflect.Type) (*BindObject, bool) {
+	if !IsContext(fieldOrFuncInput) {
+		return nil, false
+	}
+	// this is being used on both func injector and struct injector.
+	// if the func's input argument or the struct's field is a type of Context
+	// then we can do a fast binding using the ctxValue
+	// which is used as slice of reflect.Value, because of the final method's `Call`.
+	return &BindObject{
+		Type:     contextTyp,
+		BindType: Dynamic,
+		ReturnValue: func(ctx context.Context) reflect.Value {
+			return ctx.ReflectValue()[0]
+		},
+	}, true
 }
 
 var errBad = errors.New("bad")
@@ -71,7 +88,7 @@ var errBad = errors.New("bad")
 //
 // The return type of the "fn" should be a value instance, not a pointer.
 // The binder function should return just one value.
-func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker, errorHandler ErrorHandler) (func(ctx context.Context) reflect.Value, reflect.Type, error) {
+func MakeReturnValue(fn reflect.Value, errorHandler ErrorHandler) (func(context.Context) reflect.Value, reflect.Type, error) {
 	typ := IndirectType(fn.Type())
 
 	// invalid if not a func.
@@ -86,10 +103,8 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker, errorHandler ErrorH
 		return nil, typ, errBad
 	}
 
-	if goodFunc != nil {
-		if !goodFunc(typ) {
-			return nil, typ, errBad
-		}
+	if !goodFunc(typ) {
+		return nil, typ, errBad
 	}
 
 	firstOutTyp := typ.Out(0)
@@ -114,17 +129,6 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker, errorHandler ErrorH
 			return firstZeroOutVal
 		}
 
-		// if firstOutTyp == reflectValueType {
-		// 	converted := v.Convert(typ.In(0))
-		// 	fmt.Printf("object.go#124: converted: %#+v\n", converted)
-		// 	return converted //reflect.ValueOf(v.Interface())
-		// }
-
-		// if v.String() == "<interface {} Value>" {
-		// 	println("di/object.go: " + v.String())
-		// 	// println("di/object.go: because it's interface{} it should be returned as: " + v.Elem().Type().String() + " and its value: " + v.Elem().Interface().(string))
-		// 	return v.Elem()
-		// }
 		return v
 	}
 
