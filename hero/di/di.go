@@ -9,12 +9,6 @@ import (
 )
 
 type (
-	// Hijacker is a type which is used to catch fields or function's input argument
-	// to bind a custom object based on their type.
-	Hijacker func(reflect.Type) (*BindObject, bool)
-	// TypeChecker checks if a specific field's or function input argument's
-	// is valid to be binded.
-	TypeChecker func(reflect.Type) bool
 	// ErrorHandler is the optional interface to handle errors per hero func,
 	// see `mvc/Application#HandleError` for MVC application-level error handler registration too.
 	//
@@ -34,15 +28,51 @@ func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
 	fn(ctx, err)
 }
 
-var (
-	// DefaultHijacker is the hijacker used on the package-level Struct & Func functions.
-	DefaultHijacker Hijacker
-	// DefaultTypeChecker is the typechecker used on the package-level Struct & Func functions.
-	DefaultTypeChecker TypeChecker
-	// DefaultErrorHandler is the error handler used on the package-level `Func` function
-	// to catch any errors from dependencies or handlers.
-	DefaultErrorHandler ErrorHandler
-)
+// DefaultErrorHandler is the default error handler will be fired on
+// any error from registering a request-scoped dynamic dependency and on a controller's method failure.
+var DefaultErrorHandler ErrorHandler = ErrorHandlerFunc(func(ctx context.Context, err error) {
+	if err == nil {
+		return
+	}
+
+	ctx.StatusCode(400)
+	ctx.WriteString(err.Error())
+	ctx.StopExecution()
+})
+
+var emptyValue reflect.Value
+
+// DefaultFallbackBinder used to bind any oprhan inputs. Its error is handled by the `ErrorHandler`.
+var DefaultFallbackBinder FallbackBinder = func(ctx context.Context, input OrphanInput) (newValue reflect.Value, err error) {
+	wasPtr := input.Type.Kind() == reflect.Ptr
+
+	newValue = reflect.New(IndirectType(input.Type))
+	ptr := newValue.Interface()
+
+	switch ctx.GetContentTypeRequested() {
+	case context.ContentXMLHeaderValue:
+		err = ctx.ReadXML(ptr)
+	case context.ContentYAMLHeaderValue:
+		err = ctx.ReadYAML(ptr)
+	case context.ContentFormHeaderValue:
+		err = ctx.ReadQuery(ptr)
+	case context.ContentFormMultipartHeaderValue:
+		err = ctx.ReadForm(ptr)
+	default:
+		err = ctx.ReadJSON(ptr)
+		// json
+	}
+
+	// if err != nil {
+	// 	return emptyValue, err
+	// }
+
+	if !wasPtr {
+		newValue = newValue.Elem()
+	}
+
+	return newValue, err
+}
 
 // Struct is being used to return a new injector based on
 // a struct value instance, if it contains fields that the types of those
@@ -55,8 +85,6 @@ func Struct(s interface{}, values ...reflect.Value) *StructInjector {
 
 	return MakeStructInjector(
 		ValueOf(s),
-		DefaultHijacker,
-		DefaultTypeChecker,
 		SortByNumMethods,
 		Values(values).CloneWithFieldsOf(s)...,
 	)
@@ -74,9 +102,6 @@ func Func(fn interface{}, values ...reflect.Value) *FuncInjector {
 
 	return MakeFuncInjector(
 		ValueOf(fn),
-		DefaultHijacker,
-		DefaultTypeChecker,
-		DefaultErrorHandler,
 		values...,
 	)
 }
@@ -88,28 +113,34 @@ func Func(fn interface{}, values ...reflect.Value) *FuncInjector {
 type D struct {
 	Values
 
-	hijacker     Hijacker
-	goodFunc     TypeChecker
-	errorHandler ErrorHandler
-	sorter       Sorter
+	fallbackBinder FallbackBinder
+	errorHandler   ErrorHandler
+	sorter         Sorter
 }
+
+// OrphanInput represents an input without registered dependency.
+// Used to help the framework (or the caller) auto-resolve it by the request.
+type OrphanInput struct {
+	// Index int // function or struct field index.
+	Type reflect.Type
+}
+
+// FallbackBinder represents a handler of oprhan input values, handler's input arguments or controller's fields.
+type FallbackBinder func(ctx context.Context, input OrphanInput) (reflect.Value, error)
 
 // New creates and returns a new Dependency Injection container.
 // See `Values` field and `Func` and `Struct` methods for more.
 func New() *D {
-	return &D{}
+	return &D{
+		errorHandler:   DefaultErrorHandler,
+		fallbackBinder: DefaultFallbackBinder,
+	}
 }
 
-// Hijack sets a hijacker function, read the `Hijacker` type for more explanation.
-func (d *D) Hijack(fn Hijacker) *D {
-	d.hijacker = fn
-	return d
-}
-
-// GoodFunc sets a type checker for a valid function that can be binded,
-// read the `TypeChecker` type for more explanation.
-func (d *D) GoodFunc(fn TypeChecker) *D {
-	d.goodFunc = fn
+// FallbackBinder adds a binder which will handle any oprhan input values.
+// See `FallbackBinder` type.
+func (d *D) FallbackBinder(fallbackBinder FallbackBinder) *D {
+	d.fallbackBinder = fallbackBinder
 	return d
 }
 
@@ -130,11 +161,10 @@ func (d *D) Sort(with Sorter) *D {
 // parent's (current "D") hijacker, good func type checker, sorter and all dependencies values.
 func (d *D) Clone() *D {
 	return &D{
-		Values:       d.Values.Clone(),
-		hijacker:     d.hijacker,
-		goodFunc:     d.goodFunc,
-		errorHandler: d.errorHandler,
-		sorter:       d.sorter,
+		Values:         d.Values.Clone(),
+		fallbackBinder: d.fallbackBinder,
+		errorHandler:   d.errorHandler,
+		sorter:         d.sorter,
 	}
 }
 
@@ -144,16 +174,19 @@ func (d *D) Clone() *D {
 // with the injector's `Inject` and `InjectElem` methods.
 func (d *D) Struct(s interface{}) *StructInjector {
 	if s == nil {
-		return &StructInjector{Has: false}
+		return &StructInjector{}
 	}
 
-	return MakeStructInjector(
+	injector := MakeStructInjector(
 		ValueOf(s),
-		d.hijacker,
-		d.goodFunc,
 		d.sorter,
 		d.Values.CloneWithFieldsOf(s)...,
 	)
+
+	injector.ErrorHandler = d.errorHandler
+	injector.FallbackBinder = d.fallbackBinder
+
+	return injector
 }
 
 // Func is being used to return a new injector based on
@@ -163,14 +196,16 @@ func (d *D) Struct(s interface{}) *StructInjector {
 // with the injector's `Inject` method.
 func (d *D) Func(fn interface{}) *FuncInjector {
 	if fn == nil {
-		return &FuncInjector{Has: false}
+		return &FuncInjector{}
 	}
 
-	return MakeFuncInjector(
+	injector := MakeFuncInjector(
 		ValueOf(fn),
-		d.hijacker,
-		d.goodFunc,
-		d.errorHandler,
 		d.Values...,
-	).ErrorHandler(d.errorHandler)
+	)
+
+	injector.ErrorHandler = d.errorHandler
+	injector.FallbackBinder = d.fallbackBinder
+
+	return injector
 }

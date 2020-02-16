@@ -2,6 +2,8 @@ package di
 
 import (
 	"reflect"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 // EmptyIn is just an empty slice of reflect.Value.
@@ -129,6 +131,19 @@ func goodVal(v reflect.Value) bool {
 	}
 
 	return v.IsValid()
+}
+
+var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
+
+// IsContext returns true if the "inTyp" is a type of Context.
+func IsContext(inTyp reflect.Type) bool {
+	return inTyp.Implements(contextTyp)
+}
+
+func goodFunc(fn reflect.Type) bool {
+	// valid if that single input arg is a typeof context.Context
+	// or first argument is context.Context and second argument is a variadic, which is ignored (i.e new sessions#Start).
+	return (fn.NumIn() == 1 || (fn.NumIn() == 2 && fn.IsVariadic())) && IsContext(fn.In(0))
 }
 
 // IsFunc returns true if the passed type is function.

@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/v12/httptest"
 )
 
-func TestBindContextContext(t *testing.T) {
+func TestGRPCCompatible(t *testing.T) {
 	app := newApp()
 
 	e := httptest.New(t, app)
