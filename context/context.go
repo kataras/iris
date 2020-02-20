@@ -499,17 +499,17 @@ type Context interface {
 	//
 	// If not found or parse errors returns the "def".
 	PostValueInt64Default(name string, def int64) int64
-	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// PostValueFloat64 returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
 	// If not found returns -1 and a non-nil error.
 	PostValueFloat64(name string) (float64, error)
-	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// PostValueFloat64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
 	// If not found or parse errors returns the "def".
 	PostValueFloat64Default(name string, def float64) float64
-	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// PostValueBool returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as bool.
 	//
 	// If not found or value is false, then it returns false, otherwise true.
@@ -2290,7 +2290,7 @@ func (ctx *context) PostValueInt64Default(name string, def int64) int64 {
 	return def
 }
 
-// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// PostValueFloat64 returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
 // If not found returns -1 and a non-nil error.
@@ -2302,7 +2302,7 @@ func (ctx *context) PostValueFloat64(name string) (float64, error) {
 	return strconv.ParseFloat(v, 64)
 }
 
-// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// PostValueFloat64Default returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
 // If not found or parse errors returns the "def".
@@ -2314,7 +2314,7 @@ func (ctx *context) PostValueFloat64Default(name string, def float64) float64 {
 	return def
 }
 
-// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// PostValueBool returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as bool.
 //
 // If not found or value is false, then it returns false, otherwise true.
