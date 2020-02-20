@@ -28,6 +28,8 @@ func newApp() *iris.Application {
 	})
 
 	// Different path parameters types in the same path.
+	// Note that: fallback should registered first e.g. {path} {string},
+	// because the handler on this case is executing from last to top.
 	app.Get("/u/{p:path}", func(ctx iris.Context) {
 		ctx.Writef(":string, :int, :uint, :alphabetical and :path in the same path pattern.")
 	})
@@ -37,6 +39,13 @@ func newApp() *iris.Application {
 		ctx.Next()
 	}, func(ctx iris.Context) {
 		ctx.Writef("username (string): %s", ctx.Params().Get("username"))
+	})
+
+	app.Get("/u/{firstname:alphabetical}", func(ctx iris.Context) {
+		ctx.Writef("before firstname (alphabetical), current route name: %s\n", ctx.RouteName())
+		ctx.Next()
+	}, func(ctx iris.Context) {
+		ctx.Writef("firstname (alphabetical): %s", ctx.Params().Get("firstname"))
 	})
 
 	app.Get("/u/{id:int}", func(ctx iris.Context) {
@@ -51,13 +60,6 @@ func newApp() *iris.Application {
 		ctx.Next()
 	}, func(ctx iris.Context) {
 		ctx.Writef("uid (uint): %d", ctx.Params().GetUintDefault("uid", 0))
-	})
-
-	app.Get("/u/{firstname:alphabetical}", func(ctx iris.Context) {
-		ctx.Writef("before firstname (alphabetical), current route name: %s\n", ctx.RouteName())
-		ctx.Next()
-	}, func(ctx iris.Context) {
-		ctx.Writef("firstname (alphabetical): %s", ctx.Params().Get("firstname"))
 	})
 
 	/*

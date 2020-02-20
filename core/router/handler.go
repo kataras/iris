@@ -105,16 +105,21 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 				// fixes order when wildcard root is registered before other wildcard paths
 				return true
 			}
+
 			if secondSlashLen == firstSlashLen {
 				// fixes order when static path with the same prefix with a wildcard path
 				// is registered after the wildcard path, although this is managed
 				// by the low-level node but it couldn't work if we registered a root level wildcard, this fixes it.
-				if len(first.Tmpl().Params) == 0 {
+				if len(first.tmpl.Params) == 0 {
 					return false
 				}
-				if len(second.Tmpl().Params) == 0 {
+				if len(second.tmpl.Params) == 0 {
 					return true
 				}
+
+				// No don't fix the order by framework's suggestion,
+				// let it as it is today; {string} and {path} should be registered before {id} {uint} and e.t.c.
+				// see `bindMultiParamTypesHandler` for the reason. Order of registration matters.
 			}
 		}
 
@@ -151,6 +156,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 func bindMultiParamTypesHandler(top *Route, r *Route) {
 	r.BuildHandlers()
 
+	// println("here for top: " + top.Name + " and current route: " + r.Name)
 	h := r.Handlers[1:] // remove the macro evaluator handler as we manually check below.
 	f := macroHandler.MakeFilter(r.tmpl)
 	if f == nil {
@@ -158,8 +164,13 @@ func bindMultiParamTypesHandler(top *Route, r *Route) {
 	}
 
 	decisionHandler := func(ctx context.Context) {
+		// println("core/router/handler.go: decision handler; " + ctx.Path() + " route.Name: " + r.Name + " vs context's " + ctx.GetCurrentRoute().Name())
 		currentRouteName := ctx.RouteName()
+
+		// Different path parameters types in the same path, fallback should registered first e.g. {path} {string},
+		// because the handler on this case is executing from last to top.
 		if f(ctx) {
+			// println("core/router/handler.go: filter for : " + r.Name + " passed")
 			ctx.SetCurrentRouteName(r.Name)
 			ctx.HandlerIndex(0)
 			ctx.Do(h)

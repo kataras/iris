@@ -3,7 +3,6 @@ package macro
 import (
 	"reflect"
 
-	"github.com/kataras/iris/v12/core/memstore"
 	"github.com/kataras/iris/v12/macro/interpreter/ast"
 	"github.com/kataras/iris/v12/macro/interpreter/parser"
 )
@@ -65,29 +64,28 @@ func (p *TemplateParam) CanEval() bool {
 	return p.canEval
 }
 
-// Eval is the most critical part of the TEmplateParam.
-// It is responsible to return "passed:true" or "not passed:false"
-// if the "paramValue" is the correct type of the registered parameter type
+// Eval is the most critical part of the TemplateParam.
+// It is responsible to return the type-based value if passed otherwise nil.
+// If the "paramValue" is the correct type of the registered parameter type
 // and all functions, if any, are passed.
-// "paramChanger" is the same form of context's Params().Set
-// we could accept a memstore.Store or even context.RequestParams
-// but this form has been chosed in order to test easier and fully decoupled from a request when necessary.
 //
 // It is called from the converted macro handler (middleware)
 // from the higher-level component of "kataras/iris/macro/handler#MakeHandler".
-func (p *TemplateParam) Eval(paramValue string, paramSetter memstore.ValueSetter) bool {
+func (p *TemplateParam) Eval(paramValue string) interface{} {
 	if p.TypeEvaluator == nil {
 		for _, fn := range p.stringInFuncs {
 			if !fn(paramValue) {
-				return false
+				return nil
 			}
 		}
-		return true
+		return paramValue
 	}
+
+	// fmt.Printf("macro/template.go#L88: Eval for param value: %s and p.Src: %s\n", paramValue, p.Src)
 
 	newValue, passed := p.TypeEvaluator(paramValue)
 	if !passed {
-		return false
+		return nil
 	}
 
 	if len(p.Funcs) > 0 {
@@ -96,13 +94,14 @@ func (p *TemplateParam) Eval(paramValue string, paramSetter memstore.ValueSetter
 			// or make it as func(interface{}) bool and pass directly the "newValue"
 			// but that would not be as easy for end-developer, so keep that "slower":
 			if !evalFunc.Call(paramIn)[0].Interface().(bool) { // i.e func(paramValue int) bool
-				return false
+				return nil
 			}
 		}
 	}
 
-	paramSetter.Set(p.Name, newValue)
-	return true
+	// fmt.Printf("macro/template.go: passed with value: %v and type: %T\n", newValue, newValue)
+
+	return newValue
 }
 
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)
