@@ -91,22 +91,26 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 type Context interface {
 	// BeginRequest is executing once for each request
 	// it should prepare the (new or acquired from pool) context's fields for the new request.
+	// Do NOT call it manually. Framework calls it automatically.
 	//
-	// To follow the iris' flow, developer should:
-	// 1. reset handlers to nil
-	// 2. reset values to empty
-	// 3. reset sessions to nil
-	// 4. reset response writer to the http.ResponseWriter
-	// 5. reset request to the *http.Request
-	// and any other optional steps, depends on dev's application type.
+	// Resets
+	// 1. handlers to nil.
+	// 2. values to empty.
+	// 3. the defer function.
+	// 4. response writer to the http.ResponseWriter.
+	// 5. request to the *http.Request.
 	BeginRequest(http.ResponseWriter, *http.Request)
 	// EndRequest is executing once after a response to the request was sent and this context is useless or released.
+	// Do NOT call it manually. Framework calls it automatically.
 	//
-	// To follow the iris' flow, developer should:
-	// 1. flush the response writer's result
-	// 2. release the response writer
-	// and any other optional steps, depends on dev's application type.
+	// 1. executes the Defer function (if any).
+	// 2. flushes the response writer's result or fire any error handler.
+	// 3. releases the response writer.
 	EndRequest()
+	// Defer executes a handler on this Context right before the request ends.
+	// The `StopExecution` does not effect the execution of this defer handler.
+	// The "h" runs before `FireErrorCode` (when response status code is not successful).
+	Defer(Handler)
 
 	// ResponseWriter returns an http.ResponseWriter compatible response writer, as expected.
 	ResponseWriter() ResponseWriter
@@ -998,6 +1002,9 @@ type Context interface {
 	// ReflectValue caches and returns a []reflect.Value{reflect.ValueOf(ctx)}.
 	// It's just a helper to maintain variable inside the context itself.
 	ReflectValue() []reflect.Value
+	// Controller returns a reflect Value of the custom Controller from which this handler executed.
+	// It will return a Kind() == reflect.Invalid if the handler was not executed from within a controller.
+	Controller() reflect.Value
 
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
@@ -1065,6 +1072,7 @@ type context struct {
 	request *http.Request
 	// the current route's name registered to this request path.
 	currentRouteName string
+	deferFunc        Handler
 
 	// the local key-value storage
 	params RequestParams  // url named parameters.
@@ -1089,20 +1097,21 @@ func NewContext(app Application) Context {
 
 // BeginRequest is executing once for each request
 // it should prepare the (new or acquired from pool) context's fields for the new request.
+// Do NOT call it manually. Framework calls it automatically.
 //
-// To follow the iris' flow, developer should:
-// 1. reset handlers to nil
-// 2. reset store to empty
-// 3. reset sessions to nil
-// 4. reset response writer to the http.ResponseWriter
-// 5. reset request to the *http.Request
-// and any other optional steps, depends on dev's application type.
+// Resets
+// 1. handlers to nil.
+// 2. values to empty.
+// 3. the defer function.
+// 4. response writer to the http.ResponseWriter.
+// 5. request to the *http.Request.
 func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.handlers = nil           // will be filled by router.Serve/HTTP
 	ctx.values = ctx.values[0:0] // >>      >>     by context.Values().Set
 	ctx.params.Store = ctx.params.Store[0:0]
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
+	ctx.deferFunc = nil
 	ctx.writer = AcquireResponseWriter()
 	ctx.writer.BeginResponse(w)
 }
@@ -1123,12 +1132,16 @@ var StatusCodeNotSuccessful = func(statusCode int) bool {
 }
 
 // EndRequest is executing once after a response to the request was sent and this context is useless or released.
+// Do NOT call it manually. Framework calls it automatically.
 //
-// To follow the iris' flow, developer should:
-// 1. flush the response writer's result
-// 2. release the response writer
-// and any other optional steps, depends on dev's application type.
+// 1. executes the Defer function (if any).
+// 2. flushes the response writer's result or fire any error handler.
+// 3. releases the response writer.
 func (ctx *context) EndRequest() {
+	if ctx.deferFunc != nil {
+		ctx.deferFunc(ctx)
+	}
+
 	if StatusCodeNotSuccessful(ctx.GetStatusCode()) &&
 		!ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
 		// author's note:
@@ -1156,6 +1169,13 @@ func (ctx *context) EndRequest() {
 
 	ctx.writer.FlushResponse()
 	ctx.writer.EndResponse()
+}
+
+// Defer executes a handler on this Context right before the request ends.
+// The `StopExecution` does not effect the execution of this defer handler.
+// The "h" runs before `FireErrorCode` (when response status code is not successful).
+func (ctx *context) Defer(h Handler) {
+	ctx.deferFunc = h
 }
 
 // ResponseWriter returns an http.ResponseWriter compatible response writer, as expected.
@@ -4615,6 +4635,9 @@ func (ctx *context) RouteExists(method, path string) bool {
 
 const (
 	reflectValueContextKey = "_iris_context_reflect_value"
+	// ControllerContextKey returns the context key from which
+	// the `Context.Controller` method returns the store's value.
+	ControllerContextKey = "_iris_controller_reflect_value"
 )
 
 // ReflectValue caches and returns a []reflect.Value{reflect.ValueOf(ctx)}.
@@ -4627,6 +4650,18 @@ func (ctx *context) ReflectValue() []reflect.Value {
 	v := []reflect.Value{reflect.ValueOf(ctx)}
 	ctx.Values().Set(reflectValueContextKey, v)
 	return v
+}
+
+var emptyValue reflect.Value
+
+// Controller returns a reflect Value of the custom Controller from which this handler executed.
+// It will return a Kind() == reflect.Invalid if the handler was not executed from within a controller.
+func (ctx *context) Controller() reflect.Value {
+	if v := ctx.Values().Get(ControllerContextKey); v != nil {
+		return v.(reflect.Value)
+	}
+
+	return emptyValue
 }
 
 // Application returns the iris app instance which belongs to this context.

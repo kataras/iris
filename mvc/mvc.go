@@ -7,25 +7,10 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/hero"
-	"github.com/kataras/iris/v12/hero/di"
 	"github.com/kataras/iris/v12/websocket"
 
 	"github.com/kataras/golog"
 )
-
-// HeroDependencies let you share bindable dependencies between
-// package-level hero's registered dependencies and all MVC instances that comes later.
-//
-// `hero.Register(...)`
-// `myMVC := mvc.New(app.Party(...))`
-// the "myMVC" registers the dependencies provided by the `hero.Register` func
-// automatically.
-//
-// Set it to false to disable that behavior, you have to use the `mvc#Register`
-// even if you had register dependencies with the `hero` package.
-//
-// Defaults to true.
-var HeroDependencies = true
 
 // Application is the high-level component of the "mvc" package.
 // It's the API that you will be using to register controllers among with their
@@ -39,23 +24,17 @@ var HeroDependencies = true
 //
 // See `mvc#New` for more.
 type Application struct {
-	Dependencies di.Values
-	// Sorter is a `di.Sorter`, can be used to customize the order of controller's fields
-	// and their available bindable values to set.
-	// Sorting matters only when a field can accept more than one registered value.
-	// Defaults to nil; order of registration matters when more than one field can accept the same value.
-	Sorter               di.Sorter
+	container *hero.Container
+
 	Router               router.Party
 	Controllers          []*ControllerActivator
 	websocketControllers []websocket.ConnHandler
-	ErrorHandler         di.ErrorHandler
 }
 
-func newApp(subRouter router.Party, values di.Values) *Application {
+func newApp(subRouter router.Party, container *hero.Container) *Application {
 	return &Application{
-		Router:       subRouter,
-		Dependencies: values,
-		ErrorHandler: di.DefaultErrorHandler,
+		Router:    subRouter,
+		container: container,
 	}
 }
 
@@ -65,12 +44,7 @@ func newApp(subRouter router.Party, values di.Values) *Application {
 //
 // Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
 func New(party router.Party) *Application {
-	values := di.NewValues()
-	if HeroDependencies {
-		values = hero.Dependencies().Clone()
-	}
-
-	return newApp(party, values)
+	return newApp(party, party.GetContainer())
 }
 
 // Configure creates a new controller and configures it,
@@ -104,12 +78,6 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 	return app
 }
 
-// AutoBinding used to be registered as dependency to try to automatically
-// map and bind the inputs that are not already binded with a dependency.
-//
-// A shortcut of `hero.AutoBinding`. Read more at: `hero#DefaultFallbackBinder`.
-var AutoBinding = hero.AutoBinding
-
 // Register appends one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be
@@ -117,36 +85,29 @@ var AutoBinding = hero.AutoBinding
 // will be bind-ed to the controller's field, if matching or to the
 // controller's methods, if matching.
 //
-// These dependencies "values" can be changed per-controller as well,
+// These dependencies "dependencies" can be changed per-controller as well,
 // via controller's `BeforeActivation` and `AfterActivation` methods,
 // look the `Handle` method for more.
 //
 // It returns this Application.
 //
 // Example: `.Register(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
-func (app *Application) Register(values ...interface{}) *Application {
-	if len(values) > 0 && app.Dependencies.Len() == 0 && len(app.Controllers) > 0 {
+func (app *Application) Register(dependencies ...interface{}) *Application {
+	if len(dependencies) > 0 && len(app.container.Dependencies) == len(hero.BuiltinDependencies) && len(app.Controllers) > 0 {
 		allControllerNamesSoFar := make([]string, len(app.Controllers))
 		for i := range app.Controllers {
 			allControllerNamesSoFar[i] = app.Controllers[i].Name()
 		}
 
 		golog.Warnf(`mvc.Application#Register called after mvc.Application#Handle.
-The controllers[%s] may miss required dependencies.
-Set the Logger's Level to "debug" to view the active dependencies per controller.`, strings.Join(allControllerNamesSoFar, ","))
+	The controllers[%s] may miss required dependencies.
+	Set the Logger's Level to "debug" to view the active dependencies per controller.`, strings.Join(allControllerNamesSoFar, ","))
 	}
 
-	app.Dependencies.Add(values...)
+	for _, dependency := range dependencies {
+		app.container.Register(dependency)
+	}
 
-	return app
-}
-
-// SortByNumMethods is the same as `app.Sorter = di.SortByNumMethods` which
-// prioritize fields and their available values (only if more than one)
-// with the highest number of methods,
-// this way an empty interface{} is getting the "thinnest" available value.
-func (app *Application) SortByNumMethods() *Application {
-	app.Sorter = di.SortByNumMethods
 	return app
 }
 
@@ -214,12 +175,9 @@ func (app *Application) HandleWebsocket(controller interface{}) *websocket.Struc
 	return websocketController
 }
 
-func makeInjector(injector *di.StructInjector) websocket.StructInjector {
+func makeInjector(s *hero.Struct) websocket.StructInjector {
 	return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
-		v := injector.Acquire()
-		if injector.CanInject {
-			injector.InjectElem(websocket.GetContext(nsConn.Conn), v.Elem())
-		}
+		v, _ := s.Acquire(websocket.GetContext(nsConn.Conn))
 		return v
 	}
 }
@@ -239,7 +197,7 @@ func (app *Application) GetNamespaces() websocket.Namespaces {
 
 func (app *Application) handle(controller interface{}) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
-	c := newControllerActivator(app.Router, controller, app.Dependencies, app.Sorter, app.ErrorHandler)
+	c := newControllerActivator(app, controller)
 
 	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
 	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods
@@ -265,8 +223,11 @@ func (app *Application) handle(controller interface{}) *ControllerActivator {
 // HandleError registers a `hero.ErrorHandlerFunc` which will be fired when
 // application's controllers' functions returns an non-nil error.
 // Each controller can override it by implementing the `hero.ErrorHandler`.
-func (app *Application) HandleError(errorHandler func(ctx context.Context, err error)) *Application {
-	app.ErrorHandler = di.ErrorHandlerFunc(errorHandler)
+func (app *Application) HandleError(handler func(ctx context.Context, err error)) *Application {
+	errorHandler := hero.ErrorHandlerFunc(handler)
+	app.container.GetErrorHandler = func(context.Context) hero.ErrorHandler {
+		return errorHandler
+	}
 	return app
 }
 
@@ -275,8 +236,7 @@ func (app *Application) HandleError(errorHandler func(ctx context.Context, err e
 //
 // Example: `.Clone(app.Party("/path")).Handle(new(TodoSubController))`.
 func (app *Application) Clone(party router.Party) *Application {
-	cloned := newApp(party, app.Dependencies.Clone())
-	cloned.ErrorHandler = app.ErrorHandler
+	cloned := newApp(party, app.container.Clone())
 	return cloned
 }
 

@@ -8,8 +8,11 @@ import (
 )
 
 // See https://github.com/kataras/iris/issues/1449
-// for more details but in-short you can convert Iris MVC to gRPC methods by
-// binding the `context.Context` from `iris.Context.Request().Context()` and gRPC input and output data.
+// Iris automatically binds the standard "context" context.Context to `iris.Context.Request().Context()`
+// and any other structure that is not mapping to a registered dependency
+// as a payload depends on the request, e.g XML, YAML, Query, Form, JSON.
+//
+// Useful to use gRPC services as Iris controllers fast and without wrappers.
 
 func main() {
 	app := newApp()
@@ -24,27 +27,7 @@ func main() {
 func newApp() *iris.Application {
 	app := iris.New()
 
-	mvc.New(app).
-		// Request-scope binding for context.Context-type controller's method or field.
-		// (or import github.com/kataras/iris/v12/hero and hero.Register(...))
-		Register(func(ctx iris.Context) context.Context {
-			return ctx.Request().Context()
-		}).
-		// Bind loginRequest.
-		// Register(func(ctx iris.Context) loginRequest {
-		// 	var req loginRequest
-		// 	ctx.ReadJSON(&req)
-		// 	return req
-		// }).
-		// OR
-		// Bind any other structure or pointer to a structure from request's
-		// XML
-		// YAML
-		// Query
-		// Form
-		// JSON (default, if not client's "Content-Type" specified otherwise)
-		Register(mvc.AutoBinding).
-		Handle(&myController{})
+	mvc.New(app).Handle(&myController{})
 
 	return app
 }

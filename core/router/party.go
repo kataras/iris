@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
+	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/macro"
 )
 
@@ -101,6 +102,36 @@ type Party interface {
 	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
 	// Available values are: RouteOverride (the default one), RouteSkip and RouteError.
 	SetRegisterRule(rule RouteRegisterRule) Party
+
+	// GetContainer returns the DI Container of this Party.
+	// Use it to manually convert functions or structs(controllers) to a Handler.
+	//
+	// See `RegisterDependency` and `HandleFunc` too.
+	GetContainer() *hero.Container
+	// RegisterDependency adds a dependency.
+	// The value can be a single struct value or a function.
+	// Follow the rules:
+	// * <T>{structValue}
+	// * func(accepts <T>)                                 returns <D> or (<D>, error)
+	// * func(accepts iris.Context)                        returns <D> or (<D>, error)
+	// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
+	//
+	// A Dependency can accept a previous registered dependency and return a new one or the same updated.
+	// * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
+	// * func(acceptsPathParameter1 string, id uint64)     returns <T> or (<T>, error)
+	//
+	// Usage:
+	//
+	// - RegisterDependency(loggerService{prefix: "dev"})
+	// - RegisterDependency(func(ctx iris.Context) User {...})
+	// - RegisterDependency(func(User) OtherResponse {...})
+	RegisterDependency(dependency interface{}) *hero.Dependency
+	// HandleFunc accepts one or more "handlersFn" functions which each one of them
+	// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
+	// any output result; like custom structs <T>, string, []byte, int, error,
+	// a combination of the above, hero.Result(hero.View | hero.Response) and more.
+	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//

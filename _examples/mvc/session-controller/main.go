@@ -11,16 +11,14 @@ import (
 
 // VisitController handles the root route.
 type VisitController struct {
-	// the current request session,
-	// its initialization happens by the dependency function that we've added to the `visitApp`.
+	// the current request session, automatically binded.
 	Session *sessions.Session
 
-	// A time.time which is binded from the MVC,
-	// order of binded fields doesn't matter.
+	// A time.time which is binded from the MVC application manually.
 	StartTime time.Time
 }
 
-// Get handles
+// Get handles index
 // Method: GET
 // Path: http://localhost:8080
 func (c *VisitController) Get() string {
@@ -36,8 +34,9 @@ func (c *VisitController) Get() string {
 func newApp() *iris.Application {
 	app := iris.New()
 	sess := sessions.New(sessions.Config{Cookie: "mysession_cookie_name"})
+	app.Use(sess.Handler())
 
-	visitApp := mvc.New(app.Party("/"))
+	visitApp := mvc.New(app)
 	// bind the current *session.Session, which is required, to the `VisitController.Session`
 	// and the time.Now() to the `VisitController.StartTime`.
 	visitApp.Register(
@@ -50,7 +49,7 @@ func newApp() *iris.Application {
 		// If dependencies are registered without field or function's input arguments as
 		// consumers then those dependencies are being ignored before the server ran,
 		// so you can bind many dependecies and use them in different controllers.
-		sess.Start,
+		// sess.Start, // However after version 12.2 sessions are automatically binded.
 		time.Now(),
 	)
 	visitApp.Handle(new(VisitController))

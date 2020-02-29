@@ -35,7 +35,7 @@ type formValue func(string) string
 func (c *Controller) BeforeActivation(b mvc.BeforeActivation) {
 	// bind the context's `FormValue` as well in order to be
 	// acceptable on the controller or its methods' input arguments (NEW feature as well).
-	b.Dependencies().Add(func(ctx iris.Context) formValue { return ctx.FormValue })
+	b.Dependencies().Register(func(ctx iris.Context) formValue { return ctx.FormValue })
 }
 
 type page struct {

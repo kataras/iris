@@ -1,5 +1,3 @@
-// +build go1.9
-
 package mvc
 
 import "github.com/kataras/iris/v12/hero"

@@ -25,10 +25,10 @@ type TodoController struct {
 func (c *TodoController) BeforeActivation(b mvc.BeforeActivation) {
 	// this could be binded to a controller's function input argument
 	// if any, or struct field if any:
-	b.Dependencies().Add(func(ctx iris.Context) (items []todo.Item) {
+	b.Dependencies().Register(func(ctx iris.Context) (items []todo.Item) {
 		ctx.ReadJSON(&items)
 		return
-	})
+	}) // Note: from Iris v12.2 these type of dependencies are automatically resolved.
 }
 
 // Get handles the GET: /todos route.

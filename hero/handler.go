@@ -3,91 +3,115 @@ package hero
 import (
 	"fmt"
 	"reflect"
-	"runtime"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/hero/di"
-
-	"github.com/kataras/golog"
 )
 
-// var genericFuncTyp = reflect.TypeOf(func(context.Context) reflect.Value { return reflect.Value{} })
+type (
+	ErrorHandler interface {
+		HandleError(context.Context, error)
+	}
+	ErrorHandlerFunc func(context.Context, error)
+)
 
-// // IsGenericFunc reports whether the "inTyp" is a type of func(Context) interface{}.
-// func IsGenericFunc(inTyp reflect.Type) bool {
-// 	return inTyp == genericFuncTyp
-// }
-
-// checks if "handler" is context.Handler: func(context.Context).
-func isContextHandler(handler interface{}) (context.Handler, bool) {
-	h, ok := handler.(context.Handler)
-	return h, ok
+func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
+	fn(ctx, err)
 }
 
-func validateHandler(handler interface{}) error {
-	if typ := reflect.TypeOf(handler); !di.IsFunc(typ) {
-		return fmt.Errorf("handler expected to be a kind of func but got typeof(%s)", typ.String())
-	}
-	return nil
-}
+var (
+	// DefaultErrStatusCode is the default error status code (400)
+	// when the response contains a non-nil error or a request-scoped binding error occur.
+	DefaultErrStatusCode = 400
 
-// makeHandler accepts a "handler" function which can accept any input arguments that match
-// with the "values" types and any output result, that matches the hero types, like string, int (string,int),
-// custom structs, Result(View | Response) and anything that you can imagine,
-// and returns a low-level `context/iris.Handler` which can be used anywhere in the Iris Application,
-// as middleware or as simple route handler or party handler or subdomain handler-router.
-func makeHandler(handler interface{}, errorHandler di.ErrorHandler, values ...reflect.Value) (context.Handler, error) {
-	if err := validateHandler(handler); err != nil {
-		return nil, err
-	}
-
-	if h, is := isContextHandler(handler); is {
-		golog.Warnf("the standard API to register a context handler could be used instead")
-		return h, nil
-	}
-
-	fn := reflect.ValueOf(handler)
-	n := fn.Type().NumIn()
-
-	if n == 0 {
-		h := func(ctx context.Context) {
-			DispatchFuncResult(ctx, nil, fn.Call(di.EmptyIn))
+	// DefaultErrorHandler is the default error handler which is fired
+	// when a function returns a non-nil error or a request-scoped dependency failed to binded.
+	DefaultErrorHandler = ErrorHandlerFunc(func(ctx context.Context, err error) {
+		if status := ctx.GetStatusCode(); status == 0 || !context.StatusCodeNotSuccessful(status) {
+			ctx.StatusCode(DefaultErrStatusCode)
 		}
 
-		return h, nil
+		ctx.WriteString(err.Error())
+		ctx.StopExecution()
+	})
+)
+
+var (
+	// ErrSeeOther may be returned from a dependency handler to skip a specific dependency
+	// based on custom logic.
+	ErrSeeOther = fmt.Errorf("see other")
+	// ErrStopExecution may be returned from a dependency handler to stop
+	// and return the execution of the function without error (it calls ctx.StopExecution() too).
+	// It may be occurred from request-scoped dependencies as well.
+	ErrStopExecution = fmt.Errorf("stop execution")
+)
+
+func makeHandler(fn interface{}, c *Container) context.Handler {
+	if fn == nil {
+		panic("makeHandler: function is nil")
 	}
 
-	funcInjector := di.Func(fn, values...)
-	funcInjector.ErrorHandler = errorHandler
+	// 0. A normal handler.
+	if handler, ok := isHandler(fn); ok {
+		return handler
+	}
 
-	valid := funcInjector.Length == n
-
-	if !valid {
-		// is invalid when input len and values are not match
-		// or their types are not match, we will take look at the
-		// second statement, here we will re-try it
-		// using binders for path parameters: string, int, int64, uint8, uint64, bool and so on.
-		// We don't have access to the path, so neither to the macros here,
-		// but in mvc. So we have to do it here.
-		valid = funcInjector.Retry(new(params).resolve)
-		if !valid {
-			pc := fn.Pointer()
-			fpc := runtime.FuncForPC(pc)
-			callerFileName, callerLineNumber := fpc.FileLine(pc)
-			callerName := fpc.Name()
-
-			err := fmt.Errorf("input arguments length(%d) and valid binders length(%d) are not equal for typeof '%s' which is defined at %s:%d by %s",
-				n, funcInjector.Length, fn.Type().String(), callerFileName, callerLineNumber, callerName)
-			return nil, err
+	// 1. A handler which returns just an error, handle it faster.
+	if handlerWithErr, ok := isHandlerWithError(fn); ok {
+		return func(ctx context.Context) {
+			if err := handlerWithErr(ctx); err != nil {
+				c.GetErrorHandler(ctx).HandleError(ctx, err)
+			}
 		}
 	}
 
-	h := func(ctx context.Context) {
-		// in := make([]reflect.Value, n, n)
-		// funcInjector.Inject(&in, reflect.ValueOf(ctx))
-		// DispatchFuncResult(ctx, fn.Call(in))
-		DispatchFuncResult(ctx, nil, funcInjector.Call(ctx))
+	v := valueOf(fn)
+	numIn := v.Type().NumIn()
+
+	bindings := getBindingsForFunc(v, c.Dependencies, c.ParamStartIndex)
+
+	return func(ctx context.Context) {
+		inputs := make([]reflect.Value, numIn)
+
+		for _, binding := range bindings {
+			input, err := binding.Dependency.Handle(ctx, binding.Input)
+			if err != nil {
+				if err == ErrSeeOther {
+					continue
+				} else if err == ErrStopExecution {
+					ctx.StopExecution()
+					return // return without error.
+				}
+
+				c.GetErrorHandler(ctx).HandleError(ctx, err)
+				return
+			}
+
+			inputs[binding.Input.Index] = input
+		}
+
+		outputs := v.Call(inputs)
+		if err := dispatchFuncResult(ctx, outputs); err != nil {
+			c.GetErrorHandler(ctx).HandleError(ctx, err)
+		}
+	}
+}
+
+func isHandler(fn interface{}) (context.Handler, bool) {
+	if handler, ok := fn.(context.Handler); ok {
+		return handler, ok
 	}
 
-	return h, nil
+	if handler, ok := fn.(func(context.Context)); ok {
+		return handler, ok
+	}
+
+	return nil, false
+}
+
+func isHandlerWithError(fn interface{}) (func(context.Context) error, bool) {
+	if handlerWithErr, ok := fn.(func(context.Context) error); ok {
+		return handlerWithErr, true
+	}
+
+	return nil, false
 }

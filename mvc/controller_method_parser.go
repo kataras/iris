@@ -94,10 +94,10 @@ func genParamKey(argIdx int) string {
 type methodParser struct {
 	lexer  *methodLexer
 	fn     reflect.Method
-	macros macro.Macros
+	macros *macro.Macros
 }
 
-func parseMethod(macros macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
+func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
 	if skipper(fn.Name) {
 		return "", "", errSkip
 	}

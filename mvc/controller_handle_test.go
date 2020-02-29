@@ -12,24 +12,24 @@ import (
 
 // service
 type (
-	// these TestService and TestServiceImpl could be in lowercase, unexported
+	// these testService and testServiceImpl could be in lowercase, unexported
 	// but the `Say` method should be exported however we have those exported
 	// because of the controller handler test.
-	TestService interface {
+	testService interface {
 		Say(string) string
 	}
-	TestServiceImpl struct {
+	testServiceImpl struct {
 		prefix string
 	}
 )
 
-func (s *TestServiceImpl) Say(message string) string {
+func (s *testServiceImpl) Say(message string) string {
 	return s.prefix + " " + message
 }
 
 type testControllerHandle struct {
 	Ctx     context.Context
-	Service TestService
+	Service testService
 
 	reqField string
 }
@@ -41,12 +41,7 @@ func (c *testControllerHandle) BeforeActivation(b BeforeActivation) {
 	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
 	b.HandleMany("GET", "/custom/{ps:string} /custom2/{ps:string}", "CustomWithParameter")
-	// if dynamic path exist
-	// then longest path should be registered first
-	// and the controller's method if wants to add path parameters
-	// dependency injection then they should accept the longest path parameters.
-	// See `testControllerHandle.CustomWithParameters`.
-	b.HandleMany("GET", "/custom3/{ps:string}/{pssecond:string} /custom3/{ps:string}", "CustomWithParameters")
+	b.HandleMany("GET", "/custom3/{ps:string}/{pssecond:string}", "CustomWithParameters")
 }
 
 // test `GetRoute` for custom routes.
@@ -109,8 +104,6 @@ func (c *testControllerHandle) CustomWithParameter(param1 string) string {
 }
 
 func (c *testControllerHandle) CustomWithParameters(param1, param2 string) string {
-	// it returns empty string for requested path: /custom3/value1,
-	// see BeforeActivation.
 	return param1 + param2
 }
 
@@ -124,7 +117,7 @@ func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx context.Context,
 func TestControllerHandle(t *testing.T) {
 	app := iris.New()
 	m := New(app)
-	m.Register(&TestServiceImpl{prefix: "service:"})
+	m.Register(&testServiceImpl{prefix: "service:"})
 	m.Handle(new(testControllerHandle))
 	m.Handle(new(testSmallController))
 
@@ -160,8 +153,7 @@ func TestControllerHandle(t *testing.T) {
 		Body().Equal("value2")
 	e.GET("/custom3/value1/value2").Expect().Status(httptest.StatusOK).
 		Body().Equal("value1value2")
-	e.GET("/custom3/value1").Expect().Status(httptest.StatusOK).
-		Body().Equal("value1")
+	e.GET("/custom3/value1").Expect().Status(httptest.StatusNotFound)
 
 	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")

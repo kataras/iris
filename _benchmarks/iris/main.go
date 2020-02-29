@@ -8,5 +8,5 @@ func main() {
 		ctx.WriteString("value")
 	})
 
-	app.Run(iris.Addr(":5000"))
+	app.Listen(":5000")
 }
