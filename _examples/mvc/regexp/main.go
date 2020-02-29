@@ -30,7 +30,7 @@ func main() {
 type myController struct{}
 
 func (m *myController) BeforeActivation(b mvc.BeforeActivation) {
-	// b.Dependencies().Add/Remove
+	// b.Dependencies().Register
 	// b.Router().Use/UseGlobal/Done // and any standard API call you already know
 
 	// 1-> Method

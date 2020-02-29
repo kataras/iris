@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/httptest"
 
 	. "github.com/kataras/iris/v12/mvc"
@@ -281,7 +282,7 @@ type testControllerBindDeep struct {
 }
 
 func (t *testControllerBindDeep) BeforeActivation(b BeforeActivation) {
-	b.Dependencies().Add(func(ctx iris.Context) (v testCustomStruct, err error) {
+	b.Dependencies().Register(func(ctx iris.Context) (v testCustomStruct, err error) {
 		err = ctx.ReadJSON(&v)
 		return
 	})
@@ -467,7 +468,7 @@ type testControllerActivateListener struct {
 }
 
 func (c *testControllerActivateListener) BeforeActivation(b BeforeActivation) {
-	b.Dependencies().AddOnce(&testBindType{title: "default title"})
+	b.Dependencies().Register(&testBindType{title: "overrides the dependency but not the field"}) // overrides the `Register` previous calls.
 }
 
 func (c *testControllerActivateListener) Get() string {
@@ -485,17 +486,17 @@ func TestControllerActivateListener(t *testing.T) {
 	// or
 	m.Party("/manual2").Handle(&testControllerActivateListener{
 		TitlePointer: &testBindType{
-			title: "my title",
+			title: "my manual title",
 		},
 	})
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("default title")
+		Body().Equal("overrides the dependency but not the field")
 	e.GET("/manual").Expect().Status(iris.StatusOK).
-		Body().Equal("my title")
+		Body().Equal("overrides the dependency but not the field")
 	e.GET("/manual2").Expect().Status(iris.StatusOK).
-		Body().Equal("my title")
+		Body().Equal("my manual title")
 }
 
 type testControllerNotCreateNewDueManuallySettingAllFields struct {
@@ -505,13 +506,12 @@ type testControllerNotCreateNewDueManuallySettingAllFields struct {
 }
 
 func (c *testControllerNotCreateNewDueManuallySettingAllFields) AfterActivation(a AfterActivation) {
-	if n := a.DependenciesReadOnly().Len(); n != 2 {
-		c.T.Fatalf(`expecting 2 dependency, the 'T' and the 'TitlePointer' that we manually insert
-			and the fields total length is 2 so it will not create a new controller on each request
-			however the dependencies are available here
-			although the struct injector is being ignored when
-			creating the controller's handlers because we set it to invalidate state at "newControllerActivator"
-			--  got dependencies length: %d`, n)
+	if n := len(a.DependenciesReadOnly()) - len(hero.BuiltinDependencies); n != 1 {
+		c.T.Fatalf(`expecting 1 dependency;
+- the 'T' and the 'TitlePointer' are manually binded (nonzero fields on initilization)
+- controller has no more than these two fields, it's a singleton
+- however, the dependencies length here should be 1 because the injector's options handler dependencies contains the controller's value dependency itself
+--  got dependencies length: %d`, n)
 	}
 
 	if !a.Singleton() {

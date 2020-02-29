@@ -12,6 +12,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
+	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/macro"
 	macroHandler "github.com/kataras/iris/v12/macro/handler"
 )
@@ -139,7 +140,7 @@ type APIBuilder struct {
 	// global done handlers, order doesn't matter.
 	doneGlobalHandlers context.Handlers
 
-	// the per-party
+	// the per-party relative path.
 	relativePath string
 	// allowMethods are filled with the `AllowMethods` func.
 	// They are used to create new routes
@@ -151,6 +152,8 @@ type APIBuilder struct {
 	handlerExecutionRules ExecutionRules
 	// the per-party (and its children) route registration rule, see `SetRegisterRule`.
 	routeRegisterRule RouteRegisterRule
+	// the per-party (and its children gets a clone) DI container. See `HandleFunc`, `UseFunc`, `DoneFunc` too.
+	container *hero.Container
 }
 
 var _ Party = (*APIBuilder)(nil)
@@ -165,6 +168,7 @@ func NewAPIBuilder() *APIBuilder {
 		errors:            errgroup.New("API Builder"),
 		relativePath:      "/",
 		routes:            new(repository),
+		container:         hero.New(),
 	}
 
 	return api
@@ -245,109 +249,46 @@ func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
 	return api
 }
 
-// CreateRoutes returns a list of Party-based Routes.
-// It does NOT registers the route. Use `Handle, Get...` methods instead.
-// This method can be used for third-parties Iris helpers packages and tools
-// that want a more detailed view of Party-based Routes before take the decision to register them.
-func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
-	if len(methods) == 0 || methods[0] == "ALL" || methods[0] == "ANY" { // then use like it was .Any
-		return api.Any(relativePath, handlers...)
-	}
-
-	// no clean path yet because of subdomain indicator/separator which contains a dot.
-	// but remove the first slash if the relative has already ending with a slash
-	// it's not needed because later on we do normalize/clean the path, but better do it here too
-	// for any future updates.
-	if api.relativePath[len(api.relativePath)-1] == '/' {
-		if relativePath[0] == '/' {
-			relativePath = relativePath[1:]
-		}
-	}
-
-	filename, line := getCaller()
-
-	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
-	if len(handlers) == 0 {
-		api.errors.Addf("missing handlers for route[%s:%d] %s: %s", filename, line, strings.Join(methods, ", "), fullpath)
-		return nil
-	}
-
-	// note: this can not change the caller's handlers as they're but the entry values(handlers)
-	// of `middleware`, `doneHandlers` and `handlers` can.
-	// So if we just put `api.middleware` or `api.doneHandlers`
-	// then the next `Party` will have those updated handlers
-	// but dev may change the rules for that child Party, so we have to make clones of them here.
-	var (
-		beginHandlers = joinHandlers(api.middleware, context.Handlers{})
-		doneHandlers  = joinHandlers(api.doneHandlers, context.Handlers{})
-	)
-
-	mainHandlers := context.Handlers(handlers)
-	// before join the middleware + handlers + done handlers and apply the execution rules.
-
-	possibleMainHandlerName := context.MainHandlerName(mainHandlers)
-
-	// TODO: for UseGlobal/DoneGlobal that doesn't work.
-	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
-
-	// global begin handlers -> middleware that are registered before route registration
-	// -> handlers that are passed to this Handle function.
-	routeHandlers := joinHandlers(beginHandlers, mainHandlers)
-	// -> done handlers
-	routeHandlers = joinHandlers(routeHandlers, doneHandlers)
-
-	// here we separate the subdomain and relative path
-	subdomain, path := splitSubdomainAndPath(fullpath)
-
-	// if allowMethods are empty, then simply register with the passed, main, method.
-	methods = append(api.allowMethods, methods...)
-
-	routes := make([]*Route, len(methods))
-
-	for i, m := range methods {
-		route, err := NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
-		if err != nil { // template path parser errors:
-			api.errors.Addf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
-			continue
-		}
-
-		route.SourceFileName = filename
-		route.SourceLineNumber = line
-
-		// Add UseGlobal & DoneGlobal Handlers
-		route.Use(api.beginGlobalHandlers...)
-		route.Done(api.doneGlobalHandlers...)
-
-		routes[i] = route
-	}
-
-	return routes
+// GetContainer returns the DI Container of this Party.
+// Use it to manually convert functions or structs(controllers) to a Handler.
+//
+// See `RegisterDependency` and `HandleFunc` too.
+func (api *APIBuilder) GetContainer() *hero.Container {
+	return api.container
 }
 
-// https://golang.org/doc/go1.9#callersframes
-func getCaller() (string, int) {
-	var pcs [32]uintptr
-	n := runtime.Callers(1, pcs[:])
-	frames := runtime.CallersFrames(pcs[:n])
-	wd, _ := os.Getwd()
-	for {
-		frame, more := frames.Next()
-		file := frame.File
+// RegisterDependency adds a dependency.
+// The value can be a single struct value or a function.
+// Follow the rules:
+// * <T>{structValue}
+// * func(accepts <T>)                                 returns <D> or (<D>, error)
+// * func(accepts iris.Context)                        returns <D> or (<D>, error)
+// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
+//
+// A Dependency can accept a previous registered dependency and return a new one or the same updated.
+// * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
+// * func(acceptsPathParameter1 string, id uint64)     returns <T> or (<T>, error)
+//
+// Usage:
+//
+// - RegisterDependency(loggerService{prefix: "dev"})
+// - RegisterDependency(func(ctx iris.Context) User {...})
+// - RegisterDependency(func(User) OtherResponse {...})
+func (api *APIBuilder) RegisterDependency(dependency interface{}) *hero.Dependency {
+	return api.container.Register(dependency)
+}
 
-		if !strings.Contains(file, "/kataras/iris") || strings.Contains(file, "/kataras/iris/_examples") || strings.Contains(file, "iris-contrib/examples") {
-			if relFile, err := filepath.Rel(wd, file); err == nil {
-				file = "./" + relFile
-			}
-
-			return file, frame.Line
-		}
-
-		if !more {
-			break
-		}
+// HandleFunc accepts one or more "handlersFn" functions which each one of them
+// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
+// any output result; like custom structs <T>, string, []byte, int, error,
+// a combination of the above, hero.Result(hero.View | hero.Response) and more.
+func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
+	handlers := make(context.Handlers, 0, len(handlersFn))
+	for _, h := range handlersFn {
+		handlers = append(handlers, api.container.Handler(h))
 	}
 
-	return "???", 0
+	return api.Handle(method, relativePath, handlers...)
 }
 
 // Handle registers a route to the server's api.
@@ -485,6 +426,85 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	return getRoute
 }
 
+// CreateRoutes returns a list of Party-based Routes.
+// It does NOT registers the route. Use `Handle, Get...` methods instead.
+// This method can be used for third-parties Iris helpers packages and tools
+// that want a more detailed view of Party-based Routes before take the decision to register them.
+func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
+	if len(methods) == 0 || methods[0] == "ALL" || methods[0] == "ANY" { // then use like it was .Any
+		return api.Any(relativePath, handlers...)
+	}
+
+	// no clean path yet because of subdomain indicator/separator which contains a dot.
+	// but remove the first slash if the relative has already ending with a slash
+	// it's not needed because later on we do normalize/clean the path, but better do it here too
+	// for any future updates.
+	if api.relativePath[len(api.relativePath)-1] == '/' {
+		if relativePath[0] == '/' {
+			relativePath = relativePath[1:]
+		}
+	}
+
+	filename, line := getCaller()
+
+	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
+	if len(handlers) == 0 {
+		api.errors.Addf("missing handlers for route[%s:%d] %s: %s", filename, line, strings.Join(methods, ", "), fullpath)
+		return nil
+	}
+
+	// note: this can not change the caller's handlers as they're but the entry values(handlers)
+	// of `middleware`, `doneHandlers` and `handlers` can.
+	// So if we just put `api.middleware` or `api.doneHandlers`
+	// then the next `Party` will have those updated handlers
+	// but dev may change the rules for that child Party, so we have to make clones of them here.
+	var (
+		beginHandlers = joinHandlers(api.middleware, context.Handlers{})
+		doneHandlers  = joinHandlers(api.doneHandlers, context.Handlers{})
+	)
+
+	mainHandlers := context.Handlers(handlers)
+	// before join the middleware + handlers + done handlers and apply the execution rules.
+
+	possibleMainHandlerName := context.MainHandlerName(mainHandlers)
+
+	// TODO: for UseGlobal/DoneGlobal that doesn't work.
+	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
+
+	// global begin handlers -> middleware that are registered before route registration
+	// -> handlers that are passed to this Handle function.
+	routeHandlers := joinHandlers(beginHandlers, mainHandlers)
+	// -> done handlers
+	routeHandlers = joinHandlers(routeHandlers, doneHandlers)
+
+	// here we separate the subdomain and relative path
+	subdomain, path := splitSubdomainAndPath(fullpath)
+
+	// if allowMethods are empty, then simply register with the passed, main, method.
+	methods = append(api.allowMethods, methods...)
+
+	routes := make([]*Route, len(methods))
+
+	for i, m := range methods {
+		route, err := NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
+		if err != nil { // template path parser errors:
+			api.errors.Addf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
+			continue
+		}
+
+		route.SourceFileName = filename
+		route.SourceLineNumber = line
+
+		// Add UseGlobal & DoneGlobal Handlers
+		route.Use(api.beginGlobalHandlers...)
+		route.Done(api.doneGlobalHandlers...)
+
+		routes[i] = route
+	}
+
+	return routes
+}
+
 // Party groups routes which may have the same prefix and share same handlers,
 // returns that new rich subrouter.
 //
@@ -520,6 +540,12 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	allowMethods := make([]string, len(api.allowMethods))
 	copy(allowMethods, api.allowMethods)
 
+	// attach a new Container with correct dynamic path parameter start index for input arguments
+	// based on the fullpath.
+	childContainer := api.container.Clone()
+	fpath, _ := macro.Parse(fullpath, *api.macros)
+	childContainer.ParamStartIndex = len(fpath.Params)
+
 	return &APIBuilder{
 		// global/api builder
 		macros:              api.macros,
@@ -535,6 +561,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		allowMethods:          allowMethods,
 		handlerExecutionRules: api.handlerExecutionRules,
 		routeRegisterRule:     api.routeRegisterRule,
+		container:             childContainer,
 	}
 }
 
@@ -730,6 +757,7 @@ func (api *APIBuilder) Reset() Party {
 	api.doneHandlers = api.doneHandlers[0:0]
 	api.handlerExecutionRules = ExecutionRules{}
 	api.routeRegisterRule = RouteOverride
+	// keep container as it's.
 	return api
 }
 
@@ -966,4 +994,30 @@ func joinHandlers(h1 context.Handlers, h2 context.Handlers) context.Handlers {
 	// start from there we finish, and store the new Handlers too
 	copy(newHandlers[nowLen:], h2)
 	return newHandlers
+}
+
+// https://golang.org/doc/go1.9#callersframes
+func getCaller() (string, int) {
+	var pcs [32]uintptr
+	n := runtime.Callers(1, pcs[:])
+	frames := runtime.CallersFrames(pcs[:n])
+	wd, _ := os.Getwd()
+	for {
+		frame, more := frames.Next()
+		file := frame.File
+
+		if !strings.Contains(file, "/kataras/iris") || strings.Contains(file, "/kataras/iris/_examples") || strings.Contains(file, "iris-contrib/examples") {
+			if relFile, err := filepath.Rel(wd, file); err == nil {
+				file = "./" + relFile
+			}
+
+			return file, frame.Line
+		}
+
+		if !more {
+			break
+		}
+	}
+
+	return "???", 0
 }

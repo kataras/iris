@@ -19,7 +19,7 @@ func TestPathParams(t *testing.T) {
 	})
 
 	handlerWithOtherBetweenThem := h.Handler(func(firstname string, f func() string, lastname string) {
-		got = f() + firstname + lastname
+		got = firstname + lastname
 	})
 
 	ctx := context.NewContext(nil)
@@ -28,20 +28,20 @@ func TestPathParams(t *testing.T) {
 	handler(ctx)
 	expected := "GerasimosMaropoulos"
 	if got != expected {
-		t.Fatalf("expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
+		t.Fatalf("[0] expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
 	}
 
 	got = ""
 	handlerWithOther(ctx)
 	expected = "GerasimosMaropoulos"
 	if got != expected {
-		t.Fatalf("expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
+		t.Fatalf("[1] expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
 	}
 
 	got = ""
 	handlerWithOtherBetweenThem(ctx)
 	expected = "GerasimosMaropoulos"
 	if got != expected {
-		t.Fatalf("expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
+		t.Fatalf("[2] expected the params 'firstname' + 'lastname' to be '%s' but got '%s'", expected, got)
 	}
 }

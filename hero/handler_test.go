@@ -1,15 +1,12 @@
 package hero_test
 
-// black-box
-
 import (
 	"fmt"
 	"testing"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/httptest"
-
 	. "github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 // dynamic func
@@ -29,25 +26,25 @@ func testBinderFunc(ctx iris.Context) testUserStruct {
 
 // service
 type (
-	// these TestService and TestServiceImpl could be in lowercase, unexported
+	// these testService and testServiceImpl could be in lowercase, unexported
 	// but the `Say` method should be exported however we have those exported
 	// because of the controller handler test.
-	TestService interface {
+	testService interface {
 		Say(string) string
 	}
-	TestServiceImpl struct {
+	testServiceImpl struct {
 		prefix string
 	}
 )
 
-func (s *TestServiceImpl) Say(message string) string {
+func (s *testServiceImpl) Say(message string) string {
 	return s.prefix + " " + message
 }
 
 var (
 	// binders, as user-defined
 	testBinderFuncUserStruct = testBinderFunc
-	testBinderService        = &TestServiceImpl{prefix: "say"}
+	testBinderService        = &testServiceImpl{prefix: "say"}
 	testBinderFuncParam      = func(ctx iris.Context) string {
 		return ctx.Params().Get("param")
 	}
@@ -60,7 +57,7 @@ var (
 	}
 
 	// just one input arg, the service which is binded by the #2 service binder.
-	testConsumeServiceHandler = func(service TestService) string {
+	testConsumeServiceHandler = func(service testService) string {
 		return service.Say("something")
 	}
 	// just one input arg, a standar string which is binded by the #3 func(ctx) any binder.
@@ -70,7 +67,9 @@ var (
 )
 
 func TestHandler(t *testing.T) {
-	Register(testBinderFuncUserStruct, testBinderService, testBinderFuncParam)
+	Register(testBinderFuncUserStruct)
+	Register(testBinderService)
+	Register(testBinderFuncParam)
 	var (
 		h1 = Handler(testConsumeUserHandler)
 		h2 = Handler(testConsumeServiceHandler)
@@ -112,7 +111,7 @@ func TestBindFunctionAsFunctionInputArgument(t *testing.T) {
 		return ctx.PostValue // or FormValue, the same here.
 	}
 
-	h := New().Register(postsBinder).Handler(func(get func(string) string) string {
+	h := New(postsBinder).Handler(func(get func(string) string) string {
 		// send the `ctx.PostValue/FormValue("username")` value
 		// to the client.
 		return get("username")
@@ -127,9 +126,8 @@ func TestBindFunctionAsFunctionInputArgument(t *testing.T) {
 		Expect().Status(iris.StatusOK).Body().Equal(expectedUsername)
 }
 
-func TestAutoBinding(t *testing.T) {
+func TestPayloadBinding(t *testing.T) {
 	h := New()
-	h.Register(AutoBinding)
 
 	postHandler := h.Handler(func(input *testUserStruct /* ptr */) string {
 		return input.Username
@@ -146,4 +144,58 @@ func TestAutoBinding(t *testing.T) {
 	e := httptest.New(t, app)
 	e.POST("/").WithJSON(iris.Map{"username": "makis"}).Expect().Status(httptest.StatusOK).Body().Equal("makis")
 	e.POST("/2").WithJSON(iris.Map{"username": "kataras"}).Expect().Status(httptest.StatusOK).Body().Equal("kataras")
+}
+
+/* Author's notes:
+If aksed or required by my company, make the following test to pass but think downsides of code complexity and performance-cost
+before begin the implementation of it.
+- Dependencies without depending on other values can be named "root-level dependencies"
+- Dependencies could be linked (a new .DependsOn?) to a "root-level dependency"(or by theirs same-level deps too?) with much
+  more control if "root-level dependencies" are named, e.g.:
+	b.Register("db", &myDBImpl{})
+	b.Register("user_dep", func(db myDB) User{...}).DependsOn("db")
+	b.Handler(func(user User) error{...})
+	b.Handler(func(ctx iris.Context, reuseDB myDB) {...})
+Why linked over automatically? Because more thna one dependency can implement the same input and
+end-user does not care about ordering the registered ones.
+Link with `DependsOn` SHOULD be optional, if exists then limit the available dependencies,
+`DependsOn` SHOULD accept comma-separated values, e.g. "db, otherdep" and SHOULD also work
+by calling it multiple times i.e `Depends("db").DependsOn("otherdep")`.
+Handlers should also be able to explicitly limit the list of
+their available dependencies per-handler, a `.DependsOn` feature SHOULD exist there too.
+
+Also, note that with the new implementation a `*hero.Input` value can be accepted on dynamic dependencies,
+that value contains an `Options.Dependencies` field which lists all the registered dependencies,
+so, in theory, end-developers could achieve same results by hand-code(inside the dependency's function body).
+
+26 Feb 2020. Gerasimos Maropoulos
+______________________________________________
+*/
+
+type testMessage struct {
+	Body string
+}
+
+func TestDependentDependencies(t *testing.T) {
+	b := New()
+	b.Register(&testServiceImpl{prefix: "prefix:"})
+	b.Register(func(service testService) testMessage {
+		return testMessage{Body: service.Say("it is a deep") + " dependency"}
+	})
+	var (
+		h1 = b.Handler(func(msg testMessage) string {
+			return msg.Body
+		})
+		h2 = b.Handler(func(reuse testService) string {
+			return reuse.Say("message")
+		})
+	)
+
+	app := iris.New()
+	app.Get("/h1", h1)
+	app.Get("/h2", h2)
+
+	e := httptest.New(t, app)
+	e.GET("/h1").Expect().Status(httptest.StatusOK).Body().Equal("prefix: it is a deep dependency")
+	e.GET("/h2").Expect().Status(httptest.StatusOK).Body().Equal("prefix: message")
 }

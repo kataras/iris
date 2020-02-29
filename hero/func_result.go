@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/hero/di"
 
 	"github.com/fatih/structs"
 )
@@ -58,80 +57,15 @@ type compatibleErr interface {
 	Error() string
 }
 
-// DefaultErrStatusCode is the default error status code (400)
-// when the response contains an error which is not nil.
-var DefaultErrStatusCode = 400
-
-// DispatchErr writes the error to the response.
-func DispatchErr(ctx context.Context, status int, err error) {
-	if status < 400 {
-		status = DefaultErrStatusCode
+// dispatchErr writes the error to the response.
+func dispatchErr(ctx context.Context, status int, err error) bool {
+	if err == nil {
+		return false
 	}
+
 	ctx.StatusCode(status)
-	if text := err.Error(); text != "" {
-		ctx.WriteString(text)
-		ctx.StopExecution()
-	}
-}
-
-// DispatchCommon is being used internally to send
-// commonly used data to the response writer with a smart way.
-func DispatchCommon(ctx context.Context,
-	statusCode int, contentType string, content []byte, v interface{}, err error, found bool) {
-	// if we have a false boolean as a return value
-	// then skip everything and fire a not found,
-	// we even don't care about the given status code or the object or the content.
-	if !found {
-		ctx.NotFound()
-		return
-	}
-
-	status := statusCode
-	if status == 0 {
-		status = 200
-	}
-
-	if err != nil {
-		DispatchErr(ctx, status, err)
-		return
-	}
-
-	// write the status code, the rest will need that before any write ofc.
-	ctx.StatusCode(status)
-	if contentType == "" {
-		// to respect any ctx.ContentType(...) call
-		// especially if v is not nil.
-		contentType = ctx.GetContentType()
-	}
-
-	if v != nil {
-		if d, ok := v.(Result); ok {
-			// write the content type now (internal check for empty value)
-			ctx.ContentType(contentType)
-			d.Dispatch(ctx)
-			return
-		}
-
-		if strings.HasPrefix(contentType, context.ContentJavascriptHeaderValue) {
-			_, err = ctx.JSONP(v)
-		} else if strings.HasPrefix(contentType, context.ContentXMLHeaderValue) {
-			_, err = ctx.XML(v, context.XML{Indent: " "})
-		} else {
-			// defaults to json if content type is missing or its application/json.
-			_, err = ctx.JSON(v, context.JSON{Indent: " "})
-		}
-
-		if err != nil {
-			DispatchErr(ctx, status, err)
-		}
-
-		return
-	}
-
-	ctx.ContentType(contentType)
-	// .Write even len(content) == 0 , this should be called in order to call the internal tryWriteHeader,
-	// it will not cost anything.
-	ctx.Write(content)
+	DefaultErrorHandler.HandleError(ctx, err)
+	return true
 }
 
 // DispatchFuncResult is being used internally to resolve
@@ -163,9 +97,9 @@ func DispatchCommon(ctx context.Context,
 // Result or (Result, error) and so on...
 //
 // where Get is an HTTP METHOD.
-func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, values []reflect.Value) {
+func dispatchFuncResult(ctx context.Context, values []reflect.Value) error {
 	if len(values) == 0 {
-		return
+		return nil
 	}
 
 	var (
@@ -184,10 +118,6 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 		// for content type (or json default) and send the custom data object
 		// except when found == false or err != nil.
 		custom interface{}
-		// if not nil then check for its status code,
-		// if not status code or < 400 then set it as DefaultErrStatusCode
-		// and fire the error's text.
-		err error
 		// if false then skip everything and fire 404.
 		found = true // defaults to true of course, otherwise will break :)
 	)
@@ -291,23 +221,16 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 			// it's raw content, get the latest
 			content = value
 		case compatibleErr:
-			if value == nil || di.IsNil(v) {
+			if value == nil || isNil(v) {
 				continue
 			}
 
-			if errorHandler != nil {
-				errorHandler.HandleError(ctx, value)
-				return
-			}
-
-			err = value
 			if statusCode < 400 {
 				statusCode = DefaultErrStatusCode
 			}
-			// break on first error, error should be in the end but we
-			// need to know break the dispatcher if any error.
-			// at the end; we don't want to write anything to the response if error is not nil.
 
+			ctx.StatusCode(statusCode)
+			return value
 		default:
 			// else it's a custom struct or a dispatcher, we'll decide later
 			// because content type and status code matters
@@ -316,7 +239,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 			if custom == nil {
 				// if it's a pointer to struct/map.
 
-				if di.IsNil(v) {
+				if isNil(v) {
 					// if just a ptr to struct with no content type given
 					// then try to get the previous response writer's content type,
 					// and if that is empty too then force-it to application/json
@@ -338,7 +261,61 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 		}
 	}
 
-	DispatchCommon(ctx, statusCode, contentType, content, custom, err, found)
+	return dispatchCommon(ctx, statusCode, contentType, content, custom, found)
+}
+
+// dispatchCommon is being used internally to send
+// commonly used data to the response writer with a smart way.
+func dispatchCommon(ctx context.Context,
+	statusCode int, contentType string, content []byte, v interface{}, found bool) error {
+	// if we have a false boolean as a return value
+	// then skip everything and fire a not found,
+	// we even don't care about the given status code or the object or the content.
+	if !found {
+		ctx.NotFound()
+		return nil
+	}
+
+	status := statusCode
+	if status == 0 {
+		status = 200
+	}
+
+	// write the status code, the rest will need that before any write ofc.
+	ctx.StatusCode(status)
+	if contentType == "" {
+		// to respect any ctx.ContentType(...) call
+		// especially if v is not nil.
+		contentType = ctx.GetContentType()
+	}
+
+	if v != nil {
+		if d, ok := v.(Result); ok {
+			// write the content type now (internal check for empty value)
+			ctx.ContentType(contentType)
+			d.Dispatch(ctx)
+			return nil
+		}
+
+		var err error
+
+		if strings.HasPrefix(contentType, context.ContentJavascriptHeaderValue) {
+			_, err = ctx.JSONP(v)
+		} else if strings.HasPrefix(contentType, context.ContentXMLHeaderValue) {
+			_, err = ctx.XML(v, context.XML{Indent: " "})
+		} else {
+			// defaults to json if content type is missing or its application/json.
+			_, err = ctx.JSON(v, context.JSON{Indent: " "})
+		}
+
+		return err
+	}
+
+	ctx.ContentType(contentType)
+	// .Write even len(content) == 0 , this should be called in order to call the internal tryWriteHeader,
+	// it will not cost anything.
+	_, err := ctx.Write(content)
+	return err
 }
 
 // Response completes the `methodfunc.Result` interface.
@@ -401,7 +378,12 @@ func (r Response) Dispatch(ctx context.Context) {
 		r.Content = []byte(s)
 	}
 
-	DispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, r.Err, true)
+	if dispatchErr(ctx, r.Code, r.Err) {
+		return
+	}
+
+	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, true)
+	dispatchErr(ctx, r.Code, err)
 }
 
 // View completes the `hero.Result` interface.
@@ -445,13 +427,7 @@ func ensureExt(s string) string {
 // Dispatch writes the template filename, template layout and (any) data to the  client.
 // Completes the `Result` interface.
 func (r View) Dispatch(ctx context.Context) { // r as Response view.
-	if r.Err != nil {
-		if r.Code < 400 {
-			r.Code = DefaultErrStatusCode
-		}
-		ctx.StatusCode(r.Code)
-		ctx.WriteString(r.Err.Error())
-		ctx.StopExecution()
+	if dispatchErr(ctx, r.Code, r.Err) {
 		return
 	}
 
@@ -482,7 +458,7 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 					setViewData(ctx, m)
 				} else if m, ok := r.Data.(context.Map); ok {
 					setViewData(ctx, m)
-				} else if di.IndirectValue(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
+				} else if reflect.Indirect(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
 					setViewData(ctx, structs.Map(r))
 				}
 			}
