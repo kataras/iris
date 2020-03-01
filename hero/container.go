@@ -2,6 +2,7 @@ package hero
 
 import (
 	stdContext "context"
+	"net/http"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -57,7 +58,18 @@ var BuiltinDependencies = []*Dependency{
 	NewDependency(func(ctx context.Context) time.Time {
 		return time.Now()
 	}).Explicitly(),
-
+	// standard http Request dependency.
+	NewDependency(func(ctx context.Context) *http.Request {
+		return ctx.Request()
+	}).Explicitly(),
+	// standard http ResponseWriter dependency.
+	NewDependency(func(ctx context.Context) http.ResponseWriter {
+		return ctx.ResponseWriter()
+	}).Explicitly(),
+	// http headers dependency.
+	NewDependency(func(ctx context.Context) http.Header {
+		return ctx.Request().Header
+	}).Explicitly(),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
 
