@@ -252,9 +252,24 @@ func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
 // GetContainer returns the DI Container of this Party.
 // Use it to manually convert functions or structs(controllers) to a Handler.
 //
-// See `RegisterDependency` and `HandleFunc` too.
+// See `OnErrorFunc`, `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
 func (api *APIBuilder) GetContainer() *hero.Container {
 	return api.container
+}
+
+// OnErrorFunc adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
+// The "errorHandler" handles any error may occurred and returned
+// during dependencies injection of the Party's hero handlers or from the handlers themselves.
+//
+// Same as:
+// GetContainer().GetErrorHandler = func(ctx iris.Context) hero.ErrorHandler { return errorHandler }
+//
+// See `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
+func (api *APIBuilder) OnErrorFunc(errorHandler func(context.Context, error)) {
+	errHandler := hero.ErrorHandlerFunc(errorHandler)
+	api.GetContainer().GetErrorHandler = func(ctx context.Context) hero.ErrorHandler {
+		return errHandler
+	}
 }
 
 // RegisterDependency adds a dependency.
@@ -274,20 +289,14 @@ func (api *APIBuilder) GetContainer() *hero.Container {
 // - RegisterDependency(loggerService{prefix: "dev"})
 // - RegisterDependency(func(ctx iris.Context) User {...})
 // - RegisterDependency(func(User) OtherResponse {...})
+//
+// See `OnErrorFunc`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
 func (api *APIBuilder) RegisterDependency(dependency interface{}) *hero.Dependency {
 	return api.container.Register(dependency)
 }
 
-// HandleFunc accepts one or more "handlersFn" functions which each one of them
-// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
-// any output result; like custom structs <T>, string, []byte, int, error,
-// a combination of the above, hero.Result(hero.View | hero.Response) and more.
-//
-// It's common from a hero handler to not even need to accept a `Context`, for that reason,
-// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
-// To stop the execution and not continue to the next "handlersFn"
-// the end-developer should output an error and return `iris.ErrStopExecution`.
-func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
+// convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
+func (api *APIBuilder) convertHandlerFuncs(handlersFn ...interface{}) context.Handlers {
 	handlers := make(context.Handlers, 0, len(handlersFn))
 	for _, h := range handlersFn {
 		handlers = append(handlers, api.container.Handler(h))
@@ -298,6 +307,22 @@ func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...int
 	o := ExecutionOptions{Force: true}
 	o.apply(&handlers)
 
+	return handlers
+}
+
+// HandleFunc same as `HandleFunc` but it accepts one or more "handlersFn" functions which each one of them
+// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
+// any output result; like custom structs <T>, string, []byte, int, error,
+// a combination of the above, hero.Result(hero.View | hero.Response) and more.
+//
+// It's common from a hero handler to not even need to accept a `Context`, for that reason,
+// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
+// To stop the execution and not continue to the next "handlersFn"
+// the end-developer should output an error and return `iris.ErrStopExecution`.
+//
+// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
+func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
+	handlers := api.convertHandlerFuncs(handlersFn...)
 	return api.Handle(method, relativePath, handlers...)
 }
 
@@ -714,6 +739,14 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 	api.middleware = append(api.middleware, handlers...)
 }
 
+// UseFunc same as "Use" but it accepts dynamic functions as its "handlersFn" input.
+//
+// See `OnErrorFunc`, `RegisterDependency`, `DoneFunc` and `HandleFunc` for more.
+func (api *APIBuilder) UseFunc(handlersFn ...interface{}) {
+	handlers := api.convertHandlerFuncs(handlersFn...)
+	api.Use(handlers...)
+}
+
 // UseGlobal registers handlers that should run at the very beginning.
 // It prepends those handler(s) to all routes,
 // including all parties, subdomains.
@@ -738,6 +771,13 @@ func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 // The difference from .Use is that this/or these Handler(s) are being always running last.
 func (api *APIBuilder) Done(handlers ...context.Handler) {
 	api.doneHandlers = append(api.doneHandlers, handlers...)
+}
+
+// DoneFunc same as "Done" but it accepts dynamic functions as its "handlersFn" input.
+// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `HandleFunc` for more.
+func (api *APIBuilder) DoneFunc(handlersFn ...interface{}) {
+	handlers := api.convertHandlerFuncs(handlersFn...)
+	api.Done(handlers...)
 }
 
 // DoneGlobal registers handlers that should run at the very end.
