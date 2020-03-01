@@ -8,12 +8,19 @@ import (
 )
 
 type (
+	// ErrorHandler describes an interface to handle errors per hero handler and its dependencies.
+	//
+	// Handles non-nil errors return from a hero handler or a controller's method (see `getBindingsFor` and `Handler`)
+	// the error may return from a request-scoped dependency too (see `Handler`).
 	ErrorHandler interface {
 		HandleError(context.Context, error)
 	}
+	// ErrorHandlerFunc implements the `ErrorHandler`.
+	// It describes the type defnition for an error function handler.
 	ErrorHandlerFunc func(context.Context, error)
 )
 
+// HandleError fires when a non-nil error returns from a request-scoped dependency at serve-time or the handler itself.
 func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
 	fn(ctx, err)
 }
@@ -41,7 +48,7 @@ var (
 				ctx.StatusCode(DefaultErrStatusCode)
 			}
 
-			ctx.WriteString(err.Error())
+			_, _ = ctx.WriteString(err.Error())
 		}
 
 		ctx.StopExecution()

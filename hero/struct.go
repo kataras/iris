@@ -31,11 +31,13 @@ var sortByNumMethods Sorter = func(t1 reflect.Type, t2 reflect.Type) bool {
 	return true
 }
 
+// Struct keeps a record of a particular struct value injection.
+// See `Container.Struct` and `mvc#Application.Handle` methods.
 type Struct struct {
 	ptrType     reflect.Type
 	ptrValue    reflect.Value // the original ptr struct value.
 	elementType reflect.Type  // the original struct type.
-	bindings    []*Binding    // struct field bindings.
+	bindings    []*binding    // struct field bindings.
 
 	Container *Container
 	Singleton bool
@@ -102,6 +104,10 @@ func makeStruct(structPtr interface{}, c *Container) *Struct {
 	return s
 }
 
+// Acquire returns a struct value based on the request.
+// If the dependencies are all static then these are already set-ed at the initialization of this Struct
+// and the same struct value instance will be returned, ignoring the Context. Otherwise
+// a new struct value with filled fields by its pre-calculated bindings will be returned instead.
 func (s *Struct) Acquire(ctx context.Context) (reflect.Value, error) {
 	if s.Singleton {
 		ctx.Values().Set(context.ControllerContextKey, s.ptrValue)
@@ -130,6 +136,8 @@ func (s *Struct) Acquire(ctx context.Context) (reflect.Value, error) {
 	return ctrl, nil
 }
 
+// MethodHandler accepts a "methodName" that should be a valid an exported
+// method of the struct and returns its converted Handler.
 func (s *Struct) MethodHandler(methodName string) context.Handler {
 	m, ok := s.ptrValue.Type().MethodByName(methodName)
 	if !ok {

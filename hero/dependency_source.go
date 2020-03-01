@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Source describes where a dependency is located at the source code itself.
 type Source struct {
 	File   string
 	Line   int

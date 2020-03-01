@@ -9,8 +9,11 @@ import (
 )
 
 type (
+	// DependencyHandler is the native function declaration which implementors should return a value match to an input.
 	DependencyHandler func(ctx context.Context, input *Input) (reflect.Value, error)
-
+	// Dependency describes the design-time dependency to be injected at serve time.
+	// Contains its source location, the dependency handler (provider) itself and information
+	// such as static for static struct values or explicit to bind a value to its exact DestType and not if just assignable to it (interfaces).
 	Dependency struct {
 		OriginalValue interface{} // Used for debugging and for logging only.
 		Source        Source

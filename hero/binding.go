@@ -8,11 +8,13 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
-type Binding struct {
+// binding contains the Dependency and the Input, it's the result of a function or struct + dependencies.
+type binding struct {
 	Dependency *Dependency
 	Input      *Input
 }
 
+// Input contains the input reference of which a dependency is binded to.
 type Input struct {
 	Index            int   // for func inputs
 	StructFieldIndex []int // for struct fields in order to support embedded ones.
@@ -32,7 +34,8 @@ func newInput(typ reflect.Type, index int, structFieldIndex []int) *Input {
 	return in
 }
 
-func (b *Binding) String() string {
+// String returns the string representation of a binding.
+func (b *binding) String() string {
 	index := fmt.Sprintf("%d", b.Input.Index)
 	if len(b.Input.StructFieldIndex) > 0 {
 		for j, i := range b.Input.StructFieldIndex {
@@ -47,7 +50,8 @@ func (b *Binding) String() string {
 	return fmt.Sprintf("[%s:%s] maps to [%s]", index, b.Input.Type.String(), b.Dependency)
 }
 
-func (b *Binding) Equal(other *Binding) bool {
+// Equal compares "b" and "other" bindings and reports whether they are referring to the same values.
+func (b *binding) Equal(other *binding) bool {
 	if b == nil {
 		return other == nil
 	}
@@ -107,7 +111,7 @@ func matchDependency(dep *Dependency, in reflect.Type) bool {
 	return dep.DestType == nil || equalTypes(dep.DestType, in)
 }
 
-func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex int) (bindings []*Binding) {
+func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex int) (bindings []*binding) {
 	bindedInput := make(map[int]struct{})
 
 	// lastParamIndex is used to bind parameters correctly when:
@@ -170,7 +174,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex i
 				d.OriginalValue = nil
 			}
 
-			bindings = append(bindings, &Binding{
+			bindings = append(bindings, &binding{
 				Dependency: d,
 				Input:      newInput(in, i, nil),
 			})
@@ -201,7 +205,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex i
 	return
 }
 
-func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramStartIndex int) []*Binding {
+func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramStartIndex int) []*binding {
 	fnTyp := fn.Type()
 	if !isFunc(fnTyp) {
 		panic("bindings: unresolved: not a func type")
@@ -221,7 +225,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramStart
 	return bindings
 }
 
-func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStartIndex int, sorter Sorter) (bindings []*Binding) {
+func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStartIndex int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
 		panic("bindings: unresolved: no struct type")
@@ -232,7 +236,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStar
 	nonZero := lookupNonZeroFieldValues(elem)
 	for _, f := range nonZero {
 		// fmt.Printf("Controller [%s] | NonZero | Field Index: %v | Field Type: %s\n", typ, f.Index, f.Type)
-		bindings = append(bindings, &Binding{
+		bindings = append(bindings, &binding{
 			Dependency: NewDependency(elem.FieldByIndex(f.Index).Interface()),
 			Input:      newInput(f.Type, f.Index[0], f.Index),
 		})
@@ -268,7 +272,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStar
 			binding.Input.StructFieldIndex = structFieldIndex
 		}
 
-		// fmt.Printf("Controller [%s] | Binding Index: %v | Binding Type: %s\n", typ, binding.Input.StructFieldIndex, binding.Input.Type)
+		// fmt.Printf("Controller [%s] | binding Index: %v | binding Type: %s\n", typ, binding.Input.StructFieldIndex, binding.Input.Type)
 
 		// fmt.Printf("Controller [%s] Set [%s] to struct field index: %v\n", typ.String(), binding.Input.Type.String(), structFieldIndex)
 	}
@@ -280,8 +284,8 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStar
 	Builtin dynamic bindings.
 */
 
-func paramBinding(index, paramIndex int, typ reflect.Type) *Binding {
-	return &Binding{
+func paramBinding(index, paramIndex int, typ reflect.Type) *binding {
+	return &binding{
 		Dependency: &Dependency{Handle: paramDependencyHandler(paramIndex), DestType: typ, Source: getSource()},
 		Input:      newInput(typ, index, nil),
 	}
@@ -299,8 +303,8 @@ func paramDependencyHandler(paramIndex int) DependencyHandler {
 
 // registered if input parameters are more than matched dependencies.
 // It binds an input to a request body based on the request content-type header (JSON, XML, YAML, Query, Form).
-func payloadBinding(index int, typ reflect.Type) *Binding {
-	return &Binding{
+func payloadBinding(index int, typ reflect.Type) *binding {
+	return &binding{
 		Dependency: &Dependency{
 			Handle: func(ctx context.Context, input *Input) (newValue reflect.Value, err error) {
 				wasPtr := input.Type.Kind() == reflect.Ptr
