@@ -156,7 +156,7 @@ before begin the implementation of it.
 	b.Register("user_dep", func(db myDB) User{...}).DependsOn("db")
 	b.Handler(func(user User) error{...})
 	b.Handler(func(ctx iris.Context, reuseDB myDB) {...})
-Why linked over automatically? Because more thna one dependency can implement the same input and
+Why linked over automatically? Because more than one dependency can implement the same input and
 end-user does not care about ordering the registered ones.
 Link with `DependsOn` SHOULD be optional, if exists then limit the available dependencies,
 `DependsOn` SHOULD accept comma-separated values, e.g. "db, otherdep" and SHOULD also work
@@ -170,6 +170,8 @@ so, in theory, end-developers could achieve same results by hand-code(inside the
 
 26 Feb 2020. Gerasimos Maropoulos
 ______________________________________________
+
+29 Feb 2020. It's done.
 */
 
 type testMessage struct {

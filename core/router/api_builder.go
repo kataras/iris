@@ -282,11 +282,21 @@ func (api *APIBuilder) RegisterDependency(dependency interface{}) *hero.Dependen
 // can accept any input arguments that match with the Party's registered Container's `Dependencies` and
 // any output result; like custom structs <T>, string, []byte, int, error,
 // a combination of the above, hero.Result(hero.View | hero.Response) and more.
+//
+// It's common from a hero handler to not even need to accept a `Context`, for that reason,
+// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
+// To stop the execution and not continue to the next "handlersFn"
+// the end-developer should output an error and return `iris.ErrStopExecution`.
 func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
 	handlers := make(context.Handlers, 0, len(handlersFn))
 	for _, h := range handlersFn {
 		handlers = append(handlers, api.container.Handler(h))
 	}
+
+	// On that type of handlers the end-developer does not have to include the Context in the handler,
+	// so the ctx.Next is automatically called unless an `ErrStopExecution` returned (implementation inside hero pkg).
+	o := ExecutionOptions{Force: true}
+	o.apply(&handlers)
 
 	return api.Handle(method, relativePath, handlers...)
 }

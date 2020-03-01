@@ -8,6 +8,8 @@ It doesn't always contain the "best ways" but it does cover each important featu
 
 ## Running the examples
 
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/bd489282b676e30de158)
+
 1. Install the Go Programming Language, version 1.12+ from https://golang.org/dl.
 2. [Install Iris](https://github.com/kataras/iris/wiki/installation)
 3. Install any external packages that required by the examples

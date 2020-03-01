@@ -341,9 +341,10 @@ func (c *ControllerActivator) handlerOf(methodName string) context.Handler {
 		return func(ctx context.Context) {
 			ctrl, err := c.injector.Acquire(ctx)
 			if err != nil {
-				if err != hero.ErrStopExecution {
-					c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
-				}
+				// if err != hero.ErrStopExecution {
+				// 	c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
+				// }
+				c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
 				return
 			}
 

@@ -225,7 +225,7 @@ func dispatchFuncResult(ctx context.Context, values []reflect.Value) error {
 				continue
 			}
 
-			if statusCode < 400 {
+			if statusCode < 400 && value != ErrStopExecution {
 				statusCode = DefaultErrStatusCode
 			}
 
@@ -286,7 +286,11 @@ func dispatchCommon(ctx context.Context,
 	if contentType == "" {
 		// to respect any ctx.ContentType(...) call
 		// especially if v is not nil.
-		contentType = ctx.GetContentType()
+		if contentType = ctx.GetContentType(); contentType == "" {
+			// if it's still empty set to JSON. (useful for dynamic middlewares that returns an int status code and the next handler dispatches the JSON,
+			// see dependency-injection/basic/middleware example)
+			contentType = context.ContentJSONHeaderValue
+		}
 	}
 
 	if v != nil {
@@ -302,10 +306,13 @@ func dispatchCommon(ctx context.Context,
 		if strings.HasPrefix(contentType, context.ContentJavascriptHeaderValue) {
 			_, err = ctx.JSONP(v)
 		} else if strings.HasPrefix(contentType, context.ContentXMLHeaderValue) {
-			_, err = ctx.XML(v, context.XML{Indent: " "})
+			_, err = ctx.XML(v)
+			// no need: context.XML{Indent: "  "}), after v12.2,
+			// if not iris.WithOptimizations passed and indent is empty then it sets it to two spaces for JSON, JSONP and XML,
+			// otherwise given indentation.
 		} else {
 			// defaults to json if content type is missing or its application/json.
-			_, err = ctx.JSON(v, context.JSON{Indent: " "})
+			_, err = ctx.JSON(v)
 		}
 
 		return err

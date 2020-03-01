@@ -14,10 +14,17 @@ Internal selected benchmarks between modified features across different versions
 
 Measures handler factory time.
 
+```sh
+$ cd v12.1.x
+$ go test -run=NONE --bench=. -count=5 --benchmem > di_test.txt
+$ cd ../vNext
+$ go test -run=NONE --bench=. -count=5 --benchmem > di_test.txt
+```
+
 | Name    | Ops | Ns/op | B/op | Allocs/op |
 |---------|:------|:--------|:--------|----|
-| vNext   | 181726 | 6631  | 1544 | 17 |
-| v12.1.x |  96001 | 12604 | 976  | 26 |
+| vNext   | 184512 | 6607  | 1544 | 17 |
+| v12.1.x |  95974 | 12653 | 976  | 26 |
 
 It accepts a dynamic path parameter and a JSON request. It returns a JSON response. Fires 500000 requests with 125 concurrent connections.
 

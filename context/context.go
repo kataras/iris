@@ -3200,12 +3200,15 @@ var (
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
 // Ignores StatusCode, Gzip, StreamingJSON options.
-func WriteJSON(writer io.Writer, v interface{}, options JSON, enableOptimization ...bool) (int, error) {
+func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (int, error) {
 	var (
-		result   []byte
-		err      error
-		optimize = len(enableOptimization) > 0 && enableOptimization[0]
+		result []byte
+		err    error
 	)
+
+	if !optimize && options.Indent == "" {
+		options.Indent = "  "
+	}
 
 	if indent := options.Indent; indent != "" {
 		marshalIndent := json.MarshalIndent
@@ -3291,7 +3294,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 var finishCallbackB = []byte(");")
 
 // WriteJSONP marshals the given interface object and writes the JSON response to the writer.
-func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimization ...bool) (int, error) {
+func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (int, error) {
 	if callback := options.Callback; callback != "" {
 		n, err := writer.Write([]byte(callback + "("))
 		if err != nil {
@@ -3300,7 +3303,9 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimizati
 		defer writer.Write(finishCallbackB)
 	}
 
-	optimize := len(enableOptimization) > 0 && enableOptimization[0]
+	if !optimize && options.Indent == "" {
+		options.Indent = "  "
+	}
 
 	if indent := options.Indent; indent != "" {
 		marshalIndent := json.MarshalIndent
@@ -3396,12 +3401,16 @@ func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 }
 
 // WriteXML marshals the given interface object and writes the XML response to the writer.
-func WriteXML(writer io.Writer, v interface{}, options XML) (int, error) {
+func WriteXML(writer io.Writer, v interface{}, options XML, optimize bool) (int, error) {
 	if prefix := options.Prefix; prefix != "" {
 		n, err := writer.Write([]byte(prefix))
 		if err != nil {
 			return n, err
 		}
+	}
+
+	if !optimize && options.Indent == "" {
+		options.Indent = "  "
 	}
 
 	if indent := options.Indent; indent != "" {
@@ -3435,7 +3444,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 
 	ctx.ContentType(ContentXMLHeaderValue)
 
-	n, err := WriteXML(ctx.writer, v, options)
+	n, err := WriteXML(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
 		ctx.Application().Logger().Debugf("XML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)

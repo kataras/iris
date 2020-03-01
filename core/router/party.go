@@ -130,6 +130,11 @@ type Party interface {
 	// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
 	// any output result; like custom structs <T>, string, []byte, int, error,
 	// a combination of the above, hero.Result(hero.View | hero.Response) and more.
+	//
+	// It's common from a hero handler to not even need to accept a `Context`, for that reason,
+	// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
+	// To stop the execution and not continue to the next "handlersFn"
+	// the end-developer should output an error and return `iris.ErrStopExecution`.
 	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
 
 	// Handle registers a route to the server's router.
