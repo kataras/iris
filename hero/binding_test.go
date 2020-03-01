@@ -3,6 +3,7 @@ package hero
 import (
 	stdContext "context"
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ var (
 	stdContextTyp = reflect.TypeOf((*stdContext.Context)(nil)).Elem()
 	sessionTyp    = reflect.TypeOf((*sessions.Session)(nil))
 	timeTyp       = reflect.TypeOf((*time.Time)(nil)).Elem()
+	mapStringsTyp = reflect.TypeOf(map[string][]string{})
 )
 
 func contextBinding(index int) *binding {
@@ -181,10 +183,10 @@ func TestGetBindingsForFunc(t *testing.T) {
 				paramBinding(1, 1, reflect.TypeOf(0)),
 			},
 		},
-		// test std context and session bindings.
+		// test std context, session, time, request, response writer and headers  bindings.
 		{ // 12
-			Func: func(ctx stdContext.Context, s *sessions.Session, t time.Time) testResponse {
-				return testResponse{"from std context and session"}
+			Func: func(stdContext.Context, *sessions.Session, time.Time, *http.Request, http.ResponseWriter, http.Header) testResponse {
+				return testResponse{"builtin deps"}
 			},
 			Expected: []*binding{
 				{
@@ -199,6 +201,59 @@ func TestGetBindingsForFunc(t *testing.T) {
 					Dependency: NewDependency(BuiltinDependencies[3]),
 					Input:      &Input{Index: 2, Type: timeTyp},
 				},
+				{
+					Dependency: NewDependency(BuiltinDependencies[4]),
+					Input:      &Input{Index: 3, Type: BuiltinDependencies[4].DestType},
+				},
+				{
+					Dependency: NewDependency(BuiltinDependencies[5]),
+					Input:      &Input{Index: 4, Type: BuiltinDependencies[5].DestType},
+				},
+				{
+					Dependency: NewDependency(BuiltinDependencies[6]),
+					Input:      &Input{Index: 5, Type: BuiltinDependencies[6].DestType},
+				},
+			},
+		},
+		// test explicitly of http.Header and its underline type map[string][]string which
+		// but shouldn't be binded to request headers because of the (.Explicitly()), instead
+		// the map should be binded to our last of "deps" which is is a dynamic functions reads from request body's JSON
+		// (it's a builtin dependency as well but we delcared it to test user dynamic dependencies too).
+		{ // 13
+			Func: func(http.Header) testResponse {
+				return testResponse{"builtin http.Header dep"}
+			},
+			Expected: []*binding{
+				{
+					Dependency: NewDependency(BuiltinDependencies[6]),
+					Input:      &Input{Index: 0, Type: BuiltinDependencies[6].DestType},
+				},
+			},
+		},
+		{ // 14
+			Func: func(map[string][]string) testResponse {
+				return testResponse{"not dep registered except the dynamic one"}
+			},
+			Expected: []*binding{
+				{
+					Dependency: deps[len(deps)-1],
+					Input:      &Input{Index: 0, Type: mapStringsTyp},
+				},
+			},
+		},
+		{ // 15
+			Func: func(http.Header, map[string][]string) testResponse {
+				return testResponse{}
+			},
+			Expected: []*binding{ // only http.Header should be binded, we don't have map[string][]string registered.
+				{
+					Dependency: NewDependency(BuiltinDependencies[6]),
+					Input:      &Input{Index: 0, Type: BuiltinDependencies[6].DestType},
+				},
+				{
+					Dependency: deps[len(deps)-1],
+					Input:      &Input{Index: 1, Type: mapStringsTyp},
+				},
 			},
 		},
 	}
@@ -212,7 +267,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 		bindings := getBindingsForFunc(reflect.ValueOf(tt.Func), c.Dependencies, 0)
 
 		if expected, got := len(tt.Expected), len(bindings); expected != got {
-			t.Fatalf("[%d] expected bindings length to be: %d but got: %d", i, expected, got)
+			t.Fatalf("[%d] expected bindings length to be: %d but got: %d of: %s", i, expected, got, bindings)
 		}
 
 		for j, b := range bindings {
