@@ -11,8 +11,14 @@ import (
 	"github.com/kataras/iris/v12/sessions"
 )
 
-func contextBinding(index int) *Binding {
-	return &Binding{
+var (
+	stdContextTyp = reflect.TypeOf((*stdContext.Context)(nil)).Elem()
+	sessionTyp    = reflect.TypeOf((*sessions.Session)(nil))
+	timeTyp       = reflect.TypeOf((*time.Time)(nil)).Elem()
+)
+
+func contextBinding(index int) *binding {
+	return &binding{
 		Dependency: BuiltinDependencies[0],
 		Input:      &Input{Type: BuiltinDependencies[0].DestType, Index: index},
 	}
@@ -64,55 +70,55 @@ func TestGetBindingsForFunc(t *testing.T) {
 
 	var tests = []struct {
 		Func     interface{}
-		Expected []*Binding
+		Expected []*binding
 	}{
 		{ // 0
 			Func: func(ctx context.Context) {
 				ctx.WriteString("t1")
 			},
-			Expected: []*Binding{contextBinding(0)},
+			Expected: []*binding{contextBinding(0)},
 		},
 		{ // 1
 			Func: func(ctx context.Context) error {
 				return fmt.Errorf("err1")
 			},
-			Expected: []*Binding{contextBinding(0)},
+			Expected: []*binding{contextBinding(0)},
 		},
 		{ // 2
 			Func: func(ctx context.Context) testResponse {
 				return testResponse{Name: "name"}
 			},
-			Expected: []*Binding{contextBinding(0)},
+			Expected: []*binding{contextBinding(0)},
 		},
 		{ // 3
 			Func: func(in testRequest) (testResponse, error) {
 				return testResponse{Name: "email of " + in.Email}, nil
 			},
-			Expected: []*Binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}},
+			Expected: []*binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}},
 		},
 		{ // 4
 			Func: func(in testRequest) (testResponse, error) {
 				return testResponse{Name: "not valid "}, fmt.Errorf("invalid")
 			},
-			Expected: []*Binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}},
+			Expected: []*binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}},
 		},
 		{ // 5
 			Func: func(ctx context.Context, in testRequest) testResponse {
 				return testResponse{Name: "(with ctx) email of " + in.Email}
 			},
-			Expected: []*Binding{contextBinding(0), {Dependency: deps[2], Input: &Input{Index: 1, Type: testRequestTyp}}},
+			Expected: []*binding{contextBinding(0), {Dependency: deps[2], Input: &Input{Index: 1, Type: testRequestTyp}}},
 		},
 		{ // 6
 			Func: func(in testRequest, ctx context.Context) testResponse { // reversed.
 				return testResponse{Name: "(with ctx) email of " + in.Email}
 			},
-			Expected: []*Binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}, contextBinding(1)},
+			Expected: []*binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}, contextBinding(1)},
 		},
 		{ // 7
 			Func: func(in testRequest, ctx context.Context, in2 string) testResponse { // reversed.
 				return testResponse{Name: "(with ctx) email of " + in.Email + "and in2: " + in2}
 			},
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: deps[2],
 					Input:      &Input{Index: 0, Type: testRequestTyp},
@@ -128,7 +134,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 			Func: func(in testRequest, ctx context.Context, in2, in3 string) testResponse { // reversed.
 				return testResponse{Name: "(with ctx) email of " + in.Email + " | in2: " + in2 + " in3: " + in3}
 			},
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: deps[2],
 					Input:      &Input{Index: 0, Type: testRequestTyp},
@@ -148,7 +154,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 			Func: func(ctx context.Context, in testRequest, in2 testRequest2) testResponse {
 				return testResponse{Name: fmt.Sprintf("(with ctx) email of %s and in2.Age %d", in.Email, in2.Age)}
 			},
-			Expected: []*Binding{
+			Expected: []*binding{
 				contextBinding(0),
 				{
 					Dependency: deps[2],
@@ -170,7 +176,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 			Func: func(userID string, age int) testResponse {
 				return testResponse{Name: "in from path parameters"}
 			},
-			Expected: []*Binding{
+			Expected: []*binding{
 				paramBinding(0, 0, reflect.TypeOf("")),
 				paramBinding(1, 1, reflect.TypeOf(0)),
 			},
@@ -180,7 +186,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 			Func: func(ctx stdContext.Context, s *sessions.Session, t time.Time) testResponse {
 				return testResponse{"from std context and session"}
 			},
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: NewDependency(BuiltinDependencies[1]),
 					Input:      &Input{Index: 0, Type: stdContextTyp},
@@ -191,7 +197,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 				},
 				{
 					Dependency: NewDependency(BuiltinDependencies[3]),
-					Input:      &Input{Index: 2, Type: reflect.TypeOf(time.Time{})},
+					Input:      &Input{Index: 2, Type: timeTyp},
 				},
 			},
 		},
@@ -307,7 +313,7 @@ func TestBindingsForStruct(t *testing.T) {
 		}),
 	}
 
-	var autoBindings = []*Binding{
+	var autoBindings = []*binding{
 		payloadBinding(0, reflect.TypeOf(embedded1{})),
 		payloadBinding(1, reflect.TypeOf(embedded2{})),
 	}
@@ -319,12 +325,12 @@ func TestBindingsForStruct(t *testing.T) {
 	var tests = []struct {
 		Value      interface{}
 		Registered []*Dependency
-		Expected   []*Binding
+		Expected   []*binding
 	}{
 		{ // 0.
 			Value:      &controller{},
 			Registered: deps,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: deps[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf("")},
@@ -338,7 +344,7 @@ func TestBindingsForStruct(t *testing.T) {
 		// 1. test controller with pre-defined variables.
 		{
 			Value: &controller{Name: "name_struct", Service: new(serviceImpl)},
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: NewDependency("name_struct"),
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf("")},
@@ -354,7 +360,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controller{Name: "name_struct", Service: new(serviceImpl)},
 			Registered: deps,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: NewDependency("name_struct"),
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf("")},
@@ -369,7 +375,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controllerEmbeddingExported{},
 			Registered: depsForAnonymousEmbedded,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: depsForAnonymousEmbedded[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0, 0}, Type: reflect.TypeOf(0)},
@@ -384,7 +390,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controllerEmbeddingUnexported{},
 			Registered: depsForAnonymousEmbedded,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: depsForAnonymousEmbedded[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0, 0}, Type: reflect.TypeOf(0)},
@@ -411,7 +417,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controller2{},
 			Registered: depsForFieldsOfStruct,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: depsForFieldsOfStruct[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf(embedded1{})},
@@ -426,7 +432,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controller3{},
 			Registered: []*Dependency{depsForFieldsOfStruct[0]},
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: depsForFieldsOfStruct[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf(embedded1{})},
@@ -437,7 +443,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controller3{},
 			Registered: depsForFieldsOfStruct,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: depsForFieldsOfStruct[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf(embedded1{})},
@@ -448,7 +454,7 @@ func TestBindingsForStruct(t *testing.T) {
 		{
 			Value:      &controller{},
 			Registered: depsInterfaces,
-			Expected: []*Binding{
+			Expected: []*binding{
 				{
 					Dependency: depsInterfaces[0],
 					Input:      &Input{Index: 0, StructFieldIndex: []int{0}, Type: reflect.TypeOf("")},

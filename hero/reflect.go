@@ -1,12 +1,9 @@
 package hero
 
 import (
-	stdContext "context"
 	"reflect"
-	"time"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/sessions"
 )
 
 func valueOf(v interface{}) reflect.Value {
@@ -45,7 +42,6 @@ func isFunc(kindable interface{ Kind() reflect.Kind }) bool {
 }
 
 var inputTyp = reflect.TypeOf((*Input)(nil))
-var timeTyp = reflect.TypeOf((*time.Time)(nil)).Elem()
 
 var errTyp = reflect.TypeOf((*error)(nil)).Elem()
 
@@ -67,20 +63,6 @@ var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
 // isContext returns true if the "typ" is a type of Context.
 func isContext(typ reflect.Type) bool {
 	return typ.Implements(contextTyp)
-}
-
-var stdContextTyp = reflect.TypeOf((*stdContext.Context)(nil)).Elem()
-
-// isStdContext returns true if the "typ" is a type of standard Context.
-func isStdContext(typ reflect.Type) bool {
-	return typ.Implements(stdContextTyp)
-}
-
-var sessionTyp = reflect.TypeOf((*sessions.Session)(nil))
-
-// isStdContext returns true if the "typ" is a type of standard Context.
-func isSession(typ reflect.Type) bool {
-	return typ == sessionTyp
 }
 
 var errorHandlerTyp = reflect.TypeOf((*ErrorHandler)(nil)).Elem()

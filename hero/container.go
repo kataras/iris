@@ -2,16 +2,11 @@ package hero
 
 import (
 	stdContext "context"
-	"fmt"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/sessions"
 )
-
-func fatalf(format string, args ...interface{}) {
-	panic(fmt.Sprintf(format, args...))
-}
 
 // Default is the default container value which can be used for dependencies share.
 var Default = New()
@@ -40,13 +35,15 @@ type Container struct {
 	GetErrorHandler func(context.Context) ErrorHandler // cannot be nil.
 }
 
+// BuiltinDependencies is a list of builtin dependencies that are added on Container's initilization.
+// Contains the iris context, standard context, iris sessions and time dependencies.
 var BuiltinDependencies = []*Dependency{
 	// iris context dependency.
-	NewDependency(func(ctx context.Context) context.Context { return ctx }),
+	NewDependency(func(ctx context.Context) context.Context { return ctx }).Explicitly(),
 	// standard context dependency.
 	NewDependency(func(ctx context.Context) stdContext.Context {
 		return ctx.Request().Context()
-	}),
+	}).Explicitly(),
 	// iris session dependency.
 	NewDependency(func(ctx context.Context) *sessions.Session {
 		session := sessions.Get(ctx)
@@ -55,11 +52,11 @@ var BuiltinDependencies = []*Dependency{
 		}
 
 		return session
-	}),
+	}).Explicitly(),
 	// time.Time to time.Now dependency.
 	NewDependency(func(ctx context.Context) time.Time {
 		return time.Now()
-	}),
+	}).Explicitly(),
 
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
@@ -161,6 +158,9 @@ func (c *Container) Handler(fn interface{}) context.Handler {
 	return makeHandler(fn, c)
 }
 
+// Struct accepts a pointer to a struct value and returns a structure which
+// contains bindings for the struct's fields and a method to
+// extract a Handler from this struct's method.
 func (c *Container) Struct(ptrValue interface{}) *Struct {
 	return makeStruct(ptrValue, c)
 }
