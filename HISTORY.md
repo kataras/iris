@@ -72,6 +72,11 @@ func main() {
 
 Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but don't worry you can still control everything if you ever need, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.GetContainer().GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents. If you want to handle `testInput` otherwise then just add a `Party.RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go.
 
+Other Improvements:
+
+- `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"  "` (two spaces) otherwise it is empty or the provided value.
+- Hero Handlers (and `app.HandleFunc`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now. 
+
 New Context Methods:
 
 - `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle.

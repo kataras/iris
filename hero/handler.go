@@ -19,23 +19,6 @@ func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
 }
 
 var (
-	// DefaultErrStatusCode is the default error status code (400)
-	// when the response contains a non-nil error or a request-scoped binding error occur.
-	DefaultErrStatusCode = 400
-
-	// DefaultErrorHandler is the default error handler which is fired
-	// when a function returns a non-nil error or a request-scoped dependency failed to binded.
-	DefaultErrorHandler = ErrorHandlerFunc(func(ctx context.Context, err error) {
-		if status := ctx.GetStatusCode(); status == 0 || !context.StatusCodeNotSuccessful(status) {
-			ctx.StatusCode(DefaultErrStatusCode)
-		}
-
-		ctx.WriteString(err.Error())
-		ctx.StopExecution()
-	})
-)
-
-var (
 	// ErrSeeOther may be returned from a dependency handler to skip a specific dependency
 	// based on custom logic.
 	ErrSeeOther = fmt.Errorf("see other")
@@ -43,6 +26,26 @@ var (
 	// and return the execution of the function without error (it calls ctx.StopExecution() too).
 	// It may be occurred from request-scoped dependencies as well.
 	ErrStopExecution = fmt.Errorf("stop execution")
+)
+
+var (
+	// DefaultErrStatusCode is the default error status code (400)
+	// when the response contains a non-nil error or a request-scoped binding error occur.
+	DefaultErrStatusCode = 400
+
+	// DefaultErrorHandler is the default error handler which is fired
+	// when a function returns a non-nil error or a request-scoped dependency failed to binded.
+	DefaultErrorHandler = ErrorHandlerFunc(func(ctx context.Context, err error) {
+		if err != ErrStopExecution {
+			if status := ctx.GetStatusCode(); status == 0 || !context.StatusCodeNotSuccessful(status) {
+				ctx.StatusCode(DefaultErrStatusCode)
+			}
+
+			ctx.WriteString(err.Error())
+		}
+
+		ctx.StopExecution()
+	})
 )
 
 func makeHandler(fn interface{}, c *Container) context.Handler {
@@ -77,10 +80,12 @@ func makeHandler(fn interface{}, c *Container) context.Handler {
 			if err != nil {
 				if err == ErrSeeOther {
 					continue
-				} else if err == ErrStopExecution {
-					ctx.StopExecution()
-					return // return without error.
 				}
+				// handled inside ErrorHandler.
+				// else if err == ErrStopExecution {
+				// 	ctx.StopExecution()
+				// 	return // return without error.
+				// }
 
 				c.GetErrorHandler(ctx).HandleError(ctx, err)
 				return

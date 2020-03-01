@@ -18,6 +18,8 @@ import (
 
 	// context for the handlers
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/hero"
+
 	// core packages, required to build the application
 	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/core/host"
@@ -527,6 +529,9 @@ var (
 	//
 	// A shortcut for the `context#XMLMap`.
 	XMLMap = context.XMLMap
+	// ErrStopExecution if returned from a hero middleware or a request-scope dependency
+	// stops the handler's execution, see _examples/dependency-injection/basic/middleware.
+	ErrStopExecution = hero.ErrStopExecution
 )
 
 // Constants for input argument at `router.RouteRegisterRule`.
