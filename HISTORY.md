@@ -70,7 +70,70 @@ func main() {
 }
 ```
 
-Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but don't worry you can still control everything if you ever need, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.GetContainer().GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents. If you want to handle `testInput` otherwise then just add a `Party.RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go.
+Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but don't worry you can still control everything if you ever need, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.GetContainer().GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents, you can change it through `Party#OnErrorFunc`. If you want to handle `testInput` otherwise then just add a `Party.RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go. Here is a quick list of the new Party's methods:
+
+```go
+// GetContainer returns the DI Container of this Party.
+// Use it to manually convert functions or structs(controllers) to a Handler.
+//
+// See `OnErrorFunc`, `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
+GetContainer() *hero.Container
+```
+```go
+// OnErrorFunc adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
+// The "errorHandler" handles any error may occurred and returned
+// during dependencies injection of the Party's hero handlers or from the handlers themselves.
+//
+// Same as:
+// GetContainer().GetErrorHandler = func(ctx iris.Context) hero.ErrorHandler { return errorHandler }
+//
+// See `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
+OnErrorFunc(errorHandler func(context.Context, error))
+```
+```go
+// RegisterDependency adds a dependency.
+// The value can be a single struct value or a function.
+// Follow the rules:
+// * <T> {structValue}
+// * func(accepts <T>)                                 returns <D> or (<D>, error)
+// * func(accepts iris.Context)                        returns <D> or (<D>, error)
+// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
+//
+// A Dependency can accept a previous registered dependency and return a new one or the same updated.
+// * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
+// * func(acceptsPathParameter1 string, id uint64)     returns <T> or (<T>, error)
+//
+// Usage:
+//
+// - RegisterDependency(loggerService{prefix: "dev"})
+// - RegisterDependency(func(ctx iris.Context) User {...})
+// - RegisterDependency(func(User) OtherResponse {...})
+//
+// See `OnErrorFunc`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
+RegisterDependency(dependency interface{})
+```
+```go
+// UseFunc same as "Use" but it accepts dynamic functions as its "handlersFn" input.
+// See `OnErrorFunc`, `RegisterDependency`, `DoneFunc` and `HandleFunc` for more.
+UseFunc(handlersFn ...interface{})
+// DoneFunc same as "Done" but it accepts dynamic functions as its "handlersFn" input.
+// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `HandleFunc` for more.
+DoneFunc(handlersFn ...interface{})
+```
+```go
+// HandleFunc same as `HandleFunc` but it accepts one or more "handlersFn" functions which each one of them
+// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
+// any output result; like custom structs <T>, string, []byte, int, error,
+// a combination of the above, hero.Result(hero.View | hero.Response) and more.
+//
+// It's common from a hero handler to not even need to accept a `Context`, for that reason,
+// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
+// To stop the execution and not continue to the next "handlersFn"
+// the end-developer should output an error and return `iris.ErrStopExecution`.
+//
+// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
+HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+```
 
 Other Improvements:
 
