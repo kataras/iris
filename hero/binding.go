@@ -111,33 +111,45 @@ func matchDependency(dep *Dependency, in reflect.Type) bool {
 	return dep.DestType == nil || equalTypes(dep.DestType, in)
 }
 
-func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex int) (bindings []*binding) {
-	bindedInput := make(map[int]struct{})
+func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) (bindings []*binding) {
+	// Path parameter start index is the result of [total path parameters] - [total func path parameters inputs],
+	// moving from last to first path parameters and first to last (probably) available input args.
+	//
+	// That way the above will work as expected:
+	// 1. mvc.New(app.Party("/path/{firstparam}")).Handle(....Controller.GetBy(secondparam string))
+	// 2. mvc.New(app.Party("/path/{firstparam}/{secondparam}")).Handle(...Controller.GetBy(firstparam, secondparam string))
+	// 3. usersRouter := app.Party("/users/{id:uint64}"); usersRouter.HandleFunc(method, "/", handler(id uint64))
+	// 4. usersRouter.Party("/friends").HandleFunc(method, "/{friendID:uint64}", handler(friendID uint64))
+	//
+	// Therefore, count the inputs that can be path parameters first.
+	shouldBindParams := make(map[int]struct{})
+	totalParamsExpected := 0
+	for i, in := range inputs {
+		if _, canBePathParameter := context.ParamResolvers[in]; !canBePathParameter {
+			continue
+		}
+		shouldBindParams[i] = struct{}{}
 
-	// lastParamIndex is used to bind parameters correctly when:
-	// otherDep, param1, param2 string and param1 string, otherDep, param2 string.
-	lastParamIndex := paramStartIndex
-	getParamIndex := func(index int) (paramIndex int) {
-		// if len(bindings) > 0 {
-		// 	// mostly, it means it's binding to a struct's method, which first value is always the ptr struct as its receiver.
-		// 	// so we  decrement the parameter index otherwise first parameter would be declared as parameter index 1 instead of 0.
-		// 	paramIndex = len(bindings) + lastParamIndex - 1
-		// 	lastParamIndex = paramIndex + 1
-		// 	return paramIndex
-		// }
-
-		// lastParamIndex = index + 1
-		// return index
-
-		paramIndex = lastParamIndex
-		lastParamIndex = paramIndex + 1
-		return
+		totalParamsExpected++
 	}
 
-	for i, in := range inputs { //order matters.
+	startParamIndex := paramsCount - totalParamsExpected
+	if startParamIndex < 0 {
+		startParamIndex = 0
+	}
 
-		_, canBePathParameter := context.ParamResolvers[in]
-		canBePathParameter = canBePathParameter && paramStartIndex != -1 // if -1 then parameter resolver is disabled.
+	lastParamIndex := startParamIndex
+
+	getParamIndex := func() int {
+		paramIndex := lastParamIndex
+		lastParamIndex++
+		return paramIndex
+	}
+
+	bindedInput := make(map[int]struct{})
+
+	for i, in := range inputs { //order matters.
+		_, canBePathParameter := shouldBindParams[i]
 
 		prevN := len(bindings) // to check if a new binding is attached; a dependency was matched (see below).
 
@@ -160,7 +172,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex i
 
 			if canBePathParameter {
 				// wrap the existing dependency handler.
-				paramHandler := paramDependencyHandler(getParamIndex((i)))
+				paramHandler := paramDependencyHandler(getParamIndex())
 				prevHandler := d.Handle
 				d.Handle = func(ctx context.Context, input *Input) (reflect.Value, error) {
 					v, err := paramHandler(ctx, input)
@@ -190,7 +202,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex i
 			if canBePathParameter {
 				// no new dependency added for this input,
 				// let's check for path parameters.
-				bindings = append(bindings, paramBinding(i, getParamIndex(i), in))
+				bindings = append(bindings, paramBinding(i, getParamIndex(), in))
 				continue
 			}
 
@@ -205,7 +217,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramStartIndex i
 	return
 }
 
-func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramStartIndex int) []*binding {
+func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramsCount int) []*binding {
 	fnTyp := fn.Type()
 	if !isFunc(fnTyp) {
 		panic("bindings: unresolved: not a func type")
@@ -217,7 +229,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramStart
 		inputs[i] = fnTyp.In(i)
 	}
 
-	bindings := getBindingsFor(inputs, dependencies, paramStartIndex)
+	bindings := getBindingsFor(inputs, dependencies, paramsCount)
 	if expected, got := n, len(bindings); expected > got {
 		panic(fmt.Sprintf("expected [%d] bindings (input parameters) but got [%d]", expected, got))
 	}
@@ -225,7 +237,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramStart
 	return bindings
 }
 
-func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStartIndex int, sorter Sorter) (bindings []*binding) {
+func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCount int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
 		panic("bindings: unresolved: no struct type")
@@ -256,7 +268,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramStar
 		//	fmt.Printf("Controller [%s] | Field Index: %v | Field Type: %s\n", typ, fields[i].Index, fields[i].Type)
 		inputs[i] = fields[i].Type
 	}
-	exportedBindings := getBindingsFor(inputs, dependencies, paramStartIndex)
+	exportedBindings := getBindingsFor(inputs, dependencies, paramsCount)
 
 	// fmt.Printf("Controller [%s] Inputs length: %d vs Bindings length: %d\n", typ, n, len(exportedBindings))
 	if len(nonZero) >= len(exportedBindings) { // if all are fields are defined then just return.

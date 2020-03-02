@@ -55,7 +55,7 @@ var (
 	})
 )
 
-func makeHandler(fn interface{}, c *Container) context.Handler {
+func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler {
 	if fn == nil {
 		panic("makeHandler: function is nil")
 	}
@@ -77,7 +77,7 @@ func makeHandler(fn interface{}, c *Container) context.Handler {
 	v := valueOf(fn)
 	numIn := v.Type().NumIn()
 
-	bindings := getBindingsForFunc(v, c.Dependencies, c.ParamStartIndex)
+	bindings := getBindingsForFunc(v, c.Dependencies, paramsCount)
 
 	return func(ctx context.Context) {
 		inputs := make([]reflect.Value, numIn)

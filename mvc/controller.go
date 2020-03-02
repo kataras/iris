@@ -8,6 +8,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/macro"
 )
 
 // BaseController is the optional controller interface, if it's
@@ -226,7 +227,8 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 
 func (c *ControllerActivator) attachInjector() {
 	if c.injector == nil {
-		c.injector = c.app.container.Struct(c.Value)
+		partyCountParams := macro.CountParams(c.app.Router.GetRelPath(), *c.app.Router.Macros())
+		c.injector = c.app.container.Struct(c.Value, partyCountParams)
 	}
 }
 
@@ -303,7 +305,7 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 		return nil
 	}
 
-	handler := c.handlerOf(funcName)
+	handler := c.handlerOf(path, funcName)
 
 	// register the handler now.
 	routes := c.app.Router.HandleMany(method, path, append(middleware, handler)...)
@@ -332,10 +334,12 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 	return routes
 }
 
-func (c *ControllerActivator) handlerOf(methodName string) context.Handler {
+func (c *ControllerActivator) handlerOf(relPath, methodName string) context.Handler {
 	c.attachInjector()
 
-	handler := c.injector.MethodHandler(methodName)
+	fullpath := c.app.Router.GetRelPath() + relPath
+	paramsCount := macro.CountParams(fullpath, *c.app.Router.Macros())
+	handler := c.injector.MethodHandler(methodName, paramsCount)
 
 	if isBaseController(c.Type) {
 		return func(ctx context.Context) {

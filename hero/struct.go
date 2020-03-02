@@ -43,7 +43,7 @@ type Struct struct {
 	Singleton bool
 }
 
-func makeStruct(structPtr interface{}, c *Container) *Struct {
+func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Struct {
 	v := valueOf(structPtr)
 	typ := v.Type()
 	if typ.Kind() != reflect.Ptr || indirectType(typ).Kind() != reflect.Struct {
@@ -51,7 +51,7 @@ func makeStruct(structPtr interface{}, c *Container) *Struct {
 	}
 
 	// get struct's fields bindings.
-	bindings := getBindingsForStruct(v, c.Dependencies, c.ParamStartIndex, c.Sorter)
+	bindings := getBindingsForStruct(v, c.Dependencies, partyParamsCount, c.Sorter)
 
 	// length bindings of 0, means that it has no fields or all mapped deps are static.
 	// If static then Struct.Acquire will return the same "value" instance, otherwise it will create a new one.
@@ -138,11 +138,14 @@ func (s *Struct) Acquire(ctx context.Context) (reflect.Value, error) {
 
 // MethodHandler accepts a "methodName" that should be a valid an exported
 // method of the struct and returns its converted Handler.
-func (s *Struct) MethodHandler(methodName string) context.Handler {
+//
+// Second input is optional,
+// even zero is a valid value and can resolve path parameters correctly if from root party.
+func (s *Struct) MethodHandler(methodName string, paramsCount int) context.Handler {
 	m, ok := s.ptrValue.Type().MethodByName(methodName)
 	if !ok {
 		panic(fmt.Sprintf("struct: method: %s does not exist", methodName))
 	}
 
-	return makeHandler(m.Func, s.Container)
+	return makeHandler(m.Func, s.Container, paramsCount)
 }

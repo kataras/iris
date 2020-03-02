@@ -201,3 +201,33 @@ func TestDependentDependencies(t *testing.T) {
 	e.GET("/h1").Expect().Status(httptest.StatusOK).Body().Equal("prefix: it is a deep dependency")
 	e.GET("/h2").Expect().Status(httptest.StatusOK).Body().Equal("prefix: message")
 }
+
+func TestHandlerPathParams(t *testing.T) {
+	// See white box `TestPathParams` test too.
+	// All cases should pass.
+	app := iris.New()
+	handler := func(id uint64) string {
+		return fmt.Sprintf("%d", id)
+	}
+
+	app.PartyFunc("/users", func(r iris.Party) {
+		r.HandleFunc(iris.MethodGet, "/{id:uint64}", handler)
+	})
+
+	app.PartyFunc("/editors/{id:uint64}", func(r iris.Party) {
+		r.HandleFunc(iris.MethodGet, "/", handler)
+	})
+
+	// should receive the last one, as we expected only one useful for MVC (there is a similar test there too).
+	app.HandleFunc(iris.MethodGet, "/{ownerID:uint64}/book/{booKID:uint64}", handler)
+
+	e := httptest.New(t, app)
+
+	for _, testReq := range []*httptest.Request{
+		e.GET("/users/42"),
+		e.GET("/editors/42"),
+		e.GET("/1/book/42"),
+	} {
+		testReq.Expect().Status(httptest.StatusOK).Body().Equal("42")
+	}
+}
