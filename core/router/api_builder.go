@@ -296,10 +296,13 @@ func (api *APIBuilder) RegisterDependency(dependency interface{}) *hero.Dependen
 }
 
 // convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
-func (api *APIBuilder) convertHandlerFuncs(handlersFn ...interface{}) context.Handlers {
+func (api *APIBuilder) convertHandlerFuncs(relativePath string, handlersFn ...interface{}) context.Handlers {
+	fullpath := api.relativePath + relativePath
+	paramsCount := macro.CountParams(fullpath, *api.macros)
+
 	handlers := make(context.Handlers, 0, len(handlersFn))
 	for _, h := range handlersFn {
-		handlers = append(handlers, api.container.Handler(h))
+		handlers = append(handlers, api.container.HandlerWithParams(h, paramsCount))
 	}
 
 	// On that type of handlers the end-developer does not have to include the Context in the handler,
@@ -322,7 +325,7 @@ func (api *APIBuilder) convertHandlerFuncs(handlersFn ...interface{}) context.Ha
 //
 // See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
 func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
-	handlers := api.convertHandlerFuncs(handlersFn...)
+	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
 	return api.Handle(method, relativePath, handlers...)
 }
 
@@ -578,8 +581,6 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	// attach a new Container with correct dynamic path parameter start index for input arguments
 	// based on the fullpath.
 	childContainer := api.container.Clone()
-	fpath, _ := macro.Parse(fullpath, *api.macros)
-	childContainer.ParamStartIndex = len(fpath.Params)
 
 	return &APIBuilder{
 		// global/api builder
@@ -743,7 +744,7 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 //
 // See `OnErrorFunc`, `RegisterDependency`, `DoneFunc` and `HandleFunc` for more.
 func (api *APIBuilder) UseFunc(handlersFn ...interface{}) {
-	handlers := api.convertHandlerFuncs(handlersFn...)
+	handlers := api.convertHandlerFuncs("/", handlersFn...)
 	api.Use(handlers...)
 }
 
@@ -776,7 +777,7 @@ func (api *APIBuilder) Done(handlers ...context.Handler) {
 // DoneFunc same as "Done" but it accepts dynamic functions as its "handlersFn" input.
 // See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `HandleFunc` for more.
 func (api *APIBuilder) DoneFunc(handlersFn ...interface{}) {
-	handlers := api.convertHandlerFuncs(handlersFn...)
+	handlers := api.convertHandlerFuncs("/", handlersFn...)
 	api.Done(handlers...)
 }
 
@@ -1057,10 +1058,6 @@ func getCaller() (string, int) {
 		file := frame.File
 
 		if strings.Contains(file, "src/testing/testing.go") {
-			continue
-		}
-
-		if strings.Contains(file, ".amd64/src/") {
 			continue
 		}
 

@@ -34,15 +34,15 @@ func TestStruct(t *testing.T) {
 	app := iris.New()
 
 	b := New()
-	s := b.Struct(&testStruct{})
+	s := b.Struct(&testStruct{}, 0)
 
-	postHandler := s.MethodHandler("MyHandler") // fallbacks such as {path} and {string} should registered first when same path.
+	postHandler := s.MethodHandler("MyHandler", 0) // fallbacks such as {path} and {string} should registered first when same path.
 	app.Post("/{name:string}", postHandler)
-	postHandler2 := s.MethodHandler("MyHandler2")
+	postHandler2 := s.MethodHandler("MyHandler2", 0)
 	app.Post("/{id:int}", postHandler2)
-	postHandler3 := s.MethodHandler("MyHandler3")
+	postHandler3 := s.MethodHandler("MyHandler3", 0)
 	app.Post("/myHandler3", postHandler3)
-	getHandler := s.MethodHandler("MyHandler4")
+	getHandler := s.MethodHandler("MyHandler4", 0)
 	app.Get("/myHandler4", getHandler)
 
 	e := httptest.New(t, app)
@@ -67,10 +67,10 @@ func (s *testStructErrorHandler) Handle(errText string) error {
 
 func TestStructErrorHandler(t *testing.T) {
 	b := New()
-	s := b.Struct(&testStructErrorHandler{})
+	s := b.Struct(&testStructErrorHandler{}, 0)
 
 	app := iris.New()
-	app.Get("/{errText:string}", s.MethodHandler("Handle"))
+	app.Get("/{errText:string}", s.MethodHandler("Handle", 0))
 
 	expectedErrText := "an error"
 	e := httptest.New(t, app)
@@ -111,10 +111,10 @@ func TestStructFieldsSorter(t *testing.T) { // see https://github.com/kataras/ir
 	b := New()
 	b.Register(&testServiceImpl1{"parser"})
 	b.Register(&testServiceImpl2{24})
-	s := b.Struct(&testControllerDependenciesSorter{})
+	s := b.Struct(&testControllerDependenciesSorter{}, 0)
 
 	app := iris.New()
-	app.Get("/", s.MethodHandler("Index"))
+	app.Get("/", s.MethodHandler("Index", 0))
 
 	e := httptest.New(t, app)
 

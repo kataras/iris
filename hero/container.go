@@ -23,9 +23,6 @@ var Default = New()
 //
 // For a more high-level structure please take a look at the "mvc.go#Application".
 type Container struct {
-	// Indicates the path parameter start index for inputs binding.
-	// Defaults to 0.
-	ParamStartIndex int
 	// Sorter specifies how the inputs should be sorted before binded.
 	// Defaults to sort by "thinnest" target empty interface.
 	Sorter Sorter
@@ -81,9 +78,8 @@ func New(dependencies ...interface{}) *Container {
 	copy(deps, BuiltinDependencies)
 
 	c := &Container{
-		ParamStartIndex: 0,
-		Sorter:          sortByNumMethods,
-		Dependencies:    deps,
+		Sorter:       sortByNumMethods,
+		Dependencies: deps,
 		GetErrorHandler: func(context.Context) ErrorHandler {
 			return DefaultErrorHandler
 		},
@@ -100,7 +96,6 @@ func New(dependencies ...interface{}) *Container {
 // It copies the ErrorHandler, Dependencies and all Options from "c" receiver.
 func (c *Container) Clone() *Container {
 	cloned := New()
-	cloned.ParamStartIndex = c.ParamStartIndex
 	cloned.GetErrorHandler = c.GetErrorHandler
 	cloned.Sorter = c.Sorter
 	clonedDeps := make([]*Dependency, len(c.Dependencies))
@@ -167,12 +162,18 @@ func Handler(fn interface{}) context.Handler {
 // It returns a standard `iris/context.Handler` which can be used anywhere in an Iris Application,
 // as middleware or as simple route handler or subdomain's handler.
 func (c *Container) Handler(fn interface{}) context.Handler {
-	return makeHandler(fn, c)
+	return c.HandlerWithParams(fn, 0)
+}
+
+// HandlerWithParams same as `Handler` but it can receive a total path parameters counts
+// to resolve coblex path parameters input dependencies.
+func (c *Container) HandlerWithParams(fn interface{}, paramsCount int) context.Handler {
+	return makeHandler(fn, c, paramsCount)
 }
 
 // Struct accepts a pointer to a struct value and returns a structure which
 // contains bindings for the struct's fields and a method to
 // extract a Handler from this struct's method.
-func (c *Container) Struct(ptrValue interface{}) *Struct {
-	return makeStruct(ptrValue, c)
+func (c *Container) Struct(ptrValue interface{}, partyParamsCount int) *Struct {
+	return makeStruct(ptrValue, c, partyParamsCount)
 }

@@ -157,3 +157,9 @@ func Parse(src string, macros Macros) (Template, error) {
 
 	return tmpl, nil
 }
+
+// CountParams returns the length of the dynamic path's input parameters.
+func CountParams(fullpath string, macros Macros) int {
+	tmpl, _ := Parse(fullpath, macros)
+	return len(tmpl.Params)
+}
