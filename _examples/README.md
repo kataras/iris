@@ -162,6 +162,8 @@ Navigate through examples for a better understanding.
 ### MVC
 
 - [Hello world](mvc/hello-world/main.go)
+- [Basic](mvc/basic/main.go)
+- [Basic: wildcard](mvc/basic/wildcard/main.go) **NEW**
 - [Regexp](mvc/regexp/main.go)
 - [Session Controller](mvc/session-controller/main.go)
 - [Overview - Plus Repository and Service layers](mvc/overview)
