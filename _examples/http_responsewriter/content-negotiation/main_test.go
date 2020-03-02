@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 )
 
@@ -20,7 +21,9 @@ func TestContentNegotiation(t *testing.T) {
 		expectedHTMLResponse   = "<h1>Test Name</h1><h2>Age 26</h2>"
 	)
 
-	e := httptest.New(t, newApp())
+	app := newApp()
+	app.Configure(iris.WithOptimizations)
+	e := httptest.New(t, app)
 
 	e.GET("/resource").WithHeader("Accept", "application/json").
 		Expect().Status(httptest.StatusOK).

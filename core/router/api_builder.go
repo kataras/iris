@@ -1060,7 +1060,13 @@ func getCaller() (string, int) {
 			continue
 		}
 
-		if !strings.Contains(file, "/kataras/iris") || strings.Contains(file, "/kataras/iris/_examples") || strings.Contains(file, "iris-contrib/examples") {
+		if strings.Contains(file, ".amd64/src/") {
+			continue
+		}
+
+		if !strings.Contains(file, "/kataras/iris") ||
+			strings.Contains(file, "/kataras/iris/_examples") ||
+			strings.Contains(file, "iris-contrib/examples") {
 			if relFile, err := filepath.Rel(wd, file); err == nil {
 				file = "./" + relFile
 			}
