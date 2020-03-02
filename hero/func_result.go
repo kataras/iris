@@ -15,8 +15,24 @@ import (
 //
 // Example at: https://github.com/kataras/iris/tree/master/_examples/hero/overview.
 type Result interface {
-	// Dispatch should sends the response to the context's response writer.
-	Dispatch(ctx context.Context)
+	// Dispatch should send a response to the client.
+	Dispatch(context.Context)
+}
+
+// PreflightResult is an interface which implementers
+// should be responsible to perform preflight checks of a <T> resource (or Result) before sent to the client.
+//
+// If a non-nil error returned from the `Preflight` method then the JSON result
+// will be not sent to the client and an ErrorHandler will be responsible to render the error.
+//
+// Usage: a custom struct value will be a JSON body response (by-default) but it contains
+// "Code int" and `ID string` fields, the "Code" should be the status code of the response
+// and the "ID" should be sent as a Header of "X-Request-ID: $ID".
+//
+// The caller can manage it at the handler itself. However,
+// to reduce thoese type of duplications it's preferable to use such a standard interface instead.
+type PreflightResult interface {
+	Preflight(context.Context) error
 }
 
 var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
@@ -294,6 +310,12 @@ func dispatchCommon(ctx context.Context,
 	}
 
 	if v != nil {
+		if p, ok := v.(PreflightResult); ok {
+			if err := p.Preflight(ctx); err != nil {
+				return err
+			}
+		}
+
 		if d, ok := v.(Result); ok {
 			// write the content type now (internal check for empty value)
 			ctx.ContentType(contentType)
