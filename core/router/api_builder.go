@@ -1056,6 +1056,10 @@ func getCaller() (string, int) {
 		frame, more := frames.Next()
 		file := frame.File
 
+		if strings.Contains(file, "src/testing/testing.go") {
+			continue
+		}
+
 		if !strings.Contains(file, "/kataras/iris") || strings.Contains(file, "/kataras/iris/_examples") || strings.Contains(file, "iris-contrib/examples") {
 			if relFile, err := filepath.Rel(wd, file); err == nil {
 				file = "./" + relFile
