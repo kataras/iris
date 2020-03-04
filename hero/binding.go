@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/kataras/iris/v12/context"
 )
@@ -324,23 +325,32 @@ func payloadBinding(index int, typ reflect.Type) *binding {
 				newValue = reflect.New(indirectType(input.Type))
 				ptr := newValue.Interface()
 
-				switch ctx.GetContentTypeRequested() {
+				contentType := ctx.GetContentTypeRequested()
+				if contentType != "" {
+					if idx := strings.IndexByte(contentType, ';'); idx > 0 {
+						// e.g. contentType=[multipart/form-data] trailing: ; boundary=4e2946168dbbac
+						contentType = contentType[:idx]
+					}
+				}
+
+				switch contentType {
 				case context.ContentXMLHeaderValue:
 					err = ctx.ReadXML(ptr)
 				case context.ContentYAMLHeaderValue:
 					err = ctx.ReadYAML(ptr)
-				case context.ContentFormHeaderValue:
-					err = ctx.ReadQuery(ptr)
-				case context.ContentFormMultipartHeaderValue:
+				case context.ContentFormHeaderValue, context.ContentFormMultipartHeaderValue:
 					err = ctx.ReadForm(ptr)
-				default:
+				case context.ContentJSONHeaderValue:
 					err = ctx.ReadJSON(ptr)
-					// json
+				default:
+					if ctx.Request().URL.RawQuery != "" {
+						// try read from query.
+						err = ctx.ReadQuery(ptr)
+					} else {
+						// otherwise default to JSON.
+						err = ctx.ReadJSON(ptr)
+					}
 				}
-
-				// if err != nil {
-				// 	return emptyValue, err
-				// }
 
 				if !wasPtr {
 					newValue = newValue.Elem()

@@ -11,8 +11,8 @@ import (
 
 // dynamic func
 type testUserStruct struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
+	ID       int64  `json:"id" form:"id" url:"id"`
+	Username string `json:"username" form:"username" url:"username"`
 }
 
 func testBinderFunc(ctx iris.Context) testUserStruct {
@@ -142,8 +142,18 @@ func TestPayloadBinding(t *testing.T) {
 	app.Post("/2", postHandler2)
 
 	e := httptest.New(t, app)
+
+	// JSON
 	e.POST("/").WithJSON(iris.Map{"username": "makis"}).Expect().Status(httptest.StatusOK).Body().Equal("makis")
 	e.POST("/2").WithJSON(iris.Map{"username": "kataras"}).Expect().Status(httptest.StatusOK).Body().Equal("kataras")
+
+	// FORM (url-encoded)
+	e.POST("/").WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	// FORM (multipart)
+	e.POST("/").WithMultipart().WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+
+	// URL query.
+	e.POST("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
 }
 
 /* Author's notes:

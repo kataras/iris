@@ -227,7 +227,7 @@ func (m *MyController) MyCustomHandler(id int64) string { return "MyCustomHandle
 
 如果是 `mvc.New(app.Party("/assets")).Handle(new(file.Controller))`
 
-- `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
+- `func(*Controller) GetByWildcard(path string)` - `GET:/assets/{param:path}`
 
     支持的函数接收者类型是：int, int64, bool and string。
 
