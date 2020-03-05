@@ -30,7 +30,7 @@ func main() {
 		ctx.View("index.jet")
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type ViewBuiler struct {

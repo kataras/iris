@@ -12,7 +12,7 @@ func main() {
 	// [...]
 
 	// Good when you want to modify the whole configuration.
-	app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.Configuration{ // default configuration:
+	app.Listen(":8080", iris.WithConfiguration(iris.Configuration{ // default configuration:
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,

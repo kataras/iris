@@ -14,10 +14,10 @@ func main() {
 			ctx.Application().ConfigurationReadOnly().GetVHost())
 	})
 
-	app.Run(iris.Addr(":8080"), iris.WithTunneling)
+	app.Listen(":8080", iris.WithTunneling)
 
 	/* The full configuration can be set as:
-	app.Run(iris.Addr(":8080"), iris.WithConfiguration(
+	app.Listen(":8080", iris.WithConfiguration(
 		iris.Configuration{
 			Tunneling: iris.TunnelingConfiguration{
 				AuthToken:    "my-ngrok-auth-client-token",

@@ -65,5 +65,5 @@ func main() {
 	// 3. refresh the page some times
 	// 4. close the browser
 	// 5. re-open the browser (if it wasn't in private mode) and re-play 2.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

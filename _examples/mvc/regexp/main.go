@@ -24,7 +24,7 @@ func main() {
 
 	// http://localhost:8080/module/xxx.json (OK)
 	// http://localhost:8080/module/xxx.xml  (Not Found)
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type myController struct{}

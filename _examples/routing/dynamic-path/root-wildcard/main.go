@@ -38,7 +38,7 @@ func main() {
 	// this will handle only GET "/other2/static"
 	app.Get("/other2/static2", staticPathOther2)
 
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 func h(ctx iris.Context) {

@@ -24,7 +24,7 @@ func main() {
 	 app.Delete("/del", delHandler)
 	*/
 
-	app.Run(iris.Addr(":5000"))
+	app.Listen(":5000")
 }
 
 // Set and Get

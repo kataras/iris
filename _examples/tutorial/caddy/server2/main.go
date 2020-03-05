@@ -21,7 +21,7 @@ func main() {
 	// PUT http://localhost:9092/user/42
 	// DELETE http://localhost:9092/user/42
 	// GET http://localhost:9092/user/followers/42
-	app.Run(iris.Addr(":9092"))
+	app.Listen(":9092")
 }
 
 // UserController is our user example controller.

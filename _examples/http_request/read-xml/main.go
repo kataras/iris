@@ -20,7 +20,7 @@ func main() {
 	//
 	// The response should be:
 	// Received: main.person{XMLName:xml.Name{Space:"", Local:"person"}, Name:"Winston Churchill", Age:90, Description:"Description of this person, the body of this inner element."}
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
 }
 
 func newApp() *iris.Application {

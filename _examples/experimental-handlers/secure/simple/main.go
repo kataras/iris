@@ -34,5 +34,5 @@ func main() {
 		ctx.Writef("Hello from /home")
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

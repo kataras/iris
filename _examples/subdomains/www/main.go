@@ -64,7 +64,7 @@ func main() {
 	// http://www.mydomain.com/contact
 	// http://www.mydomain.com/api/users
 	// http://www.mydomain.com/api/users/42
-	if err := app.Run(iris.Addr("mydomain.com:80")); err != nil {
+	if err := app.Listen("mydomain.com:80"); err != nil {
 		panic(err)
 	}
 }

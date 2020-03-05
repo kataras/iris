@@ -63,7 +63,7 @@ func main() {
 	// saves its content on the first request and serves it instead of re-calculating the content.
 	// After 10 seconds it will be cleared and reset.
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func writeMarkdown(ctx iris.Context) {

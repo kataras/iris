@@ -400,7 +400,7 @@ func main() {
 	})
 
 	// http://localhost:3000
-	app.Run(iris.Addr("localhost:3000"))
+	app.Listen("localhost:3000")
 }
 
 type ProviderIndex struct {

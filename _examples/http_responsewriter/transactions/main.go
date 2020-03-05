@@ -50,5 +50,5 @@ func main() {
 			"not been shown. But it has a transient scope(default) so, it is visible as expected!</h1>")
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

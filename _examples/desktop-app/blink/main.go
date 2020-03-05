@@ -23,7 +23,7 @@ func runServer() {
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1> Hello Desktop</h1>")
 	})
-	app.Run(iris.Addr(addr))
+	app.Listen(addr)
 }
 
 func showAndWaitWindow() {

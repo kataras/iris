@@ -78,7 +78,7 @@ func main() {
 		ctx.View("hi.html")
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // should always print "($PATH) Handler is executing from 'MyContext'"

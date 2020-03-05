@@ -20,7 +20,7 @@ func main() {
 		ctx.HTML("<h1>Hello</h1>\n")
 	})
 
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 
 	/* There are more easy ways to notify for global shutdown using the `iris.RegisterOnInterrupt` for default signal interrupt events.
 	You can even go it even further by looking at the: "graceful-shutdown" example.

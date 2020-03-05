@@ -35,5 +35,5 @@ func main() {
 	// http://localhost:8080/
 	// http://localhost:8080/anotfound
 	// http://localhost:8080/metrics
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

@@ -41,5 +41,5 @@ func main() {
 		ctx.Exec("GET", "/invisible/iris")
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

@@ -61,5 +61,5 @@ func main() {
 	// http://localhost:8080/.well-known/metrics
 	//
 	// Remember: we could use the root wildcard `app.Get("/{param:path}")` and serve the files manually as well.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

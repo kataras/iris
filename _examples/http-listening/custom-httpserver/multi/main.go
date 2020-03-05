@@ -43,5 +43,5 @@ func main() {
 	// you can just make a new http.Server instead.
 	// http://localhost:8080/
 	// http://localhost:8080/mypath
-	app.Run(iris.Addr(":8080")) // Block here.
+	app.Listen(":8080") // Block here.
 }

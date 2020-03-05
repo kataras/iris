@@ -46,5 +46,5 @@ func main() {
 	// http://localhost:8080
 	// should give: NoCredentialProviders
 	// which is correct, you have to authorize your aws, we asumme that you know how to.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

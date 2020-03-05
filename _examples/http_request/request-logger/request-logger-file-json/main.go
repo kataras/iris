@@ -82,7 +82,7 @@ func main() {
 	// http://localhost:8080/1
 	// http://localhost:8080/2
 	// http://lcoalhost:8080/notfoundhere
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 var excludeExtensions = [...]string{

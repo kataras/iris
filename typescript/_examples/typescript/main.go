@@ -25,7 +25,7 @@ func main() {
 	ts.Run(app.Logger().Infof)
 
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // open http://localhost:8080

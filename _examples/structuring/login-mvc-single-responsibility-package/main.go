@@ -27,7 +27,7 @@ func main() {
 	// http://localhost:8080/user/me
 	// http://localhost:8080/user/logout
 	// http://localhost:8080/user/1
-	app.Run(iris.Addr(":8080"), configure)
+	app.Listen(":8080", configure)
 }
 
 func configureMVC(app *mvc.Application) {

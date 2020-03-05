@@ -24,7 +24,7 @@ func main() {
 	// pass the middleware before the main handler or use the `recaptcha.SiteVerify`.
 	app.Post("/comment", r, postComment)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 var htmlForm = `<form action="/comment" method="POST">

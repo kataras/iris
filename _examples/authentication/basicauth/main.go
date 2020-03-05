@@ -45,7 +45,7 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 	// open http://localhost:8080/admin
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func h(ctx iris.Context) {

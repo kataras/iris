@@ -42,7 +42,7 @@ func main() {
 
 	// Navigate to http://localhost:8080/ping
 	// and open the ./logs{TODAY}.txt file.
-	if err := app.Run(iris.Addr(":8080"), iris.WithoutBanner, iris.WithoutServerError(iris.ErrServerClosed)); err != nil {
+	if err := app.Listen(":8080", iris.WithoutBanner, iris.WithoutServerError(iris.ErrServerClosed)); err != nil {
 		app.Logger().Warn("Shutdown with error: " + err.Error())
 	}
 }

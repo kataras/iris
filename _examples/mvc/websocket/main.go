@@ -31,7 +31,7 @@ func main() {
 
 	websocketAPI.Get("/", websocket.Handler(websocketServer))
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 var visits uint64

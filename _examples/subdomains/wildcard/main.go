@@ -54,7 +54,7 @@ func main() {
 	// http://username1.mydomain.com:8080
 	// http://username2.mydomain.com:8080/something
 	// http://username3.mydomain.com:8080/something/yourname
-	app.Run(iris.Addr("mydomain.com:8080")) // for beginners: look ../hosts file
+	app.Listen("mydomain.com:8080") // for beginners: look ../hosts file
 }
 
 func dynamicSubdomainHandler(ctx iris.Context) {

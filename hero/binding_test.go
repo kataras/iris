@@ -218,7 +218,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 		// test explicitly of http.Header and its underline type map[string][]string which
 		// but shouldn't be binded to request headers because of the (.Explicitly()), instead
 		// the map should be binded to our last of "deps" which is is a dynamic functions reads from request body's JSON
-		// (it's a builtin dependency as well but we delcared it to test user dynamic dependencies too).
+		// (it's a builtin dependency as well but we declared it to test user dynamic dependencies too).
 		{ // 13
 			Func: func(http.Header) testResponse {
 				return testResponse{"builtin http.Header dep"}

@@ -51,7 +51,7 @@ func main() {
 
 	m.Handle(&exampleController{})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func doneHandler(ctx iris.Context) {

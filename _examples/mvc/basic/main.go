@@ -16,7 +16,7 @@ func main() {
 	app.Logger().SetLevel("debug")
 	mvc.Configure(app.Party("/basic"), basicMVC)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func basicMVC(app *mvc.Application) {

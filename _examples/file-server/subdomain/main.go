@@ -25,5 +25,5 @@ func newApp() *iris.Application {
 
 func main() {
 	app := newApp()
-	app.Run(iris.Addr(addr))
+	app.Listen(addr)
 }

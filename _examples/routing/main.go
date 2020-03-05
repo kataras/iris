@@ -177,5 +177,5 @@ func main() {
 		// FIRE NOT FOUND
 		http://localhost:8080/coudlntfound
 	*/
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

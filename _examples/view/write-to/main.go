@@ -38,5 +38,5 @@ func main() {
 		app.Logger().Errorf("error from app.View: %v", err)
 	}
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

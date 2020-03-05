@@ -47,7 +47,7 @@ func main() {
 
 	// http://localhost:8080
 	// http://localhost:8080/about
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // Notes: ViewData("", myCustomStruct{}) will set this myCustomStruct value as a root binding data,

@@ -24,5 +24,5 @@ func main() {
 
 	// http://localhost:8080?referer=https://twitter.com/Xinterio/status/1023566830974251008
 	// http://localhost:8080?referer=https://www.google.com/search?q=Top+6+golang+web+frameworks&oq=Top+6+golang+web+frameworks
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }

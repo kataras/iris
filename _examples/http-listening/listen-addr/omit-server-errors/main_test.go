@@ -34,7 +34,7 @@ func TestListenAddr(t *testing.T) {
 		app.Shutdown(ctx)
 	}()
 
-	err := app.Run(iris.Addr(":9829"))
+	err := app.Listen(":9829")
 	// in this case the error should be logged and return as well.
 	if err != iris.ErrServerClosed {
 		t.Fatalf("expecting err to be `iris.ErrServerClosed` but got: %v", err)
@@ -63,7 +63,7 @@ func TestListenAddrWithoutServerErr(t *testing.T) {
 	// we disable the ErrServerClosed, so the error should be nil when server is closed by `app.Shutdown`.
 
 	// so in this case the iris/http.ErrServerClosed should be NOT logged and NOT return.
-	err := app.Run(iris.Addr(":9827"), iris.WithoutServerError(iris.ErrServerClosed))
+	err := app.Listen(":9827", iris.WithoutServerError(iris.ErrServerClosed))
 	if err != nil {
 		t.Fatalf("expecting err to be nil but got: %v", err)
 	}

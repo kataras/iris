@@ -180,31 +180,6 @@ func (c *Container) Struct(ptrValue interface{}, partyParamsCount int) *Struct {
 	return makeStruct(ptrValue, c, partyParamsCount)
 }
 
-/*
-func (c *Container) Inject(ctx context.Context, toPtr ...interface{}) error {
-	types := make([]reflect.Type, 0, len(toPtr))
-	for _, ptr := range toPtr {
-		types = append(types, indirectType(typeOf(ptr)))
-	}
-
-	bindings := getBindingsFor(types, c.Dependencies, -1)
-
-	for _, b := range bindings {
-		v, err := b.Dependency.Handle(ctx, b.Input)
-		if err != nil {
-			if err == ErrSeeOther {
-				continue
-			}
-
-			return err
-		}
-
-		reflect.ValueOf(toPtr).Set(v)
-	}
-
-	return nil
-}*/
-
 // ErrMissingDependency may returned only from the `Container.Inject` method
 // when not a matching dependency found for "toPtr".
 var ErrMissingDependency = errors.New("missing dependency")

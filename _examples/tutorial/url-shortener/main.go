@@ -24,7 +24,7 @@ func main() {
 	// release the "db" connection when server goes off.
 	iris.RegisterOnInterrupt(db.Close)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func newApp(db *DB) *iris.Application {

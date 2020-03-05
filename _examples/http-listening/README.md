@@ -11,7 +11,7 @@ we use the `iris.Addr` which is an `iris.Runner` type
 
 ```go
 // Listening on tcp with network address 0.0.0.0:8080
-app.Run(iris.Addr(":8080"))
+app.Listen(":8080")
 ```
 
 Sometimes you have created a standard net/http server somewhere else in your app and want to use that to serve the Iris web app
@@ -166,7 +166,7 @@ app.ConfigureHost(func(h *iris.Supervisor) {
         println("server terminated")
     })
 })
-app.Run(iris.Addr(":8080"))
+app.Listen(":8080")
 ```
 
 Access to all hosts that serve your application can be provided by
@@ -201,7 +201,7 @@ app := iris.New()
 app.Get("/", indexHandler)
 
 // run in different goroutine in order to not block the main "goroutine".
-go app.Run(iris.Addr(":8080"))
+go app.Listen(":8080")
 // start a second server which is listening on tcp 0.0.0.0:9090,
 // without "go" keyword because we want to block at the last server-run.
 app.NewHost(&http.Server{Addr:":9090"}).ListenAndServe()
@@ -246,6 +246,6 @@ func main() {
         ctx.HTML(" <h1>hi, I just exist in order to see if the server is closed</h1>")
     })
 
-    app.Run(iris.Addr(":8080"), iris.WithoutInterruptHandler)
+    app.Listen(":8080", iris.WithoutInterruptHandler)
 }
 ```

@@ -191,7 +191,7 @@ var WithGlobalConfiguration = func(app *Application) {
 // from the main application's `Run` function.
 //
 // Usage:
-// err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+// err := app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 // will return `nil` if the server's error was `http/iris#ErrServerClosed`.
 //
 // See `Configuration#IgnoreServerErrors []string` too.
@@ -1001,7 +1001,7 @@ func (c Configuration) GetOther() map[string]interface{} {
 // WithConfiguration sets the "c" values to the framework's configurations.
 //
 // Usage:
-// app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.Configuration{/* fields here */ }))
+// app.Listen(":8080", iris.WithConfiguration(iris.Configuration{/* fields here */ }))
 // or
 // iris.WithConfiguration(iris.YAML("./cfg/iris.yml"))
 // or

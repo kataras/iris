@@ -72,5 +72,5 @@ func main() {
 		ctx.Writef("myparam's value (a trailing path parameter type) is: %#v\n", myparam)
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
