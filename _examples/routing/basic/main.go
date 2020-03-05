@@ -186,7 +186,7 @@ func main() {
 	//  http://v1.localhost:8080/api/users
 	//  http://v1.localhost:8080/api/users/42
 	//  http://anything.localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func adminMiddleware(ctx iris.Context) {

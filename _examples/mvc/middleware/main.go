@@ -20,7 +20,7 @@ func main() {
 	// http://localhost:8080/other
 	//
 	// refresh every 10 seconds and you'll see different time output.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func configure(m *mvc.Application) {

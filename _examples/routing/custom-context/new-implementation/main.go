@@ -99,5 +99,5 @@ func main() {
 	// GET: http://localhost:8080
 	// POST: http://localhost:8080/set
 	// GET: http://localhost:8080/get
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

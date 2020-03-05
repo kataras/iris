@@ -55,5 +55,5 @@ func main() {
 	// Target some browser windows/tabs to http://localhost:8080 and send some messages,
 	// see the static/js/chat.js,
 	// note that the client is using only the browser's native WebSocket API instead of the neffos one.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

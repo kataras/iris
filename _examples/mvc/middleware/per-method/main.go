@@ -84,7 +84,7 @@ func main() {
 	m := mvc.New(app)
 	m.Handle(&exampleController{})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type exampleController struct{}

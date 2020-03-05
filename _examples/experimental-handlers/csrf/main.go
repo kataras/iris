@@ -35,7 +35,7 @@ func main() {
 
 	// GET: http://localhost:8080/user/signup
 	// POST: http://localhost:8080/user/signup
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func getSignupForm(ctx iris.Context) {

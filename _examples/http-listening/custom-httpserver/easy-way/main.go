@@ -22,7 +22,7 @@ func main() {
 
 	// http://localhost:8080/
 	// http://localhost:8080/mypath
-	app.Run(iris.Server(srv)) // same as app.Run(iris.Addr(":8080"))
+	app.Run(iris.Server(srv)) // same as app.Listen(":8080")
 
 	// More:
 	// see "multi" if you need to use more than one server at the same app.

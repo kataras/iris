@@ -50,7 +50,7 @@ func main() {
 	// http://localhost:8080/ping
 	// http://localhost:8080/hello
 	// http://localhost:8080/custom_path
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // ExampleController serves the "/", "/ping" and "/hello".

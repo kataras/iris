@@ -22,7 +22,7 @@ func main() {
 	// http://mydomain.com             -> http://www.mydomain.com
 	// http://mydomain.com/users       -> http://www.mydomain.com/users
 	// http://mydomain.com/users/login -> http://www.mydomain.com/users/login
-	app.Run(iris.Addr(addr))
+	app.Listen(addr)
 }
 
 func newApp() *iris.Application {

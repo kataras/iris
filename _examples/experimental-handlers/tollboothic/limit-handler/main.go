@@ -25,7 +25,7 @@ func main() {
 		ctx.HTML("<b>Hello, world!</b>")
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // Read more at: https://github.com/didip/tollbooth

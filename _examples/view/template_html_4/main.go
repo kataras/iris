@@ -63,7 +63,7 @@ func main() {
 	app.Get("/mypath7/{paramfirst}/{paramsecond}/static/{paramthird}", emptyHandler).Name = "my-page7"
 
 	// http://127.0.0.1:8080
-	app.Run(iris.Addr(host))
+	app.Listen(host)
 }
 
 func emptyHandler(ctx iris.Context) {

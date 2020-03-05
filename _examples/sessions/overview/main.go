@@ -46,5 +46,5 @@ func main() {
 	app.Get("/login", login)
 	app.Get("/logout", logout)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

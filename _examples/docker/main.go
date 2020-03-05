@@ -22,5 +22,5 @@ func main() {
 		ctx.Writef("id: %d", ctx.Params().GetUintDefault("id", 0))
 	})
 
-	app.Run(iris.Addr(*addr))
+	app.Listen(*addr)
 }

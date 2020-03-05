@@ -44,7 +44,7 @@ func main() {
 		})
 	}() // ...
 
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 /* For a golang SSE client you can look at: https://github.com/r3labs/sse#example-client */

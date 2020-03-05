@@ -17,7 +17,7 @@ Example code:
 		 	app := iris.Default()
 		 	middleware := cache.Handler(2 *time.Minute)
 		 	app.Get("/hello", middleware, h)
-		 	app.Run(iris.Addr(":8080"))
+		 	app.Listen(":8080")
 		 }
 
 		 func h(ctx iris.Context) {

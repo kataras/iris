@@ -81,5 +81,5 @@ func newApp() *iris.Application {
 
 func main() {
 	app := newApp()
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

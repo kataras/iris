@@ -36,5 +36,5 @@ func main() {
 	// Make sure you prepend the "http" in your browser
 	// because .local is a virtual domain we think to show case you
 	// that you can declare any syntactical correct name as a subdomain in iris.
-	app.Run(iris.Addr("domain.local:80")) // for beginners: look ../hosts file
+	app.Listen("domain.local:80") // for beginners: look ../hosts file
 }

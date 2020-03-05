@@ -141,5 +141,5 @@ func main() {
 		port = ":" + port
 	}
 
-	app.Run(iris.Addr(port))
+	app.Listen(port)
 }

@@ -118,7 +118,7 @@ func main() {
 	// This request will fail due to the empty `User.FirstName` (fname in json)
 	// and `User.LastName` (lname in json).
 	// Check your iris' application terminal output.
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 // UserStructLevelValidation contains custom struct level validations that don't always

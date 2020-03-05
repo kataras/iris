@@ -38,5 +38,5 @@ func main() {
 		ctx.Writef(", and again from the same context: %s", name)
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

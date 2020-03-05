@@ -15,7 +15,7 @@ func main() {
 	app.Get("/newspaper", handler)
 	app.Get("/user/{id}", handler)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func notFound(ctx iris.Context) {

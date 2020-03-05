@@ -46,9 +46,8 @@ func main() {
 
 	// iris.WithoutPathCorrectionRedirection | iris#Configuration.DisablePathCorrectionRedirection:
 	// CORS needs the allow origin headers in the redirect response as well, we have a solution for this:
-	// If you use iris >= v11.0.4 then add the `app.Run(..., iris.WithoutPathCorrectionRedirection)`
-	// on the server side if you wish
+	// Add the iris.WithoutPathCorrectionRedirection option
 	// to directly fire the handler instead of redirection (which is the default behavior)
 	// on request paths like "/v1/mailer/" when "/v1/mailer" route handler is registered.
-	app.Run(iris.Addr(":80"), iris.WithoutPathCorrectionRedirection)
+	app.Listen(":80", iris.WithoutPathCorrectionRedirection)
 }

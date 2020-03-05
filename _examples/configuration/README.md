@@ -26,7 +26,7 @@ func main() {
     // [...]
 
     // Good when you want to modify the whole configuration.
-    app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.Configuration{
+    app.Listen(":8080", iris.WithConfiguration(iris.Configuration{
         DisableStartupLog:                 false,
         DisableInterruptHandler:           false,
         DisablePathCorrection:             false,
@@ -60,11 +60,11 @@ func main() {
     // Prefix: "With", code editors will help you navigate through all
     // configuration options without even a glitch to the documentation.
 
-    app.Run(iris.Addr(":8080"), iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
+    app.Listen(":8080", iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
 
     // or before run:
     // app.Configure(iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
-    // app.Run(iris.Addr(":8080"))
+    // app.Listen(":8080")
 }
 ```
 
@@ -99,7 +99,7 @@ func main() {
     // [...]
 
     // Good when you have two configurations, one for development and a different one for production use.
-    app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.TOML("./configs/iris.tml")))
+    app.Listen(":8080", iris.WithConfiguration(iris.TOML("./configs/iris.tml")))
 }
 ```
 
@@ -129,7 +129,7 @@ func main() {
     })
     // [...]
 
-    app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("./configs/iris.yml")))
+    app.Listen(":8080", iris.WithConfiguration(iris.YAML("./configs/iris.yml")))
 }
 
 ```
@@ -141,7 +141,7 @@ func main() {
 // from the main application's `Run` function.
 //
 // Usage:
-// err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+// err := app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 // will return `nil` if the server's error was `http/iris#ErrServerClosed`.
 //
 // See `Configuration#IgnoreServerErrors []string` too.
@@ -278,6 +278,6 @@ func main() {
     app := iris.New()
     app.Configure(counter.Configurator)
 
-    app.Run(iris.Addr(":8080"))
+    app.Listen(":8080")
 }
 ```

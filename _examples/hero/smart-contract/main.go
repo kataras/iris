@@ -42,7 +42,7 @@ func main() {
 	// http://localhost:8080/users
 	// http://localhost:8080/users/William%20Woe
 	// http://localhost:8080/users/William%20Woe/age
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 /*

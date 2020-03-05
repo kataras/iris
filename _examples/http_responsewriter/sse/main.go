@@ -187,5 +187,5 @@ func main() {
 
 	// http://localhost:8080
 	// http://localhost:8080/events
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }

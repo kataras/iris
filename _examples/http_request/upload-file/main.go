@@ -124,5 +124,5 @@ func main() {
 	})
 
 	// start the server at http://localhost:8080 with post limit at 5 MB.
-	app.Run(iris.Addr(":8080") /* 0.*/, iris.WithPostMaxMemory(maxSize))
+	app.Listen(":8080" /* 0.*/, iris.WithPostMaxMemory(maxSize))
 }

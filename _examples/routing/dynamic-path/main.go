@@ -289,5 +289,5 @@ func main() {
 	// should differ e.g.
 	// /path/{name:string}
 	// /path/{id:uint}
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

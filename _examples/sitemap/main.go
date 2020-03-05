@@ -15,7 +15,7 @@ func main() {
 	// Lists only online GET static routes.
 	//
 	// Reference: https://www.sitemaps.org/protocol.html
-	app.Run(iris.Addr(":8080"), iris.WithSitemap(startURL))
+	app.Listen(":8080", iris.WithSitemap(startURL))
 }
 
 func newApp() *iris.Application {

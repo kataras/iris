@@ -19,7 +19,7 @@ func main() {
 	//
 	// The response should be:
 	// Received: main.config{Addr:"localhost:8080", ServerName:"Iris"}
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
 }
 
 func newApp() *iris.Application {

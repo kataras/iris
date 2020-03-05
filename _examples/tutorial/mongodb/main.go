@@ -79,5 +79,5 @@ func main() {
 	// GET: http://localhost:8080/api/store/movies/{id}
 	// PUT: http://localhost:8080/api/store/movies/{id}
 	// DELETE: http://localhost:8080/api/store/movies/{id}
-	app.Run(iris.Addr(fmt.Sprintf(":%s", env.Port)), iris.WithOptimizations)
+	app.Listen(fmt.Sprintf(":%s", env.Port), iris.WithOptimizations)
 }

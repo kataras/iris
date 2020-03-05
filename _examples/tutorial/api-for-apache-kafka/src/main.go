@@ -77,7 +77,7 @@ func main() {
 	// POST, GET: http://localhost:8080/api/v1/topics
 	// POST     : http://localhost:8080/apiv1/topics/{topic}/produce?key=my-key
 	// GET      : http://localhost:8080/apiv1/topics/{topic}/consume?partition=0&offset=0 (these url query parameters are optional)
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 // simple use-case, you can use templates and views obviously, see the "_examples/views" examples.

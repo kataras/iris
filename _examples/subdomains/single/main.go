@@ -42,5 +42,5 @@ func main() {
 	// http://admin.mydomain.com/hey2
 	// http://mydomain.com
 	// http://mydomain.com/hey
-	app.Run(iris.Addr("mydomain.com:80")) // for beginners: look ../hosts file
+	app.Listen("mydomain.com:80") // for beginners: look ../hosts file
 }

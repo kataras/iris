@@ -47,7 +47,7 @@ func main() {
 
 	app.HandleMany("GET POST", "/socket.io/{any:path}", iris.FromStd(server))
 	app.HandleDir("/", "./asset")
-	app.Run(iris.Addr(":8000"),
+	app.Listen(":8000",
 		iris.WithoutPathCorrection,
 		iris.WithoutServerError(iris.ErrServerClosed),
 	)

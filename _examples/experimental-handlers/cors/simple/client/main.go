@@ -34,5 +34,5 @@ func main() {
 	// Start and navigate to http://localhost:8080
 	// and go to the previous terminal of your running cors/simple/main.go server
 	// and see the logs.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

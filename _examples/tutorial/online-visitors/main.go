@@ -47,7 +47,7 @@ func main() {
 	// Each page has its own online-visitors counter.
 	app.Get("/", h)
 	app.Get("/other", h2)
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type page struct {

@@ -30,7 +30,7 @@ Check the terminal window for any queries logs.`)
 	// and ctx.GetBody methods the default golang and net/http behavior
 	// is to consume the readen data - they are not available on any next handlers in the chain -
 	// to change that behavior just pass the `WithoutBodyConsumptionOnUnmarshal` option.
-	app.Run(iris.Addr(":8080"), iris.WithoutBodyConsumptionOnUnmarshal)
+	app.Listen(":8080", iris.WithoutBodyConsumptionOnUnmarshal)
 }
 
 func logAllBody(ctx iris.Context) {

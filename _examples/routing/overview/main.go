@@ -128,7 +128,7 @@ func main() {
 	// GET: http://admin.localhost:8080
 	// GET: http://admin.localhost:8080/settings
 	// GET: http://any_thing_here.localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func info(ctx iris.Context) {

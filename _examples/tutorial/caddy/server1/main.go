@@ -14,7 +14,7 @@ func main() {
 	mvc.New(app).Handle(new(Controller))
 
 	// http://localhost:9091
-	app.Run(iris.Addr(":9091"))
+	app.Listen(":9091")
 }
 
 // Layout contains all the binding properties for the shared/layout.html

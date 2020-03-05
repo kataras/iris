@@ -23,5 +23,5 @@ func main() {
 	// visit http://localhost:8080
 	// you should get an html output like this:
 	// Hello, the current time is: 2018-07-09 05:54:12.564 +0000 UTC m=+0.003900161
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

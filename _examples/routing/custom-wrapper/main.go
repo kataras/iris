@@ -61,7 +61,7 @@ func main() {
 	// http://localhost:8080/css/main.css
 	// http://localhost:8080/profile/anyusername
 	// http://localhost:8080/other/random
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 
 	// Note: In this example we just saw one use case,
 	// you may want to .WrapRouter or .Downgrade in order to bypass the iris' default router, i.e:

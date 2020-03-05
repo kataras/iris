@@ -51,5 +51,5 @@ func main() {
 	//
 	// Example usage:
 	// Visit all paths and open the generated "apidoc.html" file to see the API's automated docs.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

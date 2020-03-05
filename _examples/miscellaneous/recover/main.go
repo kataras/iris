@@ -21,7 +21,7 @@ func main() {
 	})
 
 	// http://localhost:8080, refresh it 5-6 times.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // Note:

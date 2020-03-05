@@ -12,7 +12,7 @@ func main() {
 	examplePerParty(app)
 
 	// Read the README.md before any action.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // How to test:
