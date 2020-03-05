@@ -125,13 +125,15 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 	// Therefore, count the inputs that can be path parameters first.
 	shouldBindParams := make(map[int]struct{})
 	totalParamsExpected := 0
-	for i, in := range inputs {
-		if _, canBePathParameter := context.ParamResolvers[in]; !canBePathParameter {
-			continue
-		}
-		shouldBindParams[i] = struct{}{}
+	if paramsCount != -1 {
+		for i, in := range inputs {
+			if _, canBePathParameter := context.ParamResolvers[in]; !canBePathParameter {
+				continue
+			}
+			shouldBindParams[i] = struct{}{}
 
-		totalParamsExpected++
+			totalParamsExpected++
+		}
 	}
 
 	startParamIndex := paramsCount - totalParamsExpected
