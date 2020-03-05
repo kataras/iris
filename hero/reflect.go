@@ -7,12 +7,21 @@ import (
 )
 
 func valueOf(v interface{}) reflect.Value {
-	if v, ok := v.(reflect.Value); ok {
+	if val, ok := v.(reflect.Value); ok {
 		// check if it's already a reflect.Value.
-		return v
+		return val
 	}
 
 	return reflect.ValueOf(v)
+}
+
+func typeOf(typ interface{}) reflect.Type {
+	if v, ok := typ.(reflect.Type); ok {
+		// check if it's already a reflect.Type.
+		return v
+	}
+
+	return reflect.TypeOf(typ)
 }
 
 // indirectType returns the value of a pointer-type "typ".
@@ -82,9 +91,8 @@ func equalTypes(binding reflect.Type, input reflect.Type) bool {
 	// if accepts an interface, check if the given "got" type does
 	// implement this "expected" user handler's input argument.
 	if input.Kind() == reflect.Interface {
-		// fmt.Printf("expected interface = %s and got to set on the arg is: %s\n", expected.String(), got.String())
-		// return got.Implements(expected)
-		// return expected.AssignableTo(got)
+		// fmt.Printf("expected interface = %s and got to set on the arg is: %s\n", binding.String(), input.String())
+		// return input.Implements(binding)
 		return binding.AssignableTo(input)
 	}
 

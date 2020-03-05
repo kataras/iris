@@ -46,14 +46,54 @@ var (
 	}
 )
 
-func TestHeroHandler(t *testing.T) {
+func TestContainerHandler(t *testing.T) {
 	app := iris.New()
 
-	b := New()
-	postHandler := b.Handler(fn)
+	c := New()
+	postHandler := c.Handler(fn)
 	app.Post("/{id:int}", postHandler)
 
 	e := httptest.New(t, app)
 	path := fmt.Sprintf("/%d", expectedOutput.ID)
 	e.POST(path).WithJSON(input).Expect().Status(httptest.StatusOK).JSON().Equal(expectedOutput)
+}
+
+func TestContainerInject(t *testing.T) {
+	c := New()
+
+	expected := testInput{Name: "test"}
+	c.Register(expected)
+	c.Register(&expected)
+
+	// struct value.
+	var got1 testInput
+	if err := c.Inject(&got1); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(expected, got1) {
+		t.Fatalf("[struct value] expected: %#+v but got: %#+v", expected, got1)
+	}
+
+	// ptr.
+	var got2 *testInput
+	if err := c.Inject(&got2); err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(&expected, got2) {
+		t.Fatalf("[ptr] expected: %#+v but got: %#+v", &expected, got2)
+	}
+
+	// register implementation, expect interface.
+	expected3 := &testServiceImpl{prefix: "prefix: "}
+	c.Register(expected3)
+
+	var got3 testService
+	if err := c.Inject(&got3); err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(expected3, got3) {
+		t.Fatalf("[service] expected: %#+v but got: %#+v", expected3, got3)
+	}
 }

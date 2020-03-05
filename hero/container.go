@@ -2,7 +2,9 @@ package hero
 
 import (
 	stdContext "context"
+	"errors"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -176,4 +178,71 @@ func (c *Container) HandlerWithParams(fn interface{}, paramsCount int) context.H
 // extract a Handler from this struct's method.
 func (c *Container) Struct(ptrValue interface{}, partyParamsCount int) *Struct {
 	return makeStruct(ptrValue, c, partyParamsCount)
+}
+
+/*
+func (c *Container) Inject(ctx context.Context, toPtr ...interface{}) error {
+	types := make([]reflect.Type, 0, len(toPtr))
+	for _, ptr := range toPtr {
+		types = append(types, indirectType(typeOf(ptr)))
+	}
+
+	bindings := getBindingsFor(types, c.Dependencies, -1)
+
+	for _, b := range bindings {
+		v, err := b.Dependency.Handle(ctx, b.Input)
+		if err != nil {
+			if err == ErrSeeOther {
+				continue
+			}
+
+			return err
+		}
+
+		reflect.ValueOf(toPtr).Set(v)
+	}
+
+	return nil
+}*/
+
+// ErrMissingDependency may returned only from the `Container.Inject` method
+// when not a matching dependency found for "toPtr".
+var ErrMissingDependency = errors.New("missing dependency")
+
+// Inject SHOULD only be used outside of HTTP handlers (performance is not priority for this method)
+// as it does not pre-calculate the available list of bindings for the "toPtr" and the registered dependencies.
+//
+// It sets a static-only matching dependency to the value of "toPtr".
+// The parameter "toPtr" SHOULD be a pointer to a value corresponding to a dependency,
+// like input parameter of a handler or field of a struct.
+//
+// If no matching dependency found, the `Inject` method returns an `ErrMissingDependency` and
+// "toPtr" keeps its original state (e.g. nil).
+//
+// Example Code:
+// c.Register(&LocalDatabase{...})
+// [...]
+// var db Database
+// err := c.Inject(&db)
+func (c *Container) Inject(toPtr interface{}) error {
+	val := reflect.Indirect(valueOf(toPtr))
+	typ := val.Type()
+
+	for _, d := range c.Dependencies {
+		if d.Static && matchDependency(d, typ) {
+			v, err := d.Handle(nil, &Input{Type: typ})
+			if err != nil {
+				if err == ErrSeeOther {
+					continue
+				}
+
+				return err
+			}
+
+			val.Set(v)
+			return nil
+		}
+	}
+
+	return ErrMissingDependency
 }
