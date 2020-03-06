@@ -52,3 +52,8 @@ func main() {
 		iris.WithoutServerError(iris.ErrServerClosed),
 	)
 }
+
+/*
+If you want to enable CORS in your websocket handler,
+please follow this post: https://github.com/googollee/go-socket.io/issues/242
+*/
