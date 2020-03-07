@@ -3,8 +3,13 @@ package main
 import (
 	"context"
 
+	pb "github.com/kataras/iris/v12/_examples/mvc/grpc-compatible/helloworld"
+
 	"github.com/kataras/iris/v12"
+	grpcWrapper "github.com/kataras/iris/v12/middleware/grpc"
 	"github.com/kataras/iris/v12/mvc"
+
+	"google.golang.org/grpc"
 )
 
 // See https://github.com/kataras/iris/issues/1449
@@ -18,33 +23,32 @@ func main() {
 	app := newApp()
 	app.Logger().SetLevel("debug")
 
-	// POST: http://localhost:8080/login
-	// with request data: {"username": "makis"}
-	// and expected output: {"message": "makis logged"}
-	app.Listen(":8080")
+	// POST: https://localhost/hello
+	// with request data: {"name": "John"}
+	// and expected output: {"message": "Hello John"}
+	app.Run(iris.TLS(":443", "server.crt", "server.key"))
 }
 
 func newApp() *iris.Application {
 	app := iris.New()
 
-	mvc.New(app).Handle(&myController{})
+	ctrl := &myController{}
+	// Register gRPC server.
+	grpcServer := grpc.NewServer()
+	pb.RegisterGreeterServer(grpcServer, ctrl)
 
+	// Register MVC application controller.
+	mvc.New(app).Handle(ctrl)
+
+	// Serve the gRPC server under the Iris HTTP webserver one,
+	// the Iris server should ran under TLS (it's a gRPC requirement).
+	app.WrapRouter(grpcWrapper.New(grpcServer))
 	return app
 }
 
 type myController struct{}
 
-type loginRequest struct {
-	Username string `json:"username"`
-}
-
-type loginResponse struct {
-	Message string `json:"message"`
-}
-
-func (c *myController) PostLogin(ctx context.Context, input loginRequest) (loginResponse, error) {
-	// [use of ctx to call a gRpc method or a database call...]
-	return loginResponse{
-		Message: input.Username + " logged",
-	}, nil
+// PostHello implements helloworld.GreeterServer
+func (c *myController) PostHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
