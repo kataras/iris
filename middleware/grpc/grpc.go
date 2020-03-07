@@ -20,11 +20,11 @@ import (
 //  app.WrapRouter(grpcWrapper.New(grpcServer))
 func New(grpcServer http.Handler) router.WrapperFunc {
 	return func(w http.ResponseWriter, r *http.Request, mux http.HandlerFunc) {
-		if r.ProtoMajor == 2 && strings.HasPrefix(
-			r.Header.Get("Content-Type"), "application/grpc") {
+		if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
-		} else {
-			mux.ServeHTTP(w, r)
+			return
 		}
+
+		mux.ServeHTTP(w, r)
 	}
 }
