@@ -46,7 +46,8 @@ func newApp() *iris.Application {
 	// a JSON and 200 status code
 	// or 202 status code and empty body
 	// or a 409 status code and "my_error" body.
-	app.HandleFunc(iris.MethodPost, "/{id:int}", middleware, handler)
+	app.UseFunc(middleware)
+	app.HandleFunc(iris.MethodPost, "/{id:int}", handler)
 
 	app.Configure(
 		iris.WithOptimizations, /* optional */

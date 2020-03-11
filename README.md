@@ -20,6 +20,8 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 
 [![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
 
+[![Benchmarks: Mar 11, 2020 at 9:52pm (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+
 ## 📖 Learning Iris
 
 <details>
