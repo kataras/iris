@@ -142,7 +142,9 @@ func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, paren
 			index = append(parentIndex, i)
 		}
 
-		field.Index = index
+		tmp := make([]int, len(index))
+		copy(tmp, index)
+		field.Index = tmp
 
 		fields = append(fields, field)
 	}
