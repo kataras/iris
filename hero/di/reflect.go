@@ -229,10 +229,13 @@ func lookupFields(elemTyp reflect.Type, skipUnexported bool, parentIndex []int) 
 			index = append(parentIndex, i)
 		}
 
+		tmp := make([]int, len(index))
+		copy(tmp, index)
+
 		field := field{
 			Type:   f.Type,
 			Name:   f.Name,
-			Index:  index,
+			Index:  tmp,
 			CanSet: isExported,
 		}
 
