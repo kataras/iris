@@ -1382,8 +1382,8 @@ func (ctx *context) Next() { // or context.Next(ctx)
 // it sends a Status Not Found (404) to the client and it stops the execution.
 func (ctx *context) NextOr(handlers ...Handler) bool {
 	if next := ctx.NextHandler(); next != nil {
-		next(ctx)
 		ctx.Skip() // skip this handler from the chain.
+		next(ctx)
 		return true
 	}
 
