@@ -1,5 +1,6 @@
 .vscode
 _authortools
+/_examples/issue-*/
 .directory
 node_modules
 package-lock.json

@@ -585,3 +585,42 @@ func TestControllerRequestScopedDependencies(t *testing.T) {
 	})
 	e.GET("/custom/context").Expect().Status(httptest.StatusOK).Body().Equal("test")
 }
+
+type (
+	testServiceDoSomething struct{}
+
+	TestControllerAsDeepDep struct {
+		Ctx     iris.Context
+		Service *testServiceDoSomething
+	}
+
+	FooController struct {
+		TestControllerAsDeepDep
+	}
+
+	BarController struct {
+		FooController
+	}
+
+	FinalController struct {
+		BarController
+	}
+)
+
+func (s *testServiceDoSomething) DoSomething(ctx iris.Context) {
+	ctx.WriteString("foo bar")
+}
+
+func (c *FinalController) GetSomething() {
+	c.Service.DoSomething(c.Ctx)
+}
+
+func TestControllersInsideControllerDeep(t *testing.T) {
+	app := iris.New()
+	m := New(app)
+	m.Register(new(testServiceDoSomething))
+	m.Handle(new(FinalController))
+
+	e := httptest.New(t, app)
+	e.GET("/something").Expect().Status(httptest.StatusOK).Body().Equal("foo bar")
+}
