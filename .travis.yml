@@ -3,7 +3,7 @@ os:
   - linux
   - osx
 go:
-  - 1.13.x
+  - 1.14.x
 go_import_path: github.com/kataras/iris/v12
 env:
  global:

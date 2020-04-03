@@ -26,8 +26,6 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 This release introduces new features and some breaking changes inside the `mvc` and `hero` packages.
 The codebase for dependency injection has been simplified a lot (fewer LOCs and easier to read and follow up).
 
-Before this release the `iris.Context` was the only one dependency has been automatically binded to the controller's fields or handler's inputs, now  the standard `"context"` package's `Context` is also automatically binded and all structs that are not mapping to a registered dependency are now automatically resolved to `payload` XML, YAML, Query, Form and JSON dependencies based on the request's `Content-Type` header (defaults to JSON if client didn't specified a content-type).
-
 The new release contains a fresh new and awesome feature....**a function dependency can accept previous registered dependencies and update or return a new value of any type**.
 
 The new implementation is **faster** on both design and serve-time.
@@ -36,7 +34,7 @@ The most common scenario from a route to handle is to:
 - accept one or more path parameters and request data, a payload
 - send back a response, a payload (JSON, XML,...)
 
-The new Iris Dependency Injection feature is about **[33.2% faster](_benchmarks/_internal/README.md#dependency-injection)** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route` and `Party.RegisterDependency` method.
+The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route` and `Party.RegisterDependency` method.
 
 Look how clean your codebase can be when using Iris':
 
@@ -70,7 +68,7 @@ func main() {
 }
 ```
 
-Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but don't worry you can still control everything if you ever need, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.GetContainer().GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents, you can change it through `Party#OnErrorFunc`. If you want to handle `testInput` otherwise then just add a `Party.RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go. Here is a quick list of the new Party's methods:
+Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but if you ever need, you still have the control over those, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.GetContainer().GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents, you can change it through `Party#OnErrorFunc`. If you want to handle `testInput` otherwise then just add a `Party.RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go. Here is a quick list of the new Party's methods:
 
 ```go
 // GetContainer returns the DI Container of this Party.
@@ -134,6 +132,39 @@ DoneFunc(handlersFn ...interface{})
 // See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
 HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
 ```
+
+Prior to this version the `iris.Context` was the only one dependency that has been automatically binded to the handler's input or a controller's fields and methods, read below to see what types are automatically binded:
+
+| Type | Maps To |
+|------|:---------|
+| [iris.Context](https://pkg.go.dev/github.com/kataras/iris/v12/context?tab=doc#Context) | Current Iris Context |
+| [*sessions.Session](https://pkg.go.dev/github.com/kataras/iris/v12/sessions?tab=doc#Session) | Current Iris Session |
+| [context.Context](https://golang.org/pkg/context/#Context) | [ctx.Request().Context()](https://golang.org/pkg/net/http/#Request.Context) |
+| [*http.Request](https://golang.org/pkg/net/http/#Request) | `ctx.Request()` |
+| [http.ResponseWriter](https://golang.org/pkg/net/http/#ResponseWriter) | `ctx.ResponseWriter()` |
+| [http.Header](https://golang.org/pkg/net/http/#Header) | `ctx.Request().Header` |
+| [time.Time](https://golang.org/pkg/time/#Time) | `time.Now()` |
+| `string`, | |
+| `int, int8, int16, int32, int64`, | |
+| `uint, uint8, uint16, uint32, uint64`, | |
+| `float, float32, float64`, | |
+| `bool`, | |
+| `slice` | [Path Parameter](https://github.com/kataras/iris/wiki/Routing-path-parameter-types) |
+| Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/http_request) of `JSON`, `XML`, `YAML`, `Form`, `URL Query` |
+
+Here is a preview of what the new Hero handlers look like:
+
+### Request & Response & Path Parameters
+
+![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/1.png)
+
+### Custom Preflight
+
+![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/2.png)
+
+### Custom Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/3.png)
 
 Other Improvements:
 
