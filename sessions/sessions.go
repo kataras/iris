@@ -95,7 +95,7 @@ func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOpt
 	return s.provider.Read(cookieValue, s.config.Expires)
 }
 
-const contextSessionKey = "_iris_session"
+const contextSessionKey = "iris.session"
 
 // Handler returns a sessions middleware to register on application routes.
 func (s *Sessions) Handler(cookieOptions ...context.CookieOption) context.Handler {

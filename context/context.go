@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/kataras/iris/v12/core/memstore"
 
@@ -896,6 +897,14 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	SetCookie(cookie *http.Cookie, options ...CookieOption)
+	// SetSameSite sets a same-site rule for cookies to set.
+	// SameSite allows a server to define a cookie attribute making it impossible for
+	// the browser to send this cookie along with cross-site requests. The main
+	// goal is to mitigate the risk of cross-origin information leakage, and provide
+	// some protection against cross-site request forgery attacks.
+	//
+	// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
+	SetSameSite(sameSite http.SameSite)
 	// SetCookieKV adds a cookie, requires the name(string) and the value(string).
 	//
 	// By default it expires at 2 hours and it's added to the root path,
@@ -3163,6 +3172,8 @@ type JSON struct {
 	UnescapeHTML bool
 	Indent       string
 	Prefix       string
+	ASCII        bool // if true writes with unicode to ASCII content.
+	Secure       bool // if true then it adds a "while(1);" when Go slice (to JSON Array) value.
 }
 
 // JSONP contains the options for the JSONP (Context's) Renderer.
@@ -3187,7 +3198,7 @@ type Markdown struct {
 
 var (
 	newLineB = []byte("\n")
-	// the html codes for unescaping
+	// the html codes for unescaping.
 	ltHex = []byte("\\u003c")
 	lt    = []byte("<")
 
@@ -3196,6 +3207,11 @@ var (
 
 	andHex = []byte("\\u0026")
 	and    = []byte("&")
+
+	// secure JSON.
+	jsonArrayPrefix  = []byte("[")
+	jsonArraySuffix  = []byte("]")
+	secureJSONPrefix = []byte("while(1);")
 )
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
@@ -3237,11 +3253,37 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 		result = bytes.Replace(result, andHex, and, -1)
 	}
 
+	if options.Secure {
+		if bytes.HasPrefix(result, jsonArrayPrefix) && bytes.HasSuffix(result, jsonArraySuffix) {
+			result = append(secureJSONPrefix, result...)
+		}
+	}
+
+	if options.ASCII {
+		if len(result) > 0 {
+			buf := new(bytes.Buffer)
+			for _, s := range bytesToString(result) {
+				char := string(s)
+				if s >= 128 {
+					char = fmt.Sprintf("\\u%04x", int64(s))
+				}
+				buf.WriteString(char)
+			}
+
+			result = buf.Bytes()
+		}
+	}
+
 	if prefix := options.Prefix; prefix != "" {
 		result = append([]byte(prefix), result...)
 	}
 
 	return writer.Write(result)
+}
+
+// See https://golang.org/src/strings/builder.go#L45
+func bytesToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 // DefaultJSONOptions is the optional settings that are being used
@@ -3304,7 +3346,7 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (
 	}
 
 	if !optimize && options.Indent == "" {
-		options.Indent = "  "
+		options.Indent = "    "
 	}
 
 	if indent := options.Indent; indent != "" {
@@ -4359,11 +4401,37 @@ func CookieDecode(decode CookieDecoder) CookieOption {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 func (ctx *context) SetCookie(cookie *http.Cookie, options ...CookieOption) {
+	cookie.SameSite = ctx.getSameSite()
+
 	for _, opt := range options {
 		opt(cookie)
 	}
 
 	http.SetCookie(ctx.writer, cookie)
+}
+
+const sameSiteContextKey = "iris.cookie_same_site"
+
+// SetSameSite sets a same-site rule for cookies to set.
+// SameSite allows a server to define a cookie attribute making it impossible for
+// the browser to send this cookie along with cross-site requests. The main
+// goal is to mitigate the risk of cross-origin information leakage, and provide
+// some protection against cross-site request forgery attacks.
+//
+// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
+func (ctx *context) SetSameSite(sameSite http.SameSite) {
+	ctx.Values().Set(sameSiteContextKey, sameSite)
+}
+
+func (ctx *context) getSameSite() http.SameSite {
+	if v := ctx.Values().Get(sameSiteContextKey); v != nil {
+		sameSite, ok := v.(http.SameSite)
+		if ok {
+			return sameSite
+		}
+	}
+
+	return http.SameSiteDefaultMode
 }
 
 // SetCookieKV adds a cookie, requires the name(string) and the value(string).
