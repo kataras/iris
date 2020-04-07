@@ -1,13 +1,13 @@
-// Package main shows the validator(latest, version 9) integration with Iris.
-// You can find more examples like this at: https://github.com/go-playground/validator/blob/v9/_examples
+// Package main shows the validator(latest, version 10) integration with Iris.
+// You can find more examples like this at: https://github.com/go-playground/validator/blob/master/_examples
 package main
 
 import (
 	"fmt"
 
 	"github.com/kataras/iris/v12"
-	// $ go get gopkg.in/go-playground/validator.v9
-	"gopkg.in/go-playground/validator.v9"
+	// $ go get github.com/go-playground/validator/v10
+	"github.com/go-playground/validator/v10"
 )
 
 // User contains user information.
