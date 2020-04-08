@@ -28,10 +28,12 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
+	"github.com/golang/protobuf/proto"
 	"github.com/iris-contrib/blackfriday"
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/vmihailenco/msgpack/v5"
 	"gopkg.in/yaml.v3"
 )
 
@@ -607,17 +609,21 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-yaml/main.go
 	ReadYAML(outPtr interface{}) error
-	// ReadForm binds the formObject  with the form data
-	// it supports any kind of type, including custom structs.
+	// ReadForm binds the request body of a form to the "formObject".
+	// It supports any kind of type, including custom structs.
 	// It will return nothing if request data are empty.
 	// The struct field tag is "form".
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 	ReadForm(formObject interface{}) error
-	// ReadQuery binds the "ptr" with the url query string. The struct field tag is "url".
+	// ReadQuery binds url query to "ptr". The struct field tag is "url".
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-query/main.go
 	ReadQuery(ptr interface{}) error
+	// ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
+	ReadProtobuf(ptr proto.Message) error
+	// ReadMsgPack binds the request body of msgpack format to the "ptr" and returns any error.
+	ReadMsgPack(ptr interface{}) error
 	//  +------------------------------------------------------------+
 	//  | Body (raw) Writers                                         |
 	//  +------------------------------------------------------------+
@@ -815,6 +821,10 @@ type Context interface {
 	Markdown(markdownB []byte, options ...Markdown) (int, error)
 	// YAML parses the "v" using the yaml parser and renders its result to the client.
 	YAML(v interface{}) (int, error)
+	// Protobuf parses the "v" of proto Message and renders its result to the client.
+	Protobuf(v proto.Message) (int, error)
+	// MsgPack parses the "v" of msgpack format and renders its result to the client.
+	MsgPack(v interface{}) (int, error)
 
 	//  +-----------------------------------------------------------------------+
 	//  | Content Νegotiation                                                   |
@@ -2650,8 +2660,8 @@ func (ctx *context) ReadYAML(outPtr interface{}) error {
 // A shortcut for the `schema#IsErrPath`.
 var IsErrPath = schema.IsErrPath
 
-// ReadForm binds the formObject  with the form data
-// it supports any kind of type, including custom structs.
+// ReadForm binds the request body of a form to the "formObject".
+// It supports any kind of type, including custom structs.
 // It will return nothing if request data are empty.
 // The struct field tag is "form".
 //
@@ -2665,7 +2675,7 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 	return schema.DecodeForm(values, formObject)
 }
 
-// ReadQuery binds the "ptr" with the url query string. The struct field tag is "url".
+// ReadQuery binds url query to "ptr". The struct field tag is "url".
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-query/main.go
 func (ctx *context) ReadQuery(ptr interface{}) error {
@@ -2675,6 +2685,26 @@ func (ctx *context) ReadQuery(ptr interface{}) error {
 	}
 
 	return schema.DecodeQuery(values, ptr)
+}
+
+// ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
+func (ctx *context) ReadProtobuf(ptr proto.Message) error {
+	rawData, err := ctx.GetBody()
+	if err != nil {
+		return err
+	}
+
+	return proto.Unmarshal(rawData, ptr)
+}
+
+// ReadMsgPack binds the request body of msgpack format to the "ptr" and returns any error.
+func (ctx *context) ReadMsgPack(ptr interface{}) error {
+	rawData, err := ctx.GetBody()
+	if err != nil {
+		return err
+	}
+
+	return msgpack.Unmarshal(rawData, ptr)
 }
 
 //  +------------------------------------------------------------+
@@ -3140,6 +3170,12 @@ const (
 	ContentMarkdownHeaderValue = "text/markdown"
 	// ContentYAMLHeaderValue header value for YAML data.
 	ContentYAMLHeaderValue = "application/x-yaml"
+	// ContentProtobufHeaderValue header value for Protobuf messages data.
+	ContentProtobufHeaderValue = "application/x-protobuf"
+	// ContentMsgPackHeaderValue header value for MsgPack data.
+	ContentMsgPackHeaderValue = "application/msgpack"
+	// ContentMsgPack2HeaderValue alternative header value for MsgPack data.
+	ContentMsgPack2HeaderValue = "application/x-msgpack"
 	// ContentFormHeaderValue header value for post form data.
 	ContentFormHeaderValue = "application/x-www-form-urlencoded"
 	// ContentFormMultipartHeaderValue header value for post multipart form data.
@@ -3583,6 +3619,28 @@ func (ctx *context) YAML(v interface{}) (int, error) {
 	return ctx.Write(out)
 }
 
+// Protobuf parses the "v" of proto Message and renders its result to the client.
+func (ctx *context) Protobuf(v proto.Message) (int, error) {
+	out, err := proto.Marshal(v)
+	if err != nil {
+		return 0, err
+	}
+
+	ctx.ContentType(ContentProtobufHeaderValue)
+	return ctx.Write(out)
+}
+
+// MsgPack parses the "v" of msgpack format and renders its result to the client.
+func (ctx *context) MsgPack(v interface{}) (int, error) {
+	out, err := msgpack.Marshal(v)
+	if err != nil {
+		return 0, err
+	}
+
+	ctx.ContentType(ContentMsgPackHeaderValue)
+	return ctx.Write(out)
+}
+
 //  +-----------------------------------------------------------------------+
 //  | Content Νegotiation                                                   |
 //  | https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation |                                       |
@@ -3628,11 +3686,13 @@ type N struct {
 	Markdown   []byte
 	Binary     []byte
 
-	JSON    interface{}
-	Problem Problem
-	JSONP   interface{}
-	XML     interface{}
-	YAML    interface{}
+	JSON     interface{}
+	Problem  Problem
+	JSONP    interface{}
+	XML      interface{}
+	YAML     interface{}
+	Protobuf interface{}
+	MsgPack  interface{}
 
 	Other []byte // custom content types.
 }
@@ -3658,12 +3718,16 @@ func (n N) SelectContent(mime string) interface{} {
 		return n.XML
 	case ContentYAMLHeaderValue:
 		return n.YAML
+	case ContentProtobufHeaderValue:
+		return n.Protobuf
+	case ContentMsgPackHeaderValue, ContentMsgPack2HeaderValue:
+		return n.MsgPack
 	default:
 		return n.Other
 	}
 }
 
-const negotiationContextKey = "_iris_negotiation_builder"
+const negotiationContextKey = "iris.negotiation_builder"
 
 // Negotiation creates once and returns the negotiation builder
 // to build server-side available prioritized content
@@ -3706,7 +3770,7 @@ func parseHeader(headerValue string) []string {
 // The "v" can be a single `N` struct value.
 // The "v" can be any value completes the `ContentSelector` interface.
 // The "v" can be any value completes the `ContentNegotiator` interface.
-// The "v" can be any value of struct(JSON, JSONP, XML, YAML) or
+// The "v" can be any value of struct(JSON, JSONP, XML, YAML, Protobuf, MsgPack) or
 // string(TEXT, HTML) or []byte(Markdown, Binary) or []byte with any matched mime type.
 //
 // If the "v" is nil, the `Context.Negotitation()` builder's
@@ -3791,6 +3855,15 @@ func (ctx *context) Negotiate(v interface{}) (int, error) {
 		return ctx.XML(v)
 	case ContentYAMLHeaderValue:
 		return ctx.YAML(v)
+	case ContentProtobufHeaderValue:
+		msg, ok := v.(proto.Message)
+		if !ok {
+			return -1, ErrContentNotSupported
+		}
+
+		return ctx.Protobuf(msg)
+	case ContentMsgPackHeaderValue, ContentMsgPack2HeaderValue:
+		return ctx.MsgPack(v)
 	default:
 		// maybe "Other" or v is []byte or string but not a built-in framework mime,
 		// for custom content types,
@@ -3964,6 +4037,32 @@ func (n *NegotiationBuilder) YAML(v ...interface{}) *NegotiationBuilder {
 		content = v[0]
 	}
 	return n.MIME(ContentYAMLHeaderValue, content)
+}
+
+// Protobuf registers the "application/x-protobuf" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/x-protobuf" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) Protobuf(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentProtobufHeaderValue, content)
+}
+
+// MsgPack registers the "application/x-msgpack" and "application/msgpack" content types and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts one of the "application/x-msgpack" or "application/msgpack" content types.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) MsgPack(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentMsgPackHeaderValue+","+ContentMsgPack2HeaderValue, content)
 }
 
 // Any registers a wildcard that can match any client's accept content type.

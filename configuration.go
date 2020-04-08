@@ -803,7 +803,7 @@ type Configuration struct {
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
-	// Defaults to "UTF-8".
+	// Defaults to "utf-8".
 	Charset string `json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
 
 	// PostMaxMemory sets the maximum post data size
@@ -1109,7 +1109,7 @@ func DefaultConfiguration() Configuration {
 		DisableBodyConsumptionOnUnmarshal: false,
 		DisableAutoFireStatusCode:         false,
 		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
-		Charset:                           "UTF-8",
+		Charset:                           "utf-8",
 
 		// PostMaxMemory is for post body max memory.
 		//

@@ -21,7 +21,7 @@ func main() {
 		DisableBodyConsumptionOnUnmarshal: false,
 		DisableAutoFireStatusCode:         false,
 		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
-		Charset:                           "UTF-8",
+		Charset:                           "utf-8",
 	}))
 
 	// or before Run:

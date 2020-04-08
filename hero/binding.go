@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // binding contains the Dependency and the Input, it's the result of a function or struct + dependencies.
@@ -344,6 +346,14 @@ func payloadBinding(index int, typ reflect.Type) *binding {
 					err = ctx.ReadForm(ptr)
 				case context.ContentJSONHeaderValue:
 					err = ctx.ReadJSON(ptr)
+				case context.ContentProtobufHeaderValue:
+					if msg, ok := ptr.(proto.Message); ok {
+						err = ctx.ReadProtobuf(msg)
+					} else {
+						err = context.ErrContentNotSupported
+					}
+				case context.ContentMsgPackHeaderValue, context.ContentMsgPack2HeaderValue:
+					err = ctx.ReadMsgPack(ptr)
 				default:
 					if ctx.Request().URL.RawQuery != "" {
 						// try read from query.

@@ -150,7 +150,7 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | `float, float32, float64`, | |
 | `bool`, | |
 | `slice` | [Path Parameter](https://github.com/kataras/iris/wiki/Routing-path-parameter-types) |
-| Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/http_request) of `JSON`, `XML`, `YAML`, `Form`, `URL Query` |
+| Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/http_request) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
 
 Here is a preview of what the new Hero handlers look like:
 
@@ -176,6 +176,10 @@ Other Improvements:
 
 New Context Methods:
 
+- `context.Protobuf(proto.Message)` sends protobuf to the client
+- `context.MsgPack(interface{})` sends msgpack format data to the client
+- `context.ReadProtobuf(ptr)` binds request body to a proto message
+- `context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
 - `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle.
 - `context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(context)`
 - `context.Controller() reflect.Value` returns the current MVC Controller value (when fired from inside a controller's method).

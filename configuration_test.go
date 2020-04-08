@@ -148,7 +148,7 @@ FireMethodNotAllowed: true
 EnableOptimizations: true
 DisableBodyConsumptionOnUnmarshal: true
 TimeFormat: "Mon, 02 Jan 2006 15:04:05 GMT"
-Charset: "UTF-8"
+Charset: "utf-8"
 
 RemoteAddrHeaders:
   X-Real-Ip: true
@@ -192,7 +192,7 @@ Other:
 		t.Fatalf("error on TestConfigurationYAML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
-	if expected := "UTF-8"; c.Charset != expected {
+	if expected := "utf-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected Charset %s but got %s", expected, c.Charset)
 	}
 
@@ -245,7 +245,7 @@ FireMethodNotAllowed = true
 EnableOptimizations = true
 DisableBodyConsumptionOnUnmarshal = true
 TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
-Charset = "UTF-8"
+Charset = "utf-8"
 
 [RemoteAddrHeaders]
     X-Real-Ip = true
@@ -291,7 +291,7 @@ Charset = "UTF-8"
 		t.Fatalf("error on TestConfigurationTOML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
-	if expected := "UTF-8"; c.Charset != expected {
+	if expected := "utf-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected Charset %s but got %s", expected, c.Charset)
 	}
 
