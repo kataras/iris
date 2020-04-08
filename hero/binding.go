@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 
 	"github.com/kataras/iris/v12/context"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // binding contains the Dependency and the Input, it's the result of a function or struct + dependencies.
@@ -328,42 +325,7 @@ func payloadBinding(index int, typ reflect.Type) *binding {
 
 				newValue = reflect.New(indirectType(input.Type))
 				ptr := newValue.Interface()
-
-				contentType := ctx.GetContentTypeRequested()
-				if contentType != "" {
-					if idx := strings.IndexByte(contentType, ';'); idx > 0 {
-						// e.g. contentType=[multipart/form-data] trailing: ; boundary=4e2946168dbbac
-						contentType = contentType[:idx]
-					}
-				}
-
-				switch contentType {
-				case context.ContentXMLHeaderValue:
-					err = ctx.ReadXML(ptr)
-				case context.ContentYAMLHeaderValue:
-					err = ctx.ReadYAML(ptr)
-				case context.ContentFormHeaderValue, context.ContentFormMultipartHeaderValue:
-					err = ctx.ReadForm(ptr)
-				case context.ContentJSONHeaderValue:
-					err = ctx.ReadJSON(ptr)
-				case context.ContentProtobufHeaderValue:
-					if msg, ok := ptr.(proto.Message); ok {
-						err = ctx.ReadProtobuf(msg)
-					} else {
-						err = context.ErrContentNotSupported
-					}
-				case context.ContentMsgPackHeaderValue, context.ContentMsgPack2HeaderValue:
-					err = ctx.ReadMsgPack(ptr)
-				default:
-					if ctx.Request().URL.RawQuery != "" {
-						// try read from query.
-						err = ctx.ReadQuery(ptr)
-					} else {
-						// otherwise default to JSON.
-						err = ctx.ReadJSON(ptr)
-					}
-				}
-
+				err = ctx.ReadBody(ptr)
 				if !wasPtr {
 					newValue = newValue.Elem()
 				}

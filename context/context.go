@@ -624,6 +624,12 @@ type Context interface {
 	ReadProtobuf(ptr proto.Message) error
 	// ReadMsgPack binds the request body of msgpack format to the "ptr" and returns any error.
 	ReadMsgPack(ptr interface{}) error
+	// ReadBody binds the request body to the "ptr" depending on the HTTP Method and the Request's Content-Type.
+	// If a GET method request then it reads from a form (or URL Query), otherwise
+	// it tries to match (depending on the request content-type) the data format e.g.
+	// JSON, Protobuf, MsgPack, XML, YAML, MultipartForm and binds the result to the "ptr".
+	ReadBody(ptr interface{}) error
+
 	//  +------------------------------------------------------------+
 	//  | Body (raw) Writers                                         |
 	//  +------------------------------------------------------------+
@@ -1931,9 +1937,18 @@ func (ctx *context) GetContentType() string {
 	return ctx.writer.Header().Get(ContentTypeHeaderKey)
 }
 
+func trimHeaderValue(cType string) string {
+	for i, char := range cType {
+		if char == ' ' || char == ';' {
+			return cType[:i]
+		}
+	}
+	return cType
+}
+
 // GetContentType returns the request's header value of "Content-Type".
 func (ctx *context) GetContentTypeRequested() string {
-	return ctx.GetHeader(ContentTypeHeaderKey)
+	return trimHeaderValue(ctx.GetHeader(ContentTypeHeaderKey))
 }
 
 // GetContentLength returns the request's header value of "Content-Length".
@@ -2705,6 +2720,43 @@ func (ctx *context) ReadMsgPack(ptr interface{}) error {
 	}
 
 	return msgpack.Unmarshal(rawData, ptr)
+}
+
+// ReadBody binds the request body to the "ptr" depending on the HTTP Method and the Request's Content-Type.
+// If a GET method request then it reads from a form (or URL Query), otherwise
+// it tries to match (depending on the request content-type) the data format e.g.
+// JSON, Protobuf, MsgPack, XML, YAML, MultipartForm and binds the result to the "ptr".
+func (ctx *context) ReadBody(ptr interface{}) error {
+	if ctx.Method() == http.MethodGet {
+		return ctx.ReadForm(ptr)
+	}
+
+	switch ctx.GetContentTypeRequested() {
+	case ContentXMLHeaderValue:
+		return ctx.ReadXML(ptr)
+	case ContentYAMLHeaderValue:
+		return ctx.ReadYAML(ptr)
+	case ContentFormHeaderValue, ContentFormMultipartHeaderValue:
+		return ctx.ReadForm(ptr)
+	case ContentJSONHeaderValue:
+		return ctx.ReadJSON(ptr)
+	case ContentProtobufHeaderValue:
+		msg, ok := ptr.(proto.Message)
+		if !ok {
+			return ErrContentNotSupported
+		}
+
+		return ctx.ReadProtobuf(msg)
+	case ContentMsgPackHeaderValue, ContentMsgPack2HeaderValue:
+		return ctx.ReadMsgPack(ptr)
+	default:
+		if ctx.Request().URL.RawQuery != "" {
+			// try read from query.
+			return ctx.ReadQuery(ptr)
+		}
+		// otherwise default to JSON.
+		return ctx.ReadJSON(ptr)
+	}
 }
 
 //  +------------------------------------------------------------+

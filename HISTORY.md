@@ -180,6 +180,7 @@ New Context Methods:
 - `context.MsgPack(interface{})` sends msgpack format data to the client
 - `context.ReadProtobuf(ptr)` binds request body to a proto message
 - `context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
+- `context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and ContentType
 - `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle.
 - `context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(context)`
 - `context.Controller() reflect.Value` returns the current MVC Controller value (when fired from inside a controller's method).
