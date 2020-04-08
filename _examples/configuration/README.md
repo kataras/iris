@@ -35,7 +35,7 @@ func main() {
         DisableBodyConsumptionOnUnmarshal: false,
         DisableAutoFireStatusCode:         false,
         TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
-        Charset:                           "UTF-8",
+        Charset:                           "utf-8",
     }))
 }
 ```
@@ -60,10 +60,10 @@ func main() {
     // Prefix: "With", code editors will help you navigate through all
     // configuration options without even a glitch to the documentation.
 
-    app.Listen(":8080", iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
+    app.Listen(":8080", iris.WithoutStartupLog, iris.WithCharset("utf-8"))
 
     // or before run:
-    // app.Configure(iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
+    // app.Configure(iris.WithoutStartupLog, iris.WithCharset("utf-8"))
     // app.Listen(":8080")
 }
 ```
@@ -76,7 +76,7 @@ EnablePathEscape = false
 FireMethodNotAllowed = true
 DisableBodyConsumptionOnUnmarshal = false
 TimeFormat = "Mon, 01 Jan 2006 15:04:05 GMT"
-Charset = "UTF-8"
+Charset = "utf-8"
 
 [Other]
 	MyServerName = "iris"

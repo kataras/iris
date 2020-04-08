@@ -965,7 +965,7 @@ func (app *Application) Listen(hostPort string, withOrWithout ...Configurator) e
 // then create a new host and run it manually by `go NewHost(*http.Server).Serve/ListenAndServe` etc...
 // or use an already created host:
 // h := NewHost(*http.Server)
-// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"), WithRemoteAddrHeader("CF-Connecting-IP"))
+// Run(Raw(h.ListenAndServe), WithCharset("utf-8"), WithRemoteAddrHeader("CF-Connecting-IP"))
 //
 // The Application can go online with any type of server or iris's host with the help of
 // the following runners:
