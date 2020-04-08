@@ -221,15 +221,15 @@ func TestHandlerPathParams(t *testing.T) {
 	}
 
 	app.PartyFunc("/users", func(r iris.Party) {
-		r.HandleFunc(iris.MethodGet, "/{id:uint64}", handler)
+		r.DI().Get("/{id:uint64}", handler)
 	})
 
 	app.PartyFunc("/editors/{id:uint64}", func(r iris.Party) {
-		r.HandleFunc(iris.MethodGet, "/", handler)
+		r.DI().Get("/", handler)
 	})
 
 	// should receive the last one, as we expected only one useful for MVC (there is a similar test there too).
-	app.HandleFunc(iris.MethodGet, "/{ownerID:uint64}/book/{booKID:uint64}", handler)
+	app.DI().Get("/{ownerID:uint64}/book/{booKID:uint64}", handler)
 
 	e := httptest.New(t, app)
 

@@ -4039,7 +4039,7 @@ func (n *NegotiationBuilder) JSON(v ...interface{}) *NegotiationBuilder {
 	return n.MIME(ContentJSONHeaderValue, content)
 }
 
-// Problem registers the "application/problem+xml" or "application/problem+xml" content type and, optionally,
+// Problem registers the "application/problem+json" or "application/problem+xml" content type and, optionally,
 // a value that `Context.Negotiate` will render
 // when a client accepts the "application/problem+json" or the "application/problem+xml" content type.
 //
@@ -4251,7 +4251,7 @@ func negotiationMatch(in []string, priorities []string) string {
 type NegotiationAcceptBuilder struct {
 	// initialized with "Accept" request header values.
 	accept []string
-	// initialized with "Accept-Encoding" request header. and if was empty then the
+	// initialized with "Accept-Charset" request header. and if was empty then the
 	// application's default (which defaults to utf-8).
 	charset []string
 	// initialized with "Accept-Encoding" request header values.
@@ -4353,6 +4353,18 @@ func (n *NegotiationAcceptBuilder) XML() *NegotiationAcceptBuilder {
 // YAML adds the "application/x-yaml" as accepted client content type.
 // Returns itself.
 func (n *NegotiationAcceptBuilder) YAML() *NegotiationAcceptBuilder {
+	return n.MIME(ContentYAMLHeaderValue)
+}
+
+// Protobuf adds the "application/x-protobuf" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) Protobuf() *NegotiationAcceptBuilder {
+	return n.MIME(ContentYAMLHeaderValue)
+}
+
+// MsgPack adds the "application/msgpack" and "application/x-msgpack" as accepted client content types.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) MsgPack() *NegotiationAcceptBuilder {
 	return n.MIME(ContentYAMLHeaderValue)
 }
 

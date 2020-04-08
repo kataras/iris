@@ -3,7 +3,6 @@ package router
 import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
-	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/macro"
 )
 
@@ -12,6 +11,9 @@ import (
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
+	// DI returns the APIBuilder featured with Dependency Injection.
+	DI() *APIBuilderDI
+
 	// GetRelPath returns the current party's relative path.
 	// i.e:
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
@@ -57,15 +59,9 @@ type Party interface {
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)
-	// UseFunc same as "Use" but it accepts dynamic functions as its "handlersFn" input.
-	// See `OnErrorFunc`, `RegisterDependency`, `DoneFunc` and `HandleFunc` for more.
-	UseFunc(handlersFn ...interface{})
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
-	// DoneFunc same as "Done" but it accepts dynamic functions as its "handlersFn" input.
-	// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `HandleFunc` for more.
-	DoneFunc(handlersFn ...interface{})
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 	// and the execution rules.
 	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
@@ -107,53 +103,6 @@ type Party interface {
 	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
 	// Available values are: RouteOverride (the default one), RouteSkip and RouteError.
 	SetRegisterRule(rule RouteRegisterRule) Party
-
-	// GetContainer returns the DI Container of this Party.
-	// Use it to manually convert functions or structs(controllers) to a Handler.
-	//
-	// See `OnErrorFunc`, `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-	GetContainer() *hero.Container
-	// OnErrorFunc adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
-	// The "errorHandler" handles any error may occurred and returned
-	// during dependencies injection of the Party's hero handlers or from the handlers themselves.
-	//
-	// Same as:
-	// GetContainer().GetErrorHandler = func(ctx iris.Context) hero.ErrorHandler { return errorHandler }
-	//
-	// See `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-	OnErrorFunc(errorHandler func(context.Context, error))
-	// RegisterDependency adds a dependency.
-	// The value can be a single struct value or a function.
-	// Follow the rules:
-	// * <T>{structValue}
-	// * func(accepts <T>)                                 returns <D> or (<D>, error)
-	// * func(accepts iris.Context)                        returns <D> or (<D>, error)
-	// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
-	//
-	// A Dependency can accept a previous registered dependency and return a new one or the same updated.
-	// * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
-	// * func(acceptsPathParameter1 string, id uint64)     returns <T> or (<T>, error)
-	//
-	// Usage:
-	//
-	// - RegisterDependency(loggerService{prefix: "dev"})
-	// - RegisterDependency(func(ctx iris.Context) User {...})
-	// - RegisterDependency(func(User) OtherResponse {...})
-	//
-	// See `OnErrorFunc`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-	RegisterDependency(dependency interface{}) *hero.Dependency
-	// HandleFunc same as `HandleFunc` but it accepts one or more "handlersFn" functions which each one of them
-	// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
-	// any output result; like custom structs <T>, string, []byte, int, error,
-	// a combination of the above, hero.Result(hero.View | hero.Response) and more.
-	//
-	// It's common from a hero handler to not even need to accept a `Context`, for that reason,
-	// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
-	// To stop the execution and not continue to the next "handlersFn"
-	// the end-developer should output an error and return `iris.ErrStopExecution`.
-	//
-	// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
-	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
 
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
@@ -201,44 +150,52 @@ type Party interface {
 	// Returns the read-only route information.
 	None(path string, handlers ...context.Handler) *Route
 
-	// Get registers a route for the Get http method.
+	// Get registers a route for the Get HTTP Method.
 	//
 	// Returns the read-only route information.
 	Get(path string, handlers ...context.Handler) *Route
-	// Post registers a route for the Post http method.
+	// Post registers a route for the Post HTTP Method.
 	//
 	// Returns the read-only route information.
 	Post(path string, handlers ...context.Handler) *Route
-	// Put registers a route for the Put http method.
+	// Put registers a route for the Put HTTP Method.
 	//
 	// Returns the read-only route information.
 	Put(path string, handlers ...context.Handler) *Route
-	// Delete registers a route for the Delete http method.
+	// Delete registers a route for the Delete HTTP Method.
 	//
 	// Returns the read-only route information.
 	Delete(path string, handlers ...context.Handler) *Route
-	// Connect registers a route for the Connect http method.
+	// Connect registers a route for the Connect HTTP Method.
 	//
 	// Returns the read-only route information.
 	Connect(path string, handlers ...context.Handler) *Route
-	// Head registers a route for the Head http method.
+	// Head registers a route for the Head HTTP Method.
 	//
 	// Returns the read-only route information.
 	Head(path string, handlers ...context.Handler) *Route
-	// Options registers a route for the Options http method.
+	// Options registers a route for the Options HTTP Method.
 	//
 	// Returns the read-only route information.
 	Options(path string, handlers ...context.Handler) *Route
-	// Patch registers a route for the Patch http method.
+	// Patch registers a route for the Patch HTTP Method.
 	//
 	// Returns the read-only route information.
 	Patch(path string, handlers ...context.Handler) *Route
-	// Trace registers a route for the Trace http method.
+	// Trace registers a route for the Trace HTTP Method.
 	//
 	// Returns the read-only route information.
 	Trace(path string, handlers ...context.Handler) *Route
-	// Any registers a route for ALL of the http methods
-	// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
+	// Any registers a route for ALL of the HTTP methods:
+	// Get
+	// Post
+	// Put
+	// Delete
+	// Head
+	// Patch
+	// Options
+	// Connect
+	// Trace
 	Any(registeredPath string, handlers ...context.Handler) []*Route
 	// CreateRoutes returns a list of Party-based Routes.
 	// It does NOT registers the route. Use `Handle, Get...` methods instead.

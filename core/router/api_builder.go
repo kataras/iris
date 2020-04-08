@@ -21,7 +21,7 @@ import (
 // to store the "offline" routes.
 const MethodNone = "NONE"
 
-// AllMethods contains the valid http methods:
+// AllMethods contains the valid HTTP Methods:
 // "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
 // "PATCH", "OPTIONS", "TRACE".
 var AllMethods = []string{
@@ -112,6 +112,9 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 // APIBuilder the visible API for constructing the router
 // and child routers.
 type APIBuilder struct {
+	// the per-party APIBuilder with DI.
+	apiBuilderDI *APIBuilderDI
+
 	// the api builder global macros registry
 	macros *macro.Macros
 	// the api builder global handlers per status code registry (used for custom http errors)
@@ -152,8 +155,6 @@ type APIBuilder struct {
 	handlerExecutionRules ExecutionRules
 	// the per-party (and its children) route registration rule, see `SetRegisterRule`.
 	routeRegisterRule RouteRegisterRule
-	// the per-party (and its children gets a clone) DI container. See `HandleFunc`, `UseFunc`, `DoneFunc` too.
-	container *hero.Container
 }
 
 var _ Party = (*APIBuilder)(nil)
@@ -168,10 +169,19 @@ func NewAPIBuilder() *APIBuilder {
 		errors:            errgroup.New("API Builder"),
 		relativePath:      "/",
 		routes:            new(repository),
-		container:         hero.New(),
+	}
+
+	api.apiBuilderDI = &APIBuilderDI{
+		Self:      api,
+		Container: hero.New(),
 	}
 
 	return api
+}
+
+// DI returns the APIBuilder featured with Dependency Injection.
+func (api *APIBuilder) DI() *APIBuilderDI {
+	return api.apiBuilderDI
 }
 
 // GetRelPath returns the current party's relative path.
@@ -247,86 +257,6 @@ const (
 func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
 	api.routeRegisterRule = rule
 	return api
-}
-
-// GetContainer returns the DI Container of this Party.
-// Use it to manually convert functions or structs(controllers) to a Handler.
-//
-// See `OnErrorFunc`, `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-func (api *APIBuilder) GetContainer() *hero.Container {
-	return api.container
-}
-
-// OnErrorFunc adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
-// The "errorHandler" handles any error may occurred and returned
-// during dependencies injection of the Party's hero handlers or from the handlers themselves.
-//
-// Same as:
-// GetContainer().GetErrorHandler = func(ctx iris.Context) hero.ErrorHandler { return errorHandler }
-//
-// See `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-func (api *APIBuilder) OnErrorFunc(errorHandler func(context.Context, error)) {
-	errHandler := hero.ErrorHandlerFunc(errorHandler)
-	api.GetContainer().GetErrorHandler = func(ctx context.Context) hero.ErrorHandler {
-		return errHandler
-	}
-}
-
-// RegisterDependency adds a dependency.
-// The value can be a single struct value or a function.
-// Follow the rules:
-// * <T>{structValue}
-// * func(accepts <T>)                                 returns <D> or (<D>, error)
-// * func(accepts iris.Context)                        returns <D> or (<D>, error)
-// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
-//
-// A Dependency can accept a previous registered dependency and return a new one or the same updated.
-// * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
-// * func(acceptsPathParameter1 string, id uint64)     returns <T> or (<T>, error)
-//
-// Usage:
-//
-// - RegisterDependency(loggerService{prefix: "dev"})
-// - RegisterDependency(func(ctx iris.Context) User {...})
-// - RegisterDependency(func(User) OtherResponse {...})
-//
-// See `OnErrorFunc`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-func (api *APIBuilder) RegisterDependency(dependency interface{}) *hero.Dependency {
-	return api.container.Register(dependency)
-}
-
-// convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
-func (api *APIBuilder) convertHandlerFuncs(relativePath string, handlersFn ...interface{}) context.Handlers {
-	fullpath := api.relativePath + relativePath
-	paramsCount := macro.CountParams(fullpath, *api.macros)
-
-	handlers := make(context.Handlers, 0, len(handlersFn))
-	for _, h := range handlersFn {
-		handlers = append(handlers, api.container.HandlerWithParams(h, paramsCount))
-	}
-
-	// On that type of handlers the end-developer does not have to include the Context in the handler,
-	// so the ctx.Next is automatically called unless an `ErrStopExecution` returned (implementation inside hero pkg).
-	o := ExecutionOptions{Force: true}
-	o.apply(&handlers)
-
-	return handlers
-}
-
-// HandleFunc same as `HandleFunc` but it accepts one or more "handlersFn" functions which each one of them
-// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
-// any output result; like custom structs <T>, string, []byte, int, error,
-// a combination of the above, hero.Result(hero.View | hero.Response) and more.
-//
-// It's common from a hero handler to not even need to accept a `Context`, for that reason,
-// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
-// To stop the execution and not continue to the next "handlersFn"
-// the end-developer should output an error and return `iris.ErrStopExecution`.
-//
-// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
-func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
-	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
-	return api.Handle(method, relativePath, handlers...)
 }
 
 // Handle registers a route to the server's api.
@@ -578,11 +508,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	allowMethods := make([]string, len(api.allowMethods))
 	copy(allowMethods, api.allowMethods)
 
-	// attach a new Container with correct dynamic path parameter start index for input arguments
-	// based on the fullpath.
-	childContainer := api.container.Clone()
-
-	return &APIBuilder{
+	childAPI := &APIBuilder{
 		// global/api builder
 		macros:              api.macros,
 		routes:              api.routes,
@@ -597,8 +523,18 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		allowMethods:          allowMethods,
 		handlerExecutionRules: api.handlerExecutionRules,
 		routeRegisterRule:     api.routeRegisterRule,
-		container:             childContainer,
 	}
+
+	// attach a new Container with correct dynamic path parameter start index for input arguments
+	// based on the fullpath.
+	childContainer := api.apiBuilderDI.Container.Clone()
+
+	childAPI.apiBuilderDI = &APIBuilderDI{
+		Self:      childAPI,
+		Container: childContainer,
+	}
+
+	return childAPI
 }
 
 // PartyFunc same as `Party`, groups routes that share a base path or/and same handlers.
@@ -740,14 +676,6 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 	api.middleware = append(api.middleware, handlers...)
 }
 
-// UseFunc same as "Use" but it accepts dynamic functions as its "handlersFn" input.
-//
-// See `OnErrorFunc`, `RegisterDependency`, `DoneFunc` and `HandleFunc` for more.
-func (api *APIBuilder) UseFunc(handlersFn ...interface{}) {
-	handlers := api.convertHandlerFuncs("/", handlersFn...)
-	api.Use(handlers...)
-}
-
 // UseGlobal registers handlers that should run at the very beginning.
 // It prepends those handler(s) to all routes,
 // including all parties, subdomains.
@@ -772,13 +700,6 @@ func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 // The difference from .Use is that this/or these Handler(s) are being always running last.
 func (api *APIBuilder) Done(handlers ...context.Handler) {
 	api.doneHandlers = append(api.doneHandlers, handlers...)
-}
-
-// DoneFunc same as "Done" but it accepts dynamic functions as its "handlersFn" input.
-// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `HandleFunc` for more.
-func (api *APIBuilder) DoneFunc(handlersFn ...interface{}) {
-	handlers := api.convertHandlerFuncs("/", handlersFn...)
-	api.Done(handlers...)
 }
 
 // DoneGlobal registers handlers that should run at the very end.
@@ -822,71 +743,79 @@ func (api *APIBuilder) None(relativePath string, handlers ...context.Handler) *R
 	return api.Handle(MethodNone, relativePath, handlers...)
 }
 
-// Get registers a route for the Get http method.
+// Get registers a route for the Get HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Get(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodGet, relativePath, handlers...)
 }
 
-// Post registers a route for the Post http method.
+// Post registers a route for the Post HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Post(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodPost, relativePath, handlers...)
 }
 
-// Put registers a route for the Put http method.
+// Put registers a route for the Put HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Put(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodPut, relativePath, handlers...)
 }
 
-// Delete registers a route for the Delete http method.
+// Delete registers a route for the Delete HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Delete(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodDelete, relativePath, handlers...)
 }
 
-// Connect registers a route for the Connect http method.
+// Connect registers a route for the Connect HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Connect(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodConnect, relativePath, handlers...)
 }
 
-// Head registers a route for the Head http method.
+// Head registers a route for the Head HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Head(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodHead, relativePath, handlers...)
 }
 
-// Options registers a route for the Options http method.
+// Options registers a route for the Options HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Options(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodOptions, relativePath, handlers...)
 }
 
-// Patch registers a route for the Patch http method.
+// Patch registers a route for the Patch HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Patch(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodPatch, relativePath, handlers...)
 }
 
-// Trace registers a route for the Trace http method.
+// Trace registers a route for the Trace HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
 func (api *APIBuilder) Trace(relativePath string, handlers ...context.Handler) *Route {
 	return api.Handle(http.MethodTrace, relativePath, handlers...)
 }
 
-// Any registers a route for ALL of the http methods
-// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
+// Any registers a route for ALL of the HTTP methods:
+// Get
+// Post
+// Put
+// Delete
+// Head
+// Patch
+// Options
+// Connect
+// Trace
 func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (routes []*Route) {
 	for _, m := range AllMethods {
 		r := api.HandleMany(m, relativePath, handlers...)

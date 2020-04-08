@@ -44,7 +44,7 @@ func newApp(subRouter router.Party, container *hero.Container) *Application {
 //
 // Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
 func New(party router.Party) *Application {
-	return newApp(party, party.GetContainer())
+	return newApp(party, party.DI().Container)
 }
 
 // Configure creates a new controller and configures it,
