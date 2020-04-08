@@ -34,7 +34,7 @@ The most common scenario from a route to handle is to:
 - accept one or more path parameters and request data, a payload
 - send back a response, a payload (JSON, XML,...)
 
-The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route` and `Party.RegisterDependency` method.
+The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.DI() *APIBuilderDI` method which returns methods such as `DI.Handle(method, relativePath string, handlersFn ...interface{}) *Route` and `DI.RegisterDependency`.
 
 Look how clean your codebase can be when using Iris':
 
@@ -63,31 +63,26 @@ func handler(id int, in testInput) testOutput {
 
 func main() {
     app := iris.New()
-    app.HandleFunc(iris.MethodPost, "/{id:int}", handler)
+    app.DI().Handle(iris.MethodPost, "/{id:int}", handler)
     app.Listen(":5000", iris.WithOptimizations)
 }
 ```
 
-Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but if you ever need, you still have the control over those, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.GetContainer().GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents, you can change it through `Party#OnErrorFunc`. If you want to handle `testInput` otherwise then just add a `Party.RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go. Here is a quick list of the new Party's methods:
+Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but if you ever need, you still have the control over those, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.DI().Container.GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents, you can change it through `Party.DI().OnError`. If you want to handle `testInput` otherwise then just add a `Party.DI().RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go. Here is a quick list of the new Party.DI's fields and methods:
 
 ```go
-// GetContainer returns the DI Container of this Party.
+// Container holds the DI Container of this Party featured Dependency Injection.
 // Use it to manually convert functions or structs(controllers) to a Handler.
-//
-// See `OnErrorFunc`, `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-GetContainer() *hero.Container
+Container *hero.Container
 ```
+
 ```go
-// OnErrorFunc adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
+// OnError adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
 // The "errorHandler" handles any error may occurred and returned
 // during dependencies injection of the Party's hero handlers or from the handlers themselves.
-//
-// Same as:
-// GetContainer().GetErrorHandler = func(ctx iris.Context) hero.ErrorHandler { return errorHandler }
-//
-// See `RegisterDependency`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
-OnErrorFunc(errorHandler func(context.Context, error))
+OnError(errorHandler func(context.Context, error))
 ```
+
 ```go
 // RegisterDependency adds a dependency.
 // The value can be a single struct value or a function.
@@ -106,20 +101,18 @@ OnErrorFunc(errorHandler func(context.Context, error))
 // - RegisterDependency(loggerService{prefix: "dev"})
 // - RegisterDependency(func(ctx iris.Context) User {...})
 // - RegisterDependency(func(User) OtherResponse {...})
-//
-// See `OnErrorFunc`, `UseFunc`, `DoneFunc` and `HandleFunc` too.
 RegisterDependency(dependency interface{})
 ```
+
 ```go
-// UseFunc same as "Use" but it accepts dynamic functions as its "handlersFn" input.
-// See `OnErrorFunc`, `RegisterDependency`, `DoneFunc` and `HandleFunc` for more.
-UseFunc(handlersFn ...interface{})
-// DoneFunc same as "Done" but it accepts dynamic functions as its "handlersFn" input.
-// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `HandleFunc` for more.
-DoneFunc(handlersFn ...interface{})
+// Use same as a common Party's "Use" but it accepts dynamic functions as its "handlersFn" input.
+Use(handlersFn ...interface{})
+// Done same as a common Party's but it accepts dynamic functions as its "handlersFn" input.
+Done(handlersFn ...interface{})
 ```
+
 ```go
-// HandleFunc same as `HandleFunc` but it accepts one or more "handlersFn" functions which each one of them
+// Handle same as a common Party's `Handle` but it accepts one or more "handlersFn" functions which each one of them
 // can accept any input arguments that match with the Party's registered Container's `Dependencies` and
 // any output result; like custom structs <T>, string, []byte, int, error,
 // a combination of the above, hero.Result(hero.View | hero.Response) and more.
@@ -128,9 +121,7 @@ DoneFunc(handlersFn ...interface{})
 // the "handlersFn" will call `ctx.Next()` automatically when not called manually.
 // To stop the execution and not continue to the next "handlersFn"
 // the end-developer should output an error and return `iris.ErrStopExecution`.
-//
-// See `OnErrorFunc`, `RegisterDependency`, `UseFunc` and `DoneFunc` too.
-HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+Handle(method, relativePath string, handlersFn ...interface{}) *Route
 ```
 
 Prior to this version the `iris.Context` was the only one dependency that has been automatically binded to the handler's input or a controller's fields and methods, read below to see what types are automatically binded:
@@ -172,7 +163,7 @@ Other Improvements:
 
 - `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"  "` (two spaces) otherwise it is empty or the provided value.
 
-- Hero Handlers (and `app.HandleFunc`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now. 
+- Hero Handlers (and `app.DI().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now. 
 
 New Context Methods:
 

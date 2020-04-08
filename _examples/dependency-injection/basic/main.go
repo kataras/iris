@@ -22,6 +22,6 @@ func handler(id int, in testInput) testOutput {
 
 func main() {
 	app := iris.New()
-	app.HandleFunc(iris.MethodPost, "/{id:int}", handler)
+	app.DI().Post("/{id:int}", handler)
 	app.Listen(":8080")
 }
