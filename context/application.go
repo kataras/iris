@@ -20,6 +20,10 @@ type Application interface {
 	// I18nReadOnly returns the i18n's read-only features.
 	I18nReadOnly() I18nReadOnly
 
+	// Validate validates a value and returns nil if passed or
+	// the failure reason if not.
+	Validate(interface{}) error
+
 	// View executes and write the result of a template file to the writer.
 	//
 	// Use context.View to render templates to the client instead.

@@ -1,103 +1,26 @@
-// Package main shows the validator(latest, version 10) integration with Iris.
-// You can find more examples like this at: https://github.com/go-playground/validator/blob/master/_examples
+// Package main shows the validator(latest, version 10) integration with Iris' Context methods of
+// `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody`.
+//
+// You can find more examples of this 3rd-party library at:
+// https://github.com/go-playground/validator/blob/master/_examples
 package main
 
 import (
 	"fmt"
 
 	"github.com/kataras/iris/v12"
+
 	// $ go get github.com/go-playground/validator/v10
 	"github.com/go-playground/validator/v10"
 )
 
-// User contains user information.
-type User struct {
-	FirstName      string     `json:"fname"`
-	LastName       string     `json:"lname"`
-	Age            uint8      `json:"age" validate:"gte=0,lte=130"`
-	Email          string     `json:"email" validate:"required,email"`
-	FavouriteColor string     `json:"favColor" validate:"hexcolor|rgb|rgba"`
-	Addresses      []*Address `json:"addresses" validate:"required,dive,required"` // a person can have a home and cottage...
-}
-
-// Address houses a users address information.
-type Address struct {
-	Street string `json:"street" validate:"required"`
-	City   string `json:"city" validate:"required"`
-	Planet string `json:"planet" validate:"required"`
-	Phone  string `json:"phone" validate:"required"`
-}
-
-// Use a single instance of Validate, it caches struct info.
-var validate *validator.Validate
-
 func main() {
-	validate = validator.New()
-
-	// Register validation for 'User'
-	// NOTE: only have to register a non-pointer type for 'User', validator
-	// internally dereferences during it's type checks.
-	validate.RegisterStructValidation(UserStructLevelValidation, User{})
-
 	app := iris.New()
-	app.Post("/user", func(ctx iris.Context) {
-		var user User
-		if err := ctx.ReadJSON(&user); err != nil {
-			// Handle error.
-		}
+	app.Validator = validator.New()
 
-		// Returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
-		err := validate.Struct(user)
-		if err != nil {
+	app.Post("/user", postUser)
 
-			// This check is only needed when your code could produce
-			// an invalid value for validation such as interface with nil
-			// value most including myself do not usually have code like this.
-			if _, ok := err.(*validator.InvalidValidationError); ok {
-				ctx.StatusCode(iris.StatusInternalServerError)
-				ctx.WriteString(err.Error())
-				return
-			}
-
-			ctx.StatusCode(iris.StatusBadRequest)
-			for _, err := range err.(validator.ValidationErrors) {
-				fmt.Println()
-				fmt.Println(err.Namespace())
-				fmt.Println(err.Field())
-				fmt.Println(err.StructNamespace()) // Can differ when a custom TagNameFunc is registered or.
-				fmt.Println(err.StructField())     // By passing alt name to ReportError like below.
-				fmt.Println(err.Tag())
-				fmt.Println(err.ActualTag())
-				fmt.Println(err.Kind())
-				fmt.Println(err.Type())
-				fmt.Println(err.Value())
-				fmt.Println(err.Param())
-				fmt.Println()
-
-				// Or collect these as json objects
-				// and send back to the client the collected errors via ctx.JSON
-				// {
-				// 	"namespace":        err.Namespace(),
-				// 	"field":            err.Field(),
-				// 	"struct_namespace": err.StructNamespace(),
-				// 	"struct_field":     err.StructField(),
-				// 	"tag":              err.Tag(),
-				// 	"actual_tag":       err.ActualTag(),
-				// 	"kind":             err.Kind().String(),
-				// 	"type":             err.Type().String(),
-				// 	"value":            fmt.Sprintf("%v", err.Value()),
-				// 	"param":            err.Param(),
-				// }
-			}
-
-			// from here you can create your own error messages in whatever language you wish.
-			return
-		}
-
-		// save user to database.
-	})
-
-	// use Postman or whatever to do a POST request
+	// Use Postman or any tool to perform a POST request
 	// to the http://localhost:8080/user with RAW BODY:
 	/*
 		{
@@ -114,29 +37,95 @@ func main() {
 			}]
 		}
 	*/
-	// Content-Type to application/json (optionally but good practise).
-	// This request will fail due to the empty `User.FirstName` (fname in json)
-	// and `User.LastName` (lname in json).
-	// Check your iris' application terminal output.
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	/* The response should be:
+	{
+	  "fields": [
+	    {
+	      "tag": "required",
+	      "namespace": "User.FirstName",
+	      "kind": "string",
+	      "type": "string",
+	      "value": "",
+	      "param": ""
+	    },
+	    {
+	      "tag": "required",
+	      "namespace": "User.LastName",
+	      "kind": "string",
+	      "type": "string",
+	      "value": "",
+	      "param": ""
+	    }
+	  ]
+	}
+	*/
+	app.Listen(":8080")
 }
 
-// UserStructLevelValidation contains custom struct level validations that don't always
-// make sense at the field validation level. For Example this function validates that either
-// FirstName or LastName exist; could have done that with a custom field validation but then
-// would have had to add it to both fields duplicating the logic + overhead, this way it's
-// only validated once.
-//
-// NOTE: you may ask why wouldn't I just do this outside of validator, because doing this way
-// hooks right into validator and you can combine with validation tags and still have a
-// common error output format.
-func UserStructLevelValidation(sl validator.StructLevel) {
-	user := sl.Current().Interface().(User)
+// User contains user information.
+type User struct {
+	FirstName      string     `json:"fname" validate:"required"`
+	LastName       string     `json:"lname" validate:"required"`
+	Age            uint8      `json:"age" validate:"gte=0,lte=130"`
+	Email          string     `json:"email" validate:"required,email"`
+	FavouriteColor string     `json:"favColor" validate:"hexcolor|rgb|rgba"`
+	Addresses      []*Address `json:"addresses" validate:"required,dive,required"` // a User can have a home and cottage...
+}
 
-	if len(user.FirstName) == 0 && len(user.LastName) == 0 {
-		sl.ReportError(user.FirstName, "FirstName", "fname", "fnameorlname", "")
-		sl.ReportError(user.LastName, "LastName", "lname", "fnameorlname", "")
+// Address houses a users address information.
+type Address struct {
+	Street string `json:"street" validate:"required"`
+	City   string `json:"city" validate:"required"`
+	Planet string `json:"planet" validate:"required"`
+	Phone  string `json:"phone" validate:"required"`
+}
+
+type validationError struct {
+	ActualTag string `json:"tag"`
+	Namespace string `json:"namespace"`
+	Kind      string `json:"kind"`
+	Type      string `json:"type"`
+	Value     string `json:"value"`
+	Param     string `json:"param"`
+}
+
+type errorsResponse struct {
+	ValidationErrors []validationError `json:"fields,omitempty"`
+}
+
+func wrapValidationErrors(errs validator.ValidationErrors) errorsResponse {
+	validationErrors := make([]validationError, 0, len(errs))
+	for _, validationErr := range errs {
+		validationErrors = append(validationErrors, validationError{
+			ActualTag: validationErr.ActualTag(),
+			Namespace: validationErr.Namespace(),
+			Kind:      validationErr.Kind().String(),
+			Type:      validationErr.Type().String(),
+			Value:     fmt.Sprintf("%v", validationErr.Value()),
+			Param:     validationErr.Param(),
+		})
 	}
 
-	// plus can to more, even with different tag than "fnameorlname".
+	return errorsResponse{
+		ValidationErrors: validationErrors,
+	}
+}
+
+func postUser(ctx iris.Context) {
+	var user User
+	err := ctx.ReadJSON(&user)
+	if err != nil {
+		if errs, ok := err.(validator.ValidationErrors); ok {
+			response := wrapValidationErrors(errs)
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.JSON(response)
+			return
+		}
+
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	ctx.JSON(iris.Map{"message": "OK"})
 }

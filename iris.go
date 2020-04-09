@@ -155,6 +155,9 @@ type Application struct {
 	// See `Context#Tr` method for request-based translations.
 	I18n *i18n.I18n
 
+	// Validator is the request body validator, defaults to nil.
+	Validator context.Validator
+
 	// view engine
 	view view.View
 	// used for build
@@ -307,6 +310,33 @@ func (app *Application) Logger() *golog.Logger {
 // See `I18n` method for more.
 func (app *Application) I18nReadOnly() context.I18nReadOnly {
 	return app.I18n
+}
+
+// Validate validates a value and returns nil if passed or
+// the failure reason if does not.
+func (app *Application) Validate(v interface{}) error {
+	if app.Validator == nil {
+		return nil
+	}
+
+	// val := reflect.ValueOf(v)
+	// if val.Kind() == reflect.Ptr && !val.IsNil() {
+	// 	val = val.Elem()
+	// }
+
+	// if val.Kind() == reflect.Struct && val.Type() != timeType {
+	// 	return app.Validator.Struct(v)
+	// }
+
+	// no need to check the kind, underline lib does it but in the future this may change (look above).
+	err := app.Validator.Struct(v)
+	if err != nil {
+		if !strings.HasPrefix(err.Error(), "validator: ") {
+			return err
+		}
+	}
+
+	return nil
 }
 
 var (
