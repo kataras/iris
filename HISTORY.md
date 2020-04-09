@@ -159,11 +159,13 @@ Here is a preview of what the new Hero handlers look like:
 
 Other Improvements:
 
+- New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/http_request/read-json-struct-validation) example was updated.
+
 - A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
 
 - `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"  "` (two spaces) otherwise it is empty or the provided value.
 
-- Hero Handlers (and `app.DI().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now. 
+- Hero Handlers (and `app.DI().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
 
 New Context Methods:
 

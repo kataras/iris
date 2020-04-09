@@ -2602,6 +2602,15 @@ func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
 	return data, nil
 }
 
+// Validator is the validator for request body on Context methods such as
+// ReadJSON, ReadMsgPack, ReadXML, ReadYAML, ReadForm, ReadQuery, ReadBody and e.t.c.
+type Validator interface {
+	Struct(interface{}) error
+	// If community asks for more than a struct validation on JSON, XML, MsgPack, Form, Query and e.t.c
+	// then we should add more methods here, alternative approach would be to have a
+	// `Validator:Validate(interface{}) error` and a map[reflect.Kind]Validator instead.
+}
+
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
@@ -2636,7 +2645,12 @@ func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 	// we don't need to reduce the performance here by using the reflect.TypeOf method.
 
 	// f the v doesn't contains a self-body decoder use the custom unmarshaler to bind the body.
-	return unmarshaler.Unmarshal(rawData, outPtr)
+	err = unmarshaler.Unmarshal(rawData, outPtr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Application().Validate(outPtr)
 }
 
 func (ctx *context) shouldOptimize() bool {
@@ -2687,7 +2701,12 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 		return nil
 	}
 
-	return schema.DecodeForm(values, formObject)
+	err := schema.DecodeForm(values, formObject)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Application().Validate(formObject)
 }
 
 // ReadQuery binds url query to "ptr". The struct field tag is "url".
@@ -2699,7 +2718,12 @@ func (ctx *context) ReadQuery(ptr interface{}) error {
 		return nil
 	}
 
-	return schema.DecodeQuery(values, ptr)
+	err := schema.DecodeQuery(values, ptr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Application().Validate(ptr)
 }
 
 // ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
@@ -2719,7 +2743,12 @@ func (ctx *context) ReadMsgPack(ptr interface{}) error {
 		return err
 	}
 
-	return msgpack.Unmarshal(rawData, ptr)
+	err = msgpack.Unmarshal(rawData, ptr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Application().Validate(ptr)
 }
 
 // ReadBody binds the request body to the "ptr" depending on the HTTP Method and the Request's Content-Type.

@@ -246,7 +246,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### How to Read from `context.Request() *http.Request`
 
 - [Read JSON](http_request/read-json/main.go)
-    * [Struct Validation](http_request/read-json-struct-validation/main.go)
+    * [Struct Validation](http_request/read-json-struct-validation/main.go) **UPDaTE**
 - [Read XML](http_request/read-xml/main.go)
 - [Read MsgPack](http_request/read-msgpack/main.go) **NEW**
 - [Read YAML](http_request/read-yaml/main.go)
