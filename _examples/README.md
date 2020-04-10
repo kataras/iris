@@ -252,6 +252,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Read YAML](http_request/read-yaml/main.go)
 - [Read Form](http_request/read-form/main.go)
 - [Read Query](http_request/read-query/main.go)
+- [Read Body](http_request/read-body/main.go) **NEW**
 - [Read Custom per type](http_request/read-custom-per-type/main.go)
 - [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
 - [Read Many times](http_request/read-many/main.go)

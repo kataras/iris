@@ -3621,7 +3621,7 @@ func WriteXML(writer io.Writer, v interface{}, options XML, optimize bool) (int,
 	}
 
 	if !optimize && options.Indent == "" {
-		options.Indent = "  "
+		options.Indent = "  " // Two spaces for XML is the default indentation when not optimized.
 	}
 
 	if indent := options.Indent; indent != "" {
@@ -3941,7 +3941,7 @@ func (ctx *context) Negotiate(v interface{}) (int, error) {
 
 	if contentType == "" {
 		// If the server cannot serve any matching set,
-		// it can send back a 406 (Not Acceptable) error code.
+		// it SHOULD send back a 406 (Not Acceptable) error code.
 		ctx.StatusCode(http.StatusNotAcceptable)
 		return -1, ErrContentNotSupported
 	}
