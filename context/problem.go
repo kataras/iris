@@ -78,7 +78,7 @@ func (p Problem) updateURIsToAbs(ctx Context) {
 		return
 	}
 
-	if uriRef := p.getURI("type"); uriRef != "" {
+	if uriRef := p.getURI("type"); uriRef != "" && !strings.HasPrefix(uriRef, "http") {
 		p.Type(ctx.AbsoluteURI(uriRef))
 	}
 
@@ -127,7 +127,7 @@ func (p Problem) Key(key string, value interface{}) Problem {
 //
 // Empty URI or "about:blank", when used as a problem type,
 // indicates that the problem has no additional semantics beyond that of the HTTP status code.
-// When "about:blank" is used,
+// When "about:blank" is used and "title" was not set-ed,
 // the title is being automatically set the same as the recommended HTTP status phrase for that code
 // (e.g., "Not Found" for 404, and so on) on `Status` call.
 //
@@ -151,15 +151,16 @@ func (p Problem) Title(title string) Problem {
 func (p Problem) Status(statusCode int) Problem {
 	shouldOverrideTitle := !p.keyExists("title")
 
-	if !shouldOverrideTitle {
-		typ, found := p["type"]
-		shouldOverrideTitle = !found || isEmptyTypeURI(typ.(string))
-	}
+	// if !shouldOverrideTitle {
+	// 	typ, found := p["type"]
+	// 	shouldOverrideTitle = !found || isEmptyTypeURI(typ.(string))
+	// }
 
 	if shouldOverrideTitle {
 		// Set title by code.
 		p.Title(http.StatusText(statusCode))
 	}
+
 	return p.Key("status", statusCode)
 }
 

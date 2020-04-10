@@ -18,10 +18,14 @@ func main() {
 	app := iris.New()
 	app.Validator = validator.New()
 
-	app.Post("/user", postUser)
+	userRouter := app.Party("/user")
+	{
+		userRouter.Get("/validation-errors", resolveErrorsDocumentation)
+		userRouter.Post("/", postUser)
+	}
 
 	// Use Postman or any tool to perform a POST request
-	// to the http://localhost:8080/user with RAW BODY:
+	// to the http://localhost:8080/user with RAW BODY of:
 	/*
 		{
 			"fname": "",
@@ -38,26 +42,30 @@ func main() {
 		}
 	*/
 	/* The response should be:
-	{
-	  "fields": [
-	    {
-	      "tag": "required",
-	      "namespace": "User.FirstName",
-	      "kind": "string",
-	      "type": "string",
-	      "value": "",
-	      "param": ""
-	    },
-	    {
-	      "tag": "required",
-	      "namespace": "User.LastName",
-	      "kind": "string",
-	      "type": "string",
-	      "value": "",
-	      "param": ""
-	    }
-	  ]
-	}
+		{
+		  "title": "Validation error",
+	      "detail": "One or more fields failed to be validated",
+	      "type": "http://localhost:8080/user/validation-errors",
+	      "status": 400,
+		  "fields": [
+		    {
+		      "tag": "required",
+		      "namespace": "User.FirstName",
+		      "kind": "string",
+		      "type": "string",
+		      "value": "",
+		      "param": ""
+		    },
+		    {
+		      "tag": "required",
+		      "namespace": "User.LastName",
+		      "kind": "string",
+		      "type": "string",
+		      "value": "",
+		      "param": ""
+		    }
+		  ]
+		}
 	*/
 	app.Listen(":8080")
 }
@@ -89,11 +97,7 @@ type validationError struct {
 	Param     string `json:"param"`
 }
 
-type errorsResponse struct {
-	ValidationErrors []validationError `json:"fields,omitempty"`
-}
-
-func wrapValidationErrors(errs validator.ValidationErrors) errorsResponse {
+func wrapValidationErrors(errs validator.ValidationErrors) []validationError {
 	validationErrors := make([]validationError, 0, len(errs))
 	for _, validationErr := range errs {
 		validationErrors = append(validationErrors, validationError{
@@ -106,26 +110,37 @@ func wrapValidationErrors(errs validator.ValidationErrors) errorsResponse {
 		})
 	}
 
-	return errorsResponse{
-		ValidationErrors: validationErrors,
-	}
+	return validationErrors
 }
 
 func postUser(ctx iris.Context) {
 	var user User
 	err := ctx.ReadJSON(&user)
 	if err != nil {
+		// Handle the error, below you will find the right way to do that...
+
 		if errs, ok := err.(validator.ValidationErrors); ok {
-			response := wrapValidationErrors(errs)
-			ctx.StatusCode(iris.StatusBadRequest)
-			ctx.JSON(response)
+			// Wrap the errors with JSON format, the underline library returns the errors as interface.
+			validationErrors := wrapValidationErrors(errs)
+
+			// Fire an application/json+problem response and stop the handlers chain.
+			ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+				Title("Validation error").
+				Detail("One or more fields failed to be validated").
+				Type("/user/validation-errors").
+				Key("errors", validationErrors))
+
 			return
 		}
 
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		// It's probably an internal JSON error, let's dont give more info here.
+		ctx.StopWithStatus(iris.StatusInternalServerError)
 		return
 	}
 
 	ctx.JSON(iris.Map{"message": "OK"})
+}
+
+func resolveErrorsDocumentation(ctx iris.Context) {
+	ctx.WriteString("A page that should document to web developers or users of the API on how to resolve the validation errors")
 }
