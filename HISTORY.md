@@ -169,14 +169,18 @@ Other Improvements:
 
 New Context Methods:
 
+- `context.StopWithStatus(int)` stops the handlers chain and writes the status code
+- `context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
+- `context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
 - `context.Protobuf(proto.Message)` sends protobuf to the client
 - `context.MsgPack(interface{})` sends msgpack format data to the client
 - `context.ReadProtobuf(ptr)` binds request body to a proto message
 - `context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
-- `context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and ContentType
-- `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle.
+- `context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
+- `context.SetSameSite(http.SameSite)` to set cookie "SameSite" option (respectful by sessions too)
+- `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
 - `context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(context)`
-- `context.Controller() reflect.Value` returns the current MVC Controller value (when fired from inside a controller's method).
+- `context.Controller() reflect.Value` returns the current MVC Controller value.
 
 Breaking Changes:
 

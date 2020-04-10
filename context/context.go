@@ -249,12 +249,32 @@ type Context interface {
 	// Skip skips/ignores the next handler from the handlers chain,
 	// it should be used inside a middleware.
 	Skip()
-	// StopExecution if called then the following .Next calls are ignored,
+	// StopExecution stops the handlers chain of this request.
+	// Meaning that any following `Next` calls are ignored,
 	// as a result the next handlers in the chain will not be fire.
 	StopExecution()
-	// IsStopped checks and returns true if the current position of the Context is 255,
-	// means that the StopExecution() was called.
+	// IsStopped reports whether the current position of the context's handlers is -1,
+	// means that the StopExecution() was called at least once.
 	IsStopped() bool
+	// StopWithJSON stops the handlers chain and writes the "statusCode".
+	//
+	// If the status code is a failure one then
+	// it will also fire the specified error code handler.
+	StopWithStatus(statusCode int)
+	// StopWithJSON stops the handlers chain, writes the status code
+	// and sends a JSON response.
+	//
+	// If the status code is a failure one then
+	// it will also fire the specified error code handler.
+	StopWithJSON(statusCode int, jsonObject interface{})
+	// StopWithProblem stops the handlers chain, writes the status code
+	// and sends an application/problem+json response.
+	// See `iris.NewProblem` to build a "problem" value correctly.
+	//
+	// If the status code is a failure one then
+	// it will also fire the specified error code handler.
+	StopWithProblem(statusCode int, problem Problem)
+
 	// OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
 	// when the underlying connection has gone away.
 	//
@@ -1452,16 +1472,48 @@ func (ctx *context) Skip() {
 
 const stopExecutionIndex = -1 // I don't set to a max value because we want to be able to reuse the handlers even if stopped with .Skip
 
-// StopExecution if called then the following .Next calls are ignored,
+// StopExecution stops the handlers chain of this request.
+// Meaning that any following `Next` calls are ignored,
 // as a result the next handlers in the chain will not be fire.
 func (ctx *context) StopExecution() {
 	ctx.currentHandlerIndex = stopExecutionIndex
 }
 
-// IsStopped checks and returns true if the current position of the context is -1,
-// means that the StopExecution() was called.
+// IsStopped reports whether the current position of the context's handlers is -1,
+// means that the StopExecution() was called at least once.
 func (ctx *context) IsStopped() bool {
 	return ctx.currentHandlerIndex == stopExecutionIndex
+}
+
+// StopWithJSON stops the handlers chain and writes the "statusCode".
+//
+// If the status code is a failure one then
+// it will also fire the specified error code handler.
+func (ctx *context) StopWithStatus(statusCode int) {
+	ctx.StopExecution()
+	ctx.StatusCode(statusCode)
+}
+
+// StopWithJSON stops the handlers chain, writes the status code
+// and sends a JSON response.
+//
+// If the status code is a failure one then
+// it will also fire the specified error code handler.
+func (ctx *context) StopWithJSON(statusCode int, jsonObject interface{}) {
+	ctx.StopWithStatus(statusCode)
+	ctx.JSON(jsonObject)
+}
+
+// StopWithProblem stops the handlers chain, writes the status code
+// and sends an application/problem+json response.
+// See `iris.NewProblem` to build a "problem" value correctly.
+//
+// If the status code is a failure one then
+// it will also fire the specified error code handler.
+func (ctx *context) StopWithProblem(statusCode int, problem Problem) {
+	ctx.StopWithStatus(statusCode)
+	problem.Status(statusCode)
+	ctx.Problem(problem)
 }
 
 // OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
@@ -3641,7 +3693,13 @@ func (ctx *context) Problem(v interface{}, opts ...ProblemOptions) (int, error) 
 		// }
 		p.updateURIsToAbs(ctx)
 		code, _ := p.getStatus()
-		ctx.StatusCode(code)
+		if code == 0 { // get the current status code and set it to the problem.
+			code = ctx.GetStatusCode()
+			ctx.StatusCode(code)
+		} else {
+			// send the problem's status code
+			ctx.StatusCode(code)
+		}
 
 		if options.RenderXML {
 			ctx.contentTypeOnce(ContentXMLProblemHeaderValue, "")
