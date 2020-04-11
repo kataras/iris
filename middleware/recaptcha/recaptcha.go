@@ -39,18 +39,18 @@ var Client = netutil.Client(time.Duration(20 * time.Second))
 // Use `SiteVerify` to verify a request inside another handler if needed.
 func New(secret string) context.Handler {
 	return func(ctx context.Context) {
-		if SiteFerify(ctx, secret).Success {
+		if SiteVerify(ctx, secret).Success {
 			ctx.Next()
 		}
 	}
 }
 
-// SiteFerify accepts  context and the secret key(https://www.google.com/recaptcha)
+// SiteVerify accepts  context and the secret key(https://www.google.com/recaptcha)
 //  and returns the google's recaptcha response, if `response.Success` is true
 // then validation passed.
 //
 // Use `New` for middleware use instead.
-func SiteFerify(ctx context.Context, secret string) (response Response) {
+func SiteVerify(ctx context.Context, secret string) (response Response) {
 	generatedResponseID := ctx.FormValue("g-recaptcha-response")
 	if generatedResponseID == "" {
 		response.ErrorCodes = append(response.ErrorCodes,
@@ -111,7 +111,7 @@ var recaptchaForm = `<form action="%s" method="POST">
 // Method: "POST" | Path: "/contact"
 // func postContact(ctx context.Context) {
 // 	// [...]
-// 	response := recaptcha.SiteFerify(ctx, recaptchaSecret)
+// 	response := recaptcha.SiteVerify(ctx, recaptchaSecret)
 //
 // 	if response.Success {
 // 		// [your action here, i.e sendEmail(...)]
