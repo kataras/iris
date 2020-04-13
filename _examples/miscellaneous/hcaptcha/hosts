@@ -1,0 +1,3 @@
+# https://docs.hcaptcha.com/#localdev
+# Add to the end of your hosts file, e.g. on windows: C:/windows/system32/drivers/etc/hosts
+127.0.0.1 yourdomain.com
