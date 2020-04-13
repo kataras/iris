@@ -237,12 +237,12 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 	app.Post("/remember_me", func(ctx iris.Context) {
 		// re-sends the cookie with the new Expires and MaxAge fields,
 		// test checks that on same session id too.
-		sess.UpdateExpiration(ctx, 24*time.Hour)
+		sessions.Get(ctx).Man.UpdateExpiration(ctx, 24*time.Hour)
 		writeResponse(ctx)
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
-		sess.Destroy(ctx) // this will delete the cookie too.
+		sessions.Get(ctx).Man.Destroy(ctx) // this will delete the cookie too.
 	})
 
 	e := httptest.New(t, app, httptest.URL("http://example.com"))

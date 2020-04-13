@@ -36,7 +36,7 @@ func (p *provider) RegisterDatabase(db Database) {
 }
 
 // newSession returns a new session from sessionid
-func (p *provider) newSession(sid string, expires time.Duration) *Session {
+func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) *Session {
 	onExpire := func() {
 		p.Destroy(sid)
 	}
@@ -60,6 +60,7 @@ func (p *provider) newSession(sid string, expires time.Duration) *Session {
 
 	sess := &Session{
 		sid:      sid,
+		Man:      man,
 		provider: p,
 		flashes:  make(map[string]*flashMessage),
 		Lifetime: lifetime,
@@ -69,8 +70,8 @@ func (p *provider) newSession(sid string, expires time.Duration) *Session {
 }
 
 // Init creates the session  and returns it
-func (p *provider) Init(sid string, expires time.Duration) *Session {
-	newSession := p.newSession(sid, expires)
+func (p *provider) Init(man *Sessions, sid string, expires time.Duration) *Session {
+	newSession := p.newSession(man, sid, expires)
 	p.mu.Lock()
 	p.sessions[sid] = newSession
 	p.mu.Unlock()
@@ -110,7 +111,7 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 }
 
 // Read returns the store which sid parameter belongs
-func (p *provider) Read(sid string, expires time.Duration) *Session {
+func (p *provider) Read(man *Sessions, sid string, expires time.Duration) *Session {
 	p.mu.Lock()
 	if sess, found := p.sessions[sid]; found {
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session
@@ -120,7 +121,7 @@ func (p *provider) Read(sid string, expires time.Duration) *Session {
 	}
 	p.mu.Unlock()
 
-	return p.Init(sid, expires) // if not found create new
+	return p.Init(man, sid, expires) // if not found create new
 }
 
 func (p *provider) registerDestroyListener(ln DestroyListener) {
