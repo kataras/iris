@@ -84,7 +84,7 @@ func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOpt
 	if cookieValue == "" { // cookie doesn't exist, let's generate a session and set a cookie.
 		sid := s.config.SessionIDGenerator(ctx)
 
-		sess := s.provider.Init(sid, s.config.Expires)
+		sess := s.provider.Init(s, sid, s.config.Expires)
 		sess.isNew = s.provider.db.Len(sid) == 0
 
 		s.updateCookie(ctx, sid, s.config.Expires, cookieOptions...)
@@ -92,7 +92,7 @@ func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOpt
 		return sess
 	}
 
-	return s.provider.Read(cookieValue, s.config.Expires)
+	return s.provider.Read(s, cookieValue, s.config.Expires)
 }
 
 const contextSessionKey = "iris.session"

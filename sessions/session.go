@@ -15,11 +15,16 @@ type (
 	//
 	// This is what will be returned when sess := sessions.Start().
 	Session struct {
-		sid      string
-		isNew    bool
-		flashes  map[string]*flashMessage
-		mu       sync.RWMutex // for flashes.
+		sid     string
+		isNew   bool
+		flashes map[string]*flashMessage
+		mu      sync.RWMutex // for flashes.
+		// Lifetime it contains the expiration data, use it for read-only information.
+		// See `Sessions.UpdateExpiration` too.
 		Lifetime LifeTime
+		// Man is the sessions manager that this session created of.
+		Man *Sessions
+
 		provider *provider
 	}
 
@@ -37,7 +42,7 @@ type (
 // Note that this method does NOT remove the client's cookie, although
 // it should be reseted if new session is attached to that (client).
 //
-// Use the session's manager `Destroy(ctx)` in order to remove the cookie as well.
+// Use the session's manager `Destroy(ctx)` in order to remove the cookie instead.
 func (s *Session) Destroy() {
 	s.provider.deleteSession(s)
 }
