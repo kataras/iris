@@ -21,9 +21,9 @@ type (
 	}
 	// Entry is the entry of the context storage Store - .Values()
 	Entry struct {
-		Key       string
-		ValueRaw  interface{}
-		immutable bool // if true then it can't change by its caller.
+		Key       string      `json:"key" msgpack:"key" yaml:"Key" toml:"Value"`
+		ValueRaw  interface{} `json:"value" msgpack:"value" yaml:"Value" toml:"Value"`
+		immutable bool        // if true then it can't change by its caller.
 	}
 
 	// Store is a collection of key-value entries with immutability capabilities.
