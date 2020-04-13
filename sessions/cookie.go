@@ -36,7 +36,8 @@ func AddCookie(ctx context.Context, cookie *http.Cookie, reclaim bool) {
 	if reclaim {
 		ctx.Request().AddCookie(cookie)
 	}
-	ctx.SetCookie(cookie)
+
+	ctx.UpsertCookie(cookie)
 }
 
 // RemoveCookie deletes a cookie by it's name/key
