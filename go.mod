@@ -6,7 +6,6 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CloudyKit/jet/v3 v3.0.0
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
-	github.com/ajg/form v1.5.1 // indirect
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
 	github.com/dgraph-io/badger v1.6.0
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
@@ -15,9 +14,7 @@ require (
 	github.com/gavv/httpexpect v2.0.0+incompatible
 	github.com/golang/protobuf v1.3.5
 	github.com/gomodule/redigo v1.7.1-0.20190724094224-574c33c3df38
-	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.2.0
-	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/jade v1.1.3
@@ -30,19 +27,10 @@ require (
 	github.com/klauspost/compress v1.9.7
 	github.com/mediocregopher/radix/v3 v3.4.2
 	github.com/microcosm-cc/bluemonday v1.0.2
-	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.9.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.0.0-alpha.2
-	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect
-	github.com/yudai/gojsondiff v1.0.0 // indirect
-	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
 	golang.org/x/text v0.3.2
 	gopkg.in/ini.v1 v1.51.1
 	gopkg.in/yaml.v3 v3.0.0-20191120175047-4206685974f2
