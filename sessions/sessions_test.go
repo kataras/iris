@@ -2,6 +2,7 @@ package sessions_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
@@ -196,4 +197,60 @@ func TestFlashMessages(t *testing.T) {
 	// set again in order to take the single one ( we don't test Cookies.NotEmpty because httpexpect default conf reads that from the request-only)
 	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK)
 	e.GET("/get_single").Expect().Status(iris.StatusOK).Body().Equal(valueSingleValue)
+}
+
+func TestSessionsUpdateExpiration(t *testing.T) {
+	app := iris.New()
+
+	cookieName := "mycustomsessionid"
+
+	sess := sessions.New(sessions.Config{
+		Cookie:  cookieName,
+		Expires: 30 * time.Minute,
+	})
+
+	app.Use(sess.Handler())
+
+	type response struct {
+		SessionID string `json:"sessionID"`
+		Logged    bool   `json:"logged"`
+	}
+
+	var writeResponse = func(ctx context.Context) {
+		session := sessions.Get(ctx)
+		ctx.JSON(response{
+			SessionID: session.ID(),
+			Logged:    session.GetBooleanDefault("logged", false),
+		})
+	}
+
+	app.Get("/get", func(ctx context.Context) {
+		writeResponse(ctx)
+	})
+
+	app.Get("/set", func(ctx iris.Context) {
+		sessions.Get(ctx).Set("logged", true)
+		writeResponse(ctx)
+	})
+
+	app.Get("/remember_me", func(ctx iris.Context) {
+		// re-sends the cookie with the new Expires and MaxAge fields,
+		// test checks that on same session id too.
+		sess.UpdateExpiration(ctx, 24*time.Hour)
+		writeResponse(ctx)
+	})
+
+	e := httptest.New(t, app, httptest.URL("http://example.com"))
+
+	tt := e.GET("/set").Expect().Status(httptest.StatusOK)
+	tt.Cookie(cookieName).MaxAge().Equal(30 * time.Minute)
+	sessionID := tt.JSON().Object().Raw()["sessionID"].(string)
+
+	expectedResponse := response{SessionID: sessionID, Logged: true}
+	e.GET("/get").Expect().Status(httptest.StatusOK).
+		JSON().Equal(expectedResponse)
+
+	tt = e.GET("/remember_me").Expect().Status(httptest.StatusOK)
+	tt.Cookie(cookieName).MaxAge().Equal(24 * time.Hour)
+	tt.JSON().Equal(expectedResponse)
 }
