@@ -248,7 +248,7 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 	e := httptest.New(t, app, httptest.URL("http://example.com"))
 
 	tt := e.GET("/set").Expect().Status(httptest.StatusOK)
-	tt.Cookie(cookieName).MaxAge().Equal(30 * time.Minute)
+	tt.Cookie(cookieName).MaxAge().InRange(29*time.Minute, 30*time.Minute)
 	sessionID := tt.JSON().Object().Raw()["sessionID"].(string)
 
 	expectedResponse := response{SessionID: sessionID, Logged: true}
@@ -256,11 +256,11 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 		JSON().Equal(expectedResponse)
 
 	tt = e.POST("/remember_me").Expect().Status(httptest.StatusOK)
-	tt.Cookie(cookieName).MaxAge().Equal(24 * time.Hour)
+	tt.Cookie(cookieName).MaxAge().InRange(23*time.Hour, 24*time.Hour)
 	tt.JSON().Equal(expectedResponse)
 
 	// Test call `UpdateExpiration` when cookie is firstly created.
 	e.GET("/destroy").Expect().Status(httptest.StatusOK)
 	e.POST("/remember_me").Expect().Status(httptest.StatusOK).
-		Cookie(cookieName).MaxAge().Equal(24 * time.Hour)
+		Cookie(cookieName).MaxAge().InRange(23*time.Hour, 24*time.Hour)
 }
