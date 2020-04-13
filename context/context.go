@@ -933,6 +933,11 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	SetCookie(cookie *http.Cookie, options ...CookieOption)
+	// UpsertCookie adds a cookie to the response like `SetCookie` does
+	// but it will also perform a replacement of the cookie
+	// if already set by a previous `SetCookie` call.
+	// It reports whether the cookie is new (true) or an existing one was updated (false).
+	UpsertCookie(cookie *http.Cookie, options ...CookieOption) bool
 	// SetSameSite sets a same-site rule for cookies to set.
 	// SameSite allows a server to define a cookie attribute making it impossible for
 	// the browser to send this cookie along with cross-site requests. The main
@@ -4651,13 +4656,44 @@ func CookieDecode(decode CookieDecoder) CookieOption {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 func (ctx *context) SetCookie(cookie *http.Cookie, options ...CookieOption) {
-	cookie.SameSite = ctx.getSameSite()
+	cookie.SameSite = GetSameSite(ctx)
 
 	for _, opt := range options {
 		opt(cookie)
 	}
 
 	http.SetCookie(ctx.writer, cookie)
+}
+
+// UpsertCookie adds a cookie to the response like `SetCookie` does
+// but it will also perform a replacement of the cookie
+// if already set by a previous `SetCookie` call.
+// It reports whether the cookie is new (true) or an existing one was updated (false).
+func (ctx *context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) bool {
+	cookie.SameSite = GetSameSite(ctx)
+
+	for _, opt := range options {
+		opt(cookie)
+	}
+
+	header := ctx.ResponseWriter().Header()
+
+	if cookies := header["Set-Cookie"]; len(cookies) > 0 {
+		s := cookie.Name + "=" // name=?value
+		for i, c := range cookies {
+			if strings.HasPrefix(c, s) {
+				// We need to update the Set-Cookie (to update the expiration or any other cookie's properties).
+				// Probably the cookie is set and then updated in the first session creation
+				// (e.g. UpdateExpiration, see https://github.com/kataras/iris/issues/1485).
+				cookies[i] = cookie.String()
+				header["Set-Cookie"] = cookies
+				return false
+			}
+		}
+	}
+
+	header.Add("Set-Cookie", cookie.String())
+	return true
 }
 
 const sameSiteContextKey = "iris.cookie_same_site"
@@ -4673,7 +4709,8 @@ func (ctx *context) SetSameSite(sameSite http.SameSite) {
 	ctx.Values().Set(sameSiteContextKey, sameSite)
 }
 
-func (ctx *context) getSameSite() http.SameSite {
+// GetSameSite returns the saved-to-context cookie http.SameSite option.
+func GetSameSite(ctx Context) http.SameSite {
 	if v := ctx.Values().Get(sameSiteContextKey); v != nil {
 		sameSite, ok := v.(http.SameSite)
 		if ok {

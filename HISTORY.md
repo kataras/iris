@@ -169,6 +169,7 @@ Other Improvements:
 
 New Context Methods:
 
+- `context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
 - `context.StopWithStatus(int)` stops the handlers chain and writes the status code
 - `context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
 - `context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response

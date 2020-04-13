@@ -205,8 +205,9 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 	cookieName := "mycustomsessionid"
 
 	sess := sessions.New(sessions.Config{
-		Cookie:  cookieName,
-		Expires: 30 * time.Minute,
+		Cookie:       cookieName,
+		Expires:      30 * time.Minute,
+		AllowReclaim: true,
 	})
 
 	app.Use(sess.Handler())
@@ -233,11 +234,15 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 		writeResponse(ctx)
 	})
 
-	app.Get("/remember_me", func(ctx iris.Context) {
+	app.Post("/remember_me", func(ctx iris.Context) {
 		// re-sends the cookie with the new Expires and MaxAge fields,
 		// test checks that on same session id too.
 		sess.UpdateExpiration(ctx, 24*time.Hour)
 		writeResponse(ctx)
+	})
+
+	app.Get("/destroy", func(ctx iris.Context) {
+		sess.Destroy(ctx) // this will delete the cookie too.
 	})
 
 	e := httptest.New(t, app, httptest.URL("http://example.com"))
@@ -250,7 +255,12 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 	e.GET("/get").Expect().Status(httptest.StatusOK).
 		JSON().Equal(expectedResponse)
 
-	tt = e.GET("/remember_me").Expect().Status(httptest.StatusOK)
+	tt = e.POST("/remember_me").Expect().Status(httptest.StatusOK)
 	tt.Cookie(cookieName).MaxAge().Equal(24 * time.Hour)
 	tt.JSON().Equal(expectedResponse)
+
+	// Test call `UpdateExpiration` when cookie is firstly created.
+	e.GET("/destroy").Expect().Status(httptest.StatusOK)
+	e.POST("/remember_me").Expect().Status(httptest.StatusOK).
+		Cookie(cookieName).MaxAge().Equal(24 * time.Hour)
 }
