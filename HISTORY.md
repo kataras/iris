@@ -34,7 +34,7 @@ The most common scenario from a route to handle is to:
 - accept one or more path parameters and request data, a payload
 - send back a response, a payload (JSON, XML,...)
 
-The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.DI() *APIBuilderDI` method which returns methods such as `DI.Handle(method, relativePath string, handlersFn ...interface{}) *Route` and `DI.RegisterDependency`.
+The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.ConfigureContainer(builder ...func(*iris.APIContainer)) *APIContainer` method which returns methods such as `Handle(method, relativePath string, handlersFn ...interface{}) *Route` and `RegisterDependency`.
 
 Look how clean your codebase can be when using Iris':
 
@@ -63,12 +63,14 @@ func handler(id int, in testInput) testOutput {
 
 func main() {
     app := iris.New()
-    app.DI().Handle(iris.MethodPost, "/{id:int}", handler)
+    app.ConfigureContainer(func(api *iris.APIContainer) {
+        api.Post("/{id:int}", handler)
+    })
     app.Listen(":5000", iris.WithOptimizations)
 }
 ```
 
-Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but if you ever need, you still have the control over those, even errors from dependencies. Any error may occur from request-scoped dependencies or your own handler is dispatched through `Party.DI().Container.GetErrorHandler` which defaults to the `hero.DefaultErrorHandler` which sends a `400 Bad Request` response with the error's text as its body contents, you can change it through `Party.DI().OnError`. If you want to handle `testInput` otherwise then just add a `Party.DI().RegisterDependency(func(ctx iris.Context) testInput {...})` and you are ready to go. Here is a quick list of the new Party.DI's fields and methods:
+Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but if you ever need, you still have the control over those, even errors from dependencies. Here is a quick list of the new Party.ConfigureContainer()'s fields and methods:
 
 ```go
 // Container holds the DI Container of this Party featured Dependency Injection.
@@ -122,6 +124,10 @@ Done(handlersFn ...interface{})
 // To stop the execution and not continue to the next "handlersFn"
 // the end-developer should output an error and return `iris.ErrStopExecution`.
 Handle(method, relativePath string, handlersFn ...interface{}) *Route
+
+// Get registers a GET route, same as `Handle("GET", relativePath, handlersFn....)`.
+Get(relativePath string, handlersFn ...interface{}) *Route
+// and so on...
 ```
 
 Prior to this version the `iris.Context` was the only one dependency that has been automatically binded to the handler's input or a controller's fields and methods, read below to see what types are automatically binded:
@@ -165,7 +171,7 @@ Other Improvements:
 
 - `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"  "` (two spaces) otherwise it is empty or the provided value.
 
-- Hero Handlers (and `app.DI().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
+- Hero Handlers (and `app.ConfigureContainer().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
 
 New Context Methods:
 

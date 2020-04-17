@@ -22,6 +22,8 @@ func handler(id int, in testInput) testOutput {
 
 func main() {
 	app := iris.New()
-	app.DI().Post("/{id:int}", handler)
+	app.ConfigureContainer(func(api *iris.APIContainer) {
+		api.Post("/{id:int}", handler)
+	})
 	app.Listen(":8080")
 }

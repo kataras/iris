@@ -46,11 +46,10 @@ func newApp() *iris.Application {
 	// a JSON and 200 status code
 	// or 202 status code and empty body
 	// or a 409 status code and "my_error" body.
-	di := app.DI()
-	{
-		di.Use(middleware)
-		di.Post("/{id:int}", handler)
-	}
+	app.ConfigureContainer(func(api *iris.APIContainer) {
+		api.Use(middleware)
+		api.Post("/{id:int}", handler)
+	})
 
 	app.Configure(
 		iris.WithOptimizations, /* optional */

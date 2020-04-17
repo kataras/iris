@@ -1994,18 +1994,19 @@ func (ctx *context) GetContentType() string {
 	return ctx.writer.Header().Get(ContentTypeHeaderKey)
 }
 
-func trimHeaderValue(cType string) string {
-	for i, char := range cType {
+// TrimHeaderValue returns the "v[0:first space or semicolon]".
+func TrimHeaderValue(v string) string {
+	for i, char := range v {
 		if char == ' ' || char == ';' {
-			return cType[:i]
+			return v[:i]
 		}
 	}
-	return cType
+	return v
 }
 
 // GetContentType returns the request's header value of "Content-Type".
 func (ctx *context) GetContentTypeRequested() string {
-	return trimHeaderValue(ctx.GetHeader(ContentTypeHeaderKey))
+	return TrimHeaderValue(ctx.GetHeader(ContentTypeHeaderKey))
 }
 
 // GetContentLength returns the request's header value of "Content-Length".

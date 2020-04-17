@@ -118,8 +118,8 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 	// That way the above will work as expected:
 	// 1. mvc.New(app.Party("/path/{firstparam}")).Handle(....Controller.GetBy(secondparam string))
 	// 2. mvc.New(app.Party("/path/{firstparam}/{secondparam}")).Handle(...Controller.GetBy(firstparam, secondparam string))
-	// 3. usersRouter := app.Party("/users/{id:uint64}"); usersRouter.DI().Handle(method, "/", handler(id uint64))
-	// 4. usersRouter.Party("/friends").DI().Handle(method, "/{friendID:uint64}", handler(friendID uint64))
+	// 3. usersRouter := app.Party("/users/{id:uint64}"); usersRouter.ConfigureContainer().Handle(method, "/", handler(id uint64))
+	// 4. usersRouter.Party("/friends").ConfigureContainer().Handle(method, "/{friendID:uint64}", handler(friendID uint64))
 	//
 	// Therefore, count the inputs that can be path parameters first.
 	shouldBindParams := make(map[int]struct{})

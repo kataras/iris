@@ -83,6 +83,11 @@ type (
 	//
 	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
 	Party = router.Party
+	// APIContainer is a wrapper of a common `Party` featured by Dependency Injection.
+	// See `Party.ConfigureContainer` for more.
+	//
+	// A shortcut for the `core/router#APIContainer`.
+	APIContainer = router.APIContainer
 	// DirOptions contains the optional settings that
 	// `FileServer` and `Party#HandleDir` can use to serve files and assets.
 	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/kataras/iris/v12/context"
 
 	"github.com/fatih/structs"
@@ -323,21 +324,29 @@ func dispatchCommon(ctx context.Context,
 			return nil
 		}
 
-		var err error
+		switch context.TrimHeaderValue(contentType) {
+		case context.ContentXMLHeaderValue:
+			_, err := ctx.XML(v)
+			return err
+		case context.ContentYAMLHeaderValue:
+			_, err := ctx.YAML(v)
+			return err
+		case context.ContentProtobufHeaderValue:
+			msg, ok := v.(proto.Message)
+			if !ok {
+				return context.ErrContentNotSupported
+			}
 
-		if strings.HasPrefix(contentType, context.ContentJavascriptHeaderValue) {
-			_, err = ctx.JSONP(v)
-		} else if strings.HasPrefix(contentType, context.ContentXMLHeaderValue) {
-			_, err = ctx.XML(v)
-			// no need: context.XML{Indent: "  "}), after v12.2,
-			// if not iris.WithOptimizations passed and indent is empty then it sets it to two spaces for JSON, JSONP and XML,
-			// otherwise given indentation.
-		} else {
-			// defaults to json if content type is missing or its application/json.
-			_, err = ctx.JSON(v)
+			_, err := ctx.Protobuf(msg)
+			return err
+		case context.ContentMsgPackHeaderValue, context.ContentMsgPack2HeaderValue:
+			_, err := ctx.MsgPack(v)
+			return err
+		default:
+			// otherwise default to JSON.
+			_, err := ctx.JSON(v)
+			return err
 		}
-
-		return err
 	}
 
 	ctx.ContentType(contentType)

@@ -220,16 +220,16 @@ func TestHandlerPathParams(t *testing.T) {
 		return fmt.Sprintf("%d", id)
 	}
 
-	app.PartyFunc("/users", func(r iris.Party) {
-		r.DI().Get("/{id:uint64}", handler)
+	app.Party("/users").ConfigureContainer(func(api *iris.APIContainer) {
+		api.Get("/{id:uint64}", handler)
 	})
 
-	app.PartyFunc("/editors/{id:uint64}", func(r iris.Party) {
-		r.DI().Get("/", handler)
+	app.Party("/editors/{id:uint64}").ConfigureContainer(func(api *iris.APIContainer) {
+		api.Get("/", handler)
 	})
 
 	// should receive the last one, as we expected only one useful for MVC (there is a similar test there too).
-	app.DI().Get("/{ownerID:uint64}/book/{booKID:uint64}", handler)
+	app.ConfigureContainer().Get("/{ownerID:uint64}/book/{booKID:uint64}", handler)
 
 	e := httptest.New(t, app)
 
