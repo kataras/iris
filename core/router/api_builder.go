@@ -113,7 +113,7 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 // and child routers.
 type APIBuilder struct {
 	// the per-party APIBuilder with DI.
-	apiBuilderDI *APIBuilderDI
+	apiBuilderDI *APIContainer
 
 	// the api builder global macros registry
 	macros *macro.Macros
@@ -171,7 +171,7 @@ func NewAPIBuilder() *APIBuilder {
 		routes:            new(repository),
 	}
 
-	api.apiBuilderDI = &APIBuilderDI{
+	api.apiBuilderDI = &APIContainer{
 		Self:      api,
 		Container: hero.New(),
 	}
@@ -179,8 +179,22 @@ func NewAPIBuilder() *APIBuilder {
 	return api
 }
 
-// DI returns the APIBuilder featured with Dependency Injection.
-func (api *APIBuilder) DI() *APIBuilderDI {
+// ConfigureContainer accepts one or more functions that can be used
+// to configure dependency injection features of this Party
+// such as register dependency and register handlers that will automatically inject any valid dependency.
+// However, if the "builder" parameter is nil or not provided then it just returns the *APIContainer,
+// which automatically initialized on Party allocation.
+//
+// It returns the same `APIBuilder` featured with Dependency Injection.
+func (api *APIBuilder) ConfigureContainer(builder ...func(*APIContainer)) *APIContainer {
+	for _, b := range builder {
+		if b == nil {
+			continue
+		}
+
+		b(api.apiBuilderDI)
+	}
+
 	return api.apiBuilderDI
 }
 
@@ -529,7 +543,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	// based on the fullpath.
 	childContainer := api.apiBuilderDI.Container.Clone()
 
-	childAPI.apiBuilderDI = &APIBuilderDI{
+	childAPI.apiBuilderDI = &APIContainer{
 		Self:      childAPI,
 		Container: childContainer,
 	}

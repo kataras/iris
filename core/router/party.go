@@ -9,10 +9,16 @@ import (
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
-// Look the "APIBuilder" for its implementation.
+// Look the `APIBuilder` structure for its implementation.
 type Party interface {
-	// DI returns the APIBuilder featured with Dependency Injection.
-	DI() *APIBuilderDI
+	// ConfigureContainer accepts one or more functions that can be used
+	// to configure dependency injection features of this Party
+	// such as register dependency and register handlers that will automatically inject any valid dependency.
+	// However, if the "builder" parameter is nil or not provided then it just returns the *APIContainer,
+	// which automatically initialized on Party allocation.
+	//
+	// It returns the same `APIBuilder` featured with Dependency Injection.
+	ConfigureContainer(builder ...func(*APIContainer)) *APIContainer
 
 	// GetRelPath returns the current party's relative path.
 	// i.e:
