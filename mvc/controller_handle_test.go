@@ -175,3 +175,24 @@ func TestControllerHandleWithDynamicPathPrefix(t *testing.T) {
 	e.GET("/api/data/mymodel/myaction/myid").Expect().Status(httptest.StatusOK).
 		Body().Equal("mymodelmyactionmyid")
 }
+
+type testControllerGetBy struct{}
+
+func (c *testControllerGetBy) GetBy(age int64) *testCustomStruct {
+	return &testCustomStruct{
+		Age:  int(age),
+		Name: "name",
+	}
+}
+
+func TestControllerGetBy(t *testing.T) {
+	// Tests only GetBy.
+	app := iris.New()
+	app.Configure(iris.WithFireMethodNotAllowed)
+
+	New(app.Party("/project")).Handle(new(testControllerGetBy))
+	e := httptest.New(t, app)
+	e.GET("/project/42").Expect().Status(httptest.StatusOK).
+		JSON().Equal(&testCustomStruct{Age: 42, Name: "name"})
+	e.POST("/project/42").Expect().Status(httptest.StatusMethodNotAllowed)
+}
