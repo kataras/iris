@@ -1,6 +1,7 @@
 package sessions_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -263,4 +264,48 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 	e.GET("/destroy").Expect().Status(httptest.StatusOK)
 	e.POST("/remember_me").Expect().Status(httptest.StatusOK).
 		Cookie(cookieName).MaxAge().InRange(23*time.Hour, 24*time.Hour)
+}
+
+// go test -v -count=100 -run=TestSessionsUpdateExpirationConcurrently$
+// #1488
+func TestSessionsUpdateExpirationConcurrently(t *testing.T) {
+	cookieName := "mycustomsessionid"
+	sess := sessions.New(sessions.Config{
+		Cookie:       cookieName,
+		Expires:      30 * time.Minute,
+		AllowReclaim: true,
+	})
+
+	app := iris.New()
+	app.Use(sess.Handler())
+	app.Use(func(ctx iris.Context) {
+		// session will expire after 30 minute at the last visit
+		sess.UpdateExpiration(ctx, 30*time.Minute)
+		ctx.Next()
+	})
+
+	app.Get("/get", func(ctx iris.Context) {
+		ctx.WriteString(sessions.Get(ctx).ID())
+	})
+
+	e := httptest.New(t, app, httptest.URL("http://example.com"))
+
+	id := e.GET("/get").Expect().Status(httptest.StatusOK).Body().Raw()
+
+	i := 0
+	wg := sync.WaitGroup{}
+	wg.Add(1000)
+	for i < 1000 {
+		go func() {
+			tt := e.GET("/get").Expect().Status(httptest.StatusOK)
+			tt.Body().Equal(id)
+			tt.Cookie(cookieName).MaxAge().InRange(29*time.Minute, 30*time.Minute)
+			wg.Done()
+		}()
+		i++
+	}
+	wg.Wait()
+	tt := e.GET("/get").Expect()
+	tt.Status(httptest.StatusOK).Body().Equal(id)
+	tt.Cookie(cookieName).MaxAge().InRange(29*time.Minute, 30*time.Minute)
 }
