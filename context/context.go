@@ -2819,7 +2819,7 @@ func (ctx *context) ReadBody(ptr interface{}) error {
 	}
 
 	switch ctx.GetContentTypeRequested() {
-	case ContentXMLHeaderValue:
+	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
 		return ctx.ReadXML(ptr)
 	case ContentYAMLHeaderValue:
 		return ctx.ReadYAML(ptr)

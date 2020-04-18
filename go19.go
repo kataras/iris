@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/hero"
 )
 
 type (
@@ -88,6 +89,9 @@ type (
 	//
 	// A shortcut for the `core/router#APIContainer`.
 	APIContainer = router.APIContainer
+	// ResultHandler describes the function type which should serve the "v" struct value.
+	// See `APIContainer.UseResultHandler`.
+	ResultHandler = hero.ResultHandler
 	// DirOptions contains the optional settings that
 	// `FileServer` and `Party#HandleDir` can use to serve files and assets.
 	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.

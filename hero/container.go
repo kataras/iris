@@ -33,6 +33,10 @@ type Container struct {
 	// GetErrorHandler should return a valid `ErrorHandler` to handle bindings AND handler dispatch errors.
 	// Defaults to a functon which returns the `DefaultErrorHandler`.
 	GetErrorHandler func(context.Context) ErrorHandler // cannot be nil.
+
+	// resultHandlers is a list of functions that serve the return struct value of a function handler.
+	// Defaults to "defaultResultHandler" but it can be overridden.
+	resultHandlers []func(next ResultHandler) ResultHandler
 }
 
 // BuiltinDependencies is a list of builtin dependencies that are added on Container's initilization.
@@ -103,6 +107,7 @@ func (c *Container) Clone() *Container {
 	clonedDeps := make([]*Dependency, len(c.Dependencies))
 	copy(clonedDeps, c.Dependencies)
 	cloned.Dependencies = clonedDeps
+	cloned.resultHandlers = c.resultHandlers
 	return cloned
 }
 
@@ -147,6 +152,14 @@ func (c *Container) Register(dependency interface{}) *Dependency {
 	}
 
 	return d
+}
+
+// UseResultHandler adds a result handler to the Container.
+// A result handler can be used to inject the struct value
+// or to replace the default renderer.
+func (c *Container) UseResultHandler(handler func(next ResultHandler) ResultHandler) *Container {
+	c.resultHandlers = append(c.resultHandlers, handler)
+	return c
 }
 
 // Handler accepts a "handler" function which can accept any input arguments that match

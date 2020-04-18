@@ -64,6 +64,14 @@ func (api *APIContainer) RegisterDependency(dependency interface{}) *hero.Depend
 	return api.Container.Register(dependency)
 }
 
+// UseResultHandler adds a result handler to the Container.
+// A result handler can be used to inject the struct value
+// or to replace the default renderer.
+func (api *APIContainer) UseResultHandler(handler func(next hero.ResultHandler) hero.ResultHandler) *APIContainer {
+	api.Container.UseResultHandler(handler)
+	return api
+}
+
 // convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
 func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...interface{}) context.Handlers {
 	fullpath := api.Self.GetRelPath() + relativePath
