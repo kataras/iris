@@ -20,10 +20,21 @@ func handler(id int, in testInput) testOutput {
 	}
 }
 
+func configureAPI(api *iris.APIContainer) {
+	/* Here is how you can inject a return value from a handler,
+	   in this case the "testOutput":
+	api.UseResultHandler(func(next iris.ResultHandler) iris.ResultHandler {
+		return func(ctx iris.Context, v interface{}) error {
+			return next(ctx, map[string]interface{}{"injected": true})
+		}
+	})
+	*/
+
+	api.Post("/{id:int}", handler)
+}
+
 func main() {
 	app := iris.New()
-	app.ConfigureContainer(func(api *iris.APIContainer) {
-		api.Post("/{id:int}", handler)
-	})
+	app.ConfigureContainer(configureAPI)
 	app.Listen(":8080")
 }

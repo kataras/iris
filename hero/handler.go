@@ -79,6 +79,11 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 
 	bindings := getBindingsForFunc(v, c.Dependencies, paramsCount)
 
+	resultHandler := defaultResultHandler
+	for i, lidx := 0, len(c.resultHandlers)-1; i <= lidx; i++ {
+		resultHandler = c.resultHandlers[lidx-i](resultHandler)
+	}
+
 	return func(ctx context.Context) {
 		inputs := make([]reflect.Value, numIn)
 
@@ -102,7 +107,7 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 		}
 
 		outputs := v.Call(inputs)
-		if err := dispatchFuncResult(ctx, outputs); err != nil {
+		if err := dispatchFuncResult(ctx, outputs, resultHandler); err != nil {
 			c.GetErrorHandler(ctx).HandleError(ctx, err)
 		}
 	}

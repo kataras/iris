@@ -10,6 +10,46 @@ import (
 	"github.com/fatih/structs"
 )
 
+// ResultHandler describes the function type which should serve the "v" struct value.
+type ResultHandler func(ctx context.Context, v interface{}) error
+
+func defaultResultHandler(ctx context.Context, v interface{}) error {
+	if p, ok := v.(PreflightResult); ok {
+		if err := p.Preflight(ctx); err != nil {
+			return err
+		}
+	}
+
+	if d, ok := v.(Result); ok {
+		d.Dispatch(ctx)
+		return nil
+	}
+
+	switch context.TrimHeaderValue(ctx.GetContentType()) {
+	case context.ContentXMLHeaderValue, context.ContentXMLUnreadableHeaderValue:
+		_, err := ctx.XML(v)
+		return err
+	case context.ContentYAMLHeaderValue:
+		_, err := ctx.YAML(v)
+		return err
+	case context.ContentProtobufHeaderValue:
+		msg, ok := v.(proto.Message)
+		if !ok {
+			return context.ErrContentNotSupported
+		}
+
+		_, err := ctx.Protobuf(msg)
+		return err
+	case context.ContentMsgPackHeaderValue, context.ContentMsgPack2HeaderValue:
+		_, err := ctx.MsgPack(v)
+		return err
+	default:
+		// otherwise default to JSON.
+		_, err := ctx.JSON(v)
+		return err
+	}
+}
+
 // Result is a response dispatcher.
 // All types that complete this interface
 // can be returned as values from the method functions.
@@ -114,7 +154,7 @@ func dispatchErr(ctx context.Context, status int, err error) bool {
 // Result or (Result, error) and so on...
 //
 // where Get is an HTTP METHOD.
-func dispatchFuncResult(ctx context.Context, values []reflect.Value) error {
+func dispatchFuncResult(ctx context.Context, values []reflect.Value, handler ResultHandler) error {
 	if len(values) == 0 {
 		return nil
 	}
@@ -278,13 +318,13 @@ func dispatchFuncResult(ctx context.Context, values []reflect.Value) error {
 		}
 	}
 
-	return dispatchCommon(ctx, statusCode, contentType, content, custom, found)
+	return dispatchCommon(ctx, statusCode, contentType, content, custom, handler, found)
 }
 
 // dispatchCommon is being used internally to send
 // commonly used data to the response writer with a smart way.
 func dispatchCommon(ctx context.Context,
-	statusCode int, contentType string, content []byte, v interface{}, found bool) error {
+	statusCode int, contentType string, content []byte, v interface{}, handler ResultHandler, found bool) error {
 	// if we have a false boolean as a return value
 	// then skip everything and fire a not found,
 	// we even don't care about the given status code or the object or the content.
@@ -310,46 +350,13 @@ func dispatchCommon(ctx context.Context,
 		}
 	}
 
+	// write the content type now (internal check for empty value)
+	ctx.ContentType(contentType)
+
 	if v != nil {
-		if p, ok := v.(PreflightResult); ok {
-			if err := p.Preflight(ctx); err != nil {
-				return err
-			}
-		}
-
-		if d, ok := v.(Result); ok {
-			// write the content type now (internal check for empty value)
-			ctx.ContentType(contentType)
-			d.Dispatch(ctx)
-			return nil
-		}
-
-		switch context.TrimHeaderValue(contentType) {
-		case context.ContentXMLHeaderValue:
-			_, err := ctx.XML(v)
-			return err
-		case context.ContentYAMLHeaderValue:
-			_, err := ctx.YAML(v)
-			return err
-		case context.ContentProtobufHeaderValue:
-			msg, ok := v.(proto.Message)
-			if !ok {
-				return context.ErrContentNotSupported
-			}
-
-			_, err := ctx.Protobuf(msg)
-			return err
-		case context.ContentMsgPackHeaderValue, context.ContentMsgPack2HeaderValue:
-			_, err := ctx.MsgPack(v)
-			return err
-		default:
-			// otherwise default to JSON.
-			_, err := ctx.JSON(v)
-			return err
-		}
+		return handler(ctx, v)
 	}
 
-	ctx.ContentType(contentType)
 	// .Write even len(content) == 0 , this should be called in order to call the internal tryWriteHeader,
 	// it will not cost anything.
 	_, err := ctx.Write(content)
@@ -420,7 +427,7 @@ func (r Response) Dispatch(ctx context.Context) {
 		return
 	}
 
-	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, true)
+	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, defaultResultHandler, true)
 	dispatchErr(ctx, r.Code, err)
 }
 
