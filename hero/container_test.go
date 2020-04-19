@@ -97,3 +97,35 @@ func TestContainerInject(t *testing.T) {
 		t.Fatalf("[service] expected: %#+v but got: %#+v", expected3, got3)
 	}
 }
+
+func TestContainerUseResultHandler(t *testing.T) {
+	c := New()
+	resultLogger := func(next ResultHandler) ResultHandler {
+		return func(ctx iris.Context, v interface{}) error {
+			t.Logf("%#+v", v)
+			return next(ctx, v)
+		}
+	}
+
+	c.UseResultHandler(resultLogger)
+	expectedResponse := map[string]interface{}{"injected": true}
+	c.UseResultHandler(func(next ResultHandler) ResultHandler {
+		return func(ctx iris.Context, v interface{}) error {
+			return next(ctx, expectedResponse)
+		}
+	})
+	c.UseResultHandler(resultLogger)
+
+	handler := c.Handler(func(id int) testOutput {
+		return testOutput{
+			ID:   id,
+			Name: "kataras",
+		}
+	})
+
+	app := iris.New()
+	app.Get("/{id:int}", handler)
+
+	e := httptest.New(t, app)
+	e.GET("/42").Expect().Status(httptest.StatusOK).JSON().Equal(expectedResponse)
+}

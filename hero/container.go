@@ -155,8 +155,8 @@ func (c *Container) Register(dependency interface{}) *Dependency {
 }
 
 // UseResultHandler adds a result handler to the Container.
-// A result handler can be used to inject the struct value
-// or to replace the default renderer.
+// A result handler can be used to inject the returned struct value
+// from a request handler or to replace the default renderer.
 func (c *Container) UseResultHandler(handler func(next ResultHandler) ResultHandler) *Container {
 	c.resultHandlers = append(c.resultHandlers, handler)
 	return c
