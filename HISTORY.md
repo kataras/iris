@@ -82,7 +82,7 @@ Container *hero.Container
 // OnError adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
 // The "errorHandler" handles any error may occurred and returned
 // during dependencies injection of the Party's hero handlers or from the handlers themselves.
-OnError(errorHandler func(context.Context, error))
+OnError(errorHandler func(iris.Context, error))
 ```
 
 ```go
@@ -92,7 +92,6 @@ OnError(errorHandler func(context.Context, error))
 // * <T> {structValue}
 // * func(accepts <T>)                                 returns <D> or (<D>, error)
 // * func(accepts iris.Context)                        returns <D> or (<D>, error)
-// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
 //
 // A Dependency can accept a previous registered dependency and return a new one or the same updated.
 // * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
@@ -104,7 +103,19 @@ OnError(errorHandler func(context.Context, error))
 // - RegisterDependency(func(ctx iris.Context) User {...})
 // - RegisterDependency(func(User) OtherResponse {...})
 RegisterDependency(dependency interface{})
+
+// UseResultHandler adds a result handler to the Container.
+// A result handler can be used to inject the returned struct value
+// from a request handler or to replace the default renderer.
+UseResultHandler(handler func(next iris.ResultHandler) iris.ResultHandler)
 ```
+
+<details><summary>ResultHandler</summary>
+
+```go
+type ResultHandler func(ctx iris.Context, v interface{}) error
+```
+</details>
 
 ```go
 // Use same as a common Party's "Use" but it accepts dynamic functions as its "handlersFn" input.
@@ -169,7 +180,7 @@ Other Improvements:
 
 - A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
 
-- `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"  "` (two spaces) otherwise it is empty or the provided value.
+- `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"    "` (four spaces) and `"  "` respectfully otherwise it is empty or the provided value.
 
 - Hero Handlers (and `app.ConfigureContainer().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
 

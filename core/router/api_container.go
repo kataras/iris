@@ -47,7 +47,6 @@ func (api *APIContainer) OnError(errorHandler func(context.Context, error)) {
 // * <T>{structValue}
 // * func(accepts <T>)                                 returns <D> or (<D>, error)
 // * func(accepts iris.Context)                        returns <D> or (<D>, error)
-// * func(accepts1 iris.Context, accepts2 *hero.Input) returns <D> or (<D>, error)
 //
 // A Dependency can accept a previous registered dependency and return a new one or the same updated.
 // * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
@@ -65,8 +64,8 @@ func (api *APIContainer) RegisterDependency(dependency interface{}) *hero.Depend
 }
 
 // UseResultHandler adds a result handler to the Container.
-// A result handler can be used to inject the struct value
-// or to replace the default renderer.
+// A result handler can be used to inject the returned struct value
+// from a request handler or to replace the default renderer.
 func (api *APIContainer) UseResultHandler(handler func(next hero.ResultHandler) hero.ResultHandler) *APIContainer {
 	api.Container.UseResultHandler(handler)
 	return api
