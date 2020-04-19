@@ -441,10 +441,6 @@ Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/mast
 - [原生消息](websocket/native-messages/main.go) **更新**
 - [TLS支持](websocket/secure/README.md)
 
-### Typescript 自动化工具
-
-Typescript 自动化工具独立库： [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **包含相关示例**
-
 ### 大兄弟
 
 进一步学习可通过 [godocs](https://godoc.org/github.com/kataras/iris) 和 https://docs.iris-go.com

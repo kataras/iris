@@ -204,7 +204,8 @@ Breaking Changes:
 
 - `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449))
 - `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343))
-- `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead.
+- `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
+- **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
 
 # Su, 16 February 2020 | v12.1.8
 

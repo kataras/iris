@@ -357,12 +357,6 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 - [Native Messages](websocket/native-messages/main.go)
 - [TLS Enabled](websocket/secure/README.md)
 
-### Typescript Automation Tools
-
-typescript automation tools have their own repository: [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **it contains examples**
-
-> I'd like to tell you that you can use your favourite but I don't think you will find such a thing anywhere else.
-
 ### Hey, You
 
 Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) and https://docs.iris-go.com for a better understanding.
