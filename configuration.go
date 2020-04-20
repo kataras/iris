@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -347,6 +348,17 @@ func WithoutRemoteAddrHeader(headerName string) Configurator {
 			app.config.RemoteAddrHeaders = make(map[string]bool)
 		}
 		app.config.RemoteAddrHeaders[headerName] = false
+	}
+}
+
+// WithRemoteAddrPrivateSubnet adds a new private sub-net to be excluded from `context.RemoteAddr`.
+// See `WithRemoteAddrHeader` too.
+func WithRemoteAddrPrivateSubnet(startIP, endIP string) Configurator {
+	return func(app *Application) {
+		app.config.RemoteAddrPrivateSubnets = append(app.config.RemoteAddrPrivateSubnets, netutil.IPRange{
+			Start: net.IP(startIP),
+			End:   net.IP(endIP),
+		})
 	}
 }
 
@@ -857,6 +869,19 @@ type Configuration struct {
 	// Look `context.RemoteAddr()` for more.
 	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 
+	// RemoteAddrPrivateSubnets defines the private sub-networks.
+	// They are used to be compared against
+	// IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
+	// For details please navigate through: https://github.com/kataras/iris/issues/1453
+	// Defaults to an empty slice, usage:
+	//
+	// RemoteAddrPrivateSubnets {
+	//	{Start: "10.0.0.0", End: "10.255.255.255"},
+	//  {Start: "100.64.0.0", End: "100.127.255.255"},
+	//	}
+	//
+	// Look `context.RemoteAddr()` for more.
+	RemoteAddrPrivateSubnets []netutil.IPRange `json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want.
 	//
@@ -993,6 +1018,22 @@ func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
 	return c.RemoteAddrHeaders
 }
 
+// GetRemoteAddrPrivateSubnets returns the configuration's private sub-networks.
+// They are used to be compared against
+// IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
+// For details please navigate through: https://github.com/kataras/iris/issues/1453
+// Defaults to an empty slice, usage:
+//
+// RemoteAddrPrivateSubnets {
+//	{Start: "10.0.0.0", End: "10.255.255.255"},
+//  {Start: "100.64.0.0", End: "100.127.255.255"},
+//	}
+//
+// Look `context.RemoteAddr()` for more.
+func (c Configuration) GetRemoteAddrPrivateSubnets() []netutil.IPRange {
+	return c.RemoteAddrPrivateSubnets
+}
+
 // GetOther returns the Configuration#Other map.
 func (c Configuration) GetOther() map[string]interface{} {
 	return c.Other
@@ -1087,6 +1128,10 @@ func WithConfiguration(c Configuration) Configurator {
 			}
 		}
 
+		if v := c.RemoteAddrPrivateSubnets; len(v) > 0 {
+			main.RemoteAddrPrivateSubnets = v
+		}
+
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
 				main.Other = make(map[string]interface{}, len(v))
@@ -1116,12 +1161,13 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:        32 << 20, // 32MB
-		LocaleContextKey:     "iris.locale",
-		ViewLayoutContextKey: "iris.viewLayout",
-		ViewDataContextKey:   "iris.viewData",
-		RemoteAddrHeaders:    make(map[string]bool),
-		EnableOptimizations:  false,
-		Other:                make(map[string]interface{}),
+		PostMaxMemory:            32 << 20, // 32MB
+		LocaleContextKey:         "iris.locale",
+		ViewLayoutContextKey:     "iris.viewLayout",
+		ViewDataContextKey:       "iris.viewData",
+		RemoteAddrHeaders:        make(map[string]bool),
+		RemoteAddrPrivateSubnets: []netutil.IPRange{},
+		EnableOptimizations:      false,
+		Other:                    make(map[string]interface{}),
 	}
 }

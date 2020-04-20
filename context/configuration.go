@@ -1,5 +1,9 @@
 package context
 
+import (
+	"github.com/kataras/iris/v12/core/netutil"
+)
+
 // ConfigurationReadOnly can be implemented
 // by Configuration, it's being used inside the Context.
 // All methods that it contains should be "safe" to be called by the context
@@ -91,7 +95,19 @@ type ConfigurationReadOnly interface {
 	//
 	// Look `context.RemoteAddr()` for more.
 	GetRemoteAddrHeaders() map[string]bool
-
+	// GetRemoteAddrPrivateSubnets returns the configuration's private sub-networks.
+	// They are used to be compared against
+	// IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
+	// For details please navigate through: https://github.com/kataras/iris/issues/1453
+	// Defaults to an empty slice, usage:
+	//
+	// RemoteAddrPrivateSubnets {
+	//	{Start: "10.0.0.0", End: "10.255.255.255"},
+	//  {Start: "100.64.0.0", End: "100.127.255.255"},
+	//	}
+	//
+	// Look `context.RemoteAddr()` for more.
+	GetRemoteAddrPrivateSubnets() []netutil.IPRange
 	// GetOther returns the configuration.Other map.
 	GetOther() map[string]interface{}
 }

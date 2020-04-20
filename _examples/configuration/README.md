@@ -137,6 +137,21 @@ func main() {
 ## Builtin Configurators
 
 ```go
+
+// WithGlobalConfiguration will load the global yaml configuration file
+// from the home directory and it will set/override the whole app's configuration
+// to that file's contents. The global configuration file can be modified by user
+// and be used by multiple iris instances.
+//
+// This is useful when we run multiple iris servers that share the same
+// configuration, even with custom values at its "Other" field.
+//
+// Usage: `app.Configure(iris.WithGlobalConfiguration)` or `app.Run([iris.Runner], iris.WithGlobalConfiguration)`.
+WithGlobalConfiguration
+
+// variables for configurators don't need any receivers, functions
+// for them that need (helps code editors to recognise as variables without parenthesis completion).
+
 // WithoutServerError will cause to ignore the matched "errors"
 // from the main application's `Run` function.
 //
@@ -147,81 +162,128 @@ func main() {
 // See `Configuration#IgnoreServerErrors []string` too.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
-func WithoutServerError(errors ...error) Configurator
+WithoutServerError(errors ...error) Configurator
 
 // WithoutStartupLog turns off the information send, once, to the terminal when the main server is open.
-var WithoutStartupLog
+WithoutStartupLog
 
 // WithoutInterruptHandler disables the automatic graceful server shutdown
 // when control/cmd+C pressed.
-var WithoutInterruptHandler
+WithoutInterruptHandle
 
 // WithoutPathCorrection disables the PathCorrection setting.
 //
 // See `Configuration`.
-var WithoutPathCorrection
+WithoutPathCorrectio
+
+// WithoutPathCorrectionRedirection disables the PathCorrectionRedirection setting.
+//
+// See `Configuration`.
+WithoutPathCorrectionRedirection
 
 // WithoutBodyConsumptionOnUnmarshal disables BodyConsumptionOnUnmarshal setting.
 //
 // See `Configuration`.
-var WithoutBodyConsumptionOnUnmarshal
+WithoutBodyConsumptionOnUnmarshal
 
 // WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
 //
 // See `Configuration`.
-var WithoutAutoFireStatusCode
+WithoutAutoFireStatusCode
 
-// WithPathEscape enanbles the PathEscape setting.
+// WithPathEscape enables the PathEscape setting.
 //
 // See `Configuration`.
-var WithPathEscape
+WithPathEscape
 
 // WithOptimizations can force the application to optimize for the best performance where is possible.
 //
 // See `Configuration`.
-var WithOptimizations
+WithOptimizations
 
-// WithFireMethodNotAllowed enanbles the FireMethodNotAllowed setting.
+// WithFireMethodNotAllowed enables the FireMethodNotAllowed setting.
 //
 // See `Configuration`.
-var WithFireMethodNotAllowed
+WithFireMethodNotAllowed
 
 // WithTimeFormat sets the TimeFormat setting.
 //
 // See `Configuration`.
-func WithTimeFormat(timeformat string) Configurator
+WithTimeFormat(timeformat string) Configurator
 
 // WithCharset sets the Charset setting.
 //
 // See `Configuration`.
-func WithCharset(charset string) Configurator
+WithCharset(charset string) Configurator
+
+// WithPostMaxMemory sets the maximum post data size
+// that a client can send to the server, this differs
+// from the overral request body size which can be modified
+// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
+//
+// Defaults to 32MB or 32 << 20 if you prefer.
+WithPostMaxMemory(limit int64) Configurator
 
 // WithRemoteAddrHeader enables or adds a new or existing request header name
 // that can be used to validate the client's real IP.
 //
-// Existing values are:
-// "X-Real-Ip":             false,
-// "X-Forwarded-For":       false,
-// "CF-Connecting-IP": false
+// By-default no "X-" header is consired safe to be used for retrieving the
+// client's IP address, because those headers can manually change by
+// the client. But sometimes are useful e.g., when behind a proxy
+// you want to enable the "X-Forwarded-For" or when cloudflare
+// you want to enable the "CF-Connecting-IP", inneed you
+// can allow the `ctx.RemoteAddr()` to use any header
+// that the client may sent.
+//
+// Defaults to an empty map but an example usage is:
+// WithRemoteAddrHeader("X-Forwarded-For")
 //
 // Look `context.RemoteAddr()` for more.
-func WithRemoteAddrHeader(headerName string) Configurator
+WithRemoteAddrHeader(headerName string) Configurator
 
 // WithoutRemoteAddrHeader disables an existing request header name
-// that can be used to validate the client's real IP.
+// that can be used to validate and parse the client's real IP.
 //
-// Existing values are:
-// "X-Real-Ip":             false,
-// "X-Forwarded-For":       false,
-// "CF-Connecting-IP": false
+//
+// Keep note that RemoteAddrHeaders is already defaults to an empty map
+// so you don't have to call this Configurator if you didn't
+// add allowed headers via configuration or via `WithRemoteAddrHeader` before.
 //
 // Look `context.RemoteAddr()` for more.
-func WithoutRemoteAddrHeader(headerName string) Configurator
+WithoutRemoteAddrHeader(headerName string) Configurator
+
+// WithRemoteAddrPrivateSubnet adds a new private sub-net to be excluded from `context.RemoteAddr`.
+// See `WithRemoteAddrHeader` too.
+WithRemoteAddrPrivateSubnet(startIP, endIP string) Configurator
 
 // WithOtherValue adds a value based on a key to the Other setting.
 //
-// See `Configuration`.
-func WithOtherValue(key string, val interface{}) Configurator
+// See `Configuration.Other`.
+WithOtherValue(key string, val interface{}) Configurator
+
+// WithSitemap enables the sitemap generator.
+// Use the Route's `SetLastMod`, `SetChangeFreq` and `SetPriority` to modify
+// the sitemap's URL child element properties.
+//
+// It accepts a "startURL" input argument which
+// is the prefix for the registered routes that will be included in the sitemap.
+//
+// If more than 50,000 static routes are registered then sitemaps will be splitted and a sitemap index will be served in
+// /sitemap.xml.
+//
+// If `Application.I18n.Load/LoadAssets` is called then the sitemap will contain translated links for each static route.
+//
+// If the result does not complete your needs you can take control
+// and use the github.com/kataras/sitemap package to generate a customized one instead.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/sitemap.
+WithSitemap(startURL string) Configurator
+
+// WithTunneling is the `iris.Configurator` for the `iris.Configuration.Tunneling` field.
+// It's used to enable http tunneling for an Iris Application, per registered host
+//
+// Alternatively use the `iris.WithConfiguration(iris.Configuration{Tunneling: iris.TunnelingConfiguration{ ...}}}`.
+WithTunneling
 ```
 
 ## Custom Configurator

@@ -112,10 +112,13 @@ func createGlobalConfiguration(t *testing.T) {
 }
 
 func TestConfigurationGlobal(t *testing.T) {
+	t.Cleanup(func() {
+		os.Remove(homeConfigurationFilename(".yml"))
+	})
+
 	createGlobalConfiguration(t)
 
 	testConfigurationGlobal(t, WithGlobalConfiguration)
-	// globalConfigurationKeyword = "~""
 	testConfigurationGlobal(t, WithConfiguration(YAML(globalConfigurationKeyword)))
 }
 

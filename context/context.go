@@ -25,6 +25,7 @@ import (
 	"unsafe"
 
 	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/v12/core/netutil"
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
@@ -358,7 +359,8 @@ type Context interface {
 	//
 	// Look `Configuration.RemoteAddrHeaders`,
 	//      `Configuration.WithRemoteAddrHeader(...)`,
-	//      `Configuration.WithoutRemoteAddrHeader(...)` for more.
+	//      `Configuration.WithoutRemoteAddrHeader(...)`and
+	//      `Configuration.RemoteAddrPrivateSubnets` for more.
 	RemoteAddr() string
 	// GetHeader returns the request header's value based on its name.
 	GetHeader(name string) string
@@ -1753,25 +1755,20 @@ const xForwardedForHeaderKey = "X-Forwarded-For"
 //
 // Look `Configuration.RemoteAddrHeaders`,
 //      `Configuration.WithRemoteAddrHeader(...)`,
-//      `Configuration.WithoutRemoteAddrHeader(...)` for more.
+//      `Configuration.WithoutRemoteAddrHeader(...)` and
+//      `Configuration.RemoteAddrPrivateSubnets` for more.
 func (ctx *context) RemoteAddr() string {
 	remoteHeaders := ctx.Application().ConfigurationReadOnly().GetRemoteAddrHeaders()
+	privateSubnets := ctx.Application().ConfigurationReadOnly().GetRemoteAddrPrivateSubnets()
 
 	for headerName, enabled := range remoteHeaders {
-		if enabled {
-			headerValue := ctx.GetHeader(headerName)
-			// exception needed for 'X-Forwarded-For' only , if enabled.
-			if headerName == xForwardedForHeaderKey {
-				idx := strings.IndexByte(headerValue, ',')
-				if idx >= 0 {
-					headerValue = headerValue[0:idx]
-				}
-			}
+		if !enabled {
+			continue
+		}
 
-			realIP := strings.TrimSpace(headerValue)
-			if realIP != "" {
-				return realIP
-			}
+		ipAddresses := strings.Split(ctx.GetHeader(headerName), ",")
+		if ip, ok := netutil.GetIPAddress(ipAddresses, privateSubnets); ok {
+			return ip
 		}
 	}
 
