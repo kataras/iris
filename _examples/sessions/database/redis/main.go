@@ -42,9 +42,10 @@ func main() {
 	defer db.Close() // close the database connection if application errored.
 
 	sess := sessions.New(sessions.Config{
-		Cookie:       "sessionscookieid",
-		Expires:      0, // defaults to 0: unlimited life. Another good value is: 45 * time.Minute,
-		AllowReclaim: true,
+		Cookie:          "sessionscookieid",
+		Expires:         0, // defaults to 0: unlimited life. Another good value is: 45 * time.Minute,
+		AllowReclaim:    true,
+		CookieSecureTLS: true,
 	})
 
 	//
@@ -54,70 +55,73 @@ func main() {
 
 	// the rest of the code stays the same.
 	app := iris.New()
-	// app.Logger().SetLevel("debug")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
+
 	app.Get("/set", func(ctx iris.Context) {
-		s := sess.Start(ctx)
+		session := sessions.Get(ctx)
 		// set session values
-		s.Set("name", "iris")
+		session.Set("name", "iris")
 
 		// test if set here
-		ctx.Writef("All ok session value of the 'name' is: %s", s.GetString("name"))
+		ctx.Writef("All ok session value of the 'name' is: %s", session.GetString("name"))
 	})
 
 	app.Get("/set/{key}/{value}", func(ctx iris.Context) {
 		key, value := ctx.Params().Get("key"), ctx.Params().Get("value")
-		s := sess.Start(ctx)
+		session := sessions.Get(ctx)
 		// set session values
-		s.Set(key, value)
+		session.Set(key, value)
 
 		// test if set here
-		ctx.Writef("All ok session value of the '%s' is: %s", key, s.GetString(key))
+		ctx.Writef("All ok session value of the '%s' is: %s", key, session.GetString(key))
 	})
 
 	app.Get("/set/int/{key}/{value}", func(ctx iris.Context) {
 		key := ctx.Params().Get("key")
 		value, _ := ctx.Params().GetInt("value")
-		s := sess.Start(ctx)
+		session := sessions.Get(ctx)
 		// set session values
-		s.Set(key, value)
-		valueSet := s.Get(key)
+		session.Set(key, value)
+		valueSet := session.Get(key)
 		// test if set here
 		ctx.Writef("All ok session value of the '%s' is: %v", key, valueSet)
 	})
 
 	app.Get("/get/{key}", func(ctx iris.Context) {
 		key := ctx.Params().Get("key")
-		value := sess.Start(ctx).Get(key)
+		session := sessions.Get(ctx)
+		value := session.Get(key)
 
 		ctx.Writef("The '%s' on the /set was: %v", key, value)
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
 		// get a specific key, as string, if no found returns just an empty string
-		name := sess.Start(ctx).GetString("name")
+		session := sessions.Get(ctx)
+		name := session.GetString("name")
 
 		ctx.Writef("The 'name' on the /set was: %s", name)
 	})
 
 	app.Get("/get/{key}", func(ctx iris.Context) {
 		// get a specific key, as string, if no found returns just an empty string
-		name := sess.Start(ctx).GetString(ctx.Params().Get("key"))
+		session := sessions.Get(ctx)
+		name := session.GetString(ctx.Params().Get("key"))
 
 		ctx.Writef("The name on the /set was: %s", name)
 	})
 
 	app.Get("/delete", func(ctx iris.Context) {
 		// delete a specific key
-		sess.Start(ctx).Delete("name")
+		sessions.Get(ctx).Delete("name")
 	})
 
 	app.Get("/clear", func(ctx iris.Context) {
 		// removes all entries
-		sess.Start(ctx).Clear()
+		sessions.Get(ctx).Clear()
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
@@ -141,5 +145,5 @@ func main() {
 		}
 	})
 
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }

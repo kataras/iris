@@ -463,7 +463,7 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
 	// if allowMethods are empty, then simply register with the passed, main, method.
-	methods = append(api.allowMethods, methods...)
+	methods = removeDuplString(append(api.allowMethods, methods...))
 
 	routes := make([]*Route, len(methods))
 
@@ -485,6 +485,20 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	}
 
 	return routes
+}
+
+func removeDuplString(elements []string) (result []string) {
+	seen := make(map[string]struct{})
+
+	for v := range elements {
+		val := elements[v]
+		if _, ok := seen[val]; !ok {
+			seen[val] = struct{}{}
+			result = append(result, val)
+		}
+	}
+
+	return result
 }
 
 // Party groups routes which may have the same prefix and share same handlers,

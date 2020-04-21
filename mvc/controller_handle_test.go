@@ -185,14 +185,17 @@ func (c *testControllerGetBy) GetBy(age int64) *testCustomStruct {
 	}
 }
 
-func TestControllerGetBy(t *testing.T) {
-	// Tests only GetBy.
+func TestControllerGetByWithAllowMethods(t *testing.T) {
 	app := iris.New()
 	app.Configure(iris.WithFireMethodNotAllowed)
+	// ^ this 405 status will not be fired on POST: project/... because of
+	// .AllowMethods, but it will on PUT.
 
-	New(app.Party("/project")).Handle(new(testControllerGetBy))
+	New(app.Party("/project").AllowMethods(iris.MethodGet, iris.MethodPost)).Handle(new(testControllerGetBy))
+
 	e := httptest.New(t, app)
 	e.GET("/project/42").Expect().Status(httptest.StatusOK).
 		JSON().Equal(&testCustomStruct{Age: 42, Name: "name"})
-	e.POST("/project/42").Expect().Status(httptest.StatusMethodNotAllowed)
+	e.POST("/project/42").Expect().Status(httptest.StatusOK)
+	e.PUT("/project/42").Expect().Status(httptest.StatusMethodNotAllowed)
 }
