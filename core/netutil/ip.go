@@ -11,7 +11,7 @@ https://husobee.github.io/golang/ip-address/2015/12/17/remote-ip-go.html request
 https://github.com/kataras/iris/issues/1453
 */
 
-//IPRange is a structure that holds the start and end of a range of IP Addresses.
+// IPRange is a structure that holds the start and end of a range of IP Addresses.
 type IPRange struct {
 	Start net.IP `json:"start" yaml:"Start" toml"Start"`
 	End   net.IP `json:"end" yaml:"End" toml"End"`
