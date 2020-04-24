@@ -2,6 +2,7 @@ package mvc
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
@@ -81,6 +82,9 @@ type ControllerActivator struct {
 
 	// true if this controller listens and serves to websocket events.
 	servesWebsocket bool
+
+	// true to skip the internal "activate".
+	activated bool
 }
 
 // NameOf returns the package name + the struct type's name,
@@ -96,6 +100,14 @@ func NameOf(v interface{}) string {
 }
 
 func newControllerActivator(app *Application, controller interface{}) *ControllerActivator {
+	if controller == nil {
+		return nil
+	}
+
+	if c, ok := controller.(*ControllerActivator); ok {
+		return c
+	}
+
 	typ := reflect.TypeOf(controller)
 
 	c := &ControllerActivator{
@@ -225,6 +237,11 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 	return false
 }
 
+func (c *ControllerActivator) markAsWebsocket() {
+	c.servesWebsocket = true
+	c.attachInjector()
+}
+
 func (c *ControllerActivator) attachInjector() {
 	if c.injector == nil {
 		partyCountParams := macro.CountParams(c.app.Router.GetRelPath(), *c.app.Router.Macros())
@@ -232,12 +249,18 @@ func (c *ControllerActivator) attachInjector() {
 	}
 }
 
-func (c *ControllerActivator) markAsWebsocket() {
-	c.servesWebsocket = true
-	c.attachInjector()
+// Activated can be called to skip the internal method parsing.
+func (c *ControllerActivator) Activated() bool {
+	b := c.activated
+	c.activated = true
+	return b
 }
 
 func (c *ControllerActivator) activate() {
+	if c.Activated() {
+		return
+	}
+
 	c.parseMethods()
 }
 
@@ -314,10 +337,16 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 		return nil
 	}
 
+	wd, _ := os.Getwd()
+
 	for _, r := range routes {
-		// change the main handler's name in order to respect the controller's and give
-		// a proper debug message.
+		// change the main handler's name and file:line
+		// in order to respect the controller's and give
+		// a proper debug/log message.
 		r.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
+		if m, ok := c.Type.MethodByName(funcName); ok {
+			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func, wd)
+		}
 	}
 
 	// add this as a reserved method name in order to

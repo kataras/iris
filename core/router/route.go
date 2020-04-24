@@ -14,11 +14,12 @@ import (
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
-	Name       string         `json:"name"`   // "userRoute"
-	Method     string         `json:"method"` // "GET"
-	methodBckp string         // if Method changed to something else (which is possible at runtime as well, via RefreshRouter) then this field will be filled with the old one.
-	Subdomain  string         `json:"subdomain"` // "admin."
-	tmpl       macro.Template // Tmpl().Src: "/api/user/{id:uint64}"
+	Name        string         `json:"name"`        // "userRoute"
+	Description string         `json:"description"` // "lists a user"
+	Method      string         `json:"method"`      // "GET"
+	methodBckp  string         // if Method changed to something else (which is possible at runtime as well, via RefreshRouter) then this field will be filled with the old one.
+	Subdomain   string         `json:"subdomain"` // "admin."
+	tmpl        macro.Template // Tmpl().Src: "/api/user/{id:uint64}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	beginHandlers context.Handlers
@@ -322,7 +323,11 @@ func (r *Route) Trace() string {
 	if r.Subdomain != "" {
 		printfmt += fmt.Sprintf(" %s", r.Subdomain)
 	}
-	printfmt += fmt.Sprintf(" %s ", r.Tmpl().Src)
+	printfmt += fmt.Sprintf(" %s", r.Tmpl().Src)
+
+	if r.Description != "" {
+		printfmt += fmt.Sprintf(" (%s)", r.Description)
+	}
 
 	mainHandlerName := r.MainHandlerName
 	if !strings.HasSuffix(mainHandlerName, ")") {
@@ -330,9 +335,9 @@ func (r *Route) Trace() string {
 	}
 
 	if l := r.RegisteredHandlersLen(); l > 1 {
-		printfmt += fmt.Sprintf("-> %s and %d more", mainHandlerName, l-1)
+		printfmt += fmt.Sprintf(" -> %s and %d more", mainHandlerName, l-1)
 	} else {
-		printfmt += fmt.Sprintf("-> %s", mainHandlerName)
+		printfmt += fmt.Sprintf(" -> %s", mainHandlerName)
 	}
 
 	// printfmt := fmt.Sprintf("%s: %s >> %s", r.Method, r.Subdomain+r.Tmpl().Src, r.MainHandlerName)

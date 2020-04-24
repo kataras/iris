@@ -17,7 +17,7 @@ import (
 // By-default is the router algorithm.
 type RequestHandler interface {
 	// HandleRequest should handle the request based on the Context.
-	HandleRequest(context.Context)
+	HandleRequest(ctx context.Context)
 	// Build should builds the handler, it's being called on router's BuildRouter.
 	Build(provider RoutesProvider) error
 	// RouteExists reports whether a particular route exists.
@@ -25,8 +25,9 @@ type RequestHandler interface {
 }
 
 type routerHandler struct {
-	trees []*trie
-	hosts bool // true if at least one route contains a Subdomain.
+	trees  []*trie
+	hosts  bool // true if at least one route contains a Subdomain.
+	config context.ConfigurationReadOnly
 }
 
 var _ RequestHandler = &routerHandler{}
@@ -67,9 +68,10 @@ func (h *routerHandler) AddRoute(r *Route) error {
 
 // NewDefaultHandler returns the handler which is responsible
 // to map the request with a route (aka mux implementation).
-func NewDefaultHandler() RequestHandler {
-	h := &routerHandler{}
-	return h
+func NewDefaultHandler(config context.ConfigurationReadOnly) RequestHandler {
+	return &routerHandler{
+		config: config,
+	}
 }
 
 // RoutesProvider should be implemented by
@@ -128,6 +130,11 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	})
 
 	for _, r := range registeredRoutes {
+		if h.config != nil && h.config.GetForceLowercaseRouting() {
+			// only in that state, keep everyting else as end-developer registered.
+			r.Path = strings.ToLower(r.Path)
+		}
+
 		if r.Subdomain != "" {
 			h.hosts = true
 		}
@@ -188,20 +195,21 @@ func bindMultiParamTypesHandler(top *Route, r *Route) {
 func (h *routerHandler) HandleRequest(ctx context.Context) {
 	method := ctx.Method()
 	path := ctx.Path()
-	if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrection() {
+	config := h.config // ctx.Application().GetConfigurationReadOnly()
+
+	if !config.GetDisablePathCorrection() {
 		if len(path) > 1 && strings.HasSuffix(path, "/") {
 			// Remove trailing slash and client-permanent rule for redirection,
 			// if confgiuration allows that and path has an extra slash.
 
 			// update the new path and redirect.
-			r := ctx.Request()
+			u := ctx.Request().URL
 			// use Trim to ensure there is no open redirect due to two leading slashes
 			path = "/" + strings.Trim(path, "/")
-
-			r.URL.Path = path
-			if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrectionRedirection() {
+			u.Path = path
+			if !config.GetDisablePathCorrectionRedirection() {
 				// do redirect, else continue with the modified path without the last "/".
-				url := r.URL.String()
+				url := u.String()
 
 				// Fixes https://github.com/kataras/iris/issues/921
 				// This is caused for security reasons, imagine a payment shop,
@@ -238,7 +246,7 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				// localhost -> invalid
 				// sub.mydomain.com -> valid
 				// sub.localhost -> valid
-				serverHost := ctx.Application().ConfigurationReadOnly().GetVHost()
+				serverHost := config.GetVHost()
 				if serverHost == requestHost {
 					continue // it's not a subdomain, it's a full domain (with .com...)
 				}
@@ -266,7 +274,7 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		break
 	}
 
-	if ctx.Application().ConfigurationReadOnly().GetFireMethodNotAllowed() {
+	if config.GetFireMethodNotAllowed() {
 		for i := range h.trees {
 			t := h.trees[i]
 			// if `Configuration#FireMethodNotAllowed` is kept as defaulted(false) then this function will not

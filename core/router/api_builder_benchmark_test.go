@@ -84,7 +84,7 @@ func BenchmarkAPIBuilder(b *testing.B) {
 	paths := genPaths(routesLength, 15, 42)
 
 	api := NewAPIBuilder()
-	requestHandler := NewDefaultHandler()
+	requestHandler := NewDefaultHandler(nil)
 
 	b.ReportAllocs()
 	b.ResetTimer()

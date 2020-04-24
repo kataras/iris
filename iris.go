@@ -765,18 +765,24 @@ func (app *Application) Build() error {
 		if app.I18n.Loaded() {
 			// {{ tr "lang" "key" arg1 arg2 }}
 			app.view.AddFunc("tr", app.I18n.Tr)
-			app.WrapRouter(app.I18n.Wrapper())
+			app.Router.WrapRouter(app.I18n.Wrapper())
 		}
 
 		if !app.Router.Downgraded() {
 			// router
-
 			if err := app.tryInjectLiveReload(); err != nil {
 				rp.Errf("LiveReload: init: failed: %v", err)
 			}
 
+			if app.config.ForceLowercaseRouting {
+				app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+					r.URL.Path = strings.ToLower(r.URL.Path)
+					next(w, r)
+				})
+			}
+
 			// create the request handler, the default routing handler
-			routerHandler := router.NewDefaultHandler()
+			routerHandler := router.NewDefaultHandler(app.config)
 			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
 			if err != nil {
 				rp.Err(err)

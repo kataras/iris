@@ -176,6 +176,14 @@ Here is a preview of what the new Hero handlers look like:
 
 Other Improvements:
 
+- [gRPC](https://grpc.io/) features:
+    - New Router [Wrapper](middleware/grpc).
+    - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
+
+- Improved logging (with `app.Logger().SetLevel("debug")`) for MVC-registered routes.
+
+- New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
+
 - New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/http_request/read-json-struct-validation) example was updated.
 
 - A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
@@ -184,10 +192,16 @@ Other Improvements:
 
 - Hero Handlers (and `app.ConfigureContainer().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
 
-- Improve Remote Address parsing as requested at: https://github.com/kataras/iris/issues/1453. Add `Configuration.RemoteAddrPrivateSubnets` to exclude those addresses when fetched by `Configuration.RemoteAddrHeaders` through `context.RemoteAddr() string`.
+- Improve Remote Address parsing as requested at: [#1453](https://github.com/kataras/iris/issues/1453). Add `Configuration.RemoteAddrPrivateSubnets` to exclude those addresses when fetched by `Configuration.RemoteAddrHeaders` through `context.RemoteAddr() string`.
+
+- Fix [#1487](https://github.com/kataras/iris/issues/1487).
+
+- Fix [#1473](https://github.com/kataras/iris/issues/1473).
 
 New Context Methods:
 
+- `context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
+- `context.IsGRPC() bool` reports whether the request came from a gRPC client
 - `context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
 - `context.StopWithStatus(int)` stops the handlers chain and writes the status code
 - `context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response

@@ -10,7 +10,7 @@ func TestGRPCCompatible(t *testing.T) {
 	app := newApp()
 
 	e := httptest.New(t, app)
-	e.POST("/hello").WithJSON(map[string]string{"name": "makis"}).Expect().
+	e.POST("/helloworld.Greeter/SayHello").WithJSON(map[string]string{"name": "makis"}).Expect().
 		Status(httptest.StatusOK).
 		JSON().Equal(map[string]string{"message": "Hello makis"})
 }

@@ -6,7 +6,6 @@ import (
 	pb "github.com/kataras/iris/v12/_examples/mvc/grpc-compatible/helloworld"
 
 	"github.com/kataras/iris/v12"
-	grpcWrapper "github.com/kataras/iris/v12/middleware/grpc"
 	"github.com/kataras/iris/v12/mvc"
 
 	"google.golang.org/grpc"
@@ -23,7 +22,8 @@ func main() {
 	app := newApp()
 	app.Logger().SetLevel("debug")
 
-	// POST: https://localhost/hello
+	// The Iris server should ran under TLS (it's a gRPC requirement).
+	// POST: https://localhost:443/helloworld.greeter/sayhello
 	// with request data: {"name": "John"}
 	// and expected output: {"message": "Hello John"}
 	app.Run(iris.TLS(":443", "server.crt", "server.key"))
@@ -31,24 +31,28 @@ func main() {
 
 func newApp() *iris.Application {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
 
 	ctrl := &myController{}
 	// Register gRPC server.
 	grpcServer := grpc.NewServer()
 	pb.RegisterGreeterServer(grpcServer, ctrl)
 
-	// Register MVC application controller.
-	mvc.New(app).Handle(ctrl)
+	// serviceName := pb.File_helloworld_proto.Services().Get(0).FullName()
 
-	// Serve the gRPC server under the Iris HTTP webserver one,
-	// the Iris server should ran under TLS (it's a gRPC requirement).
-	app.WrapRouter(grpcWrapper.New(grpcServer))
+	// Register MVC application controller.
+	mvc.New(app).Handle(ctrl, mvc.GRPC{
+		Server:      grpcServer,           // Required.
+		ServiceName: "helloworld.Greeter", // Required.
+		Strict:      false,
+	})
+
 	return app
 }
 
 type myController struct{}
 
-// PostHello implements helloworld.GreeterServer
-func (c *myController) PostHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+// SayHello implements helloworld.GreeterServer.
+func (c *myController) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }

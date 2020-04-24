@@ -163,20 +163,14 @@ var _ RoutesProvider = (*APIBuilder)(nil) // passed to the default request handl
 // NewAPIBuilder creates & returns a new builder
 // which is responsible to build the API and the router handler.
 func NewAPIBuilder() *APIBuilder {
-	api := &APIBuilder{
+	return &APIBuilder{
 		macros:            macro.Defaults,
 		errorCodeHandlers: defaultErrorCodeHandlers(),
 		errors:            errgroup.New("API Builder"),
 		relativePath:      "/",
 		routes:            new(repository),
+		apiBuilderDI:      &APIContainer{Container: hero.New()},
 	}
-
-	api.apiBuilderDI = &APIContainer{
-		Self:      api,
-		Container: hero.New(),
-	}
-
-	return api
 }
 
 // ConfigureContainer accepts one or more functions that can be used
@@ -187,12 +181,14 @@ func NewAPIBuilder() *APIBuilder {
 //
 // It returns the same `APIBuilder` featured with Dependency Injection.
 func (api *APIBuilder) ConfigureContainer(builder ...func(*APIContainer)) *APIContainer {
-	for _, b := range builder {
-		if b == nil {
-			continue
-		}
+	if api.apiBuilderDI.Self == nil {
+		api.apiBuilderDI.Self = api
+	}
 
-		b(api.apiBuilderDI)
+	for _, b := range builder {
+		if b != nil {
+			b(api.apiBuilderDI)
+		}
 	}
 
 	return api.apiBuilderDI
@@ -463,7 +459,7 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
 	// if allowMethods are empty, then simply register with the passed, main, method.
-	methods = removeDuplString(append(api.allowMethods, methods...))
+	methods = removeDuplicates(append(api.allowMethods, methods...))
 
 	routes := make([]*Route, len(methods))
 
@@ -487,7 +483,7 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	return routes
 }
 
-func removeDuplString(elements []string) (result []string) {
+func removeDuplicates(elements []string) (result []string) {
 	seen := make(map[string]struct{})
 
 	for v := range elements {
@@ -551,15 +547,11 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		allowMethods:          allowMethods,
 		handlerExecutionRules: api.handlerExecutionRules,
 		routeRegisterRule:     api.routeRegisterRule,
-	}
-
-	// attach a new Container with correct dynamic path parameter start index for input arguments
-	// based on the fullpath.
-	childContainer := api.apiBuilderDI.Container.Clone()
-
-	childAPI.apiBuilderDI = &APIContainer{
-		Self:      childAPI,
-		Container: childContainer,
+		apiBuilderDI: &APIContainer{
+			// attach a new Container with correct dynamic path parameter start index for input arguments
+			// based on the fullpath.
+			Container: api.apiBuilderDI.Container.Clone(),
+		},
 	}
 
 	return childAPI

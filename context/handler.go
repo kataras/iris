@@ -1,6 +1,7 @@
 package context
 
 import (
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -27,18 +28,36 @@ type Handler func(Context)
 // See `Handler` for more.
 type Handlers []Handler
 
+func valueOf(v interface{}) reflect.Value {
+	if val, ok := v.(reflect.Value); ok {
+		return val
+	}
+
+	return reflect.ValueOf(v)
+}
+
 // HandlerName returns the handler's function name.
 // See `context.HandlerName` to get function name of the current running handler in the chain.
-func HandlerName(h Handler) string {
-	pc := reflect.ValueOf(h).Pointer()
+func HandlerName(h interface{}) string {
+	pc := valueOf(h).Pointer()
 	return runtime.FuncForPC(pc).Name()
 }
 
 // HandlerFileLine returns the handler's file and line information.
 // See `context.HandlerFileLine` to get the file, line of the current running handler in the chain.
-func HandlerFileLine(h Handler) (file string, line int) {
-	pc := reflect.ValueOf(h).Pointer()
+func HandlerFileLine(h interface{}) (file string, line int) {
+	pc := valueOf(h).Pointer()
 	return runtime.FuncForPC(pc).FileLine(pc)
+}
+
+// HandlerFileLineRel same as `HandlerFileLine` but it returns the path as relative to the "workingDir".
+func HandlerFileLineRel(h interface{}, workingDir string) (string, int) {
+	file, line := HandlerFileLine(h)
+	if relFile, err := filepath.Rel(workingDir, file); err == nil {
+		file = "./" + relFile
+	}
+
+	return file, line
 }
 
 // MainHandlerName tries to find the main handler than end-developer

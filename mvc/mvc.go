@@ -111,6 +111,15 @@ func (app *Application) Register(dependencies ...interface{}) *Application {
 	return app
 }
 
+// Option is an interface which does contain a single `Apply` method that accepts
+// a `ControllerActivator`. It can be passed on `Application.Handle` method to
+// mdoify the behavior right after the `BeforeActivation` state.
+//
+// See `GRPC` package-level structure too.
+type Option interface {
+	Apply(*ControllerActivator)
+}
+
 // Handle serves a controller for the current mvc application's Router.
 // It accept any custom struct which its functions will be transformed
 // to routes.
@@ -154,9 +163,12 @@ func (app *Application) Register(dependencies ...interface{}) *Application {
 // Result or (Result, error)
 // where Get is an HTTP Method func.
 //
+// Default behavior can be changed through second, variadic, variable "options",
+// e.g. Handle(controller, GRPC {Server: grpcServer, Strict: true})
+//
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
-func (app *Application) Handle(controller interface{}) *Application {
-	app.handle(controller)
+func (app *Application) Handle(controller interface{}, options ...Option) *Application {
+	app.handle(controller, options...)
 	return app
 }
 
@@ -195,7 +207,7 @@ func (app *Application) GetNamespaces() websocket.Namespaces {
 	return websocket.JoinConnHandlers(app.websocketControllers...).GetNamespaces()
 }
 
-func (app *Application) handle(controller interface{}) *ControllerActivator {
+func (app *Application) handle(controller interface{}, options ...Option) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
 	c := newControllerActivator(app, controller)
 
@@ -206,6 +218,12 @@ func (app *Application) handle(controller interface{}) *ControllerActivator {
 		BeforeActivation(BeforeActivation)
 	}); ok {
 		before.BeforeActivation(c)
+	}
+
+	for _, opt := range options {
+		if opt != nil {
+			opt.Apply(c)
+		}
 	}
 
 	c.activate()
