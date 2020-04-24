@@ -258,11 +258,19 @@ var WithoutAutoFireStatusCode = func(app *Application) {
 	app.config.DisableAutoFireStatusCode = true
 }
 
-// WithPathEscape enables the PathEscape setting.
+// WithPathEscape sets the EnablePathEscape setting to true.
 //
 // See `Configuration`.
 var WithPathEscape = func(app *Application) {
 	app.config.EnablePathEscape = true
+}
+
+// WithLowercaseRouting enables for lowercase routing by
+// setting the `ForceLowercaseRoutes` to true.
+//
+// See `Configuration`.
+var WithLowercaseRouting = func(app *Application) {
+	app.config.ForceLowercaseRouting = true
 }
 
 // WithOptimizations can force the application to optimize for the best performance where is possible.
@@ -744,7 +752,8 @@ type Configuration struct {
 	// Defaults to false.
 	DisableInterruptHandler bool `json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
 
-	// DisablePathCorrection corrects and redirects or executes directly the handler of
+	// DisablePathCorrection disables the correcting
+	// and redirecting or executing directly the handler of
 	// the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
@@ -762,9 +771,7 @@ type Configuration struct {
 	// Defaults to false.
 	DisablePathCorrectionRedirection bool `json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
 
-	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
-	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
-	//
+	// EnablePathEscape when is true then its escapes the path and the named parameters (if any).
 	// When do you need to Disable(false) it:
 	// accepts parameters with slash '/'
 	// Request: http://localhost:8080/details/Project%2FDelta
@@ -774,6 +781,12 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	EnablePathEscape bool `json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
+
+	// ForceLowercaseRouting if enabled, converts all registered routes paths to lowercase
+	// and it does lowercase the request path too for matching.
+	//
+	// Defaults to false.
+	ForceLowercaseRouting bool `json:"forceLowercaseRouting,omitempty" yaml:"ForceLowercaseRouting" toml:"ForceLowercaseRouting"`
 
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
@@ -900,8 +913,10 @@ func (c Configuration) GetVHost() string {
 	return c.vhost
 }
 
-// GetDisablePathCorrection returns the Configuration#DisablePathCorrection,
-// DisablePathCorrection corrects and redirects the requested path to the registered path
+// GetDisablePathCorrection returns the Configuration#DisablePathCorrection.
+// DisablePathCorrection disables the correcting
+// and redirecting or executing directly the handler of
+// the requested path to the registered path
 // for example, if /home/ path is requested but no handler for this Route found,
 // then the Router checks if /home handler exists, if yes,
 // (permanent)redirects the client to the correct path /home.
@@ -920,6 +935,11 @@ func (c Configuration) GetDisablePathCorrectionRedirection() bool {
 // returns true when its escapes the path, the named parameters (if any).
 func (c Configuration) GetEnablePathEscape() bool {
 	return c.EnablePathEscape
+}
+
+// GetForceLowercaseRouting returns the value of the `ForceLowercaseRouting` setting.
+func (c Configuration) GetForceLowercaseRouting() bool {
+	return c.ForceLowercaseRouting
 }
 
 // GetEnableOptimizations returns whether
@@ -1079,6 +1099,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.EnablePathEscape = v
 		}
 
+		if v := c.ForceLowercaseRouting; v {
+			main.ForceLowercaseRouting = v
+		}
+
 		if v := c.EnableOptimizations; v {
 			main.EnableOptimizations = v
 		}
@@ -1150,6 +1174,7 @@ func DefaultConfiguration() Configuration {
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,
+		ForceLowercaseRouting:             false,
 		FireMethodNotAllowed:              false,
 		DisableBodyConsumptionOnUnmarshal: false,
 		DisableAutoFireStatusCode:         false,

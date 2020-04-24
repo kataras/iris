@@ -165,7 +165,6 @@ type Context interface {
 	// Router is calling this function to add the route's handler.
 	// If AddHandler called then the handlers will be inserted
 	// to the end of the already-defined route's handler.
-	//
 	AddHandler(...Handler)
 	// SetHandlers replaces all handlers with the new.
 	SetHandlers(Handlers)
@@ -387,6 +386,11 @@ type Context interface {
 	IsMobile() bool
 	// IsScript reports whether a client is a script.
 	IsScript() bool
+	// IsHTTP2 reports whether the protocol version for incoming request was HTTP/2.
+	// The client code always uses either HTTP/1.1 or HTTP/2.
+	IsHTTP2() bool
+	// IsGRPC reports whether the request came from a gRPC client.
+	IsGRPC() bool
 	// GetReferrer extracts and returns the information from the "Referer" header as specified
 	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 	// or by the URL query parameter "referer".
@@ -1668,6 +1672,7 @@ func (ctx *context) RequestPath(escape bool) string {
 	if escape {
 		return ctx.request.URL.EscapedPath() // DecodeQuery(ctx.request.URL.EscapedPath())
 	}
+
 	return ctx.request.URL.Path // RawPath returns empty, requesturi can be used instead also.
 }
 
@@ -1824,6 +1829,17 @@ var isScriptRegex = regexp.MustCompile("curl|wget|collectd|python|urllib|java|ja
 func (ctx *context) IsScript() bool {
 	s := strings.ToLower(ctx.GetHeader("User-Agent"))
 	return isScriptRegex.MatchString(s)
+}
+
+// IsHTTP2 reports whether the protocol version for incoming request was HTTP/2.
+// The client code always uses either HTTP/1.1 or HTTP/2.
+func (ctx *context) IsHTTP2() bool {
+	return ctx.Request().ProtoMajor == 2
+}
+
+// IsGRPC reports whether the request came from a gRPC client.
+func (ctx *context) IsGRPC() bool {
+	return ctx.IsHTTP2() && ctx.GetContentTypeRequested() == ContentGRPCHeaderValue
 }
 
 type (
@@ -3316,6 +3332,8 @@ const (
 	ContentFormHeaderValue = "application/x-www-form-urlencoded"
 	// ContentFormMultipartHeaderValue header value for post multipart form data.
 	ContentFormMultipartHeaderValue = "multipart/form-data"
+	// ContentGRPCHeaderValue Content-Type header value for gRPC.
+	ContentGRPCHeaderValue = "application/grpc"
 )
 
 // Binary writes out the raw bytes as binary data.
