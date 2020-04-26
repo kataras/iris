@@ -6,6 +6,7 @@ import (
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug").SetTimeFormat("")
 
 	// GET: http://localhost:8080
 	app.Get("/", info)
@@ -31,17 +32,15 @@ func main() {
 
 	// Static assets
 
-	// GET: http://localhost:8080/assets/css/bootstrap.min.css
-	//	    maps to ./public/assets/css/bootstrap.min.css file at system location.
-	// GET: http://localhost:8080/assets/js/react.min.js
-	//      maps to ./public/assets/js/react.min.js file at system location.
+	// GET: http://localhost:8080/assets/css/main.css
+	//	    maps to ./public/assets/css/main.css file at system location.
 	app.HandleDir("/assets", "./public/assets")
 
 	/* OR
 
-	// GET: http://localhost:8080/js/react.min.js
-	// 		maps to ./public/assets/js/react.min.js file at system location.
-	app.HandleDir("/js", "./public/assets/js")
+	// GET: http://localhost:8080/css/main.css
+	// 		maps to ./public/assets/css/main.css file at system location.
+	app.HandleDir("/css", "./public/assets/css")
 
 	// GET: http://localhost:8080/css/bootstrap.min.css
 	// 		maps to ./public/assets/css/bootstrap.min.css file at system location.
@@ -90,7 +89,7 @@ func main() {
 	usersRoutes.Delete("/{id:uint64}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("delete user by id: %d", id)
-	})
+	}).SetDescription("Deletes a User")
 
 	// Subdomains, depends on the host, you have to edit the hosts or nginx/caddy's configuration if you use them.
 	//

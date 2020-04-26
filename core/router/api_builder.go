@@ -349,11 +349,14 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	options := getDirOptions(opts...)
 
 	h := FileServer(directory, options)
+	description := directory
+	fileName, lineNumber := context.HandlerFileLine(h) // take those before StripPrefix.
 
 	// if subdomain, we get the full path of the path only,
 	// because a subdomain can have parties as well
 	// and we need that path to call the `StripPrefix`.
-	if _, fullpath := splitSubdomainAndPath(joinPath(api.relativePath, requestPath)); fullpath != "/" {
+	_, fullpath := splitSubdomainAndPath(joinPath(api.relativePath, requestPath))
+	if fullpath != "/" {
 		h = StripPrefix(fullpath, h)
 	}
 
@@ -394,7 +397,12 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	}
 
 	for _, route := range routes {
-		route.MainHandlerName = `HandleDir(directory: "` + directory + `")`
+		if route.Method == http.MethodHead {
+		} else {
+			route.SetDescription(description)
+			route.SetSourceLine(fileName, lineNumber)
+		}
+
 		if _, err := api.routes.register(route, api.routeRegisterRule); err != nil {
 			api.errors.Add(err)
 			break
@@ -884,8 +892,8 @@ func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byt
 //
 // Returns the GET *Route.
 func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
+	description := favPath
 	favPath = Abs(favPath)
-
 	f, err := os.Open(favPath)
 	if err != nil {
 		api.errors.Addf("favicon: file or directory %s not found: %w", favPath, err)
@@ -924,7 +932,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		reqPath = requestPath[0]
 	}
 
-	return api.registerResourceRoute(reqPath, h)
+	return api.registerResourceRoute(reqPath, h).SetDescription(description)
 }
 
 // OnErrorCode registers an error http status code
