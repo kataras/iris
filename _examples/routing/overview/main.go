@@ -6,7 +6,7 @@ import (
 
 func main() {
 	app := iris.New()
-	app.Logger().SetLevel("debug").SetTimeFormat("")
+	app.Logger().SetLevel("debug")
 
 	// GET: http://localhost:8080
 	app.Get("/", info)

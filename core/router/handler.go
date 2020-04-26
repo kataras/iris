@@ -153,8 +153,33 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 				continue
 			}
 		}
+	}
 
-		golog.Debugf(r.Trace()) // keep log different parameter types in the same path as different routes.
+	if golog.Default.Level == golog.DebugLevel {
+		// group routes by method and print them without the [DBUG] and time info,
+		// the route logs are colorful.
+		// Note: don't use map, we need to keep registered order, use
+		// different slices for each method.
+		collect := func(method string) (methodRoutes []*Route) {
+			for _, r := range registeredRoutes {
+				if r.Method == method {
+					methodRoutes = append(methodRoutes, r)
+				}
+			}
+
+			return
+		}
+
+		bckpTimeFormat := golog.Default.TimeFormat
+		defer golog.SetTimeFormat(bckpTimeFormat)
+		golog.SetTimeFormat("")
+
+		for _, method := range AllMethods {
+			methodRoutes := collect(method)
+			for _, r := range methodRoutes {
+				golog.Println(r.Trace())
+			}
+		}
 	}
 
 	return errgroup.Check(rp)

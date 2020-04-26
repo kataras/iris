@@ -93,6 +93,8 @@ func registerSubdomains(app *iris.Application) {
 
 func newApp() *iris.Application {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	registerErrors(app)
 	registerGamesRoutes(app)
 	registerSubdomains(app)

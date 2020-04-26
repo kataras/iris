@@ -26,13 +26,13 @@ const MethodNone = "NONE"
 // "PATCH", "OPTIONS", "TRACE".
 var AllMethods = []string{
 	http.MethodGet,
-	http.MethodPost,
-	http.MethodPut,
-	http.MethodDelete,
-	http.MethodConnect,
 	http.MethodHead,
 	http.MethodPatch,
+	http.MethodPut,
+	http.MethodPost,
+	http.MethodDelete,
 	http.MethodOptions,
+	http.MethodConnect,
 	http.MethodTrace,
 }
 
