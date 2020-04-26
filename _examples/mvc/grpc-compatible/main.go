@@ -32,7 +32,7 @@ func main() {
 func newApp() *iris.Application {
 	app := iris.New()
 	// app.Configure(iris.WithLowercaseRouting) // OPTIONAL.
-	app.Logger().SetLevel("debug").SetTimeFormat("")
+	app.Logger().SetLevel("debug")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1>Index Page</h1>")
