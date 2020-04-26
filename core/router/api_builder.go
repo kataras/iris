@@ -444,7 +444,9 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	mainHandlers := context.Handlers(handlers)
 	// before join the middleware + handlers + done handlers and apply the execution rules.
 
-	possibleMainHandlerName := context.MainHandlerName(mainHandlers)
+	possibleMainHandlerName, mainHandlerIndex := context.MainHandlerName(mainHandlers)
+	wd, _ := os.Getwd()
+	mainHandlerFileName, mainHandlerFileNumber := context.HandlerFileLineRel(handlers[mainHandlerIndex], wd)
 
 	// TODO: for UseGlobal/DoneGlobal that doesn't work.
 	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
@@ -470,8 +472,11 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 			continue
 		}
 
-		route.SourceFileName = filename
-		route.SourceLineNumber = line
+		route.SourceFileName = mainHandlerFileName
+		route.SourceLineNumber = mainHandlerFileNumber
+
+		route.RegisterFileName = filename
+		route.RegisterLineNumber = line
 
 		// Add UseGlobal & DoneGlobal Handlers
 		route.Use(api.beginGlobalHandlers...)
@@ -1011,8 +1016,8 @@ func getCaller() (string, int) {
 		}
 
 		if !strings.Contains(file, "/kataras/iris") ||
-			strings.Contains(file, "/kataras/iris/_examples") ||
-			strings.Contains(file, "iris-contrib/examples") {
+			strings.Contains(file, "_examples") ||
+			strings.Contains(file, "examples") {
 			if relFile, err := filepath.Rel(wd, file); err == nil {
 				file = "./" + relFile
 			}

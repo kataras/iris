@@ -2,12 +2,16 @@ package router
 
 import (
 	"fmt"
+	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/macro"
 	"github.com/kataras/iris/v12/macro/handler"
+
+	"github.com/kataras/pio"
 )
 
 // Route contains the information about a registered Route.
@@ -37,8 +41,12 @@ type Route struct {
 	FormattedPath string `json:"formattedPath"`
 
 	// the source code's filename:filenumber that this route was created from.
-	SourceFileName   string
-	SourceLineNumber int
+	SourceFileName   string `json:"sourceFileName"`
+	SourceLineNumber int    `json:"sourceLineNumber"`
+
+	// where the route registered.
+	RegisterFileName   string `json:"registerFileName"`
+	RegisterLineNumber int    `json:"registerLineNumber"`
 
 	// StaticSites if not empty, refers to the system (or virtual if embedded) directory
 	// and sub directories that this "GET" route was registered to serve files and folders
@@ -317,34 +325,82 @@ func (r *Route) ResolvePath(args ...string) string {
 }
 
 // Trace returns some debug infos as a string sentence.
-// Should be called after Build.
+// Should be called after `Build` state.
+//
+// It prints the @method: @path (@description) (@route_rel_location)
+//               * @handler_name (@handler_rel_location)
+//               * @second_handler ...
+// If route and handler line:number locations are equal then the second is ignored.
 func (r *Route) Trace() string {
-	printfmt := fmt.Sprintf("[%s:%d] %s:", r.SourceFileName, r.SourceLineNumber, r.Method)
+	// Color the method.
+	color := pio.Black
+	switch r.Method {
+	case http.MethodGet:
+		color = pio.Green
+	case http.MethodPost:
+		color = pio.Magenta
+	case http.MethodPut:
+		color = pio.Blue
+	case http.MethodDelete:
+		color = pio.Red
+	case http.MethodConnect:
+		color = pio.Green
+	case http.MethodHead:
+		color = pio.Green
+	case http.MethodPatch:
+		color = pio.Blue
+	case http.MethodOptions:
+		color = pio.Gray
+	case http.MethodTrace:
+		color = pio.Yellow
+	}
+
+	path := r.Tmpl().Src
 	if r.Subdomain != "" {
-		printfmt += fmt.Sprintf(" %s", r.Subdomain)
+		path = fmt.Sprintf("%s %s", r.Subdomain, path)
 	}
-	printfmt += fmt.Sprintf(" %s", r.Tmpl().Src)
 
+	// @method: @path
+	s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
+
+	// (@description)
 	if r.Description != "" {
-		printfmt += fmt.Sprintf(" (%s)", r.Description)
+		s += fmt.Sprintf(" %s", pio.Rich(r.Description, pio.Cyan, pio.Underline))
 	}
 
-	mainHandlerName := r.MainHandlerName
-	if !strings.HasSuffix(mainHandlerName, ")") {
-		mainHandlerName += "()"
+	// (@route_rel_location)
+	s += fmt.Sprintf(" (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
+
+	// if the main handler is not an anonymous function (so, differs from @route_rel_location)
+	// then * @handler_name (@handler_rel_location)
+	if r.SourceFileName != r.RegisterFileName || r.SourceLineNumber != r.RegisterLineNumber {
+		s += fmt.Sprintf("\n     ⬝ %s (%s:%d)", r.MainHandlerName, r.SourceFileName, r.SourceLineNumber)
 	}
 
-	if l := r.RegisteredHandlersLen(); l > 1 {
-		printfmt += fmt.Sprintf(" -> %s and %d more", mainHandlerName, l-1)
-	} else {
-		printfmt += fmt.Sprintf(" -> %s", mainHandlerName)
+	wd, _ := os.Getwd()
+
+	for _, h := range r.Handlers {
+		name := context.HandlerName(h)
+		if name == r.MainHandlerName {
+			continue
+		}
+
+		// trim the path for Iris' internal middlewares, e.g.
+		// irs/mvc.GRPC.Apply.func1
+		if internalName := "github.com/kataras/iris/v12"; strings.HasPrefix(name, internalName) {
+			name = strings.Replace(name, internalName, "iris", 1)
+		}
+
+		file, line := context.HandlerFileLineRel(h, wd)
+		if file == r.RegisterFileName && line == r.RegisterLineNumber {
+			continue
+		}
+
+		// * @handler_name (@handler_rel_location)
+		s += fmt.Sprintf("\n     ⬝ %s (%s:%d)", name, file, line)
 	}
 
-	// printfmt := fmt.Sprintf("%s: %s >> %s", r.Method, r.Subdomain+r.Tmpl().Src, r.MainHandlerName)
-	// if l := len(r.Handlers); l > 0 {
-	// 	printfmt += fmt.Sprintf(" and %d more", l)
-	// }
-	return printfmt // without new line.
+	return s
 }
 
 type routeReadOnlyWrapper struct {
