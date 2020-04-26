@@ -641,7 +641,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		srv.Addr = addr
 	}
 
-	app.logger.Debugf("Host: addr is %s", srv.Addr)
+	// app.logger.Debugf("Host: addr is %s", srv.Addr)
 
 	// create the new host supervisor
 	// bind the constructed server and return it
@@ -657,21 +657,21 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		app.config.vhost = netutil.ResolveVHost(srv.Addr)
 	}
 
-	app.logger.Debugf("Host: virtual host is %s", app.config.vhost)
+	// app.logger.Debugf("Host: virtual host is %s", app.config.vhost)
 
 	// the below schedules some tasks that will run among the server
 
 	if !app.config.DisableStartupLog {
 		// show the available info to exit from app.
 		su.RegisterOnServe(host.WriteStartupLogOnServe(app.logger.Printer.Output)) // app.logger.Writer -> Info
-		app.logger.Debugf("Host: register startup notifier")
+		// app.logger.Debugf("Host: register startup notifier")
 	}
 
 	if !app.config.DisableInterruptHandler {
 		// when CTRL+C/CMD+C pressed.
 		shutdownTimeout := 5 * time.Second
 		host.RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
-		app.logger.Debugf("Host: register server shutdown on interrupt(CTRL+C/CMD+C)")
+		// app.logger.Debugf("Host: register server shutdown on interrupt(CTRL+C/CMD+C)")
 	}
 
 	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
@@ -1017,7 +1017,9 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	app.Configure(withOrWithout...)
 	app.tryStartTunneling()
 
-	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
+	if len(app.Hosts) > 0 {
+		app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1 /* +1 the current */)
+	}
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)

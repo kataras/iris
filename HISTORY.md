@@ -180,7 +180,9 @@ Other Improvements:
     - New Router [Wrapper](middleware/grpc).
     - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
 
-- Improved logging (with `app.Logger().SetLevel("debug")`) for MVC-registered routes.
+- Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Example:
+
+![DBUG routes](https://iris-go.com/images/v12.2.0-dbug.png)
 
 - New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
 

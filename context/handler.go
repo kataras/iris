@@ -51,25 +51,30 @@ func HandlerFileLine(h interface{}) (file string, line int) {
 }
 
 // HandlerFileLineRel same as `HandlerFileLine` but it returns the path as relative to the "workingDir".
-func HandlerFileLineRel(h interface{}, workingDir string) (string, int) {
-	file, line := HandlerFileLine(h)
+func HandlerFileLineRel(h interface{}, workingDir string) (file string, line int) {
+	file, line = HandlerFileLine(h)
 	if relFile, err := filepath.Rel(workingDir, file); err == nil {
-		file = "./" + relFile
+		if !strings.HasPrefix(relFile, "..") {
+			// Only if it's relative to this path, not parent.
+			file = "./" + relFile
+		}
 	}
 
-	return file, line
+	return
 }
 
-// MainHandlerName tries to find the main handler than end-developer
+// MainHandlerName tries to find the main handler that end-developer
 // registered on the provided chain of handlers and returns its function name.
-func MainHandlerName(handlers Handlers) (name string) {
+func MainHandlerName(handlers Handlers) (name string, index int) {
 	for i := 0; i < len(handlers); i++ {
 		name = HandlerName(handlers[i])
+		index = i
 		if !strings.HasPrefix(name, "github.com/kataras/iris/v12") ||
 			strings.HasPrefix(name, "github.com/kataras/iris/v12/core/router.StripPrefix") ||
 			strings.HasPrefix(name, "github.com/kataras/iris/v12/core/router.FileServer") {
 			break
 		}
+
 	}
 
 	return

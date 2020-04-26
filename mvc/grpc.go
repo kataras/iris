@@ -59,7 +59,7 @@ func (g GRPC) Apply(c *ControllerActivator) {
 		if route := c.Handle(http.MethodPost, path, m.Name, pre); route != nil {
 			route.Description = "gRPC"
 			if g.Strict {
-				route.Description = "-only"
+				route.Description += "-only"
 			}
 		}
 	}
