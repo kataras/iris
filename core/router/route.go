@@ -145,6 +145,23 @@ func (r *Route) SetStatusOffline() bool {
 	return r.ChangeMethod(MethodNone)
 }
 
+// SetDescription sets the route's description
+// that will be logged alongside with the route information
+// in DEBUG log level.
+// Returns the `Route` itself.
+func (r *Route) SetDescription(description string) *Route {
+	r.Description = description
+	return r
+}
+
+// SetSourceLine sets the route's source caller, useful for debugging.
+// Returns the `Route` itself.
+func (r *Route) SetSourceLine(fileName string, lineNumber int) *Route {
+	r.SourceFileName = fileName
+	r.SourceLineNumber = lineNumber
+	return r
+}
+
 // RestoreStatus will try to restore the status of this route instance, i.e if `SetStatusOffline` called on a "GET" route,
 // then this function will make this route available with "GET" HTTP Method.
 // Note if that you want to set status online for an offline registered route then you should call the `ChangeMethod` instead.
@@ -324,6 +341,44 @@ func (r *Route) ResolvePath(args ...string) string {
 	return formattedPath
 }
 
+var ignoreHandlersTraces = [...]string{
+	"iris/macro/handler.MakeHandler.func1",
+	"iris/core/router.(*APIBuilder).Favicon.func1",
+	"iris/core/router.StripPrefix.func1",
+}
+
+func ignoreHandlerTrace(name string) bool {
+	for _, ignore := range ignoreHandlersTraces {
+		if name == ignore {
+			return true
+		}
+	}
+
+	return false
+}
+
+func traceHandlerFile(name, line string, number int, seen map[string]struct{}) string {
+	file := fmt.Sprintf("(%s:%d)", line, number)
+
+	if _, printed := seen[file]; printed {
+		return ""
+	}
+
+	seen[file] = struct{}{}
+
+	// trim the path for Iris' internal middlewares, e.g.
+	// irs/mvc.GRPC.Apply.func1
+	if internalName := "github.com/kataras/iris/v12"; strings.HasPrefix(name, internalName) {
+		name = strings.Replace(name, internalName, "iris", 1)
+	}
+
+	if ignoreHandlerTrace(name) {
+		return ""
+	}
+
+	return fmt.Sprintf("\n     ⬝ %s %s", name, file)
+}
+
 // Trace returns some debug infos as a string sentence.
 // Should be called after `Build` state.
 //
@@ -371,10 +426,12 @@ func (r *Route) Trace() string {
 	// (@route_rel_location)
 	s += fmt.Sprintf(" (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
 
+	seen := make(map[string]struct{})
+
 	// if the main handler is not an anonymous function (so, differs from @route_rel_location)
 	// then * @handler_name (@handler_rel_location)
 	if r.SourceFileName != r.RegisterFileName || r.SourceLineNumber != r.RegisterLineNumber {
-		s += fmt.Sprintf("\n     ⬝ %s (%s:%d)", r.MainHandlerName, r.SourceFileName, r.SourceLineNumber)
+		s += traceHandlerFile(r.MainHandlerName, r.SourceFileName, r.SourceLineNumber, seen)
 	}
 
 	wd, _ := os.Getwd()
@@ -385,19 +442,13 @@ func (r *Route) Trace() string {
 			continue
 		}
 
-		// trim the path for Iris' internal middlewares, e.g.
-		// irs/mvc.GRPC.Apply.func1
-		if internalName := "github.com/kataras/iris/v12"; strings.HasPrefix(name, internalName) {
-			name = strings.Replace(name, internalName, "iris", 1)
-		}
-
 		file, line := context.HandlerFileLineRel(h, wd)
 		if file == r.RegisterFileName && line == r.RegisterLineNumber {
 			continue
 		}
 
 		// * @handler_name (@handler_rel_location)
-		s += fmt.Sprintf("\n     ⬝ %s (%s:%d)", name, file, line)
+		s += traceHandlerFile(name, file, line, seen)
 	}
 
 	return s
