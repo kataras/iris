@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -3501,7 +3502,7 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 	}
 
 	if prefix := options.Prefix; prefix != "" {
-		result = append([]byte(prefix), result...)
+		result = append(stringToBytes(prefix), result...)
 	}
 
 	return writer.Write(result)
@@ -3510,6 +3511,10 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 // See https://golang.org/src/strings/builder.go#L45
 func bytesToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+func stringToBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(&s))
 }
 
 // DefaultJSONOptions is the optional settings that are being used
@@ -3564,7 +3569,7 @@ var finishCallbackB = []byte(");")
 // WriteJSONP marshals the given interface object and writes the JSON response to the writer.
 func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (int, error) {
 	if callback := options.Callback; callback != "" {
-		n, err := writer.Write([]byte(callback + "("))
+		n, err := writer.Write(stringToBytes(callback + "("))
 		if err != nil {
 			return n, err
 		}
@@ -3671,7 +3676,7 @@ func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 // WriteXML marshals the given interface object and writes the XML response to the writer.
 func WriteXML(writer io.Writer, v interface{}, options XML, optimize bool) (int, error) {
 	if prefix := options.Prefix; prefix != "" {
-		n, err := writer.Write([]byte(prefix))
+		n, err := writer.Write(stringToBytes(prefix))
 		if err != nil {
 			return n, err
 		}
