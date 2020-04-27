@@ -453,8 +453,7 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	// before join the middleware + handlers + done handlers and apply the execution rules.
 
 	mainHandlerName, mainHandlerIndex := context.MainHandlerName(mainHandlers)
-	wd, _ := os.Getwd()
-	mainHandlerFileName, mainHandlerFileNumber := context.HandlerFileLineRel(handlers[mainHandlerIndex], wd)
+	mainHandlerFileName, mainHandlerFileNumber := context.HandlerFileLineRel(handlers[mainHandlerIndex])
 
 	// re-calculate mainHandlerIndex in favor of the middlewares.
 	mainHandlerIndex = len(api.middleware) + len(api.beginGlobalHandlers) + mainHandlerIndex

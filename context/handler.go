@@ -1,6 +1,7 @@
 package context
 
 import (
+	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -10,12 +11,17 @@ import (
 )
 
 var (
+	// PackageName is the Iris Go module package name.
+	PackageName = strings.TrimSuffix(reflect.TypeOf(Handlers{}).PkgPath(), "/context")
+
+	// WorkingDir is the (initial) current directory.
+	WorkingDir, _ = os.Getwd()
+)
+
+var (
 	handlerNames   = make(map[*regexp.Regexp]string)
 	handlerNamesMu sync.RWMutex
 )
-
-// PackageName is the Iris Go module package name.
-var PackageName = strings.TrimSuffix(reflect.TypeOf(Handlers{}).PkgPath(), "/context")
 
 // SetHandlerName sets a handler name that could be
 // fetched through `HandlerName`. The "original" should be
@@ -74,6 +80,11 @@ func HandlerName(h interface{}) string {
 	name := runtime.FuncForPC(pc).Name()
 	handlerNamesMu.RLock()
 	for regex, newName := range handlerNames {
+		if regex.String() == name { // if matches as string, as it's.
+			name = newName
+			break
+		}
+
 		if regex.MatchString(name) {
 			name = newName
 			break
@@ -91,10 +102,11 @@ func HandlerFileLine(h interface{}) (file string, line int) {
 	return runtime.FuncForPC(pc).FileLine(pc)
 }
 
-// HandlerFileLineRel same as `HandlerFileLine` but it returns the path as relative to the "workingDir".
-func HandlerFileLineRel(h interface{}, workingDir string) (file string, line int) {
+// HandlerFileLineRel same as `HandlerFileLine` but it returns the path
+// corresponding to its relative based on the package-level "WorkingDir" variable.
+func HandlerFileLineRel(h interface{}) (file string, line int) {
 	file, line = HandlerFileLine(h)
-	if relFile, err := filepath.Rel(workingDir, file); err == nil {
+	if relFile, err := filepath.Rel(WorkingDir, file); err == nil {
 		if !strings.HasPrefix(relFile, "..") {
 			// Only if it's relative to this path, not parent.
 			file = "./" + relFile
