@@ -11,6 +11,7 @@ import (
 	macroHandler "github.com/kataras/iris/v12/macro/handler"
 
 	"github.com/kataras/golog"
+	"github.com/kataras/pio"
 )
 
 // RequestHandler the middle man between acquiring a context and releasing it.
@@ -156,6 +157,13 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	}
 
 	if golog.Default.Level == golog.DebugLevel {
+		tr := "routes"
+		if len(registeredRoutes) == 1 {
+			tr = tr[0 : len(tr)-1]
+		}
+
+		golog.Debugf("API: [%d] %s", len(registeredRoutes), tr)
+
 		// group routes by method and print them without the [DBUG] and time info,
 		// the route logs are colorful.
 		// Note: don't use map, we need to keep registered order, use
@@ -176,9 +184,15 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 		for _, method := range append(AllMethods, MethodNone) {
 			methodRoutes := collect(method)
-			for _, r := range methodRoutes {
-				golog.Println(r.Trace())
+			if len(methodRoutes) == 0 {
+				continue
 			}
+
+			for _, r := range methodRoutes {
+				r.Trace(golog.Default.Printer)
+			}
+
+			golog.Default.Printer.Write(pio.NewLine)
 		}
 	}
 

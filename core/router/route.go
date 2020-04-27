@@ -2,8 +2,8 @@ package router
 
 import (
 	"fmt"
+	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -342,9 +342,9 @@ func (r *Route) ResolvePath(args ...string) string {
 }
 
 var ignoreHandlersTraces = [...]string{
-	"iris/macro/handler.MakeHandler.func1",
-	"iris/core/router.(*APIBuilder).Favicon.func1",
-	"iris/core/router.StripPrefix.func1",
+	"iris/macro/handler.MakeHandler",
+	"iris/core/router.(*APIBuilder).Favicon",
+	"iris/core/router.StripPrefix",
 }
 
 func ignoreHandlerTrace(name string) bool {
@@ -357,7 +357,7 @@ func ignoreHandlerTrace(name string) bool {
 	return false
 }
 
-func traceHandlerFile(name, line string, number int) string {
+func traceHandlerFile(method, name, line string, number int) string {
 	file := fmt.Sprintf("(%s:%d)", line, number)
 
 	// trim the path for Iris' internal middlewares, e.g.
@@ -369,21 +369,24 @@ func traceHandlerFile(name, line string, number int) string {
 		name = strings.Replace(name, internalName, "iris-contrib", 1)
 	}
 
+	name = strings.TrimSuffix(name, ".func1")
+
 	if ignoreHandlerTrace(name) {
 		return ""
 	}
 
-	return fmt.Sprintf("\n     ⬝ %s %s", name, file)
+	space := strings.Repeat(" ", len(method)+1)
+	return fmt.Sprintf("\n%s ⬝ %s %s", space, name, file)
 }
 
-// Trace returns some debug infos as a string sentence.
+// Trace prints some debug info about the Route to the "w".
 // Should be called after `Build` state.
 //
 // It prints the @method: @path (@description) (@route_rel_location)
 //               * @handler_name (@handler_rel_location)
 //               * @second_handler ...
 // If route and handler line:number locations are equal then the second is ignored.
-func (r *Route) Trace() string {
+func (r *Route) Trace(w io.Writer) {
 	// Color the method.
 	color := pio.Black
 	switch r.Method {
@@ -398,7 +401,7 @@ func (r *Route) Trace() string {
 	case http.MethodConnect:
 		color = pio.Green
 	case http.MethodHead:
-		color = pio.Green
+		color = 23
 	case http.MethodPatch:
 		color = pio.Blue
 	case http.MethodOptions:
@@ -406,16 +409,29 @@ func (r *Route) Trace() string {
 	case http.MethodTrace:
 		color = pio.Yellow
 	case MethodNone:
-		color = 196 // full red.
+		color = 203 // orange-red.
 	}
 
 	path := r.Tmpl().Src
-	if r.Subdomain != "" {
-		path = fmt.Sprintf("%s %s", r.Subdomain, path)
+
+	if subdomain := r.Subdomain; subdomain != "" {
+		if path == "" {
+			path = "/"
+		}
+
+		if subdomain == "*." { // wildcard.
+			subdomain = "subdomain"
+		}
+
+		r.Description = fmt.Sprintf("%s", subdomain)
+		// path = fmt.Sprintf("%s %s", r.Subdomain, path)
 	}
 
 	// @method: @path
-	s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
+	// space := strings.Repeat(" ", len(http.MethodConnect)-len(r.Method))
+	// s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
+	pio.WriteRich(w, r.Method, color)
+	fmt.Fprintf(w, ": %s", path)
 
 	// (@description)
 	description := r.Description
@@ -424,57 +440,50 @@ func (r *Route) Trace() string {
 	}
 
 	if description != "" {
-		s += fmt.Sprintf(" %s", pio.Rich(description, pio.Cyan, pio.Underline))
+		// s += fmt.Sprintf(" %s", pio.Rich(description, pio.Cyan, pio.Underline))
+		fmt.Fprint(w, " ")
+		pio.WriteRich(w, description, pio.Cyan, pio.Underline)
 	}
 
 	// (@route_rel_location)
-	s += fmt.Sprintf(" (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
-
-	wd, _ := os.Getwd()
+	// s += fmt.Sprintf(" (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
+	fmt.Fprintf(w, " (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
 
 	for i, h := range r.Handlers {
-		// main handler info can be programmatically
-		// changed to be more specific, respect those options.
 		var (
 			name string
 			file string
 			line int
 		)
 
-		// name = context.HandlerName(h)
-		// file, line = context.HandlerFileLineRel(h, wd)
-		// fmt.Printf("---handler index: %d, name: %s, line: %s:%d\n", i, name, file, line)
-
 		if i == r.MainHandlerIndex {
+			// Main handler info can be programmatically
+			// changed to be more specific, respect these changes.
 			name = r.MainHandlerName
 			file = r.SourceFileName
 			line = r.SourceLineNumber
-			// fmt.Printf("main handler index: %d, name: %s, line: %d\n", i, name, line)
 		} else {
 			name = context.HandlerName(h)
-			file, line = context.HandlerFileLineRel(h, wd)
+			file, line = context.HandlerFileLineRel(h)
 
 			// If a middleware, e.g (macro) which changes the main handler index,
 			// skip it.
 			if file == r.SourceFileName && line == r.SourceLineNumber {
-				// fmt.Printf("[0] SKIP: handler index: %d, name: %s, line: %s:%d\n", i, name, file, line)
 				continue
 			}
-			// fmt.Printf("handler index: %d, name: %s, line: %d\n", i, name, line)
 		}
 
 		// If a handler is an anonymous function then it was already
 		// printed in the first line, skip it.
 		if file == r.RegisterFileName && line == r.RegisterLineNumber {
-			// fmt.Printf("[1] SKIP: handler index: %d, name: %s, line: %s:%d\n", i, name, file, line)
 			continue
 		}
 
 		// * @handler_name (@handler_rel_location)
-		s += traceHandlerFile(name, file, line)
+		fmt.Fprint(w, traceHandlerFile(r.Method, name, file, line))
 	}
 
-	return s
+	fmt.Fprintln(w)
 }
 
 type routeReadOnlyWrapper struct {
@@ -497,8 +506,8 @@ func (rd routeReadOnlyWrapper) Path() string {
 	return rd.Route.tmpl.Src
 }
 
-func (rd routeReadOnlyWrapper) Trace() string {
-	return rd.Route.Trace()
+func (rd routeReadOnlyWrapper) Trace(w io.Writer) {
+	rd.Route.Trace(w)
 }
 
 func (rd routeReadOnlyWrapper) Tmpl() macro.Template {
