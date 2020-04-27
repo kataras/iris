@@ -16,7 +16,7 @@ type resource string
 func (r resource) contentType() string {
 	switch filepath.Ext(r.String()) {
 	case ".js":
-		return "application/javascript"
+		return "text/javascript"
 	case ".css":
 		return "text/css"
 	case ".ico":

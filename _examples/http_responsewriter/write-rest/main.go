@@ -49,7 +49,7 @@ func main() {
 			Age:       25,
 		}
 
-		// Manually setting a content type: ctx.ContentType("application/javascript")
+		// Manually setting a content type: ctx.ContentType("text/javascript")
 		ctx.JSON(u)
 	})
 

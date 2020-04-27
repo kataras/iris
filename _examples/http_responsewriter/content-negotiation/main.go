@@ -97,7 +97,7 @@ func newApp() *iris.Application {
 			// Markdown: for text/mardown,
 			// Binary: for application/octet-stream,
 			// YAML: for application/x-yaml,
-			// JSONP: for application/javascript
+			// JSONP: for text/javascript
 			// Other: for anything else,
 			JSON: jsonAndXML,                          // for application/json
 			XML:  jsonAndXML,                          // for application/xml or text/xml

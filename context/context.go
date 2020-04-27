@@ -256,11 +256,23 @@ type Context interface {
 	// IsStopped reports whether the current position of the context's handlers is -1,
 	// means that the StopExecution() was called at least once.
 	IsStopped() bool
-	// StopWithJSON stops the handlers chain and writes the "statusCode".
+	// StopWithStatus stops the handlers chain and writes the "statusCode".
 	//
 	// If the status code is a failure one then
 	// it will also fire the specified error code handler.
 	StopWithStatus(statusCode int)
+	// StopWithText stops the handlers chain and writes the "statusCode"
+	// among with a message "plainText".
+	//
+	// If the status code is a failure one then
+	// it will also fire the specified error code handler.
+	StopWithText(statusCode int, plainText string)
+	// StopWithError stops the handlers chain and writes the "statusCode"
+	// among with the error "err".
+	//
+	// If the status code is a failure one then
+	// it will also fire the specified error code handler.
+	StopWithError(statusCode int, err error)
 	// StopWithJSON stops the handlers chain, writes the status code
 	// and sends a JSON response.
 	//
@@ -1496,13 +1508,37 @@ func (ctx *context) IsStopped() bool {
 	return ctx.currentHandlerIndex == stopExecutionIndex
 }
 
-// StopWithJSON stops the handlers chain and writes the "statusCode".
+// StopWithStatus stops the handlers chain and writes the "statusCode".
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
 func (ctx *context) StopWithStatus(statusCode int) {
 	ctx.StopExecution()
 	ctx.StatusCode(statusCode)
+}
+
+// StopWithText stops the handlers chain and writes the "statusCode"
+// among with a message "plainText".
+//
+// If the status code is a failure one then
+// it will also fire the specified error code handler.
+func (ctx *context) StopWithText(statusCode int, plainText string) {
+	ctx.WriteString(plainText)
+	ctx.StopWithStatus(statusCode)
+}
+
+// StopWithError stops the handlers chain and writes the "statusCode"
+// among with the error "err".
+//
+// If the status code is a failure one then
+// it will also fire the specified error code handler.
+func (ctx *context) StopWithError(statusCode int, err error) {
+	if err == nil {
+		return
+	}
+
+	ctx.WriteString(err.Error())
+	ctx.StopWithStatus(statusCode)
 }
 
 // StopWithJSON stops the handlers chain, writes the status code
@@ -3311,7 +3347,7 @@ const (
 	// Read more at: https://tools.ietf.org/html/rfc7807
 	ContentXMLProblemHeaderValue = "application/problem+xml"
 	// ContentJavascriptHeaderValue header value for JSONP & Javascript data.
-	ContentJavascriptHeaderValue = "application/javascript"
+	ContentJavascriptHeaderValue = "text/javascript"
 	// ContentTextHeaderValue header value for Text data.
 	ContentTextHeaderValue = "text/plain"
 	// ContentXMLHeaderValue header value for XML data.
@@ -4160,9 +4196,9 @@ func (n *NegotiationBuilder) Problem(v ...interface{}) *NegotiationBuilder {
 	return n.MIME(ContentJSONProblemHeaderValue+","+ContentXMLProblemHeaderValue, content)
 }
 
-// JSONP registers the "application/javascript" content type and, optionally,
+// JSONP registers the "text/javascript" content type and, optionally,
 // a value that `Context.Negotiate` will render
-// when a client accepts the "application/javascript" content type.
+// when a client accepts the "javascript/javascript" content type.
 //
 // Returns itself for recursive calls.
 func (n *NegotiationBuilder) JSONP(v ...interface{}) *NegotiationBuilder {
@@ -4446,7 +4482,7 @@ func (n *NegotiationAcceptBuilder) Problem() *NegotiationAcceptBuilder {
 	return n.MIME(ContentJSONProblemHeaderValue, ContentXMLProblemHeaderValue)
 }
 
-// JSONP adds the "application/javascript" as accepted client content type.
+// JSONP adds the "text/javascript" as accepted client content type.
 // Returns itself.
 func (n *NegotiationAcceptBuilder) JSONP() *NegotiationAcceptBuilder {
 	return n.MIME(ContentJavascriptHeaderValue)
