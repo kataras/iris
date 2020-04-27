@@ -29,8 +29,9 @@ type Route struct {
 	beginHandlers context.Handlers
 	// Handlers are the main route's handlers, executed by order.
 	// Cannot be empty.
-	Handlers        context.Handlers `json:"-"`
-	MainHandlerName string           `json:"mainHandlerName"`
+	Handlers         context.Handlers `json:"-"`
+	MainHandlerName  string           `json:"mainHandlerName"`
+	MainHandlerIndex int              `json:"mainHandlerIndex"`
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens after Begin and main Handler(s), can be empty.
 	doneHandlers context.Handlers
@@ -67,7 +68,7 @@ type Route struct {
 // handlers and the macro container which all routes should share.
 // It parses the path based on the "macros",
 // handlers are being changed to validate the macros at serve time, if needed.
-func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
+func NewRoute(method, subdomain, unparsedPath string,
 	handlers context.Handlers, macros macro.Macros) (*Route, error) {
 	tmpl, err := macro.Parse(unparsedPath, macros)
 	if err != nil {
@@ -87,15 +88,14 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 	formattedPath := formatPath(path)
 
 	route := &Route{
-		Name:            defaultName,
-		Method:          method,
-		methodBckp:      method,
-		Subdomain:       subdomain,
-		tmpl:            tmpl,
-		Path:            path,
-		Handlers:        handlers,
-		MainHandlerName: mainHandlerName,
-		FormattedPath:   formattedPath,
+		Name:          defaultName,
+		Method:        method,
+		methodBckp:    method,
+		Subdomain:     subdomain,
+		tmpl:          tmpl,
+		Path:          path,
+		Handlers:      handlers,
+		FormattedPath: formattedPath,
 	}
 
 	return route, nil
@@ -357,19 +357,16 @@ func ignoreHandlerTrace(name string) bool {
 	return false
 }
 
-func traceHandlerFile(name, line string, number int, seen map[string]struct{}) string {
+func traceHandlerFile(name, line string, number int) string {
 	file := fmt.Sprintf("(%s:%d)", line, number)
-
-	if _, printed := seen[file]; printed {
-		return ""
-	}
-
-	seen[file] = struct{}{}
 
 	// trim the path for Iris' internal middlewares, e.g.
 	// irs/mvc.GRPC.Apply.func1
-	if internalName := "github.com/kataras/iris/v12"; strings.HasPrefix(name, internalName) {
+	if internalName := context.PackageName; strings.HasPrefix(name, internalName) {
 		name = strings.Replace(name, internalName, "iris", 1)
+	}
+	if internalName := "github.com/iris-contrib/middleware"; strings.HasPrefix(name, internalName) {
+		name = strings.Replace(name, internalName, "iris-contrib", 1)
 	}
 
 	if ignoreHandlerTrace(name) {
@@ -408,6 +405,8 @@ func (r *Route) Trace() string {
 		color = pio.Gray
 	case http.MethodTrace:
 		color = pio.Yellow
+	case MethodNone:
+		color = 196 // full red.
 	}
 
 	path := r.Tmpl().Src
@@ -419,36 +418,60 @@ func (r *Route) Trace() string {
 	s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
 
 	// (@description)
-	if r.Description != "" {
-		s += fmt.Sprintf(" %s", pio.Rich(r.Description, pio.Cyan, pio.Underline))
+	description := r.Description
+	if description == "" && r.Method == MethodNone {
+		description = "offline"
+	}
+
+	if description != "" {
+		s += fmt.Sprintf(" %s", pio.Rich(description, pio.Cyan, pio.Underline))
 	}
 
 	// (@route_rel_location)
 	s += fmt.Sprintf(" (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
 
-	seen := make(map[string]struct{})
-
-	// if the main handler is not an anonymous function (so, differs from @route_rel_location)
-	// then * @handler_name (@handler_rel_location)
-	if r.SourceFileName != r.RegisterFileName || r.SourceLineNumber != r.RegisterLineNumber {
-		s += traceHandlerFile(r.MainHandlerName, r.SourceFileName, r.SourceLineNumber, seen)
-	}
-
 	wd, _ := os.Getwd()
 
-	for _, h := range r.Handlers {
-		name := context.HandlerName(h)
-		if name == r.MainHandlerName {
-			continue
+	for i, h := range r.Handlers {
+		// main handler info can be programmatically
+		// changed to be more specific, respect those options.
+		var (
+			name string
+			file string
+			line int
+		)
+
+		// name = context.HandlerName(h)
+		// file, line = context.HandlerFileLineRel(h, wd)
+		// fmt.Printf("---handler index: %d, name: %s, line: %s:%d\n", i, name, file, line)
+
+		if i == r.MainHandlerIndex {
+			name = r.MainHandlerName
+			file = r.SourceFileName
+			line = r.SourceLineNumber
+			// fmt.Printf("main handler index: %d, name: %s, line: %d\n", i, name, line)
+		} else {
+			name = context.HandlerName(h)
+			file, line = context.HandlerFileLineRel(h, wd)
+
+			// If a middleware, e.g (macro) which changes the main handler index,
+			// skip it.
+			if file == r.SourceFileName && line == r.SourceLineNumber {
+				// fmt.Printf("[0] SKIP: handler index: %d, name: %s, line: %s:%d\n", i, name, file, line)
+				continue
+			}
+			// fmt.Printf("handler index: %d, name: %s, line: %d\n", i, name, line)
 		}
 
-		file, line := context.HandlerFileLineRel(h, wd)
+		// If a handler is an anonymous function then it was already
+		// printed in the first line, skip it.
 		if file == r.RegisterFileName && line == r.RegisterLineNumber {
+			// fmt.Printf("[1] SKIP: handler index: %d, name: %s, line: %s:%d\n", i, name, file, line)
 			continue
 		}
 
 		// * @handler_name (@handler_rel_location)
-		s += traceHandlerFile(name, file, line, seen)
+		s += traceHandlerFile(name, file, line)
 	}
 
 	return s
@@ -484,6 +507,10 @@ func (rd routeReadOnlyWrapper) Tmpl() macro.Template {
 
 func (rd routeReadOnlyWrapper) MainHandlerName() string {
 	return rd.Route.MainHandlerName
+}
+
+func (rd routeReadOnlyWrapper) MainHandlerIndex() int {
+	return rd.Route.MainHandlerIndex
 }
 
 func (rd routeReadOnlyWrapper) StaticSites() []context.StaticSite {
