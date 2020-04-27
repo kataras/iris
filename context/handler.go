@@ -3,9 +3,39 @@ package context
 import (
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 )
+
+var (
+	handlerNames   = make(map[*regexp.Regexp]string)
+	handlerNamesMu sync.RWMutex
+)
+
+// PackageName is the Iris Go module package name.
+var PackageName = strings.TrimSuffix(reflect.TypeOf(Handlers{}).PkgPath(), "/context")
+
+// SetHandlerName sets a handler name that could be
+// fetched through `HandlerName`. The "original" should be
+// the Go's original regexp-featured (can be retrieved through a `HandlerName` call) function name.
+// The "replacement" should be the custom, human-text of that function name.
+//
+// If the name starts with "iris" then it replaces that string with the
+// full Iris module package name,
+// e.g. iris/middleware/logger.(*requestLoggerMiddleware).ServeHTTP-fm to
+// github.com/kataras/iris/v12/middleware/logger.(*requestLoggerMiddleware).ServeHTTP-fm
+// for convenient between Iris versions.
+func SetHandlerName(original string, replacement string) {
+	if strings.HasPrefix(original, "iris") {
+		original = PackageName + strings.TrimPrefix(original, "iris")
+	}
+
+	handlerNamesMu.Lock()
+	handlerNames[regexp.MustCompile(original)] = replacement
+	handlerNamesMu.Unlock()
+}
 
 // A Handler responds to an HTTP request.
 // It writes reply headers and data to the Context.ResponseWriter() and then return.
@@ -14,7 +44,7 @@ import (
 //
 // Depending on the HTTP client software, HTTP protocol version,
 // and any intermediaries between the client and the iris server,
-// it may not be possible to read from the Context.Request().Body after writing to the context.ResponseWriter().
+// it may not be possible to read from the Context.Request().Body after writing to the Context.ResponseWriter().
 // Cautious handlers should read the Context.Request().Body first, and then reply.
 //
 // Except for reading the body, handlers should not modify the provided Context.
@@ -37,10 +67,21 @@ func valueOf(v interface{}) reflect.Value {
 }
 
 // HandlerName returns the handler's function name.
-// See `context.HandlerName` to get function name of the current running handler in the chain.
+// See `Context.HandlerName` method to get function name of the current running handler in the chain.
+// See `SetHandlerName` too.
 func HandlerName(h interface{}) string {
 	pc := valueOf(h).Pointer()
-	return runtime.FuncForPC(pc).Name()
+	name := runtime.FuncForPC(pc).Name()
+	handlerNamesMu.RLock()
+	for regex, newName := range handlerNames {
+		if regex.MatchString(name) {
+			name = newName
+			break
+		}
+	}
+	handlerNamesMu.RUnlock()
+
+	return name
 }
 
 // HandlerFileLine returns the handler's file and line information.

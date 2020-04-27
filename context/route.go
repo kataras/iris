@@ -58,6 +58,9 @@ type RouteReadOnly interface {
 	// MainHandlerName returns the first registered handler for the route.
 	MainHandlerName() string
 
+	// MainHandlerIndex returns the first registered handler's index for the route.
+	MainHandlerIndex() int
+
 	// StaticSites if not empty, refers to the system (or virtual if embedded) directory
 	// and sub directories that this "GET" route was registered to serve files and folders
 	// that contain index.html (a site). The index handler may registered by other

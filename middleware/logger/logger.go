@@ -11,6 +11,10 @@ import (
 	"github.com/ryanuber/columnize"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/logger.*", "Request Logger")
+}
+
 type requestLoggerMiddleware struct {
 	config Config
 }

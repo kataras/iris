@@ -452,9 +452,12 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	mainHandlers := context.Handlers(handlers)
 	// before join the middleware + handlers + done handlers and apply the execution rules.
 
-	possibleMainHandlerName, mainHandlerIndex := context.MainHandlerName(mainHandlers)
+	mainHandlerName, mainHandlerIndex := context.MainHandlerName(mainHandlers)
 	wd, _ := os.Getwd()
 	mainHandlerFileName, mainHandlerFileNumber := context.HandlerFileLineRel(handlers[mainHandlerIndex], wd)
+
+	// re-calculate mainHandlerIndex in favor of the middlewares.
+	mainHandlerIndex = len(api.middleware) + len(api.beginGlobalHandlers) + mainHandlerIndex
 
 	// TODO: for UseGlobal/DoneGlobal that doesn't work.
 	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
@@ -474,17 +477,22 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	routes := make([]*Route, len(methods))
 
 	for i, m := range methods {
-		route, err := NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
+		route, err := NewRoute(m, subdomain, path, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
 			api.errors.Addf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
 			continue
 		}
 
-		route.SourceFileName = mainHandlerFileName
-		route.SourceLineNumber = mainHandlerFileNumber
-
+		// The caller tiself, if anonymous, it's the first line of `app.X("/path", here)`
 		route.RegisterFileName = filename
 		route.RegisterLineNumber = line
+
+		route.MainHandlerName = mainHandlerName
+		route.MainHandlerIndex = mainHandlerIndex
+
+		// The main handler source, could be the same as the register's if anonymous.
+		route.SourceFileName = mainHandlerFileName
+		route.SourceLineNumber = mainHandlerFileNumber
 
 		// Add UseGlobal & DoneGlobal Handlers
 		route.Use(api.beginGlobalHandlers...)

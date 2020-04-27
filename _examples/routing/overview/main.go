@@ -2,11 +2,15 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/logger"
 )
 
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
+
+	// Register a request logger middleware to the application.
+	app.Use(logger.New())
 
 	// GET: http://localhost:8080
 	app.Get("/", info)
@@ -112,6 +116,9 @@ func main() {
 		ctx.Writef(name)
 	})
 
+	app.None("/secret", privateHandler)
+	app.Get("/public", execPrivateHandler)
+
 	// GET: http://localhost:8080/
 	// GET: http://localhost:8080/profile/anyusername
 	// GET: http://localhost:8080/profile/anyusername/backups/any/number/of/paths/here
@@ -128,6 +135,15 @@ func main() {
 	// GET: http://admin.localhost:8080/settings
 	// GET: http://any_thing_here.localhost:8080
 	app.Listen(":8080")
+}
+
+func privateHandler(ctx iris.Context) {
+	ctx.WriteString(`This can only be executed programmatically through server's another route:
+ctx.Exec(iris.MethodNone, "/secret")`)
+}
+
+func execPrivateHandler(ctx iris.Context) {
+	ctx.Exec(iris.MethodNone, "/secret")
 }
 
 func info(ctx iris.Context) {
