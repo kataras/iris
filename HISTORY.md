@@ -206,6 +206,8 @@ New Context Methods:
 - `context.IsGRPC() bool` reports whether the request came from a gRPC client
 - `context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
 - `context.StopWithStatus(int)` stops the handlers chain and writes the status code
+- `context.StopWithText(int, string)` stops the handlers chain, writes thre status code and a plain text message
+- `context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
 - `context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
 - `context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
 - `context.Protobuf(proto.Message)` sends protobuf to the client
@@ -219,6 +221,8 @@ New Context Methods:
 - `context.Controller() reflect.Value` returns the current MVC Controller value.
 
 Breaking Changes:
+
+Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
 
 - `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449))
 - `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343))

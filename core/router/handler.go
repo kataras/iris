@@ -174,7 +174,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		defer golog.SetTimeFormat(bckpTimeFormat)
 		golog.SetTimeFormat("")
 
-		for _, method := range AllMethods {
+		for _, method := range AllMethods { // TODO: MethodNone "NONE" with an (offline) status on r.Trace.
 			methodRoutes := collect(method)
 			for _, r := range methodRoutes {
 				golog.Println(r.Trace())
