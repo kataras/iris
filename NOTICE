@@ -57,9 +57,9 @@ Revision ID: 607b5b7cef034da2692f99a4c9bafb31a999ccda
  json-iterator       08047c174c6c03e     https://github.com/json-iterator/go      
                      8ec963a411bde1b                                              
                      6d1ee67b26
- neffos              eb5c6fbe548cf13     https://github.com/kataras/neffos
-                     2812142b9ab1633
-                     ca79911ae6                                             
+ neffos              236684dea08b424     https://github.com/kataras/neffos
+                     98b4e7c7059ad1c
+                     a6d4e34373                                            
  pongo2              0738cc45f23da6a     https://github.com/iris-contrib/pongo2
                      8c14959779a75d3
                      37b7944fb6                                                               
