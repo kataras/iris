@@ -9,6 +9,10 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/recover.*", "Panic Recover")
+}
+
 func getRequestLogs(ctx context.Context) string {
 	var status, ip, method, path string
 	status = strconv.Itoa(ctx.GetStatusCode())

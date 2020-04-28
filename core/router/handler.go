@@ -132,7 +132,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 	for _, r := range registeredRoutes {
 		if h.config != nil && h.config.GetForceLowercaseRouting() {
-			// only in that state, keep everyting else as end-developer registered.
+			// only in that state, keep everything else as end-developer registered.
 			r.Path = strings.ToLower(r.Path)
 		}
 
@@ -162,7 +162,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			tr = tr[0 : len(tr)-1]
 		}
 
-		golog.Debugf("API: [%d] %s", len(registeredRoutes), tr)
+		golog.Debugf("API: %d registered %s", len(registeredRoutes), tr)
 
 		// group routes by method and print them without the [DBUG] and time info,
 		// the route logs are colorful.

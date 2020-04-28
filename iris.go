@@ -768,6 +768,24 @@ func (app *Application) Build() error {
 			app.Router.WrapRouter(app.I18n.Wrapper())
 		}
 
+		if n := app.view.Len(); n > 0 {
+			tr := "engines"
+			if n == 1 {
+				tr = tr[0 : len(tr)-1]
+			}
+
+			app.logger.Debugf("Application: %d registered view %s", n, tr)
+			// view engine
+			// here is where we declare the closed-relative framework functions.
+			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
+			rv := router.NewRoutePathReverser(app.APIBuilder)
+			app.view.AddFunc("urlpath", rv.Path)
+			// app.view.AddFunc("url", rv.URL)
+			if err := app.view.Load(); err != nil {
+				rp.Group("View Builder").Err(err)
+			}
+		}
+
 		if !app.Router.Downgraded() {
 			// router
 			if err := app.tryInjectLiveReload(); err != nil {
@@ -789,19 +807,6 @@ func (app *Application) Build() error {
 			}
 			// re-build of the router from outside can be done with
 			// app.RefreshRouter()
-		}
-
-		if app.view.Len() > 0 {
-			app.logger.Debugf("Application: %d registered view engine(s)", app.view.Len())
-			// view engine
-			// here is where we declare the closed-relative framework functions.
-			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
-			rv := router.NewRoutePathReverser(app.APIBuilder)
-			app.view.AddFunc("urlpath", rv.Path)
-			// app.view.AddFunc("url", rv.URL)
-			if err := app.view.Load(); err != nil {
-				rp.Group("View Builder").Err(err)
-			}
 		}
 	}
 

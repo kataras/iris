@@ -165,7 +165,7 @@ func main() {
 			"data": user.Serializer(),
 		})
 	})
-	
+
 	app.Listen(":8080")
 }
 

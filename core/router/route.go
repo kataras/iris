@@ -343,6 +343,7 @@ func (r *Route) ResolvePath(args ...string) string {
 
 var ignoreHandlersTraces = [...]string{
 	"iris/macro/handler.MakeHandler",
+	"iris/hero.makeHandler.func2",
 	"iris/core/router.(*APIBuilder).Favicon",
 	"iris/core/router.StripPrefix",
 }
