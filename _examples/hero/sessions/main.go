@@ -32,8 +32,5 @@ func main() {
 	// Path: http://localhost:8080
 	app.Get("/", indexHandler)
 
-	app.Run(
-		iris.Addr(":8080"),
-		iris.WithoutServerError(iris.ErrServerClosed),
-	)
+	app.Listen(":8080")
 }

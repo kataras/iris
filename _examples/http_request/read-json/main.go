@@ -60,5 +60,5 @@ func main() {
 	//
 	// The response should be:
 	// Received: main.Company{Name:"iris-Go", City:"New York", Other:"Something here"}
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
+	app.Listen(":8080", iris.WithOptimizations)
 }

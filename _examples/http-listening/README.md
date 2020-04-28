@@ -235,7 +235,7 @@ func main() {
     app := iris.New()
 
     iris.RegisterOnInterrupt(func() {
-        timeout := 5 * time.Second
+        timeout := 10 * time.Second
         ctx, cancel := context.WithTimeout(context.Background(), timeout)
         defer cancel()
         // close all hosts

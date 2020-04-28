@@ -190,6 +190,8 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png)
 
+- Server will not return neither log the `ErrServerClosed` if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
+
 - Finally, Log level's and Route debug information colorization is respected across outputs. Previously if the application used more than one output destination (e.g. a file through `app.Logger().AddOutput`) the color support was automatically disabled from all, including the terminal one, this problem is fixed now. Developers can now see colors in their terminals while log files are kept with clear text.
 
 - New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.

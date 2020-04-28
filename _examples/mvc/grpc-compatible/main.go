@@ -23,7 +23,7 @@ func main() {
 	app.Logger().SetLevel("debug")
 
 	// The Iris server should ran under TLS (it's a gRPC requirement).
-	// POST: https://localhost:443/helloworld.greeter/sayhello
+	// POST: https://localhost:443/helloworld.Greeter/SayHello
 	// with request data: {"name": "John"}
 	// and expected output: {"message": "Hello John"}
 	app.Run(iris.TLS(":443", "server.crt", "server.key"))
@@ -32,7 +32,6 @@ func main() {
 func newApp() *iris.Application {
 	app := iris.New()
 	// app.Configure(iris.WithLowercaseRouting) // OPTIONAL.
-	app.Logger().SetLevel("debug")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1>Index Page</h1>")
@@ -55,7 +54,9 @@ func newApp() *iris.Application {
 	return app
 }
 
-type myController struct{}
+type myController struct {
+	// Ctx iris.Context
+}
 
 // SayHello implements helloworld.GreeterServer.
 func (c *myController) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {

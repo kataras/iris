@@ -105,5 +105,5 @@ func main() {
 		}
 	})
 
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }

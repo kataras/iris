@@ -185,11 +185,8 @@ var WithGlobalConfiguration = func(app *Application) {
 	app.Configure(WithConfiguration(YAML(globalConfigurationKeyword)))
 }
 
-// variables for configurators don't need any receivers, functions
-// for them that need (helps code editors to recognise as variables without parenthesis completion).
-
 // WithoutServerError will cause to ignore the matched "errors"
-// from the main application's `Run` function.
+// from the main application's `Run/Listen` function.
 //
 // Usage:
 // err := app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))

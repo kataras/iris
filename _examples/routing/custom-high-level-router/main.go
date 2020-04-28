@@ -98,5 +98,5 @@ func main() {
 	myCustomRouter := new(customRouter)
 	app.BuildRouter(app.ContextPool, myCustomRouter, app.APIBuilder, true)
 
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }

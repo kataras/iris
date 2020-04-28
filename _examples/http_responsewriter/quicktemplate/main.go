@@ -18,5 +18,5 @@ func main() {
 	app := newApp()
 	// http://localhost:8080
 	// http://localhost:8080/yourname
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }

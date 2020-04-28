@@ -17,7 +17,8 @@ func main() {
 	}
 	// same as:
 	// err := app.Listen(":8080")
-	// if err != nil && (err != iris.ErrServerClosed || err.Error() != iris.ErrServerClosed.Error()) {
+	// import "errors"
+	// if errors.Is(err, iris.ErrServerClosed) {
 	//     [...]
 	// }
 }
