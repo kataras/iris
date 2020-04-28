@@ -2,7 +2,7 @@
 //
 // Article: https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7
 //
-// $ go get github.com/etcd-io/bbolt
+// $ go get go.etcd.io/bbolt/...
 // $ go get github.com/iris-contrib/go.uuid
 // $ cd $GOPATH/src/github.com/kataras/iris/_examples/tutorial/url-shortener
 // $ go build
