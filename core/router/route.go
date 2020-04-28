@@ -145,11 +145,11 @@ func (r *Route) SetStatusOffline() bool {
 	return r.ChangeMethod(MethodNone)
 }
 
-// SetDescription sets the route's description
+// Describe sets the route's description
 // that will be logged alongside with the route information
 // in DEBUG log level.
 // Returns the `Route` itself.
-func (r *Route) SetDescription(description string) *Route {
+func (r *Route) Describe(description string) *Route {
 	r.Description = description
 	return r
 }
@@ -341,38 +341,10 @@ func (r *Route) ResolvePath(args ...string) string {
 	return formattedPath
 }
 
-var ignoreHandlersTraces = [...]string{
-	"iris/macro/handler.MakeHandler",
-	"iris/hero.makeHandler.func2",
-	"iris/core/router.(*APIBuilder).Favicon",
-	"iris/core/router.StripPrefix",
-}
-
-func ignoreHandlerTrace(name string) bool {
-	for _, ignore := range ignoreHandlersTraces {
-		if name == ignore {
-			return true
-		}
-	}
-
-	return false
-}
-
 func traceHandlerFile(method, name, line string, number int) string {
 	file := fmt.Sprintf("(%s:%d)", line, number)
 
-	// trim the path for Iris' internal middlewares, e.g.
-	// irs/mvc.GRPC.Apply.func1
-	if internalName := context.PackageName; strings.HasPrefix(name, internalName) {
-		name = strings.Replace(name, internalName, "iris", 1)
-	}
-	if internalName := "github.com/iris-contrib/middleware"; strings.HasPrefix(name, internalName) {
-		name = strings.Replace(name, internalName, "iris-contrib", 1)
-	}
-
-	name = strings.TrimSuffix(name, ".func1")
-
-	if ignoreHandlerTrace(name) {
+	if context.IgnoreHandlerName(name) {
 		return ""
 	}
 
@@ -457,7 +429,7 @@ func (r *Route) Trace(w io.Writer) {
 			line int
 		)
 
-		if i == r.MainHandlerIndex {
+		if i == r.MainHandlerIndex && r.MainHandlerName != "" {
 			// Main handler info can be programmatically
 			// changed to be more specific, respect these changes.
 			name = r.MainHandlerName
@@ -466,7 +438,6 @@ func (r *Route) Trace(w io.Writer) {
 		} else {
 			name = context.HandlerName(h)
 			file, line = context.HandlerFileLineRel(h)
-
 			// If a middleware, e.g (macro) which changes the main handler index,
 			// skip it.
 			if file == r.SourceFileName && line == r.SourceLineNumber {

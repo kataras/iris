@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/hcaptcha.*", "hCaptcha")
+	context.SetHandlerName("iris/middleware/hcaptcha.*", "iris.hCaptcha")
 }
 
 var (

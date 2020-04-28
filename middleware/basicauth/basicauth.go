@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/basicauth.*", "Basic Authentication")
+	context.SetHandlerName("iris/middleware/basicauth.*", "iris.basicauth")
 }
 
 type (

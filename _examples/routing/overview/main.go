@@ -103,7 +103,7 @@ func main() {
 	usersRoutes.Delete("/{id:uint64}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("delete user by id: %d", id)
-	}).SetDescription("deletes a user")
+	}).Describe("deletes a user")
 
 	// Subdomains, depends on the host, you have to edit the hosts or nginx/caddy's configuration if you use them.
 	//

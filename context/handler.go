@@ -19,7 +19,7 @@ var (
 )
 
 var (
-	handlerNames   = make(map[*regexp.Regexp]string)
+	handlerNames   = make(map[*nameExpr]string)
 	handlerNamesMu sync.RWMutex
 )
 
@@ -39,8 +39,33 @@ func SetHandlerName(original string, replacement string) {
 	}
 
 	handlerNamesMu.Lock()
-	handlerNames[regexp.MustCompile(original)] = replacement
+	// If regexp syntax is wrong
+	// then its `MatchString` will compare through literal. Fixes an issue
+	// when a handler name is declared as it's and cause regex parsing expression error,
+	// e.g. `iris/cache/client.(*Handler).ServeHTTP-fm`
+	regex, _ := regexp.Compile(original)
+	handlerNames[&nameExpr{
+		literal: original,
+		regex:   regex,
+	}] = replacement
 	handlerNamesMu.Unlock()
+}
+
+type nameExpr struct {
+	regex   *regexp.Regexp
+	literal string
+}
+
+func (expr *nameExpr) MatchString(s string) bool {
+	if expr.literal == s { // if matches as string, as it's.
+		return true
+	}
+
+	if expr.regex != nil {
+		return expr.regex.MatchString(s)
+	}
+
+	return false
 }
 
 // A Handler responds to an HTTP request.
@@ -79,20 +104,16 @@ func HandlerName(h interface{}) string {
 	pc := valueOf(h).Pointer()
 	name := runtime.FuncForPC(pc).Name()
 	handlerNamesMu.RLock()
-	for regex, newName := range handlerNames {
-		if regex.String() == name { // if matches as string, as it's.
-			name = newName
-			break
-		}
-
-		if regex.MatchString(name) {
+	for expr, newName := range handlerNames {
+		if expr.MatchString(name) {
 			name = newName
 			break
 		}
 	}
+
 	handlerNamesMu.RUnlock()
 
-	return name
+	return trimHandlerName(name)
 }
 
 // HandlerFileLine returns the handler's file and line information.
@@ -118,19 +139,96 @@ func HandlerFileLineRel(h interface{}) (file string, line int) {
 
 // MainHandlerName tries to find the main handler that end-developer
 // registered on the provided chain of handlers and returns its function name.
-func MainHandlerName(handlers Handlers) (name string, index int) {
-	for i := 0; i < len(handlers); i++ {
-		name = HandlerName(handlers[i])
-		index = i
-		if !strings.HasPrefix(name, "github.com/kataras/iris/v12") ||
-			strings.HasPrefix(name, "github.com/kataras/iris/v12/core/router.StripPrefix") ||
-			strings.HasPrefix(name, "github.com/kataras/iris/v12/core/router.FileServer") {
-			break
+func MainHandlerName(handlers ...interface{}) (name string, index int) {
+	if len(handlers) == 0 {
+		return
+	}
+
+	if hs, ok := handlers[0].(Handlers); ok {
+		tmp := make([]interface{}, 0, len(hs))
+		for _, h := range hs {
+			tmp = append(tmp, h)
 		}
 
+		return MainHandlerName(tmp...)
+	}
+
+	for i := 0; i < len(handlers); i++ {
+		name = HandlerName(handlers[i])
+		if name == "" {
+			continue
+		}
+
+		index = i
+		if !ingoreMainHandlerName(name) {
+			break
+		}
 	}
 
 	return
+}
+
+func trimHandlerName(name string) string {
+	// trim the path for Iris' internal middlewares, e.g.
+	// irs/mvc.GRPC.Apply.func1
+	if internalName := PackageName; strings.HasPrefix(name, internalName) {
+		name = strings.Replace(name, internalName, "iris", 1)
+	}
+
+	if internalName := "github.com/iris-contrib/middleware"; strings.HasPrefix(name, internalName) {
+		name = strings.Replace(name, internalName, "iris-contrib", 1)
+	}
+
+	name = strings.TrimSuffix(name, ".func1")
+	return name
+}
+
+var ignoreHandlerNames = [...]string{
+	"iris/macro/handler.MakeHandler",
+	"iris/hero.makeHandler.func2",
+	"iris/core/router.ExecutionOptions.buildHandler",
+	"iris/core/router.(*APIBuilder).Favicon",
+	"iris/core/router.StripPrefix",
+}
+
+// IgnoreHandlerName compares a static slice of Iris builtin
+// internal methods that should be ignored from trace.
+// Some internal methods are kept out of this list for actual debugging.
+func IgnoreHandlerName(name string) bool {
+	for _, ignore := range ignoreHandlerNames {
+		if name == ignore {
+			return true
+		}
+	}
+
+	return false
+}
+
+var ignoreMainHandlerNames = [...]string{
+	"iris.cache",
+	"iris.basicauth",
+	"iris.hCaptcha",
+	"iris.reCAPTCHA",
+	"iris.profiling",
+	"iris.recover",
+}
+
+// ingoreMainHandlerName reports whether a main handler of "name" should
+// be ignored and continue to match the next.
+// The ignored main handler names are literals and respects the `ignoreNameHandlers` too.
+func ingoreMainHandlerName(name string) bool {
+	if IgnoreHandlerName(name) {
+		// If ignored at all, it can't be the main.
+		return true
+	}
+
+	for _, ignore := range ignoreMainHandlerNames {
+		if name == ignore {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Filter is just a type of func(Handler) bool which reports whether an action must be performed

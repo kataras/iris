@@ -399,7 +399,7 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 	for _, route := range routes {
 		if route.Method == http.MethodHead {
 		} else {
-			route.SetDescription(description)
+			route.Describe(description)
 			route.SetSourceLine(fileName, lineNumber)
 		}
 
@@ -453,6 +453,7 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	// before join the middleware + handlers + done handlers and apply the execution rules.
 
 	mainHandlerName, mainHandlerIndex := context.MainHandlerName(mainHandlers)
+
 	mainHandlerFileName, mainHandlerFileNumber := context.HandlerFileLineRel(handlers[mainHandlerIndex])
 
 	// re-calculate mainHandlerIndex in favor of the middlewares.
@@ -939,7 +940,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		reqPath = requestPath[0]
 	}
 
-	return api.registerResourceRoute(reqPath, h).SetDescription(description)
+	return api.registerResourceRoute(reqPath, h).Describe(description)
 }
 
 // OnErrorCode registers an error http status code

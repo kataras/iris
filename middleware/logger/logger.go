@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/logger.*", "Request Logger")
+	context.SetHandlerName("iris/middleware/logger.*", "iris.logger")
 }
 
 type requestLoggerMiddleware struct {

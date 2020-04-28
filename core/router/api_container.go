@@ -117,7 +117,15 @@ func (api *APIContainer) Done(handlersFn ...interface{}) {
 // See `OnError`, `RegisterDependency`, `Use`, `Done`, `Get`, `Post`, `Put`, `Patch` and `Delete` too.
 func (api *APIContainer) Handle(method, relativePath string, handlersFn ...interface{}) *Route {
 	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
-	return api.Self.Handle(method, relativePath, handlers...)
+	route := api.Self.Handle(method, relativePath, handlers...)
+
+	// Fix main handler name and source modified by execution rules wrapper.
+	route.MainHandlerName, route.MainHandlerIndex = context.MainHandlerName(handlersFn...)
+	if len(handlersFn) > route.MainHandlerIndex {
+		route.SourceFileName, route.SourceLineNumber = context.HandlerFileLineRel(handlersFn[route.MainHandlerIndex])
+	}
+
+	return route
 }
 
 // Get registers a route for the Get HTTP Method.
