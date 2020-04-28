@@ -113,5 +113,5 @@ func main() {
 	//
 	// `iris.WithoutServerError` is an optional configurator,
 	// if passed to the `Run` then it will not print its passed error as an actual server error.
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
+	app.Listen(":8080", iris.WithOptimizations)
 }

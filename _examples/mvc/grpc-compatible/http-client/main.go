@@ -35,7 +35,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	resp, err := client.Post("https://localhost/hello", "application/json", buf)
+	resp, err := client.Post("https://localhost/helloworld.Greeter/SayHello", "application/json", buf)
 	if err != nil {
 		log.Fatal(err)
 	}

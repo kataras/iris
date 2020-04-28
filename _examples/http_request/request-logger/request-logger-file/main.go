@@ -35,7 +35,7 @@ func main() {
 	// http://localhost:8080/1
 	// http://localhost:8080/2
 	// http://lcoalhost:8080/notfoundhere
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }
 
 // get a filename based on the date, file logs works that way the most times

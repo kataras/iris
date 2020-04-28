@@ -61,5 +61,5 @@ func main() {
 	// http://localhost:8080/2
 	// http://lcoalhost:8080/notfoundhere
 	// see the output on the console.
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }

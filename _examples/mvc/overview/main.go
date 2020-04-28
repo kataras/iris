@@ -30,14 +30,7 @@ func main() {
 	// http://localhost:8080/hello/iris
 	// http://localhost:8080/movies
 	// http://localhost:8080/movies/1
-	app.Run(
-		// Start the web server at localhost:8080
-		iris.Addr("localhost:8080"),
-		// skip err server closed when CTRL/CMD+C pressed:
-		iris.WithoutServerError(iris.ErrServerClosed),
-		// enables faster json serialization and more:
-		iris.WithOptimizations,
-	)
+	app.Listen(":8080", iris.WithOptimizations)
 }
 
 // note the mvc.Application, it's not iris.Application.

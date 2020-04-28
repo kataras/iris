@@ -87,7 +87,7 @@ func ExampleSupervisor_RegisterOnServe() {
 	logger := log.New(os.Stdout, "Supervisor: ", 0)
 
 	mytask := myTestTask{
-		restartEvery: 6 * time.Second,
+		restartEvery: 3 * time.Second,
 		maxRestarts:  2,
 		logger:       logger,
 	}

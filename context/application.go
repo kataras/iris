@@ -1,6 +1,7 @@
 package context
 
 import (
+	stdContext "context"
 	"io"
 	"net/http"
 
@@ -40,6 +41,10 @@ type Application interface {
 	//
 	// It is ready to use after Build state.
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
+
+	// Shutdown gracefully terminates all the application's server hosts and any tunnels.
+	// Returns an error on the first failure, otherwise nil.
+	Shutdown(ctx stdContext.Context) error
 
 	// GetRouteReadOnly returns the registered "read-only" route based on its name, otherwise nil.
 	// One note: "routeName" should be case-sensitive. Used by the context to get the current route.

@@ -70,5 +70,5 @@ func main() {
 
 	// http://localhost:8080/insert
 	// http://localhost:8080/get
-	app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
+	app.Listen(":8080")
 }
