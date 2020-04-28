@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/recover.*", "Panic Recover")
+	context.SetHandlerName("iris/middleware/recover.*", "iris.recover")
 }
 
 func getRequestLogs(ctx context.Context) string {

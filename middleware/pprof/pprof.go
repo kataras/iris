@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/pprof.*", "Profiling")
+	context.SetHandlerName("iris/middleware/pprof.*", "iris.profiling")
 }
 
 // New returns a new pprof (profile, cmdline, symbol, goroutine, heap, threadcreate, debug/block) Middleware.

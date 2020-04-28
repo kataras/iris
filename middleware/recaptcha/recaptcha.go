@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/recaptcha.*", "reCAPTCHA")
+	context.SetHandlerName("iris/middleware/recaptcha.*", "iris.reCAPTCHA")
 }
 
 const (
