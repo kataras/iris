@@ -7,12 +7,11 @@ require (
 	github.com/CloudyKit/jet/v3 v3.0.0
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
-	github.com/dgraph-io/badger v1.6.0
+	github.com/dgraph-io/badger v1.6.1
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
-	github.com/etcd-io/bbolt v1.3.3
 	github.com/fatih/structs v1.1.0
 	github.com/gavv/httpexpect v2.0.0+incompatible
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/protobuf v1.4.0
 	github.com/gomodule/redigo v1.7.1-0.20190724094224-574c33c3df38
 	github.com/hashicorp/go-version v1.2.0
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
@@ -25,14 +24,15 @@ require (
 	github.com/kataras/neffos v0.0.14
 	github.com/kataras/pio v0.0.5
 	github.com/kataras/sitemap v0.0.5
-	github.com/klauspost/compress v1.9.7
-	github.com/mediocregopher/radix/v3 v3.4.2
+	github.com/klauspost/compress v1.10.5
+	github.com/mediocregopher/radix/v3 v3.5.0
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/vmihailenco/msgpack/v5 v5.0.0-alpha.2
-	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+	go.etcd.io/bbolt v1.3.4
+	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
 	golang.org/x/text v0.3.2
-	gopkg.in/ini.v1 v1.51.1
-	gopkg.in/yaml.v3 v3.0.0-20191120175047-4206685974f2
+	gopkg.in/ini.v1 v1.55.0
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )

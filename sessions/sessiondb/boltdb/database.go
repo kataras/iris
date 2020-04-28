@@ -9,8 +9,8 @@ import (
 
 	"github.com/kataras/iris/v12/sessions"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/kataras/golog"
+	bolt "go.etcd.io/bbolt"
 )
 
 // DefaultFileMode used as the default database's "fileMode"

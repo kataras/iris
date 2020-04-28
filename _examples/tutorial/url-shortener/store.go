@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 
-	bolt "github.com/etcd-io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 // Panic panics, change it if you don't want to panic on critical INITIALIZE-ONLY-ERRORS
