@@ -11,7 +11,6 @@ import (
 	macroHandler "github.com/kataras/iris/v12/macro/handler"
 
 	"github.com/kataras/golog"
-	"github.com/kataras/pio"
 )
 
 // RequestHandler the middle man between acquiring a context and releasing it.
@@ -182,6 +181,8 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		defer golog.SetTimeFormat(bckpTimeFormat)
 		golog.SetTimeFormat("")
 
+		newLine := []byte("\n")
+
 		for _, method := range append(AllMethods, MethodNone) {
 			methodRoutes := collect(method)
 			if len(methodRoutes) == 0 {
@@ -192,7 +193,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 				r.Trace(golog.Default.Printer)
 			}
 
-			golog.Default.Printer.Write(pio.NewLine)
+			golog.Default.Printer.Write(newLine)
 		}
 	}
 
