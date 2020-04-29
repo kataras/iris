@@ -386,18 +386,8 @@ func (r *Route) Trace(w io.Writer) {
 	}
 
 	path := r.Tmpl().Src
-
-	if subdomain := r.Subdomain; subdomain != "" {
-		if path == "" {
-			path = "/"
-		}
-
-		if subdomain == "*." { // wildcard.
-			subdomain = "subdomain"
-		}
-
-		r.Description = fmt.Sprintf("%s", subdomain)
-		// path = fmt.Sprintf("%s %s", r.Subdomain, path)
+	if path == "" {
+		path = "/"
 	}
 
 	// @method: @path
@@ -408,8 +398,22 @@ func (r *Route) Trace(w io.Writer) {
 
 	// (@description)
 	description := r.Description
-	if description == "" && r.Method == MethodNone {
-		description = "offline"
+	if description == "" {
+		if r.Method == MethodNone {
+			description = "offline"
+		}
+
+		if subdomain := r.Subdomain; subdomain != "" {
+			if subdomain == "*." { // wildcard.
+				subdomain = "subdomain"
+			}
+
+			if description == "offline" {
+				description += ", "
+			}
+
+			description += subdomain
+		}
 	}
 
 	if description != "" {
