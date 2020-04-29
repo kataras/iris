@@ -728,87 +728,92 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 // 	app.Logger().Errorf("%s: %s", typ, err)
 // })
 func (app *Application) Build() error {
+	if app.builded {
+		return nil
+	}
+	start := time.Now()
+	app.builded = true // even if fails.
+
 	rp := errgroup.New("Application Builder")
+	rp.Err(app.APIBuilder.GetReporter())
 
-	if !app.builded {
-		app.builded = true
-		rp.Err(app.APIBuilder.GetReporter())
-
-		if app.defaultMode { // the app.I18n and app.View will be not available until Build.
-			if !app.I18n.Loaded() {
-				for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
-					if _, err := os.Stat(s); os.IsNotExist(err) {
-						continue
-					}
-
-					if err := app.I18n.Load(s); err != nil {
-						continue
-					}
-
-					app.I18n.SetDefault("en-US")
-					break
+	if app.defaultMode { // the app.I18n and app.View will be not available until Build.
+		if !app.I18n.Loaded() {
+			for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
+				if _, err := os.Stat(s); os.IsNotExist(err) {
+					continue
 				}
-			}
 
-			if app.view.Len() == 0 {
-				for _, s := range []string{"./views", "./templates", "./web/views"} {
-					if _, err := os.Stat(s); os.IsNotExist(err) {
-						continue
-					}
-
-					app.RegisterView(HTML(s, ".html"))
-					break
+				if err := app.I18n.Load(s); err != nil {
+					continue
 				}
+
+				app.I18n.SetDefault("en-US")
+				break
 			}
 		}
 
-		if app.I18n.Loaded() {
-			// {{ tr "lang" "key" arg1 arg2 }}
-			app.view.AddFunc("tr", app.I18n.Tr)
-			app.Router.WrapRouter(app.I18n.Wrapper())
-		}
+		if app.view.Len() == 0 {
+			for _, s := range []string{"./views", "./templates", "./web/views"} {
+				if _, err := os.Stat(s); os.IsNotExist(err) {
+					continue
+				}
 
-		if n := app.view.Len(); n > 0 {
-			tr := "engines"
-			if n == 1 {
-				tr = tr[0 : len(tr)-1]
+				app.RegisterView(HTML(s, ".html"))
+				break
 			}
-
-			app.logger.Debugf("Application: %d registered view %s", n, tr)
-			// view engine
-			// here is where we declare the closed-relative framework functions.
-			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
-			rv := router.NewRoutePathReverser(app.APIBuilder)
-			app.view.AddFunc("urlpath", rv.Path)
-			// app.view.AddFunc("url", rv.URL)
-			if err := app.view.Load(); err != nil {
-				rp.Group("View Builder").Err(err)
-			}
-		}
-
-		if !app.Router.Downgraded() {
-			// router
-			if err := app.tryInjectLiveReload(); err != nil {
-				rp.Errf("LiveReload: init: failed: %v", err)
-			}
-
-			if app.config.ForceLowercaseRouting {
-				app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-					r.URL.Path = strings.ToLower(r.URL.Path)
-					next(w, r)
-				})
-			}
-
-			// create the request handler, the default routing handler
-			routerHandler := router.NewDefaultHandler(app.config)
-			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
-			if err != nil {
-				rp.Err(err)
-			}
-			// re-build of the router from outside can be done with
-			// app.RefreshRouter()
 		}
 	}
+
+	if app.I18n.Loaded() {
+		// {{ tr "lang" "key" arg1 arg2 }}
+		app.view.AddFunc("tr", app.I18n.Tr)
+		app.Router.WrapRouter(app.I18n.Wrapper())
+	}
+
+	if n := app.view.Len(); n > 0 {
+		tr := "engines"
+		if n == 1 {
+			tr = tr[0 : len(tr)-1]
+		}
+
+		app.logger.Debugf("Application: %d registered view %s", n, tr)
+		// view engine
+		// here is where we declare the closed-relative framework functions.
+		// Each engine has their defaults, i.e yield,render,render_r,partial, params...
+		rv := router.NewRoutePathReverser(app.APIBuilder)
+		app.view.AddFunc("urlpath", rv.Path)
+		// app.view.AddFunc("url", rv.URL)
+		if err := app.view.Load(); err != nil {
+			rp.Group("View Builder").Err(err)
+		}
+	}
+
+	if !app.Router.Downgraded() {
+		// router
+		if err := app.tryInjectLiveReload(); err != nil {
+			rp.Errf("LiveReload: init: failed: %v", err)
+		}
+
+		if app.config.ForceLowercaseRouting {
+			app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+				r.URL.Path = strings.ToLower(r.URL.Path)
+				next(w, r)
+			})
+		}
+
+		// create the request handler, the default routing handler
+		routerHandler := router.NewDefaultHandler(app.config)
+		err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
+		if err != nil {
+			rp.Err(err)
+		}
+		// re-build of the router from outside can be done with
+		// app.RefreshRouter()
+	}
+
+	// if end := time.Since(start); end.Seconds() > 5 {
+	app.logger.Debugf("Application: build took %s", time.Since(start))
 
 	return errgroup.Check(rp)
 }
