@@ -160,14 +160,8 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		}
 	}
 
+	// TODO: move this and make it easier to read when all cases are, visually, tested.
 	if logger := h.logger; logger != nil && logger.Level == golog.DebugLevel {
-		tr := "Routes"
-		if len(registeredRoutes) == 1 {
-			tr = tr[0 : len(tr)-1]
-		}
-
-		// logger.Debugf("%s: %d", tr, len(registeredRoutes))
-
 		// group routes by method and print them without the [DBUG] and time info,
 		// the route logs are colorful.
 		// Note: don't use map, we need to keep registered order, use
@@ -182,42 +176,33 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			return
 		}
 
-		// bckpTimeFormat := logger.TimeFormat
-		// defer logger.SetTimeFormat(bckpTimeFormat)
-		// logger.SetTimeFormat("")
-
-		type methodCount struct {
+		type MethodRoutes struct {
 			method string
-			count  int
+			routes []*Route
 		}
 
 		allMethods := append(AllMethods, MethodNone)
-		routeMethodCounts := make([]methodCount, 0, len(allMethods))
+		methodRoutes := make([]MethodRoutes, 0, len(allMethods))
 
-		for i, method := range allMethods {
-			methodRoutes := collect(method)
-			if len(methodRoutes) == 0 {
-				continue
-			}
-
-			routeMethodCounts = append(routeMethodCounts, methodCount{method, len(methodRoutes)})
-
-			for _, r := range methodRoutes {
-				r.Trace(logger.Printer)
-			}
-
-			if i != len(allMethods)-1 {
-				logger.Printer.Write(pio.NewLine)
+		for _, method := range allMethods {
+			routes := collect(method)
+			if len(routes) > 0 {
+				methodRoutes = append(methodRoutes, MethodRoutes{method, routes})
 			}
 		}
 
-		if n := len(routeMethodCounts); n > 0 {
+		if n := len(methodRoutes); n > 0 {
 			tr := "routes"
 			if len(registeredRoutes) == 1 {
 				tr = tr[0 : len(tr)-1]
 			}
-			fmt.Fprintf(logger.Printer, "%s API: %d registered %s (", golog.GetTextForLevel(golog.DebugLevel, true), len(registeredRoutes), tr)
-			for i, mc := range routeMethodCounts {
+
+			bckpNewLine := logger.NewLine
+			logger.NewLine = false
+			logger.Debugf("API: %d registered %s (", len(registeredRoutes), tr)
+			logger.NewLine = bckpNewLine
+
+			for i, m := range methodRoutes {
 				// @method: @count
 				if i > 0 {
 					if i == n-1 {
@@ -226,13 +211,22 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 						fmt.Fprint(logger.Printer, ", ")
 					}
 				}
-				fmt.Fprintf(logger.Printer, "%d ", mc.count)
-				pio.WriteRich(logger.Printer, mc.method, traceMethodColor(mc.method))
+				fmt.Fprintf(logger.Printer, "%d ", len(m.routes))
+				pio.WriteRich(logger.Printer, m.method, traceMethodColor(m.method))
 			}
 
 			fmt.Fprint(logger.Printer, ")\n")
 		}
 
+		for i, m := range methodRoutes {
+			for _, r := range m.routes {
+				r.Trace(logger.Printer)
+			}
+
+			if i != len(allMethods)-1 {
+				logger.Printer.Write(pio.NewLine)
+			}
+		}
 	}
 
 	return errgroup.Check(rp)

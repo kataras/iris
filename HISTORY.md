@@ -164,15 +164,195 @@ Here is a preview of what the new Hero handlers look like:
 
 ### Request & Response & Path Parameters
 
-![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/1.png)
+**1.** Declare Go types for client's request body and a server's response.
+
+```go
+type (
+	request struct {
+		Firstname string `json:"firstname"`
+		Lastname  string `json:"lastname"`
+	}
+
+	response struct {
+		ID      uint64 `json:"id"`
+		Message string `json:"message"`
+	}
+)
+```
+
+**2.** Create the route handler.
+
+Path parameters and request body are binded automatically.
+- **id uint64** binds to "id:uint64"
+- **input request** binds to client request data such as JSON
+
+```go
+func updateUser(id uint64, input request) response {
+	return response{
+		ID:      id,
+		Message: "User updated successfully",
+	}
+}
+```
+
+**3.** Configure the container per group and register the route.
+
+```go
+app.Party("/user").ConfigureContainer(container)
+
+func container(api *iris.APIContainer) {
+    api.Put("/{id:uint64}", updateUser)
+}
+```
+
+**4.** Simulate a [client](https://curl.haxx.se/download.html) request which sends data to the server and displays the response.
+
+```sh
+curl --request PUT -d '{"firstanme":"John","lastname":"Doe"}' http://localhost:8080/user/42
+```
+
+```json
+{
+    "id": 42,
+    "message": "User updated successfully"
+}
+```
 
 ### Custom Preflight
 
-![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/2.png)
+Before we continue to the next section, register dependencies, you may want to learn how a response can be customized through the `iris.Context` right before sent to the client.
 
-### Custom Dependencies
+The server will automatically execute the `Preflight(iris.Context) error` method of a function's output struct value right before send the response to the client.
 
-![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/3.png)
+Take for example that you want to fire different HTTP status codes depending on the custom logic inside your handler and also modify the value(response body) itself before sent to the client. Your response type should contain a `Preflight` method like below.
+
+```go
+type response struct {
+	ID      uint64 `json:"id,omitempty"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+	Timestamp int64 `json:"timestamp,omitempty"`
+}
+
+func (r *response) Preflight(ctx iris.Context) error {
+	if r.ID > 0 {
+		r.Timestamp = time.Now().Unix()
+	}
+
+	ctx.StatusCode(r.Code)
+	return nil
+}
+```
+
+Now, each handler that returns a `*response` value will call the `response.Preflight` method automatically.
+
+```go
+func deleteUser(db *sql.DB, id uint64) *response {
+    // [...custom logic]
+
+    return &response{
+        Message: "User has been marked for deletion",
+        Code: iris.StatusAccepted,
+    }
+}
+```
+
+If you register the route and fire a request you should see an output like this, the timestamp is filled and the HTTP status code of the response that the client will receive is 202 (Status Accepted).
+
+```json
+{
+  "message": "User has been marked for deletion",
+  "code": 202,
+  "timestamp": 1583313026
+}
+```
+
+### Register Dependencies
+
+**1.** Import packages to interact with a database.
+The go-sqlite3 package is a database driver for [SQLite](https://www.sqlite.org/index.html).
+
+```go
+import "database/sql"
+import _ "github.com/mattn/go-sqlite3"
+```
+
+**2.** Configure the container ([see above](#request--response--path-parameters)), register your dependencies. Handler expects an *sql.DB instance.
+
+```go
+localDB, _ := sql.Open("sqlite3", "./foo.db")
+api.RegisterDependency(localDB)
+```
+
+**3.** Register a route to create a user.
+
+```go
+api.Post("/{id:uint64}", createUser)
+```
+
+**4.** The create user Handler.
+
+The handler accepts a database and some client request data such as JSON, Protobuf, Form, URL Query and e.t.c. It Returns a response.
+
+```go
+func createUser(db *sql.DB, user request) *response {
+    // [custom logic using the db]
+    userID, err := db.CreateUser(user)
+    if err != nil {
+        return &response{
+            Message: err.Error(),
+            Code: iris.StatusInternalServerError,
+        }
+    }
+
+	return &response{
+		ID:      userID,
+		Message: "User created",
+		Code:    iris.StatusCreated,
+	}
+}
+```
+
+**5.** Simulate a [client](https://curl.haxx.se/download.html) to create a user.
+
+```sh
+# JSON
+curl --request POST -d '{"firstname":"John","lastname":"Doe"}' \
+--header 'Content-Type: application/json' \
+http://localhost:8080/user
+```
+
+```sh
+# Form (multipart)
+curl --request POST 'http://localhost:8080/users' \
+--header 'Content-Type: multipart/form-data' \
+--form 'firstname=John' \
+--form 'lastname=Doe'
+```
+
+```sh
+# Form (URL-encoded)
+curl --request POST 'http://localhost:8080/users' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'firstname=John' \
+--data-urlencode 'lastname=Doe'
+```
+
+```sh
+# URL Query
+curl --request POST 'http://localhost:8080/users?firstname=John&lastname=Doe'
+```
+
+Response: 
+
+```json
+{
+    "id": 42,
+    "message": "User created",
+    "code": 201,
+    "timestamp": 1583313026
+}
+```
 
 Other Improvements:
 
@@ -184,11 +364,13 @@ Other Improvements:
 
 #### DBUG Routes (1)
 
-![DBUG routes](https://iris-go.com/images/v12.2.0-dbug.png)
+![DBUG routes](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
 
-### DBUG Routes (2)
+#### DBUG Routes (2)
 
-![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png)
+![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
+
+- Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
 
 - Server will not return neither log the `ErrServerClosed` if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
 
