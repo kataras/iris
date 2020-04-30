@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	macroHandler "github.com/kataras/iris/v12/macro/handler"
 
 	"github.com/kataras/golog"
+	"github.com/kataras/pio"
 )
 
 // RequestHandler the middle man between acquiring a context and releasing it.
@@ -25,12 +27,23 @@ type RequestHandler interface {
 }
 
 type routerHandler struct {
-	trees  []*trie
-	hosts  bool // true if at least one route contains a Subdomain.
 	config context.ConfigurationReadOnly
+	logger *golog.Logger
+
+	trees []*trie
+	hosts bool // true if at least one route contains a Subdomain.
 }
 
 var _ RequestHandler = &routerHandler{}
+
+// NewDefaultHandler returns the handler which is responsible
+// to map the request with a route (aka mux implementation).
+func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logger) RequestHandler {
+	return &routerHandler{
+		config: config,
+		logger: logger,
+	}
+}
 
 func (h *routerHandler) getTree(method, subdomain string) *trie {
 	for i := range h.trees {
@@ -64,14 +77,6 @@ func (h *routerHandler) AddRoute(r *Route) error {
 
 	t.insert(path, routeName, handlers)
 	return nil
-}
-
-// NewDefaultHandler returns the handler which is responsible
-// to map the request with a route (aka mux implementation).
-func NewDefaultHandler(config context.ConfigurationReadOnly) RequestHandler {
-	return &routerHandler{
-		config: config,
-	}
 }
 
 // RoutesProvider should be implemented by
@@ -155,13 +160,13 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		}
 	}
 
-	if golog.Default.Level == golog.DebugLevel {
-		tr := "routes"
+	if logger := h.logger; logger != nil && logger.Level == golog.DebugLevel {
+		tr := "Routes"
 		if len(registeredRoutes) == 1 {
 			tr = tr[0 : len(tr)-1]
 		}
 
-		golog.Debugf("API: %d registered %s", len(registeredRoutes), tr)
+		// logger.Debugf("%s: %d", tr, len(registeredRoutes))
 
 		// group routes by method and print them without the [DBUG] and time info,
 		// the route logs are colorful.
@@ -177,24 +182,57 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			return
 		}
 
-		bckpTimeFormat := golog.Default.TimeFormat
-		defer golog.SetTimeFormat(bckpTimeFormat)
-		golog.SetTimeFormat("")
+		// bckpTimeFormat := logger.TimeFormat
+		// defer logger.SetTimeFormat(bckpTimeFormat)
+		// logger.SetTimeFormat("")
 
-		newLine := []byte("\n")
+		type methodCount struct {
+			method string
+			count  int
+		}
 
-		for _, method := range append(AllMethods, MethodNone) {
+		allMethods := append(AllMethods, MethodNone)
+		routeMethodCounts := make([]methodCount, 0, len(allMethods))
+
+		for i, method := range allMethods {
 			methodRoutes := collect(method)
 			if len(methodRoutes) == 0 {
 				continue
 			}
 
+			routeMethodCounts = append(routeMethodCounts, methodCount{method, len(methodRoutes)})
+
 			for _, r := range methodRoutes {
-				r.Trace(golog.Default.Printer)
+				r.Trace(logger.Printer)
 			}
 
-			golog.Default.Printer.Write(newLine)
+			if i != len(allMethods)-1 {
+				logger.Printer.Write(pio.NewLine)
+			}
 		}
+
+		if n := len(routeMethodCounts); n > 0 {
+			tr := "routes"
+			if len(registeredRoutes) == 1 {
+				tr = tr[0 : len(tr)-1]
+			}
+			fmt.Fprintf(logger.Printer, "%s API: %d registered %s (", golog.GetTextForLevel(golog.DebugLevel, true), len(registeredRoutes), tr)
+			for i, mc := range routeMethodCounts {
+				// @method: @count
+				if i > 0 {
+					if i == n-1 {
+						fmt.Fprint(logger.Printer, " and ")
+					} else {
+						fmt.Fprint(logger.Printer, ", ")
+					}
+				}
+				fmt.Fprintf(logger.Printer, "%d ", mc.count)
+				pio.WriteRich(logger.Printer, mc.method, traceMethodColor(mc.method))
+			}
+
+			fmt.Fprint(logger.Printer, ")\n")
+		}
+
 	}
 
 	return errgroup.Check(rp)

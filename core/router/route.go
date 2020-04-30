@@ -349,7 +349,28 @@ func traceHandlerFile(method, name, line string, number int) string {
 	}
 
 	space := strings.Repeat(" ", len(method)+1)
-	return fmt.Sprintf("\n%s ⬝ %s %s", space, name, file)
+	return fmt.Sprintf("\n%s • %s %s", space, name, file)
+}
+
+var methodColors = map[string]int{
+	http.MethodGet:     pio.Green,
+	http.MethodPost:    pio.Magenta,
+	http.MethodPut:     pio.Blue,
+	http.MethodDelete:  pio.Red,
+	http.MethodConnect: pio.Green,
+	http.MethodHead:    23,
+	http.MethodPatch:   pio.Blue,
+	http.MethodOptions: pio.Gray,
+	http.MethodTrace:   pio.Yellow,
+	MethodNone:         203, // orange-red.
+}
+
+func traceMethodColor(method string) int {
+	if color, ok := methodColors[method]; ok {
+		return color
+	}
+
+	return pio.Black
 }
 
 // Trace prints some debug info about the Route to the "w".
@@ -361,39 +382,18 @@ func traceHandlerFile(method, name, line string, number int) string {
 // If route and handler line:number locations are equal then the second is ignored.
 func (r *Route) Trace(w io.Writer) {
 	// Color the method.
-	color := pio.Black
-	switch r.Method {
-	case http.MethodGet:
-		color = pio.Green
-	case http.MethodPost:
-		color = pio.Magenta
-	case http.MethodPut:
-		color = pio.Blue
-	case http.MethodDelete:
-		color = pio.Red
-	case http.MethodConnect:
-		color = pio.Green
-	case http.MethodHead:
-		color = 23
-	case http.MethodPatch:
-		color = pio.Blue
-	case http.MethodOptions:
-		color = pio.Gray
-	case http.MethodTrace:
-		color = pio.Yellow
-	case MethodNone:
-		color = 203 // orange-red.
-	}
+	color := traceMethodColor(r.Method)
+
+	// @method: @path
+	// space := strings.Repeat(" ", len(http.MethodConnect)-len(r.Method))
+	// s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
+	pio.WriteRich(w, r.Method, color)
 
 	path := r.Tmpl().Src
 	if path == "" {
 		path = "/"
 	}
 
-	// @method: @path
-	// space := strings.Repeat(" ", len(http.MethodConnect)-len(r.Method))
-	// s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
-	pio.WriteRich(w, r.Method, color)
 	fmt.Fprintf(w, ": %s", path)
 
 	// (@description)
