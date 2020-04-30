@@ -731,7 +731,7 @@ func (app *Application) Build() error {
 	if app.builded {
 		return nil
 	}
-	start := time.Now()
+	// start := time.Now()
 	app.builded = true // even if fails.
 
 	rp := errgroup.New("Application Builder")
@@ -803,7 +803,7 @@ func (app *Application) Build() error {
 		}
 
 		// create the request handler, the default routing handler
-		routerHandler := router.NewDefaultHandler(app.config)
+		routerHandler := router.NewDefaultHandler(app.config, app.logger)
 		err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
 		if err != nil {
 			rp.Err(err)
@@ -813,7 +813,7 @@ func (app *Application) Build() error {
 	}
 
 	// if end := time.Since(start); end.Seconds() > 5 {
-	app.logger.Debugf("Application: build took %s", time.Since(start))
+	// app.logger.Debugf("Application: build took %s", time.Since(start))
 
 	return errgroup.Check(rp)
 }
@@ -1172,7 +1172,7 @@ func (app *Application) tryStartTunneling() {
 				// to make subdomains resolution still based on this new remote, public addresses.
 				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
-				directLog := []byte(fmt.Sprintf("⬝ Public Address: %s\n", publicAddr))
+				directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
 				app.Logger().Printer.Output.Write(directLog)
 			}
 		})

@@ -48,5 +48,7 @@ func newApp() *iris.Application {
 
 func main() {
 	app := newApp()
+	app.Logger().SetLevel("debug")
+
 	app.Listen(":8080")
 }
