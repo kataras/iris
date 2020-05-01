@@ -10,6 +10,7 @@ Builtin Handlers
 | [Google reCAPTCHA](recaptcha) | [iris/_examples/miscellaneous/recaptcha](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/recaptcha) |
 | [hCaptcha](hcaptcha) | [iris/_examples/miscellaneous/recaptcha](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/hcaptcha) |
 | [recovery](recover) | [iris/_examples/miscellaneous/recover](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/recover) |
+| [rate](rate) | [iris/_examples/miscellaneous/ratelimit](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/ratelimit) |
 
 Community made
 ------------

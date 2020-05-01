@@ -283,13 +283,15 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 ### Miscellaneous
 
+- [Rate Limit](miscellaneous/ratelimit/main.go) **NEW**
 - [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
 - [Request Logger](http_request/request-logger/main.go)
     * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
 - [Recovery](miscellaneous/recover/main.go)
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
-- [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
+- [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
+- [hCaptcha](miscellaneous/hcaptcha/main.go) **NEW**
 
 ### Community-based Handlers
 
