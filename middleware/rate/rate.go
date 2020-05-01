@@ -89,9 +89,7 @@ func Limit(limit float64, burst int, options ...Option) context.Handler {
 }
 
 func (l *Limiter) acquire() *Client {
-	v := l.pool.Get().(*Client)
-	v.LastSeen = time.Now()
-	return v
+	return l.pool.Get().(*Client)
 }
 
 func (l *Limiter) release(client *Client) {
