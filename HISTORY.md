@@ -394,31 +394,33 @@ Other Improvements:
 
 New Context Methods:
 
-- `context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
-- `context.IsGRPC() bool` reports whether the request came from a gRPC client
-- `context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
-- `context.StopWithStatus(int)` stops the handlers chain and writes the status code
-- `context.StopWithText(int, string)` stops the handlers chain, writes thre status code and a plain text message
-- `context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
-- `context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
-- `context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
-- `context.Protobuf(proto.Message)` sends protobuf to the client
-- `context.MsgPack(interface{})` sends msgpack format data to the client
-- `context.ReadProtobuf(ptr)` binds request body to a proto message
-- `context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
-- `context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
-- `context.SetSameSite(http.SameSite)` to set cookie "SameSite" option (respectful by sessions too)
-- `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
-- `context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(context)`
-- `context.Controller() reflect.Value` returns the current MVC Controller value.
+- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client.
+- `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
+- `Context.IsGRPC() bool` reports whether the request came from a gRPC client
+- `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
+- `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
+- `Context.StopWithText(int, string)` stops the handlers chain, writes thre status code and a plain text message
+- `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
+- `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
+- `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
+- `Context.Protobuf(proto.Message)` sends protobuf to the client
+- `Context.MsgPack(interface{})` sends msgpack format data to the client
+- `Context.ReadProtobuf(ptr)` binds request body to a proto message
+- `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
+- `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
+- `Context.SetSameSite(http.SameSite)` to set cookie "SameSite" option (respectful by sessions too)
+- `Context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
+- `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
+- `Context.Controller() reflect.Value` returns the current MVC Controller value.
 
 Breaking Changes:
 
-Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
-
+- Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
+- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Gzip)`) or a prior call to `Context.Gzip(true)` will enable gzip compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
+- `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
 - `route.Trace() string` changed to `route.Trace(w io.Writer)`, to achieve the same result just pass a `bytes.Buffer`
-- `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449))
-- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343))
+- `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)).
+- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
 - `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
 - **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
 

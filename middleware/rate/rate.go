@@ -50,10 +50,11 @@ type (
 	Limiter struct {
 		clientDataFunc func(ctx context.Context) interface{} // fill the Client's Data field.
 		exceedHandler  context.Handler                       // when too many requests.
+		limit          rate.Limit
+		burstSize      int
 
 		clients map[string]*Client
 		mu      sync.RWMutex // mutex for clients.
-		pool    *sync.Pool   // object pool for clients.
 	}
 
 	Client struct {
@@ -68,14 +69,10 @@ type (
 const Inf = math.MaxFloat64
 
 func Limit(limit float64, burst int, options ...Option) context.Handler {
-	rateLimit := rate.Limit(limit)
-
 	l := &Limiter{
-		clients: make(map[string]*Client),
-		pool: &sync.Pool{New: func() interface{} {
-			return &Client{limiter: rate.NewLimiter(rateLimit, burst)}
-		}},
-
+		clients:   make(map[string]*Client),
+		limit:     rate.Limit(limit),
+		burstSize: burst,
 		exceedHandler: func(ctx context.Context) {
 			ctx.StopWithStatus(429) // Too Many Requests.
 		},
@@ -88,21 +85,10 @@ func Limit(limit float64, burst int, options ...Option) context.Handler {
 	return l.serveHTTP
 }
 
-func (l *Limiter) acquire() *Client {
-	return l.pool.Get().(*Client)
-}
-
-func (l *Limiter) release(client *Client) {
-	client.IP = ""
-	client.Data = nil
-	l.pool.Put(client)
-}
-
 func (l *Limiter) Purge(condition func(*Client) bool) {
 	l.mu.Lock()
 	for ip, client := range l.clients {
 		if condition(client) {
-			l.release(client)
 			delete(l.clients, ip)
 		}
 	}
@@ -116,12 +102,15 @@ func (l *Limiter) serveHTTP(ctx context.Context) {
 	l.mu.RUnlock()
 
 	if !ok {
-		client = l.acquire()
-		client.IP = ip
+		client = &Client{
+			limiter: rate.NewLimiter(l.limit, l.burstSize),
+			IP:      ip,
+		}
 
 		if l.clientDataFunc != nil {
 			client.Data = l.clientDataFunc(ctx)
 		}
+
 		//  if l.store(ctx, client) {
 		// ^ no, let's keep it simple.
 		l.mu.Lock()
