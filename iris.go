@@ -591,6 +591,17 @@ const (
 	ReferrerGoogleAdwords       = context.ReferrerGoogleAdwords
 )
 
+// Byte unit helpers.
+const (
+	B = 1 << (10 * iota)
+	KB
+	MB
+	GB
+	TB
+	PB
+	EB
+)
+
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run`,
 // they're being executed when application is ready to being served to the public.

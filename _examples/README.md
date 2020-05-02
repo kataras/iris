@@ -237,7 +237,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Basic](file-server/basic/main.go)
 - [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
 - [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
-- [Send/Force-Download Files](file-server/send-files/main.go)
+- [Send/Force-Download Files](file-server/send-files/main.go) **UPDATED**
 - Single Page Applications
     * [single Page Application](file-server/single-page-application/basic/main.go)
     * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
@@ -246,7 +246,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### How to Read from `context.Request() *http.Request`
 
 - [Read JSON](http_request/read-json/main.go)
-    * [Struct Validation](http_request/read-json-struct-validation/main.go) **UPDaTE**
+    * [Struct Validation](http_request/read-json-struct-validation/main.go) **UPDATED**
 - [Read XML](http_request/read-xml/main.go)
 - [Read MsgPack](http_request/read-msgpack/main.go) **NEW**
 - [Read YAML](http_request/read-yaml/main.go)
