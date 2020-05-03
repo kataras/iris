@@ -64,6 +64,15 @@ func PurgeEvery(every time.Duration, maxLifetime time.Duration) Option {
 	}
 }
 
+// Every converts a minimum time interval between events to a limit.
+// Usage: Limit(Every(1*time.Minute), 3, options...)
+func Every(interval time.Duration) float64 {
+	if interval <= 0 {
+		return Inf
+	}
+	return 1 / interval.Seconds()
+}
+
 type (
 	// Limiter is featured with the necessary functions to limit requests per second.
 	// It has a single exported method `Purge` which helps to manually remove
@@ -72,8 +81,9 @@ type (
 	Limiter struct {
 		clientDataFunc func(ctx context.Context) interface{} // fill the Client's Data field.
 		exceedHandler  context.Handler                       // when too many requests.
-		limit          rate.Limit
-		burstSize      int
+
+		limit     rate.Limit
+		burstSize int
 
 		clients map[string]*Client
 		mu      sync.RWMutex // mutex for clients.
@@ -83,9 +93,9 @@ type (
 	// It can be retrieved by the `Get` package-level function.
 	// It can be used to manually add RateLimit response headers.
 	Client struct {
-		Limiter *rate.Limiter
-		IP      string
+		ID      string
 		Data    interface{}
+		Limiter *rate.Limiter
 
 		lastSeen time.Time
 		mu       sync.RWMutex // mutex for lastSeen.
@@ -96,7 +106,8 @@ type (
 const Inf = math.MaxFloat64
 
 // Limit returns a new rate limiter handler that allows requests up to rate "limit" and permits
-// bursts of at most "burst" tokens.
+// bursts of at most "burst" tokens. See `rate.SetKey(ctx, key string)` and `rate.Get` too.
+//
 // E.g. Limit(1, 5) to allow 1 request per second, with a maximum burst size of 5.
 //
 // See `ExceedHandler`, `ClientData` and `PurgeEvery` for the available "options".
@@ -120,24 +131,24 @@ func Limit(limit float64, burst int, options ...Option) context.Handler {
 // Purge removes client entries from the memory based on the given "condition".
 func (l *Limiter) Purge(condition func(*Client) bool) {
 	l.mu.Lock()
-	for ip, client := range l.clients {
+	for id, client := range l.clients {
 		if condition(client) {
-			delete(l.clients, ip)
+			delete(l.clients, id)
 		}
 	}
 	l.mu.Unlock()
 }
 
 func (l *Limiter) serveHTTP(ctx context.Context) {
-	ip := ctx.RemoteAddr()
+	id := getIdentifier(ctx)
 	l.mu.RLock()
-	client, ok := l.clients[ip]
+	client, ok := l.clients[id]
 	l.mu.RUnlock()
 
 	if !ok {
 		client = &Client{
+			ID:      id,
 			Limiter: rate.NewLimiter(l.limit, l.burstSize),
-			IP:      ip,
 		}
 
 		if l.clientDataFunc != nil {
@@ -147,7 +158,7 @@ func (l *Limiter) serveHTTP(ctx context.Context) {
 		//  if l.store(ctx, client) {
 		// ^ no, let's keep it simple.
 		l.mu.Lock()
-		l.clients[ip] = client
+		l.clients[id] = client
 		l.mu.Unlock()
 	}
 
@@ -169,6 +180,22 @@ func (l *Limiter) serveHTTP(ctx context.Context) {
 	}
 }
 
+const identifierContextKey = "iris.ratelimit.identifier"
+
+// SetIdentifier can be called manually from a handler or a middleare
+// to change the identifier per client. The default key for a client is its Remote IP.
+func SetIdentifier(ctx context.Context, key string) {
+	ctx.Values().Set(identifierContextKey, key)
+}
+
+func getIdentifier(ctx context.Context) string {
+	if entry, ok := ctx.Values().GetEntry(identifierContextKey); ok {
+		return entry.ValueRaw.(string)
+	}
+
+	return ctx.RemoteAddr()
+}
+
 const clientContextKey = "iris.ratelimit.client"
 
 // Get returns the current rate limited `Client`.
@@ -188,9 +215,9 @@ func Get(ctx context.Context) *Client {
 }
 
 // LastSeen reports the last Client's visit.
-func (c *Client) LastSeen() (t time.Time) {
+func (c *Client) LastSeen() time.Time {
 	c.mu.RLock()
-	t = c.lastSeen
+	t := c.lastSeen
 	c.mu.RUnlock()
 	return t
 }
