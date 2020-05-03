@@ -11,31 +11,66 @@ func main() {
 	app := newApp()
 	app.Logger().SetLevel("debug")
 
+	// * http://localhost:8080/v1
+	// * http://localhost:8080/v1/other
+	// * http://localhost:8080/v2/list (with X-API-Key request header)
 	app.Listen(":8080")
 }
 
 func newApp() *iris.Application {
 	app := iris.New()
 
-	// Register the rate limiter middleware at the root router.
-	//
-	// Fist and second input parameters:
-	//	  Allow 1 request per second, with a maximum burst size of 5.
-	//
-	// Third optional variadic input parameter:
-	//    Can be a cleanup function.
-	//    Iris provides a cleanup function that will check for old entries and remove them.
-	//    You can customize it, e.g. check every 1 minute
-	//    if a client's last visit was 5 minutes ago ("old" entry)
-	//    and remove it from the memory.
-	rateLimiter := rate.Limit(1, 5, rate.PurgeEvery(time.Minute, 5*time.Minute))
-	app.Use(rateLimiter)
+	v1 := app.Party("/v1")
+	{
+		// Register the rate limiter middleware at the "/v1" subrouter.
+		//
+		// Fist and second input parameters:
+		//	  Allow 1 request per second, with a maximum burst size of 5.
+		//
+		// Third optional variadic input parameter:
+		//    Can be a cleanup function.
+		//    Iris provides a cleanup function that will check for old entries and remove them.
+		//    You can customize it, e.g. check every 1 minute
+		//    if a client's last visit was 5 minutes ago ("old" entry)
+		//    and remove it from the memory.
+		limitV1 := rate.Limit(1, 5, rate.PurgeEvery(time.Minute, 5*time.Minute))
+		// rate.Every helper: 1 request per minute (with burst of 5):
+		//			   rate.Limit(rate.Every(1*time.Minute), 5)
+		v1.Use(limitV1)
 
-	// Routes.
-	app.Get("/", index)
-	app.Get("/other", other)
+		v1.Get("/", index)
+		v1.Get("/other", other)
+	}
+
+	v2 := app.Party("/v2")
+	{
+		v2.Use(useAPIKey)
+		// Initialize a new rate limit middleware to limit requests
+		// per API Key(see `useAPIKey` below) instead of client's Remote IP Address.
+		limitV2 := rate.Limit(1, 5, rate.PurgeEvery(time.Minute, 5*time.Minute))
+		v2.Use(limitV2)
+
+		v2.Get("/list", list)
+	}
 
 	return app
+}
+
+func useAPIKey(ctx iris.Context) {
+	apiKey := ctx.GetHeader("X-API-Key")
+	if apiKey == "" { // [validate your API Key here...]
+		ctx.StopWithStatus(iris.StatusForbidden)
+		return
+	}
+
+	// Change the method that rate limit matches the requests with a specific user
+	// and set our own api key as theirs identifier.
+	rate.SetIdentifier(ctx, apiKey)
+	ctx.Next()
+}
+
+func list(ctx iris.Context) {
+	ctx.JSON(iris.Map{"key": "value"})
 }
 
 func index(ctx iris.Context) {
