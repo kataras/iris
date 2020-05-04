@@ -78,6 +78,9 @@ type ConfigurationReadOnly interface {
 	// GetTranslateLanguageContextKey returns the configuration's LocaleContextKey value,
 	// used for i18n. Defaults to "iris.locale".
 	GetLocaleContextKey() string
+	// GetLanguageContextKey returns the configuration's LanguageContextKey value,
+	// used for i18n. Defaults to "iris.locale.language".
+	GetLanguageContextKey() string
 
 	// GetViewLayoutContextKey returns the key of the context's user values' key
 	// which is being used to set the template

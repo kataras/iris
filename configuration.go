@@ -845,7 +845,17 @@ type Configuration struct {
 	//
 	// Defaults to "iris.locale".
 	LocaleContextKey string `json:"localeContextKey,omitempty" yaml:"LocaleContextKey" toml:"LocaleContextKey"`
-
+	// LanguageContextKey is the context key which a language can be modified by a middleware.
+	// It has the highest priority over the rest and if it is empty then it is ignored,
+	// if it set to a static string of "default" or to the default language's code
+	// then the rest of the language extractors will not be called at all and
+	// the default language will be set instead.
+	//
+	// Use with `Context.SetLanguage("el-GR")`.
+	//
+	// See `i18n.ExtractFunc` for a more organised way of the same feature.
+	// Defaults to "iris.locale.language".
+	LanguageContextKey string `json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
 	// GetViewLayoutContextKey is the key of the context's user values' key
 	// which is being used to set the template
 	// layout from a middleware or the main handler.
@@ -998,6 +1008,12 @@ func (c Configuration) GetLocaleContextKey() string {
 	return c.LocaleContextKey
 }
 
+// GetLanguageContextKey returns the configuration's LanguageContextKey value,
+// used for i18n.
+func (c Configuration) GetLanguageContextKey() string {
+	return c.LanguageContextKey
+}
+
 // GetViewLayoutContextKey returns the key of the context's user values' key
 // which is being used to set the template
 // layout from a middleware or the main handler.
@@ -1132,6 +1148,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.LocaleContextKey = v
 		}
 
+		if v := c.LanguageContextKey; v != "" {
+			main.LanguageContextKey = v
+		}
+
 		if v := c.ViewLayoutContextKey; v != "" {
 			main.ViewLayoutContextKey = v
 		}
@@ -1185,6 +1205,7 @@ func DefaultConfiguration() Configuration {
 		// or `context#SetMaxRequestBodySize`.
 		PostMaxMemory:            32 << 20, // 32MB
 		LocaleContextKey:         "iris.locale",
+		LanguageContextKey:       "iris.locale.language",
 		ViewLayoutContextKey:     "iris.viewLayout",
 		ViewDataContextKey:       "iris.viewData",
 		RemoteAddrHeaders:        make(map[string]bool),

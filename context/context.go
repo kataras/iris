@@ -409,6 +409,14 @@ type Context interface {
 	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 	// or by the URL query parameter "referer".
 	GetReferrer() Referrer
+	// SetLanguage force-sets the language for i18n, can be used inside a middleare.
+	// It has the highest priority over the rest and if it is empty then it is ignored,
+	// if it set to a static string of "default" or to the default language's code
+	// then the rest of the language extractors will not be called at all and
+	// the default language will be set instead.
+	//
+	// See `app.I18n.ExtractFunc` for a more organised way of the same feature.
+	SetLanguage(langCode string)
 	// GetLocale returns the current request's `Locale` found by i18n middleware.
 	// See `Tr` too.
 	GetLocale() Locale
@@ -1975,9 +1983,21 @@ func (ctx *context) GetReferrer() Referrer {
 	return emptyReferrer
 }
 
+// SetLanguage force-sets the language for i18n, can be used inside a middleare.
+// It has the highest priority over the rest and if it is empty then it is ignored,
+// if it set to a static string of "default" or to the default language's code
+// then the rest of the language extractors will not be called at all and
+// the default language will be set instead.
+//
+// See `i18n.ExtractFunc` for a more organised way of the same feature.
+func (ctx *context) SetLanguage(langCode string) {
+	ctx.Values().Set(ctx.app.ConfigurationReadOnly().GetLanguageContextKey(), langCode)
+}
+
 // GetLocale returns the current request's `Locale` found by i18n middleware.
 // See `Tr` too.
 func (ctx *context) GetLocale() Locale {
+	// Cache the Locale itself for multiple calls of `Tr` method.
 	contextKey := ctx.app.ConfigurationReadOnly().GetLocaleContextKey()
 	if v := ctx.Values().Get(contextKey); v != nil {
 		if locale, ok := v.(Locale); ok {
