@@ -10,7 +10,10 @@ func newApp() *iris.Application {
 	// Configure i18n.
 	// First parameter: Glob filpath patern,
 	// Second variadic parameter: Optional language tags, the first one is the default/fallback one.
-	app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR", "zh-CN")
+	err := app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR", "zh-CN")
+	if err != nil {
+		panic(err)
+	}
 	// app.I18n.LoadAssets for go-bindata.
 
 	// Default values:
