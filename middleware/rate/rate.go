@@ -16,7 +16,7 @@ func init() {
 	context.SetHandlerName("iris/middleware/rate.(*Limiter).serveHTTP-fm", "iris.ratelimit")
 }
 
-// Option delcares a function which can be passed on `Limit` package-level
+// Option declares a function which can be passed on `Limit` package-level
 // to modify its internal fields. Available Options are:
 // * ExceedHandler
 // * ClientData
