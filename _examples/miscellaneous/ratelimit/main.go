@@ -16,9 +16,10 @@ func main() {
 	// * http://localhost:8080/v2/list (with X-API-Key request header)
 	//   Read more at: https://en.wikipedia.org/wiki/Token_bucket
 	//
-	// Alternative you may want to use something like:
-	//   https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go
-	//   Read more at: https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
+	// Alternatives:
+	//   * https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go
+	//     Read more at: https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
+	//   * https://github.com/iris-contrib/middleware/tree/master/tollboothic/_examples/limit-handler
 	app.Listen(":8080")
 }
 
