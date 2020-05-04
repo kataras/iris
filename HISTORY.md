@@ -394,7 +394,8 @@ Other Improvements:
 
 New Context Methods:
 
-- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client.
+- `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
+- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
 - `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
 - `Context.IsGRPC() bool` reports whether the request came from a gRPC client
 - `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too

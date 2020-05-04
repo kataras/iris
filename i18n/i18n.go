@@ -320,21 +320,31 @@ const acceptLanguageHeaderKey = "Accept-Language"
 // GetLocale returns the found locale of a request.
 // It will return the first registered language if nothing else matched.
 func (i *I18n) GetLocale(ctx context.Context) context.Locale {
-	// if v := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetLocaleContextKey()); v != nil {
-	// 	if locale, ok := v.(context.Locale); ok {
-	// 		return locale
-	// 	}
-	// }
-
 	var (
 		index int
 		ok    bool
 	)
 
+	if contextKey := ctx.Application().ConfigurationReadOnly().GetLanguageContextKey(); contextKey != "" {
+		if v := ctx.Values().GetString(contextKey); v != "" {
+			if v == "default" {
+				index = 0 // no need to call `TryMatchString` and spend time.
+			} else {
+				_, index, _ = i.TryMatchString(v)
+			}
+
+			locale := i.localizer.GetLocale(index)
+			if locale == nil {
+				return nil
+			}
+
+			return locale
+		}
+	}
+
 	if !ok && i.ExtractFunc != nil {
 		if v := i.ExtractFunc(ctx); v != "" {
 			_, index, ok = i.TryMatchString(v)
-
 		}
 	}
 
