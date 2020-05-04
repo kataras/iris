@@ -1565,8 +1565,7 @@ func (ctx *context) StopWithError(statusCode int, err error) {
 		return
 	}
 
-	ctx.WriteString(err.Error())
-	ctx.StopWithStatus(statusCode)
+	ctx.StopWithText(statusCode, err.Error())
 }
 
 // StopWithJSON stops the handlers chain, writes the status code

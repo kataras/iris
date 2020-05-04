@@ -14,6 +14,11 @@ func main() {
 	// * http://localhost:8080/v1
 	// * http://localhost:8080/v1/other
 	// * http://localhost:8080/v2/list (with X-API-Key request header)
+	//   Read more at: https://en.wikipedia.org/wiki/Token_bucket
+	//
+	// Alternative you may want to use something like:
+	//   https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go
+	//   Read more at: https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
 	app.Listen(":8080")
 }
 
@@ -34,8 +39,8 @@ func newApp() *iris.Application {
 		//    if a client's last visit was 5 minutes ago ("old" entry)
 		//    and remove it from the memory.
 		limitV1 := rate.Limit(1, 5, rate.PurgeEvery(time.Minute, 5*time.Minute))
-		// rate.Every helper: 1 request per minute (with burst of 5):
-		//			   rate.Limit(rate.Every(1*time.Minute), 5)
+		// rate.Every helper:
+		//			   rate.Limit(rate.Every(time.Minute), 5)
 		v1.Use(limitV1)
 
 		v1.Get("/", index)
@@ -47,7 +52,7 @@ func newApp() *iris.Application {
 		v2.Use(useAPIKey)
 		// Initialize a new rate limit middleware to limit requests
 		// per API Key(see `useAPIKey` below) instead of client's Remote IP Address.
-		limitV2 := rate.Limit(1, 5, rate.PurgeEvery(time.Minute, 5*time.Minute))
+		limitV2 := rate.Limit(rate.Every(time.Minute), 300, rate.PurgeEvery(5*time.Minute, 15*time.Minute))
 		v2.Use(limitV2)
 
 		v2.Get("/list", list)

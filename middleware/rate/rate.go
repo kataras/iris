@@ -168,8 +168,6 @@ func (l *Limiter) serveHTTP(ctx context.Context) {
 
 	ctx.Values().Set(clientContextKey, client)
 
-	// reserve := client.Limiter.Reserve()
-	// if reserve.OK() {
 	if client.Limiter.Allow() {
 		ctx.Next()
 		return
