@@ -10,16 +10,9 @@ import (
 
 	"github.com/kataras/iris/v12/sessions"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/kataras/golog"
 )
-
-/*
-	Badger has been updated to 1.6.0 - 2019-07-01
-	which contains a lot of breaking changes
-	that are adapted correctly here.
-	2019-07-14
-*/
 
 // DefaultFileMode used as the default database's "fileMode"
 // for creating the sessions directory path, opening and write the session file.

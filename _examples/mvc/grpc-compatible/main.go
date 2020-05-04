@@ -44,7 +44,9 @@ func newApp() *iris.Application {
 
 	// serviceName := pb.File_helloworld_proto.Services().Get(0).FullName()
 
-	// Register MVC application controller.
+	// Register MVC application controller for gRPC services.
+	// You can bind as many mvc gRpc services in the same Party or app,
+	// as the ServiceName differs.
 	mvc.New(app).Handle(ctrl, mvc.GRPC{
 		Server:      grpcServer,           // Required.
 		ServiceName: "helloworld.Greeter", // Required.

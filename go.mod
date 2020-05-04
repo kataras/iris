@@ -7,12 +7,12 @@ require (
 	github.com/CloudyKit/jet/v3 v3.0.0
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
-	github.com/dgraph-io/badger v1.6.1
+	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/gavv/httpexpect v2.0.0+incompatible
 	github.com/golang/protobuf v1.4.0
-	github.com/gomodule/redigo v1.7.1-0.20190724094224-574c33c3df38
+	github.com/gomodule/redigo v1.8.0
 	github.com/hashicorp/go-version v1.2.0
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
@@ -31,9 +31,9 @@ require (
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/vmihailenco/msgpack/v5 v5.0.0-alpha.2
 	go.etcd.io/bbolt v1.3.4
-	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
+	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 	gopkg.in/ini.v1 v1.55.0
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	gopkg.in/yaml.v3 v3.0.0-20200504163728-5308cda29e3d
 )

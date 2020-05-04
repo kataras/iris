@@ -23,7 +23,9 @@ func newApp() *iris.Application {
 	// Set to false to disallow path (local) redirects,
 	// see https://github.com/kataras/iris/issues/1369.
 	// app.I18n.PathRedirect = true
-	// See app.I18n.ExtractFunc to change the way a language is extracted from a request.
+	//
+	// See `app.I18n.ExtractFunc = func(ctx iris.Context) string` or
+	// `ctx.SetLanguage(langCode string)` to change the extracted language from a request.
 
 	app.Get("/", func(ctx iris.Context) {
 		hi := ctx.Tr("hi", "iris")
