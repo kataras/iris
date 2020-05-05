@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/hero"
 
 	// External package to optionally filter JSON responses before sent,
 	// see `sendJSON` for more.
@@ -17,19 +15,9 @@ import (
 	$ go get github.com/jmespath/go-jmespath
 */
 
-func newApp() *iris.Application {
-	app := iris.New()
-
-	// PartyFunc is the same as usersRouter := app.Party("/users")
-	// but it gives us an easy way to call router's registration functions,
-	// i.e functions from another package that can handle this group of routes.
-	app.PartyFunc("/users", registerUsersRoutes)
-
-	return app
-}
-
 func main() {
 	app := newApp()
+	app.Logger().SetLevel("debug")
 
 	// http://localhost:8080/users?query=[?Name == 'John Doe'].Age
 	// <- client will receive the age of a user which his name is "John Doe".
@@ -45,6 +33,17 @@ func main() {
 	app.Listen(":8080")
 }
 
+func newApp() *iris.Application {
+	app := iris.New()
+
+	// PartyFunc is the same as usersRouter := app.Party("/users")
+	// but it gives us an easy way to call router's registration functions,
+	// i.e functions from another package that can handle this group of routes.
+	app.PartyFunc("/users", registerUsersRoutes)
+
+	return app
+}
+
 /*
 	START OF USERS ROUTER
 */
@@ -52,7 +51,7 @@ func main() {
 func registerUsersRoutes(usersRouter iris.Party) {
 	// GET: /users
 	usersRouter.Get("/", getAllUsersHandler)
-	usersRouter.PartyFunc("/{name:string}", registerUserRoutes)
+	usersRouter.Party("/{name}").ConfigureContainer(registerUserRoutes)
 }
 
 type user struct {
@@ -78,16 +77,12 @@ func getAllUsersHandler(ctx iris.Context) {
 	START OF USERS.USER SUB ROUTER
 */
 
-func registerUserRoutes(userRouter iris.Party) {
-	// create a new dependency injection manager for this sub router.
-	userDeps := hero.New()
-	// you can also use the global/package-level hero.Register(userDependency) as we have already learned in other examples.
-	userDeps.Register(userDependency)
-
+func registerUserRoutes(userRouter *iris.APIContainer) {
+	userRouter.RegisterDependency(userDependency)
 	// GET: /users/{name:string}
-	userRouter.Get("/", userDeps.Handler(getUserHandler))
+	userRouter.Get("/", getUserHandler)
 	// GET: /users/{name:string}/age
-	userRouter.Get("/age", userDeps.Handler(getUserAgeHandler))
+	userRouter.Get("/age", getUserAgeHandler)
 }
 
 var userDependency = func(ctx iris.Context) *user {
@@ -108,30 +103,12 @@ var userDependency = func(ctx iris.Context) *user {
 }
 
 func getUserHandler(ctx iris.Context, u *user) {
-	if u == nil {
-		return
-	}
-
 	sendJSON(ctx, u)
 }
 
-func getUserAgeHandler(ctx iris.Context, u *user) {
-	if u == nil {
-		return
-	}
-
-	ctx.Writef("%d", u.Age)
-}
-
-/* Remember, with 'hero' you get mvc-like functions, so this can work too:
 func getUserAgeHandler(u *user) string {
-	if u == nil {
-		return ""
-	}
-
 	return fmt.Sprintf("%d", u.Age)
 }
-*/
 
 /* END OF USERS.USER SUB ROUTER */
 
@@ -158,11 +135,8 @@ func fail(ctx iris.Context, statusCode int, format string, a ...interface{}) {
 		ctx.Application().Logger().Error(err)
 	}
 
-	ctx.StatusCode(statusCode)
-	ctx.JSON(err)
-
 	// no next handlers will run.
-	ctx.StopExecution()
+	ctx.StopWithJSON(statusCode, err)
 }
 
 // JSON helper to give end-user the ability to put indention chars or filtering the response, you can do that, optionally.
@@ -177,6 +151,6 @@ func sendJSON(ctx iris.Context, resp interface{}) (err error) {
 		}
 	}
 
-	_, err = ctx.JSON(resp, context.JSON{Indent: indent, UnescapeHTML: true})
+	_, err = ctx.JSON(resp, iris.JSON{Indent: indent, UnescapeHTML: true})
 	return err
 }

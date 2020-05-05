@@ -3,8 +3,8 @@
 package services
 
 import (
-	"github.com/kataras/iris/v12/_examples/hero/overview/datamodels"
-	"github.com/kataras/iris/v12/_examples/hero/overview/repositories"
+	"github.com/kataras/iris/v12/_examples/dependency-injection/overview/datamodels"
+	"github.com/kataras/iris/v12/_examples/dependency-injection/overview/repositories"
 )
 
 // MovieService handles some of the CRUID operations of the movie datamodel.
@@ -15,9 +15,9 @@ import (
 // because we may need to change or try an experimental different domain logic at the future.
 type MovieService interface {
 	GetAll() []datamodels.Movie
-	GetByID(id int64) (datamodels.Movie, bool)
-	DeleteByID(id int64) bool
-	UpdatePosterAndGenreByID(id int64, poster string, genre string) (datamodels.Movie, error)
+	GetByID(id uint64) (datamodels.Movie, bool)
+	DeleteByID(id uint64) bool
+	UpdatePosterAndGenreByID(id uint64, poster string, genre string) (datamodels.Movie, error)
 }
 
 // NewMovieService returns the default movie service.
@@ -39,14 +39,14 @@ func (s *movieService) GetAll() []datamodels.Movie {
 }
 
 // GetByID returns a movie based on its id.
-func (s *movieService) GetByID(id int64) (datamodels.Movie, bool) {
+func (s *movieService) GetByID(id uint64) (datamodels.Movie, bool) {
 	return s.repo.Select(func(m datamodels.Movie) bool {
 		return m.ID == id
 	})
 }
 
 // UpdatePosterAndGenreByID updates a movie's poster and genre.
-func (s *movieService) UpdatePosterAndGenreByID(id int64, poster string, genre string) (datamodels.Movie, error) {
+func (s *movieService) UpdatePosterAndGenreByID(id uint64, poster string, genre string) (datamodels.Movie, error) {
 	// update the movie and return it.
 	return s.repo.InsertOrUpdate(datamodels.Movie{
 		ID:     id,
@@ -58,7 +58,7 @@ func (s *movieService) UpdatePosterAndGenreByID(id int64, poster string, genre s
 // DeleteByID deletes a movie by its id.
 //
 // Returns true if deleted otherwise false.
-func (s *movieService) DeleteByID(id int64) bool {
+func (s *movieService) DeleteByID(id uint64) bool {
 	return s.repo.Delete(func(m datamodels.Movie) bool {
 		return m.ID == id
 	}, 1)

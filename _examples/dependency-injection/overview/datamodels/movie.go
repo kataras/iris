@@ -10,7 +10,7 @@ package datamodels
 // as the only one Movie model in our application,
 // for the shake of simplicty.
 type Movie struct {
-	ID     int64  `json:"id"`
+	ID     uint64 `json:"id"`
 	Name   string `json:"name"`
 	Year   int    `json:"year"`
 	Genre  string `json:"genre"`

@@ -26,6 +26,14 @@ func (api *APIContainer) Party(relativePath string, handlersFn ...interface{}) *
 	return p.ConfigureContainer()
 }
 
+// PartyFunc same as `Party` but it accepts a party builder function instead.
+// Returns the new Party's APIContainer
+func (api *APIContainer) PartyFunc(relativePath string, fn func(*APIContainer)) *APIContainer {
+	childContainer := api.Party(relativePath)
+	fn(childContainer)
+	return childContainer
+}
+
 // OnError adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
 // The "errorHandler" handles any error may occurred and returned
 // during dependencies injection of the Party's hero handlers or from the handlers themselves.
@@ -87,6 +95,14 @@ func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...
 	o.apply(&handlers)
 
 	return handlers
+}
+
+// Handler receives a function which can receive dependencies and output result
+// and returns a common Iris Handler, useful for Versioning API integration otherwise
+// the `Handle/Get/Post...` methods are preferable.
+func (api *APIContainer) Handler(handlerFn interface{}, handlerParamsCount int) context.Handler {
+	paramsCount := macro.CountParams(api.Self.GetRelPath(), *api.Self.Macros()) + handlerParamsCount
+	return api.Container.HandlerWithParams(handlerFn, paramsCount)
 }
 
 // Use same as `Self.Use` but it accepts dynamic functions as its "handlersFn" input.

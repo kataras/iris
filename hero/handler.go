@@ -103,6 +103,13 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 				return
 			}
 
+			// If ~an error status code is set or~ execution has stopped
+			// from within the dependency (something went wrong while validating the request),
+			// then stop everything and let handler fire that status code.
+			if ctx.IsStopped() /* || context.StatusCodeNotSuccessful(ctx.GetStatusCode())*/ {
+				return
+			}
+
 			inputs[binding.Input.Index] = input
 		}
 

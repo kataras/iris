@@ -2,10 +2,10 @@
 
 package datasource
 
-import "github.com/kataras/iris/v12/_examples/hero/overview/datamodels"
+import "github.com/kataras/iris/v12/_examples/dependency-injection/overview/datamodels"
 
 // Movies is our imaginary data source.
-var Movies = map[int64]datamodels.Movie{
+var Movies = map[uint64]datamodels.Movie{
 	1: {
 		ID:     1,
 		Name:   "Casablanca",

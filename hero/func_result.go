@@ -54,7 +54,7 @@ func defaultResultHandler(ctx context.Context, v interface{}) error {
 // All types that complete this interface
 // can be returned as values from the method functions.
 //
-// Example at: https://github.com/kataras/iris/tree/master/_examples/hero/overview.
+// Example at: https://github.com/kataras/iris/tree/master/_examples/dependency-injection/overview.
 type Result interface {
 	// Dispatch should send a response to the client.
 	Dispatch(context.Context)
@@ -436,7 +436,7 @@ func (r Response) Dispatch(ctx context.Context) {
 // wraps the template file name, layout, (any) view data, status code and error.
 // It's smart enough to complete the request and send the correct response to the client.
 //
-// Example at: https://github.com/kataras/iris/blob/master/_examples/hero/overview/web/routes/hello.go.
+// Example at: https://github.com/kataras/iris/blob/master/_examples/dependency-injection/overview/web/routes/hello.go.
 type View struct {
 	Name   string
 	Layout string
