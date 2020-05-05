@@ -122,7 +122,7 @@
     * [Transactions](http_responsewriter/transactions/main.go)
     * [SSE](http_responsewriter/sse/main.go)
     * [SSE (third-party package usage for server sent events)](http_responsewriter/sse-third-party/main.go)
-    * [Webassemply](webassemply/basic/main.go)
+    * [Webassembly](webassembly/basic/main.go)
 * Cache
     * [Simple](cache/simple/main.go)
     * [Client-Side (304)](cache/client-side/main.go)
