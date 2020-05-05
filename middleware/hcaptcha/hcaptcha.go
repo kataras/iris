@@ -10,6 +10,10 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/hcaptcha.*", "iris.hCaptcha")
+}
+
 var (
 	// ResponseContextKey is the default request's context key that response of a hcaptcha request is kept.
 	ResponseContextKey string = "iris.hcaptcha"

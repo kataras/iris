@@ -60,9 +60,8 @@ func TestListenAddrWithoutServerErr(t *testing.T) {
 		app.Shutdown(ctx)
 	}()
 
-	// we disable the ErrServerClosed, so the error should be nil when server is closed by `app.Shutdown`.
-
-	// so in this case the iris/http.ErrServerClosed should be NOT logged and NOT return.
+	// we disable the ErrServerClosed, so the error should be nil when server is closed by `app.Shutdown`
+	// or by an external issue.
 	err := app.Listen(":9827", iris.WithoutServerError(iris.ErrServerClosed))
 	if err != nil {
 		t.Fatalf("expecting err to be nil but got: %v", err)

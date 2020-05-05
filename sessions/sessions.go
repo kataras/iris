@@ -207,9 +207,8 @@ func (s *Sessions) decodeCookieValue(cookieValue string) string {
 		return ""
 	}
 
-	var cookieValueDecoded string
-
 	if decode := s.config.Decode; decode != nil {
+		var cookieValueDecoded string
 		err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
 		if err == nil {
 			cookieValue = cookieValueDecoded

@@ -237,7 +237,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Basic](file-server/basic/main.go)
 - [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
 - [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
-- [Send/Force-Download Files](file-server/send-files/main.go)
+- [Send/Force-Download Files](file-server/send-files/main.go) **UPDATED**
 - Single Page Applications
     * [single Page Application](file-server/single-page-application/basic/main.go)
     * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
@@ -246,7 +246,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### How to Read from `context.Request() *http.Request`
 
 - [Read JSON](http_request/read-json/main.go)
-    * [Struct Validation](http_request/read-json-struct-validation/main.go) **UPDaTE**
+    * [Struct Validation](http_request/read-json-struct-validation/main.go) **UPDATED**
 - [Read XML](http_request/read-xml/main.go)
 - [Read MsgPack](http_request/read-msgpack/main.go) **NEW**
 - [Read YAML](http_request/read-yaml/main.go)
@@ -281,15 +281,21 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Using xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
 - [Using gorm](orm/gorm/main.go)
 
+### Permissions
+
+- [permissions](permissions/main.go) **NEW**
+
 ### Miscellaneous
 
+- [Rate Limit](miscellaneous/ratelimit/main.go) **NEW**
 - [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
 - [Request Logger](http_request/request-logger/main.go)
     * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
 - [Recovery](miscellaneous/recover/main.go)
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
-- [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
+- [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
+- [hCaptcha](miscellaneous/hcaptcha/main.go) **NEW**
 
 ### Community-based Handlers
 

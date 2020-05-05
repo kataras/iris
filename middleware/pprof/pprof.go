@@ -11,6 +11,10 @@ import (
 	"github.com/kataras/iris/v12/core/handlerconv"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/pprof.*", "iris.profiling")
+}
+
 // New returns a new pprof (profile, cmdline, symbol, goroutine, heap, threadcreate, debug/block) Middleware.
 // Note: Route MUST have the last named parameter wildcard named '{action:path}'
 func New() context.Handler {

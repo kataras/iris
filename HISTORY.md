@@ -164,15 +164,195 @@ Here is a preview of what the new Hero handlers look like:
 
 ### Request & Response & Path Parameters
 
-![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/1.png)
+**1.** Declare Go types for client's request body and a server's response.
+
+```go
+type (
+	request struct {
+		Firstname string `json:"firstname"`
+		Lastname  string `json:"lastname"`
+	}
+
+	response struct {
+		ID      uint64 `json:"id"`
+		Message string `json:"message"`
+	}
+)
+```
+
+**2.** Create the route handler.
+
+Path parameters and request body are binded automatically.
+- **id uint64** binds to "id:uint64"
+- **input request** binds to client request data such as JSON
+
+```go
+func updateUser(id uint64, input request) response {
+	return response{
+		ID:      id,
+		Message: "User updated successfully",
+	}
+}
+```
+
+**3.** Configure the container per group and register the route.
+
+```go
+app.Party("/user").ConfigureContainer(container)
+
+func container(api *iris.APIContainer) {
+    api.Put("/{id:uint64}", updateUser)
+}
+```
+
+**4.** Simulate a [client](https://curl.haxx.se/download.html) request which sends data to the server and displays the response.
+
+```sh
+curl --request PUT -d '{"firstanme":"John","lastname":"Doe"}' http://localhost:8080/user/42
+```
+
+```json
+{
+    "id": 42,
+    "message": "User updated successfully"
+}
+```
 
 ### Custom Preflight
 
-![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/2.png)
+Before we continue to the next section, register dependencies, you may want to learn how a response can be customized through the `iris.Context` right before sent to the client.
 
-### Custom Dependencies
+The server will automatically execute the `Preflight(iris.Context) error` method of a function's output struct value right before send the response to the client.
 
-![](https://github.com/kataras/explore/raw/master/iris-v12.2/hero/3.png)
+Take for example that you want to fire different HTTP status codes depending on the custom logic inside your handler and also modify the value(response body) itself before sent to the client. Your response type should contain a `Preflight` method like below.
+
+```go
+type response struct {
+	ID      uint64 `json:"id,omitempty"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+	Timestamp int64 `json:"timestamp,omitempty"`
+}
+
+func (r *response) Preflight(ctx iris.Context) error {
+	if r.ID > 0 {
+		r.Timestamp = time.Now().Unix()
+	}
+
+	ctx.StatusCode(r.Code)
+	return nil
+}
+```
+
+Now, each handler that returns a `*response` value will call the `response.Preflight` method automatically.
+
+```go
+func deleteUser(db *sql.DB, id uint64) *response {
+    // [...custom logic]
+
+    return &response{
+        Message: "User has been marked for deletion",
+        Code: iris.StatusAccepted,
+    }
+}
+```
+
+If you register the route and fire a request you should see an output like this, the timestamp is filled and the HTTP status code of the response that the client will receive is 202 (Status Accepted).
+
+```json
+{
+  "message": "User has been marked for deletion",
+  "code": 202,
+  "timestamp": 1583313026
+}
+```
+
+### Register Dependencies
+
+**1.** Import packages to interact with a database.
+The go-sqlite3 package is a database driver for [SQLite](https://www.sqlite.org/index.html).
+
+```go
+import "database/sql"
+import _ "github.com/mattn/go-sqlite3"
+```
+
+**2.** Configure the container ([see above](#request--response--path-parameters)), register your dependencies. Handler expects an *sql.DB instance.
+
+```go
+localDB, _ := sql.Open("sqlite3", "./foo.db")
+api.RegisterDependency(localDB)
+```
+
+**3.** Register a route to create a user.
+
+```go
+api.Post("/{id:uint64}", createUser)
+```
+
+**4.** The create user Handler.
+
+The handler accepts a database and some client request data such as JSON, Protobuf, Form, URL Query and e.t.c. It Returns a response.
+
+```go
+func createUser(db *sql.DB, user request) *response {
+    // [custom logic using the db]
+    userID, err := db.CreateUser(user)
+    if err != nil {
+        return &response{
+            Message: err.Error(),
+            Code: iris.StatusInternalServerError,
+        }
+    }
+
+	return &response{
+		ID:      userID,
+		Message: "User created",
+		Code:    iris.StatusCreated,
+	}
+}
+```
+
+**5.** Simulate a [client](https://curl.haxx.se/download.html) to create a user.
+
+```sh
+# JSON
+curl --request POST -d '{"firstname":"John","lastname":"Doe"}' \
+--header 'Content-Type: application/json' \
+http://localhost:8080/user
+```
+
+```sh
+# Form (multipart)
+curl --request POST 'http://localhost:8080/users' \
+--header 'Content-Type: multipart/form-data' \
+--form 'firstname=John' \
+--form 'lastname=Doe'
+```
+
+```sh
+# Form (URL-encoded)
+curl --request POST 'http://localhost:8080/users' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'firstname=John' \
+--data-urlencode 'lastname=Doe'
+```
+
+```sh
+# URL Query
+curl --request POST 'http://localhost:8080/users?firstname=John&lastname=Doe'
+```
+
+Response: 
+
+```json
+{
+    "id": 42,
+    "message": "User created",
+    "code": 201,
+    "timestamp": 1583313026
+}
+```
 
 Other Improvements:
 
@@ -182,7 +362,19 @@ Other Improvements:
 
 - Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Example:
 
-![DBUG routes](https://iris-go.com/images/v12.2.0-dbug.png)
+#### DBUG Routes (1)
+
+![DBUG routes](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
+
+#### DBUG Routes (2)
+
+![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
+
+- Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
+
+- Server will not return neither log the `ErrServerClosed` if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
+
+- Finally, Log level's and Route debug information colorization is respected across outputs. Previously if the application used more than one output destination (e.g. a file through `app.Logger().AddOutput`) the color support was automatically disabled from all, including the terminal one, this problem is fixed now. Developers can now see colors in their terminals while log files are kept with clear text.
 
 - New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
 
@@ -202,30 +394,34 @@ Other Improvements:
 
 New Context Methods:
 
-- `context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
-- `context.IsGRPC() bool` reports whether the request came from a gRPC client
-- `context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
-- `context.StopWithStatus(int)` stops the handlers chain and writes the status code
-- `context.StopWithText(int, string)` stops the handlers chain, writes thre status code and a plain text message
-- `context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
-- `context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
-- `context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
-- `context.Protobuf(proto.Message)` sends protobuf to the client
-- `context.MsgPack(interface{})` sends msgpack format data to the client
-- `context.ReadProtobuf(ptr)` binds request body to a proto message
-- `context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
-- `context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
-- `context.SetSameSite(http.SameSite)` to set cookie "SameSite" option (respectful by sessions too)
-- `context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
-- `context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(context)`
-- `context.Controller() reflect.Value` returns the current MVC Controller value.
+- `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
+- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
+- `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
+- `Context.IsGRPC() bool` reports whether the request came from a gRPC client
+- `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
+- `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
+- `Context.StopWithText(int, string)` stops the handlers chain, writes thre status code and a plain text message
+- `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
+- `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
+- `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
+- `Context.Protobuf(proto.Message)` sends protobuf to the client
+- `Context.MsgPack(interface{})` sends msgpack format data to the client
+- `Context.ReadProtobuf(ptr)` binds request body to a proto message
+- `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
+- `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
+- `Context.SetSameSite(http.SameSite)` to set cookie "SameSite" option (respectful by sessions too)
+- `Context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
+- `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
+- `Context.Controller() reflect.Value` returns the current MVC Controller value.
 
 Breaking Changes:
 
-Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
-
-- `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449))
-- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343))
+- Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
+- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Gzip)`) or a prior call to `Context.Gzip(true)` will enable gzip compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
+- `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
+- `route.Trace() string` changed to `route.Trace(w io.Writer)`, to achieve the same result just pass a `bytes.Buffer`
+- `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)).
+- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
 - `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
 - **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
 

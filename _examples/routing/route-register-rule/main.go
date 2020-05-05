@@ -33,9 +33,9 @@ func newApp() *iris.Application {
 }
 
 func getHandler(ctx iris.Context) {
-	ctx.Writef("From %s", ctx.GetCurrentRoute().Trace())
+	ctx.Writef("From GET: %s", ctx.GetCurrentRoute().MainHandlerName())
 }
 
 func anyHandler(ctx iris.Context) {
-	ctx.Writef("From %s", ctx.GetCurrentRoute().Trace())
+	ctx.Writef("From %s: %s", ctx.Method(), ctx.GetCurrentRoute().MainHandlerName())
 }

@@ -33,7 +33,7 @@ func main() {
 		case <-ch:
 			println("shutdown...")
 
-			timeout := 5 * time.Second
+			timeout := 10 * time.Second
 			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), timeout)
 			defer cancel()
 			app.Shutdown(ctx)

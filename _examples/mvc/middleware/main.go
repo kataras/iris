@@ -14,6 +14,8 @@ var cacheHandler = cache.Handler(10 * time.Second)
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	mvc.Configure(app, configure)
 
 	// http://localhost:8080

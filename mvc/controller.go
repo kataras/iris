@@ -2,7 +2,6 @@ package mvc
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 
@@ -337,15 +336,14 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 		return nil
 	}
 
-	wd, _ := os.Getwd()
-
 	for _, r := range routes {
 		// change the main handler's name and file:line
 		// in order to respect the controller's and give
 		// a proper debug/log message.
+		r.Description = "controller"
 		r.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
 		if m, ok := c.Type.MethodByName(funcName); ok {
-			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func, wd)
+			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func)
 		}
 	}
 

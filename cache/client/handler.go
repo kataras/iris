@@ -9,6 +9,10 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+func init() {
+	context.SetHandlerName("iris/cache/client.(*Handler).ServeHTTP-fm", "iris.cache")
+}
+
 // Handler the local cache service handler contains
 // the original response, the memory cache entry and
 // the validator for each of the incoming requests and post responses

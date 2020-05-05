@@ -35,6 +35,8 @@ func configureAPI(api *iris.APIContainer) {
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	app.ConfigureContainer(configureAPI)
 	app.Listen(":8080")
 }

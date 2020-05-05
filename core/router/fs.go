@@ -499,8 +499,6 @@ func toWebPath(systemPath string) string {
 	webpath := strings.Replace(systemPath, "\\", "/", -1)
 	// double slashes to single
 	webpath = strings.Replace(webpath, "//", "/", -1)
-	// remove all dots
-	webpath = strings.Replace(webpath, ".", "", -1)
 	return webpath
 }
 

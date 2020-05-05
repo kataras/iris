@@ -1,13 +1,23 @@
 package main
 
 import (
+	"os"
+	"time"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/logger"
 )
 
 func main() {
 	app := iris.New()
+	// Set Logger level to "debug",
+	// see your terminal and the created file.
 	app.Logger().SetLevel("debug")
+
+	// Write logs to a file too.
+	f := newLogFile()
+	defer f.Close()
+	app.Logger().AddOutput(f)
 
 	// Register a request logger middleware to the application.
 	app.Use(logger.New())
@@ -93,7 +103,7 @@ func main() {
 	usersRoutes.Delete("/{id:uint64}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("delete user by id: %d", id)
-	}).SetDescription("Deletes a User")
+	}).Describe("deletes a user")
 
 	// Subdomains, depends on the host, you have to edit the hosts or nginx/caddy's configuration if you use them.
 	//
@@ -161,4 +171,22 @@ func info(ctx iris.Context) {
 	})
 	ctx.Writef("\nInfo\n\n")
 	ctx.Writef("Method: %s\nSubdomain: %s\nPath: %s\nParameters length: %d", method, subdomain, path, paramsLen)
+}
+
+// get a filename based on the date, file logs works that way the most times
+// but these are just a sugar.
+func todayFilename() string {
+	today := time.Now().Format("Jan 02 2006")
+	return today + ".txt"
+}
+
+func newLogFile() *os.File {
+	filename := todayFilename()
+	// open an output file, this will append to the today's file if server restarted.
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+
+	return f
 }

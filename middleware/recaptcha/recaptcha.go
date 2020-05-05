@@ -11,6 +11,10 @@ import (
 	"github.com/kataras/iris/v12/core/netutil"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/recaptcha.*", "iris.reCAPTCHA")
+}
+
 const (
 	// responseFormValue = "g-recaptcha-response"
 	apiURL = "https://www.google.com/recaptcha/api/siteverify"

@@ -591,6 +591,17 @@ const (
 	ReferrerGoogleAdwords       = context.ReferrerGoogleAdwords
 )
 
+// Byte unit helpers.
+const (
+	B = 1 << (10 * iota)
+	KB
+	MB
+	GB
+	TB
+	PB
+	EB
+)
+
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run`,
 // they're being executed when application is ready to being served to the public.
@@ -668,8 +679,8 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	}
 
 	if !app.config.DisableInterruptHandler {
-		// when CTRL+C/CMD+C pressed.
-		shutdownTimeout := 5 * time.Second
+		// when CTRL/CMD+C pressed.
+		shutdownTimeout := 10 * time.Second
 		host.RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
 		// app.logger.Debugf("Host: register server shutdown on interrupt(CTRL+C/CMD+C)")
 	}
@@ -728,82 +739,92 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 // 	app.Logger().Errorf("%s: %s", typ, err)
 // })
 func (app *Application) Build() error {
+	if app.builded {
+		return nil
+	}
+	// start := time.Now()
+	app.builded = true // even if fails.
+
 	rp := errgroup.New("Application Builder")
+	rp.Err(app.APIBuilder.GetReporter())
 
-	if !app.builded {
-		app.builded = true
-		rp.Err(app.APIBuilder.GetReporter())
-
-		if app.defaultMode { // the app.I18n and app.View will be not available until Build.
-			if !app.I18n.Loaded() {
-				for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
-					if _, err := os.Stat(s); os.IsNotExist(err) {
-						continue
-					}
-
-					if err := app.I18n.Load(s); err != nil {
-						continue
-					}
-
-					app.I18n.SetDefault("en-US")
-					break
+	if app.defaultMode { // the app.I18n and app.View will be not available until Build.
+		if !app.I18n.Loaded() {
+			for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
+				if _, err := os.Stat(s); os.IsNotExist(err) {
+					continue
 				}
-			}
 
-			if app.view.Len() == 0 {
-				for _, s := range []string{"./views", "./templates", "./web/views"} {
-					if _, err := os.Stat(s); os.IsNotExist(err) {
-						continue
-					}
-
-					app.RegisterView(HTML(s, ".html"))
-					break
+				if err := app.I18n.Load(s); err != nil {
+					continue
 				}
+
+				app.I18n.SetDefault("en-US")
+				break
 			}
 		}
 
-		if app.I18n.Loaded() {
-			// {{ tr "lang" "key" arg1 arg2 }}
-			app.view.AddFunc("tr", app.I18n.Tr)
-			app.Router.WrapRouter(app.I18n.Wrapper())
-		}
+		if app.view.Len() == 0 {
+			for _, s := range []string{"./views", "./templates", "./web/views"} {
+				if _, err := os.Stat(s); os.IsNotExist(err) {
+					continue
+				}
 
-		if !app.Router.Downgraded() {
-			// router
-			if err := app.tryInjectLiveReload(); err != nil {
-				rp.Errf("LiveReload: init: failed: %v", err)
-			}
-
-			if app.config.ForceLowercaseRouting {
-				app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-					r.URL.Path = strings.ToLower(r.URL.Path)
-					next(w, r)
-				})
-			}
-
-			// create the request handler, the default routing handler
-			routerHandler := router.NewDefaultHandler(app.config)
-			err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
-			if err != nil {
-				rp.Err(err)
-			}
-			// re-build of the router from outside can be done with
-			// app.RefreshRouter()
-		}
-
-		if app.view.Len() > 0 {
-			app.logger.Debugf("Application: %d registered view engine(s)", app.view.Len())
-			// view engine
-			// here is where we declare the closed-relative framework functions.
-			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
-			rv := router.NewRoutePathReverser(app.APIBuilder)
-			app.view.AddFunc("urlpath", rv.Path)
-			// app.view.AddFunc("url", rv.URL)
-			if err := app.view.Load(); err != nil {
-				rp.Group("View Builder").Err(err)
+				app.RegisterView(HTML(s, ".html"))
+				break
 			}
 		}
 	}
+
+	if app.I18n.Loaded() {
+		// {{ tr "lang" "key" arg1 arg2 }}
+		app.view.AddFunc("tr", app.I18n.Tr)
+		app.Router.WrapRouter(app.I18n.Wrapper())
+	}
+
+	if n := app.view.Len(); n > 0 {
+		tr := "engines"
+		if n == 1 {
+			tr = tr[0 : len(tr)-1]
+		}
+
+		app.logger.Debugf("Application: %d registered view %s", n, tr)
+		// view engine
+		// here is where we declare the closed-relative framework functions.
+		// Each engine has their defaults, i.e yield,render,render_r,partial, params...
+		rv := router.NewRoutePathReverser(app.APIBuilder)
+		app.view.AddFunc("urlpath", rv.Path)
+		// app.view.AddFunc("url", rv.URL)
+		if err := app.view.Load(); err != nil {
+			rp.Group("View Builder").Err(err)
+		}
+	}
+
+	if !app.Router.Downgraded() {
+		// router
+		if err := app.tryInjectLiveReload(); err != nil {
+			rp.Errf("LiveReload: init: failed: %v", err)
+		}
+
+		if app.config.ForceLowercaseRouting {
+			app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+				r.URL.Path = strings.ToLower(r.URL.Path)
+				next(w, r)
+			})
+		}
+
+		// create the request handler, the default routing handler
+		routerHandler := router.NewDefaultHandler(app.config, app.logger)
+		err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
+		if err != nil {
+			rp.Err(err)
+		}
+		// re-build of the router from outside can be done with
+		// app.RefreshRouter()
+	}
+
+	// if end := time.Since(start); end.Seconds() > 5 {
+	// app.logger.Debugf("Application: build took %s", time.Since(start))
 
 	return errgroup.Check(rp)
 }
@@ -1162,7 +1183,7 @@ func (app *Application) tryStartTunneling() {
 				// to make subdomains resolution still based on this new remote, public addresses.
 				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
-				directLog := []byte(fmt.Sprintf("⬝ Public Address: %s\n", publicAddr))
+				directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
 				app.Logger().Printer.Output.Write(directLog)
 			}
 		})

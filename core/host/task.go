@@ -6,6 +6,7 @@ package host
 // supervisor.
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,8 +28,9 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 		if runtime.GOOS == "darwin" {
 			interruptkey = "CMD"
 		}
-		_, _ = w.Write([]byte(fmt.Sprintf("Now listening on: %s\nApplication started. Press %s+C to shut down.\n",
-			listeningURI, interruptkey)))
+
+		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press %s+C to shut down.\n",
+			listeningURI, interruptkey)
 	}
 }
 
@@ -38,7 +40,7 @@ func ShutdownOnInterrupt(su *Supervisor, shutdownTimeout time.Duration) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.TODO(), shutdownTimeout)
 		defer cancel()
-		su.Shutdown(ctx)
+		su.shutdownOnInterrupt(ctx)
 		su.RestoreFlow()
 	}
 }
@@ -58,9 +60,9 @@ func (h TaskHost) Serve() error {
 		return err
 	}
 
-	// if http.serverclosed ignroe the error, it will have this error
+	// if http.serverclosed ignore the error, it will have this error
 	// from the previous close
-	if err := h.Supervisor.Server.Serve(l); err != http.ErrServerClosed {
+	if err := h.Supervisor.Server.Serve(l); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil

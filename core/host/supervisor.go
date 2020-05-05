@@ -27,11 +27,12 @@ type Configurator func(su *Supervisor)
 //
 // Interfaces are separated to return relative functionality to them.
 type Supervisor struct {
-	Server         *http.Server
-	closedManually int32 // future use, accessed atomically (non-zero means we've called the Shutdown)
-	manuallyTLS    bool  // we need that in order to determinate what to output on the console before the server begin.
-	shouldWait     int32 // non-zero means that the host should wait for unblocking
-	unblockChan    chan struct{}
+	Server                   *http.Server
+	closedManually           uint32 // future use, accessed atomically (non-zero means we've called the Shutdown)
+	closedByInterruptHandler uint32 // non-zero means that the end-developer interrupted it by-purpose.
+	manuallyTLS              bool   // we need that in order to determinate what to output on the console before the server begin.
+	shouldWait               int32  // non-zero means that the host should wait for unblocking
+	unblockChan              chan struct{}
 
 	mu sync.Mutex
 
@@ -39,14 +40,11 @@ type Supervisor struct {
 	// IgnoreErrors should contains the errors that should be ignored
 	// on both serve functions return statements and error handlers.
 	//
-	// i.e: http.ErrServerClosed.Error().
-	//
 	// Note that this will match the string value instead of the equality of the type's variables.
 	//
 	// Defaults to empty.
 	IgnoredErrors []string
 	onErr         []func(error)
-	onShutdown    []func()
 }
 
 // New returns a new host supervisor
@@ -143,6 +141,10 @@ func (su *Supervisor) validateErr(err error) error {
 		return nil
 	}
 
+	if errors.Is(err, http.ErrServerClosed) && atomic.LoadUint32(&su.closedByInterruptHandler) > 0 {
+		return nil
+	}
+
 	su.mu.Lock()
 	defer su.mu.Unlock()
 
@@ -151,6 +153,7 @@ func (su *Supervisor) validateErr(err error) error {
 			return nil
 		}
 	}
+
 	return err
 }
 
@@ -189,6 +192,8 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 	host := createTaskHost(su)
 
 	su.notifyServe(host)
+	atomic.StoreUint32(&su.closedByInterruptHandler, 0)
+	atomic.StoreUint32(&su.closedManually, 0)
 
 	err := blockFunc()
 	su.notifyErr(err)
@@ -319,7 +324,7 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 	// supervisor in order to close the "secondary redirect server" as well.
 	su.RegisterOnShutdown(func() {
 		// give it some time to close itself...
-		timeout := 5 * time.Second
+		timeout := 10 * time.Second
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		srv2.Shutdown(ctx)
@@ -346,21 +351,10 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 // undergone NPN/ALPN protocol upgrade or that have been hijacked.
 // This function should start protocol-specific graceful shutdown,
 // but should not wait for shutdown to complete.
+//
+// Callbacks will run as separate go routines.
 func (su *Supervisor) RegisterOnShutdown(cb func()) {
-	// when go1.9: replace the following lines with su.Server.RegisterOnShutdown(f)
-	su.mu.Lock()
-	su.onShutdown = append(su.onShutdown, cb)
-	su.mu.Unlock()
-}
-
-func (su *Supervisor) notifyShutdown() {
-	// when go1.9: remove the lines below
-	su.mu.Lock()
-	for _, f := range su.onShutdown {
-		go f()
-	}
-	su.mu.Unlock()
-	// end
+	su.Server.RegisterOnShutdown(cb)
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
@@ -375,7 +369,11 @@ func (su *Supervisor) notifyShutdown() {
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired.
 func (su *Supervisor) Shutdown(ctx context.Context) error {
-	atomic.AddInt32(&su.closedManually, 1) // future-use
-	su.notifyShutdown()
+	atomic.StoreUint32(&su.closedManually, 1) // future-use
 	return su.Server.Shutdown(ctx)
+}
+
+func (su *Supervisor) shutdownOnInterrupt(ctx context.Context) {
+	atomic.StoreUint32(&su.closedByInterruptHandler, 1)
+	su.Shutdown(ctx)
 }

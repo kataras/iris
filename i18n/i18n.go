@@ -248,6 +248,13 @@ func parsePath(m *Matcher, path string) int {
 	return -1
 }
 
+func reverseStrings(s []string) []string {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+	return s
+}
+
 func parseLanguage(path string) (language.Tag, bool) {
 	if idx := strings.LastIndexByte(path, '.'); idx > 0 {
 		path = path[0:idx]
@@ -258,6 +265,8 @@ func parseLanguage(path string) (language.Tag, bool) {
 	names := strings.FieldsFunc(path, func(r rune) bool {
 		return r == '_' || r == os.PathSeparator || r == '/' || r == '.'
 	})
+
+	names = reverseStrings(names) // see https://github.com/kataras/i18n/issues/1
 
 	for _, s := range names {
 		t, err := language.Parse(s)
@@ -303,7 +312,7 @@ func (i *I18n) Tr(lang, format string, args ...interface{}) string {
 		return msg
 	}
 
-	return fmt.Sprintf(format, args...)
+	return ""
 }
 
 const acceptLanguageHeaderKey = "Accept-Language"
@@ -311,21 +320,31 @@ const acceptLanguageHeaderKey = "Accept-Language"
 // GetLocale returns the found locale of a request.
 // It will return the first registered language if nothing else matched.
 func (i *I18n) GetLocale(ctx context.Context) context.Locale {
-	// if v := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetLocaleContextKey()); v != nil {
-	// 	if locale, ok := v.(context.Locale); ok {
-	// 		return locale
-	// 	}
-	// }
-
 	var (
 		index int
 		ok    bool
 	)
 
+	if contextKey := ctx.Application().ConfigurationReadOnly().GetLanguageContextKey(); contextKey != "" {
+		if v := ctx.Values().GetString(contextKey); v != "" {
+			if v == "default" {
+				index = 0 // no need to call `TryMatchString` and spend time.
+			} else {
+				_, index, _ = i.TryMatchString(v)
+			}
+
+			locale := i.localizer.GetLocale(index)
+			if locale == nil {
+				return nil
+			}
+
+			return locale
+		}
+	}
+
 	if !ok && i.ExtractFunc != nil {
 		if v := i.ExtractFunc(ctx); v != "" {
 			_, index, ok = i.TryMatchString(v)
-
 		}
 	}
 
@@ -372,6 +391,7 @@ func (i *I18n) GetLocale(ctx context.Context) context.Locale {
 }
 
 // GetMessage returns the localized text message for this "r" request based on the key "format".
+// It returns an empty string if locale or format not found.
 func (i *I18n) GetMessage(ctx context.Context, format string, args ...interface{}) string {
 	loc := i.GetLocale(ctx)
 	if loc != nil {
@@ -382,7 +402,7 @@ func (i *I18n) GetMessage(ctx context.Context, format string, args ...interface{
 		}
 	}
 
-	return fmt.Sprintf(format, args...)
+	return ""
 }
 
 // Wrapper returns a new router wrapper.

@@ -2,6 +2,7 @@ package context
 
 import (
 	"bytes"
+	stdContext "context"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -36,6 +37,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/vmihailenco/msgpack/v5"
+	"golang.org/x/time/rate"
 	"gopkg.in/yaml.v3"
 )
 
@@ -408,6 +410,14 @@ type Context interface {
 	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 	// or by the URL query parameter "referer".
 	GetReferrer() Referrer
+	// SetLanguage force-sets the language for i18n, can be used inside a middleare.
+	// It has the highest priority over the rest and if it is empty then it is ignored,
+	// if it set to a static string of "default" or to the default language's code
+	// then the rest of the language extractors will not be called at all and
+	// the default language will be set instead.
+	//
+	// See `app.I18n.ExtractFunc` for a more organised way of the same feature.
+	SetLanguage(langCode string)
 	// GetLocale returns the current request's `Locale` found by i18n middleware.
 	// See `Tr` too.
 	GetLocale() Locale
@@ -917,31 +927,57 @@ type Context interface {
 	//  | Serve files                                                |
 	//  +------------------------------------------------------------+
 
-	// ServeContent serves content, headers are autoset
-	// receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
+	// ServeContent replies to the request using the content in the
+	// provided ReadSeeker. The main benefit of ServeContent over io.Copy
+	// is that it handles Range requests properly, sets the MIME type, and
+	// handles If-Match, If-Unmodified-Since, If-None-Match, If-Modified-Since,
+	// and If-Range requests.
 	//
+	// If the response's Content-Type header is not set, ServeContent
+	// first tries to deduce the type from name's file extension.
 	//
-	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
+	// The name is otherwise unused; in particular it can be empty and is
+	// never sent in the response.
 	//
-	// This function doesn't support resuming (by range),
-	// use ctx.SendFile or router's `HandleDir` instead.
-	ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error
-	// ServeFile serves a file (to send a file, a zip for example to the client you should use the `SendFile` instead)
-	// receives two parameters
-	// filename/path (string)
-	// gzipCompression (bool)
+	// If modtime is not the zero time or Unix epoch, ServeContent
+	// includes it in a Last-Modified header in the response. If the
+	// request includes an If-Modified-Since header, ServeContent uses
+	// modtime to decide whether the content needs to be sent at all.
 	//
-	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
+	// The content's Seek method must work: ServeContent uses
+	// a seek to the end of the content to determine its size.
 	//
-	// This function doesn't support resuming (by range),
-	// use ctx.SendFile or router's `HandleDir` instead.
+	// If the caller has set w's ETag header formatted per RFC 7232, section 2.3,
+	// ServeContent uses it to handle requests using If-Match, If-None-Match, or If-Range.
 	//
-	// Use it when you want to serve dynamic files to the client.
-	ServeFile(filename string, gzipCompression bool) error
-	// SendFile sends file for force-download to the client
+	// Note that *os.File implements the io.ReadSeeker interface.
+	// Note that gzip compression can be registered through `ctx.Gzip(true)` or `app.Use(iris.Gzip)`.
+	ServeContent(content io.ReadSeeker, filename string, modtime time.Time)
+	// ServeContentWithRate same as `ServeContent` but it can throttle the speed of reading
+	// and though writing the "content" to the client.
+	ServeContentWithRate(content io.ReadSeeker, filename string, modtime time.Time, limit float64, burst int)
+	// ServeFile replies to the request with the contents of the named
+	// file or directory.
 	//
-	// Use this instead of ServeFile to 'force-download' bigger files to the client.
+	// If the provided file or directory name is a relative path, it is
+	// interpreted relative to the current directory and may ascend to
+	// parent directories. If the provided name is constructed from user
+	// input, it should be sanitized before calling `ServeFile`.
+	//
+	// Use it when you want to serve assets like css and javascript files.
+	// If client should confirm and save the file use the `SendFile` instead.
+	// Note that gzip compression can be registered through `ctx.Gzip(true)` or `app.Use(iris.Gzip)`.
+	ServeFile(filename string) error
+	// ServeFileWithRate same as `ServeFile` but it can throttle the speed of reading
+	// and though writing the file to the client.
+	ServeFileWithRate(filename string, limit float64, burst int) error
+	// SendFile sends a file as an attachment, that is downloaded and saved locally from client.
+	// Note that gzip compression can be registered through `ctx.Gzip(true)` or `app.Use(iris.Gzip)`.
+	// Use `ServeFile` if a file should be served as a page asset instead.
 	SendFile(filename string, destinationName string) error
+	// SendFileWithRate same as `SendFile` but it can throttle the speed of reading
+	// and though writing the file to the client.
+	SendFileWithRate(src, destName string, limit float64, burst int) error
 
 	//  +------------------------------------------------------------+
 	//  | Cookies                                                    |
@@ -1538,8 +1574,7 @@ func (ctx *context) StopWithError(statusCode int, err error) {
 		return
 	}
 
-	ctx.WriteString(err.Error())
-	ctx.StopWithStatus(statusCode)
+	ctx.StopWithText(statusCode, err.Error())
 }
 
 // StopWithJSON stops the handlers chain, writes the status code
@@ -1949,9 +1984,21 @@ func (ctx *context) GetReferrer() Referrer {
 	return emptyReferrer
 }
 
+// SetLanguage force-sets the language for i18n, can be used inside a middleare.
+// It has the highest priority over the rest and if it is empty then it is ignored,
+// if it set to a static string of "default" or to the default language's code
+// then the rest of the language extractors will not be called at all and
+// the default language will be set instead.
+//
+// See `i18n.ExtractFunc` for a more organised way of the same feature.
+func (ctx *context) SetLanguage(langCode string) {
+	ctx.Values().Set(ctx.app.ConfigurationReadOnly().GetLanguageContextKey(), langCode)
+}
+
 // GetLocale returns the current request's `Locale` found by i18n middleware.
 // See `Tr` too.
 func (ctx *context) GetLocale() Locale {
+	// Cache the Locale itself for multiple calls of `Tr` method.
 	contextKey := ctx.app.ConfigurationReadOnly().GetLocaleContextKey()
 	if v := ctx.Values().Get(contextKey); v != nil {
 		if locale, ok := v.(Locale); ok {
@@ -4545,65 +4592,135 @@ func (n *NegotiationAcceptBuilder) EncodingGzip() *NegotiationAcceptBuilder {
 //  | Serve files                                                |
 //  +------------------------------------------------------------+
 
-// ServeContent serves content, headers are autoset
-// receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
+// ServeContent replies to the request using the content in the
+// provided ReadSeeker. The main benefit of ServeContent over io.Copy
+// is that it handles Range requests properly, sets the MIME type, and
+// handles If-Match, If-Unmodified-Since, If-None-Match, If-Modified-Since,
+// and If-Range requests.
 //
-// You can define your own "Content-Type" header also, after this function call
-// Doesn't implements resuming (by range), use ctx.SendFile instead
-func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
-	if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
-		ctx.WriteNotModified()
-		return nil
+// If the response's Content-Type header is not set, ServeContent
+// first tries to deduce the type from name's file extension.
+//
+// The name is otherwise unused; in particular it can be empty and is
+// never sent in the response.
+//
+// If modtime is not the zero time or Unix epoch, ServeContent
+// includes it in a Last-Modified header in the response. If the
+// request includes an If-Modified-Since header, ServeContent uses
+// modtime to decide whether the content needs to be sent at all.
+//
+// The content's Seek method must work: ServeContent uses
+// a seek to the end of the content to determine its size.
+//
+// If the caller has set w's ETag header formatted per RFC 7232, section 2.3,
+// ServeContent uses it to handle requests using If-Match, If-None-Match, or If-Range.
+//
+// Note that *os.File implements the io.ReadSeeker interface.
+// Note that gzip compression can be registered through `ctx.Gzip(true)` or `app.Use(iris.Gzip)`.
+func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time) {
+	ctx.ServeContentWithRate(content, filename, modtime, 0, 0)
+}
+
+// rateReadSeeker is a io.ReadSeeker that is rate limited by
+// the given token bucket. Each token in the bucket
+// represents one byte. See "golang.org/x/time/rate" package.
+type rateReadSeeker struct {
+	io.ReadSeeker
+	ctx     stdContext.Context
+	limiter *rate.Limiter
+}
+
+func (rs *rateReadSeeker) Read(buf []byte) (int, error) {
+	n, err := rs.ReadSeeker.Read(buf)
+	if n <= 0 {
+		return n, err
+	}
+	rs.limiter.WaitN(rs.ctx, n)
+	return n, err
+}
+
+// ServeContentWithRate same as `ServeContent` but it can throttle the speed of reading
+// and though writing the "content" to the client.
+func (ctx *context) ServeContentWithRate(content io.ReadSeeker, filename string, modtime time.Time, limit float64, burst int) {
+	if limit > 0 {
+		content = &rateReadSeeker{
+			ReadSeeker: content,
+			ctx:        ctx.request.Context(),
+			limiter:    rate.NewLimiter(rate.Limit(limit), burst),
+		}
 	}
 
 	if ctx.GetContentType() == "" {
 		ctx.ContentType(filename)
 	}
 
-	ctx.SetLastModified(modtime)
-	var out io.Writer
-	if gzipCompression && ctx.ClientSupportsGzip() {
-		AddGzipHeaders(ctx.writer)
-
-		gzipWriter := acquireGzipWriter(ctx.writer)
-		defer releaseGzipWriter(gzipWriter)
-		out = gzipWriter
-	} else {
-		out = ctx.writer
-	}
-	_, err := io.Copy(out, content)
-	return err ///TODO: add an int64 as return value for the content length written like other writers or let it as it's in order to keep the stable api?
+	http.ServeContent(ctx.writer, ctx.request, filename, modtime, content)
 }
 
-// ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)
-// receives two parameters
-// filename/path (string)
-// gzipCompression (bool)
+// ServeFile replies to the request with the contents of the named
+// file or directory.
 //
-// You can define your own "Content-Type" header also, after this function call
-// This function doesn't implement resuming (by range), use ctx.SendFile instead
+// If the provided file or directory name is a relative path, it is
+// interpreted relative to the current directory and may ascend to
+// parent directories. If the provided name is constructed from user
+// input, it should be sanitized before calling `ServeFile`.
 //
-// Use it when you want to serve css/js/... files to the client, for bigger files and 'force-download' use the SendFile.
-func (ctx *context) ServeFile(filename string, gzipCompression bool) error {
+// Use it when you want to serve assets like css and javascript files.
+// If client should confirm and save the file use the `SendFile` instead.
+// Note that gzip compression can be registered through `ctx.Gzip(true)` or `app.Use(iris.Gzip)`.
+func (ctx *context) ServeFile(filename string) error {
+	return ctx.ServeFileWithRate(filename, 0, 0)
+}
+
+// ServeFileWithRate same as `ServeFile` but it can throttle the speed of reading
+// and though writing the file to the client.
+func (ctx *context) ServeFileWithRate(filename string, limit float64, burst int) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return fmt.Errorf("%d", http.StatusNotFound)
+		ctx.StatusCode(http.StatusNotFound)
+		return err
 	}
 	defer f.Close()
-	fi, _ := f.Stat()
-	if fi.IsDir() {
-		return ctx.ServeFile(path.Join(filename, "index.html"), gzipCompression)
+
+	st, err := f.Stat()
+	if err != nil {
+		code := http.StatusInternalServerError
+		if os.IsNotExist(err) {
+			code = http.StatusNotFound
+		}
+
+		if os.IsPermission(err) {
+			code = http.StatusForbidden
+		}
+
+		ctx.StatusCode(code)
+		return err
 	}
 
-	return ctx.ServeContent(f, fi.Name(), fi.ModTime(), gzipCompression)
+	if st.IsDir() {
+		return ctx.ServeFile(path.Join(filename, "index.html"))
+	}
+
+	ctx.ServeContentWithRate(f, st.Name(), st.ModTime(), limit, burst)
+	return nil
 }
 
-// SendFile sends file for force-download to the client
-//
-// Use this instead of ServeFile to 'force-download' bigger files to the client.
-func (ctx *context) SendFile(filename string, destinationName string) error {
-	ctx.writer.Header().Set(ContentDispositionHeaderKey, "attachment;filename="+destinationName)
-	return ctx.ServeFile(filename, false)
+// SendFile sends a file as an attachment, that is downloaded and saved locally from client.
+// Note that gzip compression can be registered through `ctx.Gzip(true)` or `app.Use(iris.Gzip)`.
+// Use `ServeFile` if a file should be served as a page asset instead.
+func (ctx *context) SendFile(src string, destName string) error {
+	return ctx.SendFileWithRate(src, destName, 0, 0)
+}
+
+// SendFileWithRate same as `SendFile` but it can throttle the speed of reading
+// and though writing the file to the client.
+func (ctx *context) SendFileWithRate(src, destName string, limit float64, burst int) error {
+	if destName == "" {
+		destName = filepath.Base(src)
+	}
+
+	ctx.writer.Header().Set(ContentDispositionHeaderKey, "attachment;filename="+destName)
+	return ctx.ServeFileWithRate(src, limit, burst)
 }
 
 //  +------------------------------------------------------------+

@@ -57,10 +57,12 @@ func (g GRPC) Apply(c *ControllerActivator) {
 		m := c.Type.Method(i)
 		path := path.Join(g.ServiceName, m.Name)
 		if route := c.Handle(http.MethodPost, path, m.Name, pre); route != nil {
+			bckp := route.Description
 			route.Description = "gRPC"
 			if g.Strict {
 				route.Description += "-only"
 			}
+			route.Description += " " + bckp // e.g. "gRPC controller"
 		}
 	}
 }

@@ -47,12 +47,12 @@ open for Iris-specific developers the time we speak.
 
 Go to our facebook page, like it and receive notifications about new job offers, we already have couple of them stay at the top of the page: https://www.facebook.com/iris.framework
 
-## Do we have a community Chat?
+## Do we have a Community chat?
 
 Yes, https://chat.iris-go.com
 
-## How is the development of Iris supported?
+## How is the development of Iris economically supported?
 
-By normal people, like you, who help us by donating small or large amounts of money.
+By people like you, who help us by donating small or large amounts of money.
 
 Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://www.paypal.me/kataras). Your name will be published [here](https://iris-go.com) after your approval via e-mail.

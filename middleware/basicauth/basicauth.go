@@ -12,6 +12,10 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/basicauth.*", "iris.basicauth")
+}
+
 type (
 	encodedUser struct {
 		HeaderValue string
