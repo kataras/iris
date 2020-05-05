@@ -6,7 +6,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/kataras/iris/v12/_examples/hero/overview/datamodels"
+	"github.com/kataras/iris/v12/_examples/dependency-injection/overview/datamodels"
 )
 
 // Query represents the visitor and action queries.
@@ -27,14 +27,14 @@ type MovieRepository interface {
 
 // NewMovieRepository returns a new movie memory-based repository,
 // the one and only repository type in our example.
-func NewMovieRepository(source map[int64]datamodels.Movie) MovieRepository {
+func NewMovieRepository(source map[uint64]datamodels.Movie) MovieRepository {
 	return &movieMemoryRepository{source: source}
 }
 
 // movieMemoryRepository is a "MovieRepository"
 // which manages the movies using the memory data source (map).
 type movieMemoryRepository struct {
-	source map[int64]datamodels.Movie
+	source map[uint64]datamodels.Movie
 	mu     sync.RWMutex
 }
 
@@ -115,7 +115,7 @@ func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamode
 	id := movie.ID
 
 	if id == 0 { // Create new action
-		var lastID int64
+		var lastID uint64
 		// find the biggest ID in order to not have duplications
 		// in productions apps you can use a third-party
 		// library to generate a UUID as string.

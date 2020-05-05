@@ -5,8 +5,8 @@ package routes
 import (
 	"errors"
 
-	"github.com/kataras/iris/v12/_examples/hero/overview/datamodels"
-	"github.com/kataras/iris/v12/_examples/hero/overview/services"
+	"github.com/kataras/iris/v12/_examples/dependency-injection/overview/datamodels"
+	"github.com/kataras/iris/v12/_examples/dependency-injection/overview/services"
 
 	"github.com/kataras/iris/v12"
 )
@@ -21,14 +21,14 @@ func Movies(service services.MovieService) (results []datamodels.Movie) {
 // MovieByID returns a movie.
 // Demo:
 // curl -i http://localhost:8080/movies/1
-func MovieByID(service services.MovieService, id int64) (movie datamodels.Movie, found bool) {
+func MovieByID(service services.MovieService, id uint64) (movie datamodels.Movie, found bool) {
 	return service.GetByID(id) // it will throw 404 if not found.
 }
 
 // UpdateMovieByID updates a movie.
 // Demo:
 // curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
-func UpdateMovieByID(ctx iris.Context, service services.MovieService, id int64) (datamodels.Movie, error) {
+func UpdateMovieByID(ctx iris.Context, service services.MovieService, id uint64) (datamodels.Movie, error) {
 	// get the request data for poster and genre
 	file, info, err := ctx.FormFile("poster")
 	if err != nil {
@@ -47,7 +47,7 @@ func UpdateMovieByID(ctx iris.Context, service services.MovieService, id int64) 
 // DeleteMovieByID deletes a movie.
 // Demo:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
-func DeleteMovieByID(service services.MovieService, id int64) interface{} {
+func DeleteMovieByID(service services.MovieService, id uint64) interface{} {
 	wasDel := service.DeleteByID(id)
 	if wasDel {
 		// return the deleted movie's ID

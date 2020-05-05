@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -342,7 +343,7 @@ func (r *Route) ResolvePath(args ...string) string {
 }
 
 func traceHandlerFile(method, name, line string, number int) string {
-	file := fmt.Sprintf("(%s:%d)", line, number)
+	file := fmt.Sprintf("(%s:%d)", filepath.ToSlash(line), number)
 
 	if context.IgnoreHandlerName(name) {
 		return ""

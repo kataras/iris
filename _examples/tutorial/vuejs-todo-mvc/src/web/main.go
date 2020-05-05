@@ -36,7 +36,6 @@ func main() {
 	// any dependencies bindings here...
 	todosApp.Register(
 		todo.NewMemoryService(),
-		sess.Start,
 	)
 
 	todosController := new(controllers.TodoController)
