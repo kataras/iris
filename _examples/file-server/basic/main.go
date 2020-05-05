@@ -36,7 +36,7 @@ func newApp() *iris.Application {
 	// You can also register any index handler manually, order of registration does not matter:
 	// v1.Get("/static", [...custom middleware...], func(ctx iris.Context) {
 	//  [...custom code...]
-	// 	ctx.ServeFile("./assets/index.html", false)
+	// 	ctx.ServeFile("./assets/index.html")
 	// })
 
 	// http://localhost:8080/v1/static

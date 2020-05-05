@@ -1,6 +1,7 @@
 # Table of Contents
 
 * Tutorials
+    * [Dockerize](tutorial/docker)
     * [Caddy](tutorial/caddy)
     * [MongoDB](tutorial/mongodb)
     * [Dropzone.js](tutorial/dropzonejs)
@@ -79,7 +80,7 @@
         * [Embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
 * View
     * [Overview](view/overview/main.go)
-    * [Hi](view/template_html_0/main.go)
+    * [Basic](view/template_html_0/main.go)
     * [A simple Layout](view/template_html_1/main.go)
     * [Layouts: `yield` and `render` tmpl funcs](view/template_html_2/main.go)
     * [The `urlpath` tmpl func](view/template_html_3/main.go)
@@ -87,14 +88,14 @@
     * [Inject Data Between Handlers](view/context-view-data/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
     * [Write to a custom `io.Writer`](view/write-to)
-    * [Greeting with Pug (Jade)`](view/template_pug_0)
-    * [Pug (Jade) Actions`](view/template_pug_1)
-    * [Pug (Jade) Includes`](view/template_pug_2)
-    * [Pug (Jade) Extends`](view/template_pug_3)
-    * [Jet](/view/template_jet_0)
+    * [Pug: Greeting](view/template_pug_0)
+    * [Pug: `Actions`](view/template_pug_1)
+    * [Pug: `Includes`](view/template_pug_2)
+    * [Pug: `Extends`](view/template_pug_3)
+    * [Jet Template](/view/template_jet_0)
     * [Jet Embedded](view/template_jet_1_embedded)
     * [Jet 'urlpath' tmpl func](/view/template_jet_2)
-    * [Jet template funcs from structure](/view/template_jet_3)
+    * [Jet Template Funcs from Struct](/view/template_jet_3)
     * Third-Parties
         * [Render `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
         * [Render `shiyanhui/hero` templates](http_responsewriter/herotemplate)
@@ -121,6 +122,7 @@
     * [Transactions](http_responsewriter/transactions/main.go)
     * [SSE](http_responsewriter/sse/main.go)
     * [SSE (third-party package usage for server sent events)](http_responsewriter/sse-third-party/main.go)
+    * [Webassemply](webassemply/basic/main.go)
 * Cache
     * [Simple](cache/simple/main.go)
     * [Client-Side (304)](cache/client-side/main.go)
