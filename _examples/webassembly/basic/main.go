@@ -5,8 +5,8 @@ import (
 )
 
 /*
-You need to build the hello.wasm first, download the go1.11 and execute the below command:
-$ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.11/bin/go build -o hello.wasm hello_go111.go
+You need to build the hello.wasm first, download the go1.14 and execute the below command:
+$ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.14/bin/go build -o hello.wasm hello_go114.go
 */
 
 func main() {
@@ -17,7 +17,8 @@ func main() {
 	app.HandleDir("/", "./client")
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.ServeFile("./client/hello.html", false) // true for gzip.
+		// ctx.Gzip(true)
+		ctx.ServeFile("./client/hello.html")
 	})
 
 	// visit http://localhost:8080
