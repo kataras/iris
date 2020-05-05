@@ -7,7 +7,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -3561,7 +3560,11 @@ func bytesToString(b []byte) string {
 }
 
 func stringToBytes(s string) []byte {
-	return *(*[]byte)(unsafe.Pointer(&s))
+	var b []byte
+	sp := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	bp := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	bp.Data, bp.Len, bp.Cap = sp.Data, sp.Len, sp.Len
+	return b
 }
 
 // DefaultJSONOptions is the optional settings that are being used
