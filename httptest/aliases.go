@@ -1,6 +1,6 @@
 package httptest
 
-import "github.com/gavv/httpexpect"
+import "github.com/iris-contrib/httpexpect/v2"
 
 type (
 	// Request type alias.

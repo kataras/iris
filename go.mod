@@ -10,7 +10,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
-	github.com/gavv/httpexpect v2.0.0+incompatible
+	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/golang/protobuf v1.4.0
 	github.com/gomodule/redigo v1.8.0
 	github.com/hashicorp/go-version v1.2.0
