@@ -506,7 +506,7 @@ type testControllerNotCreateNewDueManuallySettingAllFields struct {
 }
 
 func (c *testControllerNotCreateNewDueManuallySettingAllFields) AfterActivation(a AfterActivation) {
-	if n := len(a.DependenciesReadOnly()) - len(hero.BuiltinDependencies); n != 1 {
+	if n := len(a.DependenciesReadOnly()) - len(hero.BuiltinDependencies) - 1; /* Application */ n != 1 {
 		c.T.Fatalf(`expecting 1 dependency;
 - the 'T' and the 'TitlePointer' are manually binded (nonzero fields on initilization)
 - controller has no more than these two fields, it's a singleton
@@ -623,4 +623,25 @@ func TestControllersInsideControllerDeep(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/something").Expect().Status(httptest.StatusOK).Body().Equal("foo bar")
+}
+
+type testApplicationDependency struct {
+	App *Application
+}
+
+func (c *testApplicationDependency) Get() string {
+	return c.App.Name
+}
+
+func TestApplicationDependency(t *testing.T) {
+	app := iris.New()
+	m := New(app).SetName("app1")
+	m.Handle(new(testApplicationDependency))
+
+	m2 := m.Clone(app.Party("/other")).SetName("app2")
+	m2.Handle(new(testApplicationDependency))
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("app1")
+	e.GET("/other").Expect().Status(httptest.StatusOK).Body().Equal("app2")
 }
