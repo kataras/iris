@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"math"
 	"reflect"
 	"strconv"
 	"sync"
@@ -225,20 +226,22 @@ func newErrEntryNotFound(key string, kind reflect.Kind, value interface{}) *ErrE
 func (s *Session) GetInt(key string) (int, error) {
 	v := s.Get(key)
 
-	if vint, ok := v.(int); ok {
-		return vint, nil
-	}
+	if v != nil {
+		if vint, ok := v.(int); ok {
+			return vint, nil
+		}
 
-	if vfloat64, ok := v.(float64); ok {
-		return int(vfloat64), nil
-	}
+		if vfloat64, ok := v.(float64); ok {
+			return int(vfloat64), nil
+		}
 
-	if vint64, ok := v.(int64); ok {
-		return int(vint64), nil
-	}
+		if vint64, ok := v.(int64); ok {
+			return int(vint64), nil
+		}
 
-	if vstring, sok := v.(string); sok {
-		return strconv.Atoi(vstring)
+		if vstring, sok := v.(string); sok {
+			return strconv.Atoi(vstring)
+		}
 	}
 
 	return -1, newErrEntryNotFound(key, reflect.Int, v)
@@ -277,21 +280,22 @@ func (s *Session) Decrement(key string, n int) (newValue int) {
 // if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetInt64(key string) (int64, error) {
 	v := s.Get(key)
+	if v != nil {
+		if vint64, ok := v.(int64); ok {
+			return vint64, nil
+		}
 
-	if vint64, ok := v.(int64); ok {
-		return vint64, nil
-	}
+		if vfloat64, ok := v.(float64); ok {
+			return int64(vfloat64), nil
+		}
 
-	if vfloat64, ok := v.(float64); ok {
-		return int64(vfloat64), nil
-	}
+		if vint, ok := v.(int); ok {
+			return int64(vint), nil
+		}
 
-	if vint, ok := v.(int); ok {
-		return int64(vint), nil
-	}
-
-	if vstring, sok := v.(string); sok {
-		return strconv.ParseInt(vstring, 10, 64)
+		if vstring, sok := v.(string); sok {
+			return strconv.ParseInt(vstring, 10, 64)
+		}
 	}
 
 	return -1, newErrEntryNotFound(key, reflect.Int64, v)
@@ -301,6 +305,49 @@ func (s *Session) GetInt64(key string) (int64, error) {
 // if key doesn't exist it returns the "defaultValue".
 func (s *Session) GetInt64Default(key string, defaultValue int64) int64 {
 	if v, err := s.GetInt64(key); err == nil {
+		return v
+	}
+
+	return defaultValue
+}
+
+// GetUint64 same as `Get` but returns as uint64,
+// if key doesn't exist then it returns 0 and a non-nil error.
+func (s *Session) GetUint64(key string) (uint64, error) {
+	v := s.Get(key)
+	if v != nil {
+		switch vv := v.(type) {
+		case string:
+			val, err := strconv.ParseUint(vv, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+			if val > math.MaxUint64 {
+				break
+			}
+			return uint64(val), nil
+		case uint8:
+			return uint64(vv), nil
+		case uint16:
+			return uint64(vv), nil
+		case uint32:
+			return uint64(vv), nil
+		case uint64:
+			return vv, nil
+		case int64:
+			return uint64(vv), nil
+		case int:
+			return uint64(vv), nil
+		}
+	}
+
+	return 0, newErrEntryNotFound(key, reflect.Uint64, v)
+}
+
+// GetUint64Default same as `Get` but returns as uint64,
+// if key doesn't exist it returns the "defaultValue".
+func (s *Session) GetUint64Default(key string, defaultValue uint64) uint64 {
+	if v, err := s.GetUint64(key); err == nil {
 		return v
 	}
 

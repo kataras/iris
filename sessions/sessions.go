@@ -7,6 +7,10 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+func init() {
+	context.SetHandlerName("iris/sessions.*Handler", "iris.session")
+}
+
 // A Sessions manager should be responsible to Start a sesion, based
 // on a Context, which should return
 // a compatible Session interface, type. If the external session manager

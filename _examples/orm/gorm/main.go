@@ -61,7 +61,7 @@ func main() {
 	}
 	db.AutoMigrate(&User{}) // create table: // AutoMigrate run auto migration for given models, will only add missing fields, won't delete/change current data
 
-	app.Post("/post_user", func(context iris.Context) {
+	app.Post("/post_user", func(ctx iris.Context) {
 		var user User
 		user = User{
 			Username:  "gorm",
@@ -71,41 +71,41 @@ func main() {
 		}
 		if err := db.FirstOrCreate(&user); err == nil {
 			app.Logger().Fatalf("created one record failed: %s", err.Error)
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":  http.StatusBadRequest,
 				"error": err.Error,
 			})
 			return
 		}
-		context.JSON(
+		ctx.JSON(
 			iris.Map{
 				"code": http.StatusOK,
 				"data": user.Serializer(),
 			})
 	})
 
-	app.Get("/get_user/{id:uint}", func(context iris.Context) {
+	app.Get("/get_user/{id:uint}", func(ctx iris.Context) {
 		var user User
-		id, _ := context.Params().GetUint("id")
+		id, _ := ctx.Params().GetUint("id")
 		app.Logger().Println(id)
 		if err := db.Where("id = ?", int(id)).First(&user).Error; err != nil {
 			app.Logger().Fatalf("find one record failed: %t", err == nil)
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":  http.StatusBadRequest,
 				"error": err.Error,
 			})
 			return
 		}
-		context.JSON(iris.Map{
+		ctx.JSON(iris.Map{
 			"code": http.StatusOK,
 			"data": user.Serializer(),
 		})
 	})
 
-	app.Delete("/delete_user/{id:uint}", func(context iris.Context) {
-		id, _ := context.Params().GetUint("id")
+	app.Delete("/delete_user/{id:uint}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint("id")
 		if id == 0 {
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":   http.StatusOK,
 				"detail": "query param id should not be nil",
 			})
@@ -114,23 +114,23 @@ func main() {
 		var user User
 		if err := db.Where("id = ?", id).First(&user).Error; err != nil {
 			app.Logger().Fatalf("record not found")
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":   http.StatusOK,
 				"detail": err.Error,
 			})
 			return
 		}
 		db.Delete(&user)
-		context.JSON(iris.Map{
+		ctx.JSON(iris.Map{
 			"code": http.StatusOK,
 			"data": user.Serializer(),
 		})
 	})
 
-	app.Patch("/patch_user/{id:uint}", func(context iris.Context) {
-		id, _ := context.Params().GetUint("id")
+	app.Patch("/patch_user/{id:uint}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint("id")
 		if id == 0 {
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":   http.StatusOK,
 				"detail": "query param id should not be nil",
 			})
@@ -140,7 +140,7 @@ func main() {
 		tx := db.Begin()
 		if err := tx.Where("id = ?", id).First(&user).Error; err != nil {
 			app.Logger().Fatalf("record not found")
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":   http.StatusOK,
 				"detail": err.Error,
 			})
@@ -148,19 +148,19 @@ func main() {
 		}
 
 		var body patchParam
-		context.ReadJSON(&body)
+		ctx.ReadJSON(&body)
 		app.Logger().Println(body)
 		if err := tx.Model(&user).Updates(map[string]interface{}{"username": body.Data.UserName, "password": body.Data.Password}).Error; err != nil {
 			app.Logger().Fatalf("update record failed")
 			tx.Rollback()
-			context.JSON(iris.Map{
+			ctx.JSON(iris.Map{
 				"code":  http.StatusBadRequest,
 				"error": err.Error,
 			})
 			return
 		}
 		tx.Commit()
-		context.JSON(iris.Map{
+		ctx.JSON(iris.Map{
 			"code": http.StatusOK,
 			"data": user.Serializer(),
 		})
