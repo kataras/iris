@@ -372,11 +372,20 @@ type Response struct {
 	ContentType string
 	Content     []byte
 
-	// if not empty then content type is the text/plain
-	// and content is the text as []byte.
+	// If not empty then content type is the "text/plain"
+	// and content is the text as []byte. If not empty and
+	// the "Lang" field is not empty then this "Text" field
+	// becomes the current locale file's key.
 	Text string
-	// If not nil then it will fire that as "application/json" or the
-	// "ContentType" if not empty.
+	// If not empty then "Text" field becomes the locale file's key that should point
+	// to a translation file's unique key. See `Object` for locale template data.
+	// The "Lang" field is the language code
+	// that should render the text inside the locale file's key.
+	Lang string
+	// If not nil then it will fire that as "application/json" or any
+	// previously set "ContentType". If "Lang" and "Text" are not empty
+	// then this "Object" field becomes the template data that the
+	// locale text should use to be rendered.
 	Object interface{}
 
 	// If Path is not empty then it will redirect
@@ -407,7 +416,11 @@ var _ Result = Response{}
 
 // Dispatch writes the response result to the context's response writer.
 func (r Response) Dispatch(ctx context.Context) {
-	if r.Path != "" && r.Err == nil {
+	if dispatchErr(ctx, r.Code, r.Err) {
+		return
+	}
+
+	if r.Path != "" {
 		// it's not a redirect valid status
 		if r.Code < 300 || r.Code >= 400 {
 			if ctx.Method() == "POST" {
@@ -419,12 +432,19 @@ func (r Response) Dispatch(ctx context.Context) {
 		return
 	}
 
-	if s := r.Text; s != "" {
-		r.Content = []byte(s)
-	}
+	if r.Text != "" {
+		if r.Lang != "" {
+			if r.Code > 0 {
+				ctx.StatusCode(r.Code)
+			}
+			ctx.ContentType(r.ContentType)
 
-	if dispatchErr(ctx, r.Code, r.Err) {
-		return
+			ctx.SetLanguage(r.Lang)
+			r.Content = []byte(ctx.Tr(r.Text, r.Object))
+			return
+		}
+
+		r.Content = []byte(r.Text)
 	}
 
 	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, defaultResultHandler, true)
