@@ -856,6 +856,10 @@ type Configuration struct {
 	// See `i18n.ExtractFunc` for a more organised way of the same feature.
 	// Defaults to "iris.locale.language".
 	LanguageContextKey string `json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
+	// VersionContextKey is the context key which an API Version can be modified
+	// via a middleware through `SetVersion` method, e.g. `ctx.SetVersion("1.0, 1.1")`.
+	// Defauls to "iris.api.version".
+	VersionContextKey string `json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
 	// GetViewLayoutContextKey is the key of the context's user values' key
 	// which is being used to set the template
 	// layout from a middleware or the main handler.
@@ -1014,6 +1018,12 @@ func (c Configuration) GetLanguageContextKey() string {
 	return c.LanguageContextKey
 }
 
+// GetVersionContextKey returns the configuration's VersionContextKey value,
+// used for API Versioning.
+func (c Configuration) GetVersionContextKey() string {
+	return c.VersionContextKey
+}
+
 // GetViewLayoutContextKey returns the key of the context's user values' key
 // which is being used to set the template
 // layout from a middleware or the main handler.
@@ -1152,6 +1162,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.LanguageContextKey = v
 		}
 
+		if v := c.VersionContextKey; v != "" {
+			main.VersionContextKey = v
+		}
+
 		if v := c.ViewLayoutContextKey; v != "" {
 			main.ViewLayoutContextKey = v
 		}
@@ -1206,6 +1220,7 @@ func DefaultConfiguration() Configuration {
 		PostMaxMemory:            32 << 20, // 32MB
 		LocaleContextKey:         "iris.locale",
 		LanguageContextKey:       "iris.locale.language",
+		VersionContextKey:        "iris.api.version",
 		ViewLayoutContextKey:     "iris.viewLayout",
 		ViewDataContextKey:       "iris.viewData",
 		RemoteAddrHeaders:        make(map[string]bool),

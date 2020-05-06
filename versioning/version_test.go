@@ -17,7 +17,7 @@ func TestGetVersion(t *testing.T) {
 
 	app.Get("/", writeVesion)
 	app.Get("/manual", func(ctx iris.Context) {
-		ctx.Values().Set(versioning.Key, "11.0.5")
+		ctx.SetVersion("11.0.5")
 		ctx.Next()
 	}, writeVesion)
 
@@ -36,13 +36,13 @@ func TestGetVersion(t *testing.T) {
 
 	// unknown versions.
 	e.GET("/").WithHeader(versioning.AcceptVersionHeaderKey, "").Expect().
-		Status(iris.StatusOK).Body().Equal(versioning.NotFound)
+		Status(iris.StatusOK).Body().Equal("")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "application/vnd.api+json; version=").Expect().
-		Status(iris.StatusOK).Body().Equal(versioning.NotFound)
+		Status(iris.StatusOK).Body().Equal("")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "application/vnd.api+json; version= ;other=dsa").Expect().
-		Status(iris.StatusOK).Body().Equal(versioning.NotFound)
+		Status(iris.StatusOK).Body().Equal("")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "version=").Expect().
-		Status(iris.StatusOK).Body().Equal(versioning.NotFound)
+		Status(iris.StatusOK).Body().Equal("")
 
 	e.GET("/manual").Expect().Status(iris.StatusOK).Body().Equal("11.0.5")
 }

@@ -424,7 +424,9 @@ type Context interface {
 	// See `GetLocale` too.
 	// Example: https://github.com/kataras/iris/tree/master/_examples/i18n
 	Tr(format string, args ...interface{}) string
-
+	// SetVersion force-sets the API Version integrated with the "iris/versioning" subpackage.
+	// It can be used inside a middleare.
+	SetVersion(constraint string)
 	//  +------------------------------------------------------------+
 	//  | Headers helpers                                            |
 	//  +------------------------------------------------------------+
@@ -2023,6 +2025,12 @@ func (ctx *context) Tr(format string, args ...interface{}) string { // other nam
 	}
 
 	return fmt.Sprintf(format, args...)
+}
+
+// SetVersion force-sets the API Version integrated with the "iris/versioning" subpackage.
+// It can be used inside a middleare.
+func (ctx *context) SetVersion(constraint string) {
+	ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetVersionContextKey(), constraint)
 }
 
 //  +------------------------------------------------------------+

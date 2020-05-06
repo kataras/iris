@@ -21,10 +21,12 @@ const (
 	// 	ctx.Values().Set(versioning.Key, ctx.URLParamDefault("version", "1"))
 	// 	ctx.Next()
 	// }
-	Key = "iris.api.version" // for use inside the ctx.Values(), not visible by the user.
-	// NotFound is the key that can be used inside a `Map` or inside `ctx.Values().Set(versioning.Key, versioning.NotFound)`
+	//
+	// DEPRECATED: May 06 2020: Use `ctx.SetVersion(ctx.URLParamDefault("version", "1"))` instead.
+	Key = "iris.api.version"
+	// NotFound is the key that can be used inside a `Map` or inside `ctx.SetVersion(versioning.NotFound)`
 	// to tell that a version wasn't found, therefore the not found handler should handle the request instead.
-	NotFound = Key + ".notfound"
+	NotFound = "iris.api.version.notfound"
 )
 
 // NotFoundHandler is the default version not found handler that
@@ -55,13 +57,14 @@ var NotFoundHandler = func(ctx context.Context) {
 // However, the end developer can also set a custom version for a handler via a middleware by using the context's store key
 // for versions (see `Key` for further details on that).
 func GetVersion(ctx context.Context) string {
-	// firstly by context store, if manually set-ed by a middleware.
-	if version := ctx.Values().GetString(Key); version != "" {
+	// firstly by context store, if manually set by a middleware.
+	version := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetVersionContextKey())
+	if version != "" {
 		return version
 	}
 
 	// secondly by the "Accept-Version" header.
-	if version := ctx.GetHeader(AcceptVersionHeaderKey); version != "" {
+	if version = ctx.GetHeader(AcceptVersionHeaderKey); version != "" {
 		return version
 	}
 
@@ -72,7 +75,7 @@ func GetVersion(ctx context.Context) string {
 			rem := acceptValue[idx:]
 			startVersion := strings.Index(rem, "=")
 			if startVersion == -1 || len(rem) < startVersion+1 {
-				return NotFound
+				return ""
 			}
 
 			rem = rem[startVersion+1:]
@@ -85,11 +88,11 @@ func GetVersion(ctx context.Context) string {
 				end = len(rem)
 			}
 
-			if version := rem[:end]; version != "" {
+			if version = rem[:end]; version != "" {
 				return version
 			}
 		}
 	}
 
-	return NotFound
+	return ""
 }
