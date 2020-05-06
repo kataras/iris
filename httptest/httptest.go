@@ -7,7 +7,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"github.com/gavv/httpexpect"
+	"github.com/iris-contrib/httpexpect/v2"
 )
 
 type (

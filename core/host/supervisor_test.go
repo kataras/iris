@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gavv/httpexpect"
+	"github.com/iris-contrib/httpexpect/v2"
 )
 
 const (
