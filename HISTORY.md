@@ -394,6 +394,7 @@ Other Improvements:
 
 New Context Methods:
 
+- `Context.SetVersion(constraint string)` force-sets an [API Version](https://github.com/kataras/iris/wiki/API-versioning)
 - `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
 - `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
 - `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
@@ -416,6 +417,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `versioning.GetVersion` now returns an empty string if version wasn't found.
 - Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
 - Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Gzip)`) or a prior call to `Context.Gzip(true)` will enable gzip compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
 - `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
