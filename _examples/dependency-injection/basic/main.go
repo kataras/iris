@@ -1,10 +1,14 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"github.com/kataras/iris/v12"
+
+	"github.com/go-playground/validator/v10"
+)
 
 type (
 	testInput struct {
-		Email string `json:"email"`
+		Email string `json:"email" validate:"required"`
 	}
 
 	testOutput struct {
@@ -35,6 +39,7 @@ func configureAPI(api *iris.APIContainer) {
 
 func main() {
 	app := iris.New()
+	app.Validator = validator.New()
 	app.Logger().SetLevel("debug")
 
 	app.ConfigureContainer(configureAPI)
