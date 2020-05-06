@@ -288,7 +288,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 		return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 	})
 	if err != nil {
-		golog.Debugf("session '%s' key '%s' not found", sid, key)
+		golog.Debugf("session '%s' key '%s' cannot be retrieved: %v", sid, key, err)
 	}
 
 	return

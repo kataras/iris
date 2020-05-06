@@ -1,6 +1,11 @@
 package sessions
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
+	"reflect"
+)
 
 type (
 	// Marshaler is the common marshaler interface, used by transcoder.
@@ -18,13 +23,43 @@ type (
 	}
 )
 
-// DefaultTranscoder is the default transcoder across databases, it's the JSON by default.
-// Change it if you want a different serialization/deserialization inside your session databases (when `UseDatabase` is used).
-var DefaultTranscoder Transcoder = defaultTranscoder{}
+var (
+	_ Transcoder = (*defaultTranscoder)(nil)
+	_ Transcoder = (*GobTranscoder)(nil)
 
-type defaultTranscoder struct{}
+	// DefaultTranscoder is the default transcoder across databases (when `UseDatabase` is used).
+	//
+	// The default database's values encoder and decoder
+	// calls the value's `Marshal/Unmarshal` methods (if any)
+	// otherwise JSON is selected,
+	// the JSON format can be stored to any database and
+	// it supports both builtin language types(e.g. string, int) and custom struct values.
+	// Also, and the most important, the values can be
+	// retrieved/logged/monitored by a third-party program
+	// written in any other language as well.
+	//
+	// You can change this behavior by registering a custom `Transcoder`.
+	// Iris provides a `GobTranscoder` which is mostly suitable
+	// if your session values are going to be custom Go structs.
+	// Select this if you always retrieving values through Go.
+	// Don't forget to initialize a call of gob.Register when necessary.
+	// Read https://golang.org/pkg/encoding/gob/ for more.
+	//
+	// You can also implement your own `sessions.Transcoder` and use it,
+	// i.e: a transcoder which will allow(on Marshal: return its byte representation and nil error)
+	// or dissalow(on Marshal: return non nil error) certain types.
+	//
+	// sessions.DefaultTranscoder = sessions.GobTranscoder{}
+	DefaultTranscoder Transcoder = defaultTranscoder{}
+)
 
-func (d defaultTranscoder) Marshal(value interface{}) ([]byte, error) {
+type (
+	defaultTranscoder struct{}
+	// GobTranscoder can be set to `DefaultTranscoder` to modify the database(s) transcoder.
+	GobTranscoder struct{}
+)
+
+func (defaultTranscoder) Marshal(value interface{}) ([]byte, error) {
 	if tr, ok := value.(Marshaler); ok {
 		return tr.Marshal(value)
 	}
@@ -36,7 +71,7 @@ func (d defaultTranscoder) Marshal(value interface{}) ([]byte, error) {
 	return json.Marshal(value)
 }
 
-func (d defaultTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
+func (defaultTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
 	if tr, ok := outPtr.(Unmarshaler); ok {
 		return tr.Unmarshal(b, outPtr)
 	}
@@ -46,4 +81,47 @@ func (d defaultTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
 	}
 
 	return json.Unmarshal(b, outPtr)
+}
+
+// Marshal returns the gob encoding of "value".
+func (GobTranscoder) Marshal(value interface{}) ([]byte, error) {
+	var (
+		w   = new(bytes.Buffer)
+		enc = gob.NewEncoder(w)
+		err error
+	)
+
+	switch v := value.(type) {
+	case reflect.Value:
+		err = enc.EncodeValue(v)
+	case string,
+		int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64,
+		complex64, complex128:
+		err = enc.Encode(&v)
+	default:
+		err = enc.Encode(value)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Bytes(), nil
+}
+
+// Unmarshal parses the gob-encoded data "b" and stores the result
+// in the value pointed to by "outPtr".
+func (GobTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
+	var (
+		r   = bytes.NewBuffer(b)
+		dec = gob.NewDecoder(r)
+	)
+
+	if v, ok := outPtr.(reflect.Value); ok {
+		return dec.DecodeValue(v)
+	}
+
+	return dec.Decode(outPtr)
 }

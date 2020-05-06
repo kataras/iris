@@ -30,6 +30,28 @@ func main() {
 		AllowReclaim: true,
 	})
 
+	// The default database's values encoder and decoder
+	// calls the value's `Marshal/Unmarshal` methods (if any)
+	// otherwise JSON is selected,
+	// the JSON format can be stored to any database and
+	// it supports both builtin language types(e.g. string, int) and custom struct values.
+	// Also, and the most important, the values can be
+	// retrieved/logged/monitored by a third-party program
+	// written in any other language as well.
+	//
+	// You can change this behavior by registering a custom `Transcoder`.
+	// Iris provides a `GobTranscoder` which is mostly suitable
+	// if your session values are going to be custom Go structs.
+	// Select this if you always retrieving values through Go.
+	// Don't forget to initialize a call of gob.Register when necessary.
+	// Read https://golang.org/pkg/encoding/gob/ for more.
+	//
+	// You can also implement your own `sessions.Transcoder` and use it,
+	// i.e: a transcoder which will allow(on Marshal: return its byte representation and nil error)
+	// or dissalow(on Marshal: return non nil error) certain types.
+	//
+	// sessions.DefaultTranscoder = sessions.GobTranscoder{}
+
 	//
 	// IMPORTANT:
 	//
@@ -37,6 +59,7 @@ func main() {
 
 	// the rest of the code stays the same.
 	app := iris.New()
+	app.Logger().SetLevel("debug")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
