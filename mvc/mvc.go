@@ -25,6 +25,8 @@ import (
 // See `mvc#New` for more.
 type Application struct {
 	container *hero.Container
+	// This Application's Name. Keep names unique to each other.
+	Name string
 
 	Router               router.Party
 	Controllers          []*ControllerActivator
@@ -32,9 +34,33 @@ type Application struct {
 }
 
 func newApp(subRouter router.Party, container *hero.Container) *Application {
-	return &Application{
+	app := &Application{
 		Router:    subRouter,
 		container: container,
+	}
+
+	// Register this Application so any field or method's input argument of
+	// *mvc.Application can point to the current MVC application that the controller runs on.
+	registerBuiltinDependencies(container, app)
+	return app
+}
+
+// See `hero.BuiltinDependencies` too, here we are registering dependencies per MVC Application.
+func registerBuiltinDependencies(container *hero.Container, deps ...interface{}) {
+	for _, dep := range deps {
+		depTyp := reflect.TypeOf(dep)
+		for i, dependency := range container.Dependencies {
+			if dependency.Static {
+				if dependency.DestType == depTyp {
+					// Remove any existing before register this one (see app.Clone).
+					copy(container.Dependencies[i:], container.Dependencies[i+1:])
+					container.Dependencies = container.Dependencies[:len(container.Dependencies)-1]
+					break
+				}
+			}
+		}
+
+		container.Register(dep)
 	}
 }
 
@@ -44,7 +70,7 @@ func newApp(subRouter router.Party, container *hero.Container) *Application {
 //
 // Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
 func New(party router.Party) *Application {
-	return newApp(party, party.ConfigureContainer().Container)
+	return newApp(party, party.ConfigureContainer().Container.Clone())
 }
 
 // Configure creates a new controller and configures it,
@@ -75,6 +101,15 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 	for _, c := range configurators {
 		c(app)
 	}
+	return app
+}
+
+// SetName sets a unique name to this MVC Application.
+// Used for logging, not used in runtime yet, but maybe useful for future features.
+//
+// It returns this Application.
+func (app *Application) SetName(appName string) *Application {
+	app.Name = appName
 	return app
 }
 
