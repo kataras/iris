@@ -1,7 +1,7 @@
 .vscode
-_authortools
-/_examples/issue-*/
 .directory
-node_modules
 package-lock.json
 go.sum
+node_modules
+/_examples/issue-*/
+/_examples/feature-*/
