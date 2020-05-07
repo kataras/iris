@@ -175,7 +175,7 @@ func trimHandlerName(name string) string {
 		name = strings.Replace(name, internalName, "iris", 1)
 	}
 
-	if internalName := "github.com/iris-contrib/middleware"; strings.HasPrefix(name, internalName) {
+	if internalName := "github.com/iris-contrib"; strings.HasPrefix(name, internalName) {
 		name = strings.Replace(name, internalName, "iris-contrib", 1)
 	}
 
