@@ -139,8 +139,9 @@
     * [Basic](cookies/basic/main.go)
     * [Encode/Decode (with `securecookie`)](cookies/securecookie/main.go)
 * Sessions
-    * [Overview](sessions/overview/main.go)
-    * [Middleware](sessions/middleware/main.go)
+    * [Overview: Config](sessions/overview/main.go)
+        * [Overview: Routes](sessions/overview/example/example.go)
+    * [Basic](sessions/basic/main.go)
     * [Secure Cookie](sessions/securecookie/main.go)
     * [Flash Messages](sessions/flash-messages/main.go)
     * [Databases](sessions/database)

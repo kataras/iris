@@ -30,6 +30,10 @@ func newProvider() *provider {
 
 // RegisterDatabase sets a session database.
 func (p *provider) RegisterDatabase(db Database) {
+	if db == nil {
+		return
+	}
+
 	p.mu.Lock() // for any case
 	p.db = db
 	p.mu.Unlock()

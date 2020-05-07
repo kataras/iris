@@ -1,13 +1,14 @@
 package main
 
 import (
-	"errors"
 	"time"
 
 	"github.com/kataras/iris/v12"
 
 	"github.com/kataras/iris/v12/sessions"
 	"github.com/kataras/iris/v12/sessions/sessiondb/redis"
+
+	"github.com/kataras/iris/v12/_examples/sessions/overview/example"
 )
 
 // tested with redis version 3.0.503.
@@ -42,7 +43,7 @@ func main() {
 	defer db.Close() // close the database connection if application errored.
 
 	sess := sessions.New(sessions.Config{
-		Cookie:          "sessionscookieid",
+		Cookie:          "_session_id",
 		Expires:         0, // defaults to 0: unlimited life. Another good value is: 45 * time.Minute,
 		AllowReclaim:    true,
 		CookieSecureTLS: true,
@@ -53,97 +54,6 @@ func main() {
 	//
 	sess.UseDatabase(db)
 
-	// the rest of the code stays the same.
-	app := iris.New()
-
-	app.Get("/", func(ctx iris.Context) {
-		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
-	})
-
-	app.Get("/set", func(ctx iris.Context) {
-		session := sessions.Get(ctx)
-		// set session values
-		session.Set("name", "iris")
-
-		// test if set here
-		ctx.Writef("All ok session value of the 'name' is: %s", session.GetString("name"))
-	})
-
-	app.Get("/set/{key}/{value}", func(ctx iris.Context) {
-		key, value := ctx.Params().Get("key"), ctx.Params().Get("value")
-		session := sessions.Get(ctx)
-		// set session values
-		session.Set(key, value)
-
-		// test if set here
-		ctx.Writef("All ok session value of the '%s' is: %s", key, session.GetString(key))
-	})
-
-	app.Get("/set/int/{key}/{value}", func(ctx iris.Context) {
-		key := ctx.Params().Get("key")
-		value, _ := ctx.Params().GetInt("value")
-		session := sessions.Get(ctx)
-		// set session values
-		session.Set(key, value)
-		valueSet := session.Get(key)
-		// test if set here
-		ctx.Writef("All ok session value of the '%s' is: %v", key, valueSet)
-	})
-
-	app.Get("/get/{key}", func(ctx iris.Context) {
-		key := ctx.Params().Get("key")
-		session := sessions.Get(ctx)
-		value := session.Get(key)
-
-		ctx.Writef("The '%s' on the /set was: %v", key, value)
-	})
-
-	app.Get("/get", func(ctx iris.Context) {
-		// get a specific key, as string, if no found returns just an empty string
-		session := sessions.Get(ctx)
-		name := session.GetString("name")
-
-		ctx.Writef("The 'name' on the /set was: %s", name)
-	})
-
-	app.Get("/get/{key}", func(ctx iris.Context) {
-		// get a specific key, as string, if no found returns just an empty string
-		session := sessions.Get(ctx)
-		name := session.GetString(ctx.Params().Get("key"))
-
-		ctx.Writef("The name on the /set was: %s", name)
-	})
-
-	app.Get("/delete", func(ctx iris.Context) {
-		// delete a specific key
-		sessions.Get(ctx).Delete("name")
-	})
-
-	app.Get("/clear", func(ctx iris.Context) {
-		// removes all entries
-		sessions.Get(ctx).Clear()
-	})
-
-	app.Get("/destroy", func(ctx iris.Context) {
-		// destroy, removes the entire session data and cookie
-		sess.Destroy(ctx)
-	})
-
-	app.Get("/update", func(ctx iris.Context) {
-		// updates resets the expiration based on the session's `Expires` field.
-		if err := sess.ShiftExpiration(ctx); err != nil {
-			if errors.Is(err, sessions.ErrNotFound) {
-				ctx.StatusCode(iris.StatusNotFound)
-			} else if errors.Is(err, sessions.ErrNotImplemented) {
-				ctx.StatusCode(iris.StatusNotImplemented)
-			} else {
-				ctx.StatusCode(iris.StatusNotModified)
-			}
-
-			ctx.Writef("%v", err)
-			ctx.Application().Logger().Error(err)
-		}
-	})
-
+	app := example.NewApp(sess)
 	app.Listen(":8080")
 }

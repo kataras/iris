@@ -7,8 +7,9 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
-
 	"github.com/kataras/iris/v12/sessions"
+
+	"github.com/kataras/iris/v12/_examples/sessions/overview/example"
 
 	"github.com/gorilla/securecookie"
 )
@@ -16,7 +17,7 @@ import (
 func newApp() *iris.Application {
 	app := iris.New()
 
-	cookieName := "mycustomsessionid"
+	cookieName := "_session_id"
 	// AES only supports key sizes of 16, 24 or 32 bytes.
 	// You either need to provide exactly that amount or you derive the key from what you type in.
 	hashKey := []byte("the-big-and-secret-fash-key-here")
@@ -30,52 +31,7 @@ func newApp() *iris.Application {
 		AllowReclaim: true,
 	})
 
-	app.Get("/", func(ctx iris.Context) {
-		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
-	})
-	app.Get("/set", func(ctx iris.Context) {
-		// set session values
-		s := mySessions.Start(ctx)
-		s.Set("name", "iris")
-
-		// test if set here
-		ctx.Writef("All ok session set to: %s", s.GetString("name"))
-	})
-
-	app.Get("/get", func(ctx iris.Context) {
-		// get a specific key, as string, if no found returns just an empty string
-		s := mySessions.Start(ctx)
-		name := s.GetString("name")
-
-		ctx.Writef("The name on the /set was: %s", name)
-	})
-
-	app.Get("/delete", func(ctx iris.Context) {
-		// delete a specific key
-		s := mySessions.Start(ctx)
-		s.Delete("name")
-	})
-
-	app.Get("/clear", func(ctx iris.Context) {
-		// removes all entries
-		mySessions.Start(ctx).Clear()
-	})
-
-	app.Get("/update", func(ctx iris.Context) {
-		// updates expire date with a new date
-		mySessions.ShiftExpiration(ctx)
-	})
-
-	app.Get("/destroy", func(ctx iris.Context) {
-		// destroy, removes the entire session data and cookie
-		mySessions.Destroy(ctx)
-	})
-	// Note about destroy:
-	//
-	// You can destroy a session outside of a handler too, using the:
-	// mySessions.DestroyByID
-	// mySessions.DestroyAll
-
+	app = example.NewApp(mySessions)
 	return app
 }
 

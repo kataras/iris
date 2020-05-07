@@ -5,7 +5,12 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"reflect"
+	"time"
 )
+
+func init() {
+	gob.Register(time.Time{})
+}
 
 type (
 	// Marshaler is the common marshaler interface, used by transcoder.
@@ -21,6 +26,12 @@ type (
 		Marshaler
 		Unmarshaler
 	}
+)
+
+type (
+	defaultTranscoder struct{}
+	// GobTranscoder can be set to `DefaultTranscoder` to modify the database(s) transcoder.
+	GobTranscoder struct{}
 )
 
 var (
@@ -51,12 +62,6 @@ var (
 	//
 	// sessions.DefaultTranscoder = sessions.GobTranscoder{}
 	DefaultTranscoder Transcoder = defaultTranscoder{}
-)
-
-type (
-	defaultTranscoder struct{}
-	// GobTranscoder can be set to `DefaultTranscoder` to modify the database(s) transcoder.
-	GobTranscoder struct{}
 )
 
 func (defaultTranscoder) Marshal(value interface{}) ([]byte, error) {
@@ -91,17 +96,10 @@ func (GobTranscoder) Marshal(value interface{}) ([]byte, error) {
 		err error
 	)
 
-	switch v := value.(type) {
-	case reflect.Value:
+	if v, ok := value.(reflect.Value); ok {
 		err = enc.EncodeValue(v)
-	case string,
-		int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64,
-		float32, float64,
-		complex64, complex128:
-		err = enc.Encode(&v)
-	default:
-		err = enc.Encode(value)
+	} else {
+		err = enc.Encode(&value)
 	}
 
 	if err != nil {
@@ -114,10 +112,7 @@ func (GobTranscoder) Marshal(value interface{}) ([]byte, error) {
 // Unmarshal parses the gob-encoded data "b" and stores the result
 // in the value pointed to by "outPtr".
 func (GobTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
-	var (
-		r   = bytes.NewBuffer(b)
-		dec = gob.NewDecoder(r)
-	)
+	dec := gob.NewDecoder(bytes.NewBuffer(b))
 
 	if v, ok := outPtr.(reflect.Value); ok {
 		return dec.DecodeValue(v)
