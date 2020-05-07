@@ -1,34 +1,21 @@
-package main
+package example
 
 import (
-	"time"
+	"errors"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/sessions"
 )
 
-type businessModel struct {
+// BusinessModel is just a Go struct value that we will use in our session example,
+// never save sensitive information, like passwords, here.
+type BusinessModel struct {
 	Name string
 }
 
-func main() {
+// NewApp returns a new application for showcasing the sessions feature.
+func NewApp(sess *sessions.Sessions) *iris.Application {
 	app := iris.New()
-	sess := sessions.New(sessions.Config{
-		// Cookie string, the session's client cookie name, for example: "mysessionid"
-		//
-		// Defaults to "irissessionid"
-		Cookie: "mysessionid",
-		// it's time.Duration, from the time cookie is created, how long it can be alive?
-		// 0 means no expire.
-		// -1 means expire when browser closes
-		// or set a value, like 2 hours:
-		Expires: time.Hour * 2,
-		// if you want to invalid cookies on different subdomains
-		// of the same host, then enable it.
-		// Defaults to false.
-		DisableSubdomainPersistence: false,
-	})
-
 	app.Use(sess.Handler()) // session is always non-nil inside handlers now.
 
 	app.Get("/", func(ctx iris.Context) {
@@ -51,57 +38,85 @@ func main() {
 		session := sessions.Get(ctx)
 		session.Set("name", "iris")
 
-		// test if set here.
 		ctx.Writef("All ok session set to: %s", session.GetString("name"))
-
-		// Set will set the value as-it-is,
-		// if it's a slice or map
-		// you will be able to change it on .Get directly!
-		// Keep note that I don't recommend saving big data neither slices or maps on a session
-		// but if you really need it then use the `SetImmutable` instead of `Set`.
-		// Use `SetImmutable` consistently, it's slower.
-		// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-	})
-
-	app.Get("/set/{key}/{value}", func(ctx iris.Context) {
-		key, value := ctx.Params().Get("key"), ctx.Params().Get("value")
-
-		session := sessions.Get(ctx)
-		session.Set(key, value)
-
-		// test if set here
-		ctx.Writef("All ok session value of the '%s' is: %s", key, session.GetString(key))
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
+
 		// get a specific value, as string,
 		// if not found then it returns just an empty string.
-		name := sessions.Get(ctx).GetString("name")
+		name := session.GetString("name")
+
+		ctx.Writef("The name on the /set was: %s", name)
+	})
+
+	app.Get("/set-struct", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
+		session.Set("struct", BusinessModel{Name: "John Doe"})
+
+		ctx.Writef("All ok session value of the 'struct' is: %v", session.Get("struct"))
+	})
+
+	app.Get("/get-struct", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
+		ctx.Writef("Session value of the 'struct' is: %v", session.Get("struct"))
+	})
+
+	app.Get("/set/{key}/{value}", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
+
+		key := ctx.Params().Get("key")
+		value := ctx.Params().Get("value")
+		session.Set(key, value)
+
+		ctx.Writef("All ok session value of the '%s' is: %s", key, session.GetString(key))
+	})
+
+	app.Get("/get/{key}", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
+		// get a specific key, as string, if no found returns just an empty string
+		key := ctx.Params().Get("key")
+		name := session.GetString(key)
 
 		ctx.Writef("The name on the /set was: %s", name)
 	})
 
 	app.Get("/delete", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
 		// delete a specific key
-		sessions.Get(ctx).Delete("name")
+		session.Delete("name")
 	})
 
 	app.Get("/clear", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
 		// removes all entries.
-		sessions.Get(ctx).Clear()
+		session.Clear()
 	})
 
 	app.Get("/update", func(ctx iris.Context) {
-		// updates expire date.
-		sess.ShiftExpiration(ctx)
+		session := sessions.Get(ctx)
+		// shifts the expiration based on the session's `Lifetime`.
+		if err := session.Man.ShiftExpiration(ctx); err != nil {
+			if errors.Is(err, sessions.ErrNotFound) {
+				ctx.StatusCode(iris.StatusNotFound)
+			} else if errors.Is(err, sessions.ErrNotImplemented) {
+				ctx.StatusCode(iris.StatusNotImplemented)
+			} else {
+				ctx.StatusCode(iris.StatusNotModified)
+			}
+
+			ctx.Writef("%v", err)
+			ctx.Application().Logger().Error(err)
+		}
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
-		// destroy, removes the entire session data and cookie
-		// sess.Destroy(ctx)
-		// or
-		sessions.Get(ctx).Destroy()
+		session := sessions.Get(ctx)
+		// Man(anager)'s Destroy, removes the entire session data and cookie
+		session.Man.Destroy(ctx)
 	})
+
 	// Note about Destroy:
 	//
 	// You can destroy a session outside of a handler too, using the:
@@ -114,25 +129,26 @@ func main() {
 	//
 	// Use `SetImmutable` consistently, it's slower than `Set`.
 	// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-	app.Get("/set_immutable", func(ctx iris.Context) {
-		business := []businessModel{{Name: "Edward"}, {Name: "value 2"}}
+	app.Get("/set-immutable", func(ctx iris.Context) {
 		session := sessions.Get(ctx)
+
+		business := []BusinessModel{{Name: "Edward"}, {Name: "value 2"}}
 		session.SetImmutable("businessEdit", business)
-		businessGet := session.Get("businessEdit").([]businessModel)
+		businessGet := session.Get("businessEdit").([]BusinessModel)
 
 		// try to change it, if we used `Set` instead of `SetImmutable` this
 		// change will affect the underline array of the session's value "businessEdit", but now it will not.
 		businessGet[0].Name = "Gabriel"
 	})
 
-	app.Get("/get_immutable", func(ctx iris.Context) {
+	app.Get("/get-immutable", func(ctx iris.Context) {
 		valSlice := sessions.Get(ctx).Get("businessEdit")
 		if valSlice == nil {
-			ctx.HTML("please navigate to the <a href='/set_immutable'>/set_immutable</a> first")
+			ctx.HTML("please navigate to the <a href='/set_immutable'>/set-immutable</a> first")
 			return
 		}
 
-		firstModel := valSlice.([]businessModel)[0]
+		firstModel := valSlice.([]BusinessModel)[0]
 		// businessGet[0].Name is equal to Edward initially
 		if firstModel.Name != "Edward" {
 			panic("Report this as a bug, immutable data cannot be changed from the caller without re-SetImmutable")
@@ -143,5 +159,5 @@ func main() {
 		// the name should remains "Edward"
 	})
 
-	app.Listen(":8080")
+	return app
 }
