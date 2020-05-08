@@ -1,8 +1,6 @@
 package context
 
-import (
-	"github.com/kataras/iris/v12/core/netutil"
-)
+import "github.com/kataras/iris/v12/core/netutil"
 
 // ConfigurationReadOnly can be implemented
 // by Configuration, it's being used inside the Context.
@@ -16,6 +14,10 @@ type ConfigurationReadOnly interface {
 	// If original addr was :https or :http, it will return localhost.
 	// If original addr was 0.0.0.0, it will return localhost.
 	GetVHost() string
+
+	// GetLogLevel returns the `Configuration.LogLevel` field.
+	// The same (as `golog.LogLevel`) can be retrieved through `app.Logger().Level`.
+	GetLogLevel() string
 
 	// GetDisablePathCorrection returns the configuration.DisablePathCorrection,
 	// DisablePathCorrection corrects and redirects the requested path to the registered path

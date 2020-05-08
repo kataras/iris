@@ -185,6 +185,13 @@ var WithGlobalConfiguration = func(app *Application) {
 	app.Configure(WithConfiguration(YAML(globalConfigurationKeyword)))
 }
 
+// WithLogLevel sets the `Configuration.LogLevel` field.
+func WithLogLevel(level string) Configurator {
+	return func(app *Application) {
+		app.config.LogLevel = level
+	}
+}
+
 // WithoutServerError will cause to ignore the matched "errors"
 // from the main application's `Run/Listen` function.
 //
@@ -717,9 +724,23 @@ func (tc TunnelingConfiguration) createTunnel(tunnelAPIRequest ngrokTunnel, publ
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
 type Configuration struct {
-	// vhost is private and set only with .Run method, it cannot be changed after the first set.
+	// vhost is private and set only with .Run/Listen methods, it cannot be changed after the first set.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
 	vhost string
+
+	// LogLevel is the log level the application should use to output messages.
+	// Logger, by default, is mostly used on Build state but it is also possible
+	// that debug error messages could be thrown when the app is running, e.g.
+	// when malformed data structures try to be sent on Client (i.e Context.JSON/JSONP/XML...).
+	//
+	// Defaults to "info". Possible values are:
+	// * "disable"
+	// * "fatal"
+	// * "error"
+	// * "warn"
+	// * "info"
+	// * "debug"
+	LogLevel string `json:"logLevel" yaml:"LogLevel" toml:"LogLevel" env:"LOG_LEVEL"`
 
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
@@ -924,6 +945,12 @@ func (c Configuration) GetVHost() string {
 	return c.vhost
 }
 
+// GetLogLevel returns the `Configuration.LogLevel` field.
+// The same (as `golog.LogLevel`) can be retrieved through `app.Logger().Level`.
+func (c Configuration) GetLogLevel() string {
+	return c.vhost
+}
+
 // GetDisablePathCorrection returns the Configuration#DisablePathCorrection.
 // DisablePathCorrection disables the correcting
 // and redirecting or executing directly the handler of
@@ -1094,6 +1121,10 @@ func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
 
+		if v := c.LogLevel; v != "" {
+			main.LogLevel = v
+		}
+
 		if c.Tunneling.isEnabled() {
 			main.Tunneling = c.Tunneling
 		}
@@ -1201,6 +1232,7 @@ func WithConfiguration(c Configuration) Configurator {
 // DefaultConfiguration returns the default configuration for an iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
+		LogLevel:                          "info",
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,

@@ -1,7 +1,6 @@
 package iris
 
 import (
-	// std packages
 	"bytes"
 	stdContext "context"
 	"errors"
@@ -16,27 +15,18 @@ import (
 	"sync"
 	"time"
 
-	// context for the handlers
+	"github.com/kataras/iris/v12/cache"
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/hero"
-
-	// core packages, required to build the application
 	"github.com/kataras/iris/v12/core/errgroup"
+	"github.com/kataras/iris/v12/core/handlerconv"
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/core/netutil"
 	"github.com/kataras/iris/v12/core/router"
-
-	// handlerconv conversions
-	"github.com/kataras/iris/v12/core/handlerconv"
-	// cache conversions
-	"github.com/kataras/iris/v12/cache"
-	// view
-	"github.com/kataras/iris/v12/view"
-	// i18n
+	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/i18n"
-	// handlers used in `Default` function
 	requestLogger "github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/kataras/iris/v12/view"
 
 	"github.com/kataras/golog"
 	"gopkg.in/yaml.v3"
@@ -274,6 +264,7 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 // - "info"
 // - "debug"
 // Usage: app.Logger().SetLevel("error")
+// Or set the level through Configurartion's LogLevel or WithLogLevel functional option.
 // Defaults to "info" level.
 //
 // Callers can use the application's logger which is
@@ -745,6 +736,12 @@ func (app *Application) Build() error {
 	// start := time.Now()
 	app.builded = true // even if fails.
 
+	// check if a prior app.Logger().SetLevel called and if not
+	// then set the defined configuration's log level.
+	if app.logger.Level == golog.InfoLevel /* the default level */ {
+		app.logger.SetLevel(app.config.LogLevel)
+	}
+
 	rp := errgroup.New("Application Builder")
 	rp.Err(app.APIBuilder.GetReporter())
 
@@ -1028,14 +1025,13 @@ func (app *Application) Listen(hostPort string, withOrWithout ...Configurator) e
 // the following runners:
 // `Listener`, `Server`, `Addr`, `TLS`, `AutoTLS` and `Raw`.
 func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
-	// first Build because it doesn't need anything from configuration,
-	// this gives the user the chance to modify the router inside a configurator as well.
+	app.Configure(withOrWithout...)
+
 	if err := app.Build(); err != nil {
 		app.logger.Error(err)
 		return err
 	}
 
-	app.Configure(withOrWithout...)
 	app.tryStartTunneling()
 
 	if len(app.Hosts) > 0 {
