@@ -904,15 +904,21 @@ func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 	}
 }
 
+// TLSNoRedirect is a `host.Configurator` which can be passed as last argument
+// to the `TLS` and `AutoTLS` functions. It disables the automatic
+// registration of redirection from "http://" to "https://" requests.
+var TLSNoRedirect = func(su *host.Supervisor) { su.NoRedirect() }
+
 // TLS can be used as an argument for the `Run` method.
 // It will start the Application's secure server.
 //
 // Use it like you used to use the http.ListenAndServeTLS function.
 //
 // Addr should have the form of [host]:port, i.e localhost:443 or :443.
-// CertFile & KeyFile should be filenames with their extensions.
+// "certFileOrContents" & "keyFileOrContents" should be filenames with their extensions
+// or raw contents of the certificate and the private key.
 //
-// Second argument is optional, it accepts one or more
+// Last argument is optional, it accepts one or more
 // `func(*host.Configurator)` that are being executed
 // on that specific host that this function will create to start the server.
 // Via host configurators you can configure the back-end host supervisor,
@@ -922,11 +928,11 @@ func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
-func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator) Runner {
+func TLS(addr string, certFileOrContents, keyFileOrContents string, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		return app.NewHost(&http.Server{Addr: addr}).
 			Configure(hostConfigs...).
-			ListenAndServeTLS(certFile, keyFile)
+			ListenAndServeTLS(certFileOrContents, keyFileOrContents)
 	}
 }
 

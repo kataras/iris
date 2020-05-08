@@ -1,11 +1,7 @@
 package main
 
 import (
-	"net/url"
-
 	"github.com/kataras/iris/v12"
-
-	"github.com/kataras/iris/v12/core/host"
 )
 
 func main() {
@@ -19,11 +15,13 @@ func main() {
 		ctx.Writef("Hello from the SECURE server on path /mypath")
 	})
 
-	// to start a new server listening at :80 and redirects
-	// to the secure address, then:
-	target, _ := url.Parse("https://127.0.0.1:443")
-	go host.NewRedirection("127.0.0.1:80", target, iris.StatusMovedPermanently).ListenAndServe()
-
-	// start the server (HTTPS) on port 443, this is a blocking func
+	// Start the server (HTTPS) on port 443,
+	// and a secondary of (HTTP) on port :80 which redirects requests to their HTTPS version.
+	// This is a blocking func.
 	app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key"))
+
+	// Note: to disable automatic "http://" to "https://" redirections pass the `iris.TLSNoRedirect`
+	// host configurator to TLS or AutoTLS functions, e.g:
+	//
+	// app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))
 }
