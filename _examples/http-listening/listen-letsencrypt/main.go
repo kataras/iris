@@ -24,4 +24,9 @@ func main() {
 	// use real whitelisted domain(or domains split by whitespaces)
 	// and a non-public e-mail instead or edit your hosts file.
 	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com"))
+
+	// Note: to disable automatic "http://" to "https://" redirections pass the `iris.TLSNoRedirect`
+	// host configurator to TLS or AutoTLS functions, e.g:
+	//
+	// app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com", iris.TLSNoRedirect))
 }

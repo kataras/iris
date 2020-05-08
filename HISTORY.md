@@ -371,6 +371,9 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- `iris.TLS` can now accept certificates as raw contents too.
+- `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS` (or `iris.AutoTLS`), e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`.
+
 - Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
 
 - Server will not return neither log the `ErrServerClosed` if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
