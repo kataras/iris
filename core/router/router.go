@@ -50,12 +50,14 @@ var ErrNotRouteAdder = errors.New("request handler does not implement AddRoute m
 // Works before or after Build state.
 // Mainly used for internal cases like `iris.WithSitemap`.
 // Do NOT use it on serve-time.
-func (router *Router) AddRouteUnsafe(r *Route) error {
+func (router *Router) AddRouteUnsafe(routes ...*Route) error {
 	if h := router.requestHandler; h != nil {
 		if v, ok := h.(interface {
 			AddRoute(*Route) error
 		}); ok {
-			return v.AddRoute(r)
+			for _, r := range routes {
+				return v.AddRoute(r)
+			}
 		}
 	}
 

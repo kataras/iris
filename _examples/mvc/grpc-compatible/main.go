@@ -61,6 +61,14 @@ type myController struct {
 }
 
 // SayHello implements helloworld.GreeterServer.
+// See https://github.com/kataras/iris/issues/1449#issuecomment-625570442
+// for the comments below (https://github.com/iris-contrib/swagger).
+//
+// @Description greet service
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string	"Hello {name}"
+// @Router /helloworld.Greeter/SayHello [post]
 func (c *myController) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
