@@ -10,13 +10,13 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
-	github.com/iris-contrib/httpexpect/v2 v2.0.5
-	github.com/golang/protobuf v1.4.0
-	github.com/gomodule/redigo v1.8.0
+	github.com/golang/protobuf v1.4.1
+	github.com/gomodule/redigo v1.8.1
 	github.com/hashicorp/go-version v1.2.0
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
-	github.com/iris-contrib/jade v1.1.3
+	github.com/iris-contrib/httpexpect/v2 v2.0.5
+	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
 	github.com/json-iterator/go v1.1.9
@@ -35,5 +35,5 @@ require (
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 	gopkg.in/ini.v1 v1.55.0
-	gopkg.in/yaml.v3 v3.0.0-20200504163728-5308cda29e3d
+	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86
 )
