@@ -14,7 +14,7 @@ func main() {
 			ctx.Application().ConfigurationReadOnly().GetVHost())
 	})
 
-	app.Listen(":8080", iris.WithTunneling)
+	app.Listen(":8080", iris.WithTunneling, iris.WithLogLevel("debug"))
 
 	/* The full configuration can be set as:
 	app.Listen(":8080", iris.WithConfiguration(

@@ -13,16 +13,16 @@ func TestCookiesBasic(t *testing.T) {
 
 	cookieName, cookieValue := "my_cookie_name", "my_cookie_value"
 
-	// Test Set A Cookie.
+	// Test set a Cookie.
 	t1 := e.GET(fmt.Sprintf("/cookies/%s/%s", cookieName, cookieValue)).Expect().Status(httptest.StatusOK)
 	t1.Cookie(cookieName).Value().Equal(cookieValue) // validate cookie's existence, it should be there now.
 	t1.Body().Contains(cookieValue)
 
-	// Test Retrieve A Cookie.
+	// Test retrieve a Cookie.
 	t2 := e.GET(fmt.Sprintf("/cookies/%s", cookieName)).Expect().Status(httptest.StatusOK)
 	t2.Body().Equal(cookieValue)
 
-	// Test Remove A Cookie.
+	// Test remove a Cookie.
 	t3 := e.DELETE(fmt.Sprintf("/cookies/%s", cookieName)).Expect().Status(httptest.StatusOK)
 	t3.Body().Contains(cookieName)
 

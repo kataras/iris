@@ -371,12 +371,13 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
 - `iris.TLS` can now accept certificates as raw contents too.
 - `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS` (or `iris.AutoTLS`), e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`.
 
 - Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
 
-- Server will not return neither log the `ErrServerClosed` if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
+- Server will not return neither log the `ErrServerClosed` error if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
 
 - Finally, Log level's and Route debug information colorization is respected across outputs. Previously if the application used more than one output destination (e.g. a file through `app.Logger().AddOutput`) the color support was automatically disabled from all, including the terminal one, this problem is fixed now. Developers can now see colors in their terminals while log files are kept with clear text.
 
@@ -396,8 +397,16 @@ Other Improvements:
 
 - Fix [#1473](https://github.com/kataras/iris/issues/1473).
 
+New Package-level Variables:
+
+- `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
+- `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
+- `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
+
 New Context Methods:
 
+- `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
+- `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
 - `Context.SetVersion(constraint string)` force-sets an [API Version](https://github.com/kataras/iris/wiki/API-versioning)
 - `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
 - `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
@@ -421,6 +430,8 @@ New Context Methods:
 
 Breaking Changes:
 
+- `iris.CookieEncode` and `CookieDecode` are replaced with the `iris.CookieEncoding`.
+- `sessions#Config.Encode` and `Decode` are removed in favor of (the existing) `Encoding` field.
 - `versioning.GetVersion` now returns an empty string if version wasn't found.
 - Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
 - Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Gzip)`) or a prior call to `Context.Gzip(true)` will enable gzip compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).

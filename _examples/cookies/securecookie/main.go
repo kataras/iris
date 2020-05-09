@@ -11,49 +11,62 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-var (
-	// AES only supports key sizes of 16, 24 or 32 bytes.
-	// You either need to provide exactly that amount or you derive the key from what you type in.
-	hashKey  = []byte("the-big-and-secret-fash-key-here")
-	blockKey = []byte("lot-secret-of-characters-big-too")
-	sc       = securecookie.New(hashKey, blockKey)
-)
+func main() {
+	app := newApp()
+	// http://localhost:8080/cookies/name/value
+	// http://localhost:8080/cookies/name
+	// http://localhost:8080/cookies/remove/name
+	app.Listen(":8080")
+}
 
 func newApp() *iris.Application {
 	app := iris.New()
 
-	// Set A Cookie.
-	app.Get("/cookies/{name}/{value}", func(ctx iris.Context) {
-		name := ctx.Params().Get("name")
-		value := ctx.Params().Get("value")
+	r := app.Party("/cookies")
+	{
+		r.Use(useSecureCookies())
 
-		ctx.SetCookieKV(name, value, iris.CookieEncode(sc.Encode)) // <--
+		// Set A Cookie.
+		r.Get("/{name}/{value}", func(ctx iris.Context) {
+			name := ctx.Params().Get("name")
+			value := ctx.Params().Get("value")
 
-		ctx.Writef("cookie added: %s = %s", name, value)
-	})
+			ctx.SetCookieKV(name, value)
 
-	// Retrieve A Cookie.
-	app.Get("/cookies/{name}", func(ctx iris.Context) {
-		name := ctx.Params().Get("name")
+			ctx.Writef("cookie added: %s = %s", name, value)
+		})
 
-		value := ctx.GetCookie(name, iris.CookieDecode(sc.Decode)) // <--
+		// Retrieve A Cookie.
+		r.Get("/{name}", func(ctx iris.Context) {
+			name := ctx.Params().Get("name")
 
-		ctx.WriteString(value)
-	})
+			value := ctx.GetCookie(name)
 
-	// Delete A Cookie.
-	app.Delete("/cookies/{name}", func(ctx iris.Context) {
-		name := ctx.Params().Get("name")
+			ctx.WriteString(value)
+		})
 
-		ctx.RemoveCookie(name) // <--
+		r.Get("/remove/{name}", func(ctx iris.Context) {
+			name := ctx.Params().Get("name")
 
-		ctx.Writef("cookie %s removed", name)
-	})
+			ctx.RemoveCookie(name)
+
+			ctx.Writef("cookie %s removed", name)
+		})
+	}
 
 	return app
 }
 
-func main() {
-	app := newApp()
-	app.Listen(":8080")
+func useSecureCookies() iris.Handler {
+	var (
+		hashKey  = securecookie.GenerateRandomKey(64)
+		blockKey = securecookie.GenerateRandomKey(32)
+
+		s = securecookie.New(hashKey, blockKey)
+	)
+
+	return func(ctx iris.Context) {
+		ctx.AddCookieOptions(iris.CookieEncoding(s))
+		ctx.Next()
+	}
 }

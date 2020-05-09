@@ -74,16 +74,14 @@ var sessionsManager *sessions.Sessions
 func init() {
 	// attach a session manager
 	cookieName := "mycustomsessionid"
-	// AES only supports key sizes of 16, 24 or 32 bytes.
-	// You either need to provide exactly that amount or you derive the key from what you type in.
-	hashKey := []byte("the-big-and-secret-fash-key-here")
-	blockKey := []byte("lot-secret-of-characters-big-too")
+	hashKey := securecookie.GenerateRandomKey(64)
+	blockKey := securecookie.GenerateRandomKey(32)
 	secureCookie := securecookie.New(hashKey, blockKey)
 
 	sessionsManager = sessions.New(sessions.Config{
-		Cookie: cookieName,
-		Encode: secureCookie.Encode,
-		Decode: secureCookie.Decode,
+		Cookie:       cookieName,
+		Encoding:     secureCookie,
+		AllowReclaim: true,
 	})
 }
 

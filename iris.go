@@ -493,6 +493,41 @@ var (
 	//
 	// A shortcut of the `cache#Cache304`.
 	Cache304 = cache.Cache304
+
+	// CookieAllowReclaim accepts the Context itself.
+	// If set it will add the cookie to (on `CookieSet`, `CookieSetKV`, `CookieUpsert`)
+	// or remove the cookie from (on `CookieRemove`) the Request object too.
+	//
+	// A shortcut for the `context#CookieAllowReclaim`.
+	CookieAllowReclaim = context.CookieAllowReclaim
+	// CookieAllowSubdomains set to the Cookie Options
+	// in order to allow subdomains to have access to the cookies.
+	// It sets the cookie's Domain field (if was empty) and
+	// it also sets the cookie's SameSite to lax mode too.
+	//
+	// A shortcut for the `context#CookieAllowSubdomains`.
+	CookieAllowSubdomains = context.CookieAllowSubdomains
+	// CookieSameSite sets a same-site rule for cookies to set.
+	// SameSite allows a server to define a cookie attribute making it impossible for
+	// the browser to send this cookie along with cross-site requests. The main
+	// goal is to mitigate the risk of cross-origin information leakage, and provide
+	// some protection against cross-site request forgery attacks.
+	//
+	// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
+	//
+	// A shortcut for the `context#CookieSameSite`.
+	CookieSameSite = context.CookieHTTPOnly
+	// CookieSecure sets the cookie's Secure option if the current request's
+	// connection is using TLS. See `CookieHTTPOnly` too.
+	//
+	// A shortcut for the `context#CookieSecure`.
+	CookieSecure = context.CookieSecure
+	// CookieHTTPOnly is a `CookieOption`.
+	// Use it to set the cookie's HttpOnly field to false or true.
+	// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+	//
+	// A shortcut for the `context#CookieHTTPOnly`.
+	CookieHTTPOnly = context.CookieHTTPOnly
 	// CookiePath is a `CookieOption`.
 	// Use it to change the cookie's Path field.
 	//
@@ -508,30 +543,13 @@ var (
 	//
 	// A shortcut for the `context#CookieExpires`.
 	CookieExpires = context.CookieExpires
-	// CookieHTTPOnly is a `CookieOption`.
-	// Use it to set the cookie's HttpOnly field to false or true.
-	// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+	// CookieEncoding accepts a value which implements `Encode` and `Decode` methods.
+	// It calls its `Encode` on `Context.SetCookie, UpsertCookie, and SetCookieKV` methods.
+	// And on `Context.GetCookie` method it calls its `Decode`.
 	//
-	// A shortcut for the `context#CookieHTTPOnly`.
-	CookieHTTPOnly = context.CookieHTTPOnly
-	// CookieEncode is a `CookieOption`.
-	// Provides encoding functionality when adding a cookie.
-	// Accepts a `context#CookieEncoder` and sets the cookie's value to the encoded value.
-	// Users of that is the `context#SetCookie` and `context#SetCookieKV`.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
-	//
-	// A shortcut for the `context#CookieEncode`.
-	CookieEncode = context.CookieEncode
-	// CookieDecode is a `CookieOption`.
-	// Provides decoding functionality when retrieving a cookie.
-	// Accepts a `context#CookieDecoder` and sets the cookie's value to the decoded value before return by the `GetCookie`.
-	// User of that is the `context#GetCookie`.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
-	//
-	// A shortcut for the `context#CookieDecode`.
-	CookieDecode = context.CookieDecode
+	// A shortcut for the `context#CookieEncoding`.
+	CookieEncoding = context.CookieEncoding
+
 	// IsErrPath can be used at `context#ReadForm`.
 	// It reports whether the incoming error is type of `formbinder.ErrPath`,
 	// which can be ignored when server allows unknown post values to be sent by the client.

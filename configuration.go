@@ -879,7 +879,7 @@ type Configuration struct {
 	LanguageContextKey string `json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
 	// VersionContextKey is the context key which an API Version can be modified
 	// via a middleware through `SetVersion` method, e.g. `ctx.SetVersion("1.0, 1.1")`.
-	// Defauls to "iris.api.version".
+	// Defaults to "iris.api.version".
 	VersionContextKey string `json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
 	// GetViewLayoutContextKey is the key of the context's user values' key
 	// which is being used to set the template

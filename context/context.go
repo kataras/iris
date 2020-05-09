@@ -36,6 +36,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/vmihailenco/msgpack/v5"
+	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
 	"gopkg.in/yaml.v3"
 )
@@ -984,6 +985,25 @@ type Context interface {
 	//  | Cookies                                                    |
 	//  +------------------------------------------------------------+
 
+	// AddCookieOptions adds cookie options for `SetCookie`,
+	// `SetCookieKV, UpsertCookie` and `RemoveCookie` methods
+	// for the current request. It can be called from a middleware before
+	// cookies sent or received from the next Handler in the chain.
+	// See `ClearCookieOptions` too.
+	//
+	// Available builtin Cookie options are:
+	// * CookieSameSite
+	// * CookiePath
+	// * CookieCleanPath
+	// * CookieExpires
+	// * CookieHTTPOnly
+	// * CookieEncoding
+	//
+	// Example at: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+	AddCookieOptions(options ...CookieOption)
+	// ClearCookieOptions clears any previously registered cookie options.
+	// See `AddCookieOptions` too.
+	ClearCookieOptions()
 	// SetCookie adds a cookie.
 	// Use of the "options" is not required, they can be used to amend the "cookie".
 	//
@@ -994,14 +1014,6 @@ type Context interface {
 	// if already set by a previous `SetCookie` call.
 	// It reports whether the cookie is new (true) or an existing one was updated (false).
 	UpsertCookie(cookie *http.Cookie, options ...CookieOption) bool
-	// SetSameSite sets a same-site rule for cookies to set.
-	// SameSite allows a server to define a cookie attribute making it impossible for
-	// the browser to send this cookie along with cross-site requests. The main
-	// goal is to mitigate the risk of cross-origin information leakage, and provide
-	// some protection against cross-site request forgery attacks.
-	//
-	// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
-	SetSameSite(sameSite http.SameSite)
 	// SetCookieKV adds a cookie, requires the name(string) and the value(string).
 	//
 	// By default it expires at 2 hours and it's added to the root path,
@@ -4734,48 +4746,171 @@ func (ctx *context) SendFileWithRate(src, destName string, limit float64, burst 
 //  | Cookies                                                    |
 //  +------------------------------------------------------------+
 
+// Set of Cookie actions for `CookieOption`.
+const (
+	OpCookieGet uint8 = iota
+	OpCookieSet
+	OpCookieDel
+)
+
 // CookieOption is the type of function that is accepted on
 // context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
 // as their (last) variadic input argument to amend the end cookie's form.
 //
 // Any custom or builtin `CookieOption` is valid,
 // see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
-type CookieOption func(*http.Cookie)
+// The "op" is the operation code, 0 is GET, 1 is SET and 2 is REMOVE.
+type CookieOption func(c *http.Cookie, op uint8)
 
-// CookiePath is a `CookieOption`.
-// Use it to change the cookie's Path field.
-func CookiePath(path string) CookieOption {
-	return func(c *http.Cookie) {
-		c.Path = path
+// findCookieAgainst reports whether the "cookie.Name" is in the list of "cookieNames".
+// Notes:
+// If "cookieNames" slice is empty then it returns true,
+// If "cookie.Name" is empty then it returns false.
+func findCookieAgainst(cookie *http.Cookie, cookieNames []string) bool {
+	if cookie.Name == "" {
+		return false
+	}
+
+	if len(cookieNames) > 0 {
+		for _, name := range cookieNames {
+			if cookie.Name == name {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	return true
+}
+
+// CookieAllowReclaim accepts the Context itself.
+// If set it will add the cookie to (on `CookieSet`, `CookieSetKV`, `CookieUpsert`)
+// or remove the cookie from (on `CookieRemove`) the Request object too.
+func CookieAllowReclaim(ctx Context, cookieNames ...string) CookieOption {
+	return func(c *http.Cookie, op uint8) {
+		if op == OpCookieGet {
+			return
+		}
+
+		if !findCookieAgainst(c, cookieNames) {
+			return
+		}
+
+		switch op {
+		case OpCookieSet:
+			ctx.Request().AddCookie(c)
+		case OpCookieDel:
+			// TODO: delete only this c.Name.
+			ctx.Request().Header.Set("Cookie", "")
+		}
+	}
+
+}
+
+// CookieAllowSubdomains set to the Cookie Options
+// in order to allow subdomains to have access to the cookies.
+// It sets the cookie's Domain field (if was empty) and
+// it also sets the cookie's SameSite to lax mode too.
+func CookieAllowSubdomains(ctx Context, cookieNames ...string) CookieOption {
+	host := ctx.Host()
+	if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
+		host = host[0:portIdx]
+	}
+
+	cookieDomain := "." + host
+
+	if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+		cookieDomain = "." + domain
+	}
+
+	return func(c *http.Cookie, _ uint8) {
+		if c.Domain != "" {
+			return // already set.
+		}
+
+		if !findCookieAgainst(c, cookieNames) {
+			return
+		}
+
+		c.Domain = cookieDomain
+		c.SameSite = http.SameSiteLaxMode // allow subdomain sharing.
 	}
 }
 
-// CookieCleanPath is a `CookieOption`.
-// Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
-func CookieCleanPath(c *http.Cookie) {
-	c.Path = ""
+// CookieSameSite sets a same-site rule for cookies to set.
+// SameSite allows a server to define a cookie attribute making it impossible for
+// the browser to send this cookie along with cross-site requests. The main
+// goal is to mitigate the risk of cross-origin information leakage, and provide
+// some protection against cross-site request forgery attacks.
+//
+// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
+func CookieSameSite(sameSite http.SameSite) CookieOption {
+	return func(c *http.Cookie, op uint8) {
+		if op == OpCookieSet {
+			c.SameSite = sameSite
+		}
+	}
 }
 
-// CookieExpires is a `CookieOption`.
-// Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
-func CookieExpires(durFromNow time.Duration) CookieOption {
-	return func(c *http.Cookie) {
-		c.Expires = time.Now().Add(durFromNow)
-		c.MaxAge = int(durFromNow.Seconds())
+// CookieSecure sets the cookie's Secure option if the current request's
+// connection is using TLS. See `CookieHTTPOnly` too.
+func CookieSecure(ctx Context) CookieOption {
+	return func(c *http.Cookie, op uint8) {
+		if op == OpCookieSet {
+			if ctx.Request().TLS != nil {
+				c.Secure = true
+			}
+		}
 	}
 }
 
 // CookieHTTPOnly is a `CookieOption`.
 // Use it to set the cookie's HttpOnly field to false or true.
 // HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+// See `CookieSecure` too.
 func CookieHTTPOnly(httpOnly bool) CookieOption {
-	return func(c *http.Cookie) {
-		c.HttpOnly = httpOnly
+	return func(c *http.Cookie, op uint8) {
+		if op == OpCookieSet {
+			c.HttpOnly = httpOnly
+		}
 	}
 }
 
-type (
-	// CookieEncoder should encode the cookie value.
+// CookiePath is a `CookieOption`.
+// Use it to change the cookie's Path field.
+func CookiePath(path string) CookieOption {
+	return func(c *http.Cookie, op uint8) {
+		if op > OpCookieGet { // on set and remove.
+			c.Path = path
+		}
+	}
+}
+
+// CookieCleanPath is a `CookieOption`.
+// Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
+func CookieCleanPath(c *http.Cookie, op uint8) {
+	if op > OpCookieGet {
+		c.Path = ""
+	}
+}
+
+// CookieExpires is a `CookieOption`.
+// Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
+func CookieExpires(durFromNow time.Duration) CookieOption {
+	return func(c *http.Cookie, op uint8) {
+		if op == OpCookieSet {
+			c.Expires = time.Now().Add(durFromNow)
+			c.MaxAge = int(durFromNow.Seconds())
+		}
+	}
+}
+
+// SecureCookie should encodes and decodes
+// authenticated and optionally encrypted cookie values.
+// See `CookieEncoding` package-level function.
+type SecureCookie interface {
+	// Encode should encode the cookie value.
 	// Should accept the cookie's name as its first argument
 	// and as second argument the cookie value ptr.
 	// Should return an encoded value or an empty one if encode operation failed.
@@ -4785,9 +4920,9 @@ type (
 	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
 	// You either need to provide exactly that amount or you derive the key from what you type in.
 	//
-	// See `CookieDecoder` too.
-	CookieEncoder func(cookieName string, value interface{}) (string, error)
-	// CookieDecoder should decode the cookie value.
+	// See `Decode` too.
+	Encode(cookieName string, cookieValue interface{}) (string, error)
+	// Decode should decode the cookie value.
 	// Should accept the cookie's name as its first argument,
 	// as second argument the encoded cookie value and as third argument the decoded value ptr.
 	// Should return a decoded value or an empty one if decode operation failed.
@@ -4797,39 +4932,100 @@ type (
 	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
 	// You either need to provide exactly that amount or you derive the key from what you type in.
 	//
-	// See `CookieEncoder` too.
-	CookieDecoder func(cookieName string, cookieValue string, v interface{}) error
-)
+	// See `Encode` too.
+	Decode(cookieName string, cookieValue string, cookieValuePtr interface{}) error
+}
 
-// CookieEncode is a `CookieOption`.
-// Provides encoding functionality when adding a cookie.
-// Accepts a `CookieEncoder` and sets the cookie's value to the encoded value.
-// Users of that is the `SetCookie` and `SetCookieKV`.
+// CookieEncoding accepts a value which implements `Encode` and `Decode` methods.
+// It calls its `Encode` on `Context.SetCookie, UpsertCookie, and SetCookieKV` methods.
+// And on `Context.GetCookie` method it calls its `Decode`.
+// If "cookieNames" slice is not empty then only cookies
+// with that `Name` will be encoded on set and decoded on get, that way you can encrypt
+// specific cookie names (like the session id) and let the rest of the cookies "insecure".
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
-func CookieEncode(encode CookieEncoder) CookieOption {
-	return func(c *http.Cookie) {
-		newVal, err := encode(c.Name, c.Value)
-		if err != nil {
-			c.Value = ""
-		} else {
-			c.Value = newVal
+func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
+	return func(c *http.Cookie, op uint8) {
+		if op == OpCookieDel {
+			return
+		}
+
+		if !findCookieAgainst(c, cookieNames) {
+			return
+		}
+
+		switch op {
+		case OpCookieSet:
+			// Should encode, it's a write to the client operation.
+			newVal, err := encoding.Encode(c.Name, c.Value)
+			if err != nil {
+				c.Value = ""
+			} else {
+				c.Value = newVal
+			}
+			return
+		case OpCookieGet:
+			// Should decode, it's a read from the client operation.
+			if err := encoding.Decode(c.Name, c.Value, &c.Value); err != nil {
+				c.Value = ""
+			}
 		}
 	}
 }
 
-// CookieDecode is a `CookieOption`.
-// Provides decoding functionality when retrieving a cookie.
-// Accepts a `CookieDecoder` and sets the cookie's value to the decoded value before return by the `GetCookie`.
-// User of that is the `GetCookie`.
+const cookieOptionsContextKey = "iris.cookie.options"
+
+// AddCookieOptions adds cookie options for `SetCookie`,
+// `SetCookieKV, UpsertCookie` and `RemoveCookie` methods
+// for the current request. It can be called from a middleware before
+// cookies sent or received from the next Handler in the chain.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
-func CookieDecode(decode CookieDecoder) CookieOption {
-	return func(c *http.Cookie) {
-		if err := decode(c.Name, c.Value, &c.Value); err != nil {
-			c.Value = ""
+// Available builtin Cookie options are:
+//  * CookieAllowReclaim
+//  * CookieAllowSubdomains
+//  * CookieSecure
+//  * CookieHTTPOnly
+//  * CookieSameSite
+//  * CookiePath
+//  * CookieCleanPath
+//  * CookieExpires
+//  * CookieEncoding
+//
+// Example at: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+func (ctx *context) AddCookieOptions(options ...CookieOption) {
+	if len(options) == 0 {
+		return
+	}
+
+	if v := ctx.Values().Get(cookieOptionsContextKey); v != nil {
+		if opts, ok := v.([]CookieOption); ok {
+			options = append(opts, options...)
 		}
 	}
+
+	ctx.Values().Set(cookieOptionsContextKey, options)
+}
+
+func (ctx *context) applyCookieOptions(c *http.Cookie, op uint8, override []CookieOption) {
+	if v := ctx.Values().Get(cookieOptionsContextKey); v != nil {
+		if options, ok := v.([]CookieOption); ok {
+			for _, opt := range options {
+				opt(c, op)
+			}
+		}
+	}
+
+	// The function's ones should be called last, so they can override
+	// the stored ones (i.e by a prior middleware).
+	for _, opt := range override {
+		opt(c, op)
+	}
+}
+
+// ClearCookieOptions clears any previously registered cookie options.
+// See `AddCookieOptions` too.
+func (ctx *context) ClearCookieOptions() {
+	ctx.Values().Remove(cookieOptionsContextKey)
 }
 
 // SetCookie adds a cookie.
@@ -4837,29 +5033,22 @@ func CookieDecode(decode CookieDecoder) CookieOption {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 func (ctx *context) SetCookie(cookie *http.Cookie, options ...CookieOption) {
-	cookie.SameSite = GetSameSite(ctx)
-
-	for _, opt := range options {
-		opt(cookie)
-	}
-
+	ctx.applyCookieOptions(cookie, OpCookieSet, options)
 	http.SetCookie(ctx.writer, cookie)
 }
+
+const setCookieHeaderKey = "Set-Cookie"
 
 // UpsertCookie adds a cookie to the response like `SetCookie` does
 // but it will also perform a replacement of the cookie
 // if already set by a previous `SetCookie` call.
 // It reports whether the cookie is new (true) or an existing one was updated (false).
 func (ctx *context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) bool {
-	cookie.SameSite = GetSameSite(ctx)
-
-	for _, opt := range options {
-		opt(cookie)
-	}
+	ctx.applyCookieOptions(cookie, OpCookieSet, options)
 
 	header := ctx.ResponseWriter().Header()
 
-	if cookies := header["Set-Cookie"]; len(cookies) > 0 {
+	if cookies := header[setCookieHeaderKey]; len(cookies) > 0 {
 		s := cookie.Name + "=" // name=?value
 		for i, c := range cookies {
 			if strings.HasPrefix(c, s) {
@@ -4867,40 +5056,21 @@ func (ctx *context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) b
 				// Probably the cookie is set and then updated in the first session creation
 				// (e.g. UpdateExpiration, see https://github.com/kataras/iris/issues/1485).
 				cookies[i] = cookie.String()
-				header["Set-Cookie"] = cookies
+				header[setCookieHeaderKey] = cookies
 				return false
 			}
 		}
 	}
 
-	header.Add("Set-Cookie", cookie.String())
+	header.Add(setCookieHeaderKey, cookie.String())
 	return true
 }
 
-const sameSiteContextKey = "iris.cookie_same_site"
-
-// SetSameSite sets a same-site rule for cookies to set.
-// SameSite allows a server to define a cookie attribute making it impossible for
-// the browser to send this cookie along with cross-site requests. The main
-// goal is to mitigate the risk of cross-origin information leakage, and provide
-// some protection against cross-site request forgery attacks.
+// SetCookieKVExpiration is 365 days by-default
+// you can change it or simple, use the SetCookie for more control.
 //
-// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
-func (ctx *context) SetSameSite(sameSite http.SameSite) {
-	ctx.Values().Set(sameSiteContextKey, sameSite)
-}
-
-// GetSameSite returns the saved-to-context cookie http.SameSite option.
-func GetSameSite(ctx Context) http.SameSite {
-	if v := ctx.Values().Get(sameSiteContextKey); v != nil {
-		sameSite, ok := v.(http.SameSite)
-		if ok {
-			return sameSite
-		}
-	}
-
-	return http.SameSiteDefaultMode
-}
+// See CookieExpires` for more.
+var SetCookieKVExpiration = time.Duration(8760) * time.Hour
 
 // SetCookieKV adds a cookie, requires the name(string) and the value(string).
 //
@@ -4925,8 +5095,13 @@ func (ctx *context) SetCookieKV(name, value string, options ...CookieOption) {
 	c.Name = name
 	c.Value = url.QueryEscape(value)
 	c.HttpOnly = true
+
+	// MaxAge=0 means no 'Max-Age' attribute specified.
+	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
+	// MaxAge>0 means Max-Age attribute present and given in seconds
 	c.Expires = time.Now().Add(SetCookieKVExpiration)
-	c.MaxAge = int(SetCookieKVExpiration.Seconds())
+	c.MaxAge = int(time.Until(c.Expires).Seconds())
+
 	ctx.SetCookie(c, options...)
 }
 
@@ -4938,24 +5113,24 @@ func (ctx *context) SetCookieKV(name, value string, options ...CookieOption) {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 func (ctx *context) GetCookie(name string, options ...CookieOption) string {
-	cookie, err := ctx.request.Cookie(name)
+	c, err := ctx.request.Cookie(name)
 	if err != nil {
 		return ""
 	}
 
-	for _, opt := range options {
-		opt(cookie)
-	}
+	ctx.applyCookieOptions(c, OpCookieGet, options)
 
-	value, _ := url.QueryUnescape(cookie.Value)
+	value, _ := url.QueryUnescape(c.Value)
 	return value
 }
 
-// SetCookieKVExpiration is 365 days by-default
-// you can change it or simple, use the SetCookie for more control.
-//
-// See `SetCookieKVExpiration` and `CookieExpires` for more.
-var SetCookieKVExpiration = time.Duration(8760) * time.Hour
+var (
+	// CookieExpireDelete may be set on Cookie.Expire for expiring the given cookie.
+	CookieExpireDelete = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+
+	// CookieExpireUnlimited indicates that does expires after 24 years.
+	CookieExpireUnlimited = time.Now().AddDate(24, 10, 10)
+)
 
 // RemoveCookie deletes a cookie by its name and path = "/".
 // Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
@@ -4967,13 +5142,13 @@ func (ctx *context) RemoveCookie(name string, options ...CookieOption) {
 	c.Value = ""
 	c.Path = "/" // if user wants to change it, use of the CookieOption `CookiePath` is required if not `ctx.SetCookie`.
 	c.HttpOnly = true
+
 	// RFC says 1 second, but let's do it 1  to make sure is working
-	exp := time.Now().Add(-time.Duration(1) * time.Minute)
-	c.Expires = exp
+	c.Expires = CookieExpireDelete
 	c.MaxAge = -1
-	ctx.SetCookie(c, options...)
-	// delete request's cookie also, which is temporary available.
-	ctx.request.Header.Set("Cookie", "")
+
+	ctx.applyCookieOptions(c, OpCookieDel, options)
+	http.SetCookie(ctx.writer, c)
 }
 
 // VisitAllCookies takes a visitor function which is called
