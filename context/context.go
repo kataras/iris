@@ -378,6 +378,8 @@ type Context interface {
 	RemoteAddr() string
 	// GetHeader returns the request header's value based on its name.
 	GetHeader(name string) string
+	// GetDomain resolves and returns the server's domain.
+	GetDomain() string
 	// IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
 	//
 	// There is no a 100% way of knowing that a request was made via Ajax.
@@ -992,12 +994,15 @@ type Context interface {
 	// See `ClearCookieOptions` too.
 	//
 	// Available builtin Cookie options are:
-	// * CookieSameSite
-	// * CookiePath
-	// * CookieCleanPath
-	// * CookieExpires
-	// * CookieHTTPOnly
-	// * CookieEncoding
+	//  * CookieAllowReclaim
+	//  * CookieAllowSubdomains
+	//  * CookieSecure
+	//  * CookieHTTPOnly
+	//  * CookieSameSite
+	//  * CookiePath
+	//  * CookieCleanPath
+	//  * CookieExpires
+	//  * CookieEncoding
 	//
 	// Example at: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
 	AddCookieOptions(options ...CookieOption)
@@ -1876,6 +1881,20 @@ func (ctx *context) RemoteAddr() string {
 // GetHeader returns the request header's value based on its name.
 func (ctx *context) GetHeader(name string) string {
 	return ctx.request.Header.Get(name)
+}
+
+// GetDomain resolves and returns the server's domain.
+func (ctx *context) GetDomain() string {
+	host := ctx.Host()
+	if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
+		host = host[0:portIdx]
+	}
+
+	if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+		host = domain
+	}
+
+	return host
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
@@ -4755,18 +4774,16 @@ const (
 
 // CookieOption is the type of function that is accepted on
 // context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
-// as their (last) variadic input argument to amend the end cookie's form.
+// as their (last) variadic input argument to amend the to-be-sent cookie.
 //
-// Any custom or builtin `CookieOption` is valid,
-// see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
 // The "op" is the operation code, 0 is GET, 1 is SET and 2 is REMOVE.
-type CookieOption func(c *http.Cookie, op uint8)
+type CookieOption func(ctx Context, c *http.Cookie, op uint8)
 
-// findCookieAgainst reports whether the "cookie.Name" is in the list of "cookieNames".
+// CookieIncluded reports whether the "cookie.Name" is in the list of "cookieNames".
 // Notes:
 // If "cookieNames" slice is empty then it returns true,
 // If "cookie.Name" is empty then it returns false.
-func findCookieAgainst(cookie *http.Cookie, cookieNames []string) bool {
+func CookieIncluded(cookie *http.Cookie, cookieNames []string) bool {
 	if cookie.Name == "" {
 		return false
 	}
@@ -4784,25 +4801,53 @@ func findCookieAgainst(cookie *http.Cookie, cookieNames []string) bool {
 	return true
 }
 
+var cookieNameSanitizer = strings.NewReplacer("\n", "-", "\r", "-")
+
+func sanitizeCookieName(n string) string {
+	return cookieNameSanitizer.Replace(n)
+}
+
 // CookieAllowReclaim accepts the Context itself.
 // If set it will add the cookie to (on `CookieSet`, `CookieSetKV`, `CookieUpsert`)
 // or remove the cookie from (on `CookieRemove`) the Request object too.
-func CookieAllowReclaim(ctx Context, cookieNames ...string) CookieOption {
-	return func(c *http.Cookie, op uint8) {
+func CookieAllowReclaim(cookieNames ...string) CookieOption {
+	return func(ctx Context, c *http.Cookie, op uint8) {
 		if op == OpCookieGet {
 			return
 		}
 
-		if !findCookieAgainst(c, cookieNames) {
+		if !CookieIncluded(c, cookieNames) {
 			return
 		}
 
 		switch op {
 		case OpCookieSet:
+			// perform upsert on request cookies or is it too much and not worth the cost?
 			ctx.Request().AddCookie(c)
 		case OpCookieDel:
-			// TODO: delete only this c.Name.
-			ctx.Request().Header.Set("Cookie", "")
+			header := ctx.Request().Header
+
+			if cookiesLine := header.Get("Cookie"); cookiesLine != "" {
+				if cookies := strings.Split(cookiesLine, "; "); len(cookies) > 1 {
+					// more than one cookie here.
+					// select that one and remove it.
+					name := sanitizeCookieName(c.Name)
+
+					for _, nameValue := range cookies {
+						if strings.HasPrefix(nameValue, name) {
+							cookiesLine = strings.Replace(cookiesLine, "; "+nameValue, "", 1)
+							// current cookiesLine: myapp_session_id=5ccf4e89-8d0e-4ed6-9f4c-6746d7c5e2ee; key1=value1
+							// found nameValue: key1=value1
+							// new cookiesLine: myapp_session_id=5ccf4e89-8d0e-4ed6-9f4c-6746d7c5e2ee
+							header.Set("Cookie", cookiesLine)
+							break
+						}
+					}
+					return
+				}
+			}
+
+			header.Del("Cookie")
 		}
 	}
 
@@ -4812,28 +4857,17 @@ func CookieAllowReclaim(ctx Context, cookieNames ...string) CookieOption {
 // in order to allow subdomains to have access to the cookies.
 // It sets the cookie's Domain field (if was empty) and
 // it also sets the cookie's SameSite to lax mode too.
-func CookieAllowSubdomains(ctx Context, cookieNames ...string) CookieOption {
-	host := ctx.Host()
-	if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
-		host = host[0:portIdx]
-	}
-
-	cookieDomain := "." + host
-
-	if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
-		cookieDomain = "." + domain
-	}
-
-	return func(c *http.Cookie, _ uint8) {
+func CookieAllowSubdomains(cookieNames ...string) CookieOption {
+	return func(ctx Context, c *http.Cookie, _ uint8) {
 		if c.Domain != "" {
 			return // already set.
 		}
 
-		if !findCookieAgainst(c, cookieNames) {
+		if !CookieIncluded(c, cookieNames) {
 			return
 		}
 
-		c.Domain = cookieDomain
+		c.Domain = ctx.GetDomain()
 		c.SameSite = http.SameSiteLaxMode // allow subdomain sharing.
 	}
 }
@@ -4846,7 +4880,7 @@ func CookieAllowSubdomains(ctx Context, cookieNames ...string) CookieOption {
 //
 // See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
 func CookieSameSite(sameSite http.SameSite) CookieOption {
-	return func(c *http.Cookie, op uint8) {
+	return func(_ Context, c *http.Cookie, op uint8) {
 		if op == OpCookieSet {
 			c.SameSite = sameSite
 		}
@@ -4855,12 +4889,10 @@ func CookieSameSite(sameSite http.SameSite) CookieOption {
 
 // CookieSecure sets the cookie's Secure option if the current request's
 // connection is using TLS. See `CookieHTTPOnly` too.
-func CookieSecure(ctx Context) CookieOption {
-	return func(c *http.Cookie, op uint8) {
-		if op == OpCookieSet {
-			if ctx.Request().TLS != nil {
-				c.Secure = true
-			}
+func CookieSecure(ctx Context, c *http.Cookie, op uint8) {
+	if op == OpCookieSet {
+		if ctx.Request().TLS != nil {
+			c.Secure = true
 		}
 	}
 }
@@ -4870,7 +4902,7 @@ func CookieSecure(ctx Context) CookieOption {
 // HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
 // See `CookieSecure` too.
 func CookieHTTPOnly(httpOnly bool) CookieOption {
-	return func(c *http.Cookie, op uint8) {
+	return func(_ Context, c *http.Cookie, op uint8) {
 		if op == OpCookieSet {
 			c.HttpOnly = httpOnly
 		}
@@ -4880,7 +4912,7 @@ func CookieHTTPOnly(httpOnly bool) CookieOption {
 // CookiePath is a `CookieOption`.
 // Use it to change the cookie's Path field.
 func CookiePath(path string) CookieOption {
-	return func(c *http.Cookie, op uint8) {
+	return func(_ Context, c *http.Cookie, op uint8) {
 		if op > OpCookieGet { // on set and remove.
 			c.Path = path
 		}
@@ -4889,7 +4921,7 @@ func CookiePath(path string) CookieOption {
 
 // CookieCleanPath is a `CookieOption`.
 // Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
-func CookieCleanPath(c *http.Cookie, op uint8) {
+func CookieCleanPath(_ Context, c *http.Cookie, op uint8) {
 	if op > OpCookieGet {
 		c.Path = ""
 	}
@@ -4898,7 +4930,7 @@ func CookieCleanPath(c *http.Cookie, op uint8) {
 // CookieExpires is a `CookieOption`.
 // Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
 func CookieExpires(durFromNow time.Duration) CookieOption {
-	return func(c *http.Cookie, op uint8) {
+	return func(_ Context, c *http.Cookie, op uint8) {
 		if op == OpCookieSet {
 			c.Expires = time.Now().Add(durFromNow)
 			c.MaxAge = int(durFromNow.Seconds())
@@ -4945,12 +4977,12 @@ type SecureCookie interface {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
 func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
-	return func(c *http.Cookie, op uint8) {
+	return func(_ Context, c *http.Cookie, op uint8) {
 		if op == OpCookieDel {
 			return
 		}
 
-		if !findCookieAgainst(c, cookieNames) {
+		if !CookieIncluded(c, cookieNames) {
 			return
 		}
 
@@ -5010,7 +5042,7 @@ func (ctx *context) applyCookieOptions(c *http.Cookie, op uint8, override []Cook
 	if v := ctx.Values().Get(cookieOptionsContextKey); v != nil {
 		if options, ok := v.([]CookieOption); ok {
 			for _, opt := range options {
-				opt(c, op)
+				opt(ctx, c, op)
 			}
 		}
 	}
@@ -5018,7 +5050,7 @@ func (ctx *context) applyCookieOptions(c *http.Cookie, op uint8, override []Cook
 	// The function's ones should be called last, so they can override
 	// the stored ones (i.e by a prior middleware).
 	for _, opt := range override {
-		opt(c, op)
+		opt(ctx, c, op)
 	}
 }
 

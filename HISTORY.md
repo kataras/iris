@@ -372,6 +372,8 @@ Other Improvements:
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
 - Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
+- `Context.RemoveCookie` removes also the Request's cookies of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
+
 - `iris.TLS` can now accept certificates as raw contents too.
 - `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS` (or `iris.AutoTLS`), e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`.
 
@@ -405,6 +407,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.GetDomain() string` returns the domain.
 - `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
 - `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
 - `Context.SetVersion(constraint string)` force-sets an [API Version](https://github.com/kataras/iris/wiki/API-versioning)
@@ -423,7 +426,6 @@ New Context Methods:
 - `Context.ReadProtobuf(ptr)` binds request body to a proto message
 - `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
 - `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
-- `Context.SetSameSite(http.SameSite)` to set cookie "SameSite" option (respectful by sessions too)
 - `Context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
 - `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
 - `Context.Controller() reflect.Value` returns the current MVC Controller value.
