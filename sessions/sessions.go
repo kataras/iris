@@ -104,20 +104,21 @@ const sessionContextKey = "iris.session"
 func (s *Sessions) Handler(cookieOptions ...context.CookieOption) context.Handler {
 	s.handlerCookieOpts = cookieOptions
 
+	var requestOptions []context.CookieOption
+	if s.config.AllowReclaim {
+		requestOptions = append(requestOptions, context.CookieAllowReclaim(s.config.Cookie))
+	}
+	if !s.config.DisableSubdomainPersistence {
+		requestOptions = append(requestOptions, context.CookieAllowSubdomains(s.config.Cookie))
+	}
+	if s.config.CookieSecureTLS {
+		requestOptions = append(requestOptions, context.CookieSecure)
+	}
+	if s.config.Encoding != nil {
+		requestOptions = append(requestOptions, context.CookieEncoding(s.config.Encoding, s.config.Cookie))
+	}
+
 	return func(ctx context.Context) {
-		var requestOptions []context.CookieOption
-		if s.config.AllowReclaim {
-			requestOptions = append(requestOptions, context.CookieAllowReclaim(ctx, s.config.Cookie))
-		}
-		if !s.config.DisableSubdomainPersistence {
-			requestOptions = append(requestOptions, context.CookieAllowSubdomains(ctx, s.config.Cookie))
-		}
-		if s.config.CookieSecureTLS {
-			requestOptions = append(requestOptions, context.CookieSecure(ctx))
-		}
-		if s.config.Encoding != nil {
-			requestOptions = append(requestOptions, context.CookieEncoding(s.config.Encoding, s.config.Cookie))
-		}
 		ctx.AddCookieOptions(requestOptions...) // request life-cycle options.
 
 		session := s.Start(ctx, cookieOptions...) // this cookie's end-developer's custom options.

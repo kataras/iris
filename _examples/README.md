@@ -137,6 +137,7 @@
     * [Manage Permissions](permissions/main.go)
 * Cookies
     * [Basic](cookies/basic/main.go)
+    * [Options](cookies/options/main.go)
     * [Encode/Decode (with `securecookie`)](cookies/securecookie/main.go)
 * Sessions
     * [Overview: Config](sessions/overview/main.go)
