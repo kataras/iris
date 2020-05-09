@@ -15,14 +15,16 @@ func TestSessions(t *testing.T) {
 	app := iris.New()
 
 	sess := sessions.New(sessions.Config{Cookie: "mycustomsessionid"})
-	testSessions(t, sess, app)
+	app.Use(sess.Handler())
+
+	testSessions(t, app)
 }
 
 const (
 	testEnableSubdomain = true
 )
 
-func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) {
+func testSessions(t *testing.T, app *iris.Application) {
 	values := map[string]interface{}{
 		"Name":   "iris",
 		"Months": "4",
@@ -30,7 +32,7 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 	}
 
 	writeValues := func(ctx context.Context) {
-		s := sess.Start(ctx)
+		s := sessions.Get(ctx)
 		sessValues := s.GetAll()
 
 		_, err := ctx.JSON(sessValues)
@@ -44,7 +46,7 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 	}
 
 	app.Post("/set", func(ctx context.Context) {
-		s := sess.Start(ctx)
+		s := sessions.Get(ctx)
 		vals := make(map[string]interface{})
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot read JSON. Trace %s", err.Error())
@@ -59,26 +61,38 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 	})
 
 	app.Get("/clear", func(ctx context.Context) {
-		sess.Start(ctx).Clear()
+		sessions.Get(ctx).Clear()
 		writeValues(ctx)
 	})
 
 	app.Get("/destroy", func(ctx context.Context) {
-		sess.Destroy(ctx)
-		writeValues(ctx)
+		session := sessions.Get(ctx)
+		if session.IsNew() {
+			t.Fatal("expected session not to be nil on destroy")
+		}
+
+		session.Man.Destroy(ctx)
+
+		if sessions.Get(ctx) != nil {
+			t.Fatal("expected session inside Context to be nil after Manager's Destroy call")
+		}
+
+		ctx.JSON(struct{}{})
 		// the cookie and all values should be empty
 	})
 
-	// request cookie should be empty
-	app.Get("/after_destroy", func(ctx context.Context) {
+	// cookie should be new.
+	app.Get("/after_destroy_renew", func(ctx context.Context) {
+		isNew := sessions.Get(ctx).IsNew()
+		ctx.Writef("%v", isNew)
 	})
 
 	app.Get("/multi_start_set_get", func(ctx context.Context) {
-		s := sess.Start(ctx)
+		s := sessions.Get(ctx)
 		s.Set("key", "value")
 		ctx.Next()
 	}, func(ctx context.Context) {
-		s := sess.Start(ctx)
+		s := sessions.Get(ctx)
 		_, err := ctx.Writef(s.GetString("key"))
 		if err != nil {
 			t.Fatal(err)
@@ -98,12 +112,13 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 	// test destroy which also clears first
 	d := e.GET("/destroy").Expect().Status(iris.StatusOK)
 	d.JSON().Object().Empty()
-	// 	This removed: d.Cookies().Empty(). Reason:
-	// httpexpect counts the cookies set or deleted at the response time, but cookie is not removed, to be really removed needs to SetExpire(now-1second) so,
-	// test if the cookies removed on the next request, like the browser's behavior.
-	e.GET("/after_destroy").Expect().Status(iris.StatusOK).Cookies().Empty()
+
+	d = e.GET("/after_destroy_renew").Expect().Status(iris.StatusOK)
+	d.Body().Equal("true")
+	d.Cookies().NotEmpty()
+
 	// set and clear again
-	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK)
 	e.GET("/clear").Expect().Status(iris.StatusOK).JSON().Object().Empty()
 
 	// test start on the same request but more than one times

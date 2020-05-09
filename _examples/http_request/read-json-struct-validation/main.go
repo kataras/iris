@@ -10,7 +10,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	// $ go get github.com/go-playground/validator/v10
+	// $ go get github.com/go-playground/validator/v10@latest
 	"github.com/go-playground/validator/v10"
 )
 
