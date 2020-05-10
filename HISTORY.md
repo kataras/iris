@@ -372,7 +372,7 @@ Other Improvements:
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
 - Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
-- `Context.RemoveCookie` removes also the Request's cookies of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
+- `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
 
 - `iris.TLS` can now accept certificates as raw contents too.
 - `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS` (or `iris.AutoTLS`), e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`.
@@ -407,6 +407,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
 - `Context.GetDomain() string` returns the domain.
 - `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
 - `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
@@ -432,6 +433,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `Context.String()` (rarely used by end-developers) it does not return a unique string anymore, to achieve the old representation you must call the new `Context.SetID` method first.
 - `iris.CookieEncode` and `CookieDecode` are replaced with the `iris.CookieEncoding`.
 - `sessions#Config.Encode` and `Decode` are removed in favor of (the existing) `Encoding` field.
 - `versioning.GetVersion` now returns an empty string if version wasn't found.
