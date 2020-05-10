@@ -15,26 +15,42 @@ import (
 	"github.com/kataras/pio"
 )
 
-// RequestHandler the middle man between acquiring a context and releasing it.
-// By-default is the router algorithm.
-type RequestHandler interface {
-	// HandleRequest should handle the request based on the Context.
-	HandleRequest(ctx context.Context)
-	// Build should builds the handler, it's being called on router's BuildRouter.
-	Build(provider RoutesProvider) error
-	// RouteExists reports whether a particular route exists.
-	RouteExists(ctx context.Context, method, path string) bool
-}
+type (
+	// RequestHandler the middle man between acquiring a context and releasing it.
+	// By-default is the router algorithm.
+	RequestHandler interface {
+		// Note: A different interface in order  to hide the rest of the implementation.
+		// We only need the `FireErrorCode` to be accessible through the Iris application (see `iris.go#Build`)
+		HTTPErrorHandler
+
+		// HandleRequest should handle the request based on the Context.
+		HandleRequest(ctx context.Context)
+		// Build should builds the handler, it's being called on router's BuildRouter.
+		Build(provider RoutesProvider) error
+		// RouteExists reports whether a particular route exists.
+		RouteExists(ctx context.Context, method, path string) bool
+	}
+
+	// HTTPErrorHandler should contain a method `FireErrorCode` which
+	// handles http unsuccessful status codes.
+	HTTPErrorHandler interface {
+		FireErrorCode(ctx context.Context)
+	}
+)
 
 type routerHandler struct {
 	config context.ConfigurationReadOnly
 	logger *golog.Logger
 
-	trees []*trie
-	hosts bool // true if at least one route contains a Subdomain.
+	trees      []*trie
+	errorTrees []*trie
+
+	hosts      bool // true if at least one route contains a Subdomain.
+	errorHosts bool // true if error handlers are registered to at least one Subdomain.
 }
 
-var _ RequestHandler = &routerHandler{}
+var _ RequestHandler = (*routerHandler)(nil)
+var _ HTTPErrorHandler = (*routerHandler)(nil)
 
 // NewDefaultHandler returns the handler which is responsible
 // to map the request with a route (aka mux implementation).
@@ -45,7 +61,17 @@ func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logge
 	}
 }
 
-func (h *routerHandler) getTree(method, subdomain string) *trie {
+func (h *routerHandler) getTree(statusCode int, method, subdomain string) *trie {
+	if statusCode > 0 {
+		for i := range h.errorTrees {
+			t := h.errorTrees[i]
+			if t.statusCode == statusCode && t.subdomain == subdomain {
+				return t
+			}
+		}
+		return nil
+	}
+
 	for i := range h.trees {
 		t := h.trees[i]
 		if t.method == method && t.subdomain == subdomain {
@@ -59,23 +85,28 @@ func (h *routerHandler) getTree(method, subdomain string) *trie {
 // AddRoute registers a route. See `Router.AddRouteUnsafe`.
 func (h *routerHandler) AddRoute(r *Route) error {
 	var (
-		routeName = r.Name
-		method    = r.Method
-		subdomain = r.Subdomain
-		path      = r.Path
-		handlers  = r.Handlers
+		method     = r.Method
+		statusCode = r.StatusCode
+		subdomain  = r.Subdomain
+		path       = r.Path
+		handlers   = r.Handlers
 	)
 
-	t := h.getTree(method, subdomain)
+	t := h.getTree(statusCode, method, subdomain)
 
 	if t == nil {
 		n := newTrieNode()
 		// first time we register a route to this method with this subdomain
-		t = &trie{method: method, subdomain: subdomain, root: n}
-		h.trees = append(h.trees, t)
+		t = &trie{statusCode: statusCode, method: method, subdomain: subdomain, root: n}
+		if statusCode > 0 {
+			h.errorTrees = append(h.errorTrees, t)
+		} else {
+			h.trees = append(h.trees, t)
+		}
 	}
 
-	t.insert(path, routeName, handlers)
+	t.insert(path, r.ReadOnly, handlers)
+
 	return nil
 }
 
@@ -141,7 +172,11 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		}
 
 		if r.Subdomain != "" {
-			h.hosts = true
+			if r.StatusCode > 0 {
+				h.errorHosts = true
+			} else {
+				h.hosts = true
+			}
 		}
 
 		if r.topLink == nil {
@@ -242,26 +277,71 @@ func bindMultiParamTypesHandler(top *Route, r *Route) {
 		return // should never happen, previous checks made to set the top link.
 	}
 
+	currentStatusCode := r.StatusCode
+	if currentStatusCode == 0 {
+		currentStatusCode = http.StatusOK
+	}
+
 	decisionHandler := func(ctx context.Context) {
 		// println("core/router/handler.go: decision handler; " + ctx.Path() + " route.Name: " + r.Name + " vs context's " + ctx.GetCurrentRoute().Name())
-		currentRouteName := ctx.RouteName()
+		currentRoute := ctx.GetCurrentRoute()
 
 		// Different path parameters types in the same path, fallback should registered first e.g. {path} {string},
 		// because the handler on this case is executing from last to top.
 		if f(ctx) {
 			// println("core/router/handler.go: filter for : " + r.Name + " passed")
-			ctx.SetCurrentRouteName(r.Name)
+			ctx.SetCurrentRoute(r.ReadOnly)
+			// Note: error handlers will be the same, routes came from the same party,
+			// no need to update them.
 			ctx.HandlerIndex(0)
 			ctx.Do(h)
 			return
 		}
 
-		ctx.SetCurrentRouteName(currentRouteName)
-		ctx.StatusCode(http.StatusOK)
+		ctx.SetCurrentRoute(currentRoute)
+		ctx.StatusCode(currentStatusCode)
 		ctx.Next()
 	}
 
 	r.topLink.beginHandlers = append(context.Handlers{decisionHandler}, r.topLink.beginHandlers...)
+}
+
+func (h *routerHandler) canHandleSubdomain(ctx context.Context, subdomain string) bool {
+	if subdomain == "" {
+		return true
+	}
+
+	requestHost := ctx.Host()
+	if netutil.IsLoopbackSubdomain(requestHost) {
+		// this fixes a bug when listening on
+		// 127.0.0.1:8080 for example
+		// and have a wildcard subdomain and a route registered to root domain.
+		return false // it's not a subdomain, it's something like 127.0.0.1 probably
+	}
+	// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
+	if subdomain == SubdomainWildcardIndicator {
+		// mydomain.com -> invalid
+		// localhost -> invalid
+		// sub.mydomain.com -> valid
+		// sub.localhost -> valid
+		serverHost := ctx.Application().ConfigurationReadOnly().GetVHost()
+		if serverHost == requestHost {
+			return false // it's not a subdomain, it's a full domain (with .com...)
+		}
+
+		dotIdx := strings.IndexByte(requestHost, '.')
+		slashIdx := strings.IndexByte(requestHost, '/')
+		if dotIdx > 0 && (slashIdx == -1 || slashIdx > dotIdx) {
+			// if "." was found anywhere but not at the first path segment (host).
+		} else {
+			return false
+		}
+		// continue to that, any subdomain is valid.
+	} else if !strings.HasPrefix(requestHost, subdomain) { // subdomain contains the dot.
+		return false
+	}
+
+	return true
 }
 
 func (h *routerHandler) HandleRequest(ctx context.Context) {
@@ -304,40 +384,13 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			continue
 		}
 
-		if h.hosts && t.subdomain != "" {
-			requestHost := ctx.Host()
-			if netutil.IsLoopbackSubdomain(requestHost) {
-				// this fixes a bug when listening on
-				// 127.0.0.1:8080 for example
-				// and have a wildcard subdomain and a route registered to root domain.
-				continue // it's not a subdomain, it's something like 127.0.0.1 probably
-			}
-			// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
-			if t.subdomain == SubdomainWildcardIndicator {
-				// mydomain.com -> invalid
-				// localhost -> invalid
-				// sub.mydomain.com -> valid
-				// sub.localhost -> valid
-				serverHost := config.GetVHost()
-				if serverHost == requestHost {
-					continue // it's not a subdomain, it's a full domain (with .com...)
-				}
-
-				dotIdx := strings.IndexByte(requestHost, '.')
-				slashIdx := strings.IndexByte(requestHost, '/')
-				if dotIdx > 0 && (slashIdx == -1 || slashIdx > dotIdx) {
-					// if "." was found anywhere but not at the first path segment (host).
-				} else {
-					continue
-				}
-				// continue to that, any subdomain is valid.
-			} else if !strings.HasPrefix(requestHost, t.subdomain) { // t.subdomain contains the dot.
-				continue
-			}
+		if h.hosts && !h.canHandleSubdomain(ctx, t.subdomain) {
+			continue
 		}
+
 		n := t.search(path, ctx.Params())
 		if n != nil {
-			ctx.SetCurrentRouteName(n.RouteName)
+			ctx.SetCurrentRoute(n.Route)
 			ctx.Do(n.Handlers)
 			// found
 			return
@@ -362,6 +415,89 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	}
 
 	ctx.StatusCode(http.StatusNotFound)
+}
+
+func (h *routerHandler) FireErrorCode(ctx context.Context) {
+	statusCode := ctx.GetStatusCode() // the response's cached one.
+
+	// if we can reset the body
+	if w, ok := ctx.IsRecording(); ok {
+		if statusCodeSuccessful(w.StatusCode()) { // if not an error status code
+			w.WriteHeader(statusCode) // then set it manually here, otherwise it should be set via ctx.StatusCode(...)
+		}
+		// reset if previous content and it's recorder, keep the status code.
+		w.ClearHeaders()
+		w.ResetBody()
+	} else if w, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok {
+		// reset and disable the gzip in order to be an expected form of http error result
+		w.ResetBody()
+		w.Disable()
+	} else {
+		// if we can't reset the body and the body has been filled
+		// which means that the status code already sent,
+		// then do not fire this custom error code.
+		if ctx.ResponseWriter().Written() > 0 { // != -1, rel: context/context.go#EndRequest
+			return
+		}
+	}
+
+	for i := range h.errorTrees {
+		t := h.errorTrees[i]
+
+		if statusCode != t.statusCode {
+			continue
+		}
+
+		if h.errorHosts && !h.canHandleSubdomain(ctx, t.subdomain) {
+			continue
+		}
+
+		n := t.search(ctx.Path(), ctx.Params())
+		if n == nil {
+			// try to take the root's one.
+			n = t.root.getChild(pathSep)
+		}
+
+		if n != nil {
+			// fire this http status code's error handlers chain.
+
+			// ctx.StopExecution() // not uncomment this, is here to remember why to.
+			// note for me: I don't stopping the execution of the other handlers
+			// because may the user want to add a fallback error code
+			// i.e
+			// users := app.Party("/users")
+			// users.Done(func(ctx context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
+
+			// use .HandlerIndex
+			// that sets the current handler index to zero
+			// in order to:
+			// ignore previous runs that may changed the handler index,
+			// via ctx.Next or ctx.StopExecution, if any.
+			//
+			// use .Do
+			// that overrides the existing handlers and sets and runs these error handlers.
+			// in order to:
+			// ignore the route's after-handlers, if any.
+			ctx.SetCurrentRoute(n.Route)
+			// Should work with:
+			// Manual call of ctx.Application().FireErrorCode(ctx) (handlers length > 0)
+			// And on `ctx.SetStatusCode`: Context -> EndRequest -> FireErrorCode (handlers length > 0)
+			// And on router: HandleRequest -> SetStatusCode -> Context ->
+			//                EndRequest -> FireErrorCode (handlers' length is always 0)
+			ctx.HandlerIndex(0)
+			ctx.Do(n.Handlers)
+			return
+		}
+
+		break
+	}
+
+	// not error handler found, write a default message.
+	ctx.WriteString(http.StatusText(statusCode))
+}
+
+func statusCodeSuccessful(statusCode int) bool {
+	return !context.StatusCodeNotSuccessful(statusCode)
 }
 
 func (h *routerHandler) subdomainAndPathAndMethodExists(ctx context.Context, t *trie, method, path string) bool {

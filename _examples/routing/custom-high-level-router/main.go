@@ -13,7 +13,8 @@ import (
    - Build should builds the handler, it's being called on router's BuildRouter.
 	  Build(provider router.RoutesProvider) error
    - RouteExists reports whether a particular route exists.
-      RouteExists(ctx iris.Context, method, path string) bool
+	  RouteExists(ctx iris.Context, method, path string) bool
+   - FireErrorCode(ctx context.Context) should handle the given ctx.GetStatusCode().
 
 For a more detailed, complete and useful example
 you can take a look at the iris' router itself which is located at:
@@ -44,7 +45,7 @@ func (r *customRouter) HandleRequest(ctx iris.Context) {
 				}
 			}
 
-			ctx.SetCurrentRouteName(route.Name)
+			ctx.SetCurrentRoute(route.ReadOnly)
 			ctx.Do(route.Handlers)
 			return
 		}
@@ -69,6 +70,11 @@ func (r *customRouter) Build(provider router.RoutesProvider) error {
 func (r *customRouter) RouteExists(ctx iris.Context, method, path string) bool {
 	// [...]
 	return false
+}
+
+func (r *customRouter) FireErrorCode(ctx iris.Context) {
+	// responseStatusCode := ctx.GetStatusCode() // set by prior ctx.StatusCode calls
+	// [...]
 }
 
 func main() {
