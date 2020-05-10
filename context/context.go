@@ -138,18 +138,13 @@ type Context interface {
 	// ctx.ResetRequest(r.WithContext(stdCtx)).
 	ResetRequest(r *http.Request)
 
-	// SetCurrentRouteName sets the route's name internally,
-	// in order to be able to find the correct current "read-only" Route when
-	// end-developer calls the `GetCurrentRoute()` function.
-	// It's being initialized by the Router, if you change that name
-	// manually nothing really happens except that you'll get other
-	// route via `GetCurrentRoute()`.
-	// Instead, to execute a different path
-	// from this context you should use the `Exec` function
-	// or change the handlers via `SetHandlers/AddHandler` functions.
-	SetCurrentRouteName(currentRouteName string)
-	// GetCurrentRoute returns the current registered "read-only" route that
-	// was being registered to this request's path.
+	// SetCurrentRoutes sets the route internally,
+	// See `GetCurrentRoute()` method too.
+	// It's being initialized by the Router.
+	// See `Exec` or `SetHandlers/AddHandler` methods to simulate a request.
+	SetCurrentRoute(route RouteReadOnly)
+	// GetCurrentRoute returns the current "read-only" route that
+	// was registered to this request's path.
 	GetCurrentRoute() RouteReadOnly
 
 	// Do calls the SetHandlers(handlers)
@@ -175,7 +170,7 @@ type Context interface {
 
 	// HandlerIndex sets the current index of the
 	// current context's handlers chain.
-	// If -1 passed then it just returns the
+	// If n < 0 or the current handlers length is 0 then it just returns the
 	// current handler index without change the current index.
 	//
 	// Look Handlers(), Next() and StopExecution() too.
@@ -1194,9 +1189,9 @@ type context struct {
 	writer ResponseWriter
 	// the original http.Request
 	request *http.Request
-	// the current route's name registered to this request path.
-	currentRouteName string
-	deferFunc        Handler
+	// the current route registered to this request path.
+	currentRoute RouteReadOnly
+	deferFunc    Handler
 
 	// the local key-value storage
 	params RequestParams  // url named parameters.
@@ -1230,6 +1225,7 @@ func NewContext(app Application) Context {
 // 4. response writer to the http.ResponseWriter.
 // 5. request to the *http.Request.
 func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
+	ctx.currentRoute = nil
 	ctx.handlers = nil           // will be filled by router.Serve/HTTP
 	ctx.values = ctx.values[0:0] // >>      >>     by context.Values().Set
 	ctx.params.Store = ctx.params.Store[0:0]
@@ -1266,8 +1262,8 @@ func (ctx *context) EndRequest() {
 		ctx.deferFunc(ctx)
 	}
 
-	if StatusCodeNotSuccessful(ctx.GetStatusCode()) &&
-		!ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
+	if !ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() &&
+		StatusCodeNotSuccessful(ctx.GetStatusCode()) {
 		// author's note:
 		// if recording, the error handler can handle
 		// the rollback and remove any response written before,
@@ -1332,23 +1328,18 @@ func (ctx *context) ResetRequest(r *http.Request) {
 	ctx.request = r
 }
 
-// SetCurrentRouteName sets the route's name internally,
-// in order to be able to find the correct current "read-only" Route when
-// end-developer calls the `GetCurrentRoute()` function.
-// It's being initialized by the Router, if you change that name
-// manually nothing really happens except that you'll get other
-// route via `GetCurrentRoute()`.
-// Instead, to execute a different path
-// from this context you should use the `Exec` function
-// or change the handlers via `SetHandlers/AddHandler` functions.
-func (ctx *context) SetCurrentRouteName(currentRouteName string) {
-	ctx.currentRouteName = currentRouteName
+// SetCurrentRoutes sets the route internally,
+// See `GetCurrentRoute()` method too.
+// It's being initialized by the Router.
+// See `Exec` or `SetHandlers/AddHandler` methods to simulate a request.
+func (ctx *context) SetCurrentRoute(route RouteReadOnly) {
+	ctx.currentRoute = route
 }
 
-// GetCurrentRoute returns the current registered "read-only" route that
-// was being registered to this request's path.
+// GetCurrentRoute returns the current "read-only" route that
+// was registered to this request's path.
 func (ctx *context) GetCurrentRoute() RouteReadOnly {
-	return ctx.app.GetRouteReadOnly(ctx.currentRouteName)
+	return ctx.currentRoute
 }
 
 // Do calls the SetHandlers(handlers)
@@ -1385,8 +1376,8 @@ func (ctx *context) Handlers() Handlers {
 
 // HandlerIndex sets the current index of the
 // current context's handlers chain.
-// If -1 passed then it just returns the
-// current handler index without change the current index.rns that index, useless return value.
+// If n < 0 or the current handlers length is 0 then it just returns the
+// current handler index without change the current index.
 //
 // Look Handlers(), Next() and StopExecution() too.
 func (ctx *context) HandlerIndex(n int) (currentIndex int) {
@@ -1455,9 +1446,13 @@ func (ctx *context) HandlerFileLine() (file string, line int) {
 }
 
 // RouteName returns the route name that this handler is running on.
-// Note that it will return empty on not found handlers.
+// Note that it may return empty on not found handlers.
 func (ctx *context) RouteName() string {
-	return ctx.currentRouteName
+	if ctx.currentRoute == nil {
+		return ""
+	}
+
+	return ctx.currentRoute.Name()
 }
 
 // Next is the function that executed when `ctx.Next()` is called.

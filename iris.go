@@ -130,7 +130,8 @@ type Application struct {
 	// routing embedded | exposing APIBuilder's and Router's public API.
 	*router.APIBuilder
 	*router.Router
-	ContextPool *context.Pool
+	router.HTTPErrorHandler // if Router is Downgraded this is nil.
+	ContextPool             *context.Pool
 
 	// config contains the configuration fields
 	// all fields defaults to something that is working, developers don't have to set it.
@@ -834,6 +835,7 @@ func (app *Application) Build() error {
 		if err != nil {
 			rp.Err(err)
 		}
+		app.HTTPErrorHandler = routerHandler
 		// re-build of the router from outside can be done with
 		// app.RefreshRouter()
 	}

@@ -58,7 +58,7 @@ func (repo *repository) getRelative(r *Route) *Route {
 	}
 
 	for _, route := range repo.routes {
-		if r.Subdomain == route.Subdomain && r.Method == route.Method && r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
+		if r.Subdomain == route.Subdomain && r.StatusCode == route.StatusCode && r.Method == route.Method && r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
 			return route
 		}
 	}
@@ -100,12 +100,16 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 		}
 	}
 
+	// fmt.Printf("repo.routes append:\t%#+v\n\n", route)
 	repo.routes = append(repo.routes, route)
-	if repo.pos == nil {
-		repo.pos = make(map[string]int)
+
+	if route.StatusCode == 0 { // a common resource route, not a status code error handler.
+		if repo.pos == nil {
+			repo.pos = make(map[string]int)
+		}
+		repo.pos[route.tmpl.Src] = len(repo.routes) - 1
 	}
 
-	repo.pos[route.tmpl.Src] = len(repo.routes) - 1
 	return route, nil
 }
 
@@ -117,8 +121,6 @@ type APIBuilder struct {
 
 	// the api builder global macros registry
 	macros *macro.Macros
-	// the api builder global handlers per status code registry (used for custom http errors)
-	errorCodeHandlers *ErrorCodeHandlers
 	// the api builder global routes repository
 	routes *repository
 
@@ -164,12 +166,11 @@ var _ RoutesProvider = (*APIBuilder)(nil) // passed to the default request handl
 // which is responsible to build the API and the router handler.
 func NewAPIBuilder() *APIBuilder {
 	return &APIBuilder{
-		macros:            macro.Defaults,
-		errorCodeHandlers: defaultErrorCodeHandlers(),
-		errors:            errgroup.New("API Builder"),
-		relativePath:      "/",
-		routes:            new(repository),
-		apiBuilderDI:      &APIContainer{Container: hero.New()},
+		macros:       macro.Defaults,
+		errors:       errgroup.New("API Builder"),
+		relativePath: "/",
+		routes:       new(repository),
+		apiBuilderDI: &APIContainer{Container: hero.New()},
 	}
 }
 
@@ -274,7 +275,11 @@ func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
 //
 // Returns a *Route, app will throw any errors later on.
 func (api *APIBuilder) Handle(method string, relativePath string, handlers ...context.Handler) *Route {
-	routes := api.CreateRoutes([]string{method}, relativePath, handlers...)
+	return api.handle(0, method, relativePath, handlers...)
+}
+
+func (api *APIBuilder) handle(errorCode int, method string, relativePath string, handlers ...context.Handler) *Route {
+	routes := api.createRoutes(errorCode, []string{method}, relativePath, handlers...)
 
 	var route *Route // the last one is returned.
 	var err error
@@ -282,6 +287,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 		if route == nil {
 			break
 		}
+
 		// global
 
 		route.topLink = api.routes.getRelative(route)
@@ -417,8 +423,18 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 // This method can be used for third-parties Iris helpers packages and tools
 // that want a more detailed view of Party-based Routes before take the decision to register them.
 func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
-	if len(methods) == 0 || methods[0] == "ALL" || methods[0] == "ANY" { // then use like it was .Any
-		return api.Any(relativePath, handlers...)
+	return api.createRoutes(0, methods, relativePath, handlers...)
+}
+
+func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePath string, handlers ...context.Handler) []*Route {
+	if statusCodeSuccessful(errorCode) {
+		errorCode = 0
+	}
+
+	if errorCode == 0 {
+		if len(methods) == 0 || methods[0] == "ALL" || methods[0] == "ANY" { // then use like it was .Any
+			return api.Any(relativePath, handlers...)
+		}
 	}
 
 	// no clean path yet because of subdomain indicator/separator which contains a dot.
@@ -444,10 +460,16 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	// So if we just put `api.middleware` or `api.doneHandlers`
 	// then the next `Party` will have those updated handlers
 	// but dev may change the rules for that child Party, so we have to make clones of them here.
+
 	var (
-		beginHandlers = joinHandlers(api.middleware, context.Handlers{})
-		doneHandlers  = joinHandlers(api.doneHandlers, context.Handlers{})
+		beginHandlers context.Handlers
+		doneHandlers  context.Handlers
 	)
+
+	if errorCode == 0 {
+		beginHandlers = joinHandlers(api.middleware, beginHandlers)
+		doneHandlers = joinHandlers(api.doneHandlers, doneHandlers)
+	}
 
 	mainHandlers := context.Handlers(handlers)
 	// before join the middleware + handlers + done handlers and apply the execution rules.
@@ -476,8 +498,8 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 
 	routes := make([]*Route, len(methods))
 
-	for i, m := range methods {
-		route, err := NewRoute(m, subdomain, path, routeHandlers, *api.macros)
+	for i, m := range methods { // single, empty method for error handlers.
+		route, err := NewRoute(errorCode, m, subdomain, path, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
 			api.errors.Addf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
 			continue
@@ -523,6 +545,13 @@ func removeDuplicates(elements []string) (result []string) {
 //
 // You can even declare a subdomain with relativePath as "mysub." or see `Subdomain`.
 func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
+	// if app.Party("/"), root party, then just add the middlewares
+	// and return itself.
+	if api.relativePath == "/" && (relativePath == "" || relativePath == "/") {
+		api.Use(handlers...)
+		return api
+	}
+
 	parentPath := api.relativePath
 	dot := string(SubdomainPrefix[0])
 	if len(parentPath) > 0 && parentPath[0] == '/' && strings.HasSuffix(relativePath, dot) {
@@ -557,7 +586,6 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		// global/api builder
 		macros:              api.macros,
 		routes:              api.routes,
-		errorCodeHandlers:   api.errorCodeHandlers,
 		beginGlobalHandlers: api.beginGlobalHandlers,
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 		errors:              api.errors,
@@ -674,7 +702,7 @@ func (api *APIBuilder) GetRoutesReadOnly() []context.RouteReadOnly {
 	routes := api.GetRoutes()
 	readOnlyRoutes := make([]context.RouteReadOnly, len(routes))
 	for i, r := range routes {
-		readOnlyRoutes[i] = routeReadOnlyWrapper{r}
+		readOnlyRoutes[i] = r.ReadOnly
 	}
 
 	return readOnlyRoutes
@@ -692,7 +720,7 @@ func (api *APIBuilder) GetRouteReadOnly(routeName string) context.RouteReadOnly 
 	if r == nil {
 		return nil
 	}
-	return routeReadOnlyWrapper{r}
+	return r.ReadOnly
 }
 
 // GetRouteReadOnlyByPath returns the registered read-only route based on the template path (`Route.Tmpl().Src`).
@@ -702,7 +730,7 @@ func (api *APIBuilder) GetRouteReadOnlyByPath(tmplPath string) context.RouteRead
 		return nil
 	}
 
-	return routeReadOnlyWrapper{r}
+	return r.ReadOnly
 }
 
 // Use appends Handler(s) to the current Party's routes and child routes.
@@ -951,11 +979,25 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 // and/or disable the gzip if gzip response recorder
 // was active.
 func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
-	if len(api.beginGlobalHandlers) > 0 {
-		handlers = joinHandlers(api.beginGlobalHandlers, handlers)
+	// TODO: think a stable way for that and document it so end-developers
+	// not be suprised. Many feature requests in the past asked for that per-party error handlers.
+	if api.relativePath != "/" {
+		api.handle(statusCode, "", "/{tail:path}", handlers...)
 	}
 
-	api.errorCodeHandlers.Register(statusCode, handlers...)
+	api.handle(statusCode, "", "/", handlers...)
+
+	// if api.relativePath != "/" /* root is OK, no need to wildcard, see handler.go */ &&
+	// 	!strings.HasSuffix(api.relativePath, "}") /* and not /users/{id:int} */ {
+	// 	// We need to register the /users and the /users/{tail:path},
+	// 	api.handle(statusCode, "", "/{tail:path}", handlers...)
+	// }
+
+	// if strings.HasSuffix(api.relativePath, "/") {
+	// 	api.handle(statusCode, "", "/", handlers...)
+	// }
+
+	// api.handle(statusCode, "", "/{tail:path}", handlers...)
 }
 
 // OnAnyErrorCode registers a handler which called when error status code written.
@@ -970,15 +1012,6 @@ func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
 			api.OnErrorCode(code, handlers...)
 		}
 	}
-}
-
-// FireErrorCode executes an error http status code handler
-// based on the context's status code.
-//
-// If a handler is not already registered,
-// it creates and registers a new trivial handler on the-fly.
-func (api *APIBuilder) FireErrorCode(ctx context.Context) {
-	api.errorCodeHandlers.Fire(ctx)
 }
 
 // Layout overrides the parent template layout with a more specific layout for this Party.

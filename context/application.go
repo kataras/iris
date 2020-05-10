@@ -61,9 +61,6 @@ type Application interface {
 
 	// FireErrorCode executes an error http status code handler
 	// based on the context's status code.
-	//
-	// If a handler is not already registered,
-	// then it creates & registers a new trivial handler on the-fly.
 	FireErrorCode(ctx Context)
 
 	// RouteExists reports whether a particular route exists

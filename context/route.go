@@ -17,6 +17,10 @@ type RouteReadOnly interface {
 	// Name returns the route's name.
 	Name() string
 
+	// StatusErrorCode returns 0 for common resource routes
+	// or the error code that an http error handler registered on.
+	StatusErrorCode() int
+
 	// Method returns the route's method.
 	Method() string
 

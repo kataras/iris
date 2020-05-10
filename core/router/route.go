@@ -22,6 +22,7 @@ type Route struct {
 	Name        string         `json:"name"`        // "userRoute"
 	Description string         `json:"description"` // "lists a user"
 	Method      string         `json:"method"`      // "GET"
+	StatusCode  int            `json:"statusCode"`  // 404 (only for HTTP error handlers).
 	methodBckp  string         // if Method changed to something else (which is possible at runtime as well, via RefreshRouter) then this field will be filled with the old one.
 	Subdomain   string         `json:"subdomain"` // "admin."
 	tmpl        macro.Template // Tmpl().Src: "/api/user/{id:uint64}"
@@ -62,6 +63,9 @@ type Route struct {
 	LastMod    time.Time `json:"lastMod,omitempty"`
 	ChangeFreq string    `json:"changeFreq,omitempty"`
 	Priority   float32   `json:"priority,omitempty"`
+
+	// ReadOnly is the read-only structure of the Route.
+	ReadOnly context.RouteReadOnly
 }
 
 // NewRoute returns a new route based on its method,
@@ -69,7 +73,7 @@ type Route struct {
 // handlers and the macro container which all routes should share.
 // It parses the path based on the "macros",
 // handlers are being changed to validate the macros at serve time, if needed.
-func NewRoute(method, subdomain, unparsedPath string,
+func NewRoute(statusErrorCode int, method, subdomain, unparsedPath string,
 	handlers context.Handlers, macros macro.Macros) (*Route, error) {
 	tmpl, err := macro.Parse(unparsedPath, macros)
 	if err != nil {
@@ -86,9 +90,14 @@ func NewRoute(method, subdomain, unparsedPath string,
 
 	path = cleanPath(path) // maybe unnecessary here.
 	defaultName := method + subdomain + tmpl.Src
+	if statusErrorCode > 0 {
+		defaultName = fmt.Sprintf("%d_%s", statusErrorCode, defaultName)
+	}
+
 	formattedPath := formatPath(path)
 
 	route := &Route{
+		StatusCode:    statusErrorCode,
 		Name:          defaultName,
 		Method:        method,
 		methodBckp:    method,
@@ -99,6 +108,7 @@ func NewRoute(method, subdomain, unparsedPath string,
 		FormattedPath: formattedPath,
 	}
 
+	route.ReadOnly = routeReadOnlyWrapper{route}
 	return route, nil
 }
 
@@ -189,15 +199,20 @@ func (r *Route) BuildHandlers() {
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
 func (r *Route) String() string {
+	start := r.Method
+	if r.StatusCode > 0 {
+		start = http.StatusText(r.StatusCode)
+	}
+
 	return fmt.Sprintf("%s %s%s",
-		r.Method, r.Subdomain, r.Tmpl().Src)
+		start, r.Subdomain, r.Tmpl().Src)
 }
 
 // Equal compares the method, subdomain and the
 // underline representation of the route's path,
 // instead of the `String` function which returns the front representation.
 func (r *Route) Equal(other *Route) bool {
-	return r.Method == other.Method && r.Subdomain == other.Subdomain && r.Path == other.Path
+	return r.StatusCode == other.StatusCode && r.Method == other.Method && r.Subdomain == other.Subdomain && r.Path == other.Path
 }
 
 // DeepEqual compares the method, subdomain, the
@@ -465,6 +480,10 @@ func (r *Route) Trace(w io.Writer) {
 
 type routeReadOnlyWrapper struct {
 	*Route
+}
+
+func (rd routeReadOnlyWrapper) StatusErrorCode() int {
+	return rd.Route.StatusCode
 }
 
 func (rd routeReadOnlyWrapper) Method() string {

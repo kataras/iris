@@ -30,8 +30,8 @@ type trieNode struct {
 	staticKey string
 
 	// insert data.
-	Handlers  context.Handlers
-	RouteName string
+	Route    context.RouteReadOnly
+	Handlers context.Handlers
 }
 
 func newTrieNode() *trieNode {
@@ -89,7 +89,9 @@ type trie struct {
 	hasRootWildcard bool
 	hasRootSlash    bool
 
-	method string
+	statusCode int // for error codes only, method is ignored.
+	method     string
+
 	// subdomain is empty for default-hostname routes,
 	// ex: mysubdomain.
 	subdomain string
@@ -108,7 +110,7 @@ func slowPathSplit(path string) []string {
 	return strings.Split(path, pathSep)[1:]
 }
 
-func (tr *trie) insert(path, routeName string, handlers context.Handlers) {
+func (tr *trie) insert(path string, route context.RouteReadOnly, handlers context.Handlers) {
 	input := slowPathSplit(path)
 
 	n := tr.root
@@ -148,8 +150,9 @@ func (tr *trie) insert(path, routeName string, handlers context.Handlers) {
 		n = n.getChild(s)
 	}
 
-	n.RouteName = routeName
+	n.Route = route
 	n.Handlers = handlers
+
 	n.paramKeys = paramKeys
 	n.key = path
 	n.end = true
@@ -163,6 +166,8 @@ func (tr *trie) insert(path, routeName string, handlers context.Handlers) {
 	}
 
 	n.staticKey = path[:i]
+
+	// fmt.Printf("trie.insert: (whole path=%v) Path: %s, Route name: %s, Handlers len: %d\n", n.end, n.key, route.Name(), len(handlers))
 }
 
 func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
