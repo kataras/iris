@@ -21,7 +21,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -1136,13 +1135,19 @@ type Context interface {
 	// and methods are not available here for the developer's safety.
 	Application() Application
 
-	// String returns the string representation of this request.
-	// Each context has a unique string representation.
-	// It can be used for simple debugging scenarios, i.e print context as string.
+	// SetID sets an ID, any value, to the Context.
+	// If possible the "id" should implement a `String() string` method
+	// so it can be rendered on `Context.String` method.
 	//
-	// What it returns? A number which declares the length of the
-	// total `String` calls per executable application, followed
-	// by the remote IP (the client) and finally the method:url.
+	// See `GetID` too.
+	SetID(id interface{})
+	// GetID returns the Context's ID.
+	// It returns nil if not given by a prior `SetID` call.
+	GetID() interface{}
+	// String returns the string representation of this request.
+	//
+	// It returns the Context's ID given by a `SetID`call,
+	// followed by the client's IP and the method:uri.
 	String() string
 }
 
@@ -1185,10 +1190,6 @@ type Map = map[string]interface{}
 //  +------------------------------------------------------------+
 
 type context struct {
-	// the unique id, it's zero until `String` function is called,
-	// it's here to cache the random, unique context's id, although `String`
-	// returns more than this.
-	id uint64
 	// the http.ResponseWriter wrapped by custom writer.
 	writer ResponseWriter
 	// the original http.Request
@@ -2024,7 +2025,7 @@ func (ctx *context) GetReferrer() Referrer {
 //
 // See `i18n.ExtractFunc` for a more organised way of the same feature.
 func (ctx *context) SetLanguage(langCode string) {
-	ctx.Values().Set(ctx.app.ConfigurationReadOnly().GetLanguageContextKey(), langCode)
+	ctx.values.Set(ctx.app.ConfigurationReadOnly().GetLanguageContextKey(), langCode)
 }
 
 // GetLocale returns the current request's `Locale` found by i18n middleware.
@@ -2032,14 +2033,14 @@ func (ctx *context) SetLanguage(langCode string) {
 func (ctx *context) GetLocale() Locale {
 	// Cache the Locale itself for multiple calls of `Tr` method.
 	contextKey := ctx.app.ConfigurationReadOnly().GetLocaleContextKey()
-	if v := ctx.Values().Get(contextKey); v != nil {
+	if v := ctx.values.Get(contextKey); v != nil {
 		if locale, ok := v.(Locale); ok {
 			return locale
 		}
 	}
 
 	if locale := ctx.Application().I18nReadOnly().GetLocale(ctx); locale != nil {
-		ctx.Values().Set(contextKey, locale)
+		ctx.values.Set(contextKey, locale)
 		return locale
 	}
 
@@ -2061,7 +2062,7 @@ func (ctx *context) Tr(format string, args ...interface{}) string { // other nam
 // SetVersion force-sets the API Version integrated with the "iris/versioning" subpackage.
 // It can be used inside a middleare.
 func (ctx *context) SetVersion(constraint string) {
-	ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetVersionContextKey(), constraint)
+	ctx.values.Set(ctx.Application().ConfigurationReadOnly().GetVersionContextKey(), constraint)
 }
 
 //  +------------------------------------------------------------+
@@ -2093,7 +2094,7 @@ func (ctx *context) contentTypeOnce(cType string, charset string) {
 		cType += "; charset=" + charset
 	}
 
-	ctx.Values().Set(contentTypeContextKey, cType)
+	ctx.values.Set(contentTypeContextKey, cType)
 	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
 }
 
@@ -2103,7 +2104,7 @@ func (ctx *context) ContentType(cType string) {
 		return
 	}
 
-	if _, wroteOnce := ctx.Values().GetEntry(contentTypeContextKey); wroteOnce {
+	if _, wroteOnce := ctx.values.GetEntry(contentTypeContextKey); wroteOnce {
 		return
 	}
 
@@ -3355,7 +3356,7 @@ func (ctx *context) ViewData(key string, value interface{}) {
 // `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
 func (ctx *context) GetViewData() map[string]interface{} {
 	viewDataContextKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
-	v := ctx.Values().Get(viewDataContextKey)
+	v := ctx.values.Get(viewDataContextKey)
 
 	// if no values found, then return nil
 	if v == nil {
@@ -4021,7 +4022,7 @@ const negotiationContextKey = "iris.negotiation_builder"
 //
 // See `Negotiate` method too.
 func (ctx *context) Negotiation() *NegotiationBuilder {
-	if n := ctx.Values().Get(negotiationContextKey); n != nil {
+	if n := ctx.values.Get(negotiationContextKey); n != nil {
 		return n.(*NegotiationBuilder)
 	}
 
@@ -4031,7 +4032,7 @@ func (ctx *context) Negotiation() *NegotiationBuilder {
 
 	n := &NegotiationBuilder{Accept: acceptBuilder}
 
-	ctx.Values().Set(negotiationContextKey, n)
+	ctx.values.Set(negotiationContextKey, n)
 
 	return n
 }
@@ -5029,17 +5030,17 @@ func (ctx *context) AddCookieOptions(options ...CookieOption) {
 		return
 	}
 
-	if v := ctx.Values().Get(cookieOptionsContextKey); v != nil {
+	if v := ctx.values.Get(cookieOptionsContextKey); v != nil {
 		if opts, ok := v.([]CookieOption); ok {
 			options = append(opts, options...)
 		}
 	}
 
-	ctx.Values().Set(cookieOptionsContextKey, options)
+	ctx.values.Set(cookieOptionsContextKey, options)
 }
 
 func (ctx *context) applyCookieOptions(c *http.Cookie, op uint8, override []CookieOption) {
-	if v := ctx.Values().Get(cookieOptionsContextKey); v != nil {
+	if v := ctx.values.Get(cookieOptionsContextKey); v != nil {
 		if options, ok := v.([]CookieOption); ok {
 			for _, opt := range options {
 				opt(ctx, c, op)
@@ -5057,7 +5058,7 @@ func (ctx *context) applyCookieOptions(c *http.Cookie, op uint8, override []Cook
 // ClearCookieOptions clears any previously registered cookie options.
 // See `AddCookieOptions` too.
 func (ctx *context) ClearCookieOptions() {
-	ctx.Values().Remove(cookieOptionsContextKey)
+	ctx.values.Remove(cookieOptionsContextKey)
 }
 
 // SetCookie adds a cookie.
@@ -5298,7 +5299,7 @@ func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 
 // skipTransactionsContextKey set this to any value to stop executing next transactions
 // it's a context-key in order to be used from anywhere, set it by calling the SkipTransactions()
-const skipTransactionsContextKey = "@transictions_skipped"
+const skipTransactionsContextKey = "iris.transactions.skip"
 
 // SkipTransactions if called then skip the rest of the transactions
 // or all of them if called before the first transaction
@@ -5395,12 +5396,12 @@ const (
 // ReflectValue caches and returns a []reflect.Value{reflect.ValueOf(ctx)}.
 // It's just a helper to maintain variable inside the context itself.
 func (ctx *context) ReflectValue() []reflect.Value {
-	if v := ctx.Values().Get(reflectValueContextKey); v != nil {
+	if v := ctx.values.Get(reflectValueContextKey); v != nil {
 		return v.([]reflect.Value)
 	}
 
 	v := []reflect.Value{reflect.ValueOf(ctx)}
-	ctx.Values().Set(reflectValueContextKey, v)
+	ctx.values.Set(reflectValueContextKey, v)
 	return v
 }
 
@@ -5409,7 +5410,7 @@ var emptyValue reflect.Value
 // Controller returns a reflect Value of the custom Controller from which this handler executed.
 // It will return a Kind() == reflect.Invalid if the handler was not executed from within a controller.
 func (ctx *context) Controller() reflect.Value {
-	if v := ctx.Values().Get(ControllerContextKey); v != nil {
+	if v := ctx.values.Get(ControllerContextKey); v != nil {
 		return v.(reflect.Value)
 	}
 
@@ -5425,27 +5426,27 @@ func (ctx *context) Application() Application {
 	return ctx.app
 }
 
-var lastCapturedContextID uint64
+const idContextKey = "iris.context.id"
 
-// LastCapturedContextID returns the total number of `context#String` calls.
-func LastCapturedContextID() uint64 {
-	return atomic.LoadUint64(&lastCapturedContextID)
+// SetID sets an ID, any value, to the Context.
+// If possible the "id" should implement a `String() string` method
+// so it can be rendered on `Context.String` method.
+//
+// See `GetID` too.
+func (ctx *context) SetID(id interface{}) {
+	ctx.values.Set(idContextKey, id)
+}
+
+// GetID returns the Context's ID.
+// It returns nil if not given by a prior `SetID` call.
+func (ctx *context) GetID() interface{} {
+	return ctx.values.Get(idContextKey)
 }
 
 // String returns the string representation of this request.
-// Each context has a unique string representation.
-// It can be used for simple debugging scenarios, i.e print context as string.
 //
-// What it returns? A number which declares the length of the
-// total `String` calls per executable application, followed
-// by the remote IP (the client) and finally the method:url.
+// It returns the Context's ID given by a `SetID`call,
+// followed by the client's IP and the method:uri.
 func (ctx *context) String() string {
-	if ctx.id == 0 {
-		// set the id here.
-		forward := atomic.AddUint64(&lastCapturedContextID, 1)
-		ctx.id = forward
-	}
-
-	return fmt.Sprintf("[%d] %s ▶ %s:%s",
-		ctx.id, ctx.RemoteAddr(), ctx.Method(), ctx.Request().RequestURI)
+	return fmt.Sprintf("[%s] %s ▶ %s:%s", ctx.GetID(), ctx.RemoteAddr(), ctx.Method(), ctx.Request().RequestURI)
 }
