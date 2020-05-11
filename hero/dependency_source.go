@@ -41,7 +41,10 @@ func newSource(fn reflect.Value) Source {
 
 	wd, _ := os.Getwd()
 	if relFile, err := filepath.Rel(wd, callerFileName); err == nil {
-		callerFileName = "./" + relFile
+		if !strings.HasPrefix(relFile, "..") {
+			// Only if it's relative to this path, not parent.
+			callerFileName = "./" + relFile
+		}
 	}
 
 	return Source{

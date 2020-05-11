@@ -981,23 +981,11 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
 	// TODO: think a stable way for that and document it so end-developers
 	// not be suprised. Many feature requests in the past asked for that per-party error handlers.
+	api.handle(statusCode, "", "/", handlers...)
+
 	if api.relativePath != "/" {
 		api.handle(statusCode, "", "/{tail:path}", handlers...)
 	}
-
-	api.handle(statusCode, "", "/", handlers...)
-
-	// if api.relativePath != "/" /* root is OK, no need to wildcard, see handler.go */ &&
-	// 	!strings.HasSuffix(api.relativePath, "}") /* and not /users/{id:int} */ {
-	// 	// We need to register the /users and the /users/{tail:path},
-	// 	api.handle(statusCode, "", "/{tail:path}", handlers...)
-	// }
-
-	// if strings.HasSuffix(api.relativePath, "/") {
-	// 	api.handle(statusCode, "", "/", handlers...)
-	// }
-
-	// api.handle(statusCode, "", "/{tail:path}", handlers...)
 }
 
 // OnAnyErrorCode registers a handler which called when error status code written.
@@ -1058,25 +1046,32 @@ func getCaller() (string, int) {
 	wd, _ := os.Getwd()
 	for {
 		frame, more := frames.Next()
-		file := frame.File
+		file := filepath.ToSlash(frame.File)
 
-		if strings.Contains(file, "src/testing/testing.go") {
+		if !strings.Contains(file, "_test.go") {
+			if strings.Contains(file, "/kataras/iris") && !strings.Contains(file, "kataras/iris/_examples") && !strings.Contains(file, "iris-contrib/examples") {
+				if !more {
+					break
+				}
+				continue
+			}
+		}
+
+		if strings.Contains(file, "go/src/runtime/") {
+			if !more {
+				break
+			}
 			continue
 		}
 
-		if !strings.Contains(file, "/kataras/iris") ||
-			strings.Contains(file, "_examples") ||
-			strings.Contains(file, "examples") {
-			if relFile, err := filepath.Rel(wd, file); err == nil {
+		if relFile, err := filepath.Rel(wd, file); err == nil {
+			if !strings.HasPrefix(relFile, "..") {
+				// Only if it's relative to this path, not parent.
 				file = "./" + relFile
 			}
-
-			return file, frame.Line
 		}
 
-		if !more {
-			break
-		}
+		return file, frame.Line
 	}
 
 	return "???", 0
