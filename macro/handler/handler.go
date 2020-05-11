@@ -39,11 +39,17 @@ func MakeHandler(tmpl macro.Template) context.Handler {
 
 	return func(ctx context.Context) {
 		if !filter(ctx) {
-			ctx.StopExecution()
+			if ctx.GetCurrentRoute().StatusErrorCode() == ctx.GetStatusCode() {
+				ctx.Next()
+			} else {
+				ctx.StopExecution()
+			}
+
 			return
 		}
 
-		// if all passed, just continue.
+		// if all passed or the next is the registered error handler to handle this status code,
+		// just continue.
 		ctx.Next()
 	}
 }

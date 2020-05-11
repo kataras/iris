@@ -386,7 +386,7 @@ func traceMethodColor(method string) int {
 		return color
 	}
 
-	return pio.Black
+	return 131 // for error handlers, of "ERROR [%STATUSCODE]"
 }
 
 // Trace prints some debug info about the Route to the "w".
@@ -397,13 +397,18 @@ func traceMethodColor(method string) int {
 //               * @second_handler ...
 // If route and handler line:number locations are equal then the second is ignored.
 func (r *Route) Trace(w io.Writer) {
+	method := r.Method
+	if method == "" {
+		method = fmt.Sprintf("%d", r.StatusCode)
+	}
+
 	// Color the method.
-	color := traceMethodColor(r.Method)
+	color := traceMethodColor(method)
 
 	// @method: @path
-	// space := strings.Repeat(" ", len(http.MethodConnect)-len(r.Method))
-	// s := fmt.Sprintf("%s: %s", pio.Rich(r.Method, color), path)
-	pio.WriteRich(w, r.Method, color)
+	// space := strings.Repeat(" ", len(http.MethodConnect)-len(method))
+	// s := fmt.Sprintf("%s: %s", pio.Rich(method, color), path)
+	pio.WriteRich(w, method, color)
 
 	path := r.Tmpl().Src
 	if path == "" {
@@ -415,7 +420,7 @@ func (r *Route) Trace(w io.Writer) {
 	// (@description)
 	description := r.Description
 	if description == "" {
-		if r.Method == MethodNone {
+		if method == MethodNone {
 			description = "offline"
 		}
 

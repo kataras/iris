@@ -216,7 +216,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			routes []*Route
 		}
 
-		allMethods := append(AllMethods, MethodNone)
+		allMethods := append(AllMethods, []string{MethodNone, ""}...)
 		methodRoutes := make([]MethodRoutes, 0, len(allMethods))
 
 		for _, method := range allMethods {
@@ -245,6 +245,9 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 					} else {
 						fmt.Fprint(logger.Printer, ", ")
 					}
+				}
+				if m.method == "" {
+					m.method = "ERROR"
 				}
 				fmt.Fprintf(logger.Printer, "%d ", len(m.routes))
 				pio.WriteRich(logger.Printer, m.method, traceMethodColor(m.method))
@@ -459,6 +462,16 @@ func (h *routerHandler) FireErrorCode(ctx context.Context) {
 		}
 
 		if n != nil {
+			// Note: handlers can contain macro filters here,
+			// they are registered as error handlers, see macro/handler.go#42.
+
+			// fmt.Println("Error Handlers")
+			// for _, h := range n.Handlers {
+
+			// 	f, l := context.HandlerFileLine(h)
+			// 	fmt.Printf("%s: %s:%d\n", ctx.Path(), f, l)
+			// }
+
 			// fire this http status code's error handlers chain.
 
 			// ctx.StopExecution() // not uncomment this, is here to remember why to.

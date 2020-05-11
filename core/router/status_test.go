@@ -89,27 +89,30 @@ func TestPartyOnErrorCode(t *testing.T) {
 
 	app.Get("/path", h)
 
-	h := func(ctx iris.Context) { ctx.WriteString(ctx.Path()) }
 	usersResponse := "users: method allowed"
-
 	users := app.Party("/users")
 	users.OnErrorCode(iris.StatusMethodNotAllowed, func(ctx iris.Context) {
 		ctx.WriteString(usersResponse)
 	})
 	users.Get("/", h)
+	write400 := func(ctx iris.Context) { ctx.StatusCode(iris.StatusBadRequest) }
 	// test setting the error code from a handler.
-	users.Get("/badrequest", func(ctx iris.Context) { ctx.StatusCode(iris.StatusBadRequest) })
+	users.Get("/badrequest", write400)
 
 	usersuserResponse := "users:user: method allowed"
 	user := users.Party("/{id:int}")
 	user.OnErrorCode(iris.StatusMethodNotAllowed, func(ctx iris.Context) {
 		ctx.WriteString(usersuserResponse)
 	})
-	// usersuserNotFoundResponse := "users:user: not found"
-	// user.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
-	// 	ctx.WriteString(usersuserNotFoundResponse)
-	// })
+	usersuserNotFoundResponse := "users:user: not found"
+	user.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
+		ctx.WriteString(usersuserNotFoundResponse)
+	})
 	user.Get("/", h)
+	user.Get("/ab/badrequest", write400)
+
+	friends := users.Party("/friends")
+	friends.Get("/{id:int}", h)
 
 	e := httptest.New(t, app)
 
@@ -125,10 +128,12 @@ func TestPartyOnErrorCode(t *testing.T) {
 
 	e.GET("/users/42").Expect().Status(iris.StatusOK).
 		Body().Equal("/users/42")
-	// e.GET("/users/ab").Expect().Status(iris.StatusNotFound).Body().Equal(usersuserNotFoundResponse)
+	e.GET("/users/ab").Expect().Status(iris.StatusNotFound).Body().Equal(usersuserNotFoundResponse)
+	// inherit the parent.
+	e.GET("/users/42/friends/dsa").Expect().Status(iris.StatusNotFound).Body().Equal(usersuserNotFoundResponse)
 
 	// if not registered to the party, then the root is taking action.
-	e.GET("/users/ab/cd").Expect().Status(iris.StatusNotFound).Body().Equal(globalNotFoundResponse)
+	e.GET("/users/42/ab/badrequest").Expect().Status(iris.StatusBadRequest).Body().Equal(http.StatusText(iris.StatusBadRequest))
 
 	// if not registered to the party, and not in root, then just write the status text (fallback behavior)
 	e.GET("/users/badrequest").Expect().Status(iris.StatusBadRequest).
