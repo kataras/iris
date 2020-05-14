@@ -37,9 +37,13 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 func ShutdownOnInterrupt(su *Supervisor, shutdownTimeout time.Duration) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.TODO(), shutdownTimeout)
-		defer cancel()
+		defer func() {
+		    cancel()
+		    su.RestoreFlow()
+		}()
+		su.DeferFlow()
 		su.Shutdown(ctx)
-		su.RestoreFlow()
+		//su.RestoreFlow()
 	}
 }
 
