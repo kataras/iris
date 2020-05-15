@@ -46,7 +46,7 @@ func readBody(ctx iris.Context) {
 		return
 	}
 
-	// For the shake of the example, log the received payload.
+	// For the sake of the example, log the received payload.
 	ctx.Application().Logger().Infof("Received: %#+v", p)
 
 	// Send back the payload depending on the accept content type and accept-encoding of the client,

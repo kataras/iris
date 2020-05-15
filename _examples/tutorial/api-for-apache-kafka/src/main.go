@@ -26,7 +26,7 @@ Resources:
 	- DIY
 */
 
-// package-level variables for the shake of the example
+// package-level variables for the sake of the example
 // but you can define them inside your main func
 // and pass around this config whenever you need to create a client or a producer or a consumer or use a cluster.
 var (

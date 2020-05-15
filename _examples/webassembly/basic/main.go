@@ -12,7 +12,7 @@ $ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.14/bin/go build -o hello.
 func main() {
 	app := iris.New()
 
-	// we could serve your assets like this the shake of the example,
+	// we could serve your assets like this the sake of the example,
 	// never include the .go files there in production.
 	app.HandleDir("/", "./client")
 
