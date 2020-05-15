@@ -8,7 +8,7 @@ package datamodels
 // which could wrap by embedding the datamodels.Movie or
 // declare new fields instead butwe will use this datamodel
 // as the only one Movie model in our application,
-// for the shake of simplicty.
+// for the sake of simplicty.
 type Movie struct {
 	ID     uint64 `json:"id"`
 	Name   string `json:"name"`

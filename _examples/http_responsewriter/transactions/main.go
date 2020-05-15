@@ -22,7 +22,7 @@ func main() {
 			// we should use t.Context if we want to rollback on any errors lives inside this function clojure.
 			t.Context().Text("Blablabla this should not be sent to the client because we will fill the err with a message and status")
 
-			// virtualize a fake error here, for the shake of the example
+			// virtualize a fake error here, for the sake of the example
 			fail := true
 			if fail {
 				err.StatusCode = iris.StatusInternalServerError

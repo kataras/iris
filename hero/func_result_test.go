@@ -209,7 +209,7 @@ func TestFuncResult(t *testing.T) {
 
 type (
 	testPreflightRequest struct {
-		FailCode int `json:"fail_code"` // for the shake of the test.
+		FailCode int `json:"fail_code"` // for the sake of the test.
 	}
 
 	testPreflightResponse struct {

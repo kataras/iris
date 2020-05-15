@@ -97,7 +97,7 @@ type MeController struct {
 	CurrentUserID Authenticated
 }
 
-// Get returns a message for the shake of the example.
+// Get returns a message for the sake of the example.
 // GET: /user
 func (c *MeController) Get() string {
 	return "This will be executed only when the user is logged in"
