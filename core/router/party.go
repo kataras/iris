@@ -33,20 +33,13 @@ type Party interface {
 	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
-	// OnErrorCode registers an error http status code
-	// based on the "statusCode" < 200 || >= 400 (came from `context.StatusCodeNotSuccessful`).
-	// The handler is being wrapped by a generic
-	// handler which will try to reset
-	// the body if recorder was enabled
-	// and/or disable the gzip if gzip response recorder
-	// was active.
-	OnErrorCode(statusCode int, handlers ...context.Handler)
-	// OnAnyErrorCode registers a handler which called when error status code written.
-	// Same as `OnErrorCode` but registers all http error codes based on the `context.StatusCodeNotSuccessful`
-	// which defaults to < 200 || >= 400 for an error code, any previous error code will be overridden,
-	// so call it first if you want to use any custom handler for a specific error status code.
-	//
+	// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 	// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+	// Look `OnAnyErrorCode` too.
+	OnErrorCode(statusCode int, handlers ...context.Handler)
+	// OnAnyErrorCode registers a handlers chain for all error codes
+	// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
+	// Look `OnErrorCode` too.
 	OnAnyErrorCode(handlers ...context.Handler)
 
 	// Party groups routes which may have the same prefix and share same handlers,

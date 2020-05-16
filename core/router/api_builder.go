@@ -971,16 +971,10 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 	return api.registerResourceRoute(reqPath, h).Describe(description)
 }
 
-// OnErrorCode registers an error http status code
-// based on the "statusCode" < 200 || >= 400 (came from `context.StatusCodeNotSuccessful`).
-// The handler is being wrapped by a generic
-// handler which will try to reset
-// the body if recorder was enabled
-// and/or disable the gzip if gzip response recorder
-// was active.
+// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
+// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+// Look `OnAnyErrorCode` too.
 func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
-	// TODO: think a stable way for that and document it so end-developers
-	// not be suprised. Many feature requests in the past asked for that per-party error handlers.
 	api.handle(statusCode, "", "/", handlers...)
 
 	if api.relativePath != "/" {
@@ -988,17 +982,110 @@ func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) 
 	}
 }
 
-// OnAnyErrorCode registers a handler which called when error status code written.
-// Same as `OnErrorCode` but registers all http error codes based on the `context.StatusCodeNotSuccessful`
-// which defaults to < 200 || >= 400 for an error code, any previous error code will be overridden,
-// so call it first if you want to use any custom handler for a specific error status code.
-//
-// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+// ClientErrorCodes holds the 4xx Client errors.
+var (
+	ClientErrorCodes = []int{
+		http.StatusBadRequest,
+		http.StatusUnauthorized,
+		http.StatusPaymentRequired,
+		http.StatusForbidden,
+		http.StatusNotFound,
+		http.StatusMethodNotAllowed,
+		http.StatusNotAcceptable,
+		http.StatusProxyAuthRequired,
+		http.StatusRequestTimeout,
+		http.StatusConflict,
+		http.StatusGone,
+		http.StatusLengthRequired,
+		http.StatusPreconditionFailed,
+		http.StatusRequestEntityTooLarge,
+		http.StatusRequestURITooLong,
+		http.StatusUnsupportedMediaType,
+		http.StatusRequestedRangeNotSatisfiable,
+		http.StatusExpectationFailed,
+		http.StatusTeapot,
+		http.StatusMisdirectedRequest,
+		http.StatusUnprocessableEntity,
+		http.StatusLocked,
+		http.StatusFailedDependency,
+		http.StatusTooEarly,
+		http.StatusUpgradeRequired,
+		http.StatusPreconditionRequired,
+		http.StatusTooManyRequests,
+		http.StatusRequestHeaderFieldsTooLarge,
+		http.StatusUnavailableForLegalReasons,
+		// Unofficial.
+		StatusPageExpired,
+		StatusBlockedByWindowsParentalControls,
+		StatusInvalidToken,
+		StatusTokenRequired,
+	}
+	// ServerErrorCodes holds the 5xx Server errors.
+	ServerErrorCodes = []int{
+		http.StatusInternalServerError,
+		http.StatusNotImplemented,
+		http.StatusBadGateway,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout,
+		http.StatusHTTPVersionNotSupported,
+		http.StatusVariantAlsoNegotiates,
+		http.StatusInsufficientStorage,
+		http.StatusLoopDetected,
+		http.StatusNotExtended,
+		http.StatusNetworkAuthenticationRequired,
+		// Unofficial.
+		StatusBandwidthLimitExceeded,
+		StatusInvalidSSLCertificate,
+		StatusSiteOverloaded,
+		StatusSiteFrozen,
+		StatusNetworkReadTimeout,
+	}
+)
+
+// Unofficial status error codes.
+const (
+	// 4xx
+	StatusPageExpired                      = 419
+	StatusBlockedByWindowsParentalControls = 450
+	StatusInvalidToken                     = 498
+	StatusTokenRequired                    = 499
+	// 5xx
+	StatusBandwidthLimitExceeded = 509
+	StatusInvalidSSLCertificate  = 526
+	StatusSiteOverloaded         = 529
+	StatusSiteFrozen             = 530
+	StatusNetworkReadTimeout     = 598
+)
+
+var unofficialStatusText = map[int]string{
+	StatusPageExpired:                      "Page Expired",
+	StatusBlockedByWindowsParentalControls: "Blocked by Windows Parental Controls",
+	StatusInvalidToken:                     "Invalid Token",
+	StatusTokenRequired:                    "Token Required",
+	StatusBandwidthLimitExceeded:           "Bandwidth Limit Exceeded",
+	StatusInvalidSSLCertificate:            "Invalid SSL Certificate",
+	StatusSiteOverloaded:                   "Site is overloaded",
+	StatusSiteFrozen:                       "Site is frozen",
+	StatusNetworkReadTimeout:               "Network read timeout error",
+}
+
+// StatusText returns a text for the HTTP status code. It returns the empty
+// string if the code is unknown.
+func StatusText(code int) string {
+	text := http.StatusText(code)
+	if text == "" {
+		text = unofficialStatusText[code]
+	}
+
+	return text
+}
+
+// OnAnyErrorCode registers a handlers chain for all error codes
+// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
+// Look `OnErrorCode` too.
 func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
-	for code := 100; code <= 511; code++ {
-		if context.StatusCodeNotSuccessful(code) {
-			api.OnErrorCode(code, handlers...)
-		}
+	for _, statusCode := range append(ClientErrorCodes, ServerErrorCodes...) {
+		api.OnErrorCode(statusCode, handlers...)
 	}
 }
 
