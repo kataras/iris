@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/kataras/iris/v12"
-)
+import "github.com/kataras/iris/v12"
 
 func main() {
 	app := iris.New()
@@ -10,7 +8,14 @@ func main() {
 	crs := func(ctx iris.Context) {
 		ctx.Header("Access-Control-Allow-Origin", "*")
 		ctx.Header("Access-Control-Allow-Credentials", "true")
-		ctx.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Origin,Content-Type")
+
+		if ctx.Method() == iris.MethodOptions {
+			ctx.Header("Access-Control-Methods", "POST, PUT, PATCH, DELETE")
+			ctx.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Origin,Content-Type")
+			ctx.Header("Access-Control-Max-Age", "86400")
+			ctx.StatusCode(iris.StatusNoContent)
+			return
+		}
 		ctx.Next()
 	} // or	"github.com/iris-contrib/middleware/cors"
 
@@ -25,6 +30,8 @@ func main() {
 				return
 			}
 			ctx.Application().Logger().Infof("received %#+v", any)
+
+			ctx.JSON(iris.Map{"message": "ok"})
 		})
 
 		v1.Get("/home", func(ctx iris.Context) {
@@ -44,10 +51,5 @@ func main() {
 		})
 	}
 
-	// iris.WithoutPathCorrectionRedirection | iris#Configuration.DisablePathCorrectionRedirection:
-	// CORS needs the allow origin headers in the redirect response as well, we have a solution for this:
-	// Add the iris.WithoutPathCorrectionRedirection option
-	// to directly fire the handler instead of redirection (which is the default behavior)
-	// on request paths like "/v1/mailer/" when "/v1/mailer" route handler is registered.
-	app.Listen(":80", iris.WithoutPathCorrectionRedirection)
+	app.Listen(":80", iris.WithTunneling)
 }

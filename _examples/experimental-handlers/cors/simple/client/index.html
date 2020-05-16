@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Example CORS</title>
+</head>
+
+<body>
+    <script type="text/javascript">
+        // Replace the "host" with your domain (you can use iris.WithTunneling).
+        const host = 'https://e1de7bc1.ngrok.io';
+
+        async function postData(url = '', data = {}) {
+            const response = await fetch(url, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                redirect: 'follow',
+                referrerPolicy: 'no-referrer',
+                body: JSON.stringify(data)
+            });
+            return response.json();
+        }
+
+        postData(host + '/api/v1/mailer', {
+                email: "me@test.com"
+            })
+            .then(data => {
+                console.log(data);
+                document.write(data.message);
+            });
+    </script>
+</body>
+
+</html>
