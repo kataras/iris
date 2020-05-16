@@ -506,7 +506,7 @@ func (h *routerHandler) FireErrorCode(ctx context.Context) {
 	}
 
 	// not error handler found, write a default message.
-	ctx.WriteString(http.StatusText(statusCode))
+	ctx.WriteString(StatusText(statusCode))
 }
 
 func statusCodeSuccessful(statusCode int) bool {

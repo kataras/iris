@@ -78,6 +78,7 @@ const (
 	StatusLengthRequired               = 411 // RFC 7231, 6.5.10
 	StatusPreconditionFailed           = 412 // RFC 7232, 4.2
 	StatusRequestEntityTooLarge        = 413 // RFC 7231, 6.5.11
+	StatusPayloadTooRage               = StatusRequestEntityTooLarge
 	StatusRequestURITooLong            = 414 // RFC 7231, 6.5.12
 	StatusUnsupportedMediaType         = 415 // RFC 7231, 6.5.13
 	StatusRequestedRangeNotSatisfiable = 416 // RFC 7233, 4.4
@@ -93,7 +94,12 @@ const (
 	StatusTooManyRequests              = 429 // RFC 6585, 4
 	StatusRequestHeaderFieldsTooLarge  = 431 // RFC 6585, 5
 	StatusUnavailableForLegalReasons   = 451 // RFC 7725, 3
-
+	// Unofficial Client Errors.
+	StatusPageExpired                      = router.StatusPageExpired
+	StatusBlockedByWindowsParentalControls = router.StatusBlockedByWindowsParentalControls
+	StatusInvalidToken                     = router.StatusInvalidToken
+	StatusTokenRequired                    = router.StatusTokenRequired
+	//
 	StatusInternalServerError           = 500 // RFC 7231, 6.6.1
 	StatusNotImplemented                = 501 // RFC 7231, 6.6.2
 	StatusBadGateway                    = 502 // RFC 7231, 6.6.3
@@ -105,7 +111,19 @@ const (
 	StatusLoopDetected                  = 508 // RFC 5842, 7.2
 	StatusNotExtended                   = 510 // RFC 2774, 7
 	StatusNetworkAuthenticationRequired = 511 // RFC 6585, 6
+	// Unofficial Server Errors.
+	StatusBandwidthLimitExceeded = router.StatusBandwidthLimitExceeded
+	StatusInvalidSSLCertificate  = router.StatusInvalidSSLCertificate
+	StatusSiteOverloaded         = router.StatusSiteOverloaded
+	StatusSiteFrozen             = router.StatusSiteFrozen
+	StatusNetworkReadTimeout     = router.StatusNetworkReadTimeout
 )
+
+// StatusText returns a text for the HTTP status code. It returns the empty
+// string if the code is unknown.
+//
+// Shortcut for core/router#StatusText.
+var StatusText = router.StatusText
 
 // HTTP Methods copied from `net/http`.
 const (
