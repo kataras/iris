@@ -11,13 +11,11 @@ func init() {
 	context.SetHandlerName("iris/sessions.*Handler", "iris.session")
 }
 
-// A Sessions manager should be responsible to Start a sesion, based
-// on a Context, which should return
-// a compatible Session interface, type. If the external session manager
-// doesn't qualifies, then the user should code the rest of the functions with empty implementation.
-//
-// Sessions should be responsible to Destroy a session based
-// on the Context.
+// A Sessions manager should be responsible to Start/Get a sesion, based
+// on a Context, which returns a *Session, type.
+// It performs automatic memory cleanup on expired sessions.
+// It can accept a `Database` for persistence across server restarts.
+// A session can set temporarly values (flash messages).
 type Sessions struct {
 	config   Config
 	provider *provider

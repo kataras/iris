@@ -26,8 +26,12 @@ func main() {
 
 	sess := sessions.New(sessions.Config{
 		Cookie:       "sessionscookieid",
-		Expires:      45 * time.Minute, // <=0 means unlimited life. Defaults to 0.
+		Expires:      1 * time.Minute, // <=0 means unlimited life. Defaults to 0.
 		AllowReclaim: true,
+	})
+
+	sess.OnDestroy(func(sid string) {
+		println(sid + " expired and destroyed from memory and its values from database")
 	})
 
 	//

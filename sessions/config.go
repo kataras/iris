@@ -23,11 +23,6 @@ type (
 
 		// CookieSecureTLS set to true if server is running over TLS
 		// and you need the session's cookie "Secure" field to be set true.
-		//
-		// Note: The user should fill the Decode configuation field in order for this to work.
-		// Recommendation: You don't need this to be set to true, just fill the Encode and Decode fields
-		// with a third-party library like secure cookie, example is provided at the _examples folder.
-		//
 		// Defaults to false.
 		CookieSecureTLS bool
 
