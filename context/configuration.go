@@ -25,26 +25,24 @@ type ConfigurationReadOnly interface {
 	// then the Router checks if /home handler exists, if yes,
 	// (permant)redirects the client to the correct path /home.
 	GetDisablePathCorrection() bool
-
-	// GetDisablePathCorrectionRedirection returns the Configuration#DisablePathCorrectionRedirection field.
+	// GetDisablePathCorrectionRedirection returns the Configuration.DisablePathCorrectionRedirection field.
 	// If DisablePathCorrectionRedirection set to true then it will handle paths as they are.
 	// it will fire the handler of the matching route without
 	// the last slash ("/") instead of send a redirection status.
 	GetDisablePathCorrectionRedirection() bool
-
+	// GetEnablePathIntelligence returns the Configuration.EnablePathIntelligence field.
+	GetEnablePathIntelligence() bool
 	// GetEnablePathEscape is the configuration.EnablePathEscape,
 	// returns true when its escapes the path, the named parameters (if any).
 	GetEnablePathEscape() bool
-
 	// GetForceLowercaseRouting returns the value of the `ForceLowercaseRouting` setting.
 	GetForceLowercaseRouting() bool
+	// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
+	GetFireMethodNotAllowed() bool
 
 	// GetEnableOptimizations returns whether
 	// the application has performance optimizations enabled.
 	GetEnableOptimizations() bool
-
-	// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
-	GetFireMethodNotAllowed() bool
 	// GetDisableBodyConsumptionOnUnmarshal returns the configuration.GetDisableBodyConsumptionOnUnmarshal,
 	// manages the reading behavior of the context's body readers/binders.
 	// If returns true then the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`
