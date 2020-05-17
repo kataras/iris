@@ -36,11 +36,11 @@ type Party interface {
 	// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 	// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 	// Look `OnAnyErrorCode` too.
-	OnErrorCode(statusCode int, handlers ...context.Handler)
+	OnErrorCode(statusCode int, handlers ...context.Handler) []*Route
 	// OnAnyErrorCode registers a handlers chain for all error codes
 	// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
 	// Look `OnErrorCode` too.
-	OnAnyErrorCode(handlers ...context.Handler)
+	OnAnyErrorCode(handlers ...context.Handler) []*Route
 
 	// Party groups routes which may have the same prefix and share same handlers,
 	// returns that new rich subrouter.

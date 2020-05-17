@@ -974,12 +974,14 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 // OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 // Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 // Look `OnAnyErrorCode` too.
-func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
-	api.handle(statusCode, "", "/", handlers...)
+func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) (routes []*Route) {
+	routes = append(routes, api.handle(statusCode, "", "/", handlers...))
 
 	if api.relativePath != "/" {
-		api.handle(statusCode, "", "/{tail:path}", handlers...)
+		routes = append(routes, api.handle(statusCode, "", "/{tail:path}", handlers...))
 	}
+
+	return
 }
 
 // ClientErrorCodes holds the 4xx Client errors.
@@ -1083,10 +1085,12 @@ func StatusText(code int) string {
 // OnAnyErrorCode registers a handlers chain for all error codes
 // (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
 // Look `OnErrorCode` too.
-func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
+func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Route) {
 	for _, statusCode := range append(ClientErrorCodes, ServerErrorCodes...) {
-		api.OnErrorCode(statusCode, handlers...)
+		routes = append(routes, api.OnErrorCode(statusCode, handlers...)...)
 	}
+
+	return
 }
 
 // Layout overrides the parent template layout with a more specific layout for this Party.

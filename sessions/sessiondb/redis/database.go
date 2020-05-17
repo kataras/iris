@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"crypto/tls"
 	"errors"
 	"time"
 
@@ -45,6 +46,11 @@ type Config struct {
 	// Delim the delimeter for the keys on the sessiondb. Defaults to "-".
 	Delim string
 
+	// TLSConfig will cause Dial to perform a TLS handshake using the provided
+	// config. If is nil then no TLS is used.
+	// See https://golang.org/pkg/crypto/tls/#Config
+	TLSConfig *tls.Config
+
 	// Driver supports `Redigo()` or `Radix()` go clients for redis.
 	// Configure each driver by the return value of their constructors.
 	//
@@ -63,6 +69,7 @@ func DefaultConfig() Config {
 		Timeout:   DefaultRedisTimeout,
 		Prefix:    "",
 		Delim:     DefaultDelim,
+		TLSConfig: nil,
 		Driver:    Redigo(),
 	}
 }

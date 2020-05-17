@@ -271,62 +271,61 @@ func (r *RedigoDriver) Delete(key string) error {
 	return err
 }
 
-func dial(network string, addr string, pass string, timeout time.Duration) (redis.Conn, error) {
-	if network == "" {
-		network = DefaultRedisNetwork
-	}
-	if addr == "" {
-		addr = DefaultRedisAddr
-	}
-
-	var options []redis.DialOption
-
-	if timeout > 0 {
-		options = append(options,
-			redis.DialConnectTimeout(timeout),
-			redis.DialReadTimeout(timeout),
-			redis.DialWriteTimeout(timeout))
-	}
-
-	c, err := redis.Dial(network, addr, options...)
-	if err != nil {
-		return nil, err
-	}
-
-	if pass != "" {
-		if _, err = c.Do("AUTH", pass); err != nil {
-			c.Close()
-			return nil, err
-		}
-	}
-	return c, err
-}
-
-// Connect connects to the redis, called only once
+// Connect connects to the redis, called only once.
 func (r *RedigoDriver) Connect(c Config) error {
+	if c.Network == "" {
+		c.Network = DefaultRedisNetwork
+	}
+
+	if c.Addr == "" {
+		c.Addr = DefaultRedisAddr
+	}
+
 	pool := &redis.Pool{IdleTimeout: r.IdleTimeout, MaxIdle: r.MaxIdle, Wait: r.Wait, MaxActive: c.MaxActive}
 	pool.TestOnBorrow = func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
 		return err
 	}
 
-	if c.Database != "" {
-		pool.Dial = func() (redis.Conn, error) {
-			red, err := dial(c.Network, c.Addr, c.Password, c.Timeout)
-			if err != nil {
-				return nil, err
-			}
-			if _, err = red.Do("SELECT", c.Database); err != nil {
-				red.Close()
-				return nil, err
-			}
-			return red, err
-		}
-	} else {
-		pool.Dial = func() (redis.Conn, error) {
-			return dial(c.Network, c.Addr, c.Password, c.Timeout)
-		}
+	var options []redis.DialOption
+
+	if c.Timeout > 0 {
+		options = append(options,
+			redis.DialConnectTimeout(c.Timeout),
+			redis.DialReadTimeout(c.Timeout),
+			redis.DialWriteTimeout(c.Timeout))
 	}
+
+	if c.TLSConfig != nil {
+		options = append(options,
+			redis.DialTLSConfig(c.TLSConfig),
+			redis.DialUseTLS(true),
+		)
+	}
+
+	pool.Dial = func() (redis.Conn, error) {
+		conn, err := redis.Dial(c.Network, c.Addr, options...)
+		if err != nil {
+			return nil, err
+		}
+
+		if c.Password != "" {
+			if _, err = conn.Do("AUTH", c.Password); err != nil {
+				conn.Close()
+				return nil, err
+			}
+		}
+
+		if c.Database != "" {
+			if _, err = conn.Do("SELECT", c.Database); err != nil {
+				conn.Close()
+				return nil, err
+			}
+		}
+
+		return conn, err
+	}
+
 	r.Connected = true
 	r.pool = pool
 	r.Config = c
