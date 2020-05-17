@@ -10,10 +10,7 @@ type (
 	// provider contains the sessions and external databases (load and update).
 	// It's the session memory manager
 	provider struct {
-		// we don't use RWMutex because all actions have read and write at the same action function.
-		// (or write to a *Session's value which is race if we don't lock)
-		// narrow locks are fasters but are useless here.
-		mu               sync.Mutex
+		mu               sync.RWMutex
 		sessions         map[string]*Session
 		db               Database
 		destroyListeners []DestroyListener
@@ -22,10 +19,12 @@ type (
 
 // newProvider returns a new sessions provider
 func newProvider() *provider {
-	return &provider{
+	p := &provider{
 		sessions: make(map[string]*Session),
 		db:       newMemDB(),
 	}
+
+	return p
 }
 
 // RegisterDatabase sets a session database.
@@ -41,8 +40,17 @@ func (p *provider) RegisterDatabase(db Database) {
 
 // newSession returns a new session from sessionid
 func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) *Session {
+	sess := &Session{
+		sid:      sid,
+		Man:      man,
+		provider: p,
+		flashes:  make(map[string]*flashMessage),
+	}
+
 	onExpire := func() {
-		p.Destroy(sid)
+		p.mu.Lock()
+		p.deleteSession(sess)
+		p.mu.Unlock()
 	}
 
 	lifetime := p.db.Acquire(sid, expires)
@@ -62,14 +70,7 @@ func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) 
 		lifetime.Begin(expires, onExpire)
 	}
 
-	sess := &Session{
-		sid:      sid,
-		Man:      man,
-		provider: p,
-		flashes:  make(map[string]*flashMessage),
-		Lifetime: lifetime,
-	}
-
+	sess.Lifetime = lifetime
 	return sess
 }
 
@@ -103,9 +104,9 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 		return nil
 	}
 
-	p.mu.Lock()
+	p.mu.RLock()
 	sess, found := p.sessions[sid]
-	p.mu.Unlock()
+	p.mu.RUnlock()
 	if !found {
 		return ErrNotFound
 	}
@@ -116,14 +117,14 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 
 // Read returns the store which sid parameter belongs
 func (p *provider) Read(man *Sessions, sid string, expires time.Duration) *Session {
-	p.mu.Lock()
+	p.mu.RLock()
 	if sess, found := p.sessions[sid]; found {
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session
-		p.mu.Unlock()
+		p.mu.RUnlock()
 
 		return sess
 	}
-	p.mu.Unlock()
+	p.mu.RUnlock()
 
 	return p.Init(man, sid, expires) // if not found create new
 }

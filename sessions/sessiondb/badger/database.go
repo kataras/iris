@@ -53,6 +53,7 @@ func New(directoryPath string) (*Database, error) {
 	}
 
 	opts := badger.DefaultOptions(directoryPath)
+	opts.Logger = golog.Default.Child("[sessionsdb.badger]").DisableNewLine()
 
 	service, err := badger.Open(opts)
 	if err != nil {

@@ -10,7 +10,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v1.8.1
 	github.com/hashicorp/go-version v1.2.0
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
@@ -20,7 +20,7 @@ require (
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
 	github.com/json-iterator/go v1.1.9
-	github.com/kataras/golog v0.0.13
+	github.com/kataras/golog v0.0.15
 	github.com/kataras/neffos v0.0.15
 	github.com/kataras/pio v0.0.6
 	github.com/kataras/sitemap v0.0.5
@@ -31,9 +31,9 @@ require (
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/vmihailenco/msgpack/v5 v5.0.0-alpha.2
 	go.etcd.io/bbolt v1.3.4
-	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
-	gopkg.in/ini.v1 v1.55.0
+	gopkg.in/ini.v1 v1.56.0
 	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86
 )
