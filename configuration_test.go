@@ -146,6 +146,7 @@ func TestConfigurationYAML(t *testing.T) {
 	yamlConfigurationContents := `
 DisablePathCorrection: false
 DisablePathCorrectionRedirection: true
+EnablePathIntelligence: true
 EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
@@ -173,6 +174,10 @@ Other:
 
 	if expected := true; c.DisablePathCorrectionRedirection != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
+	}
+
+	if expected := true; c.EnablePathIntelligence != expected {
+		t.Fatalf("error on TestConfigurationYAML: Expected EnablePathIntelligence %v but got %v", expected, c.EnablePathIntelligence)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {

@@ -240,6 +240,13 @@ var WithoutPathCorrection = func(app *Application) {
 	app.config.DisablePathCorrection = true
 }
 
+// WithPathIntelligence enables the EnablePathIntelligence setting.
+//
+// See `Configuration`.
+var WithPathIntelligence = func(app *Application) {
+	app.config.EnablePathIntelligence = true
+}
+
 // WithoutPathCorrectionRedirection disables the PathCorrectionRedirection setting.
 //
 // See `Configuration`.
@@ -781,14 +788,21 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	DisablePathCorrection bool `json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
-
 	// DisablePathCorrectionRedirection works whenever configuration.DisablePathCorrection is set to false
 	// and if DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
 	// the trailing slash ("/") instead of send a redirection status.
 	//
 	// Defaults to false.
 	DisablePathCorrectionRedirection bool `json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
-
+	// EnablePathIntelligence if set to true,
+	// the router will redirect HTTP "GET" not found pages to the most closest one path(if any). For example
+	// you register a route at "/contact" path -
+	// a client tries to reach it by "/cont", the path will be automatic fixed
+	// and the client will be redirected to the "/contact" path
+	// instead of getting a 404 not found response back.
+	//
+	// Defaults to false.
+	EnablePathIntelligence bool `json:"enablePathIntelligence,omitempty" yaml:"EnablePathIntelligence" toml:"EnablePathIntelligence"`
 	// EnablePathEscape when is true then its escapes the path and the named parameters (if any).
 	// When do you need to Disable(false) it:
 	// accepts parameters with slash '/'
@@ -799,23 +813,21 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	EnablePathEscape bool `json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
-
 	// ForceLowercaseRouting if enabled, converts all registered routes paths to lowercase
 	// and it does lowercase the request path too for matching.
 	//
 	// Defaults to false.
 	ForceLowercaseRouting bool `json:"forceLowercaseRouting,omitempty" yaml:"ForceLowercaseRouting" toml:"ForceLowercaseRouting"`
+	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
+	//  fires the 405 error instead of 404
+	// Defaults to false.
+	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
 
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
 	//
 	// Defaults to false.
 	EnableOptimizations bool `json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
-	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
-	//  fires the 405 error instead of 404
-	// Defaults to false.
-	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
-
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If set to true then it
 	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
@@ -962,33 +974,38 @@ func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
 
-// GetDisablePathCorrectionRedirection returns the Configuration#DisablePathCorrectionRedirection field.
+// GetDisablePathCorrectionRedirection returns the Configuration.DisablePathCorrectionRedirection field.
 // If DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
 // the last slash ("/") instead of send a redirection status.
 func (c Configuration) GetDisablePathCorrectionRedirection() bool {
 	return c.DisablePathCorrectionRedirection
 }
 
-// GetEnablePathEscape is the Configuration#EnablePathEscape,
+// GetEnablePathIntelligence returns the Configuration.EnablePathIntelligence field.
+func (c Configuration) GetEnablePathIntelligence() bool {
+	return c.EnablePathIntelligence
+}
+
+// GetEnablePathEscape is the Configuration.EnablePathEscape,
 // returns true when its escapes the path, the named parameters (if any).
 func (c Configuration) GetEnablePathEscape() bool {
 	return c.EnablePathEscape
 }
 
-// GetForceLowercaseRouting returns the value of the `ForceLowercaseRouting` setting.
+// GetForceLowercaseRouting returns the value of the Configuration.ForceLowercaseRouting setting.
 func (c Configuration) GetForceLowercaseRouting() bool {
 	return c.ForceLowercaseRouting
+}
+
+// GetFireMethodNotAllowed returns the Configuration.FireMethodNotAllowed.
+func (c Configuration) GetFireMethodNotAllowed() bool {
+	return c.FireMethodNotAllowed
 }
 
 // GetEnableOptimizations returns whether
 // the application has performance optimizations enabled.
 func (c Configuration) GetEnableOptimizations() bool {
 	return c.EnableOptimizations
-}
-
-// GetFireMethodNotAllowed returns the Configuration#FireMethodNotAllowed.
-func (c Configuration) GetFireMethodNotAllowed() bool {
-	return c.FireMethodNotAllowed
 }
 
 // GetDisableBodyConsumptionOnUnmarshal returns the Configuration#GetDisableBodyConsumptionOnUnmarshal,
@@ -1147,6 +1164,10 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.DisablePathCorrectionRedirection; v {
 			main.DisablePathCorrectionRedirection = v
+		}
+
+		if v := c.EnablePathIntelligence; v {
+			main.EnablePathIntelligence = v
 		}
 
 		if v := c.EnablePathEscape; v {

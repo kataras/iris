@@ -351,7 +351,7 @@ type Context interface {
 	// this request based on subdomain and request path.
 	//
 	// Order may change.
-	// Example: https://github.com/kataras/iris/tree/master/_examples/routing/not-found-suggests
+	// Example: https://github.com/kataras/iris/tree/master/_examples/routing/intelligence/manual
 	FindClosest(n int) []string
 	// IsWWW returns true if the current subdomain (if any) is www.
 	IsWWW() bool
@@ -1812,7 +1812,7 @@ func (ctx *context) Subdomain() (subdomain string) {
 // this request based on subdomain and request path.
 //
 // Order may change.
-// Example: https://github.com/kataras/iris/tree/master/_examples/routing/not-found-suggests
+// Example: https://github.com/kataras/iris/tree/master/_examples/routing/intelligence/manual
 func (ctx *context) FindClosest(n int) []string {
 	return ctx.Application().FindClosestPaths(ctx.Subdomain(), ctx.Path(), n)
 }

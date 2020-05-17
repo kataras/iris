@@ -229,3 +229,19 @@ func (api *APIContainer) Any(relativePath string, handlersFn ...interface{}) (ro
 
 	return
 }
+
+// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
+// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+// Look `OnAnyErrorCode` too.
+func (api *APIContainer) OnErrorCode(statusCode int, handlersFn ...interface{}) []*Route {
+	handlers := api.convertHandlerFuncs("/{tail:path}", handlersFn...)
+	return api.Self.OnErrorCode(statusCode, handlers...)
+}
+
+// OnAnyErrorCode registers a handlers chain for all error codes
+// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
+// Look `OnErrorCode` too.
+func (api *APIContainer) OnAnyErrorCode(handlersFn ...interface{}) []*Route {
+	handlers := api.convertHandlerFuncs("/{tail:path}", handlersFn...)
+	return api.Self.OnAnyErrorCode(handlers...)
+}

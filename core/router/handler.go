@@ -417,6 +417,16 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
+	if config.GetEnablePathIntelligence() && method == http.MethodGet {
+		closestPaths := ctx.FindClosest(1)
+		if len(closestPaths) > 0 {
+			u := ctx.Request().URL
+			u.Path = closestPaths[0]
+			ctx.Redirect(u.String(), http.StatusMovedPermanently)
+			return
+		}
+	}
+
 	ctx.StatusCode(http.StatusNotFound)
 }
 
