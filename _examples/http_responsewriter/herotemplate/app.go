@@ -45,8 +45,8 @@ func main() {
 
 		_, err := ctx.Write(buffer.Bytes())
 		if err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.WriteString(err.Error())
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+			return
 		}
 	})
 

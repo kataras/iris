@@ -52,8 +52,7 @@ func main() {
 
 		err := ctx.Request().ParseMultipartForm(maxSize)
 		if err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.WriteString(err.Error())
+			ctx.StopWithError(iris.StatusInternalServerError, err)
 			return
 		}
 

@@ -11,8 +11,7 @@ func main() {
 		// body, err := ioutil.ReadAll(ctx.Request().Body) once or
 		body, err := ctx.GetBody() // as many times as you need.
 		if err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.WriteString(err.Error())
+			ctx.StopWithError(iris.StatusInternalServerError, err)
 			return
 		}
 

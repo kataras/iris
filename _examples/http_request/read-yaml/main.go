@@ -22,8 +22,7 @@ type product struct {
 func handler(ctx iris.Context) {
 	var p product
 	if err := ctx.ReadYAML(&p); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 

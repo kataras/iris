@@ -17,8 +17,8 @@ func main() {
 		var t MyType
 		err := ctx.ReadQuery(&t)
 		if err != nil && !iris.IsErrPath(err) {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.WriteString(err.Error())
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+			return
 		}
 
 		ctx.Writef("MyType: %#v", t)

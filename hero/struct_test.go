@@ -56,9 +56,7 @@ func TestStruct(t *testing.T) {
 type testStructErrorHandler struct{}
 
 func (s *testStructErrorHandler) HandleError(ctx iris.Context, err error) {
-	ctx.StatusCode(httptest.StatusConflict)
-	ctx.WriteString(err.Error())
-	ctx.StopExecution()
+	ctx.StopWithError(httptest.StatusConflict, err)
 }
 
 func (s *testStructErrorHandler) Handle(errText string) error {
