@@ -97,6 +97,14 @@ func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...
 	return handlers
 }
 
+func fixRouteInfo(route *Route, handlersFn []interface{}) {
+	// Fix main handler name and source modified by execution rules wrapper.
+	route.MainHandlerName, route.MainHandlerIndex = context.MainHandlerName(handlersFn...)
+	if len(handlersFn) > route.MainHandlerIndex {
+		route.SourceFileName, route.SourceLineNumber = context.HandlerFileLineRel(handlersFn[route.MainHandlerIndex])
+	}
+}
+
 // Handler receives a function which can receive dependencies and output result
 // and returns a common Iris Handler, useful for Versioning API integration otherwise
 // the `Handle/Get/Post...` methods are preferable.
@@ -134,13 +142,7 @@ func (api *APIContainer) Done(handlersFn ...interface{}) {
 func (api *APIContainer) Handle(method, relativePath string, handlersFn ...interface{}) *Route {
 	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
 	route := api.Self.Handle(method, relativePath, handlers...)
-
-	// Fix main handler name and source modified by execution rules wrapper.
-	route.MainHandlerName, route.MainHandlerIndex = context.MainHandlerName(handlersFn...)
-	if len(handlersFn) > route.MainHandlerIndex {
-		route.SourceFileName, route.SourceLineNumber = context.HandlerFileLineRel(handlersFn[route.MainHandlerIndex])
-	}
-
+	fixRouteInfo(route, handlersFn)
 	return route
 }
 

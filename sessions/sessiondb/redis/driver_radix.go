@@ -45,6 +45,10 @@ func (r *RadixDriver) Connect(c Config) error {
 
 	var options []radix.DialOpt
 
+	if c.TLSConfig != nil {
+		options = append(options, radix.DialUseTLS(c.TLSConfig))
+	}
+
 	if c.Password != "" {
 		options = append(options, radix.DialAuthPass(c.Password))
 	}
