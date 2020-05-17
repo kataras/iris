@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -307,6 +308,7 @@ type Context interface {
 	// OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
 	// and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
 	// Note that you can register only one callback for the entire request handler chain/per route.
+	// Note that the "cb" will only be called once.
 	//
 	// Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
 	OnClose(cb func())
@@ -1633,6 +1635,10 @@ func (ctx *context) StopWithProblem(statusCode int, problem Problem) {
 //
 // Look the `ResponseWriter#CloseNotifier` for more.
 func (ctx *context) OnConnectionClose(cb func()) bool {
+	if cb == nil {
+		return false
+	}
+
 	// Note that `ctx.ResponseWriter().CloseNotify()` can already do the same
 	// but it returns a channel which will never fire if it the protocol version is not compatible,
 	// here we don't want to allocate an empty channel, just skip it.
@@ -1644,9 +1650,7 @@ func (ctx *context) OnConnectionClose(cb func()) bool {
 	notify := notifier.CloseNotify()
 	go func() {
 		<-notify
-		if cb != nil {
-			cb()
-		}
+		cb()
 	}()
 
 	return true
@@ -1656,14 +1660,22 @@ func (ctx *context) OnConnectionClose(cb func()) bool {
 // and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
 // Note that you can register only one callback for the entire request handler chain/per route.
 //
+// Note that the "cb" will only be called once.
+//
 // Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
 func (ctx *context) OnClose(cb func()) {
 	if cb == nil {
 		return
 	}
 
+	once := new(sync.Once)
+
+	callOnce := func() {
+		once.Do(cb)
+	}
+
 	// Register the on underline connection close handler first.
-	ctx.OnConnectionClose(cb)
+	ctx.OnConnectionClose(callOnce)
 
 	// Author's notes:
 	// This is fired on `ctx.ResponseWriter().FlushResponse()` which is fired by the framework automatically, internally, on the end of request handler(s),
@@ -1680,7 +1692,7 @@ func (ctx *context) OnClose(cb func()) {
 	// 	return
 	// }
 
-	ctx.writer.SetBeforeFlush(cb)
+	ctx.writer.SetBeforeFlush(callOnce)
 }
 
 //  +------------------------------------------------------------+
