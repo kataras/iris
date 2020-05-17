@@ -56,8 +56,7 @@ func handler(ctx iris.Context) {
 	//
 
 	if err := ctx.UnmarshalBody(&c, nil); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 

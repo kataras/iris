@@ -41,8 +41,7 @@ type person struct {
 func handler(ctx iris.Context) {
 	var p person
 	if err := ctx.ReadXML(&p); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 

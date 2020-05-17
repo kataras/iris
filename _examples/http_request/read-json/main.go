@@ -14,8 +14,7 @@ func MyHandler(ctx iris.Context) {
 	var c Company
 
 	if err := ctx.ReadJSON(&c); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 
@@ -33,8 +32,7 @@ func MyHandler2(ctx iris.Context) {
 	var persons []Person
 	err := ctx.ReadJSON(&persons)
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 

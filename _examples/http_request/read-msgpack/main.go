@@ -15,8 +15,7 @@ func readMsgPack(ctx iris.Context) {
 	var u User
 	err := ctx.ReadMsgPack(&u)
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 

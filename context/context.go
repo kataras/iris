@@ -1576,8 +1576,8 @@ func (ctx *context) StopWithStatus(statusCode int) {
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
 func (ctx *context) StopWithText(statusCode int, plainText string) {
-	ctx.WriteString(plainText)
 	ctx.StopWithStatus(statusCode)
+	ctx.WriteString(plainText)
 }
 
 // StopWithError stops the handlers chain and writes the "statusCode"

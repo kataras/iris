@@ -16,6 +16,7 @@ func main() {
 			ctx.StatusCode(iris.StatusNoContent)
 			return
 		}
+
 		ctx.Next()
 	} // or	"github.com/iris-contrib/middleware/cors"
 
@@ -25,8 +26,7 @@ func main() {
 			var any iris.Map
 			err := ctx.ReadJSON(&any)
 			if err != nil {
-				ctx.WriteString(err.Error())
-				ctx.StatusCode(iris.StatusBadRequest)
+				ctx.StopWithError(iris.StatusBadRequest, err)
 				return
 			}
 			ctx.Application().Logger().Infof("received %#+v", any)

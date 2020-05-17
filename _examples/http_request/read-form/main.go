@@ -19,8 +19,8 @@ func main() {
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("form.html"); err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.WriteString(err.Error())
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+			return
 		}
 	})
 
@@ -28,8 +28,8 @@ func main() {
 		visitor := Visitor{}
 		err := ctx.ReadForm(&visitor)
 		if err != nil && !iris.IsErrPath(err) /* see: https://github.com/kataras/iris/issues/1157 */ {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.WriteString(err.Error())
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+			return
 		}
 
 		ctx.Writef("Visitor: %#v", visitor)
