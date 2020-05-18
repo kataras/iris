@@ -77,9 +77,29 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 		session := sessions.Get(ctx)
 		// get a specific key, as string, if no found returns just an empty string
 		key := ctx.Params().Get("key")
-		name := session.GetString(key)
+		value := session.Get(key)
 
-		ctx.Writef("The name on the /set was: %s", name)
+		ctx.Writef("The [%s:%T] on the /set was: %v", key, value, value)
+	})
+
+	app.Get("/set/{type}/{key}/{value}", func(ctx iris.Context) {
+		session := sessions.Get(ctx)
+
+		key := ctx.Params().Get("key")
+		var value interface{}
+
+		switch ctx.Params().Get("type") {
+		case "int":
+			value = ctx.Params().GetIntDefault("value", 0)
+		case "float64":
+			value = ctx.Params().GetFloat64Default("value", 0.0)
+		default:
+			value = ctx.Params().Get("value")
+		}
+		session.Set(key, value)
+
+		value = session.Get(key)
+		ctx.Writef("Key: %s, Type: %T, Value: %v", key, value, value)
 	})
 
 	app.Get("/delete", func(ctx iris.Context) {

@@ -24,6 +24,18 @@ func main() {
 
 	defer db.Close() // close and unlock the database if application errored.
 
+	// The default transcoder is the JSON one,
+	// based on the https://golang.org/pkg/encoding/json/#Unmarshal
+	// you can only retrieve numbers as float64 types:
+	// * bool, for booleans
+	// * float64, for numbers
+	// * string, for strings
+	// * []interface{}, for arrays
+	// * map[string]interface{}, for objects.
+	// If you want to save the data per go-specific types
+	// you should change the DefaultTranscoder to the GobTranscoder one:
+	// sessions.DefaultTranscoder = sessions.GobTranscoder{}
+
 	sess := sessions.New(sessions.Config{
 		Cookie:       "sessionscookieid",
 		Expires:      1 * time.Minute, // <=0 means unlimited life. Defaults to 0.
