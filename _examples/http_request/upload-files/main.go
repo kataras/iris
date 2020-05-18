@@ -15,8 +15,13 @@ import (
 )
 
 func main() {
-	app := iris.New()
+	app := newApp()
+	// start the server at http://localhost:8080 with post limit at 32 MB.
+	app.Listen(":8080", iris.WithPostMaxMemory(32<<20 /* same as 32 * iris.MB */))
+}
 
+func newApp() *iris.Application {
+	app := iris.New()
 	app.RegisterView(iris.HTML("./templates", ".html"))
 
 	// Serve the upload_form.html to the client.
@@ -39,7 +44,7 @@ func main() {
 		// uploads any number of incoming files ("multiple" property on the form input).
 		//
 
-		// second argument is totally optionally,
+		// second argument is optional,
 		// it can be used to change a file's name based on the request,
 		// at this example we will showcase how to use it
 		// by prefixing the uploaded file with the current user's ip.
@@ -70,8 +75,7 @@ func main() {
 		ctx.Writef("%d files uploaded", len(files)-failures)
 	})
 
-	// start the server at http://localhost:8080 with post limit at 32 MB.
-	app.Listen(":8080", iris.WithPostMaxMemory(32<<20))
+	return app
 }
 
 func saveUploadedFile(fh *multipart.FileHeader, destDirectory string) (int64, error) {
@@ -104,5 +108,9 @@ func beforeSave(ctx iris.Context, file *multipart.FileHeader) {
 	// prefix the Filename with the $IP-
 	// no need for more actions, internal uploader will use this
 	// name to save the file into the "./uploads" folder.
+	if ip == "" {
+		return
+	}
+
 	file.Filename = ip + "-" + file.Filename
 }
