@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"testing"
 
@@ -20,7 +19,7 @@ func TestUploadFiles(t *testing.T) {
 	defer fh.Close()
 
 	e.POST("/upload").WithMultipart().WithFile("files", "main.go", fh).
-		Expect().Status(http.StatusOK)
+		Expect().Status(httptest.StatusOK)
 
 	f, err := os.Open("uploads/main.go")
 	if err != nil {
