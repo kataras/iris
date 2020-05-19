@@ -53,7 +53,10 @@ type ConfigurationReadOnly interface {
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	GetDisableBodyConsumptionOnUnmarshal() bool
-
+	// GetFireEmptyFormError returns the Configuration.FireEmptyFormError value.
+	// If true then the `context.ReadBody/ReadForm` will return an `iris.ErrEmptyForm`
+	// on empty request form data.
+	GetFireEmptyFormError() bool
 	// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
 	// Returns true when the http error status code handler automatic execution turned off.
 	GetDisableAutoFireStatusCode() bool

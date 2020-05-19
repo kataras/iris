@@ -129,17 +129,18 @@ func TestBindFunctionAsFunctionInputArgument(t *testing.T) {
 func TestPayloadBinding(t *testing.T) {
 	h := New()
 
-	postHandler := h.Handler(func(input *testUserStruct /* ptr */) string {
+	ptrHandler := h.Handler(func(input *testUserStruct /* ptr */) string {
 		return input.Username
 	})
 
-	postHandler2 := h.Handler(func(input testUserStruct) string {
+	valHandler := h.Handler(func(input testUserStruct) string {
 		return input.Username
 	})
 
 	app := iris.New()
-	app.Post("/", postHandler)
-	app.Post("/2", postHandler2)
+	app.Get("/", ptrHandler)
+	app.Post("/", ptrHandler)
+	app.Post("/2", valHandler)
 
 	e := httptest.New(t, app)
 
@@ -152,8 +153,10 @@ func TestPayloadBinding(t *testing.T) {
 	// FORM (multipart)
 	e.POST("/").WithMultipart().WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
 
-	// URL query.
+	// POST URL query.
 	e.POST("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	// GET URL query.
+	e.GET("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
 }
 
 /* Author's notes:
@@ -240,4 +243,45 @@ func TestHandlerPathParams(t *testing.T) {
 	} {
 		testReq.Expect().Status(httptest.StatusOK).Body().Equal("42")
 	}
+}
+
+func TestRegisterDependenciesFromContext(t *testing.T) {
+	// Tests serve-time struct dependencies through a common Iris middleware.
+	app := iris.New()
+	app.Use(func(ctx iris.Context) {
+		ctx.RegisterDependency(testUserStruct{Username: "kataras"})
+		ctx.Next()
+	})
+	app.Use(func(ctx iris.Context) {
+		ctx.RegisterDependency(&testServiceImpl{prefix: "say"})
+		ctx.Next()
+	})
+
+	app.ConfigureContainer(func(api *iris.APIContainer) {
+		api.Get("/", func(u testUserStruct) string {
+			return u.Username
+		})
+
+		api.Get("/service", func(s *testServiceImpl) string {
+			return s.Say("hello")
+		})
+
+		// Note: we are not allowed to pass the service as an interface here
+		// because the container will, correctly, panic because it will expect
+		// a dependency to be registered before server ran.
+		api.Get("/both", func(s *testServiceImpl, u testUserStruct) string {
+			return s.Say(u.Username)
+		})
+
+		api.Get("/non", func() string {
+			return "nothing"
+		})
+	})
+
+	e := httptest.New(t, app)
+
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("kataras")
+	e.GET("/service").Expect().Status(httptest.StatusOK).Body().Equal("say hello")
+	e.GET("/both").Expect().Status(httptest.StatusOK).Body().Equal("say kataras")
+	e.GET("/non").Expect().Status(httptest.StatusOK).Body().Equal("nothing")
 }

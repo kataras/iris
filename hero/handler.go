@@ -75,7 +75,8 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 	}
 
 	v := valueOf(fn)
-	numIn := v.Type().NumIn()
+	typ := v.Type()
+	numIn := typ.NumIn()
 
 	bindings := getBindingsForFunc(v, c.Dependencies, paramsCount)
 

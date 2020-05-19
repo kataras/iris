@@ -575,6 +575,11 @@ var (
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
+	// ErrEmptyForm is the type error which API users can make use of
+	// to check if a form was empty on `Context.ReadForm`.
+	//
+	// A shortcut for the `context#ErrEmptyForm`.
+	ErrEmptyForm = context.ErrEmptyForm
 	// NewProblem returns a new Problem.
 	// Head over to the `Problem` type godoc for more.
 	//

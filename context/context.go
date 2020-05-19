@@ -662,6 +662,9 @@ type Context interface {
 	// It supports any kind of type, including custom structs.
 	// It will return nothing if request data are empty.
 	// The struct field tag is "form".
+	// Note that it will return nil error on empty form data if `Configuration.FireEmptyFormError`
+	// is false (as defaulted) in this case the caller should check the pointer to
+	// see if something was actually binded.
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 	ReadForm(formObject interface{}) error
@@ -1124,6 +1127,20 @@ type Context interface {
 	// Controller returns a reflect Value of the custom Controller from which this handler executed.
 	// It will return a Kind() == reflect.Invalid if the handler was not executed from within a controller.
 	Controller() reflect.Value
+	// RegisterDependency registers a struct dependency at serve-time
+	// for the next handler in the chain. One value per type.
+	// Note that it's highly recommended to register
+	// your dependencies before server ran
+	// through APIContainer(app.ConfigureContainer) or MVC(mvc.New)
+	// in sake of minimum performance cost.
+	//
+	// See `UnRegisterDependency` too.
+	RegisterDependency(v interface{})
+	// UnRegisterDependency removes a dependency based on its type.
+	// Reports whether a dependency with that type was found and removed successfully.
+	//
+	// See `RegisterDependency` too.
+	UnRegisterDependency(typ reflect.Type) bool
 
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
@@ -2890,15 +2907,25 @@ func (ctx *context) ReadYAML(outPtr interface{}) error {
 // A shortcut for the `schema#IsErrPath`.
 var IsErrPath = schema.IsErrPath
 
+// ErrEmptyForm is returned by `context#ReadForm` and `context#ReadBody`
+// when it should read data from a request form data but there is none.
+var ErrEmptyForm = errors.New("empty form")
+
 // ReadForm binds the request body of a form to the "formObject".
 // It supports any kind of type, including custom structs.
 // It will return nothing if request data are empty.
 // The struct field tag is "form".
+// Note that it will return nil error on empty form data if `Configuration.FireEmptyFormError`
+// is false (as defaulted) in this case the caller should check the pointer to
+// see if something was actually binded.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if len(values) == 0 {
+		if ctx.Application().ConfigurationReadOnly().GetFireEmptyFormError() {
+			return ErrEmptyForm
+		}
 		return nil
 	}
 
@@ -2984,6 +3011,7 @@ func (ctx *context) ReadBody(ptr interface{}) error {
 			// try read from query.
 			return ctx.ReadQuery(ptr)
 		}
+
 		// otherwise default to JSON.
 		return ctx.ReadJSON(ptr)
 	}
@@ -5422,6 +5450,61 @@ func (ctx *context) Controller() reflect.Value {
 	}
 
 	return emptyValue
+}
+
+// DependenciesContextKey is the context key for the context's value
+// to keep the serve-time static dependencies raw values.
+const DependenciesContextKey = "iris.dependencies"
+
+// DependenciesMap is the type which context serve-time
+// struct dependencies are stored with.
+type DependenciesMap map[reflect.Type]reflect.Value
+
+// RegisterDependency registers a struct dependency at serve-time
+// for the next handler in the chain. One value per type.
+// Note that it's highly recommended to register
+// your dependencies before server ran
+// through APIContainer(app.ConfigureContainer) or MVC(mvc.New)
+// in sake of minimum performance cost.
+func (ctx *context) RegisterDependency(v interface{}) {
+	if v == nil {
+		return
+	}
+
+	val, ok := v.(reflect.Value)
+	if !ok {
+		val = reflect.ValueOf(v)
+	}
+
+	cv := ctx.Values().Get(DependenciesContextKey)
+	if cv != nil {
+		m, ok := cv.(DependenciesMap)
+		if !ok {
+			return
+		}
+
+		m[val.Type()] = val
+		return
+	}
+
+	ctx.Values().Set(DependenciesContextKey, DependenciesMap{
+		val.Type(): val,
+	})
+}
+
+// UnRegisterDependency removes a dependency based on its type.
+// Reports whether a dependency with that type was found and removed successfully.
+func (ctx *context) UnRegisterDependency(typ reflect.Type) bool {
+	cv := ctx.Values().Get(DependenciesContextKey)
+	if cv != nil {
+		m, ok := cv.(DependenciesMap)
+		if ok {
+			delete(m, typ)
+			return true
+		}
+	}
+
+	return false
 }
 
 // Application returns the iris app instance which belongs to this context.

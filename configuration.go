@@ -262,6 +262,13 @@ var WithoutBodyConsumptionOnUnmarshal = func(app *Application) {
 	app.config.DisableBodyConsumptionOnUnmarshal = true
 }
 
+// WithEmptyFormError enables the setting `FireEmptyFormError`.
+//
+// See `Configuration`.
+var WithEmptyFormError = func(app *Application) {
+	app.config.FireEmptyFormError = true
+}
+
 // WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
 //
 // See `Configuration`.
@@ -837,6 +844,9 @@ type Configuration struct {
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
+	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
+	//  will return an `iris.ErrEmptyForm` on empty request form data.
+	FireEmptyFormError bool `json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" yaml:"FireEmptyFormError"`
 
 	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
 	// from (`context.StatusCodeNotSuccessful`, defaults to < 200 || >= 400).
@@ -1021,6 +1031,13 @@ func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
 	return c.DisableBodyConsumptionOnUnmarshal
 }
 
+// GetFireEmptyFormError returns the Configuration.FireEmptyFormError value.
+// If true then the `context.ReadBody/ReadForm` will return an `iris.ErrEmptyForm`
+// on empty request form data.
+func (c Configuration) GetFireEmptyFormError() bool {
+	return c.DisableBodyConsumptionOnUnmarshal
+}
+
 // GetDisableAutoFireStatusCode returns the Configuration#DisableAutoFireStatusCode.
 // Returns true when the http error status code handler automatic execution turned off.
 func (c Configuration) GetDisableAutoFireStatusCode() bool {
@@ -1190,6 +1207,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.DisableBodyConsumptionOnUnmarshal = v
 		}
 
+		if v := c.FireEmptyFormError; v {
+			main.FireEmptyFormError = v
+		}
+
 		if v := c.DisableAutoFireStatusCode; v {
 			main.DisableAutoFireStatusCode = v
 		}
@@ -1261,6 +1282,7 @@ func DefaultConfiguration() Configuration {
 		ForceLowercaseRouting:             false,
 		FireMethodNotAllowed:              false,
 		DisableBodyConsumptionOnUnmarshal: false,
+		FireEmptyFormError:                false,
 		DisableAutoFireStatusCode:         false,
 		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
 		Charset:                           "utf-8",
