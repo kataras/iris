@@ -164,6 +164,7 @@
         * [Middleware](dependency-injection/basic/middleware/main.go)
     * [Sessions](dependency-injection/sessions/main.go)
     * [Smart Contract](dependency-injection/smart-contract/main.go)
+    * [JWT](dependency-injection/jwt/main.go)
 * MVC
     * [Overview - Repository and Service layers](mvc/overview)
     * [Login - Repository and Service layers](mvc/login)

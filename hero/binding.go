@@ -323,6 +323,14 @@ func payloadBinding(index int, typ reflect.Type) *binding {
 			Handle: func(ctx context.Context, input *Input) (newValue reflect.Value, err error) {
 				wasPtr := input.Type.Kind() == reflect.Ptr
 
+				if serveDepsV := ctx.Values().Get(context.DependenciesContextKey); serveDepsV != nil {
+					if serveDeps, ok := serveDepsV.(context.DependenciesMap); ok {
+						if newValue, ok = serveDeps[typ]; ok {
+							return
+						}
+					}
+				}
+
 				newValue = reflect.New(indirectType(input.Type))
 				ptr := newValue.Interface()
 				err = ctx.ReadBody(ptr)

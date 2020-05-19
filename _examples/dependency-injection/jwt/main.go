@@ -37,10 +37,13 @@ func register(api *iris.APIContainer) {
 	// 		ctx.StopWithStatus(iris.StatusUnauthorized)
 	// 		return nil
 	// 	}
-
+	//
 	// 	token := j.Get(ctx)
 	// 	return token
 	// })
+	// ^ You can do the same with MVC too, as the container is shared and works
+	// the same way in both functions-as-handlers and structs-as-controllers.
+	//
 	// api.Get("/", verifiedWithBindedTokenPage)
 }
 
