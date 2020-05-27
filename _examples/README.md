@@ -133,8 +133,9 @@
     * [Sitemap](sitemap/main.go)
 * Authentication
     * [Basic Authentication](authentication/basicauth/main.go)
+    * [JWT](miscellaneous/jwt/main.go)
+    * [JWT (community edition)](experimental-handlers/jwt/main.go)
     * [OAUth2](authentication/oauth2/main.go)
-    * [Request Auth(JWT)](experimental-handlers/jwt/main.go)
     * [Manage Permissions](permissions/main.go)
 * Cookies
     * [Basic](cookies/basic/main.go)
@@ -190,6 +191,7 @@
     * [The lorca package](desktop-app/lorca)
     * [The webview package](desktop-app/webview)
 * Middlewares (Builtin)
+    * [JWT](miscellaneous/jwt/main.go)
     * [Rate Limit](miscellaneous/ratelimit/main.go)
     * [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
     * [Request Logger](http_request/request-logger/main.go)

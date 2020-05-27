@@ -1135,24 +1135,32 @@ func getCaller() (string, int) {
 	n := runtime.Callers(1, pcs[:])
 	frames := runtime.CallersFrames(pcs[:n])
 	wd, _ := os.Getwd()
-	for {
-		frame, more := frames.Next()
-		file := filepath.ToSlash(frame.File)
 
-		if !strings.Contains(file, "_test.go") {
-			if strings.Contains(file, "/kataras/iris") && !strings.Contains(file, "kataras/iris/_examples") && !strings.Contains(file, "iris-contrib/examples") {
-				if !more {
-					break
-				}
-				continue
-			}
+	var (
+		frame runtime.Frame
+		more  = true
+	)
+
+	for {
+		if !more {
+			break
 		}
 
+		frame, more = frames.Next()
+		file := filepath.ToSlash(frame.File)
+		// fmt.Printf("%s:%d | %s\n", file, frame.Line, frame.Function)
+
 		if strings.Contains(file, "go/src/runtime/") {
-			if !more {
-				break
-			}
 			continue
+		}
+
+		if !strings.Contains(file, "_test.go") {
+			if strings.Contains(file, "/kataras/iris") &&
+				!strings.Contains(file, "kataras/iris/_examples") &&
+				!strings.Contains(file, "kataras/iris/middleware") &&
+				!strings.Contains(file, "iris-contrib/examples") {
+				continue
+			}
 		}
 
 		if relFile, err := filepath.Rel(wd, file); err == nil {

@@ -95,3 +95,6 @@ Revision ID: d1c07411df0bb21f6b21f5b5d9325fac6f29c911
  toml                3012a1dbe2e4bd1     https://github.com/BurntSushi/toml       
                      391d42b32f0577c                                              
                      b7bbc7f005                                                   
+ jose                d84c719419c2a90     https://github.com/square/go-jose       
+                     8d188ea67e09652                                              
+                     f5c1929ae8                                            
