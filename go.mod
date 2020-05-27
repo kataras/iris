@@ -29,6 +29,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
+	github.com/square/go-jose/v3 v3.0.0-20200430180204-d84c719419c2
 	github.com/vmihailenco/msgpack/v5 v5.0.0-alpha.2
 	go.etcd.io/bbolt v1.3.4
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
