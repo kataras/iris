@@ -106,7 +106,7 @@ type JWT struct {
 	VerificationKey interface{}
 
 	// Encrypter is used to, optionally, encrypt the token.
-	// It is set on `WithExpiration` method.
+	// It is set on `WithEncryption` method.
 	Encrypter jose.Encrypter
 	// DecriptionKey is used to decrypt the token (private key)
 	DecriptionKey interface{}

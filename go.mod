@@ -12,9 +12,9 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v1.8.1
+	github.com/google/uuid v1.1.2-0.20200519141726-cb32006e483f
 	github.com/hashicorp/go-version v1.2.0
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
-	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/pongo2 v0.0.1

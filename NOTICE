@@ -37,10 +37,7 @@ Revision ID: d1c07411df0bb21f6b21f5b5d9325fac6f29c911
                      d132d2847a                                                                                                   
  go-version          2b13044f5cdd383     https://github.com/hashicorp/go-version  
                      3370d41ce57d8bf                                              
-                     3cec5e62b8                                                   
- go.uuid             36e9d2ebbde5e3f     https://github.com/iris-contrib/go.uuid  
-                     13ab2e25625fd45                                              
-                     3271d6522e                                                   
+                     3cec5e62b8                                                                                                    
  golog               4038abff49248cc     https://github.com/kataras/golog         
                      fe2043e2e763923                                              
                      d612998bea                                                   
@@ -98,3 +95,6 @@ Revision ID: d1c07411df0bb21f6b21f5b5d9325fac6f29c911
  jose                d84c719419c2a90     https://github.com/square/go-jose       
                      8d188ea67e09652                                              
                      f5c1929ae8                                            
+ uuid                cb32006e483f2a2     https://github.com/google/uuid       
+                     3230e24209cf185                                              
+                     c65b477dbf                

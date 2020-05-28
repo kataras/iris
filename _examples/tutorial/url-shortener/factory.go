@@ -3,7 +3,7 @@ package main
 import (
 	"net/url"
 
-	"github.com/iris-contrib/go.uuid"
+	"github.com/google/uuid"
 )
 
 // Generator the type to generate keys(short urls)
@@ -11,7 +11,7 @@ type Generator func() string
 
 // DefaultGenerator is the defautl url generator
 var DefaultGenerator = func() string {
-	id, _ := uuid.NewV4()
+	id, _ := uuid.NewRandom()
 	return id.String()
 }
 

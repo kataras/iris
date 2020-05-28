@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
-	uuid "github.com/iris-contrib/go.uuid"
+	"github.com/google/uuid"
 )
 
 const (
@@ -71,7 +71,7 @@ func (c Config) Validate() Config {
 
 	if c.SessionIDGenerator == nil {
 		c.SessionIDGenerator = func(context.Context) string {
-			id, _ := uuid.NewV4()
+			id, _ := uuid.NewRandom()
 			return id.String()
 		}
 	}

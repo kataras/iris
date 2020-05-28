@@ -380,7 +380,7 @@ Other Improvements:
 - Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
 - `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
 
-- `iris.TLS` can now accept certificates as raw contents too.
+- `iris.TLS` can now accept certificates in form of raw `[]byte` contents too.
 - `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS` (or `iris.AutoTLS`), e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`.
 
 - Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.

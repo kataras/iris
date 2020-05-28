@@ -11,6 +11,8 @@ Builtin Handlers
 | [hCaptcha](hcaptcha) | [iris/_examples/miscellaneous/recaptcha](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/hcaptcha) |
 | [recovery](recover) | [iris/_examples/miscellaneous/recover](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/recover) |
 | [rate](rate) | [iris/_examples/miscellaneous/ratelimit](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/ratelimit) |
+| [jwt](jwt) | [iris/_examples/miscellaneous/jwt](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/jwt) |
+| [requestid](requestid) | [iris/middleware/requestid/requestid_test.go](https://github.com/kataras/iris/blob/master/_examples/middleware/requestid/requestid_test.go) |
 
 Community made
 ------------

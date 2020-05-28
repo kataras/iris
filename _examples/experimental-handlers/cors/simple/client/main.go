@@ -9,6 +9,6 @@ func main() {
 	})
 
 	// Read index.html comments,
-	// adn then start and navigate to http://localhost:8080.
+	// and then start and navigate to http://localhost:8080.
 	app.Listen(":8080")
 }

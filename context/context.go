@@ -1149,14 +1149,15 @@ type Context interface {
 	// and methods are not available here for the developer's safety.
 	Application() Application
 
-	// SetID sets an ID, any value, to the Context.
+	// SetID sets an ID, any value, to the Request Context.
 	// If possible the "id" should implement a `String() string` method
 	// so it can be rendered on `Context.String` method.
 	//
-	// See `GetID` too.
+	// See `GetID` and `middleware/requestid` too.
 	SetID(id interface{})
-	// GetID returns the Context's ID.
+	// GetID returns the Request Context's ID.
 	// It returns nil if not given by a prior `SetID` call.
+	// See `middleware/requestid` too.
 	GetID() interface{}
 	// String returns the string representation of this request.
 	//
@@ -5518,17 +5519,18 @@ func (ctx *context) Application() Application {
 
 const idContextKey = "iris.context.id"
 
-// SetID sets an ID, any value, to the Context.
+// SetID sets an ID, any value, to the Request Context.
 // If possible the "id" should implement a `String() string` method
 // so it can be rendered on `Context.String` method.
 //
-// See `GetID` too.
+// See `GetID` and `middleware/requestid` too.
 func (ctx *context) SetID(id interface{}) {
 	ctx.values.Set(idContextKey, id)
 }
 
-// GetID returns the Context's ID.
+// GetID returns the Request Context's ID.
 // It returns nil if not given by a prior `SetID` call.
+// See `middleware/requestid` too.
 func (ctx *context) GetID() interface{} {
 	return ctx.values.Get(idContextKey)
 }
