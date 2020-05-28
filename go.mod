@@ -24,8 +24,8 @@ require (
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.6
 	github.com/kataras/sitemap v0.0.5
-	github.com/klauspost/compress v1.10.5
-	github.com/mediocregopher/radix/v3 v3.5.0
+	github.com/klauspost/compress v1.10.6
+	github.com/mediocregopher/radix/v3 v3.5.1
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
@@ -35,6 +35,6 @@ require (
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
-	gopkg.in/ini.v1 v1.56.0
+	gopkg.in/ini.v1 v1.57.0
 	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86
 )

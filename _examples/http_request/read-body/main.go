@@ -12,6 +12,9 @@ func main() {
 
 func newApp() *iris.Application {
 	app := iris.New()
+	// To automatically decompress using gzip:
+	// app.Use(iris.GzipReader)
+
 	app.Use(setAllowedResponses)
 
 	app.Post("/", readBody)

@@ -453,6 +453,16 @@ var (
 	//
 	// A shortcut for the `context#Gzip`.
 	Gzip = context.Gzip
+	// GzipReader is a middleware which enables gzip decompression,
+	// when client sends gzip compressed data.
+	//
+	// Similar to: func(ctx iris.Context) {
+	//	ctx.GzipReader(true)
+	//	ctx.Next()
+	// }
+	//
+	// A shortcut for the `context#GzipReader`.
+	GzipReader = context.GzipReader
 	// FromStd converts native http.Handler, http.HandlerFunc & func(w, r, next) to context.Handler.
 	//
 	// Supported form types:

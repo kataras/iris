@@ -112,6 +112,7 @@
     * [Bind Custom per type](http_request/read-custom-per-type/main.go)
     * [Bind Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
     * [Bind Many times](http_request/read-many/main.go)
+    * [Read/Bind Gzip compressed data](http_request/read-gzip/main.go)
     * [Upload/Read File](http_request/upload-file/main.go)
     * [Upload multiple Files](http_request/upload-files/main.go)
     * [Extract Referrer](http_request/extract-referer/main.go)

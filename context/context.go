@@ -34,6 +34,7 @@ import (
 	"github.com/iris-contrib/blackfriday"
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/klauspost/compress/gzip"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/publicsuffix"
@@ -789,6 +790,24 @@ type Context interface {
 	// supports gzip compression, so the following response data will
 	// be sent as compressed gzip data to the client.
 	Gzip(enable bool)
+	// GzipReader accepts a boolean, which, if set to true
+	// it wraps the request body reader with a gzip reader one (decompress request data on read).
+	// If the "enable" input argument is false then the request body will reset to the default one.
+	//
+	// Useful when incoming request data are gzip compressed.
+	// All future calls of `ctx.GetBody/ReadXXX/UnmarshalBody` methods will respect this option.
+	//
+	// Usage:
+	// app.Use(func(ctx iris.Context){
+	// 	ctx.GzipReader(true)
+	// 	ctx.Next()
+	// })
+	//
+	// If a client request's body is not gzip compressed then
+	// it returns with a `ErrGzipNotSupported` error, which can be safety ignored.
+	//
+	// See `GzipReader` package-level middleware too.
+	GzipReader(enable bool) error
 
 	//  +------------------------------------------------------------+
 	//  | Rich Body Content Writers/Renderers                        |
@@ -1194,6 +1213,18 @@ var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 // using gzip compression, if client supports.
 var Gzip = func(ctx Context) {
 	ctx.Gzip(true)
+	ctx.Next()
+}
+
+// GzipReader is a middleware which enables gzip decompression,
+// when client sends gzip compressed data.
+//
+// Similar to: func(ctx iris.Context) {
+//	ctx.GzipReader(true)
+//	ctx.Next()
+// }
+var GzipReader = func(ctx Context) {
+	ctx.GzipReader(true)
 	ctx.Next()
 }
 
@@ -3256,7 +3287,7 @@ func (ctx *context) ClientSupportsGzip() bool {
 	return false
 }
 
-// ErrGzipNotSupported may be returned from `WriteGzip` methods if
+// ErrGzipNotSupported may be returned from `WriteGzip` and `GzipReader` methods if
 // the client does not support the "gzip" compression.
 var ErrGzipNotSupported = errors.New("client does not support gzip compression")
 
@@ -3317,6 +3348,62 @@ func (ctx *context) Gzip(enable bool) {
 			gzipResWriter.Disable()
 		}
 	}
+}
+
+type gzipReadCloser struct {
+	requestReader io.ReadCloser
+	gzipReader    io.ReadCloser
+}
+
+func (rc *gzipReadCloser) Close() error {
+	rc.gzipReader.Close()
+	return rc.requestReader.Close()
+}
+
+func (rc *gzipReadCloser) Read(p []byte) (n int, err error) {
+	return rc.gzipReader.Read(p)
+}
+
+const gzipEncodingHeaderValue = "gzip"
+
+// GzipReader accepts a boolean, which, if set to true
+// it wraps the request body reader with a gzip reader one (decompress request data on read)..
+// If the "enable" input argument is false then the request body will reset to the default one.
+//
+// Useful when incoming request data are gzip compressed.
+// All future calls of `ctx.GetBody/ReadXXX/UnmarshalBody` methods will respect this option.
+//
+// Usage:
+// app.Use(func(ctx iris.Context){
+// 	ctx.GzipReader(true)
+// 	ctx.Next()
+// })
+//
+// If a client request's body is not gzip compressed then
+// it returns with a `ErrGzipNotSupported` error, which can be safety ignored.
+//
+// See `GzipReader` package-level middleware too.
+func (ctx *context) GzipReader(enable bool) error {
+	if enable {
+		if ctx.GetHeader(ContentEncodingHeaderKey) == gzipEncodingHeaderValue {
+			reader, err := gzip.NewReader(ctx.request.Body)
+			if err != nil {
+				return err
+			}
+
+			// Wrap the reader so on Close it will close both request body and gzip reader.
+			ctx.request.Body = &gzipReadCloser{requestReader: ctx.request.Body, gzipReader: reader}
+			return nil
+		}
+
+		return ErrGzipNotSupported
+	}
+
+	if gzipReader, ok := ctx.request.Body.(*gzipReadCloser); ok {
+		ctx.request.Body = gzipReader.requestReader
+	}
+
+	return nil
 }
 
 //  +------------------------------------------------------------+
