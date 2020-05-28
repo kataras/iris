@@ -15,7 +15,7 @@ func init() {
 // on a Context, which returns a *Session, type.
 // It performs automatic memory cleanup on expired sessions.
 // It can accept a `Database` for persistence across server restarts.
-// A session can set temporarly values (flash messages).
+// A session can set temporary values (flash messages).
 type Sessions struct {
 	config   Config
 	provider *provider
