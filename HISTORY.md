@@ -371,7 +371,9 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
-- New builtin [JWT](https://github.com/kataras/iris/tree/master/jwt) middleware based on [square/go-jose](https://github.com/square/go-jose) featured with optional encryption to set claims with sensitive data when necessary.
+- New builtin [requestid](https://github.com/kataras/iris/tree/master/middleware/requestid) middleware.
+
+- New builtin [JWT](https://github.com/kataras/iris/tree/master/middleware/jwt) middleware based on [square/go-jose](https://github.com/square/go-jose) featured with optional encryption to set claims with sensitive data when necessary.
 
 - `Context.ReadForm` now can return an `iris.ErrEmptyForm` instead of `nil` when the new `Configuration.FireEmptyFormError`  is true  (or `iris.WithEmptyFormError`) on missing form body to read from.
 
@@ -413,6 +415,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.GzipReader(enable bool)` method and `iris.GzipReader` middleware to enable future request read body calls to decompress data using gzip, [example](_examples/http_request/read-gzip).
 - `Context.RegisterDependency(v interface{})` and `Context.RemoveDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
 - `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
 - `Context.GetDomain() string` returns the domain.
