@@ -1942,21 +1942,23 @@ func (ctx *context) GetHeader(name string) string {
 
 // GetDomain resolves and returns the server's domain.
 func (ctx *context) GetDomain() string {
-	host := ctx.Host()
-	if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
-		host = host[0:portIdx]
-	}
+	hostport := ctx.Host()
+	if host, _, err := net.SplitHostPort(hostport); err == nil {
+		// has port.
+		switch host {
+		case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0", "0:0:0:0:0:0:1":
+			// loopback.
+			return "localhost"
+		default:
+			if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+				host = domain
+			}
 
-	switch host {
-	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0", "0:0:0:0:0:0:1":
-		return "localhost"
-	default:
-		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
-			host = domain
+			return host
 		}
-
-		return host
 	}
+
+	return hostport
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
