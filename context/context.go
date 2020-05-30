@@ -1947,11 +1947,16 @@ func (ctx *context) GetDomain() string {
 		host = host[0:portIdx]
 	}
 
-	if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
-		host = domain
-	}
+	switch host {
+	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0", "0:0:0:0:0:0:1":
+		return "localhost"
+	default:
+		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+			host = domain
+		}
 
-	return host
+		return host
+	}
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
