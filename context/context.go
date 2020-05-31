@@ -1946,7 +1946,7 @@ func (ctx *context) GetDomain() string {
 	if host, _, err := net.SplitHostPort(hostport); err == nil {
 		// has port.
 		switch host {
-		case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0", "0:0:0:0:0:0:1":
+		case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
 			// loopback.
 			return "localhost"
 		default:

@@ -2,10 +2,9 @@ package jwt
 
 import (
 	"crypto"
-	"crypto/rand"
-	"crypto/rsa"
 	"encoding/json"
 	"errors"
+	"os"
 	"strings"
 	"time"
 
@@ -112,35 +111,6 @@ type JWT struct {
 	DecriptionKey interface{}
 }
 
-// Random returns a new `JWT` instance
-// with in-memory generated rsa256 signing and encryption keys (development).
-// It panics on errors. Next server ran will invalidate all request tokens.
-//
-// Use the `New` package-level function for production use.
-func Random(maxAge time.Duration) *JWT {
-	sigKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-
-	j, err := New(maxAge, RS256, sigKey)
-	if err != nil {
-		panic(err)
-	}
-
-	encKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-
-	err = j.WithEncryption(A128CBCHS256, RSA15, encKey)
-	if err != nil {
-		panic(err)
-	}
-
-	return j
-}
-
 type privateKey interface{ Public() crypto.PublicKey }
 
 // New returns a new JWT instance.
@@ -157,7 +127,7 @@ type privateKey interface{ Public() crypto.PublicKey }
 // 1. Generate key file, e.g:
 // 		$ openssl genrsa -des3 -out private.pem 2048
 // 2. Read file contents with io.ReadFile("./private.pem")
-// 3. Pass the []byte result to the `MustParseRSAPrivateKey(contents, password)` package-level helper
+// 3. Pass the []byte result to the `ParseRSAPrivateKey(contents, password)` package-level helper
 // 4. Use the result *rsa.PrivateKey as "key" input parameter of this `New` function.
 //
 // See aliases.go file for available algorithms.
@@ -183,6 +153,99 @@ func New(maxAge time.Duration, alg SignatureAlgorithm, key interface{}) (*JWT, e
 	}
 
 	return j, nil
+}
+
+// RSA filenames for `DefaultRSA`.
+const (
+	SignFilename = "jwt_sign.key"
+	EncFilename  = "jwt_enc.key"
+)
+
+// DefaultRSA returns a new `JWT` instance.
+// It tries to parse RSA256 keys from "jwt_sign.key" and (optionally) "jwt_enc.key" files
+// in the current working directory, and if not found, it generates and exports the keys.
+//
+// It panics on errors.
+// Use the `New` package-level function instead for more options.
+func DefaultRSA(maxAge time.Duration) *JWT {
+	// Do not try to create or load enc key if only sign key already exists.
+	withEncryption := true
+	if fileExists(SignFilename) {
+		withEncryption = fileExists(EncFilename)
+	}
+
+	sigKey, err := LoadRSA(SignFilename, 2048)
+	if err != nil {
+		panic(err)
+	}
+
+	j, err := New(maxAge, RS256, sigKey)
+	if err != nil {
+		panic(err)
+	}
+
+	if withEncryption {
+		encKey, err := LoadRSA(EncFilename, 2048)
+		if err != nil {
+			panic(err)
+		}
+		err = j.WithEncryption(A128CBCHS256, RSA15, encKey)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return j
+}
+
+const (
+	signEnv = "JWT_SECRET"
+	encEnv  = "JWT_SECRET_ENC"
+)
+
+func getenv(key string, def string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+
+	return v
+}
+
+// DefaultHMAC returns a new `JWT` instance.
+// It tries to read hmac256 secret keys from system environment variables:
+// * JWT_SECRET for signing and verification key and
+// * JWT_SECRET_ENC for encryption and decryption key
+// and defaults them to the given "keys" respectfully.
+//
+// It panics on errors.
+// Use the `New` package-level function instead for more options.
+func DefaultHMAC(maxAge time.Duration, keys ...string) *JWT {
+	var defaultSignSecret, defaultEncSecret string
+
+	switch len(keys) {
+	case 1:
+		defaultSignSecret = keys[0]
+	case 2:
+		defaultEncSecret = keys[1]
+	}
+
+	signSecret := getenv(signEnv, defaultSignSecret)
+	encSecret := getenv(encEnv, defaultEncSecret)
+
+	j, err := New(maxAge, HS256, []byte(signSecret))
+	if err != nil {
+		panic(err)
+	}
+
+	if encSecret != "" {
+		err = j.WithEncryption(A128GCM, DIRECT, []byte(encSecret))
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return j
 }
 
 // WithEncryption method enables encryption and decryption of the token.
