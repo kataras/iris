@@ -14,19 +14,12 @@ type UserClaims struct {
 }
 
 func main() {
-	// hmac
-	key := []byte("secret")
-	j, err := jwt.New(1*time.Minute, jwt.HS256, key)
-	if err != nil {
-		panic(err)
-	}
-
-	// OPTIONAL encryption:
-	encryptionKey := []byte("itsa16bytesecret")
-	err = j.WithEncryption(jwt.A128GCM, jwt.DIRECT, encryptionKey)
-	if err != nil {
-		panic(err)
-	}
+	// Get keys from system's environment variables
+	// JWT_SECRET (for signing and verification) and JWT_SECRET_ENC(for encryption and decryption),
+	// or defaults to "secret" and "itsa16bytesecret" respectfully.
+	//
+	// Use the `jwt.New` instead for more flexibility, if necessary.
+	j := jwt.DefaultHMAC(15*time.Minute, "secret", "itsa16bytesecret")
 
 	app := iris.New()
 	app.Logger().SetLevel("debug")
@@ -74,12 +67,62 @@ func main() {
 }
 
 /*
-func load_From_File_Example() {
+func default_RSA_Example() {
+	j := jwt.DefaultRSA(1 * time.Minute)
+}
+
+Same as:
+
+func load_File_Or_Generate_RSA_Example() {
+	signKey, err := jwt.LoadRSA("jwt_sign.key", 2048)
+	if err != nil {
+		panic(err)
+	}
+
+	j, err := jwt.New(15*time.Minute, jwt.RS256, signKey)
+	if err != nil {
+		panic(err)
+	}
+
+	encKey, err := jwt.LoadRSA("jwt_enc.key", 2048)
+	if err != nil {
+		panic(err)
+	}
+	err = j.WithEncryption(jwt.A128CBCHS256, jwt.RSA15, encKey)
+	if err != nil {
+		panic(err)
+	}
+}
+*/
+
+/*
+func hmac_Example() {
+	// hmac
+	key := []byte("secret")
+	j, err := jwt.New(15*time.Minute, jwt.HS256, key)
+	if err != nil {
+		panic(err)
+	}
+
+	// OPTIONAL encryption:
+	encryptionKey := []byte("itsa16bytesecret")
+	err = j.WithEncryption(jwt.A128GCM, jwt.DIRECT, encryptionKey)
+	if err != nil {
+		panic(err)
+	}
+}
+*/
+
+/*
+func load_From_File_With_Password_Example() {
 	b, err := ioutil.ReadFile("./private_rsa.pem")
 	if err != nil {
 		panic(err)
 	}
-	signKey := jwt.MustParseRSAPrivateKey(b, []byte("pass"))
+	signKey,err := jwt.ParseRSAPrivateKey(b, []byte("pass"))
+	if err != nil {
+		panic(err)
+	}
 
 	j, err := jwt.New(15*time.Minute, jwt.RS256, signKey)
 	if err != nil {
@@ -89,23 +132,18 @@ func load_From_File_Example() {
 */
 
 /*
-func random_RSA_Sign_And_Encrypt_Example() {
-	j := jwt.Random(1 * time.Minute)
-}
-*/
-
-/*
-func random_manually_generate_RSA_Example() {
-	signey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-	encryptionKey, err := rsa.GenerateKey(rand.Reader, 2048)
+func generate_RSA_Example() {
+	signKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		panic(err)
 	}
 
-	j, err := jwt.New(1*time.Minute, jwt.RS256, signey)
+	encryptionKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		panic(err)
+	}
+
+	j, err := jwt.New(15*time.Minute, jwt.RS512, signKey)
 	if err != nil {
 		panic(err)
 	}

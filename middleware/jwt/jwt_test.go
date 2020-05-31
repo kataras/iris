@@ -2,6 +2,7 @@
 package jwt_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -18,12 +19,21 @@ type userClaims struct {
 const testMaxAge = 3 * time.Second
 
 // Random RSA verification and encryption.
-func TestRSA(t *testing.T) {
-	j := jwt.Random(testMaxAge)
+func TestDefaultRSA(t *testing.T) {
+	j := jwt.DefaultRSA(testMaxAge)
+	t.Cleanup(func() {
+		os.Remove(jwt.SignFilename)
+		os.Remove(jwt.EncFilename)
+	})
 	testWriteVerifyToken(t, j)
 }
 
 // HMAC verification and encryption.
+func TestDefaultHMAC(t *testing.T) {
+	j := jwt.DefaultHMAC(testMaxAge, "secret", "itsa16bytesecret")
+	testWriteVerifyToken(t, j)
+}
+
 func TestHMAC(t *testing.T) {
 	j, err := jwt.New(testMaxAge, jwt.HS256, []byte("secret"))
 	if err != nil {
