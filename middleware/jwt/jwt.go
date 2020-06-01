@@ -371,8 +371,8 @@ func IsValidated(ctx context.Context) bool { // see the `ReadClaims`.
 	return ctx.Values().Get(needsValidationContextKey) == nil
 }
 
-func validateClaims(ctx context.Context, claimsPtr interface{}) (err error) {
-	switch claims := claimsPtr.(type) {
+func validateClaims(ctx context.Context, claims interface{}) (err error) {
+	switch claims := claims.(type) {
 	case claimsValidator:
 		err = claims.ValidateWithLeeway(jwt.Expected{Time: time.Now()}, 0)
 	case claimsAlternativeValidator:
@@ -484,4 +484,50 @@ func ReadClaims(ctx context.Context, claimsPtr interface{}) error {
 	}
 
 	return nil
+}
+
+// Get returns and validates (if not already) the claims
+// stored on request context's values storage.
+//
+// Should be used instead of the `ReadClaims` method when
+// a custom verification middleware was registered (see the `Verify` method for an example).
+//
+// Usage:
+// j := jwt.New(...)
+// [...]
+// app.Use(func(ctx iris.Context) {
+//	var claims CustomClaims_or_jwt.Claims
+// 	if err := j.VerifyToken(ctx, &claims); err != nil {
+// 		ctx.StopWithStatus(iris.StatusUnauthorized)
+// 		return
+// 	}
+//
+// 	ctx.Values().Set(jwt.ClaimsContextKey, claims)
+// 	ctx.Next()
+// })
+// [...]
+// app.Post("/restricted", func(ctx iris.Context){
+//	v, err := jwt.Get(ctx)
+//  [handle error...]
+//  claims,ok := v.(CustomClaims_or_jwt.Claims)
+//  if !ok {
+// 	  [do you support more than one type of claims? Handle here]
+// 	}
+//  [use claims...]
+// })
+func Get(ctx context.Context) (interface{}, error) {
+	claims := ctx.Values().Get(ClaimsContextKey)
+	if claims == nil {
+		return nil, ErrTokenMissing
+	}
+
+	if !IsValidated(ctx) {
+		ctx.Values().Remove(needsValidationContextKey)
+		err := validateClaims(ctx, claims)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return claims, nil
 }
