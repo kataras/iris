@@ -328,7 +328,7 @@ func WithCharset(charset string) Configurator {
 // from the overral request body size which can be modified
 // by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 //
-// Defaults to 32MB or 32 << 20 if you prefer.
+// Defaults to 32MB or 32 << 20 or 32*iris.MB if you prefer.
 func WithPostMaxMemory(limit int64) Configurator {
 	return func(app *Application) {
 		app.config.PostMaxMemory = limit

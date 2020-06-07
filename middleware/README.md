@@ -37,7 +37,7 @@ Most of the experimental handlers are ported to work with _iris_'s handler form,
 Third-Party Handlers
 ------------
 
-Iris has its own middleware form of `func(ctx context.Context)` but it's also compatible with all `net/http` middleware forms. See [here](https://github.com/kataras/iris/tree/master/_examples/convert-handlers).
+Iris has its own middleware form of `func(ctx iris.Context)` but it's also compatible with all `net/http` middleware forms. See [here](https://github.com/kataras/iris/tree/master/_examples/convert-handlers).
 
 Here's a small list of useful third-party handlers:
 
