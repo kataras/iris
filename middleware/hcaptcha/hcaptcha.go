@@ -160,7 +160,7 @@ func ParseForm(dataSiteKey, postActionRelativePath string) string {
 }
 
 // RenderForm writes the `HTMLForm` to "w" response writer.
-// See `_examples/basic/register_form.html` example for a custom form instead.
+// See `_examples/auth/hcaptcha/templates/register_form.html` example for a custom form instead.
 func RenderForm(ctx context.Context, dataSiteKey, postActionRelativePath string) (int, error) {
 	return ctx.HTML(ParseForm(dataSiteKey, postActionRelativePath))
 }

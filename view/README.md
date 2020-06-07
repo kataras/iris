@@ -30,7 +30,7 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 - [Jet](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_0) **NEW**
 - [Jet Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_1_embedded) **NEW**
 
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [iris/_examples/http_responsewriter/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/http_responsewriter/quicktemplate) example.
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
 
 ## Overview
 
@@ -58,7 +58,7 @@ func main() {
 
     // Method:    GET
     // Resource:  http://localhost:8080/user/42
-    app.Get("/user/{id:long}", func(ctx iris.Context) {
+    app.Get("/user/{id:int64}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
         ctx.Writef("User ID: %d", userID)
     })

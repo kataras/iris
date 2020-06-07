@@ -10,7 +10,7 @@ func init() {
 	context.SetHandlerName("iris/middleware/requestid.*", "iris.request.id")
 }
 
-const xRequestIDHeaderValue = "X-Request-ID"
+const xRequestIDHeaderValue = "X-Request-Id"
 
 // Generator defines the function which should extract or generate
 // a Request ID. See `DefaultGenerator` and `New` package-level functions.
@@ -40,13 +40,14 @@ var DefaultGenerator Generator = func(ctx context.Context) string {
 }
 
 // New returns a new request id middleware.
-// It accepts an ID Generator.
+// It optionally accepts an ID Generator.
 // The Generator can stop the handlers chain with an error or
 // return a valid ID (string).
 // If it's nil then the `DefaultGenerator` will be used instead.
-func New(gen Generator) context.Handler {
-	if gen == nil {
-		gen = DefaultGenerator
+func New(generator ...Generator) context.Handler {
+	gen := DefaultGenerator
+	if len(generator) > 0 {
+		gen = generator[0]
 	}
 
 	return func(ctx context.Context) {

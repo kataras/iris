@@ -133,7 +133,7 @@ func newApp() *iris.Application {
 	{ // braces are optional, it's just type of style, to group the routes visually.
 
 		// http://v1.localhost:8080
-		// Note: for versioning-specific features checkout the _examples/versioning instead.
+		// Note: for versioning-specific features checkout the _examples/routing/versioning instead.
 		v1.Get("/", func(ctx iris.Context) {
 			ctx.HTML(`Version 1 API. go to <a href="/api/users">/api/users</a>`)
 		})

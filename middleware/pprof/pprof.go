@@ -1,4 +1,4 @@
-// Package pprof provides native pprof support via middleware. See _examples/miscellaneous/pprof
+// Package pprof provides native pprof support via middleware. See _examples/pprof
 package pprof
 
 import (

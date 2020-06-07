@@ -9,9 +9,9 @@ import (
 
 // UsersController is our /users API controller.
 // GET				/users  | get all
-// GET				/users/{id:long} | get by id
-// PUT				/users/{id:long} | update by id
-// DELETE			/users/{id:long} | delete by id
+// GET				/users/{id:int64} | get by id
+// PUT				/users/{id:int64} | update by id
+// DELETE			/users/{id:int64} | delete by id
 // Requires basic authentication.
 type UsersController struct {
 	// Optionally: context is auto-binded by Iris on each request,

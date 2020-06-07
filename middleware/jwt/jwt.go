@@ -155,26 +155,38 @@ func New(maxAge time.Duration, alg SignatureAlgorithm, key interface{}) (*JWT, e
 	return j, nil
 }
 
-// RSA filenames for `DefaultRSA`.
+// Default key filenames for `RSA`.
 const (
-	SignFilename = "jwt_sign.key"
-	EncFilename  = "jwt_enc.key"
+	DefaultSignFilename = "jwt_sign.key"
+	DefaultEncFilename  = "jwt_enc.key"
 )
 
-// DefaultRSA returns a new `JWT` instance.
-// It tries to parse RSA256 keys from "jwt_sign.key" and (optionally) "jwt_enc.key" files
-// in the current working directory, and if not found, it generates and exports the keys.
+// RSA returns a new `JWT` instance.
+// It tries to parse RSA256 keys from "filenames[0]" (defaults to  "jwt_sign.key") and
+// "filenames[1]" (defaults to "jwt_enc.key") files or generates and exports new random keys.
 //
 // It panics on errors.
 // Use the `New` package-level function instead for more options.
-func DefaultRSA(maxAge time.Duration) *JWT {
-	// Do not try to create or load enc key if only sign key already exists.
-	withEncryption := true
-	if fileExists(SignFilename) {
-		withEncryption = fileExists(EncFilename)
+func RSA(maxAge time.Duration, filenames ...string) *JWT {
+	var (
+		signFilename = DefaultSignFilename
+		encFilename  = DefaultEncFilename
+	)
+
+	switch len(filenames) {
+	case 1:
+		signFilename = filenames[0]
+	case 2:
+		encFilename = filenames[1]
 	}
 
-	sigKey, err := LoadRSA(SignFilename, 2048)
+	// Do not try to create or load enc key if only sign key already exists.
+	withEncryption := true
+	if fileExists(signFilename) {
+		withEncryption = fileExists(encFilename)
+	}
+
+	sigKey, err := LoadRSA(signFilename, 2048)
 	if err != nil {
 		panic(err)
 	}
@@ -185,7 +197,7 @@ func DefaultRSA(maxAge time.Duration) *JWT {
 	}
 
 	if withEncryption {
-		encKey, err := LoadRSA(EncFilename, 2048)
+		encKey, err := LoadRSA(encFilename, 2048)
 		if err != nil {
 			panic(err)
 		}
@@ -212,7 +224,7 @@ func getenv(key string, def string) string {
 	return v
 }
 
-// DefaultHMAC returns a new `JWT` instance.
+// HMAC returns a new `JWT` instance.
 // It tries to read hmac256 secret keys from system environment variables:
 // * JWT_SECRET for signing and verification key and
 // * JWT_SECRET_ENC for encryption and decryption key
@@ -220,7 +232,7 @@ func getenv(key string, def string) string {
 //
 // It panics on errors.
 // Use the `New` package-level function instead for more options.
-func DefaultHMAC(maxAge time.Duration, keys ...string) *JWT {
+func HMAC(maxAge time.Duration, keys ...string) *JWT {
 	var defaultSignSecret, defaultEncSecret string
 
 	switch len(keys) {
@@ -279,8 +291,8 @@ func (j *JWT) WithEncryption(contentEncryption ContentEncryption, alg KeyAlgorit
 // See the `JWT.Expiry` method too.
 func Expiry(maxAge time.Duration, claims Claims) Claims {
 	now := time.Now()
-	claims.Expiry = jwt.NewNumericDate(now.Add(maxAge))
-	claims.IssuedAt = jwt.NewNumericDate(now)
+	claims.Expiry = NewNumericDate(now.Add(maxAge))
+	claims.IssuedAt = NewNumericDate(now)
 	return claims
 }
 
@@ -308,6 +320,14 @@ func (j *JWT) Expiry(claims Claims) Claims {
 // Token generates and returns a new token string.
 // See `VerifyToken` too.
 func (j *JWT) Token(claims interface{}) (string, error) {
+	// switch c := claims.(type) {
+	// case Claims:
+	// 	claims = Expiry(j.MaxAge, c)
+	// case map[string]interface{}: let's not support map.
+	// 	now := time.Now()
+	// 	c["iat"] = now.Unix()
+	// 	c["exp"] = now.Add(j.MaxAge).Unix()
+	// }
 	if c, ok := claims.(Claims); ok {
 		claims = Expiry(j.MaxAge, c)
 	}
@@ -331,6 +351,39 @@ func (j *JWT) Token(claims interface{}) (string, error) {
 	return token, nil
 }
 
+/* Let's no support maps, typed claim is the way to go.
+// validateMapClaims validates claims of map type.
+func validateMapClaims(m map[string]interface{}, e jwt.Expected, leeway time.Duration) error {
+	if !e.Time.IsZero() {
+		if v, ok := m["nbf"]; ok {
+			if notBefore, ok := v.(NumericDate); ok {
+				if e.Time.Add(leeway).Before(notBefore.Time()) {
+					return ErrNotValidYet
+				}
+			}
+		}
+
+		if v, ok := m["exp"]; ok {
+			if exp, ok := v.(int64); ok {
+				if e.Time.Add(-leeway).Before(time.Unix(exp, 0)) {
+					return ErrExpired
+				}
+			}
+		}
+
+		if v, ok := m["iat"]; ok {
+			if issuedAt, ok := v.(int64); ok {
+				if e.Time.Add(leeway).Before(time.Unix(issuedAt, 0)) {
+					return ErrIssuedInTheFuture
+				}
+			}
+		}
+	}
+
+	return nil
+}
+*/
+
 // WriteToken is a helper which just generates(calls the `Token` method) and writes
 // a new token to the client in plain text format.
 //
@@ -347,20 +400,25 @@ func (j *JWT) WriteToken(ctx context.Context, claims interface{}) error {
 }
 
 var (
-	// ErrTokenMissing when token cannot be extracted from the request.
-	ErrTokenMissing = errors.New("token is missing")
-	// ErrTokenInvalid when incoming token is invalid.
-	ErrTokenInvalid = errors.New("token is invalid")
-	// ErrTokenExpired when incoming token has expired.
-	ErrTokenExpired = errors.New("token has expired")
+	// ErrMissing when token cannot be extracted from the request.
+	ErrMissing = errors.New("token is missing")
+	// ErrExpired indicates that token is used after expiry time indicated in exp claim.
+	ErrExpired = errors.New("token is expired (exp)")
+	// ErrNotValidYet indicates that token is used before time indicated in nbf claim.
+	ErrNotValidYet = errors.New("token not valid yet (nbf)")
+	// ErrIssuedInTheFuture indicates that the iat field is in the future.
+	ErrIssuedInTheFuture = errors.New("token issued in the future (iat)")
 )
 
 type (
 	claimsValidator interface {
 		ValidateWithLeeway(e jwt.Expected, leeway time.Duration) error
 	}
-	claimsAlternativeValidator interface {
+	claimsAlternativeValidator interface { // to keep iris-contrib/jwt MapClaims compatible.
 		Validate() error
+	}
+	claimsContextValidator interface {
+		Validate(ctx context.Context) error
 	}
 )
 
@@ -372,18 +430,34 @@ func IsValidated(ctx context.Context) bool { // see the `ReadClaims`.
 }
 
 func validateClaims(ctx context.Context, claims interface{}) (err error) {
-	switch claims := claims.(type) {
+	switch c := claims.(type) {
 	case claimsValidator:
-		err = claims.ValidateWithLeeway(jwt.Expected{Time: time.Now()}, 0)
+		err = c.ValidateWithLeeway(jwt.Expected{Time: time.Now()}, 0)
 	case claimsAlternativeValidator:
-		err = claims.Validate()
+		err = c.Validate()
+	case claimsContextValidator:
+		err = c.Validate(ctx)
+	case *json.RawMessage:
+		// if the data type is raw message (json []byte)
+		// then it should contain exp (and iat and nbf) keys.
+		// Unmarshal raw message to validate against.
+		v := new(Claims)
+		err = json.Unmarshal(*c, v)
+		if err == nil {
+			return validateClaims(ctx, v)
+		}
 	default:
 		ctx.Values().Set(needsValidationContextKey, struct{}{})
 	}
 
 	if err != nil {
-		if err == jwt.ErrExpired {
-			return ErrTokenExpired
+		switch err {
+		case jwt.ErrExpired:
+			return ErrExpired
+		case jwt.ErrNotValidYet:
+			return ErrNotValidYet
+		case jwt.ErrIssuedInTheFuture:
+			return ErrIssuedInTheFuture
 		}
 	}
 
@@ -403,7 +477,7 @@ func (j *JWT) VerifyToken(ctx context.Context, claimsPtr interface{}) error {
 	}
 
 	if token == "" {
-		return ErrTokenMissing
+		return ErrMissing
 	}
 
 	var (
@@ -422,11 +496,11 @@ func (j *JWT) VerifyToken(ctx context.Context, claimsPtr interface{}) error {
 		parsedToken, err = jwt.ParseSigned(token)
 	}
 	if err != nil {
-		return ErrTokenInvalid
+		return err
 	}
 
 	if err = parsedToken.Claims(j.VerificationKey, claimsPtr); err != nil {
-		return ErrTokenInvalid
+		return err
 	}
 
 	return validateClaims(ctx, claimsPtr)
@@ -463,12 +537,12 @@ func (j *JWT) Verify(ctx context.Context) {
 func ReadClaims(ctx context.Context, claimsPtr interface{}) error {
 	v := ctx.Values().Get(ClaimsContextKey)
 	if v == nil {
-		return ErrTokenMissing
+		return ErrMissing
 	}
 
 	raw, ok := v.(json.RawMessage)
 	if !ok {
-		return ErrTokenMissing
+		return ErrMissing
 	}
 
 	err := json.Unmarshal(raw, claimsPtr)
@@ -476,9 +550,9 @@ func ReadClaims(ctx context.Context, claimsPtr interface{}) error {
 		return err
 	}
 
-	// If already validated on VerifyToken (a claimsValidator/claimsAlternativeValidator)
-	// then no need to perform the check again.
 	if !IsValidated(ctx) {
+		// If already validated on `Verify/VerifyToken`
+		// then no need to perform the check again.
 		ctx.Values().Remove(needsValidationContextKey)
 		return validateClaims(ctx, claimsPtr)
 	}
@@ -518,7 +592,7 @@ func ReadClaims(ctx context.Context, claimsPtr interface{}) error {
 func Get(ctx context.Context) (interface{}, error) {
 	claims := ctx.Values().Get(ClaimsContextKey)
 	if claims == nil {
-		return nil, ErrTokenMissing
+		return nil, ErrMissing
 	}
 
 	if !IsValidated(ctx) {

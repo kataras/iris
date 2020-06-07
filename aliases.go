@@ -24,7 +24,7 @@ type (
 	//
 	// See 'context#UnmarshalBody` for more.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc = context.UnmarshalerFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.

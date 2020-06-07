@@ -52,7 +52,7 @@ func Cache(expiration time.Duration) *client.Handler {
 // Handler like `Cache` but returns an Iris Handler to be used as a middleware.
 // For more options use the `Cache`.
 //
-// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
+// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/response-writer/cache
 func Handler(expiration time.Duration) context.Handler {
 	h := Cache(expiration).ServeHTTP
 	return h

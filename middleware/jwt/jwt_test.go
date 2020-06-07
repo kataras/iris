@@ -19,22 +19,22 @@ type userClaims struct {
 const testMaxAge = 3 * time.Second
 
 // Random RSA verification and encryption.
-func TestDefaultRSA(t *testing.T) {
-	j := jwt.DefaultRSA(testMaxAge)
+func TestRSA(t *testing.T) {
+	j := jwt.RSA(testMaxAge)
 	t.Cleanup(func() {
-		os.Remove(jwt.SignFilename)
-		os.Remove(jwt.EncFilename)
+		os.Remove(jwt.DefaultSignFilename)
+		os.Remove(jwt.DefaultEncFilename)
 	})
 	testWriteVerifyToken(t, j)
 }
 
 // HMAC verification and encryption.
-func TestDefaultHMAC(t *testing.T) {
-	j := jwt.DefaultHMAC(testMaxAge, "secret", "itsa16bytesecret")
+func TestHMAC(t *testing.T) {
+	j := jwt.HMAC(testMaxAge, "secret", "itsa16bytesecret")
 	testWriteVerifyToken(t, j)
 }
 
-func TestHMAC(t *testing.T) {
+func TestNew_HMAC(t *testing.T) {
 	j, err := jwt.New(testMaxAge, jwt.HS256, []byte("secret"))
 	if err != nil {
 		t.Fatal(err)
@@ -81,9 +81,19 @@ func testWriteVerifyToken(t *testing.T, j *jwt.JWT) {
 		ctx.JSON(claims)
 	})
 
-	app.Post("/restricted_middleware", j.Verify, func(ctx iris.Context) {
+	app.Post("/restricted_middleware_readclaims", j.Verify, func(ctx iris.Context) {
 		var claims userClaims
 		if err := jwt.ReadClaims(ctx, &claims); err != nil {
+			ctx.StopWithStatus(iris.StatusUnauthorized)
+			return
+		}
+
+		ctx.JSON(claims)
+	})
+
+	app.Post("/restricted_middleware_get", j.Verify, func(ctx iris.Context) {
+		claims, err := jwt.Get(ctx)
+		if err != nil {
 			ctx.StopWithStatus(iris.StatusUnauthorized)
 			return
 		}
@@ -99,7 +109,7 @@ func testWriteVerifyToken(t *testing.T, j *jwt.JWT) {
 		t.Fatalf("empty token")
 	}
 
-	restrictedPaths := [...]string{"/restricted", "/restricted_middleware"}
+	restrictedPaths := [...]string{"/restricted", "/restricted_middleware_readclaims", "/restricted_middleware_get"}
 
 	now := time.Now()
 	for _, path := range restrictedPaths {

@@ -159,7 +159,7 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | `float, float32, float64`, | |
 | `bool`, | |
 | `slice` | [Path Parameter](https://github.com/kataras/iris/wiki/Routing-path-parameter-types) |
-| Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/http_request) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
+| Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/request-body) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
 
 Here is a preview of what the new Hero handlers look like:
 
@@ -393,7 +393,7 @@ Other Improvements:
 
 - New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
 
-- New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/http_request/read-json-struct-validation) example was updated.
+- New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/request-body/read-json-struct-validation) example was updated.
 
 - A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
 
@@ -415,7 +415,7 @@ New Package-level Variables:
 
 New Context Methods:
 
-- `Context.GzipReader(enable bool)` method and `iris.GzipReader` middleware to enable future request read body calls to decompress data using gzip, [example](_examples/http_request/read-gzip).
+- `Context.GzipReader(enable bool)` method and `iris.GzipReader` middleware to enable future request read body calls to decompress data using gzip, [example](_examples/request-body/read-gzip).
 - `Context.RegisterDependency(v interface{})` and `Context.RemoveDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
 - `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
 - `Context.GetDomain() string` returns the domain.
@@ -476,7 +476,6 @@ Implement **new** `SetRegisterRule(iris.RouteOverride, RouteSkip, RouteError)` t
 
 New Examples:
 
-- [_examples/Docker](_examples/Docker)
 - [_examples/routing/route-register-rule](_examples/routing/route-register-rule)
 
 # We, 05 February 2020 | v12.1.6
@@ -570,10 +569,10 @@ Navigate through: https://github.com/kataras/iris/wiki/Sitemap for more.
 ## New Examples
 
 2. [_examples/i18n](_examples/i18n)
-1. [_examples/sitemap](_examples/sitemap)
-3. [_examples/desktop-app/blink](_examples/desktop-app/blink)
-4. [_examples/desktop-app/lorca](_examples/desktop-app/lorca)
-5. [_examples/desktop-app/webview](_examples/desktop-app/webview)
+1. [_examples/sitemap](_examples/routing/sitemap)
+3. [_examples/desktop/blink](_examples/desktop/blink)
+4. [_examples/desktop/lorca](_examples/desktop/lorca)
+5. [_examples/desktop/webview](_examples/desktop/webview)
 
 # Sa, 26 October 2019 | v12.0.0
 
@@ -603,7 +602,7 @@ The iris-contrib/middleare and examples are updated to use the new `github.com/k
 # Fr, 16 August 2019 | v11.2.8
 
 - Set `Cookie.SameSite` to `Lax` when subdomains sessions share is enabled[*](https://github.com/kataras/iris/commit/6bbdd3db9139f9038641ce6f00f7b4bab6e62550)
-- Add and update all [experimental handlers](https://github.com/kataras/iris/tree/master/_examples/experimental-handlers) 
+- Add and update all [experimental handlers](https://github.com/iris-contrib/middleware) 
 - New `XMLMap` function which wraps a `map[string]interface{}` and converts it to a valid xml content to render through `Context.XML` method
 - Add new `ProblemOptions.XML` and `RenderXML` fields to render the `Problem` as XML(application/problem+xml) instead of JSON("application/problem+json) and enrich the `Negotiate` to easily accept the `application/problem+xml` mime.
 
@@ -657,7 +656,7 @@ Commit log: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
 
 - [New Feature: Handle different parameter types in the same path](https://github.com/kataras/iris/issues/1315)
 - [New Feature: Content Negotiation](https://github.com/kataras/iris/issues/1319)
-- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/http_request/read-yaml)
+- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/request-body/read-yaml)
 - Fixes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
 
 # We, 24 July 2019 | v11.2.2

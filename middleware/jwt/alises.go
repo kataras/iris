@@ -10,6 +10,15 @@ type (
 	Claims = jwt.Claims
 	// Audience represents the recipients that the token is intended for.
 	Audience = jwt.Audience
+	// NumericDate represents date and time as the number of seconds since the
+	// epoch, including leap seconds. Non-integer values can be represented
+	// in the serialized format, but we round to the nearest second.
+	NumericDate = jwt.NumericDate
+)
+
+var (
+	// NewNumericDate constructs NumericDate from time.Time value.
+	NewNumericDate = jwt.NewNumericDate
 )
 
 type (
