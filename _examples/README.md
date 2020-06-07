@@ -112,7 +112,7 @@
 * [Request ID](https://github.com/kataras/iris/blob/master/middleware/requestid/requestid_test.go)
 * [Request Rate Limit](request-ratelimit/main.go)
 * [Request Referrer](request-referrer/main.go)
-* [Webassembly](webassembly/basic/main.go)
+* [Webassembly](webassembly/main.go)
 * Request Body
     * [Bind JSON](request-body/read-json/main.go)
     *   * [Struct Validation](request-body/read-json-struct-validation/main.go)
@@ -135,8 +135,8 @@
     * [SSE](response-writer/sse/main.go)
     * [SSE (third-party package usage for server sent events)](response-writer/sse-third-party/main.go)
     * Cache
-        * [Simple](response-writer/simple/main.go)
-        * [Client-Side (304)](response-writer/client-side/main.go)
+        * [Simple](response-writer/cache/simple/main.go)
+        * [Client-Side (304)](response-writer/cache/client-side/main.go)
 * Localization and Internationalization
     * [i18n](i18n/main.go)
 * Authentication, Authorization & Bot Detection 
