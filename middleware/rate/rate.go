@@ -1,5 +1,5 @@
 // Package rate implements rate limiter for Iris client requests.
-// Example can be found at: _examples/miscellaneous/ratelimit/main.go.
+// Example can be found at: _examples/request-ratelimit/main.go.
 package rate
 
 import (

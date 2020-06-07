@@ -1,12 +1,11 @@
 package main
 
 import (
+	"time"
+
 	"github.com/kataras/iris/v12"
-
-	"github.com/iris-contrib/middleware/jwt"
+	"github.com/kataras/iris/v12/middleware/jwt"
 )
-
-var secret = []byte("My Secret Key")
 
 func main() {
 	app := iris.New()
@@ -16,51 +15,36 @@ func main() {
 }
 
 func register(api *iris.APIContainer) {
-	j := jwt.New(jwt.Config{
-		// Extract by "token" url parameter.
-		Extractor: jwt.FromFirst(jwt.FromParameter("token"), jwt.FromAuthHeader),
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-			return secret, nil
-		},
-		SigningMethod: jwt.SigningMethodHS256,
+	j := jwt.HMAC(15*time.Minute, "secret", "secretforencrypt")
+
+	api.RegisterDependency(func(ctx iris.Context) (claims userClaims) {
+		if err := j.VerifyToken(ctx, &claims); err != nil {
+			ctx.StopWithError(iris.StatusUnauthorized, err)
+			return
+		}
+
+		return
 	})
 
-	api.Get("/token", writeToken)
-	// This works as usually:
-	api.Get("/", j.Serve, verifiedPage)
-
-	// You can also bind the *jwt.Token (see `verifiedWithBindedTokenPage`)
-	// by registering a *jwt.Token dependency.
-	//
-	// api.RegisterDependency(func(ctx iris.Context) *jwt.Token {
-	// 	if err := j.CheckJWT(ctx); err != nil {
-	// 		ctx.StopWithStatus(iris.StatusUnauthorized)
-	// 		return nil
-	// 	}
-	//
-	// 	token := j.Get(ctx)
-	// 	return token
-	// })
-	// ^ You can do the same with MVC too, as the container is shared and works
-	// the same way in both functions-as-handlers and structs-as-controllers.
-	//
-	// api.Get("/", verifiedWithBindedTokenPage)
+	api.Get("/authenticate", writeToken(j))
+	api.Get("/restricted", restrictedPage)
 }
 
-func writeToken() string {
-	token := jwt.NewTokenWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"foo": "bar",
-	})
-
-	tokenString, _ := token.SignedString(secret)
-	return tokenString
+type userClaims struct {
+	jwt.Claims
+	Username string
 }
 
-func verifiedPage() string {
-	return "This page can only be seen by verified clients"
+func writeToken(j *jwt.JWT) iris.Handler {
+	return func(ctx iris.Context) {
+		j.WriteToken(ctx, userClaims{
+			Claims:   j.Expiry(jwt.Claims{Issuer: "an-issuer"}),
+			Username: "kataras",
+		})
+	}
 }
 
-func verifiedWithBindedTokenPage(token *jwt.Token) string {
-	// Token[foo] value: bar
-	return "Token[foo] value: " + token.Claims.(jwt.MapClaims)["foo"].(string)
+func restrictedPage(claims userClaims) string {
+	// userClaims.Username: kataras
+	return "userClaims.Username: " + claims.Username
 }

@@ -81,7 +81,7 @@ func TestHandler(t *testing.T) {
 
 func testAppWithHeroHandlers(t *testing.T, h1, h2, h3 iris.Handler) {
 	app := iris.New()
-	app.Get("/{id:long}/{username:string}", h1)
+	app.Get("/{id:int64}/{username:string}", h1)
 	app.Get("/service", h2)
 	app.Get("/param/{param:string}", h3)
 

@@ -108,7 +108,7 @@ Registro de commits: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
 
 - [Nueva característica: Manejar diferentes tipos de parámetros en la misma ruta](https://github.com/kataras/iris/issues/1315)
 - [Nueva característica: Negociación de contenido](https://github.com/kataras/iris/issues/1319)
-- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/http_request/read-yaml)
+- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/request-body/read-yaml)
 - Ajustes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
 
 # Miércoles, 24 de julio 2019 | v11.2.2

@@ -1,4 +1,4 @@
-// Package recover provides recovery for specific routes or for the whole app via middleware. See _examples/miscellaneous/recover
+// Package recover provides recovery for specific routes or for the whole app via middleware. See _examples/recover
 package recover
 
 import (

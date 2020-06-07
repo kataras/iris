@@ -3,15 +3,15 @@ Builtin Handlers
 
 | Middleware | Example |
 | -----------|-------------|
-| [basic authentication](basicauth) | [iris/_examples/authentication/basicauth](https://github.com/kataras/iris/tree/master/_examples/authentication/basicauth) |
-| [request logger](logger) | [iris/_examples/http_request/request-logger](https://github.com/kataras/iris/tree/master/_examples/http_request/request-logger) |
+| [basic authentication](basicauth) | [iris/_examples/auth/basicauth](https://github.com/kataras/iris/tree/master/_examples/auth/basicauth) |
+| [request logger](logger) | [iris/_examples/logging/request-logger](https://github.com/kataras/iris/tree/master/_examples/logging/request-logger) |
 | [HTTP method override](methodoverride) | [iris/middleware/methodoverride/methodoverride_test.go](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) |
-| [profiling (pprof)](pprof) | [iris/_examples/miscellaneous/pprof](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/pprof) |
-| [Google reCAPTCHA](recaptcha) | [iris/_examples/miscellaneous/recaptcha](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/recaptcha) |
-| [hCaptcha](hcaptcha) | [iris/_examples/miscellaneous/recaptcha](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/hcaptcha) |
-| [recovery](recover) | [iris/_examples/miscellaneous/recover](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/recover) |
-| [rate](rate) | [iris/_examples/miscellaneous/ratelimit](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/ratelimit) |
-| [jwt](jwt) | [iris/_examples/miscellaneous/jwt](https://github.com/kataras/iris/tree/master/_examples/miscellaneous/jwt) |
+| [profiling (pprof)](pprof) | [iris/_examples/pprof](https://github.com/kataras/iris/tree/master/_examples/pprof) |
+| [Google reCAPTCHA](recaptcha) | [iris/_examples/auth/recaptcha](https://github.com/kataras/iris/tree/master/_examples/auth/recaptcha) |
+| [hCaptcha](hcaptcha) | [iris/_examples/auth/recaptcha](https://github.com/kataras/iris/tree/master/_examples/auth/hcaptcha) |
+| [recovery](recover) | [iris/_examples/recover](https://github.com/kataras/iris/tree/master/_examples/recover) |
+| [rate](rate) | [iris/_examples/request-ratelimit](https://github.com/kataras/iris/tree/master/_examples/request-ratelimit) |
+| [jwt](jwt) | [iris/_examples/auth/jwt](https://github.com/kataras/iris/tree/master/_examples/auth/jwt) |
 | [requestid](requestid) | [iris/middleware/requestid/requestid_test.go](https://github.com/kataras/iris/blob/master/_examples/middleware/requestid/requestid_test.go) |
 
 Community made
@@ -32,7 +32,7 @@ Most of the experimental handlers are ported to work with _iris_'s handler form,
 | [raven](https://github.com/iris-contrib/middleware/tree/master/raven)| Sentry client in Go | [iris-contrib/middleware/raven/_example](https://github.com/iris-contrib/middleware/blob/master/raven/_example/main.go) |
 | [csrf](https://github.com/iris-contrib/middleware/tree/master/csrf)| Cross-Site Request Forgery Protection | [iris-contrib/middleware/csrf/_example](https://github.com/iris-contrib/middleware/blob/master/csrf/_example/main.go) |
 | [go-i18n](https://github.com/iris-contrib/middleware/tree/master/go-i18n)| i18n Iris Loader for nicksnyder/go-i18n | [iris-contrib/middleware/go-i18n/_example](https://github.com/iris-contrib/middleware/blob/master/go-i18n/_example/main.go) |
-| [throttler](https://github.com/iris-contrib/middleware/tree/master/throttler)| Rate limiting access to HTTP endpoints | [iris-contrib/middleware/throttler/_example](https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go) **NEW** |
+| [throttler](https://github.com/iris-contrib/middleware/tree/master/throttler)| Rate limiting access to HTTP endpoints | [iris-contrib/middleware/throttler/_example](https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go) |
 
 Third-Party Handlers
 ------------
@@ -43,15 +43,14 @@ Here's a small list of useful third-party handlers:
 
 | Middleware | Description |
 | -----------|-------------|
-| [goth](https://github.com/markbates/goth) | OAuth, OAuth2 authentication. [Example](https://github.com/kataras/iris/tree/master/_examples/authentication/oauth2) |
+| [goth](https://github.com/markbates/goth) | OAuth, OAuth2 authentication. [Example](https://github.com/kataras/iris/tree/master/_examples/auth/goth) |
+| [permissions2](https://github.com/xyproto/permissions2) | Cookies, users and permissions. [Example](https://github.com/kataras/iris/tree/master/_examples/auth/permissions) |
 | [csp](https://github.com/awakenetworks/csp) | [Content Security Policy](https://www.w3.org/TR/CSP2/) (CSP) support |
 | [delay](https://github.com/jeffbmartinez/delay) | Add delays/latency to endpoints. Useful when testing effects of high latency |
 | [onthefly](https://github.com/xyproto/onthefly) | Generate TinySVG, HTML and CSS on the fly |
-| [permissions2](https://github.com/xyproto/permissions2) | Cookies, users and permissions |
 | [RestGate](https://github.com/pjebs/restgate) | Secure authentication for REST API endpoints |
 | [stats](https://github.com/thoas/stats) | Store information about your web application (response time, etc.) |
 | [VanGoH](https://github.com/auroratechnologies/vangoh) | Configurable [AWS-Style](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html) HMAC authentication middleware |
-| [xrequestid](https://github.com/pilu/xrequestid) | Middleware that assigns a random X-Request-Id header to each request |
 | [digits](https://github.com/bamarni/digits) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
 
 > Feel free to put up your own middleware in this list!

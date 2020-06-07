@@ -1,4 +1,4 @@
-// Package logger provides request logging via middleware. See _examples/http_request/request-logger
+// Package logger provides request logging via middleware. See _examples/logging/request-logger
 package logger
 
 import (

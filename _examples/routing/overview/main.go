@@ -107,7 +107,7 @@ func main() {
 
 	// Subdomains, depends on the host, you have to edit the hosts or nginx/caddy's configuration if you use them.
 	//
-	// See more subdomains examples at _examples/subdomains folder.
+	// See more subdomains examples at _examples/routing/subdomains folder.
 	adminRoutes := app.Party("admin.")
 
 	// GET: http://admin.localhost:8080

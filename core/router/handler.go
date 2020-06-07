@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
@@ -234,7 +235,13 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 			bckpNewLine := logger.NewLine
 			logger.NewLine = false
-			logger.Debugf("API: %d registered %s (", len(registeredRoutes), tr)
+			debugLevel := golog.Levels[golog.DebugLevel]
+			// Replace that in order to not transfer it to the log handler (e.g. json)
+			// logger.Debugf("API: %d registered %s (", len(registeredRoutes), tr)
+			// with:
+			pio.WriteRich(logger.Printer, debugLevel.Title, debugLevel.ColorCode, debugLevel.Style...)
+			fmt.Fprintf(logger.Printer, " %s API: %d registered %s (", time.Now().Format(logger.TimeFormat), len(registeredRoutes), tr)
+			//
 			logger.NewLine = bckpNewLine
 
 			for i, m := range methodRoutes {

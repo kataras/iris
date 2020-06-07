@@ -17,7 +17,7 @@ func TestRequestID(t *testing.T) {
 
 	def := app.Party("/default")
 	{
-		def.Use(requestid.New(nil))
+		def.Use(requestid.New())
 		def.Get("/", h)
 	}
 
@@ -51,7 +51,7 @@ func TestRequestID(t *testing.T) {
 			ctx.SetID(expectedCustomIDFromOtherMiddleware)
 			ctx.Next()
 		})
-		changeID.Use(requestid.New(nil))
+		changeID.Use(requestid.New())
 		changeID.Get("/", h)
 	}
 

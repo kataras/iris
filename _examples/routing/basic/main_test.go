@@ -11,7 +11,7 @@ import (
 // The tests are written in a way to be easy to understand,
 // for a more comprehensive testing examples check out the:
 // _examples/routing/main_test.go,
-// _examples/subdomains/www/main_test.go
+// _examples/routing/subdomains/www/main_test.go
 // _examples/file-server and e.t.c.
 // Almost every example which covers
 // a new feature from you to learn

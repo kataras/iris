@@ -226,7 +226,7 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 		}
 	}
 
-	// /{argfirst:path}, /{argfirst:long}...
+	// /{argfirst:path}, /{argfirst:int64}...
 	if path[len(path)-1] != '/' {
 		path += "/"
 	}

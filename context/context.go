@@ -59,7 +59,7 @@ type (
 	// Note: This is totally optionally, the default decoders
 	// for ReadJSON is the encoding/json and for ReadXML is the encoding/xml.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-per-type/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-per-type/main.go
 	BodyDecoder interface {
 		Decode(data []byte) error
 	}
@@ -74,7 +74,7 @@ type (
 	//
 	// See 'Unmarshaler' and 'BodyDecoder' for more.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc func(data []byte, outPtr interface{}) error
 )
 
@@ -405,9 +405,9 @@ type Context interface {
 	IsHTTP2() bool
 	// IsGRPC reports whether the request came from a gRPC client.
 	IsGRPC() bool
-	// GetReferrer extracts and returns the information from the "Referer" header as specified
+	// GetReferrer extracts and returns the information from the "Referrer" header as specified
 	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-	// or by the URL query parameter "referer".
+	// or by the URL query parameter "referrer".
 	GetReferrer() Referrer
 	// SetLanguage force-sets the language for i18n, can be used inside a middleare.
 	// It has the highest priority over the rest and if it is empty then it is ignored,
@@ -582,7 +582,7 @@ type Context interface {
 	// The default form's memory maximum size is 32MB, it can be changed by the
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-file
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-file
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 	// UploadFormFiles uploads any received file(s) from the client
 	// to the system physical location "destDirectory".
@@ -609,7 +609,7 @@ type Context interface {
 	// See `FormFile` to a more controlled to receive a file.
 	//
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-files
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-files
 	UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error)
 
 	//  +------------------------------------------------------------+
@@ -641,7 +641,7 @@ type Context interface {
 	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type.
 	// Examples of usage: context.ReadJSON, context.ReadXML.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
 	//
 	// UnmarshalBody does not check about gzipped data.
 	// Do not rely on compressed data incoming to your server. The main reason is: https://en.wikipedia.org/wiki/Zip_bomb
@@ -649,15 +649,15 @@ type Context interface {
 	UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error
 	// ReadJSON reads JSON from request's body and binds it to a pointer of a value of any json-valid type.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go
 	ReadJSON(jsonObjectPtr interface{}) error
 	// ReadXML reads XML from request's body and binds it to a pointer of a value of any xml-valid type.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-xml/main.go
 	ReadXML(xmlObjectPtr interface{}) error
 	// ReadYAML reads YAML from request's body and binds it to the "outPtr" value.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-yaml/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-yaml/main.go
 	ReadYAML(outPtr interface{}) error
 	// ReadForm binds the request body of a form to the "formObject".
 	// It supports any kind of type, including custom structs.
@@ -667,11 +667,11 @@ type Context interface {
 	// is false (as defaulted) in this case the caller should check the pointer to
 	// see if something was actually binded.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-form/main.go
 	ReadForm(formObject interface{}) error
 	// ReadQuery binds url query to "ptr". The struct field tag is "url".
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-query/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 	ReadQuery(ptr interface{}) error
 	// ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
 	ReadProtobuf(ptr proto.Message) error
@@ -2051,16 +2051,16 @@ const (
 // unnecessary but good to know the default values upfront.
 var emptyReferrer = Referrer{Type: ReferrerInvalid, GoogleType: ReferrerNotGoogleSearch}
 
-// GetReferrer extracts and returns the information from the "Referer" header as specified
+// GetReferrer extracts and returns the information from the "Referrer" header as specified
 // in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-// or by the URL query parameter "referer".
+// or by the URL query parameter "referrer".
 func (ctx *context) GetReferrer() Referrer {
 	// the underline net/http follows the https://tools.ietf.org/html/rfc7231#section-5.5.2,
 	// so there is nothing special left to do.
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-	refURL := ctx.GetHeader("Referer")
+	refURL := ctx.GetHeader("Referrer")
 	if refURL == "" {
-		refURL = ctx.URLParam("referer")
+		refURL = ctx.URLParam("referrer")
 	}
 
 	if ref := goreferrer.DefaultRules.Parse(refURL); ref.Type > goreferrer.Invalid {
@@ -2654,7 +2654,7 @@ func (ctx *context) PostValues(name string) []string {
 // The default form's memory maximum size is 32MB, it can be changed by the
 // `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-file
+// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-file
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	// we don't have access to see if the request is body stream
 	// and then the ParseMultipartForm can be useless
@@ -2692,7 +2692,7 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 //
 // See `FormFile` to a more controlled to receive a file.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-files
+// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-files
 func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error) {
 	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
@@ -2871,7 +2871,7 @@ type Validator interface {
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
 //
 // UnmarshalBody does not check about gzipped data.
 // Do not rely on compressed data incoming to your server. The main reason is: https://en.wikipedia.org/wiki/Zip_bomb
@@ -2916,7 +2916,7 @@ func (ctx *context) shouldOptimize() bool {
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go
 func (ctx *context) ReadJSON(outPtr interface{}) error {
 	unmarshaler := json.Unmarshal
 	if ctx.shouldOptimize() {
@@ -2927,14 +2927,14 @@ func (ctx *context) ReadJSON(outPtr interface{}) error {
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-xml/main.go
 func (ctx *context) ReadXML(outPtr interface{}) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(xml.Unmarshal))
 }
 
 // ReadYAML reads YAML from request's body and binds it to the "outPtr" value.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-yaml/main.go
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-yaml/main.go
 func (ctx *context) ReadYAML(outPtr interface{}) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(yaml.Unmarshal))
 }
@@ -2958,7 +2958,7 @@ var ErrEmptyForm = errors.New("empty form")
 // is false (as defaulted) in this case the caller should check the pointer to
 // see if something was actually binded.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if len(values) == 0 {
@@ -2978,7 +2978,7 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 
 // ReadQuery binds url query to "ptr". The struct field tag is "url".
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-query/main.go
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 func (ctx *context) ReadQuery(ptr interface{}) error {
 	values := ctx.request.URL.Query()
 	if len(values) == 0 {

@@ -1,7 +1,7 @@
-// Package basicauth provides http basic authentication via middleware. See _examples/authentication/basicauth
+// Package basicauth provides http basic authentication via middleware. See _examples/auth/basicauth
 package basicauth
 
-// test file: ../../_examples/authentication/basicauth/main_test.go
+// test file: ../../_examples/auth/basicauth/main_test.go
 
 import (
 	"encoding/base64"

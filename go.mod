@@ -20,7 +20,7 @@ require (
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
 	github.com/json-iterator/go v1.1.9
-	github.com/kataras/golog v0.0.15
+	github.com/kataras/golog v0.0.16
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.6
 	github.com/kataras/sitemap v0.0.5
