@@ -64,9 +64,7 @@ func (h *Handler) AddRule(r rule.Rule) *Handler {
 }
 
 var emptyHandler = func(ctx context.Context) {
-	ctx.StatusCode(500)
-	ctx.WriteString("cache: empty body handler")
-	ctx.StopExecution()
+	ctx.StopWithText(500, "cache: empty body handler")
 }
 
 func parseLifeChanger(ctx context.Context) entry.LifeChanger {

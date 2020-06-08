@@ -51,8 +51,7 @@ func New() context.Handler {
 				logMessage += fmt.Sprintf("\n%s", stacktrace)
 				ctx.Application().Logger().Warn(logMessage)
 
-				ctx.StatusCode(500)
-				ctx.StopExecution()
+				ctx.StopWithStatus(500)
 			}
 		}()
 
