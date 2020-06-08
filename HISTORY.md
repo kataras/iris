@@ -371,7 +371,7 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
-- Fixed handler's error response not be respected when response recorder or gzip writer was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder or gzip writer).
+- New [rollbar example](https://github.com/kataras/iris/tree/master/_examples/logging/rollbar/main.go).
 
 - New builtin [requestid](https://github.com/kataras/iris/tree/master/middleware/requestid) middleware.
 
@@ -445,6 +445,8 @@ New Context Methods:
 
 Breaking Changes:
 
+
+- Fixed handler's error response not be respected when response recorder or gzip writer was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder or gzip writer).
 - `Context.String()` (rarely used by end-developers) it does not return a unique string anymore, to achieve the old representation you must call the new `Context.SetID` method first.
 - `iris.CookieEncode` and `CookieDecode` are replaced with the `iris.CookieEncoding`.
 - `sessions#Config.Encode` and `Decode` are removed in favor of (the existing) `Encoding` field.
