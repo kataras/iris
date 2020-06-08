@@ -1900,6 +1900,16 @@ func (ctx *context) RemoteAddr() string {
 	return addr
 }
 
+// TrimHeaderValue returns the "v[0:first space or semicolon]".
+func TrimHeaderValue(v string) string {
+	for i, char := range v {
+		if char == ' ' || char == ';' {
+			return v[:i]
+		}
+	}
+	return v
+}
+
 // GetHeader returns the request header's value based on its name.
 func (ctx *context) GetHeader(name string) string {
 	return ctx.request.Header.Get(name)
@@ -2107,7 +2117,7 @@ func (ctx *context) Header(name string, value string) {
 	ctx.writer.Header().Add(name, value)
 }
 
-const contentTypeContextKey = "_iris_content_type"
+const contentTypeContextKey = "iris.content_type"
 
 func shouldAppendCharset(cType string) bool {
 	return cType != ContentBinaryHeaderValue && cType != ContentWebassemblyHeaderValue
@@ -2156,16 +2166,6 @@ func (ctx *context) ContentType(cType string) {
 // which may, set before with the 'ContentType'.
 func (ctx *context) GetContentType() string {
 	return ctx.writer.Header().Get(ContentTypeHeaderKey)
-}
-
-// TrimHeaderValue returns the "v[0:first space or semicolon]".
-func TrimHeaderValue(v string) string {
-	for i, char := range v {
-		if char == ' ' || char == ';' {
-			return v[:i]
-		}
-	}
-	return v
 }
 
 // GetContentType returns the request's header value of "Content-Type".
@@ -3083,6 +3083,8 @@ const (
 	ContentEncodingHeaderKey = "Content-Encoding"
 	// GzipHeaderValue is the header value of "gzip".
 	GzipHeaderValue = "gzip"
+	// FlateHeaderValue is the header value of "deflate".
+	FlateHeaderValue = "deflate"
 	// AcceptEncodingHeaderKey is the header key of "Accept-Encoding".
 	AcceptEncodingHeaderKey = "Accept-Encoding"
 	// VaryHeaderKey is the header key of "Vary".
@@ -3250,12 +3252,13 @@ func (ctx *context) StreamWriter(writer func(w io.Writer) bool) {
 // ClientSupportsGzip retruns true if the client supports gzip compression.
 func (ctx *context) ClientSupportsGzip() bool {
 	if h := ctx.GetHeader(AcceptEncodingHeaderKey); h != "" {
-		for _, v := range strings.Split(h, ";") {
+		for _, v := range strings.Split(h, ",") {
 			if strings.Contains(v, GzipHeaderValue) { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
 				return true
 			}
 		}
 	}
+
 	return false
 }
 
@@ -3506,8 +3509,7 @@ func (ctx *context) View(filename string, optionalViewModel ...interface{}) erro
 
 	err := ctx.app.View(ctx, filename, layout, bindingData)
 	if err != nil {
-		ctx.StatusCode(http.StatusInternalServerError)
-		ctx.StopExecution()
+		ctx.StopWithStatus(http.StatusInternalServerError)
 	}
 
 	return err

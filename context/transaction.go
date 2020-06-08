@@ -114,7 +114,7 @@ func (t *Transaction) Complete(err error) {
 				reason = errWstatus.Reason
 			}
 			// get the content type used on this transaction
-			if cTypeH := t.context.ResponseWriter().Header().Get(ContentTypeHeaderKey); cTypeH != "" {
+			if cTypeH := t.context.GetContentType(); cTypeH != "" {
 				cType = cTypeH
 			}
 
@@ -168,8 +168,7 @@ var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrR
 				ctx.ContentType(maybeErr.ContentType)
 			} else {
 				// else execute the registered user error and skip the next transactions and all normal flow,
-				ctx.StatusCode(maybeErr.StatusCode)
-				ctx.StopExecution()
+				ctx.StopWithStatus(maybeErr.StatusCode)
 			}
 		})
 
