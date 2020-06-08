@@ -117,8 +117,9 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
 	n, err = fmt.Fprintf(w, format, a...)
 	if err == nil {
-		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
-			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
+		h := w.ResponseWriter.Header()
+		if h[ContentTypeHeaderKey] == nil {
+			h.Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
 	}
 
@@ -130,8 +131,9 @@ func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err
 func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
 	n, err = w.Write([]byte(s))
 	if err == nil {
-		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
-			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
+		h := w.ResponseWriter.Header()
+		if h[ContentTypeHeaderKey] == nil {
+			h.Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
 	}
 	return
@@ -183,11 +185,10 @@ func AddGzipHeaders(w ResponseWriter) {
 	w.Header().Add(ContentEncodingHeaderKey, GzipHeaderValue)
 }
 
-// FlushResponse validates the response headers in order to be compatible with the gzip written data
-// and writes the data to the underline ResponseWriter.
-func (w *GzipResponseWriter) FlushResponse() {
-	_, _ = w.WriteNow(w.chunks)
-	w.ResponseWriter.FlushResponse()
+// Body returns the body tracked from the writer so far,
+// do not use this for edit.
+func (w *GzipResponseWriter) Body() []byte {
+	return w.chunks
 }
 
 // ResetBody resets the response body.
@@ -199,4 +200,11 @@ func (w *GzipResponseWriter) ResetBody() {
 // if called then the contents are being written in plain form.
 func (w *GzipResponseWriter) Disable() {
 	w.disabled = true
+}
+
+// FlushResponse validates the response headers in order to be compatible with the gzip written data
+// and writes the data to the underline ResponseWriter.
+func (w *GzipResponseWriter) FlushResponse() {
+	_, _ = w.WriteNow(w.chunks)
+	w.ResponseWriter.FlushResponse()
 }

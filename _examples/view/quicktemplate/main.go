@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12/_examples/response-writer/quicktemplate/controllers"
+	"github.com/kataras/iris/v12/_examples/view/quicktemplate/controllers"
 
 	"github.com/kataras/iris/v12"
 )

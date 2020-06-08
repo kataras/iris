@@ -51,7 +51,7 @@
     * [Route State](routing/route-state/main.go)
     * [Reverse Routing](routing/reverse/main.go)
     * [Router Wrapper](routing/custom-wrapper/main.go)
-    * [Custom Router](routing/custom-high-level-router/main.go)
+    * [Custom Router](routing/custom-router/main.go)
     * Custom Context
         * [Method Overriding](routing/custom-context/method-overriding/main.go)
         * [New Implementation](routing/custom-context/new-implementation/main.go)

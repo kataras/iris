@@ -35,11 +35,11 @@ func TestOnAnyErrorCode(t *testing.T) {
 		ctx.WriteString(expectedFoundResponse)
 	})
 
-	app.Get("/406", func(ctx context.Context) {
+	expected407 := "this should be sent, we manage the response response by ourselves"
+	app.Get("/407", func(ctx context.Context) {
 		ctx.Record()
-		ctx.WriteString("this should not be sent, only status text will be sent")
-		ctx.WriteString("the handler can handle 'rollback' of the text when error code fired because of the recorder")
-		ctx.StatusCode(iris.StatusNotAcceptable)
+		ctx.WriteString(expected407)
+		ctx.StatusCode(iris.StatusProxyAuthRequired)
 	})
 
 	e := httptest.New(t, app)
@@ -57,7 +57,26 @@ func TestOnAnyErrorCode(t *testing.T) {
 
 	checkAndClearBuf(t, buff, expectedPrintBeforeExecuteErr)
 
-	e.GET("/406").Expect().Status(iris.StatusNotAcceptable).
+	e.GET("/407").Expect().Status(iris.StatusProxyAuthRequired).
+		Body().Equal(expected407)
+
+	// Test Configuration.ResetOnFireErrorCode.
+	app2 := iris.New()
+	app2.Configure(iris.WithResetOnFireErrorCode)
+
+	app2.OnAnyErrorCode(func(ctx context.Context) {
+		buff.WriteString(expectedPrintBeforeExecuteErr)
+		ctx.Next()
+	}, defaultErrHandler)
+
+	app2.Get("/406", func(ctx context.Context) {
+		ctx.Record()
+		ctx.WriteString("this should not be sent, only status text will be sent")
+		ctx.WriteString("the handler can handle 'rollback' of the text when error code fired because of the recorder")
+		ctx.StatusCode(iris.StatusNotAcceptable)
+	})
+
+	httptest.New(t, app2).GET("/406").Expect().Status(iris.StatusNotAcceptable).
 		Body().Equal(http.StatusText(iris.StatusNotAcceptable))
 
 	checkAndClearBuf(t, buff, expectedPrintBeforeExecuteErr)

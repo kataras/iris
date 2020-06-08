@@ -1287,21 +1287,6 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.writer.BeginResponse(w)
 }
 
-// StatusCodeNotSuccessful defines if a specific "statusCode" is not
-// a valid status code for a successful response.
-// It defaults to < 200 || >= 400
-//
-// Read more at `iris#DisableAutoFireStatusCode`, `iris/core/router#ErrorCodeHandler`
-// and `iris/core/router#OnAnyErrorCode` for relative information.
-//
-// Do NOT change it.
-//
-// It's exported for extreme situations--special needs only, when the Iris server and the client
-// is not following the RFC: https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-var StatusCodeNotSuccessful = func(statusCode int) bool {
-	return statusCode < 200 || statusCode >= 400
-}
-
 // EndRequest is executing once after a response to the request was sent and this context is useless or released.
 // Do NOT call it manually. Framework calls it automatically.
 //
@@ -1313,29 +1298,9 @@ func (ctx *context) EndRequest() {
 		ctx.deferFunc(ctx)
 	}
 
-	if !ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() &&
+	if !ctx.app.ConfigurationReadOnly().GetDisableAutoFireStatusCode() &&
 		StatusCodeNotSuccessful(ctx.GetStatusCode()) {
-		// author's note:
-		// if recording, the error handler can handle
-		// the rollback and remove any response written before,
-		// we don't have to do anything here, written is <=0 (-1 for default empty, even no status code)
-		// when Recording
-		// because we didn't flush the response yet
-		// if !recording  then check if the previous handler didn't send something
-		// to the client.
-		if ctx.writer.Written() <= 0 {
-			// Author's notes:
-			// previously: == -1,
-			// <=0 means even if empty write called which has meaning;
-			// rel: core/router/status.go#Fire-else
-			// mvc/activator/funcmethod/func_result_dispatcher.go#DispatchCommon-write
-			// mvc/response.go#defaultFailureResponse - no text given but
-			// status code should be fired, but it couldn't because of the .Write
-			// action, the .Written() was 0 even on empty response, this 0 means that
-			// a status code given, the previous check of the "== -1" didn't make check for that,
-			// we do now.
-			ctx.Application().FireErrorCode(ctx)
-		}
+		ctx.app.FireErrorCode(ctx)
 	}
 
 	ctx.writer.FlushResponse()
@@ -1779,7 +1744,7 @@ func (ctx *context) Method() string {
 // Path returns the full request path,
 // escaped if EnablePathEscape config field is true.
 func (ctx *context) Path() string {
-	return ctx.RequestPath(ctx.Application().ConfigurationReadOnly().GetEnablePathEscape())
+	return ctx.RequestPath(ctx.app.ConfigurationReadOnly().GetEnablePathEscape())
 }
 
 // DecodeQuery returns the uri parameter as url (string)
@@ -1861,7 +1826,7 @@ func (ctx *context) Subdomain() (subdomain string) {
 
 	// listening on mydomain.com:80
 	// subdomain = mydomain, but it's wrong, it should return ""
-	vhost := ctx.Application().ConfigurationReadOnly().GetVHost()
+	vhost := ctx.app.ConfigurationReadOnly().GetVHost()
 	if strings.Contains(vhost, subdomain) { // then it's not subdomain
 		return ""
 	}
@@ -1875,7 +1840,7 @@ func (ctx *context) Subdomain() (subdomain string) {
 // Order may change.
 // Example: https://github.com/kataras/iris/tree/master/_examples/routing/intelligence/manual
 func (ctx *context) FindClosest(n int) []string {
-	return ctx.Application().FindClosestPaths(ctx.Subdomain(), ctx.Path(), n)
+	return ctx.app.FindClosestPaths(ctx.Subdomain(), ctx.Path(), n)
 }
 
 // IsWWW returns true if the current subdomain (if any) is www.
@@ -1883,7 +1848,7 @@ func (ctx *context) IsWWW() bool {
 	host := ctx.Host()
 	if index := strings.IndexByte(host, '.'); index > 0 {
 		// if it has a subdomain and it's www then return true.
-		if subdomain := host[0:index]; !strings.Contains(ctx.Application().ConfigurationReadOnly().GetVHost(), subdomain) {
+		if subdomain := host[0:index]; !strings.Contains(ctx.app.ConfigurationReadOnly().GetVHost(), subdomain) {
 			return subdomain == "www"
 		}
 	}
@@ -1910,8 +1875,8 @@ const xForwardedForHeaderKey = "X-Forwarded-For"
 //      `Configuration.WithoutRemoteAddrHeader(...)` and
 //      `Configuration.RemoteAddrPrivateSubnets` for more.
 func (ctx *context) RemoteAddr() string {
-	remoteHeaders := ctx.Application().ConfigurationReadOnly().GetRemoteAddrHeaders()
-	privateSubnets := ctx.Application().ConfigurationReadOnly().GetRemoteAddrPrivateSubnets()
+	remoteHeaders := ctx.app.ConfigurationReadOnly().GetRemoteAddrHeaders()
+	privateSubnets := ctx.app.ConfigurationReadOnly().GetRemoteAddrPrivateSubnets()
 
 	for headerName, enabled := range remoteHeaders {
 		if !enabled {
@@ -2102,7 +2067,7 @@ func (ctx *context) GetLocale() Locale {
 		}
 	}
 
-	if locale := ctx.Application().I18nReadOnly().GetLocale(ctx); locale != nil {
+	if locale := ctx.app.I18nReadOnly().GetLocale(ctx); locale != nil {
 		ctx.values.Set(contextKey, locale)
 		return locale
 	}
@@ -2125,7 +2090,7 @@ func (ctx *context) Tr(format string, args ...interface{}) string { // other nam
 // SetVersion force-sets the API Version integrated with the "iris/versioning" subpackage.
 // It can be used inside a middleare.
 func (ctx *context) SetVersion(constraint string) {
-	ctx.values.Set(ctx.Application().ConfigurationReadOnly().GetVersionContextKey(), constraint)
+	ctx.values.Set(ctx.app.ConfigurationReadOnly().GetVersionContextKey(), constraint)
 }
 
 //  +------------------------------------------------------------+
@@ -2150,7 +2115,7 @@ func shouldAppendCharset(cType string) bool {
 
 func (ctx *context) contentTypeOnce(cType string, charset string) {
 	if charset == "" {
-		charset = ctx.Application().ConfigurationReadOnly().GetCharset()
+		charset = ctx.app.ConfigurationReadOnly().GetCharset()
 	}
 
 	if shouldAppendCharset(cType) {
@@ -2180,7 +2145,7 @@ func (ctx *context) ContentType(cType string) {
 	// if doesn't contain a charset already then append it
 	if !strings.Contains(cType, "charset") {
 		if shouldAppendCharset(cType) {
-			cType += "; charset=" + ctx.Application().ConfigurationReadOnly().GetCharset()
+			cType += "; charset=" + ctx.app.ConfigurationReadOnly().GetCharset()
 		}
 	}
 
@@ -2457,7 +2422,7 @@ func (ctx *context) FormValues() map[string][]string {
 // Form contains the parsed form data, including both the URL
 // field's query parameters and the POST or PUT form data.
 func (ctx *context) form() (form map[string][]string, found bool) {
-	return GetForm(ctx.request, ctx.Application().ConfigurationReadOnly().GetPostMaxMemory(), ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+	return GetForm(ctx.request, ctx.app.ConfigurationReadOnly().GetPostMaxMemory(), ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
 }
 
 // GetForm returns the request form (url queries, post or multipart) values.
@@ -2661,7 +2626,7 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 	// here but do it in order to apply the post limit,
 	// the internal request.FormFile will not do it if that's filled
 	// and it's not a stream body.
-	if err := ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory()); err != nil {
+	if err := ctx.request.ParseMultipartForm(ctx.app.ConfigurationReadOnly().GetPostMaxMemory()); err != nil {
 		return nil, nil, err
 	}
 
@@ -2694,7 +2659,7 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-files
 func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error) {
-	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+	err = ctx.request.ParseMultipartForm(ctx.app.ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
 		return 0, err
 	}
@@ -2840,7 +2805,7 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 //
 // However, whenever you can use the `ctx.Request().Body` instead.
 func (ctx *context) GetBody() ([]byte, error) {
-	return GetBody(ctx.request, ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+	return GetBody(ctx.request, ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
 }
 
 // GetBody reads and returns the request body.
@@ -2907,11 +2872,11 @@ func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 		return err
 	}
 
-	return ctx.Application().Validate(outPtr)
+	return ctx.app.Validate(outPtr)
 }
 
 func (ctx *context) shouldOptimize() bool {
-	return ctx.Application().ConfigurationReadOnly().GetEnableOptimizations()
+	return ctx.app.ConfigurationReadOnly().GetEnableOptimizations()
 }
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
@@ -2962,7 +2927,7 @@ var ErrEmptyForm = errors.New("empty form")
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if len(values) == 0 {
-		if ctx.Application().ConfigurationReadOnly().GetFireEmptyFormError() {
+		if ctx.app.ConfigurationReadOnly().GetFireEmptyFormError() {
 			return ErrEmptyForm
 		}
 		return nil
@@ -2973,7 +2938,7 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 		return err
 	}
 
-	return ctx.Application().Validate(formObject)
+	return ctx.app.Validate(formObject)
 }
 
 // ReadQuery binds url query to "ptr". The struct field tag is "url".
@@ -2990,7 +2955,7 @@ func (ctx *context) ReadQuery(ptr interface{}) error {
 		return err
 	}
 
-	return ctx.Application().Validate(ptr)
+	return ctx.app.Validate(ptr)
 }
 
 // ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
@@ -3015,7 +2980,7 @@ func (ctx *context) ReadMsgPack(ptr interface{}) error {
 		return err
 	}
 
-	return ctx.Application().Validate(ptr)
+	return ctx.app.Validate(ptr)
 }
 
 // ReadBody binds the request body to the "ptr" depending on the HTTP Method and the Request's Content-Type.
@@ -3434,7 +3399,7 @@ const (
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 func (ctx *context) ViewLayout(layoutTmplFile string) {
-	ctx.values.Set(ctx.Application().ConfigurationReadOnly().GetViewLayoutContextKey(), layoutTmplFile)
+	ctx.values.Set(ctx.app.ConfigurationReadOnly().GetViewLayoutContextKey(), layoutTmplFile)
 }
 
 // ViewData saves one or more key-value pair in order to be passed if and when .View
@@ -3456,7 +3421,7 @@ func (ctx *context) ViewLayout(layoutTmplFile string) {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 func (ctx *context) ViewData(key string, value interface{}) {
-	viewDataContextKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
+	viewDataContextKey := ctx.app.ConfigurationReadOnly().GetViewDataContextKey()
 	if key == "" {
 		ctx.values.Set(viewDataContextKey, value)
 		return
@@ -3485,7 +3450,7 @@ func (ctx *context) ViewData(key string, value interface{}) {
 // Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
 // `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
 func (ctx *context) GetViewData() map[string]interface{} {
-	viewDataContextKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
+	viewDataContextKey := ctx.app.ConfigurationReadOnly().GetViewDataContextKey()
 	v := ctx.values.Get(viewDataContextKey)
 
 	// if no values found, then return nil
@@ -3527,7 +3492,7 @@ func (ctx *context) GetViewData() map[string]interface{} {
 // Examples: https://github.com/kataras/iris/tree/master/_examples/view
 func (ctx *context) View(filename string, optionalViewModel ...interface{}) error {
 	ctx.ContentType(ContentHTMLHeaderValue)
-	cfg := ctx.Application().ConfigurationReadOnly()
+	cfg := ctx.app.ConfigurationReadOnly()
 
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
 
@@ -3539,7 +3504,7 @@ func (ctx *context) View(filename string, optionalViewModel ...interface{}) erro
 		bindingData = ctx.values.Get(cfg.GetViewDataContextKey())
 	}
 
-	err := ctx.Application().View(ctx, filename, layout, bindingData)
+	err := ctx.app.View(ctx, filename, layout, bindingData)
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		ctx.StopExecution()
@@ -3763,7 +3728,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		}
 
 		if err != nil {
-			ctx.Application().Logger().Debugf("JSON: %v", err)
+			ctx.app.Logger().Debugf("JSON: %v", err)
 			ctx.StatusCode(http.StatusInternalServerError) // it handles the fallback to normal mode here which also removes the gzip headers.
 			return 0, err
 		}
@@ -3772,7 +3737,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 
 	n, err = WriteJSON(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
-		ctx.Application().Logger().Debugf("JSON: %v", err)
+		ctx.app.Logger().Debugf("JSON: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3838,7 +3803,7 @@ func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
 
 	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
-		ctx.Application().Logger().Debugf("JSONP: %v", err)
+		ctx.app.Logger().Debugf("JSONP: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3935,7 +3900,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 
 	n, err := WriteXML(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
-		ctx.Application().Logger().Debugf("XML: %v", err)
+		ctx.app.Logger().Debugf("XML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -4015,7 +3980,7 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 
 	n, err := WriteMarkdown(ctx.writer, markdownB, options)
 	if err != nil {
-		ctx.Application().Logger().Debugf("Markdown: %v", err)
+		ctx.app.Logger().Debugf("Markdown: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -4027,7 +3992,7 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 func (ctx *context) YAML(v interface{}) (int, error) {
 	out, err := yaml.Marshal(v)
 	if err != nil {
-		ctx.Application().Logger().Debugf("YAML: %v", err)
+		ctx.app.Logger().Debugf("YAML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -4225,7 +4190,7 @@ func (ctx *context) Negotiate(v interface{}) (int, error) {
 	}
 
 	if charset == "" {
-		charset = ctx.Application().ConfigurationReadOnly().GetCharset()
+		charset = ctx.app.ConfigurationReadOnly().GetCharset()
 	}
 
 	if encoding == "gzip" {
@@ -5410,7 +5375,7 @@ func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 	t := newTransaction(ctx) // it calls this *context, so the overriding with a new pool's New of context.Context wil not work here.
 	defer func() {
 		if err := recover(); err != nil {
-			ctx.Application().Logger().Warn(fmt.Errorf("recovery from panic: %w", ErrTransactionInterrupt))
+			ctx.app.Logger().Warn(fmt.Errorf("recovery from panic: %w", ErrTransactionInterrupt))
 			// complete (again or not , doesn't matters) the scope without loud
 			t.Complete(nil)
 			// we continue as normal, no need to return here*
@@ -5498,7 +5463,7 @@ func (ctx *context) Exec(method string, path string) {
 
 	// execute the route from the (internal) context router
 	// this way we keep the sessions and the values
-	ctx.Application().ServeHTTPC(ctx)
+	ctx.app.ServeHTTPC(ctx)
 
 	// set the request back to its previous state
 	req.RequestURI = backupPath
@@ -5513,7 +5478,7 @@ func (ctx *context) Exec(method string, path string) {
 // RouteExists reports whether a particular route exists
 // It will search from the current subdomain of context's host, if not inside the root domain.
 func (ctx *context) RouteExists(method, path string) bool {
-	return ctx.Application().RouteExists(ctx, method, path)
+	return ctx.app.RouteExists(ctx, method, path)
 }
 
 const (
