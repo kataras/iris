@@ -70,6 +70,7 @@
         * [Log Requests to a JSON File](logging/request-logger/request-logger-file-json/main.go) 
     * [Application File Logger](logging/file-logger/main.go)
     * [Application JSON Logger](logging/json-logger/main.go)
+    * [Rollbar](logging/rollbar/main.go)
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)
     * [Swagger](https://github.com/iris-contrib/swagger/tree/master/example)
