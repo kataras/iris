@@ -39,6 +39,18 @@ type ConfigurationReadOnly interface {
 	GetForceLowercaseRouting() bool
 	// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
 	GetFireMethodNotAllowed() bool
+	// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
+	// Returns true when the http error status code handler automatic execution turned off.
+	GetDisableAutoFireStatusCode() bool
+	// ResetOnFireErrorCode if true then any previously response body or headers through
+	// response recorder or gzip writer will be ignored and the router
+	// will fire the registered (or default) HTTP error handler instead.
+	// See `core/router/handler#FireErrorCode` and `Context.EndRequest` for more details.
+	//
+	// Read more at: https://github.com/kataras/iris/issues/1531
+	//
+	// Defaults to false.
+	GetResetOnFireErrorCode() bool
 
 	// GetEnableOptimizations returns whether
 	// the application has performance optimizations enabled.
@@ -57,9 +69,6 @@ type ConfigurationReadOnly interface {
 	// If true then the `context.ReadBody/ReadForm` will return an `iris.ErrEmptyForm`
 	// on empty request form data.
 	GetFireEmptyFormError() bool
-	// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
-	// Returns true when the http error status code handler automatic execution turned off.
-	GetDisableAutoFireStatusCode() bool
 
 	// GetTimeFormat returns the configuration.TimeFormat,
 	// format for any kind of datetime parsing.

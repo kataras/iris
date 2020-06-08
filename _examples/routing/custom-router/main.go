@@ -72,7 +72,7 @@ func (r *customRouter) RouteExists(ctx iris.Context, method, path string) bool {
 	return false
 }
 
-func (r *customRouter) FireErrorCode(ctx iris.Context) {
+func (r *customRouter) FireErrorCode(ctx iris.Context, reset bool) {
 	// responseStatusCode := ctx.GetStatusCode() // set by prior ctx.StatusCode calls
 	// [...]
 }

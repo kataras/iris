@@ -269,13 +269,6 @@ var WithEmptyFormError = func(app *Application) {
 	app.config.FireEmptyFormError = true
 }
 
-// WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
-//
-// See `Configuration`.
-var WithoutAutoFireStatusCode = func(app *Application) {
-	app.config.DisableAutoFireStatusCode = true
-}
-
 // WithPathEscape sets the EnablePathEscape setting to true.
 //
 // See `Configuration`.
@@ -303,6 +296,20 @@ var WithOptimizations = func(app *Application) {
 // See `Configuration`.
 var WithFireMethodNotAllowed = func(app *Application) {
 	app.config.FireMethodNotAllowed = true
+}
+
+// WithoutAutoFireStatusCode sets the DisableAutoFireStatusCode setting to true.
+//
+// See `Configuration`.
+var WithoutAutoFireStatusCode = func(app *Application) {
+	app.config.DisableAutoFireStatusCode = true
+}
+
+// WithResetOnFireErrorCode sets the ResetOnFireErrorCode setting to true.
+//
+// See `Configuration`.
+var WithResetOnFireErrorCode = func(app *Application) {
+	app.config.ResetOnFireErrorCode = true
 }
 
 // WithTimeFormat sets the TimeFormat setting.
@@ -829,6 +836,21 @@ type Configuration struct {
 	//  fires the 405 error instead of 404
 	// Defaults to false.
 	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
+	// DisableAutoFireStatusCode if true then it turns off the http error status code
+	// handler automatic execution on error code from a `Context.StatusCode` call.
+	// By-default a custom http error handler will be fired when "Context.StatusCode(errorCode)" called.
+	//
+	// Defaults to false.
+	DisableAutoFireStatusCode bool `json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
+	// ResetOnFireErrorCode if true then any previously response body or headers through
+	// response recorder or gzip writer will be ignored and the router
+	// will fire the registered (or default) HTTP error handler instead.
+	// See `core/router/handler#FireErrorCode` and `Context.EndRequest` for more details.
+	//
+	// Read more at: https://github.com/kataras/iris/issues/1531
+	//
+	// Defaults to false.
+	ResetOnFireErrorCode bool `json:"resetOnFireErrorCode,omitempty" yaml:"ResetOnFireErrorCode" toml:"ResetOnFireErrorCode"`
 
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
@@ -847,20 +869,6 @@ type Configuration struct {
 	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
 	//  will return an `iris.ErrEmptyForm` on empty request form data.
 	FireEmptyFormError bool `json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" yaml:"FireEmptyFormError"`
-
-	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
-	// from (`context.StatusCodeNotSuccessful`, defaults to < 200 || >= 400).
-	// If that is false then for a direct error firing, then call the "context#FireStatusCode(statusCode)" manually.
-	//
-	// By-default a custom http error handler will be fired when "context.StatusCode(code)" called,
-	// code should be equal with the result of the the `context.StatusCodeNotSuccessful` in order to be received as an "http error handler".
-	//
-	// Developer may want this option to set as true in order to manually call the
-	// error handlers when needed via "context#FireStatusCode(< 200 || >= 400)".
-	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
-	//
-	// Defaults to false.
-	DisableAutoFireStatusCode bool `json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
@@ -1038,19 +1046,28 @@ func (c Configuration) GetFireEmptyFormError() bool {
 	return c.DisableBodyConsumptionOnUnmarshal
 }
 
-// GetDisableAutoFireStatusCode returns the Configuration#DisableAutoFireStatusCode.
+// GetDisableAutoFireStatusCode returns the Configuration.DisableAutoFireStatusCode.
 // Returns true when the http error status code handler automatic execution turned off.
 func (c Configuration) GetDisableAutoFireStatusCode() bool {
 	return c.DisableAutoFireStatusCode
 }
 
-// GetTimeFormat returns the Configuration#TimeFormat,
+// GetResetOnFireErrorCode returns the Configuration.ResetOnFireErrorCode.
+// Returns true when the router should not respect the handler's error response and
+// fire the registered error handler instead.
+//
+// See https://github.com/kataras/iris/issues/1531
+func (c Configuration) GetResetOnFireErrorCode() bool {
+	return c.ResetOnFireErrorCode
+}
+
+// GetTimeFormat returns the Configuration.TimeFormat,
 // format for any kind of datetime parsing.
 func (c Configuration) GetTimeFormat() string {
 	return c.TimeFormat
 }
 
-// GetCharset returns the Configuration#Charset,
+// GetCharset returns the Configuration.Charset,
 // the character encoding for various rendering
 // used for templates and the rest of the responses.
 func (c Configuration) GetCharset() string {
@@ -1203,16 +1220,20 @@ func WithConfiguration(c Configuration) Configurator {
 			main.FireMethodNotAllowed = v
 		}
 
+		if v := c.DisableAutoFireStatusCode; v {
+			main.DisableAutoFireStatusCode = v
+		}
+
+		if v := c.ResetOnFireErrorCode; v {
+			main.ResetOnFireErrorCode = v
+		}
+
 		if v := c.DisableBodyConsumptionOnUnmarshal; v {
 			main.DisableBodyConsumptionOnUnmarshal = v
 		}
 
 		if v := c.FireEmptyFormError; v {
 			main.FireEmptyFormError = v
-		}
-
-		if v := c.DisableAutoFireStatusCode; v {
-			main.DisableAutoFireStatusCode = v
 		}
 
 		if v := c.TimeFormat; v != "" {

@@ -35,6 +35,8 @@ type (
 	// HTTPErrorHandler should contain a method `FireErrorCode` which
 	// handles http unsuccessful status codes.
 	HTTPErrorHandler interface {
+		// FireErrorCode should send an error response to the client based
+		// on the given context's response status code.
 		FireErrorCode(ctx context.Context)
 	}
 )
@@ -437,27 +439,55 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	ctx.StatusCode(http.StatusNotFound)
 }
 
+func statusCodeSuccessful(statusCode int) bool {
+	return !context.StatusCodeNotSuccessful(statusCode)
+}
+
+// FireErrorCode handles the response's error response.
+// If `Configuration.ResetOnFireErrorCode()` is true
+// and the response writer was a recorder or a gzip writer one
+// then it will try to reset the headers and the body before calling the
+// registered (or default) error handler for that error code set by
+// `ctx.StatusCode` method.
 func (h *routerHandler) FireErrorCode(ctx context.Context) {
+	// On common response writer, always check
+	// if we can't reset the body and the body has been filled
+	// which means that the status code already sent,
+	// then do not fire this custom error code,
+	// rel: context/context.go#EndRequest.
+	//
+	// Note that, this is set to 0 on recorder and gzip writer because they cache the response,
+	// so we check their len(Body()) instead, look below.
+	if ctx.ResponseWriter().Written() > 0 {
+		return
+	}
+
 	statusCode := ctx.GetStatusCode() // the response's cached one.
 
-	// if we can reset the body
-	if w, ok := ctx.IsRecording(); ok {
-		if statusCodeSuccessful(w.StatusCode()) { // if not an error status code
-			w.WriteHeader(statusCode) // then set it manually here, otherwise it should be set via ctx.StatusCode(...)
+	if ctx.Application().ConfigurationReadOnly().GetResetOnFireErrorCode() /* could be an argument too but we must not break the method */ {
+		// if we can reset the body, probably manual call of `Application.FireErrorCode`.
+		if w, ok := ctx.IsRecording(); ok {
+			if statusCodeSuccessful(w.StatusCode()) { // if not an error status code
+				w.WriteHeader(statusCode) // then set it manually here, otherwise it should be set via ctx.StatusCode(...)
+			}
+			// reset if previous content and it's recorder, keep the status code.
+			w.ClearHeaders()
+			w.ResetBody()
+		} else if w, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok {
+			// reset and disable the gzip in order to be an expected form of http error result
+			w.ResetBody()
+			w.Disable()
 		}
-		// reset if previous content and it's recorder, keep the status code.
-		w.ClearHeaders()
-		w.ResetBody()
-	} else if w, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok {
-		// reset and disable the gzip in order to be an expected form of http error result
-		w.ResetBody()
-		w.Disable()
 	} else {
-		// if we can't reset the body and the body has been filled
-		// which means that the status code already sent,
-		// then do not fire this custom error code.
-		if ctx.ResponseWriter().Written() > 0 { // != -1, rel: context/context.go#EndRequest
-			return
+		// check if a body already set (the error response is handled by the handler itself, see `Context.EndRequest`)
+		if w, ok := ctx.IsRecording(); ok {
+			if len(w.Body()) > 0 {
+				return
+			}
+		} else if w, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok {
+			if len(w.Body()) > 0 {
+				return
+			}
 		}
 	}
 
@@ -523,11 +553,7 @@ func (h *routerHandler) FireErrorCode(ctx context.Context) {
 	}
 
 	// not error handler found, write a default message.
-	ctx.WriteString(StatusText(statusCode))
-}
-
-func statusCodeSuccessful(statusCode int) bool {
-	return !context.StatusCodeNotSuccessful(statusCode)
+	ctx.WriteString(context.StatusText(statusCode))
 }
 
 func (h *routerHandler) subdomainAndPathAndMethodExists(ctx context.Context, t *trie, method, path string) bool {

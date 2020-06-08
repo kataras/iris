@@ -59,8 +59,12 @@ type Application interface {
 	// Look core/router/APIBuilder#GetRoutes for more.
 	GetRoutesReadOnly() []RouteReadOnly
 
-	// FireErrorCode executes an error http status code handler
-	// based on the context's status code.
+	// FireErrorCode handles the response's error response.
+	// If `Configuration.ResetOnFireErrorCode()` is true
+	// and the response writer was a recorder or a gzip writer one
+	// then it will try to reset the headers and the body before calling the
+	// registered (or default) error handler for that error code set by
+	// `ctx.StatusCode` method.
 	FireErrorCode(ctx Context)
 
 	// RouteExists reports whether a particular route exists

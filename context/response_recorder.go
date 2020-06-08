@@ -114,7 +114,7 @@ func (w *ResponseRecorder) SetBodyString(s string) {
 	w.SetBody([]byte(s))
 }
 
-// Body returns the body tracked from the writer so far
+// Body returns the body tracked from the writer so far,
 // do not use this for edit.
 func (w *ResponseRecorder) Body() []byte {
 	return w.chunks
@@ -190,7 +190,7 @@ func (w *ResponseRecorder) Clone() ResponseWriter {
 func (w *ResponseRecorder) WriteTo(res ResponseWriter) {
 	if to, ok := res.(*ResponseRecorder); ok {
 
-		// set the status code, to is first ( probably an error? (context.StatusCodeNotSuccessful, defaults to < 200 || >= 400).
+		// set the status code, to is first ( probably an error? (context.StatusCodeNotSuccessful, defaults to >=400).
 		if statusCode := w.ResponseWriter.StatusCode(); statusCode == defaultStatusCode {
 			to.WriteHeader(statusCode)
 		}
