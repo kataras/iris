@@ -579,7 +579,7 @@ var (
 	// A shortcut for the `context#CookieEncoding`.
 	CookieEncoding = context.CookieEncoding
 
-	// IsErrPath can be used at `context#ReadForm`.
+	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
 	// It reports whether the incoming error is type of `formbinder.ErrPath`,
 	// which can be ignored when server allows unknown post values to be sent by the client.
 	//

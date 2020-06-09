@@ -667,9 +667,14 @@ type Context interface {
 	// is false (as defaulted) in this case the caller should check the pointer to
 	// see if something was actually binded.
 	//
+	// If a client sent an unknown field, this method will return an error,
+	// in order to ignore that error use the `err != nil && !iris.IsErrPath(err)`.
+	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-form/main.go
 	ReadForm(formObject interface{}) error
 	// ReadQuery binds url query to "ptr". The struct field tag is "url".
+	// If a client sent an unknown field, this method will return an error,
+	// in order to ignore that error use the `err != nil && !iris.IsErrPath(err)`.
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 	ReadQuery(ptr interface{}) error
@@ -2923,6 +2928,9 @@ var ErrEmptyForm = errors.New("empty form")
 // is false (as defaulted) in this case the caller should check the pointer to
 // see if something was actually binded.
 //
+// If a client sent an unknown field, this method will return an error,
+// in order to ignore that error use the `err != nil && !iris.IsErrPath(err)`.
+//
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
@@ -2942,6 +2950,8 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 }
 
 // ReadQuery binds url query to "ptr". The struct field tag is "url".
+// If a client sent an unknown field, this method will return an error,
+// in order to ignore that error use the `err != nil && !iris.IsErrPath(err)`.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 func (ctx *context) ReadQuery(ptr interface{}) error {
