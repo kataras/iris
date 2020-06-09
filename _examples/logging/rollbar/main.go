@@ -80,7 +80,7 @@ func main() {
 	// * a critical error message here
 	//
 	// custom.handler.file
-	// * C:/mygopath/src/github.com/kataras/iris/_examples/loggin/rollbar/main.go:76
+	// * C:/mygopath/src/github.com/kataras/iris/_examples/logging/rollbar/main.go:76
 	//
 	// custom.handler.name
 	// * main.panicMe

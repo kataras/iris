@@ -61,8 +61,8 @@ func main() {
 	}()
 
 	r := newRequestLogger(logFile)
-
 	app.Use(r)
+
 	app.OnAnyErrorCode(r, func(ctx iris.Context) {
 		ctx.HTML("<h1> Error: Please try <a href ='/'> this </a> instead.</h1>")
 	})
