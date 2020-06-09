@@ -9,7 +9,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/logger"
 )
 
-const deleteFileOnExit = true
+const deleteFileOnExit = false
 
 func main() {
 	app := iris.New()
