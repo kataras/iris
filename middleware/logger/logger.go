@@ -112,7 +112,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	if l.config.Columns {
 		endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
 		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message, headerMessage)
-		_, _ = ctx.Application().Logger().Printer.Output.Write([]byte(output))
+		_, _ = ctx.Application().Logger().Printer.Write([]byte(output))
 		return
 	}
 	// no new line, the framework's logger is responsible how to render each log.
