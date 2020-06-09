@@ -142,6 +142,7 @@
     * [i18n](i18n/main.go)
 * Authentication, Authorization & Bot Detection 
     * [Basic Authentication](auth/basicauth/main.go)
+    * [CORS](auth/cors)
     * [JWT](auth/jwt/main.go)
     * [JWT (community edition)](https://github.com/iris-contrib/middleware/tree/v12/jwt/_example/main.go)
     * [OAUth2](auth/goth/main.go)
