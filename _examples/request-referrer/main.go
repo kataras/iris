@@ -8,8 +8,8 @@ func main() {
 	app := iris.New()
 
 	app.Get("/", func(ctx iris.Context) {
-		// GetReferrer extracts and returns the information from the "Referrer" header as specified
-		// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy or by the URL query parameter "referrer".
+		// GetReferrer extracts and returns the information from the "Referer" (or "Referrer") header
+		// and url query parameter as specified in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy.
 		r := ctx.GetReferrer()
 		switch r.Type {
 		case iris.ReferrerSearch:
