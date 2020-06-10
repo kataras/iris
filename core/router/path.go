@@ -258,6 +258,19 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 	return // return subdomain without slash, path with slash
 }
 
+func staticPath(src string) string {
+	bidx := strings.IndexByte(src, '{')
+	if bidx == -1 || len(src) <= bidx {
+		return src // no dynamic part found
+	}
+	if bidx <= 1 { // found at first{...} or second index (/{...}),
+		// although first index should never happen because of the prepended slash.
+		return "/"
+	}
+
+	return src[:bidx-1] // (/static/{...} -> /static)
+}
+
 // RoutePathReverserOption option signature for the RoutePathReverser.
 type RoutePathReverserOption func(*RoutePathReverser)
 

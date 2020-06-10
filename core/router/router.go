@@ -21,7 +21,7 @@ type Router struct {
 	// not indeed but we don't to risk its usage by third-parties.
 	requestHandler RequestHandler   // build-accessible, can be changed to define a custom router or proxy, used on RefreshRouter too.
 	mainHandler    http.HandlerFunc // init-accessible
-	wrapperFunc    func(http.ResponseWriter, *http.Request, http.HandlerFunc)
+	wrapperFunc    WrapperFunc
 
 	cPool          *context.Pool // used on RefreshRouter
 	routesProvider RoutesProvider
@@ -139,7 +139,7 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 	}
 
 	if router.wrapperFunc != nil { // if wrapper used then attach that as the router service
-		router.mainHandler = NewWrapper(router.wrapperFunc, router.mainHandler).ServeHTTP
+		router.mainHandler = newWrapper(router.wrapperFunc, router.mainHandler).ServeHTTP
 	}
 
 	// build closest.
@@ -180,12 +180,6 @@ func (router *Router) Downgraded() bool {
 	return router.mainHandler != nil && router.requestHandler == nil
 }
 
-// WrapperFunc is used as an expected input parameter signature
-// for the WrapRouter. It's a "low-level" signature which is compatible
-// with the net/http.
-// It's being used to run or no run the router based on a custom logic.
-type WrapperFunc func(w http.ResponseWriter, r *http.Request, firstNextIsTheRouter http.HandlerFunc)
-
 // WrapRouter adds a wrapper on the top of the main router.
 // Usually it's useful for third-party middleware
 // when need to wrap the entire application with a middleware like CORS.
@@ -196,28 +190,7 @@ type WrapperFunc func(w http.ResponseWriter, r *http.Request, firstNextIsTheRout
 //
 // Before build.
 func (router *Router) WrapRouter(wrapperFunc WrapperFunc) {
-	if wrapperFunc == nil {
-		return
-	}
-
-	router.mu.Lock()
-	defer router.mu.Unlock()
-
-	if router.wrapperFunc != nil {
-		// wrap into one function, from bottom to top, end to begin.
-		nextWrapper := wrapperFunc
-		prevWrapper := router.wrapperFunc
-		wrapperFunc = func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-			if next != nil {
-				nexthttpFunc := http.HandlerFunc(func(_w http.ResponseWriter, _r *http.Request) {
-					prevWrapper(_w, _r, next)
-				})
-				nextWrapper(w, r, nexthttpFunc)
-			}
-		}
-	}
-
-	router.wrapperFunc = wrapperFunc
+	router.wrapperFunc = makeWrapperFunc(router.wrapperFunc, wrapperFunc)
 }
 
 // ServeHTTPC serves the raw context, useful if we have already a context, it by-pass the wrapper.
@@ -233,25 +206,4 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // It will search from the current subdomain of context's host, if not inside the root domain.
 func (router *Router) RouteExists(ctx context.Context, method, path string) bool {
 	return router.requestHandler.RouteExists(ctx, method, path)
-}
-
-type wrapper struct {
-	router      http.HandlerFunc // http.HandlerFunc to catch the CURRENT state of its .ServeHTTP on case of future change.
-	wrapperFunc func(http.ResponseWriter, *http.Request, http.HandlerFunc)
-}
-
-// NewWrapper returns a new http.Handler wrapped by the 'wrapperFunc'
-// the "next" is the final "wrapped" input parameter.
-//
-// Application is responsible to make it to work on more than one wrappers
-// via composition or func clojure.
-func NewWrapper(wrapperFunc func(w http.ResponseWriter, r *http.Request, routerNext http.HandlerFunc), wrapped http.HandlerFunc) http.Handler {
-	return &wrapper{
-		wrapperFunc: wrapperFunc,
-		router:      wrapped,
-	}
-}
-
-func (wr *wrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	wr.wrapperFunc(w, r, wr.router)
 }
