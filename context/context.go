@@ -405,9 +405,8 @@ type Context interface {
 	IsHTTP2() bool
 	// IsGRPC reports whether the request came from a gRPC client.
 	IsGRPC() bool
-	// GetReferrer extracts and returns the information from the "Referrer" header as specified
-	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-	// or by the URL query parameter "referrer".
+	// GetReferrer extracts and returns the information from the "Referer" (or "Referrer") header
+	// and url query parameter as specified in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy.
 	GetReferrer() Referrer
 	// SetLanguage force-sets the language for i18n, can be used inside a middleare.
 	// It has the highest priority over the rest and if it is empty then it is ignored,
@@ -2031,16 +2030,25 @@ const (
 // unnecessary but good to know the default values upfront.
 var emptyReferrer = Referrer{Type: ReferrerInvalid, GoogleType: ReferrerNotGoogleSearch}
 
-// GetReferrer extracts and returns the information from the "Referrer" header as specified
-// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-// or by the URL query parameter "referrer".
+// GetReferrer extracts and returns the information from the "Referer" (or "Referrer") header
+// and url query parameter as specified in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy.
 func (ctx *context) GetReferrer() Referrer {
 	// the underline net/http follows the https://tools.ietf.org/html/rfc7231#section-5.5.2,
 	// so there is nothing special left to do.
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-	refURL := ctx.GetHeader("Referrer")
+	refURL := ctx.GetHeader("Referer")
 	if refURL == "" {
-		refURL = ctx.URLParam("referrer")
+		refURL = ctx.GetHeader("Referrer")
+		if refURL == "" {
+			refURL = ctx.URLParam("referer")
+			if refURL == "" {
+				refURL = ctx.URLParam("referrer")
+			}
+		}
+	}
+
+	if refURL == "" {
+		return emptyReferrer
 	}
 
 	if ref := goreferrer.DefaultRules.Parse(refURL); ref.Type > goreferrer.Invalid {
