@@ -248,7 +248,7 @@ func (app *Application) WWW() router.Party {
 // Example: https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect
 func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 	sd := router.NewSubdomainRedirectWrapper(app.ConfigurationReadOnly().GetVHost, from.GetRelPath(), to.GetRelPath())
-	app.WrapRouter(sd)
+	app.Router.WrapRouter(sd)
 	return to
 }
 
@@ -392,13 +392,13 @@ func (app *Application) RegisterView(viewEngine view.Engine) {
 func (app *Application) View(writer io.Writer, filename string, layout string, bindingData interface{}) error {
 	if app.view.Len() == 0 {
 		err := errors.New("view engine is missing, use `RegisterView`")
-		app.Logger().Error(err)
+		app.logger.Error(err)
 		return err
 	}
 
 	err := app.view.ExecuteWriter(writer, filename, layout, bindingData)
 	if err != nil {
-		app.Logger().Error(err)
+		app.logger.Error(err)
 	}
 	return err
 }
@@ -1103,7 +1103,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)
 	if err != nil {
-		app.Logger().Error(err)
+		app.logger.Error(err)
 	}
 
 	return err
@@ -1179,7 +1179,7 @@ func (app *Application) tryInjectLiveReload() error {
 
 	bodyCloseTag := []byte("</body>")
 
-	app.WrapRouter(func(w http.ResponseWriter, r *http.Request, _ http.HandlerFunc) {
+	app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, _ http.HandlerFunc) {
 		ctx := app.ContextPool.Acquire(w, r)
 		rec := ctx.Recorder() // Record everything and write all in once at the Context release.
 		app.ServeHTTPC(ctx)   // We directly call request handler with Context.
@@ -1234,7 +1234,7 @@ func (app *Application) tryStartTunneling() {
 				var publicAddr string
 				err := tc.startTunnel(t, &publicAddr)
 				if err != nil {
-					app.Logger().Errorf("Host: tunneling error: %v", err)
+					app.logger.Errorf("Host: tunneling error: %v", err)
 					return
 				}
 
@@ -1242,7 +1242,7 @@ func (app *Application) tryStartTunneling() {
 				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
 				directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
-				app.Logger().Printer.Write(directLog)
+				app.logger.Printer.Write(directLog)
 			}
 		})
 	})

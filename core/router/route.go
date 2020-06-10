@@ -325,16 +325,7 @@ func (r *Route) IsStatic() bool {
 // if /assets/{filepath:path} it will return /assets.
 func (r *Route) StaticPath() string {
 	src := r.tmpl.Src
-	bidx := strings.IndexByte(src, '{')
-	if bidx == -1 || len(src) <= bidx {
-		return src // no dynamic part found
-	}
-	if bidx <= 1 { // found at first{...} or second index (/{...}),
-		// although first index should never happen because of the prepended slash.
-		return "/"
-	}
-
-	return src[:bidx-1] // (/static/{...} -> /static)
+	return staticPath(src)
 }
 
 // ResolvePath returns the formatted path's %v replaced with the args.
