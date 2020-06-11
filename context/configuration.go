@@ -9,122 +9,58 @@ import "github.com/kataras/iris/v12/core/netutil"
 // safe or its useless to be called from a request handler.
 type ConfigurationReadOnly interface {
 	// GetVHost returns the non-exported vhost config field.
-	//
-	// If original addr ended with :443 or :80, it will return the host without the port.
-	// If original addr was :https or :http, it will return localhost.
-	// If original addr was 0.0.0.0, it will return localhost.
 	GetVHost() string
-
-	// GetLogLevel returns the `Configuration.LogLevel` field.
-	// The same (as `golog.LogLevel`) can be retrieved through `app.Logger().Level`.
+	// GetLogLevel returns the LogLevel field.
 	GetLogLevel() string
-
-	// GetDisablePathCorrection returns the configuration.DisablePathCorrection,
-	// DisablePathCorrection corrects and redirects the requested path to the registered path
-	// for example, if /home/ path is requested but no handler for this Route found,
-	// then the Router checks if /home handler exists, if yes,
-	// (permant)redirects the client to the correct path /home.
+	// GetDisablePathCorrection returns the DisablePathCorrection field
 	GetDisablePathCorrection() bool
-	// GetDisablePathCorrectionRedirection returns the Configuration.DisablePathCorrectionRedirection field.
-	// If DisablePathCorrectionRedirection set to true then it will handle paths as they are.
-	// it will fire the handler of the matching route without
-	// the last slash ("/") instead of send a redirection status.
+	// GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.
 	GetDisablePathCorrectionRedirection() bool
-	// GetEnablePathIntelligence returns the Configuration.EnablePathIntelligence field.
+	// GetEnablePathIntelligence returns the EnablePathIntelligence field.
 	GetEnablePathIntelligence() bool
-	// GetEnablePathEscape is the configuration.EnablePathEscape,
-	// returns true when its escapes the path, the named parameters (if any).
+	// GetEnablePathEscape returns the EnablePathEscape field.
 	GetEnablePathEscape() bool
-	// GetForceLowercaseRouting returns the value of the `ForceLowercaseRouting` setting.
+	// GetForceLowercaseRouting returns the ForceLowercaseRouting field.
 	GetForceLowercaseRouting() bool
-	// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
+	// GetFireMethodNotAllowed returns the FireMethodNotAllowed field.
 	GetFireMethodNotAllowed() bool
-	// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
-	// Returns true when the http error status code handler automatic execution turned off.
+	// GetDisableAutoFireStatusCode returns the DisableAutoFireStatusCode field.
 	GetDisableAutoFireStatusCode() bool
-	// ResetOnFireErrorCode if true then any previously response body or headers through
-	// response recorder or gzip writer will be ignored and the router
-	// will fire the registered (or default) HTTP error handler instead.
-	// See `core/router/handler#FireErrorCode` and `Context.EndRequest` for more details.
-	//
-	// Read more at: https://github.com/kataras/iris/issues/1531
-	//
-	// Defaults to false.
+	// ResetOnFireErrorCode retruns the ResetOnFireErrorCode field.
 	GetResetOnFireErrorCode() bool
 
-	// GetEnableOptimizations returns whether
-	// the application has performance optimizations enabled.
+	// GetEnableOptimizations returns the EnableOptimizations field.
 	GetEnableOptimizations() bool
-	// GetDisableBodyConsumptionOnUnmarshal returns the configuration.GetDisableBodyConsumptionOnUnmarshal,
-	// manages the reading behavior of the context's body readers/binders.
-	// If returns true then the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`
-	// is disabled.
-	//
-	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
-	// if this field set to true then a new buffer will be created to read from and the request body.
-	// The body will not be changed and existing data before the
-	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+	// GetDisableBodyConsumptionOnUnmarshal returns the DisableBodyConsumptionOnUnmarshal field.
 	GetDisableBodyConsumptionOnUnmarshal() bool
-	// GetFireEmptyFormError returns the Configuration.FireEmptyFormError value.
-	// If true then the `context.ReadBody/ReadForm` will return an `iris.ErrEmptyForm`
-	// on empty request form data.
+	// GetFireEmptyFormError returns the FireEmptyFormError field.
 	GetFireEmptyFormError() bool
 
-	// GetTimeFormat returns the configuration.TimeFormat,
-	// format for any kind of datetime parsing.
+	// GetTimeFormat returns the TimeFormat field.
 	GetTimeFormat() string
-
-	// GetCharset returns the configuration.Charset,
-	// the character encoding for various rendering
-	// used for templates and the rest of the responses.
+	// GetCharset returns the Charset field.
 	GetCharset() string
-
-	// GetPostMaxMemory returns the maximum configured post data size
-	// that a client can send to the server, this differs
-	// from the overral request body size which can be modified
-	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
-	//
-	// Defaults to 32MB or 32 << 20 if you prefer.
+	// GetPostMaxMemory returns the PostMaxMemory field.
 	GetPostMaxMemory() int64
 
-	// GetTranslateLanguageContextKey returns the configuration's LocaleContextKey value,
-	// used for i18n. Defaults to "iris.locale".
+	// GetTranslateLanguageContextKey returns the LocaleContextKey field.
 	GetLocaleContextKey() string
-	// GetLanguageContextKey returns the configuration's LanguageContextKey value,
-	// used for i18n. Defaults to "iris.locale.language".
+	// GetLanguageContextKey returns the LanguageContextKey field.
 	GetLanguageContextKey() string
-	// GetVersionContextKey returns the configuration's VersionKey value,
-	// used for API Versioning. Defaults to "iris.api.version".
+	// GetVersionContextKey returns the VersionContextKey field.
 	GetVersionContextKey() string
-	// GetViewLayoutContextKey returns the key of the context's user values' key
-	// which is being used to set the template
-	// layout from a middleware or the main handler.
-	// Overrides the parent's or the configuration's.
+	// GetViewLayoutContextKey returns the ViewLayoutContextKey field.
 	GetViewLayoutContextKey() string
-	// GetViewDataContextKey returns the key of the context's user values' key
-	// which is being used to set the template
-	// binding data from a middleware or the main handler.
+	// GetViewDataContextKey returns the ViewDataContextKey field.
 	GetViewDataContextKey() string
 
-	// GetRemoteAddrHeaders returns the allowed request headers names
-	// that can be valid to parse the client's IP based on.
-	//
-	// Defaults to:
-	// "X-Real-Ip":             true,
-	// "X-Forwarded-For":       true,
-	// "CF-Connecting-IP": false
-	//
-	// Look `context.RemoteAddr()` for more.
+	// GetRemoteAddrHeaders returns RemoteAddrHeaders field.
 	GetRemoteAddrHeaders() map[string]bool
-	// GetRemoteAddrPrivateSubnets returns the configuration's private sub-networks.
-	// They are used to be compared against
-	// IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
-	// For details please navigate through: https://github.com/kataras/iris/issues/1453
-	//
-	// Look `context.RemoteAddr()` for more.
+	// GetRemoteAddrPrivateSubnets returns the RemoteAddrPrivateSubnets field.
 	GetRemoteAddrPrivateSubnets() []netutil.IPRange
 	// GetSSLProxyHeaders returns the SSLProxyHeaders field.
 	GetSSLProxyHeaders() map[string]string
-	// GetOther returns the configuration.Other map.
+
+	// GetOther returns the Other field.
 	GetOther() map[string]interface{}
 }
