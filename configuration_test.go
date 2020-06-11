@@ -153,12 +153,14 @@ EnableOptimizations: true
 DisableBodyConsumptionOnUnmarshal: true
 TimeFormat: "Mon, 02 Jan 2006 15:04:05 GMT"
 Charset: "utf-8"
-
 RemoteAddrHeaders:
   X-Real-Ip: true
   X-Forwarded-For: true
   CF-Connecting-IP: true
-
+HostProxyHeaders:
+  X-Host: true
+SSLProxyHeaders:
+  X-Forwarded-Proto: https
 Other:
   MyServerName: "Iris: https://github.com/kataras/iris"
 `
@@ -221,6 +223,34 @@ Other:
 	for k, v := range c.RemoteAddrHeaders {
 		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
 			t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+		}
+	}
+
+	expectedHostProxyHeaders := map[string]bool{
+		"X-Host": true,
+	}
+
+	if expected, got := len(c.HostProxyHeaders), len(expectedHostProxyHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected HostProxyHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.HostProxyHeaders {
+		if expected, got := expectedHostProxyHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected HostProxyHeaders[%s] = %t but got %t", k, expected, got)
+		}
+	}
+
+	expectedSSLProxyHeaders := map[string]string{
+		"X-Forwarded-Proto": "https",
+	}
+
+	if expected, got := len(c.SSLProxyHeaders), len(c.SSLProxyHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected SSLProxyHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.SSLProxyHeaders {
+		if expected, got := expectedSSLProxyHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected SSLProxyHeaders[%s] = %s but got %s", k, expected, got)
 		}
 	}
 
