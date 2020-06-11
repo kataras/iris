@@ -354,15 +354,18 @@ func WithPostMaxMemory(limit int64) Configurator {
 // that the client may sent.
 //
 // Defaults to an empty map but an example usage is:
-// WithRemoteAddrHeader("X-Forwarded-For")
+// WithRemoteAddrHeader("X-Forwarded-For", "CF-Connecting-IP")
 //
 // Look `context.RemoteAddr()` for more.
-func WithRemoteAddrHeader(headerName string) Configurator {
+func WithRemoteAddrHeader(header ...string) Configurator {
 	return func(app *Application) {
 		if app.config.RemoteAddrHeaders == nil {
 			app.config.RemoteAddrHeaders = make(map[string]bool)
 		}
-		app.config.RemoteAddrHeaders[headerName] = true
+
+		for _, k := range header {
+			app.config.RemoteAddrHeaders[k] = true
+		}
 	}
 }
 
@@ -405,6 +408,20 @@ func WithSSLProxyHeader(headerKey, headerValue string) Configurator {
 		}
 
 		app.config.SSLProxyHeaders[headerKey] = headerValue
+	}
+}
+
+// WithHostProxyHeader sets a HostProxyHeaders key value pair.
+// Example: WithHostProxyHeader("X-Host").
+// See `Context.Host` for more.
+func WithHostProxyHeader(headers ...string) Configurator {
+	return func(app *Application) {
+		if app.config.HostProxyHeaders == nil {
+			app.config.HostProxyHeaders = make(map[string]bool)
+		}
+		for _, k := range headers {
+			app.config.HostProxyHeaders[k] = true
+		}
 	}
 }
 
@@ -880,7 +897,7 @@ type Configuration struct {
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
-	//  will return an `iris.ErrEmptyForm` on empty request form data.
+	// will return an `iris.ErrEmptyForm` on empty request form data.
 	FireEmptyFormError bool `json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" yaml:"FireEmptyFormError"`
 
 	// TimeFormat time format for any kind of datetime parsing
@@ -956,7 +973,6 @@ type Configuration struct {
 	//
 	// Look `context.RemoteAddr()` for more.
 	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
-
 	// RemoteAddrPrivateSubnets defines the private sub-networks.
 	// They are used to be compared against
 	// IP Addresses fetched through `RemoteAddrHeaders` or `Context.Request.RemoteAddr`.
@@ -987,14 +1003,18 @@ type Configuration struct {
 	// 	End:   net.ParseIP("198.19.255.255"),
 	// }
 	//
-	// Look `context.RemoteAddr()` for more.
+	// Look `Context.RemoteAddr()` for more.
 	RemoteAddrPrivateSubnets []netutil.IPRange `json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
 	// SSLProxyHeaders defines the set of header key values
-	// that would indicate a valid https Request (look `context.IsSSL()`).
+	// that would indicate a valid https Request (look `Context.IsSSL()`).
 	// Example: `map[string]string{"X-Forwarded-Proto": "https"}`.
 	//
 	// Defaults to empty map.
 	SSLProxyHeaders map[string]string `json:"sslProxyHeaders" yaml:"SSLProxyHeaders" toml:"SSLProxyHeaders"`
+	// HostProxyHeaders defines the set of headers that may hold a proxied hostname value for the clients.
+	// Look `Context.Host()` for more.
+	// Defaults to empty map.
+	HostProxyHeaders map[string]bool `json:"hostProxyHeaders" yaml:"HostProxyHeaders" toml:"HostProxyHeaders"`
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want.
 	//
@@ -1122,6 +1142,11 @@ func (c Configuration) GetSSLProxyHeaders() map[string]string {
 // GetRemoteAddrPrivateSubnets returns the RemoteAddrPrivateSubnets field.
 func (c Configuration) GetRemoteAddrPrivateSubnets() []netutil.IPRange {
 	return c.RemoteAddrPrivateSubnets
+}
+
+// GetHostProxyHeaders returns the HostProxyHeaders field.
+func (c Configuration) GetHostProxyHeaders() map[string]bool {
+	return c.HostProxyHeaders
 }
 
 // GetOther returns the Other field.
@@ -1259,6 +1284,15 @@ func WithConfiguration(c Configuration) Configurator {
 			}
 		}
 
+		if v := c.HostProxyHeaders; len(v) > 0 {
+			if main.HostProxyHeaders == nil {
+				main.HostProxyHeaders = make(map[string]bool, len(v))
+			}
+			for key, value := range v {
+				main.HostProxyHeaders[key] = value
+			}
+		}
+
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
 				main.Other = make(map[string]interface{}, len(v))
@@ -1325,6 +1359,7 @@ func DefaultConfiguration() Configuration {
 			},
 		},
 		SSLProxyHeaders:     make(map[string]string),
+		HostProxyHeaders:    make(map[string]bool),
 		EnableOptimizations: false,
 		Other:               make(map[string]interface{}),
 	}

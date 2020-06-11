@@ -60,7 +60,8 @@ type ConfigurationReadOnly interface {
 	GetRemoteAddrPrivateSubnets() []netutil.IPRange
 	// GetSSLProxyHeaders returns the SSLProxyHeaders field.
 	GetSSLProxyHeaders() map[string]string
-
+	// GetHostProxyHeaders returns the HostProxyHeaders field.
+	GetHostProxyHeaders() map[string]bool
 	// GetOther returns the Other field.
 	GetOther() map[string]interface{}
 }

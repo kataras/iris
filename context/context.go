@@ -346,6 +346,7 @@ type Context interface {
 	// based on the 'escape'.
 	RequestPath(escape bool) string
 	// Host returns the host part of the current url.
+	// This method makes use of the `Configuration.HostProxyHeaders` field too.
 	Host() string
 	// Subdomain returns the subdomain of this request, if any.
 	// Note that this is a fast method which does not cover all cases.
@@ -1813,7 +1814,18 @@ func (ctx *context) RequestPath(escape bool) string {
 // } no, it will not work because map is a random peek data structure.
 
 // Host returns the host part of the current URI.
+// This method makes use of the `Configuration.HostProxyHeaders` field too.
 func (ctx *context) Host() string {
+	for header, ok := range ctx.app.ConfigurationReadOnly().GetHostProxyHeaders() {
+		if !ok {
+			continue
+		}
+
+		if host := ctx.GetHeader(header); host != "" {
+			return host
+		}
+	}
+
 	return GetHost(ctx.request)
 }
 
