@@ -120,12 +120,6 @@ type ConfigurationReadOnly interface {
 	// They are used to be compared against
 	// IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
 	// For details please navigate through: https://github.com/kataras/iris/issues/1453
-	// Defaults to an empty slice, usage:
-	//
-	// RemoteAddrPrivateSubnets {
-	//	{Start: "10.0.0.0", End: "10.255.255.255"},
-	//  {Start: "100.64.0.0", End: "100.127.255.255"},
-	//	}
 	//
 	// Look `context.RemoteAddr()` for more.
 	GetRemoteAddrPrivateSubnets() []netutil.IPRange
