@@ -395,6 +395,18 @@ func WithRemoteAddrPrivateSubnet(startIP, endIP string) Configurator {
 	}
 }
 
+// WithSSLProxyHeader sets a SSLProxyHeaders key value pair.
+// Example: WithSSLProxyHeader("X-Forwarded-Proto", "https").
+func WithSSLProxyHeader(headerKey, headerValue string) Configurator {
+	return func(app *Application) {
+		if app.config.SSLProxyHeaders == nil {
+			app.config.SSLProxyHeaders = make(map[string]string)
+		}
+
+		app.config.SSLProxyHeaders[headerKey] = headerValue
+	}
+}
+
 // WithOtherValue adds a value based on a key to the Other setting.
 //
 // See `Configuration.Other`.
@@ -976,10 +988,16 @@ type Configuration struct {
 	//
 	// Look `context.RemoteAddr()` for more.
 	RemoteAddrPrivateSubnets []netutil.IPRange `json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
+	// SSLProxyHeaders defines the set of header key values
+	// that would indicate a valid https Request (look `context.IsSSL()`).
+	// Example: `map[string]string{"X-Forwarded-Proto": "https"}`.
+	//
+	// Defaults to empty map.
+	SSLProxyHeaders map[string]string `json:"sslProxyHeaders" yaml:"SSLProxyHeaders" toml:"SSLProxyHeaders"`
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want.
 	//
-	// Defaults to a non-nil empty map.
+	// Defaults to empty map.
 	Other map[string]interface{} `json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
 
@@ -1156,6 +1174,11 @@ func (c Configuration) GetViewDataContextKey() string {
 // Look `context.RemoteAddr()` for more.
 func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
 	return c.RemoteAddrHeaders
+}
+
+// GetSSLProxyHeaders returns the SSLProxyHeaders field.
+func (c Configuration) GetSSLProxyHeaders() map[string]string {
+	return c.SSLProxyHeaders
 }
 
 // GetRemoteAddrPrivateSubnets returns the configuration's private sub-networks.
@@ -1384,6 +1407,7 @@ func DefaultConfiguration() Configuration {
 				End:   net.ParseIP("198.19.255.255"),
 			},
 		},
+		SSLProxyHeaders:     make(map[string]string),
 		EnableOptimizations: false,
 		Other:               make(map[string]interface{}),
 	}

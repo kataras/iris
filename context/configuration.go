@@ -123,6 +123,8 @@ type ConfigurationReadOnly interface {
 	//
 	// Look `context.RemoteAddr()` for more.
 	GetRemoteAddrPrivateSubnets() []netutil.IPRange
+	// GetSSLProxyHeaders returns the SSLProxyHeaders field.
+	GetSSLProxyHeaders() map[string]string
 	// GetOther returns the configuration.Other map.
 	GetOther() map[string]interface{}
 }
