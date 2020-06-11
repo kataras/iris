@@ -389,8 +389,8 @@ func WithoutRemoteAddrHeader(headerName string) Configurator {
 func WithRemoteAddrPrivateSubnet(startIP, endIP string) Configurator {
 	return func(app *Application) {
 		app.config.RemoteAddrPrivateSubnets = append(app.config.RemoteAddrPrivateSubnets, netutil.IPRange{
-			Start: net.IP(startIP),
-			End:   net.IP(endIP),
+			Start: net.ParseIP(startIP),
+			End:   net.ParseIP(endIP),
 		})
 	}
 }
@@ -946,14 +946,33 @@ type Configuration struct {
 
 	// RemoteAddrPrivateSubnets defines the private sub-networks.
 	// They are used to be compared against
-	// IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
+	// IP Addresses fetched through `RemoteAddrHeaders` or `Context.Request.RemoteAddr`.
 	// For details please navigate through: https://github.com/kataras/iris/issues/1453
-	// Defaults to an empty slice, usage:
-	//
-	// RemoteAddrPrivateSubnets {
-	//	{Start: "10.0.0.0", End: "10.255.255.255"},
-	//  {Start: "100.64.0.0", End: "100.127.255.255"},
-	//	}
+	// Defaults to:
+	// {
+	// 	Start: net.ParseIP("10.0.0.0"),
+	// 	End:   net.ParseIP("10.255.255.255"),
+	// },
+	// {
+	// 	Start: net.ParseIP("100.64.0.0"),
+	// 	End:   net.ParseIP("100.127.255.255"),
+	// },
+	// {
+	// 	Start: net.ParseIP("172.16.0.0"),
+	// 	End:   net.ParseIP("172.31.255.255"),
+	// },
+	// {
+	// 	Start: net.ParseIP("192.0.0.0"),
+	// 	End:   net.ParseIP("192.0.0.255"),
+	// },
+	// {
+	// 	Start: net.ParseIP("192.168.0.0"),
+	// 	End:   net.ParseIP("192.168.255.255"),
+	// },
+	// {
+	// 	Start: net.ParseIP("198.18.0.0"),
+	// 	End:   net.ParseIP("198.19.255.255"),
+	// }
 	//
 	// Look `context.RemoteAddr()` for more.
 	RemoteAddrPrivateSubnets []netutil.IPRange `json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
@@ -1143,12 +1162,31 @@ func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
 // They are used to be compared against
 // IP Addresses fetched through `RemoteAddrHeaders` or `Request.RemoteAddr`.
 // For details please navigate through: https://github.com/kataras/iris/issues/1453
-// Defaults to an empty slice, usage:
-//
-// RemoteAddrPrivateSubnets {
-//	{Start: "10.0.0.0", End: "10.255.255.255"},
-//  {Start: "100.64.0.0", End: "100.127.255.255"},
-//	}
+// Defaults to:
+// {
+// 	Start: net.ParseIP("10.0.0.0"),
+// 	End:   net.ParseIP("10.255.255.255"),
+// },
+// {
+// 	Start: net.ParseIP("100.64.0.0"),
+// 	End:   net.ParseIP("100.127.255.255"),
+// },
+// {
+// 	Start: net.ParseIP("172.16.0.0"),
+// 	End:   net.ParseIP("172.31.255.255"),
+// },
+// {
+// 	Start: net.ParseIP("192.0.0.0"),
+// 	End:   net.ParseIP("192.0.0.255"),
+// },
+// {
+// 	Start: net.ParseIP("192.168.0.0"),
+// 	End:   net.ParseIP("192.168.255.255"),
+// },
+// {
+// 	Start: net.ParseIP("198.18.0.0"),
+// 	End:   net.ParseIP("198.19.255.255"),
+// }
 //
 // Look `context.RemoteAddr()` for more.
 func (c Configuration) GetRemoteAddrPrivateSubnets() []netutil.IPRange {
@@ -1313,15 +1351,40 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:            32 << 20, // 32MB
-		LocaleContextKey:         "iris.locale",
-		LanguageContextKey:       "iris.locale.language",
-		VersionContextKey:        "iris.api.version",
-		ViewLayoutContextKey:     "iris.viewLayout",
-		ViewDataContextKey:       "iris.viewData",
-		RemoteAddrHeaders:        make(map[string]bool),
-		RemoteAddrPrivateSubnets: []netutil.IPRange{},
-		EnableOptimizations:      false,
-		Other:                    make(map[string]interface{}),
+		PostMaxMemory:        32 << 20, // 32MB
+		LocaleContextKey:     "iris.locale",
+		LanguageContextKey:   "iris.locale.language",
+		VersionContextKey:    "iris.api.version",
+		ViewLayoutContextKey: "iris.viewLayout",
+		ViewDataContextKey:   "iris.viewData",
+		RemoteAddrHeaders:    make(map[string]bool),
+		RemoteAddrPrivateSubnets: []netutil.IPRange{
+			{
+				Start: net.ParseIP("10.0.0.0"),
+				End:   net.ParseIP("10.255.255.255"),
+			},
+			{
+				Start: net.ParseIP("100.64.0.0"),
+				End:   net.ParseIP("100.127.255.255"),
+			},
+			{
+				Start: net.ParseIP("172.16.0.0"),
+				End:   net.ParseIP("172.31.255.255"),
+			},
+			{
+				Start: net.ParseIP("192.0.0.0"),
+				End:   net.ParseIP("192.0.0.255"),
+			},
+			{
+				Start: net.ParseIP("192.168.0.0"),
+				End:   net.ParseIP("192.168.255.255"),
+			},
+			{
+				Start: net.ParseIP("198.18.0.0"),
+				End:   net.ParseIP("198.19.255.255"),
+			},
+		},
+		EnableOptimizations: false,
+		Other:               make(map[string]interface{}),
 	}
 }
