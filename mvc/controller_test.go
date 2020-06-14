@@ -469,10 +469,19 @@ type testControllerActivateListener struct {
 
 func (c *testControllerActivateListener) BeforeActivation(b BeforeActivation) {
 	b.Dependencies().Register(&testBindType{title: "overrides the dependency but not the field"}) // overrides the `Register` previous calls.
+
+	// b.Handle("POST", "/me/tos-read", "MeTOSRead")
+	// b.Handle("GET", "/me/tos-read", "MeTOSRead")
+	// OR:
+	b.HandleMany("GET POST", "/me/tos-read", "MeTOSRead")
 }
 
 func (c *testControllerActivateListener) Get() string {
 	return c.TitlePointer.title
+}
+
+func (c *testControllerActivateListener) MeTOSRead() string {
+	return "MeTOSRead"
 }
 
 func TestControllerActivateListener(t *testing.T) {
@@ -493,6 +502,11 @@ func TestControllerActivateListener(t *testing.T) {
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("overrides the dependency but not the field")
+	e.GET("/me/tos-read").Expect().Status(iris.StatusOK).
+		Body().Equal("MeTOSRead")
+	e.POST("/me/tos-read").Expect().Status(iris.StatusOK).
+		Body().Equal("MeTOSRead")
+
 	e.GET("/manual").Expect().Status(iris.StatusOK).
 		Body().Equal("overrides the dependency but not the field")
 	e.GET("/manual2").Expect().Status(iris.StatusOK).
