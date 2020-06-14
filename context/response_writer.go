@@ -105,6 +105,32 @@ type ResponseWriter interface {
 	CloseNotifier() (http.CloseNotifier, bool)
 }
 
+// ResponseWriterBodyReseter can be implemented by
+// response writers that supports response body overriding
+// (e.g. recorder and compressed).
+type ResponseWriterBodyReseter interface {
+	// ResetBody should reset the body and reports back if it could reset successfully.
+	ResetBody()
+}
+
+// ResponseWriterDisabler can be implemented
+// by response writers that can be disabled and restored to their previous state
+// (e.g. compressed).
+type ResponseWriterDisabler interface {
+	// Disable should disable this type of response writer and fallback to the default one.
+	Disable()
+}
+
+// ResponseWriterReseter can be implemented
+// by response writers that can clear the whole response
+// so a new handler can write into this from the beginning.
+// E.g. recorder, compressed (full) and common writer (status code and headers).
+type ResponseWriterReseter interface {
+	// Reset should reset the whole response and reports
+	// whether it could reset successfully.
+	Reset() bool
+}
+
 //  +------------------------------------------------------------+
 //  | Response Writer Implementation                             |
 //  +------------------------------------------------------------+
@@ -165,6 +191,25 @@ func (w *responseWriter) BeginResponse(underline http.ResponseWriter) {
 // Here is the place which we can make the last checks or do a cleanup.
 func (w *responseWriter) EndResponse() {
 	releaseResponseWriter(w)
+}
+
+// Reset clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *responseWriter) Reset() bool {
+	if w.written > 0 {
+		return false // if already written we can't reset this type of response writer.
+	}
+
+	h := w.Header()
+	for k := range h {
+		h[k] = nil
+	}
+
+	w.written = NoWritten
+	w.statusCode = defaultStatusCode
+	return true
 }
 
 // SetWritten sets manually a value for written, it can be

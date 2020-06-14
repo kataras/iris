@@ -91,6 +91,9 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 				return r, nil
 			} else if rule == RouteError {
 				return nil, fmt.Errorf("new route: %s conflicts with an already registered one: %s route", route.String(), r.String())
+			} else if rule == RouteOverlap {
+				overlapRoute(r, route)
+				return route, nil
 			} else {
 				// replace existing with the latest one, the default behavior.
 				repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
@@ -111,6 +114,38 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 	}
 
 	return route, nil
+}
+
+var defaultOverlapFilter = func(ctx context.Context) bool {
+	if ctx.IsStopped() {
+		// It's stopped and the response can be overriden by a new handler.
+		rs, ok := ctx.ResponseWriter().(context.ResponseWriterReseter)
+		return ok && rs.Reset()
+	}
+
+	// It's not stopped, all OK no need to execute the alternative route.
+	return false
+}
+
+func overlapRoute(r *Route, next *Route) {
+	next.BuildHandlers()
+	nextHandlers := next.Handlers[0:]
+
+	decisionHandler := func(ctx context.Context) {
+		ctx.Next()
+
+		if !defaultOverlapFilter(ctx) {
+			return
+		}
+
+		ctx.SetCurrentRoute(next.ReadOnly)
+		ctx.HandlerIndex(0)
+		ctx.Do(nextHandlers)
+	}
+
+	// NOTE(@kataras): Any UseGlobal call will prepend to this, if they are
+	// in the same Party then it's expected, otherwise not.
+	r.beginHandlers = append(context.Handlers{decisionHandler}, r.beginHandlers...)
 }
 
 // APIBuilder the visible API for constructing the router
@@ -261,10 +296,17 @@ const (
 	// RouteError log when a route already exists, shown after the `Build` state,
 	// server never starts.
 	RouteError
+	// RouteOverlap will overlap the new route to the previous one.
+	// If the route stopped and its response can be reset then the new route will be execute.
+	RouteOverlap
 )
 
 // SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
-// Available values are: RouteOverride (the default one), RouteSkip and RouteError.
+// Available values are:
+// * RouteOverride (the default one)
+// * RouteSkip
+// * RouteError
+// * RouteOverlap.
 func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
 	api.routeRegisterRule = rule
 	return api

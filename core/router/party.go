@@ -116,7 +116,11 @@ type Party interface {
 	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
 	SetExecutionRules(executionRules ExecutionRules) Party
 	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
-	// Available values are: RouteOverride (the default one), RouteSkip and RouteError.
+	// Available values are:
+	// * RouteOverride (the default one)
+	// * RouteSkip
+	// * RouteError
+	// * RouteOverlap.
 	SetRegisterRule(rule RouteRegisterRule) Party
 
 	// Handle registers a route to the server's router.

@@ -66,6 +66,9 @@ type Route struct {
 
 	// ReadOnly is the read-only structure of the Route.
 	ReadOnly context.RouteReadOnly
+
+	// OnBuild runs right before BuildHandlers.
+	OnBuild func(r *Route)
 }
 
 // NewRoute returns a new route based on its method,
@@ -186,6 +189,10 @@ func (r *Route) RestoreStatus() bool {
 // at the `Application#Build` state. Do not call it manually, unless
 // you were defined your own request mux handler.
 func (r *Route) BuildHandlers() {
+	if r.OnBuild != nil {
+		r.OnBuild(r)
+	}
+
 	if len(r.beginHandlers) > 0 {
 		r.Handlers = append(r.beginHandlers, r.Handlers...)
 		r.beginHandlers = r.beginHandlers[0:0]
