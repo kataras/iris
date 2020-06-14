@@ -11,7 +11,7 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/golang/protobuf v1.4.2
-	github.com/gomodule/redigo v1.8.1
+	github.com/gomodule/redigo v1.8.2
 	github.com/google/uuid v1.1.2-0.20200519141726-cb32006e483f
 	github.com/hashicorp/go-version v1.2.0
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible

@@ -8,7 +8,7 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 [![iris](https://img.shields.io/badge/iris-powered-2196f3.svg?style=for-the-badge)](https://github.com/kataras/iris)
 ```
 
-> The badge is optionally, of course, it is just a simple and fast way to support Iris. The badge is work of a third-party, taken from https://github.com/blob-go/blob-go which was published by our friend @clover113 and we loved it<3
+> The badge is optionally, of course, it is just a simple and fast way to support Iris. The badge is work of a third-party, taken from https://github.com/blob-go/blob-go which was published by our friend @clover113 and we loved it🧡
 
 ## Editors & IDEs Extensions
 
@@ -31,10 +31,10 @@ Go version 1.13 and above is required.
 More than 100 practical examples, tutorials and articles at:
 
 - https://iris-go.com/start
-- https://github.com/kataras/iris/wiki/Starter-kits
-- https://github.com/iris-contrib/examples
-- https://godoc.org/github.com/kataras/iris
 - https://bit.ly/iris-req-book
+- https://github.com/kataras/iris/wiki/Starter-kits
+- https://github.com/kataras/iris/tree/master/_examples
+- https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0
 
 ## Active development mode
 
