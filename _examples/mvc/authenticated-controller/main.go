@@ -15,9 +15,19 @@ import (
 )
 
 func main() {
-	app := iris.New()
+	app := newApp()
 	app.Logger().SetLevel("debug")
 
+	// Open a client, e.g. Postman and visit the below endpoints.
+	// GET: http://localhost:8080/user (UnauthenticatedUserController.Get)
+	// POST: http://localhost:8080/user/login (UnauthenticatedUserController.PostLogin)
+	// GET: http://localhost:8080/user (UserController.Get)
+	// POST: http://localhost:8080/user/logout (UserController.PostLogout)
+	app.Listen(":8080")
+}
+
+func newApp() *iris.Application {
+	app := iris.New()
 	sess := sessions.New(sessions.Config{
 		Cookie:       "myapp_session_id",
 		AllowReclaim: true,
@@ -37,18 +47,11 @@ func main() {
 		userApp.Register(authDependency)
 
 		// Register Controllers.
-		userApp.Handle(new(MeController))
 		userApp.Handle(new(UserController))
 		userApp.Handle(new(UnauthenticatedUserController))
 	}
 
-	// Open a client, e.g. Postman and visit the below endpoints.
-	// GET: http://localhost:8080/user
-	// POST: http://localhost:8080/user/login
-	// GET: http://localhost:8080/user
-	// GET: http://localhost:8080/user/me
-	// POST: http://localhost:8080/user/logout
-	app.Listen(":8080")
+	return app
 }
 
 // Authenticated is a custom type used as "annotation" for resources that requires authentication,
@@ -70,21 +73,16 @@ func authDependency(ctx iris.Context, session *sessions.Session) Authenticated {
 // UnauthenticatedUserController serves the "public" Unauthorized User API.
 type UnauthenticatedUserController struct{}
 
-// GetMe registers a route that will be executed when authentication is not passed
-// (see UserController.GetMe) too.
-func (c *UnauthenticatedUserController) GetMe() string {
+// Get registers a route that will be executed when authentication is not passed
+// (see UserController.Get) too.
+func (c *UnauthenticatedUserController) Get() string {
 	return `custom action to redirect on authentication page`
-}
-
-// UserController serves the "public" User API.
-type UserController struct {
-	Session *sessions.Session
 }
 
 // PostLogin serves
 // POST: /user/login
-func (c *UserController) PostLogin() mvc.Response {
-	c.Session.Set("user_id", 1)
+func (c *UnauthenticatedUserController) PostLogin(session *sessions.Session) mvc.Response {
+	session.Set("user_id", 1)
 
 	// Redirect (you can still use the Context.Redirect if you want so).
 	return mvc.Response{
@@ -93,27 +91,20 @@ func (c *UserController) PostLogin() mvc.Response {
 	}
 }
 
-// PostLogout serves
-// POST: /user/logout
-func (c *UserController) PostLogout(ctx iris.Context) {
-	c.Session.Man.Destroy(ctx)
-}
-
-// GetMe showcases that the same type can be used inside controller's method too,
-// a second controller like `MeController` is not required.
-// GET: user/me
-func (c *UserController) GetMe(_ Authenticated) string {
-	return `UserController.GetMe: The Authenticated type
-can be used to secure a controller's method too.`
-}
-
-// MeController provides the logged user's available actions.
-type MeController struct {
+// UserController serves the "public" User API.
+type UserController struct {
 	CurrentUserID Authenticated
 }
 
 // Get returns a message for the sake of the example.
 // GET: /user
-func (c *MeController) Get() string {
-	return "This will be executed only when the user is logged in"
+func (c *UserController) Get() string {
+	return `UserController.Get: The Authenticated type
+can be used to secure a controller's method too.`
+}
+
+// PostLogout serves
+// POST: /user/logout
+func (c *UserController) PostLogout(ctx iris.Context) {
+	sessions.Get(ctx).Man.Destroy(ctx)
 }

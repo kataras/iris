@@ -289,9 +289,9 @@ func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
 type RouteRegisterRule uint8
 
 const (
-	// RouteOverride an existing route with the new one, the default rule.
+	// RouteOverride replaces an existing route with the new one, the default rule.
 	RouteOverride RouteRegisterRule = iota
-	// RouteSkip registering a new route twice.
+	// RouteSkip keeps the original route and skips the new one.
 	RouteSkip
 	// RouteError log when a route already exists, shown after the `Build` state,
 	// server never starts.

@@ -610,9 +610,9 @@ var (
 // Constants for input argument at `router.RouteRegisterRule`.
 // See `Party#SetRegisterRule`.
 const (
-	// RouteOverride an existing route with the new one, the default rule.
+	// RouteOverride replaces an existing route with the new one, the default rule.
 	RouteOverride = router.RouteOverride
-	// RouteSkip registering a new route twice.
+	// RouteSkip keeps the original route and skips the new one.
 	RouteSkip = router.RouteSkip
 	// RouteError log when a route already exists, shown after the `Build` state,
 	// server never starts.
