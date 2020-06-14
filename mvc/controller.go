@@ -236,6 +236,18 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 	return false
 }
 
+func (c *ControllerActivator) isReservedMethodHandler(method, path string) bool {
+	for _, routes := range c.routes {
+		for _, r := range routes {
+			if r.Method == method && r.Path == path {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func (c *ControllerActivator) markAsWebsocket() {
 	c.servesWebsocket = true
 	c.attachInjector()
@@ -296,8 +308,10 @@ func (c *ControllerActivator) addErr(err error) bool {
 // Just like `Party#Handle`, it returns the `*router.Route`, if failed
 // then it logs the errors and it returns nil, you can check the errors
 // programmatically by the `Party#GetReporter`.
+//
+// Handle will add a route to the "funcName".
 func (c *ControllerActivator) Handle(method, path, funcName string, middleware ...context.Handler) *router.Route {
-	routes := c.HandleMany(method, path, funcName, middleware...)
+	routes := c.handleMany(method, path, funcName, false, middleware...)
 	if len(routes) == 0 {
 		return nil
 	}
@@ -315,13 +329,14 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 // func (*Controller) BeforeActivation(b mvc.BeforeActivation) {
 // 	b.HandleMany("GET", "/path /path1" /path2", "HandlePath")
 // }
+// HandleMany will override any routes of this "funcName".
 func (c *ControllerActivator) HandleMany(method, path, funcName string, middleware ...context.Handler) []*router.Route {
 	return c.handleMany(method, path, funcName, true, middleware...)
 }
 
 func (c *ControllerActivator) handleMany(method, path, funcName string, override bool, middleware ...context.Handler) []*router.Route {
 	if method == "" || path == "" || funcName == "" ||
-		c.isReservedMethod(funcName) {
+		(c.isReservedMethod(funcName) && c.isReservedMethodHandler(method, path)) {
 		// isReservedMethod -> if it's already registered
 		// by a previous Handle or analyze methods internally.
 		return nil
