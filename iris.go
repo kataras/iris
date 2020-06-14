@@ -617,6 +617,9 @@ const (
 	// RouteError log when a route already exists, shown after the `Build` state,
 	// server never starts.
 	RouteError = router.RouteError
+	// RouteOverlap will overlap the new route to the previous one.
+	// If the route stopped and its response can be reset then the new route will be execute.
+	RouteOverlap = router.RouteOverlap
 )
 
 // Contains the enum values of the `Context.GetReferrer()` method,

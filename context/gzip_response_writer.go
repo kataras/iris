@@ -192,6 +192,7 @@ func (w *GzipResponseWriter) Body() []byte {
 }
 
 // ResetBody resets the response body.
+// Implements the `ResponseWriterBodyReseter`.
 func (w *GzipResponseWriter) ResetBody() {
 	w.chunks = w.chunks[0:0]
 }
@@ -200,6 +201,26 @@ func (w *GzipResponseWriter) ResetBody() {
 // if called then the contents are being written in plain form.
 func (w *GzipResponseWriter) Disable() {
 	w.disabled = true
+}
+
+// Reset disables the gzip content writer, clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *GzipResponseWriter) Reset() bool {
+	// disable gzip content writer.
+	w.Disable()
+	// clear headers.
+	h := w.ResponseWriter.Header()
+	for k := range h {
+		h[k] = nil
+	}
+	// restore status code.
+	w.WriteHeader(defaultStatusCode)
+	// reset body.
+	w.ResetBody()
+
+	return true
 }
 
 // FlushResponse validates the response headers in order to be compatible with the gzip written data

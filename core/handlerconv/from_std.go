@@ -18,21 +18,19 @@ func FromStd(handler interface{}) context.Handler {
 	case context.Handler:
 		{
 			//
-			// it's already a iris handler
+			// it's already an Iris Handler
 			//
 			return h
 		}
-
 	case http.Handler:
-		//
-		// handlerFunc.ServeHTTP(w,r)
-		//
 		{
+			//
+			// handlerFunc.ServeHTTP(w,r)
+			//
 			return func(ctx context.Context) {
 				h.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 			}
 		}
-
 	case func(http.ResponseWriter, *http.Request):
 		{
 			//
@@ -40,7 +38,6 @@ func FromStd(handler interface{}) context.Handler {
 			//
 			return FromStd(http.HandlerFunc(h))
 		}
-
 	case func(http.ResponseWriter, *http.Request, http.HandlerFunc):
 		{
 			//
@@ -48,7 +45,6 @@ func FromStd(handler interface{}) context.Handler {
 			//
 			return FromStdWithNext(h)
 		}
-
 	default:
 		{
 			//
@@ -60,9 +56,8 @@ func FromStd(handler interface{}) context.Handler {
 			- func(w http.ResponseWriter, r *http.Request)
 			- func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 			---------------------------------------------------------------------
-			It seems to be a  %T points to: %v`, handler, handler))
+			It seems to be a %T points to: %v`, handler, handler))
 		}
-
 	}
 }
 
@@ -70,10 +65,10 @@ func FromStd(handler interface{}) context.Handler {
 // compatible context.Handler wrapper.
 func FromStdWithNext(h func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)) context.Handler {
 	return func(ctx context.Context) {
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next := func(w http.ResponseWriter, r *http.Request) {
 			ctx.ResetRequest(r)
 			ctx.Next()
-		})
+		}
 
 		h(ctx.ResponseWriter(), ctx.Request(), next)
 	}

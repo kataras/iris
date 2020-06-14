@@ -139,11 +139,15 @@ func (w *ResponseRecorder) ClearHeaders() {
 	}
 }
 
-// Reset resets the response body, headers and the status code header.
-func (w *ResponseRecorder) Reset() {
+// Reset clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *ResponseRecorder) Reset() bool {
 	w.ClearHeaders()
 	w.WriteHeader(defaultStatusCode)
 	w.ResetBody()
+	return true
 }
 
 // FlushResponse the full body, headers and status code to the underline response writer

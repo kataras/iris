@@ -58,3 +58,54 @@ func testRegisterRule(e *httptest.Expect, expectedGetBody string) {
 		}
 	}
 }
+
+func TestRegisterRuleOverlap(t *testing.T) {
+	app := iris.New()
+	// TODO(@kataras) the overlapping does not work per-party yet,
+	// it just checks compares from the total app's routes (which is the best possible action to do
+	// because MVC applications can be separated into different parties too?).
+	usersRouter := app.Party("/users")
+	usersRouter.SetRegisterRule(iris.RouteOverlap)
+
+	// second handler will be executed, status will be reset-ed as well,
+	// stop without data written.
+	usersRouter.Get("/", func(ctx iris.Context) {
+		ctx.StopWithStatus(iris.StatusUnauthorized)
+	})
+	usersRouter.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("data")
+	})
+
+	// first handler will be executed, no stop called.
+	usersRouter.Get("/p1", func(ctx iris.Context) {
+		ctx.StatusCode(iris.StatusUnauthorized)
+	})
+	usersRouter.Get("/p1", func(ctx iris.Context) {
+		ctx.WriteString("not written")
+	})
+
+	// first handler will be executed, stop but with data sent on default writer
+	// (body sent cannot be reset-ed here).
+	usersRouter.Get("/p2", func(ctx iris.Context) {
+		ctx.StopWithText(iris.StatusUnauthorized, "no access")
+	})
+	usersRouter.Get("/p2", func(ctx iris.Context) {
+		ctx.WriteString("not written")
+	})
+
+	// second will be executed, response can be reset-ed on recording.
+	usersRouter.Get("/p3", func(ctx iris.Context) {
+		ctx.Record()
+		ctx.StopWithText(iris.StatusUnauthorized, "no access")
+	})
+	usersRouter.Get("/p3", func(ctx iris.Context) {
+		ctx.WriteString("p3 data")
+	})
+
+	e := httptest.New(t, app)
+
+	e.GET("/users").Expect().Status(httptest.StatusOK).Body().Equal("data")
+	e.GET("/users/p1").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+	e.GET("/users/p2").Expect().Status(httptest.StatusUnauthorized).Body().Equal("no access")
+	e.GET("/users/p3").Expect().Status(httptest.StatusOK).Body().Equal("p3 data")
+}

@@ -169,7 +169,6 @@ type Context interface {
 	SetHandlers(Handlers)
 	// Handlers keeps tracking of the current handlers.
 	Handlers() Handlers
-
 	// HandlerIndex sets the current index of the
 	// current context's handlers chain.
 	// If n < 0 or the current handlers length is 0 then it just returns the

@@ -19,7 +19,7 @@ require (
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.1
-	github.com/json-iterator/go v1.1.9
+	github.com/json-iterator/go v1.1.10
 	github.com/kataras/golog v0.0.18
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.8
@@ -34,7 +34,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.0.0-alpha.2
 	go.etcd.io/bbolt v1.3.4
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
-	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
+	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 	gopkg.in/ini.v1 v1.57.0

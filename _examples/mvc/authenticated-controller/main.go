@@ -26,6 +26,11 @@ func main() {
 
 	userRouter := app.Party("/user")
 	{
+		// Use that in order to be able to register a route twice,
+		// last one will be executed if the previous route's handler(s) stopped and the response can be reset-ed.
+		// See core/router/route_register_rule_test.go#TestRegisterRuleOverlap.
+		userRouter.SetRegisterRule(iris.RouteOverlap)
+
 		// Initialize a new MVC application on top of the "userRouter".
 		userApp := mvc.New(userRouter)
 		// Register Dependencies.
@@ -34,6 +39,7 @@ func main() {
 		// Register Controllers.
 		userApp.Handle(new(MeController))
 		userApp.Handle(new(UserController))
+		userApp.Handle(new(UnauthenticatedUserController))
 	}
 
 	// Open a client, e.g. Postman and visit the below endpoints.
@@ -59,6 +65,15 @@ func authDependency(ctx iris.Context, session *sessions.Session) Authenticated {
 	}
 
 	return Authenticated(userID)
+}
+
+// UnauthenticatedUserController serves the "public" Unauthorized User API.
+type UnauthenticatedUserController struct{}
+
+// GetMe registers a route that will be executed when authentication is not passed
+// (see UserController.GetMe) too.
+func (c *UnauthenticatedUserController) GetMe() string {
+	return `custom action to redirect on authentication page`
 }
 
 // UserController serves the "public" User API.
