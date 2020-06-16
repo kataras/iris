@@ -1513,7 +1513,7 @@ func DefaultNext(ctx Context) {
 // it should be used inside a middleware.
 //
 // Note: Custom context should override this method in order to be able to pass its own context.Context implementation.
-func (ctx *context) Next() { // or context.Next(ctx)
+func (ctx *context) Next() {
 	Next(ctx)
 }
 
