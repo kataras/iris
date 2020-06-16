@@ -43,6 +43,7 @@
     * Middleware
         * [Per Route](routing/writing-a-middleware/per-route/main.go)
         * [Globally](routing/writing-a-middleware/globally/main.go)
+        * [Handlers Execution Rule](routing/route-handlers-execution-rules/main.go)
         * [Route Register Rule](routing/route-register-rule/main.go)
         * Convert net/http Handlers
             * [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
