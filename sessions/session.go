@@ -1,10 +1,12 @@
 package sessions
 
 import (
+	"math"
+	"reflect"
 	"strconv"
 	"sync"
 
-	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/v12/core/memstore"
 )
 
 type (
@@ -14,11 +16,16 @@ type (
 	//
 	// This is what will be returned when sess := sessions.Start().
 	Session struct {
-		sid      string
-		isNew    bool
-		flashes  map[string]*flashMessage
-		mu       sync.RWMutex // for flashes.
+		sid     string
+		isNew   bool
+		flashes map[string]*flashMessage
+		mu      sync.RWMutex // for flashes.
+		// Lifetime it contains the expiration data, use it for read-only information.
+		// See `Sessions.UpdateExpiration` too.
 		Lifetime LifeTime
+		// Man is the sessions manager that this session created of.
+		Man *Sessions
+
 		provider *provider
 	}
 
@@ -36,7 +43,7 @@ type (
 // Note that this method does NOT remove the client's cookie, although
 // it should be reseted if new session is attached to that (client).
 //
-// Use the session's manager `Destroy(ctx)` in order to remove the cookie as well.
+// Use the session's manager `Destroy(ctx)` in order to remove the cookie instead.
 func (s *Session) Destroy() {
 	s.provider.deleteSession(s)
 }
@@ -165,30 +172,79 @@ func (s *Session) GetFlashStringDefault(key string, defaultValue string) string 
 	return defaultValue
 }
 
-var errFindParse = errors.New("Unable to find the %s with key: %s. Found? %#v")
+// ErrEntryNotFound similar to core/memstore#ErrEntryNotFound but adds
+// the value (if found) matched to the requested key-value pair of the session's memory storage.
+type ErrEntryNotFound struct {
+	Err   *memstore.ErrEntryNotFound
+	Value interface{}
+}
+
+func (e *ErrEntryNotFound) Error() string {
+	return e.Err.Error()
+}
+
+// Unwrap method implements the dynamic Unwrap interface of the std errors package.
+func (e *ErrEntryNotFound) Unwrap() error {
+	return e.Err
+}
+
+// As method implements the dynamic As interface of the std errors package.
+// As should be NOT used directly, use `errors.As` instead.
+func (e *ErrEntryNotFound) As(target interface{}) bool {
+	if v, ok := target.(*memstore.ErrEntryNotFound); ok && e.Err != nil {
+		return e.Err.As(v)
+	}
+
+	v, ok := target.(*ErrEntryNotFound)
+	if !ok {
+		return false
+	}
+
+	if v.Value != nil {
+		if v.Value != e.Value {
+			return false
+		}
+	}
+
+	if v.Err != nil {
+		if e.Err != nil {
+			return e.Err.As(v.Err)
+		}
+
+		return false
+	}
+
+	return true
+}
+
+func newErrEntryNotFound(key string, kind reflect.Kind, value interface{}) *ErrEntryNotFound {
+	return &ErrEntryNotFound{Err: &memstore.ErrEntryNotFound{Key: key, Kind: kind}, Value: value}
+}
 
 // GetInt same as `Get` but returns its int representation,
 // if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetInt(key string) (int, error) {
 	v := s.Get(key)
 
-	if vint, ok := v.(int); ok {
-		return vint, nil
+	if v != nil {
+		if vint, ok := v.(int); ok {
+			return vint, nil
+		}
+
+		if vfloat64, ok := v.(float64); ok {
+			return int(vfloat64), nil
+		}
+
+		if vint64, ok := v.(int64); ok {
+			return int(vint64), nil
+		}
+
+		if vstring, sok := v.(string); sok {
+			return strconv.Atoi(vstring)
+		}
 	}
 
-	if vfloat64, ok := v.(float64); ok {
-		return int(vfloat64), nil
-	}
-
-	if vint64, ok := v.(int64); ok {
-		return int(vint64), nil
-	}
-
-	if vstring, sok := v.(string); sok {
-		return strconv.Atoi(vstring)
-	}
-
-	return -1, errFindParse.Format("int", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Int, v)
 }
 
 // GetIntDefault same as `Get` but returns its int representation,
@@ -224,30 +280,74 @@ func (s *Session) Decrement(key string, n int) (newValue int) {
 // if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetInt64(key string) (int64, error) {
 	v := s.Get(key)
+	if v != nil {
+		if vint64, ok := v.(int64); ok {
+			return vint64, nil
+		}
 
-	if vint64, ok := v.(int64); ok {
-		return vint64, nil
+		if vfloat64, ok := v.(float64); ok {
+			return int64(vfloat64), nil
+		}
+
+		if vint, ok := v.(int); ok {
+			return int64(vint), nil
+		}
+
+		if vstring, sok := v.(string); sok {
+			return strconv.ParseInt(vstring, 10, 64)
+		}
 	}
 
-	if vfloat64, ok := v.(float64); ok {
-		return int64(vfloat64), nil
-	}
-
-	if vint, ok := v.(int); ok {
-		return int64(vint), nil
-	}
-
-	if vstring, sok := v.(string); sok {
-		return strconv.ParseInt(vstring, 10, 64)
-	}
-
-	return -1, errFindParse.Format("int64", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Int64, v)
 }
 
 // GetInt64Default same as `Get` but returns its int64 representation,
 // if key doesn't exist it returns the "defaultValue".
 func (s *Session) GetInt64Default(key string, defaultValue int64) int64 {
 	if v, err := s.GetInt64(key); err == nil {
+		return v
+	}
+
+	return defaultValue
+}
+
+// GetUint64 same as `Get` but returns as uint64,
+// if key doesn't exist then it returns 0 and a non-nil error.
+func (s *Session) GetUint64(key string) (uint64, error) {
+	v := s.Get(key)
+	if v != nil {
+		switch vv := v.(type) {
+		case string:
+			val, err := strconv.ParseUint(vv, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+			if val > math.MaxUint64 {
+				break
+			}
+			return uint64(val), nil
+		case uint8:
+			return uint64(vv), nil
+		case uint16:
+			return uint64(vv), nil
+		case uint32:
+			return uint64(vv), nil
+		case uint64:
+			return vv, nil
+		case int64:
+			return uint64(vv), nil
+		case int:
+			return uint64(vv), nil
+		}
+	}
+
+	return 0, newErrEntryNotFound(key, reflect.Uint64, v)
+}
+
+// GetUint64Default same as `Get` but returns as uint64,
+// if key doesn't exist it returns the "defaultValue".
+func (s *Session) GetUint64Default(key string, defaultValue uint64) uint64 {
+	if v, err := s.GetUint64(key); err == nil {
 		return v
 	}
 
@@ -283,7 +383,7 @@ func (s *Session) GetFloat32(key string) (float32, error) {
 		return float32(vfloat64), nil
 	}
 
-	return -1, errFindParse.Format("float32", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Float32, v)
 }
 
 // GetFloat32Default same as `Get` but returns its float32 representation,
@@ -321,7 +421,7 @@ func (s *Session) GetFloat64(key string) (float64, error) {
 		return strconv.ParseFloat(vstring, 32)
 	}
 
-	return -1, errFindParse.Format("float64", key, v)
+	return -1, newErrEntryNotFound(key, reflect.Float64, v)
 }
 
 // GetFloat64Default same as `Get` but returns its float64 representation,
@@ -339,7 +439,7 @@ func (s *Session) GetFloat64Default(key string, defaultValue float64) float64 {
 func (s *Session) GetBoolean(key string) (bool, error) {
 	v := s.Get(key)
 	if v == nil {
-		return false, errFindParse.Format("bool", key, "nil")
+		return false, newErrEntryNotFound(key, reflect.Bool, nil)
 	}
 
 	// here we could check for "true", "false" and 0 for false and 1 for true
@@ -352,7 +452,7 @@ func (s *Session) GetBoolean(key string) (bool, error) {
 		return strconv.ParseBool(vstring)
 	}
 
-	return false, errFindParse.Format("bool", key, v)
+	return false, newErrEntryNotFound(key, reflect.Bool, v)
 }
 
 // GetBooleanDefault same as `Get` but returns its boolean representation,
@@ -409,6 +509,11 @@ func (s *Session) GetFlashes() map[string]interface{} {
 // Visit loops each of the entries and calls the callback function func(key, value).
 func (s *Session) Visit(cb func(k string, v interface{})) {
 	s.provider.db.Visit(s.sid, cb)
+}
+
+// Len returns the total number of stored values in this session.
+func (s *Session) Len() int {
+	return s.provider.db.Len(s.sid)
 }
 
 func (s *Session) set(key string, value interface{}, immutable bool) {

@@ -3,9 +3,9 @@ package versioning_test
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
-	"github.com/kataras/iris/versioning"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v12/versioning"
 )
 
 func notFoundHandler(ctx iris.Context) {
@@ -31,6 +31,7 @@ func TestIf(t *testing.T) {
 		t.Fatalf("expected %s to be %s", "1.2.3", "> 1.2")
 	}
 }
+
 func TestNewMatcher(t *testing.T) {
 	app := iris.New()
 

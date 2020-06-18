@@ -30,7 +30,6 @@ var IsLoopbackSubdomain = func(s string) bool {
 		if !strings.Contains(machineHostname, ".") { // if machine name's is not a loopback by itself
 			valid = s == machineHostname
 		}
-
 	}
 	return valid
 }
@@ -92,13 +91,6 @@ var IsLoopbackHost = func(requestHost string) bool {
 const (
 	// defaultServerHostname returns the default hostname which is "localhost"
 	defaultServerHostname = "localhost"
-	// defaultServerPort returns the default port which is 8080, not used
-	defaultServerPort = 8080
-)
-
-var (
-	// defaultServerAddr the default server addr which is: localhost:8080
-	defaultServerAddr = defaultServerHostname + ":" + strconv.Itoa(defaultServerPort)
 )
 
 // ResolveAddr tries to convert a given string to an address which is compatible with net.Listener and server
@@ -127,7 +119,7 @@ func ResolveAddr(addr string) string {
 		if a[portIdx:] == ":https" {
 			a = defaultServerHostname + ":443"
 		} else {
-			// if contains only :port	,then the : is the first letter, so we dont have setted a hostname, lets set it
+			// if contains only :port	,then the : is the first letter, so we dont have set a hostname, lets set it
 			a = defaultServerHostname + a
 		}
 	}
@@ -159,12 +151,14 @@ func ResolveVHost(addr string) string {
 	}
 
 	if idx := strings.IndexByte(addr, ':'); idx == 0 {
-		// only port, then return the localhost hostname
-		return "localhost" + addr[idx:]
+		// only port, then return the 0.0.0.0
+		return /* "0.0.0.0" */ "localhost" + addr[idx:]
 	}
 
 	// with ':' in order to not replace the ipv6 loopback addresses
-	addr = strings.Replace(addr, "0.0.0.0:", "localhost:", 1)
+	// addr = strings.Replace(addr, "0.0.0.0:", "localhost:", 1)
+	// some users are confusing from the log output ^.
+
 	port := ResolvePort(addr)
 	if port == 80 || port == 443 {
 		return ResolveHostname(addr)

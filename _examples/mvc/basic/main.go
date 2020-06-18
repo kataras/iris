@@ -3,18 +3,20 @@ package main
 import (
 	"fmt"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/kataras/iris/v12/sessions"
 
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 func main() {
 	app := iris.New()
+	app.Use(recover.New())
 	app.Logger().SetLevel("debug")
 	mvc.Configure(app.Party("/basic"), basicMVC)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func basicMVC(app *mvc.Application) {
@@ -34,6 +36,7 @@ func basicMVC(app *mvc.Application) {
 
 	// GET: http://localhost:8080/basic
 	// GET: http://localhost:8080/basic/custom
+	// GET: http://localhost:8080/basic/custom2
 	app.Handle(new(basicController))
 
 	// All dependencies of the parent *mvc.Application
@@ -71,7 +74,7 @@ type basicController struct {
 }
 
 func (c *basicController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle("GET", "/custom", "Custom")
+	b.HandleMany("GET", "/custom /custom2", "Custom")
 }
 
 func (c *basicController) AfterActivation(a mvc.AfterActivation) {

@@ -2,13 +2,15 @@ package hero_test
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/httptest"
 
-	. "github.com/kataras/iris/hero"
+	. "github.com/kataras/iris/v12/hero"
 )
 
 func GetText() string {
@@ -37,8 +39,8 @@ type testCustomResult struct {
 }
 
 // The only one required function to make that a custom Response dispatcher.
-func (r testCustomResult) Dispatch(ctx context.Context) {
-	ctx.HTML(r.HTML)
+func (r testCustomResult) Dispatch(ctx iris.Context) {
+	_, _ = ctx.HTML(r.HTML)
 }
 
 func GetCustomResponse() testCustomResult {
@@ -90,11 +92,27 @@ func (e err) Dispatch(ctx iris.Context) {
 	// write the status code based on the err's StatusCode.
 	ctx.StatusCode(e.Status)
 	// send to the client the whole object as json
-	ctx.JSON(e)
+	_, _ = ctx.JSON(e)
 }
 
 func GetCustomErrorAsDispatcher() err {
 	return err{iris.StatusBadRequest, "this is my error as json"}
+}
+
+func GetCustomTypedNilEmptyResponse() iris.Map {
+	return nil
+}
+
+func GetCustomTypedPtrNilEmptyResponse() *iris.Map {
+	return nil
+}
+
+func GetCustomMapNilEmptyResponse() map[string]interface{} {
+	return nil
+}
+
+func GetCustomPtrStructNilEmptyResponse() *testCustomStruct {
+	return nil
 }
 
 func TestFuncResult(t *testing.T) {
@@ -119,6 +137,11 @@ func TestFuncResult(t *testing.T) {
 	app.Get("/custom/struct/with/content/type", h.Handler(GetCustomStructWithContentType))
 	app.Get("/custom/struct/with/error", h.Handler(GetCustomStructWithError))
 	app.Get("/custom/error/as/dispatcher", h.Handler(GetCustomErrorAsDispatcher))
+
+	app.Get("/custom/nil/typed", h.Handler(GetCustomTypedNilEmptyResponse))
+	app.Get("/custom/nil/typed/ptr", h.Handler(GetCustomTypedPtrNilEmptyResponse))
+	app.Get("/custom/nil/map", h.Handler(GetCustomMapNilEmptyResponse))
+	app.Get("/custom/nil/struct", h.Handler(GetCustomPtrStructNilEmptyResponse))
 
 	e := httptest.New(t, app)
 
@@ -172,4 +195,66 @@ func TestFuncResult(t *testing.T) {
 		// the content should be not JSON it should be the status code's text
 		// it will fire the error's text
 		JSON().Equal(err{iris.StatusBadRequest, "this is my error as json"})
+
+	// its result is nil should give an empty response but content-type is set correctly.
+	e.GET("/custom/nil/typed").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+	e.GET("/custom/nil/typed/ptr").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+	e.GET("/custom/nil/map").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+	e.GET("/custom/nil/struct").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+}
+
+type (
+	testPreflightRequest struct {
+		FailCode int `json:"fail_code"` // for the sake of the test.
+	}
+
+	testPreflightResponse struct {
+		Code    int
+		Message string
+	}
+)
+
+func (r testPreflightResponse) Preflight(ctx iris.Context) error {
+	if r.Code == httptest.StatusInternalServerError {
+		return fmt.Errorf("custom error")
+	}
+
+	ctx.StatusCode(r.Code)
+	return nil
+}
+
+func TestPreflightResult(t *testing.T) {
+	app := iris.New()
+	c := New()
+	handler := c.Handler(func(in testPreflightRequest) testPreflightResponse {
+		return testPreflightResponse{Code: in.FailCode, Message: http.StatusText(in.FailCode)}
+	})
+	app.Post("/", handler)
+	handler2 := c.Handler(func(in testInput) (int, testOutput) {
+		return httptest.StatusAccepted, testOutput{Name: in.Name}
+	})
+	app.Post("/alternative", handler2)
+
+	e := httptest.New(t, app)
+
+	expected1 := testPreflightResponse{Code: httptest.StatusOK, Message: "OK"}
+	e.POST("/").WithJSON(testPreflightRequest{FailCode: expected1.Code}).
+		Expect().Status(httptest.StatusOK).JSON().Equal(expected1)
+
+	expected2 := testPreflightResponse{Code: httptest.StatusBadRequest, Message: "Bad Request"}
+	e.POST("/").WithJSON(testPreflightRequest{FailCode: expected2.Code}).
+		Expect().Status(httptest.StatusBadRequest).JSON().Equal(expected2)
+
+	// Test error returned from Preflight.
+	e.POST("/").WithJSON(testPreflightRequest{FailCode: httptest.StatusInternalServerError}).
+		Expect().Status(httptest.StatusBadRequest).Body().Equal("custom error")
+
+	// Can be done without Preflight as the second output argument can be a status code.
+	expected4 := testOutput{Name: "my_name"}
+	e.POST("/alternative").WithJSON(testInput{expected4.Name}).
+		Expect().Status(httptest.StatusAccepted).JSON().Equal(expected4)
 }

@@ -2,7 +2,7 @@ Examples for the Iris project can be found at
 <https://github.com/kataras/iris/tree/master/_examples>.
 
 Documentation for the Iris project can be found at
-<https://godoc.org/github.com/kataras/iris>.
+<https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0>.
 
 Love iris? Please consider supporting the project:
 👉  https://iris-go.com/donate

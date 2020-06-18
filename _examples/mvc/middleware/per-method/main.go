@@ -69,9 +69,9 @@ package main
 import (
 	"time"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/cache"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/cache"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 var cacheHandler = cache.Handler(10 * time.Second)
@@ -84,7 +84,7 @@ func main() {
 	m := mvc.New(app)
 	m.Handle(&exampleController{})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type exampleController struct{}

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
 
-	"github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
+	"github.com/kataras/iris/v12/middleware/logger"
+	"github.com/kataras/iris/v12/middleware/recover"
 )
 
 // This example is equivalent to the
@@ -32,7 +32,7 @@ import (
 // for the main_test.go.
 func newApp() *iris.Application {
 	app := iris.New()
-	// Optionally, add two built'n handlers
+	// Optionally, add two builtin handlers
 	// that can recover from any http-relative panics
 	// and log the requests to the terminal.
 	app.Use(recover.New())
@@ -50,7 +50,7 @@ func main() {
 	// http://localhost:8080/ping
 	// http://localhost:8080/hello
 	// http://localhost:8080/custom_path
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // ExampleController serves the "/", "/ping" and "/hello".

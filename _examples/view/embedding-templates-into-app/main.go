@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 		return "Greetings " + s + "!"
 	})
 
-	// $ go get -u github.com/shuLhan/go-bindata/...
+	// $ go get -u github.com/go-bindata/go-bindata/...
 	// $ go-bindata ./templates/...
 	// $ go build
 	// $ ./embedding-templates-into-app
@@ -53,7 +53,7 @@ func main() {
 	// http://localhost:8080/nolayout
 	// http://localhost:8080/my
 	// http://localhost:8080/my/other
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // Note for new Gophers:

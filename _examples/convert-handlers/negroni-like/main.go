@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 
 	// http://localhost:8080
 	// http://localhost:8080/ok
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func negronilikeTestMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {

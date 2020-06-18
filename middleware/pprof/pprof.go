@@ -1,4 +1,4 @@
-// Package pprof provides native pprof support via middleware. See _examples/miscellaneous/pprof
+// Package pprof provides native pprof support via middleware. See _examples/pprof
 package pprof
 
 import (
@@ -7,9 +7,13 @@ import (
 	rpprof "runtime/pprof"
 	"strings"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/handlerconv"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/handlerconv"
 )
+
+func init() {
+	context.SetHandlerName("iris/middleware/pprof.*", "iris.profiling")
+}
 
 // New returns a new pprof (profile, cmdline, symbol, goroutine, heap, threadcreate, debug/block) Middleware.
 // Note: Route MUST have the last named parameter wildcard named '{action:path}'

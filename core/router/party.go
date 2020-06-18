@@ -1,28 +1,46 @@
 package router
 
 import (
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/errgroup"
+	"github.com/kataras/iris/v12/macro"
 )
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
-// Look the "APIBuilder" for its implementation.
+// Look the `APIBuilder` structure for its implementation.
 type Party interface {
+	// ConfigureContainer accepts one or more functions that can be used
+	// to configure dependency injection features of this Party
+	// such as register dependency and register handlers that will automatically inject any valid dependency.
+	// However, if the "builder" parameter is nil or not provided then it just returns the *APIContainer,
+	// which automatically initialized on Party allocation.
+	//
+	// It returns the same `APIBuilder` featured with Dependency Injection.
+	ConfigureContainer(builder ...func(*APIContainer)) *APIContainer
+
 	// GetRelPath returns the current party's relative path.
 	// i.e:
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
 	// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
 	GetRelPath() string
-	// GetReporter returns the reporter for adding errors
-	GetReporter() *errors.Reporter
+	// GetReporter returns the reporter for adding or receiving any errors caused when building the API.
+	GetReporter() *errgroup.Group
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
 	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
 	Macros() *macro.Macros
+
+	// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
+	// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+	// Look `OnAnyErrorCode` too.
+	OnErrorCode(statusCode int, handlers ...context.Handler) []*Route
+	// OnAnyErrorCode registers a handlers chain for all error codes
+	// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
+	// Look `OnErrorCode` too.
+	OnAnyErrorCode(handlers ...context.Handler) []*Route
 
 	// Party groups routes which may have the same prefix and share same handlers,
 	// returns that new rich subrouter.
@@ -56,7 +74,6 @@ type Party interface {
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)
-
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
@@ -98,6 +115,14 @@ type Party interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
 	SetExecutionRules(executionRules ExecutionRules) Party
+	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
+	// Available values are:
+	// * RouteOverride (the default one)
+	// * RouteSkip
+	// * RouteError
+	// * RouteOverlap.
+	SetRegisterRule(rule RouteRegisterRule) Party
+
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
@@ -120,6 +145,22 @@ type Party interface {
 	// in order to handle more than one paths for the same controller instance.
 	HandleMany(method string, relativePath string, handlers ...context.Handler) []*Route
 
+	// HandleDir registers a handler that serves HTTP requests
+	// with the contents of a file system (physical or embedded).
+	//
+	// first parameter  : the route path
+	// second parameter : the system or the embedded directory that needs to be served
+	// third parameter  : not required, the directory options, set fields is optional.
+	//
+	// for more options look router.FileServer.
+	//
+	//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
+	//
+	// Returns the GET *Route.
+	//
+	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+	HandleDir(requestPath, directory string, opts ...DirOptions) *Route
+
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and
 	// party.Routes().Online(handleResultregistry.*Route, "GET") and
@@ -128,100 +169,63 @@ type Party interface {
 	// Returns the read-only route information.
 	None(path string, handlers ...context.Handler) *Route
 
-	// Get registers a route for the Get http method.
+	// Get registers a route for the Get HTTP Method.
 	//
 	// Returns the read-only route information.
 	Get(path string, handlers ...context.Handler) *Route
-	// Post registers a route for the Post http method.
+	// Post registers a route for the Post HTTP Method.
 	//
 	// Returns the read-only route information.
 	Post(path string, handlers ...context.Handler) *Route
-	// Put registers a route for the Put http method.
+	// Put registers a route for the Put HTTP Method.
 	//
 	// Returns the read-only route information.
 	Put(path string, handlers ...context.Handler) *Route
-	// Delete registers a route for the Delete http method.
+	// Delete registers a route for the Delete HTTP Method.
 	//
 	// Returns the read-only route information.
 	Delete(path string, handlers ...context.Handler) *Route
-	// Connect registers a route for the Connect http method.
+	// Connect registers a route for the Connect HTTP Method.
 	//
 	// Returns the read-only route information.
 	Connect(path string, handlers ...context.Handler) *Route
-	// Head registers a route for the Head http method.
+	// Head registers a route for the Head HTTP Method.
 	//
 	// Returns the read-only route information.
 	Head(path string, handlers ...context.Handler) *Route
-	// Options registers a route for the Options http method.
+	// Options registers a route for the Options HTTP Method.
 	//
 	// Returns the read-only route information.
 	Options(path string, handlers ...context.Handler) *Route
-	// Patch registers a route for the Patch http method.
+	// Patch registers a route for the Patch HTTP Method.
 	//
 	// Returns the read-only route information.
 	Patch(path string, handlers ...context.Handler) *Route
-	// Trace registers a route for the Trace http method.
+	// Trace registers a route for the Trace HTTP Method.
 	//
 	// Returns the read-only route information.
 	Trace(path string, handlers ...context.Handler) *Route
-	// Any registers a route for ALL of the http methods
-	// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
+	// Any registers a route for ALL of the HTTP methods:
+	// Get
+	// Post
+	// Put
+	// Delete
+	// Head
+	// Patch
+	// Options
+	// Connect
+	// Trace
 	Any(registeredPath string, handlers ...context.Handler) []*Route
-
-	// StaticHandler returns a new Handler which is ready
-	// to serve all kind of static files.
-	//
-	// Note:
-	// The only difference from package-level `StaticHandler`
-	// is that this `StaticHandler` receives a request path which
-	// is appended to the party's relative path and stripped here.
-	//
-	// Usage:
-	// app := iris.New()
-	// ...
-	// mySubdomainFsServer := app.Party("mysubdomain.")
-	// h := mySubdomainFsServer.StaticHandler("./static_files", false, false)
-	// /* http://mysubdomain.mydomain.com/static/css/style.css */
-	// mySubdomainFsServer.Get("/static", h)
-	// ...
-	//
-	StaticHandler(systemPath string, showList bool, gzip bool) context.Handler
-
-	// StaticServe serves a directory as web resource
-	// it's the simpliest form of the Static* functions
-	// Almost same usage as StaticWeb
-	// accepts only one required parameter which is the systemPath,
-	// the same path will be used to register the GET and HEAD method routes.
-	// If second parameter is empty, otherwise the requestPath is the second parameter
-	// it uses gzip compression (compression on each request, no file cache).
-	//
-	// Returns the GET *Route.
-	StaticServe(systemPath string, requestPath ...string) *Route
+	// CreateRoutes returns a list of Party-based Routes.
+	// It does NOT registers the route. Use `Handle, Get...` methods instead.
+	// This method can be used for third-parties Iris helpers packages and tools
+	// that want a more detailed view of Party-based Routes before take the decision to register them.
+	CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route
 	// StaticContent registers a GET and HEAD method routes to the requestPath
 	// that are ready to serve raw static bytes, memory cached.
 	//
 	// Returns the GET *Route.
 	StaticContent(requestPath string, cType string, content []byte) *Route
-
-	// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
-	// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
-	// Second parameter is the (virtual) directory path, for example "./assets"
-	// Third parameter is the Asset function
-	// Forth parameter is the AssetNames function.
-	//
-	// Returns the GET *Route.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
-	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
-	// StaticEmbeddedGzip registers a route which can serve embedded gziped files
-	// that are embedded using the https://github.com/kataras/bindata tool and only.
-	// It's 8 times faster than the `StaticEmbeddedHandler` with `go-bindata` but
-	// it sends gzip response only, so the client must be aware that is expecting a gzip body
-	// (browsers and most modern browsers do that, so you can use it without fair).
-	//
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
-	StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route
 	// Favicon serves static favicon
 	// accepts 2 parameters, second is optional
 	// favPath (string), declare the system directory path of the __.ico
@@ -234,24 +238,6 @@ type Party interface {
 	//
 	// Returns the GET *Route.
 	Favicon(favPath string, requestPath ...string) *Route
-	// StaticWeb returns a handler that serves HTTP requests
-	// with the contents of the file system rooted at directory.
-	//
-	// first parameter: the route path
-	// second parameter: the system directory
-	//
-	// for more options look router.StaticHandler.
-	//
-	//     router.StaticWeb("/static", "./static")
-	//
-	// As a special case, the returned file server redirects any request
-	// ending in "/index.html" to the same path, without the final
-	// "index.html".
-	//
-	// StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
-	//
-	// Returns the GET *Route.
-	StaticWeb(requestPath string, systemPath string) *Route
 
 	// Layout overrides the parent template layout with a more specific layout for this Party.
 	// It returns the current Party.

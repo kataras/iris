@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 const (
@@ -52,7 +52,7 @@ func h3(ctx context.Context) {
 }
 
 func TestRouterWildcardDifferentPrefixPath(t *testing.T) {
-	var tt = []testRoute{
+	tt := []testRoute{
 		{"GET", "/s/{p:path}", h, []testRouteRequest{
 			{"GET", "", "/s/that/is/wildcard", iris.StatusOK, same_as_request_path},
 			{"GET", "", "/s/ok", iris.StatusOK, same_as_request_path},
@@ -71,7 +71,7 @@ func TestRouterWildcardDifferentPrefixPath(t *testing.T) {
 }
 
 func TestRouterWildcardAndStatic(t *testing.T) {
-	var tt = []testRoute{
+	tt := []testRoute{
 		{"GET", "/some/{p:path}", h2, []testRouteRequest{
 			{"GET", "", "/some/that/is/wildcard", iris.StatusForbidden, same_as_request_path},
 			{"GET", "", "/some/did", iris.StatusForbidden, same_as_request_path},
@@ -95,7 +95,7 @@ func TestRouterWildcardAndStatic(t *testing.T) {
 }
 
 func TestRouterWildcardRootMany(t *testing.T) {
-	var tt = []testRoute{
+	tt := []testRoute{
 		// all routes will be handlded by "h" because we added wildcard to root,
 		// this feature is very important and can remove noumerous of previous hacks on our apps.
 		{"GET", "/{p:path}", h, []testRouteRequest{
@@ -121,7 +121,7 @@ func TestRouterWildcardRootMany(t *testing.T) {
 }
 
 func TestRouterWildcardRootManyAndRootStatic(t *testing.T) {
-	var tt = []testRoute{
+	tt := []testRoute{
 		// routes that may return 404 will be handled by the below route ("h" handler) because we added wildcard to root,
 		// this feature is very important and can remove noumerous of previous hacks on our apps.
 		//

@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/cache"
+	"github.com/kataras/iris/v12/cache"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 func TestNoCache(t *testing.T) {
@@ -76,6 +76,7 @@ func TestCache304(t *testing.T) {
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
 	r.Body().Equal("send")
 }
+
 func TestETag(t *testing.T) {
 	t.Parallel()
 
@@ -91,13 +92,13 @@ func TestETag(t *testing.T) {
 	e := httptest.New(t, app)
 
 	r := e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Header("ETag").Equal("/") // test if header setted.
+	r.Header("ETag").Equal("/") // test if header set.
 	r.Body().Equal("_")
 
 	e.GET("/").WithHeader("ETag", "/").WithHeader("If-None-Match", "/").Expect().
 		Status(httptest.StatusNotModified).Body().Equal("") // browser is responsible, no the test engine.
 
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Header("ETag").Equal("/") // test if header setted.
+	r.Header("ETag").Equal("/") // test if header set.
 	r.Body().Equal("__")
 }

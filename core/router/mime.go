@@ -3,6 +3,8 @@ package router
 import (
 	"mime"
 	"path/filepath"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 var types = map[string]string{
@@ -47,7 +49,7 @@ var types = map[string]string{
 	".bsh":       "application/x-bsh",
 	".bz2":       "application/x-bzip2",
 	".bz":        "application/x-bzip",
-	".c++":       "text/plain",
+	".c++":       context.ContentTextHeaderValue,
 	".c":         "text/x-c",
 	".cab":       "application/vnd.ms-cab-compressed",
 	".cat":       "application/vndms-pkiseccat",
@@ -60,8 +62,8 @@ var types = map[string]string{
 	".chat":      "application/x-chat",
 	".chrt":      "application/vnd.kde.kchart",
 	".class":     "application/java",
-	".com":       "text/plain",
-	".conf":      "text/plain",
+	".com":       context.ContentTextHeaderValue,
+	".conf":      context.ContentTextHeaderValue,
 	".cpio":      "application/x-cpio",
 	".cpp":       "text/x-c",
 	".cpt":       "application/mac-compactpro",
@@ -71,12 +73,12 @@ var types = map[string]string{
 	".csh":       "text/x-scriptcsh",
 	".css":       "text/css",
 	".csv":       "text/csv",
-	".cxx":       "text/plain",
+	".cxx":       context.ContentTextHeaderValue,
 	".dar":       "application/x-dar",
 	".dcr":       "application/x-director",
 	".deb":       "application/x-debian-package",
 	".deepv":     "application/x-deepv",
-	".def":       "text/plain",
+	".def":       context.ContentTextHeaderValue,
 	".der":       "application/x-x509-ca-cert",
 	".dif":       "video/x-dv",
 	".dir":       "application/x-director",
@@ -118,7 +120,7 @@ var types = map[string]string{
 	".frl":       "application/freeloader",
 	".funk":      "audio/make",
 	".g3":        "image/g3fax",
-	".g":         "text/plain",
+	".g":         context.ContentTextHeaderValue,
 	".gif":       "image/gif",
 	".gl":        "video/gl",
 	".gsd":       "audio/x-gsm",
@@ -149,7 +151,7 @@ var types = map[string]string{
 	".ico":       "image/x-icon",
 	".ics":       "text/calendar",
 	".icz":       "text/calendar",
-	".idc":       "text/plain",
+	".idc":       context.ContentTextHeaderValue,
 	".ief":       "image/ief",
 	".iefs":      "image/ief",
 	".iges":      "application/iges",
@@ -175,8 +177,9 @@ var types = map[string]string{
 	".jpeg":      "image/jpeg",
 	".jpg":       "image/jpeg",
 	".jps":       "image/x-jps",
-	".js":        "application/javascript",
-	".json":      "application/json",
+	".js":        context.ContentJavascriptHeaderValue,
+	".mjs":       context.ContentJavascriptHeaderValue,
+	".json":      context.ContentJSONHeaderValue,
 	".jut":       "image/jutvision",
 	".kar":       "audio/midi",
 	".karbon":    "application/vnd.kde.karbon",
@@ -196,11 +199,11 @@ var types = map[string]string{
 	".latex":     "application/x-latex",
 	".lha":       "application/lha",
 	".lhx":       "application/octet-stream",
-	".list":      "text/plain",
+	".list":      context.ContentTextHeaderValue,
 	".lma":       "audio/nspaudio",
-	".log":       "text/plain",
+	".log":       context.ContentTextHeaderValue,
 	".lsp":       "text/x-scriptlisp",
-	".lst":       "text/plain",
+	".lst":       context.ContentTextHeaderValue,
 	".lsx":       "text/x-la-asf",
 	".ltx":       "application/x-latex",
 	".lzh":       "application/octet-stream",
@@ -213,7 +216,7 @@ var types = map[string]string{
 	".man":       "application/x-troff-man",
 	".manifest":  "text/cache-manifest",
 	".map":       "application/x-navimap",
-	".mar":       "text/plain",
+	".mar":       context.ContentTextHeaderValue,
 	".mbd":       "application/mbedlet",
 	".mc$":       "application/x-magic-cap-package-10",
 	".mcd":       "application/mcad",
@@ -366,7 +369,7 @@ var types = map[string]string{
 	".saveme":    "application/octet-stream",
 	".sbk":       "application/x-tbook",
 	".scm":       "text/x-scriptscheme",
-	".sdml":      "text/plain",
+	".sdml":      context.ContentTextHeaderValue,
 	".sdp":       "application/sdp",
 	".sdr":       "application/sounder",
 	".sea":       "application/sea",
@@ -415,7 +418,7 @@ var types = map[string]string{
 	".tex":       "application/x-tex",
 	".texi":      "application/x-texinfo",
 	".texinfo":   "application/x-texinfo",
-	".text":      "text/plain",
+	".text":      context.ContentTextHeaderValue,
 	".tgz":       "application/gnutar",
 	".tif":       "image/tiff",
 	".tiff":      "image/tiff",
@@ -424,7 +427,7 @@ var types = map[string]string{
 	".tsp":       "application/dsptype",
 	".tsv":       "text/tab-separated-values",
 	".turbot":    "image/florian",
-	".txt":       "text/plain",
+	".txt":       context.ContentTextHeaderValue,
 	".uil":       "text/x-uil",
 	".uni":       "text/uri-list",
 	".unis":      "text/uri-list",
@@ -500,7 +503,7 @@ var types = map[string]string{
 	".xlv":       "application/excel",
 	".xlw":       "application/excel",
 	".xm":        "audio/xm",
-	".xml":       "text/xml",
+	".xml":       context.ContentXMLHeaderValue,
 	".xmz":       "xgl/movie",
 	".xpix":      "application/x-vndls-xpix",
 	".xpm":       "image/x-xpixmap",
@@ -542,7 +545,7 @@ var types = map[string]string{
 func init() {
 	for ext, typ := range types {
 		// skip errors
-		mime.AddExtensionType(ext, typ)
+		_ = mime.AddExtensionType(ext, typ)
 	}
 }
 
@@ -569,23 +572,21 @@ func TypeByExtension(ext string) (typ string) {
 	}
 
 	if ext[0] != '.' { // try to take it by filename
-		typ = TypeByFilename(ext)
+		typ = context.TrimHeaderValue(TypeByFilename(ext))
 		if typ == "" {
 			ext = "." + ext // if error or something wrong then prepend the dot
 		}
 	}
 
 	if typ == "" {
-		typ = mime.TypeByExtension(ext)
+		typ = context.TrimHeaderValue(mime.TypeByExtension(ext))
 	}
 
 	// mime.TypeByExtension returns as text/plain; | charset=utf-8 the static .js (not always)
-	if ext == ".js" && (typ == "text/plain" || typ == "text/plain; charset=utf-8") {
-
-		if ext == ".js" {
-			typ = "application/javascript"
-		}
+	if ext == ".js" && (typ == context.ContentJavascriptHeaderValue || typ == context.ContentTextHeaderValue) {
+		typ = context.ContentJavascriptHeaderValue
 	}
+
 	return typ
 }
 

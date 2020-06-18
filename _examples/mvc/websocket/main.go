@@ -1,39 +1,37 @@
 package main
 
 import (
+	"fmt"
 	"sync/atomic"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
-	"github.com/kataras/iris/websocket"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
+	"github.com/kataras/iris/v12/websocket"
 )
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	// load templates.
 	app.RegisterView(iris.HTML("./views", ".html"))
 
-	// render the ./views/index.html.
-	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.html")
-	})
+	// render the ./browser/index.html.
+	app.HandleDir("/", "./browser")
 
-	mvc.Configure(app.Party("/websocket"), configureMVC)
-	// Or mvc.New(app.Party(...)).Configure(configureMVC)
+	websocketAPI := app.Party("/websocket")
 
+	m := mvc.New(websocketAPI)
+	m.Register(
+		&prefixedLogger{prefix: "DEV"},
+	)
+	m.HandleWebsocket(&websocketController{Namespace: "default", Age: 42, Otherstring: "other string"})
+
+	websocketServer := websocket.New(websocket.DefaultGorillaUpgrader, m)
+
+	websocketAPI.Get("/", websocket.Handler(websocketServer))
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
-}
-
-func configureMVC(m *mvc.Application) {
-	ws := websocket.New(websocket.Config{})
-	// http://localhost:8080/websocket/iris-ws.js
-	m.Router.Any("/iris-ws.js", websocket.ClientHandler())
-
-	// This will bind the result of ws.Upgrade which is a websocket.Connection
-	// to the controller(s) served by the `m.Handle`.
-	m.Register(ws.Upgrade)
-	m.Handle(new(websocketController))
+	app.Listen(":8080")
 }
 
 var visits uint64
@@ -47,36 +45,74 @@ func decrement() uint64 {
 }
 
 type websocketController struct {
-	// Note that you could use an anonymous field as well, it doesn't matter, binder will find it.
-	//
-	// This is the current websocket connection, each client has its own instance of the *websocketController.
-	Conn websocket.Connection
+	*websocket.NSConn `stateless:"true"`
+	Namespace         string
+	Age               int
+	Otherstring       string
+
+	Logger LoggerService
 }
 
-func (c *websocketController) onLeave(roomName string) {
+// or
+// func (c *websocketController) Namespace() string {
+// 	return "default"
+// }
+
+func (c *websocketController) OnNamespaceDisconnect(msg websocket.Message) error {
+	c.Logger.Log("Disconnected")
 	// visits--
 	newCount := decrement()
-	// This will call the "visit" event on all clients, except the current one,
+	// This will call the "OnVisit" event on all clients, except the current one,
 	// (it can't because it's left but for any case use this type of design)
-	c.Conn.To(websocket.Broadcast).Emit("visit", newCount)
+	c.Conn.Server().Broadcast(nil, websocket.Message{
+		Namespace: msg.Namespace,
+		Event:     "OnVisit",
+		Body:      []byte(fmt.Sprintf("%d", newCount)),
+	})
+
+	return nil
 }
 
-func (c *websocketController) update() {
+func (c *websocketController) OnNamespaceConnected(msg websocket.Message) error {
+	// println("Broadcast prefix is: " + c.BroadcastPrefix)
+	c.Logger.Log("Connected")
+
 	// visits++
 	newCount := increment()
 
-	// This will call the "visit" event on all clients, including the current
+	// This will call the "OnVisit" event on all clients, including the current one,
 	// with the 'newCount' variable.
 	//
 	// There are many ways that u can do it and faster, for example u can just send a new visitor
 	// and client can increment itself, but here we are just "showcasing" the websocket controller.
-	c.Conn.To(websocket.All).Emit("visit", newCount)
+	c.Conn.Server().Broadcast(nil, websocket.Message{
+		Namespace: msg.Namespace,
+		Event:     "OnVisit",
+		Body:      []byte(fmt.Sprintf("%d", newCount)),
+	})
+
+	return nil
 }
 
-func (c *websocketController) Get( /* websocket.Connection could be lived here as well, it doesn't matter */ ) {
-	c.Conn.OnLeave(c.onLeave)
-	c.Conn.On("visit", c.update)
+func (c *websocketController) OnChat(msg websocket.Message) error {
+	ctx := websocket.GetContext(c.Conn)
 
-	// call it after all event callbacks registration.
-	c.Conn.Wait()
+	ctx.Application().Logger().Infof("[IP: %s] [ID: %s]  broadcast to other clients the message [%s]",
+		ctx.RemoteAddr(), c, string(msg.Body))
+
+	c.Conn.Server().Broadcast(c, msg)
+
+	return nil
+}
+
+type LoggerService interface {
+	Log(string)
+}
+
+type prefixedLogger struct {
+	prefix string
+}
+
+func (s *prefixedLogger) Log(msg string) {
+	fmt.Printf("%s: %s\n", s.prefix, msg)
 }

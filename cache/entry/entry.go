@@ -3,7 +3,7 @@ package entry
 import (
 	"time"
 
-	"github.com/kataras/iris/cache/cfg"
+	"github.com/kataras/iris/v12/cache/cfg"
 )
 
 // Entry is the cache entry
@@ -101,7 +101,6 @@ func CopyHeaders(dst map[string][]string, src map[string][]string) {
 // to re-set the response with the new handler's content result
 func (e *Entry) Reset(statusCode int, headers map[string][]string,
 	body []byte, lifeChanger LifeChanger) {
-
 	if e.response == nil {
 		e.response = &Response{}
 	}
@@ -115,7 +114,7 @@ func (e *Entry) Reset(statusCode int, headers map[string][]string,
 		e.response.headers = newHeaders
 	}
 
-	e.response.body = make([]byte,len(body))
+	e.response.body = make([]byte, len(body))
 	copy(e.response.body, body)
 	// check if a given life changer provided
 	// and if it does then execute the change life time

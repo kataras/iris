@@ -1,16 +1,20 @@
-// Package basicauth provides http basic authentication via middleware. See _examples/authentication/basicauth
+// Package basicauth provides http basic authentication via middleware. See _examples/auth/basicauth
 package basicauth
 
-// test file: ../../_examples/authentication/basicauth/main_test.go
+// test file: ../../_examples/auth/basicauth/main_test.go
 
 import (
 	"encoding/base64"
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 )
+
+func init() {
+	context.SetHandlerName("iris/middleware/basicauth.*", "iris.basicauth")
+}
 
 type (
 	encodedUser struct {
@@ -107,7 +111,6 @@ func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {
 
 // Serve the actual middleware
 func (b *basicAuthMiddleware) Serve(ctx context.Context) {
-
 	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
 	if !found {
 		b.askForCredentials(ctx)
@@ -117,7 +120,7 @@ func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 	}
 	// all ok
 	if b.expireEnabled {
-		if auth.logged == false {
+		if !auth.logged {
 			auth.expires = time.Now().Add(b.config.Expires)
 			auth.logged = true
 		}

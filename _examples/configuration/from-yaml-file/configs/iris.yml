@@ -4,3 +4,13 @@ FireMethodNotAllowed: true
 DisableBodyConsumptionOnUnmarshal: true
 TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
 Charset: UTF-8
+SSLProxyHeaders:
+  X-Forwarded-Proto: https
+HostProxyHeaders:
+  X-Host: true
+RemoteAddrHeaders:
+  X-Real-Ip: true
+  X-Forwarded-For: true
+  CF-Connecting-IP: true
+Other:
+  Addr: :8080

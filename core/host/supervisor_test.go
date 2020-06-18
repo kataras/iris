@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iris-contrib/httpexpect"
+	"github.com/iris-contrib/httpexpect/v2"
 )
 
 const (
@@ -20,7 +20,6 @@ const (
 )
 
 func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.Expect {
-
 	var transporter http.RoundTripper
 
 	if strings.HasPrefix(baseURL, "http") { // means we are testing real serve time
@@ -57,13 +56,15 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 	)
 
 	// http routing
-	var (
-		expectedBody = "this is the response body\n"
-	)
+
+	expectedBody := "this is the response body\n"
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(expectedBody))
+		_, err := w.Write([]byte(expectedBody))
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	// host (server wrapper and adapter) construction
@@ -98,6 +99,7 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 		t.Fatalf("expected hello Task's message to be '%s' but got '%s'", expectedHelloMessage, got)
 	}
 }
+
 func TestSupervisor(t *testing.T) {
 	testSupervisor(t, func(srv *http.Server, tasks []func(TaskHost)) *Supervisor {
 		su := New(srv)

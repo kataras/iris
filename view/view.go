@@ -1,10 +1,10 @@
 package view
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
-
-	"github.com/kataras/iris/core/errors"
+	"strings"
 )
 
 // View is responsible to
@@ -21,11 +21,10 @@ func (v *View) Register(e Engine) {
 
 // Find receives a filename, gets its extension and returns the view engine responsible for that file extension
 func (v *View) Find(filename string) Engine {
-	extension := filepath.Ext(filename)
 	// Read-Only no locks needed, at serve/runtime-time the library is not supposed to add new view engines
 	for i, n := 0, len(v.engines); i < n; i++ {
 		e := v.engines[i]
-		if e.Ext() == extension {
+		if strings.HasSuffix(filename, e.Ext()) {
 			return e
 		}
 	}
@@ -37,10 +36,6 @@ func (v *View) Len() int {
 	return len(v.engines)
 }
 
-var (
-	errNoViewEngineForExt = errors.New("no view engine found for '%s'")
-)
-
 // ExecuteWriter calls the correct view Engine's ExecuteWriter func
 func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
 	if len(filename) > 2 {
@@ -51,7 +46,7 @@ func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindin
 
 	e := v.Find(filename)
 	if e == nil {
-		return errNoViewEngineForExt.Format(filepath.Ext(filename))
+		return fmt.Errorf("no view engine found for '%s'", filepath.Ext(filename))
 	}
 
 	return e.ExecuteWriter(w, filename, layout, bindingData)

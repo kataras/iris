@@ -2,13 +2,12 @@ package context
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"sync"
-
-	"github.com/kataras/iris/core/errors"
 )
 
 // ResponseWriter interface is used by the context to serve an HTTP handler to
@@ -25,6 +24,8 @@ type ResponseWriter interface {
 	http.ResponseWriter
 	http.Flusher
 	http.Hijacker
+	// Note:
+	// The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
 	http.CloseNotifier
 	http.Pusher
 
@@ -40,6 +41,9 @@ type ResponseWriter interface {
 	//
 	// Here is the place which we can make the last checks or do a cleanup.
 	EndResponse()
+
+	// IsHijacked reports whether this response writer's connection is hijacked.
+	IsHijacked() bool
 
 	// Writef formats according to a format specifier and writes to the response.
 	//
@@ -57,7 +61,7 @@ type ResponseWriter interface {
 	// Written should returns the total length of bytes that were being written to the client.
 	// In addition iris provides some variables to help low-level actions:
 	// NoWritten, means that nothing were written yet and the response writer is still live.
-	// StatusCodeWritten, means that status code were written but no other bytes are written to the client, response writer may closed.
+	// StatusCodeWritten, means that status code was written but no other bytes are written to the client, response writer may closed.
 	// > 0 means that the reply was written and it's the total number of bytes were written.
 	Written() int
 
@@ -67,7 +71,7 @@ type ResponseWriter interface {
 
 	// SetBeforeFlush registers the unique callback which called exactly before the response is flushed to the client.
 	SetBeforeFlush(cb func())
-	// GetBeforeFlush returns (not execute) the before flush callback, or nil if not setted by SetBeforeFlush.
+	// GetBeforeFlush returns (not execute) the before flush callback, or nil if not set by SetBeforeFlush.
 	GetBeforeFlush() func()
 	// FlushResponse should be called only once before EndResponse.
 	// it tries to send the status code if not sent already
@@ -97,7 +101,34 @@ type ResponseWriter interface {
 	Flusher() (http.Flusher, bool)
 
 	// CloseNotifier indicates if the protocol supports the underline connection closure notification.
+	// Warning: The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
 	CloseNotifier() (http.CloseNotifier, bool)
+}
+
+// ResponseWriterBodyReseter can be implemented by
+// response writers that supports response body overriding
+// (e.g. recorder and compressed).
+type ResponseWriterBodyReseter interface {
+	// ResetBody should reset the body and reports back if it could reset successfully.
+	ResetBody()
+}
+
+// ResponseWriterDisabler can be implemented
+// by response writers that can be disabled and restored to their previous state
+// (e.g. compressed).
+type ResponseWriterDisabler interface {
+	// Disable should disable this type of response writer and fallback to the default one.
+	Disable()
+}
+
+// ResponseWriterReseter can be implemented
+// by response writers that can clear the whole response
+// so a new handler can write into this from the beginning.
+// E.g. recorder, compressed (full) and common writer (status code and headers).
+type ResponseWriterReseter interface {
+	// Reset should reset the whole response and reports
+	// whether it could reset successfully.
+	Reset() bool
 }
 
 //  +------------------------------------------------------------+
@@ -162,6 +193,25 @@ func (w *responseWriter) EndResponse() {
 	releaseResponseWriter(w)
 }
 
+// Reset clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *responseWriter) Reset() bool {
+	if w.written > 0 {
+		return false // if already written we can't reset this type of response writer.
+	}
+
+	h := w.Header()
+	for k := range h {
+		h[k] = nil
+	}
+
+	w.written = NoWritten
+	w.statusCode = defaultStatusCode
+	return true
+}
+
 // SetWritten sets manually a value for written, it can be
 // NoWritten(-1) or StatusCodeWritten(0), > 0 means body length which is useless here.
 func (w *responseWriter) SetWritten(n int) {
@@ -193,6 +243,15 @@ func (w *responseWriter) tryWriteHeader() {
 		w.written = StatusCodeWritten
 		w.ResponseWriter.WriteHeader(w.statusCode)
 	}
+}
+
+// IsHijacked reports whether this response writer's connection is hijacked.
+func (w *responseWriter) IsHijacked() bool {
+	// Note:
+	// A zero-byte `ResponseWriter.Write` on a hijacked connection will
+	// return `http.ErrHijacked` without any other side effects.
+	_, err := w.ResponseWriter.Write(nil)
+	return err == http.ErrHijacked
 }
 
 // Write writes to the client
@@ -286,7 +345,6 @@ func (w *responseWriter) WriteTo(to ResponseWriter) {
 				}
 			}
 		}
-
 	}
 	// the body is not copied, this writer doesn't support recording
 }

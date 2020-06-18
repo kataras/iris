@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 	mvc.New(app.Party("/")).Handle(&globalVisitorsController{visits: 0})
 
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type globalVisitorsController struct {

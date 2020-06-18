@@ -1,16 +1,16 @@
 package boltdb
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"time"
 
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12/sessions"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/kataras/golog"
+	bolt "go.etcd.io/bbolt"
 )
 
 // DefaultFileMode used as the default database's "fileMode"
@@ -42,7 +42,7 @@ func New(path string, fileMode os.FileMode) (*Database, error) {
 		return nil, errPathMissing
 	}
 
-	if fileMode <= 0 {
+	if fileMode == 0 {
 		fileMode = os.FileMode(DefaultFileMode)
 	}
 
@@ -55,7 +55,6 @@ func New(path string, fileMode os.FileMode) (*Database, error) {
 	service, err := bolt.Open(path, fileMode,
 		&bolt.Options{Timeout: 20 * time.Second},
 	)
-
 	if err != nil {
 		golog.Errorf("unable to initialize the BoltDB-based session database: %v", err)
 		return nil, err
@@ -68,10 +67,14 @@ func New(path string, fileMode os.FileMode) (*Database, error) {
 func NewFromDB(service *bolt.DB, bucketName string) (*Database, error) {
 	bucket := []byte(bucketName)
 
-	service.Update(func(tx *bolt.Tx) (err error) {
+	err := service.Update(func(tx *bolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists(bucket)
 		return
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	db := &Database{table: bucket, Service: service}
 
@@ -203,7 +206,6 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 		_, err = root.CreateBucketIfNotExists(bsid)
 		return
 	})
-
 	if err != nil {
 		golog.Debugf("unable to acquire session '%s': %v", sid, err)
 		return sessions.LifeTime{}
@@ -285,9 +287,8 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 
 		return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 	})
-
 	if err != nil {
-		golog.Debugf("session '%s' key '%s' not found", sid, key)
+		golog.Debugf("session '%s' key '%s' cannot be retrieved: %v", sid, key, err)
 	}
 
 	return
@@ -295,7 +296,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 
 // Visit loops through all session keys and values.
 func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
-	db.Service.View(func(tx *bolt.Tx) error {
+	err := db.Service.View(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -312,11 +313,15 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 			return nil
 		})
 	})
+
+	if err != nil {
+		golog.Debugf("Database.Visit: %s: %v", sid, err)
+	}
 }
 
 // Len returns the length of the session's entries (keys).
 func (db *Database) Len(sid string) (n int) {
-	db.Service.View(func(tx *bolt.Tx) error {
+	err := db.Service.View(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -325,6 +330,10 @@ func (db *Database) Len(sid string) (n int) {
 		n = b.Stats().KeyN
 		return nil
 	})
+
+	if err != nil {
+		golog.Debugf("Database.Len: %s: %v", sid, err)
+	}
 
 	return
 }
@@ -345,7 +354,7 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 
 // Clear removes all session key values but it keeps the session entry.
 func (db *Database) Clear(sid string) {
-	db.Service.Update(func(tx *bolt.Tx) error {
+	err := db.Service.Update(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -355,20 +364,28 @@ func (db *Database) Clear(sid string) {
 			return b.Delete(k)
 		})
 	})
+
+	if err != nil {
+		golog.Debugf("Database.Clear: %s: %v", sid, err)
+	}
 }
 
 // Release destroys the session, it clears and removes the session entry,
 // session manager will create a new session ID on the next request after this call.
 func (db *Database) Release(sid string) {
-	db.Service.Update(func(tx *bolt.Tx) error {
+	err := db.Service.Update(func(tx *bolt.Tx) error {
 		// delete the session bucket.
 		b := db.getBucket(tx)
 		bsid := []byte(sid)
 		// try to delete the associated expiration bucket, if exists, ignore error.
-		b.DeleteBucket(getExpirationBucketName(bsid))
+		_ = b.DeleteBucket(getExpirationBucketName(bsid))
 
 		return b.DeleteBucket(bsid)
 	})
+
+	if err != nil {
+		golog.Debugf("Database.Release: %s: %v", sid, err)
+	}
 }
 
 // Close shutdowns the BoltDB connection.

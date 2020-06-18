@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 //
@@ -84,7 +84,7 @@ func BenchmarkAPIBuilder(b *testing.B) {
 	paths := genPaths(routesLength, 15, 42)
 
 	api := NewAPIBuilder()
-	requestHandler := NewDefaultHandler()
+	requestHandler := NewDefaultHandler(nil, nil)
 
 	b.ReportAllocs()
 	b.ResetTimer()

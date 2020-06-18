@@ -1,7 +1,7 @@
 package rule
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 // Conditional is a Rule witch adds a predicate in order to its methods to execute
@@ -34,16 +34,10 @@ func Conditional(claimPredicate func() bool, validPredicate func() bool) Rule {
 
 // Claim validator
 func (c *conditionalRule) Claim(ctx context.Context) bool {
-	if !c.claimPredicate() {
-		return false
-	}
-	return true
+	return c.claimPredicate()
 }
 
 // Valid validator
 func (c *conditionalRule) Valid(ctx context.Context) bool {
-	if !c.validPredicate() {
-		return false
-	}
-	return true
+	return c.validPredicate()
 }

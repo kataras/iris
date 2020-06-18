@@ -6,9 +6,10 @@ Example:
 
 ```go
 import (
-    "github.com/kataras/iris/_examples/mvc/login/datamodels"
+    "github.com/kataras/iris/v12/_examples/mvc/login/datamodels"
 
-    "github.com/kataras/iris/context"
+    "github.com/kataras/iris/v12"
+    "github.com/kataras/iris/v12/context"
 )
 
 type User struct {
@@ -41,7 +42,7 @@ so theoretically, something like the following is permitted if it's really neces
 // This is called where the return value from a controller's method functions
 // is type of `User`.
 // For example the `controllers/user_controller.go#GetBy`.
-func (m User) Dispatch(ctx context.Context) {
+func (m User) Dispatch(ctx iris.Context) {
     if !m.IsValid() {
         ctx.NotFound()
         return

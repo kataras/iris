@@ -1,9 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
-
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 /*
@@ -95,6 +93,7 @@ func registerSubdomains(app *iris.Application) {
 
 func newApp() *iris.Application {
 	app := iris.New()
+
 	registerErrors(app)
 	registerGamesRoutes(app)
 	registerSubdomains(app)
@@ -108,7 +107,7 @@ func newApp() *iris.Application {
 	// to protect ourselves from "over heating".
 	app.Post("/", iris.LimitRequestBodySize(maxBodySize), func(ctx iris.Context) {
 		// get request body
-		b, err := ioutil.ReadAll(ctx.Request().Body)
+		b, err := ctx.GetBody()
 		// if is larger then send a bad request status
 		if err != nil {
 			ctx.StatusCode(iris.StatusBadRequest)
@@ -179,5 +178,5 @@ func main() {
 		// FIRE NOT FOUND
 		http://localhost:8080/coudlntfound
 	*/
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

@@ -1,28 +1,36 @@
 package cache_test
 
 import (
+	"fmt"
 	"net/http"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/cache"
-	"github.com/kataras/iris/cache/client"
-	"github.com/kataras/iris/cache/client/rule"
+	"github.com/kataras/iris/v12/cache"
+	"github.com/kataras/iris/v12/cache/client"
+	"github.com/kataras/iris/v12/cache/client/rule"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 
-	"github.com/iris-contrib/httpexpect"
-	"github.com/kataras/iris/httptest"
+	"github.com/iris-contrib/httpexpect/v2"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 var (
 	cacheDuration   = 2 * time.Second
 	expectedBodyStr = "Imagine it as a big message to achieve x20 response performance!"
-	errTestFailed   = errors.New("expected the main handler to be executed %d times instead of %d")
 )
+
+type testError struct {
+	expected int
+	got      uint32
+}
+
+func (h *testError) Error() string {
+	return fmt.Sprintf("expected the main handler to be executed %d times instead of %d", h.expected, h.got)
+}
 
 func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBodyStr string, nocache string) error {
 	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
@@ -31,7 +39,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	counter := atomic.LoadUint32(counterPtr)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
-		return errTestFailed.Format(1, counter)
+		return &testError{1, counter}
 	}
 	time.Sleep(cacheDuration)
 
@@ -42,7 +50,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 2 {
-		return errTestFailed.Format(2, counter)
+		return &testError{2, counter}
 	}
 
 	// we have cache response saved for the path, we have some time more here, but here
@@ -51,7 +59,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	e.GET(path).WithHeader("Authorization", "basic or anything").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 4 {
-		return errTestFailed.Format(4, counter)
+		return &testError{4, counter}
 	}
 
 	if nocache != "" {
@@ -69,14 +77,14 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 		e.GET(nocache).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr) // counter should be 6
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 { // 4 before, 5 with the first call to store the cache, and six with the no cache, again original handler executation
-			return errTestFailed.Format(6, counter)
+			return &testError{6, counter}
 		}
 
 		// let's call again the path the expiration is not passed so  it should be cached
 		e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 {
-			return errTestFailed.Format(6, counter)
+			return &testError{6, counter}
 		}
 
 		// but now check for the No
@@ -104,7 +112,6 @@ func TestClientNoCache(t *testing.T) {
 	if err := runTest(e, "/", &n, expectedBodyStr, "/nocache"); err != nil {
 		t.Fatalf(t.Name()+": %v", err)
 	}
-
 }
 
 func TestCache(t *testing.T) {
@@ -136,7 +143,6 @@ func TestCache(t *testing.T) {
 	if err := runTest(e, "/other", &n2, expectedBodyStr2, ""); err != nil {
 		t.Fatalf(t.Name()+" other: %v", err)
 	}
-
 }
 
 func TestCacheHandlerParallel(t *testing.T) {
@@ -159,10 +165,8 @@ func TestCacheValidator(t *testing.T) {
 	managedCache := cache.Cache(cacheDuration)
 	managedCache.AddRule(rule.Validator([]rule.PreValidator{
 		func(ctx context.Context) bool {
-			if ctx.Request().URL.Path == "/invalid" {
-				return false // should always invalid for cache, don't bother to go to try to get or set cache
-			}
-			return true
+			// should always invalid for cache, don't bother to go to try to get or set cache
+			return ctx.Request().URL.Path != "/invalid"
 		},
 	}, nil))
 
@@ -170,10 +174,8 @@ func TestCacheValidator(t *testing.T) {
 	managedCache2.AddRule(rule.Validator(nil,
 		[]rule.PostValidator{
 			func(ctx context.Context) bool {
-				if ctx.ResponseWriter().Header().Get("DONT") != "" {
-					return false // it's passed the Claim and now Valid checks if the response contains a header of "DONT"
-				}
-				return true
+				// it's passed the Claim and now Valid checks if the response contains a header of "DONT"
+				return ctx.ResponseWriter().Header().Get("DONT") == ""
 			},
 		},
 	))
@@ -185,7 +187,6 @@ func TestCacheValidator(t *testing.T) {
 		atomic.AddUint32(&n, 1)
 		ctx.Header("DONT", "DO not cache that response even if it was claimed")
 		ctx.Write([]byte(expectedBodyStr))
-
 	})
 
 	e := httptest.New(t, app)
@@ -197,7 +198,7 @@ func TestCacheValidator(t *testing.T) {
 	counter := atomic.LoadUint32(&n)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
-		t.Fatal(errTestFailed.Format(1, counter))
+		t.Fatalf("%s: %v", t.Name(), &testError{1, counter})
 	}
 	// don't execute from cache, execute the original, counter should ++ here
 	e.GET("/invalid").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)  // counter = 2
@@ -206,6 +207,6 @@ func TestCacheValidator(t *testing.T) {
 	counter = atomic.LoadUint32(&n)
 	if counter != 3 {
 		// n should be 1 because it doesn't changed after the first call
-		t.Fatalf(t.Name()+": %v", errTestFailed.Format(3, counter))
+		t.Fatalf("%s: %v", t.Name(), &testError{3, counter})
 	}
 }

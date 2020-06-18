@@ -3,33 +3,33 @@ package mvc_test
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/httptest"
 
-	. "github.com/kataras/iris/mvc"
+	. "github.com/kataras/iris/v12/mvc"
 )
 
 // service
 type (
-	// these TestService and TestServiceImpl could be in lowercase, unexported
+	// these testService and testServiceImpl could be in lowercase, unexported
 	// but the `Say` method should be exported however we have those exported
 	// because of the controller handler test.
-	TestService interface {
+	testService interface {
 		Say(string) string
 	}
-	TestServiceImpl struct {
+	testServiceImpl struct {
 		prefix string
 	}
 )
 
-func (s *TestServiceImpl) Say(message string) string {
+func (s *testServiceImpl) Say(message string) string {
 	return s.prefix + " " + message
 }
 
 type testControllerHandle struct {
 	Ctx     context.Context
-	Service TestService
+	Service testService
 
 	reqField string
 }
@@ -40,6 +40,8 @@ func (c *testControllerHandle) BeforeActivation(b BeforeActivation) {
 	b.Handle("GET", "/hiservice/{ps:string}", "HiServiceBy")
 	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
+	b.HandleMany("GET", "/custom/{ps:string} /custom2/{ps:string}", "CustomWithParameter")
+	b.HandleMany("GET", "/custom3/{ps:string}/{pssecond:string}", "CustomWithParameters")
 }
 
 // test `GetRoute` for custom routes.
@@ -97,12 +99,27 @@ func (c *testControllerHandle) HiParamEmptyInputBy() string {
 	return "empty in but served with ctx.Params.Get('ps')=" + c.Ctx.Params().Get("ps")
 }
 
+func (c *testControllerHandle) CustomWithParameter(param1 string) string {
+	return param1
+}
+
+func (c *testControllerHandle) CustomWithParameters(param1, param2 string) string {
+	return param1 + param2
+}
+
+type testSmallController struct{}
+
+// test ctx + id in the same time.
+func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx context.Context, id string) string {
+	return "empty in but served with ctx.Params.Get('param2')= " + ctx.Params().Get("param2") + " == id == " + id
+}
+
 func TestControllerHandle(t *testing.T) {
 	app := iris.New()
-
 	m := New(app)
-	m.Register(&TestServiceImpl{prefix: "service:"})
+	m.Register(&testServiceImpl{prefix: "service:"})
 	m.Handle(new(testControllerHandle))
+	m.Handle(new(testSmallController))
 
 	e := httptest.New(t, app)
 
@@ -130,4 +147,55 @@ func TestControllerHandle(t *testing.T) {
 		Body().Equal("value")
 	e.GET("/hiparamempyinput/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('ps')=value")
+	e.GET("/custom/value1").Expect().Status(httptest.StatusOK).
+		Body().Equal("value1")
+	e.GET("/custom2/value2").Expect().Status(httptest.StatusOK).
+		Body().Equal("value2")
+	e.GET("/custom3/value1/value2").Expect().Status(httptest.StatusOK).
+		Body().Equal("value1value2")
+	e.GET("/custom3/value1").Expect().Status(httptest.StatusNotFound)
+
+	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
+		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")
+}
+
+type testControllerHandleWithDynamicPathPrefix struct {
+	Ctx iris.Context
+}
+
+func (c *testControllerHandleWithDynamicPathPrefix) GetBy(id string) string {
+	params := c.Ctx.Params()
+	return params.Get("model") + params.Get("action") + id
+}
+
+func TestControllerHandleWithDynamicPathPrefix(t *testing.T) {
+	app := iris.New()
+	New(app.Party("/api/data/{model:string}/{action:string}")).Handle(new(testControllerHandleWithDynamicPathPrefix))
+	e := httptest.New(t, app)
+	e.GET("/api/data/mymodel/myaction/myid").Expect().Status(httptest.StatusOK).
+		Body().Equal("mymodelmyactionmyid")
+}
+
+type testControllerGetBy struct{}
+
+func (c *testControllerGetBy) GetBy(age int64) *testCustomStruct {
+	return &testCustomStruct{
+		Age:  int(age),
+		Name: "name",
+	}
+}
+
+func TestControllerGetByWithAllowMethods(t *testing.T) {
+	app := iris.New()
+	app.Configure(iris.WithFireMethodNotAllowed)
+	// ^ this 405 status will not be fired on POST: project/... because of
+	// .AllowMethods, but it will on PUT.
+
+	New(app.Party("/project").AllowMethods(iris.MethodGet, iris.MethodPost)).Handle(new(testControllerGetBy))
+
+	e := httptest.New(t, app)
+	e.GET("/project/42").Expect().Status(httptest.StatusOK).
+		JSON().Equal(&testCustomStruct{Age: 42, Name: "name"})
+	e.POST("/project/42").Expect().Status(httptest.StatusOK)
+	e.PUT("/project/42").Expect().Status(httptest.StatusMethodNotAllowed)
 }

@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/macro/interpreter/ast"
-	"github.com/kataras/iris/macro/interpreter/lexer"
-	"github.com/kataras/iris/macro/interpreter/token"
+	"github.com/kataras/iris/v12/macro/interpreter/ast"
+	"github.com/kataras/iris/v12/macro/interpreter/lexer"
+	"github.com/kataras/iris/v12/macro/interpreter/token"
 )
 
 // Parse takes a route "fullpath"
@@ -78,23 +78,10 @@ func (p *ParamParser) appendErr(format string, a ...interface{}) {
 
 const (
 	// DefaultParamErrorCode is the default http error code, 404 not found,
-	// per-parameter. An error code can be setted via
+	// per-parameter. An error code can be set via
 	// the "else" keyword inside a route's path.
 	DefaultParamErrorCode = 404
 )
-
-// func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
-// 	if t.Type == token.INT {
-// 		return ast.ParamFuncArgToInt(t.Literal)
-// 	}
-// 	// act all as strings here, because of int vs int64 vs uint64 and etc.
-// 	return t.Literal, nil
-// }
-
-func parseParamFuncArg(t token.Token) (a string, err error) {
-	// act all as strings here, because of int vs int64 vs uint64 and etc.
-	return t.Literal, nil
-}
 
 func (p ParamParser) Error() error {
 	if len(p.errors) > 0 {
@@ -180,7 +167,6 @@ func (p *ParamParser) Parse(paramTypes []ast.ParamType) (*ast.ParamStatement, er
 			if stmt.Name == "" {
 				p.appendErr("[%d:%d] illegal token: }, forgot '{' ?", t.Start, t.End)
 			}
-			break
 		case token.ILLEGAL:
 			p.appendErr("[%d:%d] illegal token: %s", t.Start, t.End, t.Literal)
 		default:

@@ -2,19 +2,23 @@
 package handlerconv_test
 
 import (
+	stdContext "context"
 	"net/http"
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/handlerconv"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/handlerconv"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 func TestFromStd(t *testing.T) {
 	expected := "ok"
 	std := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(expected))
+		_, err := w.Write([]byte(expected))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	h := handlerconv.FromStd(http.HandlerFunc(std))
@@ -35,14 +39,14 @@ func TestFromStd(t *testing.T) {
 }
 
 func TestFromStdWithNext(t *testing.T) {
-
 	basicauth := "secret"
 	passed := "ok"
 
 	stdWNext := func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		if username, password, ok := r.BasicAuth(); ok &&
 			username == basicauth && password == basicauth {
-			next.ServeHTTP(w, r)
+			ctx := stdContext.WithValue(r.Context(), "key", "ok")
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 		w.WriteHeader(iris.StatusForbidden)
@@ -50,7 +54,7 @@ func TestFromStdWithNext(t *testing.T) {
 
 	h := handlerconv.FromStdWithNext(stdWNext)
 	next := func(ctx context.Context) {
-		ctx.WriteString(passed)
+		ctx.WriteString(ctx.Request().Context().Value("key").(string))
 	}
 
 	app := iris.New()

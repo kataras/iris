@@ -1,6 +1,6 @@
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 func main() {
 	app := iris.New()
@@ -22,14 +22,14 @@ func main() {
 	// are applied to existing routes and future routes.
 	//
 	// Remember: the `Use` and `Done` are applied to the current party's and its children,
-	// so if we used the `app.Use/Don`e before the routes registration
+	// so if we used the `app.Use/Done` before the routes registration
 	// it would work like UseGlobal/DoneGlobal in this case, because the `app` is the root party.
 	//
 	// See `app.Party/PartyFunc` for more.
 	app.UseGlobal(before)
 	app.DoneGlobal(after)
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func before(ctx iris.Context) {

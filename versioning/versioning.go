@@ -1,7 +1,7 @@
 package versioning
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/hashicorp/go-version"
 )
@@ -43,7 +43,7 @@ func NewMatcher(versions Map) context.Handler {
 
 	return func(ctx context.Context) {
 		versionString := GetVersion(ctx)
-		if versionString == NotFound {
+		if versionString == "" || versionString == NotFound {
 			notFoundHandler(ctx)
 			return
 		}
@@ -63,7 +63,7 @@ func NewMatcher(versions Map) context.Handler {
 		}
 
 		// pass the not matched version so the not found handler can have knowedge about it.
-		// ctx.Values().Set(Key, versionString)
+		// ctx.SetVersion(versionString)
 		// or let a manual cal of GetVersion(ctx) do that instead.
 		notFoundHandler(ctx)
 	}

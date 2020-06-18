@@ -2,6 +2,8 @@ package sessions
 
 import (
 	"time"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 // LifeTime controls the session expiration datetime.
@@ -50,7 +52,7 @@ func (lt *LifeTime) Shift(d time.Duration) {
 
 // ExpireNow reduce the lifetime completely.
 func (lt *LifeTime) ExpireNow() {
-	lt.Time = CookieExpireDelete
+	lt.Time = context.CookieExpireDelete
 	if lt.timer != nil {
 		lt.timer.Stop()
 	}

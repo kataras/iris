@@ -1,29 +1,18 @@
 package mvc
 
 import (
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/hero"
-	"github.com/kataras/iris/hero/di"
+	"reflect"
+	"strings"
+
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/websocket"
+
+	"github.com/kataras/golog"
 )
 
-var (
-	// HeroDependencies let you share bindable dependencies between
-	// package-level hero's registered dependencies and all MVC instances that comes later.
-	//
-	// `hero.Register(...)`
-	// `myMVC := mvc.New(app.Party(...))`
-	// the "myMVC" registers the dependencies provided by the `hero.Register` func
-	// automatically.
-	//
-	// Set it to false to disable that behavior, you have to use the `mvc#Register`
-	// even if you had register dependencies with the `hero` package.
-	//
-	// Defaults to true.
-	HeroDependencies = true
-)
-
-// Application is the high-level compoment of the "mvc" package.
+// Application is the high-level component of the "mvc" package.
 // It's the API that you will be using to register controllers among with their
 // dependencies that your controllers may expecting.
 // It contains the Router(iris.Party) in order to be able to register
@@ -35,14 +24,43 @@ var (
 //
 // See `mvc#New` for more.
 type Application struct {
-	Dependencies di.Values
-	Router       router.Party
+	container *hero.Container
+	// This Application's Name. Keep names unique to each other.
+	Name string
+
+	Router               router.Party
+	Controllers          []*ControllerActivator
+	websocketControllers []websocket.ConnHandler
 }
 
-func newApp(subRouter router.Party, values di.Values) *Application {
-	return &Application{
-		Router:       subRouter,
-		Dependencies: values,
+func newApp(subRouter router.Party, container *hero.Container) *Application {
+	app := &Application{
+		Router:    subRouter,
+		container: container,
+	}
+
+	// Register this Application so any field or method's input argument of
+	// *mvc.Application can point to the current MVC application that the controller runs on.
+	registerBuiltinDependencies(container, app)
+	return app
+}
+
+// See `hero.BuiltinDependencies` too, here we are registering dependencies per MVC Application.
+func registerBuiltinDependencies(container *hero.Container, deps ...interface{}) {
+	for _, dep := range deps {
+		depTyp := reflect.TypeOf(dep)
+		for i, dependency := range container.Dependencies {
+			if dependency.Static {
+				if dependency.DestType == depTyp {
+					// Remove any existing before register this one (see app.Clone).
+					copy(container.Dependencies[i:], container.Dependencies[i+1:])
+					container.Dependencies = container.Dependencies[:len(container.Dependencies)-1]
+					break
+				}
+			}
+		}
+
+		container.Register(dep)
 	}
 }
 
@@ -52,11 +70,7 @@ func newApp(subRouter router.Party, values di.Values) *Application {
 //
 // Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
 func New(party router.Party) *Application {
-	values := di.NewValues()
-	if HeroDependencies {
-		values = hero.Dependencies().Clone()
-	}
-	return newApp(party, values)
+	return newApp(party, party.ConfigureContainer().Container.Clone())
 }
 
 // Configure creates a new controller and configures it,
@@ -90,23 +104,55 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 	return app
 }
 
+// SetName sets a unique name to this MVC Application.
+// Used for logging, not used in runtime yet, but maybe useful for future features.
+//
+// It returns this Application.
+func (app *Application) SetName(appName string) *Application {
+	app.Name = appName
+	return app
+}
+
 // Register appends one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be
 // an `iris.Context` and the output can be any type, that output type
-// will be binded to the controller's field, if matching or to the
+// will be bind-ed to the controller's field, if matching or to the
 // controller's methods, if matching.
 //
-// These dependencies "values" can be changed per-controller as well,
+// These dependencies "dependencies" can be changed per-controller as well,
 // via controller's `BeforeActivation` and `AfterActivation` methods,
 // look the `Handle` method for more.
 //
 // It returns this Application.
 //
 // Example: `.Register(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
-func (app *Application) Register(values ...interface{}) *Application {
-	app.Dependencies.Add(values...)
+func (app *Application) Register(dependencies ...interface{}) *Application {
+	if len(dependencies) > 0 && len(app.container.Dependencies) == len(hero.BuiltinDependencies) && len(app.Controllers) > 0 {
+		allControllerNamesSoFar := make([]string, len(app.Controllers))
+		for i := range app.Controllers {
+			allControllerNamesSoFar[i] = app.Controllers[i].Name()
+		}
+
+		golog.Warnf(`mvc.Application#Register called after mvc.Application#Handle.
+	The controllers[%s] may miss required dependencies.
+	Set the Logger's Level to "debug" to view the active dependencies per controller.`, strings.Join(allControllerNamesSoFar, ","))
+	}
+
+	for _, dependency := range dependencies {
+		app.container.Register(dependency)
+	}
+
 	return app
+}
+
+// Option is an interface which does contain a single `Apply` method that accepts
+// a `ControllerActivator`. It can be passed on `Application.Handle` method to
+// mdoify the behavior right after the `BeforeActivation` state.
+//
+// See `GRPC` package-level structure too.
+type Option interface {
+	Apply(*ControllerActivator)
 }
 
 // Handle serves a controller for the current mvc application's Router.
@@ -152,10 +198,53 @@ func (app *Application) Register(values ...interface{}) *Application {
 // Result or (Result, error)
 // where Get is an HTTP Method func.
 //
+// Default behavior can be changed through second, variadic, variable "options",
+// e.g. Handle(controller, GRPC {Server: grpcServer, Strict: true})
+//
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
-func (app *Application) Handle(controller interface{}) *Application {
+func (app *Application) Handle(controller interface{}, options ...Option) *Application {
+	app.handle(controller, options...)
+	return app
+}
+
+// HandleWebsocket handles a websocket specific controller.
+// Its exported methods are the events.
+// If a "Namespace" field or method exists then namespace is set, otherwise empty namespace.
+// Note that a websocket controller is registered and ran under a specific connection connected to a namespace
+// and it cannot send HTTP responses on that state.
+// However all static and dynamic dependency injection features are working, as expected, like any regular MVC Controller.
+func (app *Application) HandleWebsocket(controller interface{}) *websocket.Struct {
+	c := app.handle(controller)
+	c.markAsWebsocket()
+
+	websocketController := websocket.NewStruct(c.Value).SetInjector(makeInjector(c.injector))
+	app.websocketControllers = append(app.websocketControllers, websocketController)
+	return websocketController
+}
+
+func makeInjector(s *hero.Struct) websocket.StructInjector {
+	return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
+		v, _ := s.Acquire(websocket.GetContext(nsConn.Conn))
+		return v
+	}
+}
+
+var _ websocket.ConnHandler = (*Application)(nil)
+
+// GetNamespaces completes the websocket ConnHandler interface.
+// It returns a collection of namespace and events that
+// were registered through `HandleWebsocket` controllers.
+func (app *Application) GetNamespaces() websocket.Namespaces {
+	if golog.Default.Level == golog.DebugLevel {
+		websocket.EnableDebug(golog.Default)
+	}
+
+	return websocket.JoinConnHandlers(app.websocketControllers...).GetNamespaces()
+}
+
+func (app *Application) handle(controller interface{}, options ...Option) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
-	c := newControllerActivator(app.Router, controller, app.Dependencies)
+	c := newControllerActivator(app, controller)
 
 	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
 	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods
@@ -166,6 +255,12 @@ func (app *Application) Handle(controller interface{}) *Application {
 		before.BeforeActivation(c)
 	}
 
+	for _, opt := range options {
+		if opt != nil {
+			opt.Apply(c)
+		}
+	}
+
 	c.activate()
 
 	if after, okAfter := controller.(interface {
@@ -173,15 +268,29 @@ func (app *Application) Handle(controller interface{}) *Application {
 	}); okAfter {
 		after.AfterActivation(c)
 	}
+
+	app.Controllers = append(app.Controllers, c)
+	return c
+}
+
+// HandleError registers a `hero.ErrorHandlerFunc` which will be fired when
+// application's controllers' functions returns an non-nil error.
+// Each controller can override it by implementing the `hero.ErrorHandler`.
+func (app *Application) HandleError(handler func(ctx context.Context, err error)) *Application {
+	errorHandler := hero.ErrorHandlerFunc(handler)
+	app.container.GetErrorHandler = func(context.Context) hero.ErrorHandler {
+		return errorHandler
+	}
 	return app
 }
 
 // Clone returns a new mvc Application which has the dependencies
-// of the current mvc Mpplication's dependencies.
+// of the current mvc Application's `Dependencies` and its `ErrorHandler`.
 //
 // Example: `.Clone(app.Party("/path")).Handle(new(TodoSubController))`.
 func (app *Application) Clone(party router.Party) *Application {
-	return newApp(party, app.Dependencies.Clone())
+	cloned := newApp(party, app.container.Clone())
+	return cloned
 }
 
 // Party returns a new child mvc Application based on the current path + "relativePath".

@@ -1,8 +1,6 @@
-// +build go1.9
-
 package mvc
 
-import "github.com/kataras/iris/hero"
+import "github.com/kataras/iris/v12/hero"
 
 type (
 
@@ -14,8 +12,6 @@ type (
 	View = hero.View
 )
 
-var (
-	// Try is a type alias for the `hero#Try`,
-	// useful to return a result based on two cases: failure(including panics) and a succeess.
-	Try = hero.Try
-)
+// Try is a type alias for the `hero#Try`,
+// useful to return a result based on two cases: failure(including panics) and a succeess.
+var Try = hero.Try

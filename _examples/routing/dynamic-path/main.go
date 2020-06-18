@@ -3,7 +3,7 @@ package main
 import (
 	"regexp"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -284,5 +284,10 @@ func main() {
 	// Last, do not confuse `ctx.Params()` with `ctx.Values()`.
 	// Path parameter's values can be retrieved from `ctx.Params()`,
 	// context's local storage that can be used to communicate between handlers and middleware(s) can be stored to `ctx.Values()`.
-	app.Run(iris.Addr(":8080"))
+	//
+	// When registering different parameter types in the same exact path pattern, the path parameter's name
+	// should differ e.g.
+	// /path/{name:string}
+	// /path/{id:uint}
+	app.Listen(":8080")
 }

@@ -3,12 +3,12 @@
 package controllers
 
 import (
-	"github.com/kataras/iris/_examples/mvc/login/datamodels"
-	"github.com/kataras/iris/_examples/mvc/login/services"
+	"github.com/kataras/iris/v12/_examples/mvc/login/datamodels"
+	"github.com/kataras/iris/v12/_examples/mvc/login/services"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
+	"github.com/kataras/iris/v12/sessions"
 )
 
 // UserController is our /user controller.
@@ -96,7 +96,6 @@ func (c *UserController) PostRegister() mvc.Result {
 		// but it's good to know you can set a custom code;
 		// Code: 303,
 	}
-
 }
 
 var loginStaticView = mvc.View{

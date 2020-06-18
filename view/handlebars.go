@@ -27,13 +27,15 @@ type HandlebarsEngine struct {
 	templateCache map[string]*raymond.Template
 }
 
+var _ Engine = (*HandlebarsEngine)(nil)
+
 // Handlebars creates and returns a new handlebars view engine.
 func Handlebars(directory, extension string) *HandlebarsEngine {
 	s := &HandlebarsEngine{
 		directory:     directory,
 		extension:     extension,
-		templateCache: make(map[string]*raymond.Template, 0),
-		helpers:       make(map[string]interface{}, 0),
+		templateCache: make(map[string]*raymond.Template),
+		helpers:       make(map[string]interface{}),
 	}
 
 	// register the render helper here
@@ -62,7 +64,7 @@ func (s *HandlebarsEngine) Binary(assetFn func(name string) ([]byte, error), nam
 	return s
 }
 
-// Reload if setted to true the templates are reloading on each render,
+// Reload if set to true the templates are reloading on each render,
 // use it when you're in development and you're boring of restarting
 // the whole app when you edit a template file.
 //
@@ -95,7 +97,7 @@ func (s *HandlebarsEngine) AddFunc(funcName string, funcBody interface{}) {
 }
 
 // Load parses the templates to the engine.
-// It's alos responsible to add the necessary global functions.
+// It is responsible to add the necessary global functions.
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HandlebarsEngine) Load() error {
@@ -109,14 +111,17 @@ func (s *HandlebarsEngine) Load() error {
 	if err != nil {
 		return err
 	}
-	// change the directory field configuration, load happens after directory has been setted, so we will not have any problems here.
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return err
+	}
+
+	// change the directory field configuration, load happens after directory has been set, so we will not have any problems here.
 	s.directory = dir
 	return s.loadDirectory()
 }
 
 // loadDirectory builds the handlebars templates from directory.
 func (s *HandlebarsEngine) loadDirectory() error {
-
 	// register the global helpers on the first load
 	if len(s.templateCache) == 0 && s.helpers != nil {
 		raymond.RegisterHelpers(s.helpers)
@@ -128,7 +133,7 @@ func (s *HandlebarsEngine) loadDirectory() error {
 	// instead of the html/template engine which works like {{ render "myfile.html"}} and accepts the parent binding, with handlebars we can't do that because of lack of runtime helpers (dublicate error)
 
 	var templateErr error
-	filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
 		if info == nil || info.IsDir() {
 			return nil
 		}
@@ -160,6 +165,10 @@ func (s *HandlebarsEngine) loadDirectory() error {
 		return nil
 	})
 
+	if err != nil {
+		return err
+	}
+
 	return templateErr
 }
 
@@ -181,7 +190,6 @@ func (s *HandlebarsEngine) loadAssets() error {
 			virtualDirectory = virtualDirectory[1:]
 		}
 	}
-	var templateErr error
 
 	names := namesFn()
 	for _, path := range names {
@@ -193,28 +201,27 @@ func (s *HandlebarsEngine) loadAssets() error {
 
 			rel, err := filepath.Rel(virtualDirectory, path)
 			if err != nil {
-				templateErr = err
 				return err
 			}
 
 			buf, err := assetFn(path)
 			if err != nil {
-				templateErr = err
 				return err
 			}
+
 			contents := string(buf)
 			name := filepath.ToSlash(rel)
 
 			tmpl, err := raymond.Parse(contents)
 			if err != nil {
-				templateErr = err
 				return err
 			}
 			s.templateCache[name] = tmpl
 
 		}
 	}
-	return templateErr
+
+	return nil
 }
 
 func (s *HandlebarsEngine) fromCache(relativeName string) *raymond.Template {
@@ -258,7 +265,7 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		binding := bindingData
 		if isLayout {
 			var context map[string]interface{}
-			if m, is := binding.(map[string]interface{}); is { //handlebars accepts maps,
+			if m, is := binding.(map[string]interface{}); is { // handlebars accepts maps,
 				context = m
 			} else {
 				return fmt.Errorf("Please provide a map[string]interface{} type as the binding instead of the %#v", binding)
@@ -277,7 +284,6 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		}
 
 		res, err := tmpl.Exec(binding)
-
 		if err != nil {
 			return err
 		}

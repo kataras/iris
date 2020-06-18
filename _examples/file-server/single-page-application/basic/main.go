@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 // same as embedded-single-page-application but without go-bindata, the files are "physical" stored in the
@@ -20,15 +20,7 @@ func newApp() *iris.Application {
 		ctx.View("index.html")
 	})
 
-	// or just serve index.html as it is:
-	// app.Get("/{f:path}", func(ctx iris.Context) {
-	// 	ctx.ServeFile("index.html", false)
-	// })
-
-	assetHandler := app.StaticHandler("./public", false, false)
-	// as an alternative of SPA you can take a look at the /routing/dynamic-path/root-wildcard
-	// example too
-	app.SPA(assetHandler)
+	app.HandleDir("/", "./public")
 
 	return app
 }
@@ -40,5 +32,5 @@ func main() {
 	// http://localhost:8080/index.html
 	// http://localhost:8080/app.js
 	// http://localhost:8080/css/main.css
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

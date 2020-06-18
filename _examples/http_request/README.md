@@ -1,1 +1,0 @@
-The `context.Request()` returns the same *http.Request you already know, the examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.

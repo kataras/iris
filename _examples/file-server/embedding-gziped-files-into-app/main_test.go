@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 	"github.com/klauspost/compress/gzip"
 )
 
@@ -20,7 +20,7 @@ type resource string
 func (r resource) contentType() string {
 	switch filepath.Ext(r.String()) {
 	case ".js":
-		return "application/javascript"
+		return "text/javascript"
 	case ".css":
 		return "text/css"
 	case ".ico":
@@ -55,7 +55,7 @@ func (r resource) loadFromBase(dir string) string {
 	result := string(b)
 
 	if runtime.GOOS != "windows" {
-		// result = strings.Replace(result, "\n", "\r\n", -1)
+		result = strings.Replace(result, "\n", "\r\n", -1)
 	}
 	return result
 }
@@ -67,7 +67,7 @@ var urls = []resource{
 }
 
 // if bindata's values matches with the assets/... contents
-// and secondly if the StaticEmbedded had successfully registered
+// and secondly if the HandleDir had successfully registered
 // the routes and gave the correct response.
 func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 	app := newApp()
@@ -89,9 +89,10 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 		if expected, got := response.Raw().StatusCode, httptest.StatusOK; expected != got {
 			t.Fatalf("[%d] of '%s': expected %d status code but got %d", i, url, expected, got)
 		}
+		rawBody := response.Body().Raw()
 
 		func() {
-			reader, err := gzip.NewReader(bytes.NewBuffer(response.Content))
+			reader, err := gzip.NewReader(strings.NewReader(rawBody))
 			defer reader.Close()
 			if err != nil {
 				t.Fatalf("[%d] of '%s': %v", i, url, err)
