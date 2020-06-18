@@ -76,7 +76,7 @@ type UnauthenticatedUserController struct{}
 // Get registers a route that will be executed when authentication is not passed
 // (see UserController.Get) too.
 func (c *UnauthenticatedUserController) Get() string {
-	return `custom action to redirect on authentication page`
+	return "custom action to redirect on authentication page"
 }
 
 // PostLogin serves

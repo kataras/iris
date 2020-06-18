@@ -421,7 +421,7 @@ New Context Methods:
 
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
 - `Context.GzipReader(enable bool)` method and `iris.GzipReader` middleware to enable future request read body calls to decompress data using gzip, [example](_examples/request-body/read-gzip).
-- `Context.RegisterDependency(v interface{})` and `Context.RemoveDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
+- `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
 - `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
 - `Context.GetDomain() string` returns the domain.
 - `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
