@@ -659,3 +659,55 @@ func TestApplicationDependency(t *testing.T) {
 	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("app1")
 	e.GET("/other").Expect().Status(httptest.StatusOK).Body().Equal("app2")
 }
+
+// Authenticated type.
+type Authenticated int64
+
+// BasePublicPrivateController base controller between public and private controllers.
+type BasePublicPrivateController struct {
+	CurrentUserID Authenticated
+	Ctx           iris.Context
+}
+
+type publicController struct {
+	Ctx iris.Context
+}
+
+// Get desc
+// Route / [GET]
+func (c *publicController) Get() iris.Map {
+	return iris.Map{"data": "things"}
+}
+
+// privateController serves the "public-private" Customer API.
+type privateController struct{ BasePublicPrivateController }
+
+// Get desc
+// Route / [GET]
+func (c *privateController) Get() iris.Map {
+	return iris.Map{"id": c.CurrentUserID}
+}
+
+func TestControllerOverlapping(t *testing.T) {
+	app := iris.New()
+
+	m := New(app)
+	m.Router.SetRegisterRule(iris.RouteOverlap)
+
+	m.Register(func(ctx iris.Context) Authenticated {
+		if ctx.URLParam("name") == "kataras" {
+			return 1
+		}
+
+		ctx.StopWithStatus(iris.StatusForbidden)
+		return -1
+	})
+
+	// Order matters.
+	m.Handle(new(privateController))
+	m.Handle(new(publicController))
+
+	e := httptest.New(t, app)
+	e.GET("/").WithQuery("name", "kataras").Expect().Status(httptest.StatusOK).JSON().Equal(iris.Map{"id": 1})
+	e.GET("/").Expect().Status(httptest.StatusOK).JSON().Equal(iris.Map{"data": "things"})
+}

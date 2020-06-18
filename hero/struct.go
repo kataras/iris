@@ -115,7 +115,8 @@ func (s *Struct) Acquire(ctx context.Context) (reflect.Value, error) {
 	}
 
 	ctrl := ctx.Controller()
-	if ctrl.Kind() == reflect.Invalid {
+	if ctrl.Kind() == reflect.Invalid ||
+		ctrl.Type() != s.ptrType /* in case of changing controller in the same request (see RouteOverlap feature) */ {
 		ctrl = reflect.New(s.elementType)
 		ctx.Values().Set(context.ControllerContextKey, ctrl)
 		elem := ctrl.Elem()

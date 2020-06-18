@@ -114,6 +114,11 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 			inputs[binding.Input.Index] = input
 		}
 
+		// fmt.Printf("For func: %s | valid input deps length(%d)\n", typ.String(), len(inputs))
+		// for idx, in := range inputs {
+		// 	fmt.Printf("[%d] (%s) %#+v\n", idx, in.Type().String(), in.Interface())
+		// }
+
 		outputs := v.Call(inputs)
 		if err := dispatchFuncResult(ctx, outputs, resultHandler); err != nil {
 			c.GetErrorHandler(ctx).HandleError(ctx, err)
