@@ -5,7 +5,7 @@ package datasource
 import (
 	"errors"
 
-	"github.com/kataras/iris/_examples/mvc/login/datamodels"
+	"github.com/kataras/iris/v12/_examples/mvc/login/datamodels"
 )
 
 // Engine is from where to fetch the data, in this case the users.
@@ -21,10 +21,10 @@ const (
 	MySQL
 )
 
-// LoadUsers returns all users(empty map) from the memory, for the shake of simplicty.
+// LoadUsers returns all users(empty map) from the memory, for the sake of simplicty.
 func LoadUsers(engine Engine) (map[int64]datamodels.User, error) {
 	if engine != Memory {
-		return nil, errors.New("for the shake of simplicity we're using a simple map as the data source")
+		return nil, errors.New("for the sake of simplicity we're using a simple map as the data source")
 	}
 
 	return make(map[int64]datamodels.User), nil

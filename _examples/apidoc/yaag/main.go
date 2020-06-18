@@ -1,15 +1,11 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"github.com/betacraft/yaag/irisyaag"
 	"github.com/betacraft/yaag/yaag"
 )
-
-/*
-	go get github.com/betacraft/yaag/...
-*/
 
 type myXML struct {
 	Result string `xml:"result"`
@@ -55,5 +51,5 @@ func main() {
 	//
 	// Example usage:
 	// Visit all paths and open the generated "apidoc.html" file to see the API's automated docs.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

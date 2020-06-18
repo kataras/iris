@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/core/memstore"
+	"github.com/kataras/iris/v12/core/memstore"
 )
 
 // RequestParams is a key string - value string storage which
@@ -89,84 +89,122 @@ func (r RequestParams) GetIntUnslashed(key string) (int, bool) {
 	return -1, false
 }
 
-var (
-	// ParamResolvers is the global param resolution for a parameter type for a specific go std or custom type.
-	//
-	// Key is the specific type, which should be unique.
-	// The value is a function which accepts the parameter index
-	// and it should return the value as the parameter type evaluator expects it.
-	// i.e [reflect.TypeOf("string")] = func(paramIndex int) interface{} {
-	//     return func(ctx Context) <T> {
-	//         return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(<T>)
-	//     }
-	// }
-	//
-	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
-	ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
-		reflect.TypeOf(""): func(paramIndex int) interface{} {
-			return func(ctx Context) string {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(string)
+// ParamResolvers is the global param resolution for a parameter type for a specific go std or custom type.
+//
+// Key is the specific type, which should be unique.
+// The value is a function which accepts the parameter index
+// and it should return the value as the parameter type evaluator expects it.
+// i.e [reflect.TypeOf("string")] = func(paramIndex int) interface{} {
+//     return func(ctx Context) <T> {
+//         return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(<T>)
+//     }
+// }
+//
+// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
+// Checks for total available request parameters length
+// and parameter index based on the hero/mvc function added
+// in order to support the MVC.HandleMany("GET", "/path/{ps}/{pssecond} /path/{ps}")
+// when on the second requested path, the 'pssecond' should be empty.
+var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
+	reflect.TypeOf(""): func(paramIndex int) interface{} {
+		return func(ctx Context) string {
+			if ctx.Params().Len() <= paramIndex {
+				return ""
 			}
-		},
-		reflect.TypeOf(int(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) int {
-				// v, _ := ctx.Params().GetEntryAt(paramIndex).IntDefault(0)
-				// return v
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(string)
+		}
+	},
+	reflect.TypeOf(int(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) int {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(int8(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) int8 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int8)
+			// v, _ := ctx.Params().GetEntryAt(paramIndex).IntDefault(0)
+			// return v
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int)
+		}
+	},
+	reflect.TypeOf(int8(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) int8 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(int16(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) int16 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int16)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int8)
+		}
+	},
+	reflect.TypeOf(int16(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) int16 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(int32(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) int32 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int32)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int16)
+		}
+	},
+	reflect.TypeOf(int32(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) int32 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(int64(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) int64 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int64)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int32)
+		}
+	},
+	reflect.TypeOf(int64(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) int64 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(uint(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) uint {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int64)
+		}
+	},
+	reflect.TypeOf(uint(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) uint {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(uint8(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) uint8 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint8)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint)
+		}
+	},
+	reflect.TypeOf(uint8(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) uint8 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(uint16(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) uint16 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint16)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint8)
+		}
+	},
+	reflect.TypeOf(uint16(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) uint16 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(uint32(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) uint32 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint16)
+		}
+	},
+	reflect.TypeOf(uint32(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) uint32 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(uint64(1)): func(paramIndex int) interface{} {
-			return func(ctx Context) uint64 {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint64)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
+		}
+	},
+	reflect.TypeOf(uint64(1)): func(paramIndex int) interface{} {
+		return func(ctx Context) uint64 {
+			if ctx.Params().Len() <= paramIndex {
+				return 0
 			}
-		},
-		reflect.TypeOf(true): func(paramIndex int) interface{} {
-			return func(ctx Context) bool {
-				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint64)
+		}
+	},
+	reflect.TypeOf(true): func(paramIndex int) interface{} {
+		return func(ctx Context) bool {
+			if ctx.Params().Len() <= paramIndex {
+				return false
 			}
-		},
-	}
-)
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
+		}
+	},
+}
 
 // ParamResolverByTypeAndIndex will return a function that can be used to bind path parameter's exact value by its Go std type
 // and the parameter's index based on the registered path.

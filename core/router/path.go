@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/core/netutil"
-	"github.com/kataras/iris/macro"
-	"github.com/kataras/iris/macro/interpreter/ast"
-	"github.com/kataras/iris/macro/interpreter/lexer"
+	"github.com/kataras/iris/v12/core/netutil"
+	"github.com/kataras/iris/v12/macro"
+	"github.com/kataras/iris/v12/macro/interpreter/ast"
+	"github.com/kataras/iris/v12/macro/interpreter/lexer"
 )
 
 // Param receives a parameter name prefixed with the ParamStart symbol.
@@ -23,6 +23,15 @@ func WildcardParam(name string) string {
 		return ""
 	}
 	return prefix(name, WildcardParamStart)
+}
+
+// WildcardFileParam wraps a named parameter "file" with the trailing "path" macro parameter type.
+// At build state this "file" parameter is prefixed with the request handler's `WildcardParamStart`.
+// Created mostly for routes that serve static files to be visibly collected by
+// the `Application#GetRouteReadOnly` via the `Route.Tmpl().Src` instead of
+// the underline request handler's representation (`Route.Path()`).
+func WildcardFileParam() string {
+	return "{file:path}"
 }
 
 func convertMacroTmplToNodePath(tmpl macro.Template) string {
@@ -50,13 +59,6 @@ func prefix(s string, prefix string) string {
 		return prefix + s
 	}
 
-	return s
-}
-
-func suffix(s string, suffix string) string {
-	if !strings.HasSuffix(s, suffix) {
-		return s + suffix
-	}
 	return s
 }
 
@@ -222,13 +224,51 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 		return "", "/"
 	}
 
-	slashIdx := strings.IndexByte(s, '/')
-	if slashIdx == 0 {
-		// no subdomain
-		return "", cleanPath(s)
+	splitPath := strings.Split(s, ".")
+	if len(splitPath) == 2 && splitPath[1] == "" {
+		return splitPath[0] + ".", "/"
 	}
 
-	return s[0:slashIdx], cleanPath(s[slashIdx:]) // return subdomain without slash, path with slash
+	slashIdx := strings.IndexByte(s, '/')
+	if slashIdx > 0 {
+		// has subdomain
+		subdomain = s[0:slashIdx]
+	}
+
+	path = s[slashIdx:]
+	if !strings.Contains(path, "{") {
+		path = strings.ReplaceAll(path, "//", "/")
+		path = strings.ReplaceAll(path, "\\", "/")
+	}
+
+	// remove any left trailing slashes, i.e "//api/users".
+	for i := 1; i < len(path); i++ {
+		if path[i] == '/' {
+			path = path[0:i] + path[i+1:]
+		} else {
+			break
+		}
+	}
+
+	// remove last /.
+	path = strings.TrimRight(path, "/")
+
+	// no cleanPath(path) in order
+	// to be able to parse macro function regexp(\\).
+	return // return subdomain without slash, path with slash
+}
+
+func staticPath(src string) string {
+	bidx := strings.IndexByte(src, '{')
+	if bidx == -1 || len(src) <= bidx {
+		return src // no dynamic part found
+	}
+	if bidx <= 1 { // found at first{...} or second index (/{...}),
+		// although first index should never happen because of the prepended slash.
+		return "/"
+	}
+
+	return src[:bidx-1] // (/static/{...} -> /static)
 }
 
 // RoutePathReverserOption option signature for the RoutePathReverser.
@@ -314,7 +354,7 @@ func toStringSlice(args []interface{}) (argsString []string) {
 		return
 	}
 
-	argsString = make([]string, argsSize, argsSize)
+	argsString = make([]string, argsSize)
 	for i, v := range args {
 		if s, ok := v.(string); ok {
 			argsString[i] = s

@@ -450,4 +450,22 @@ func TestConvertBuilderFunc(t *testing.T) {
 	if !evalFunc([]string{"1", "[name1,name2]"}).Call([]reflect.Value{reflect.ValueOf("ok")})[0].Interface().(bool) {
 		t.Fatalf("failed, it should fail already")
 	}
+
+	fnSimplify := func(requestParamValue string) bool {
+		return requestParamValue == "kataras"
+	}
+
+	evalFunc = convertBuilderFunc(fnSimplify)
+	if !evalFunc([]string{}).Call([]reflect.Value{reflect.ValueOf("kataras")})[0].Interface().(bool) {
+		t.Fatalf("it should pass, the combile arguments are empty and the given request value is the expected one")
+	}
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("it should panic, the combile arguments are more than one")
+		}
+	}()
+
+	// should panic.
+	evalFunc([]string{"1"}).Call([]reflect.Value{reflect.ValueOf("kataras")})
 }

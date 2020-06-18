@@ -114,7 +114,7 @@ func (t *Transaction) Complete(err error) {
 				reason = errWstatus.Reason
 			}
 			// get the content type used on this transaction
-			if cTypeH := t.context.ResponseWriter().Header().Get(ContentTypeHeaderKey); cTypeH != "" {
+			if cTypeH := t.context.GetContentType(); cTypeH != "" {
 				cType = cTypeH
 			}
 
@@ -155,7 +155,7 @@ var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrR
 
 		// we need to register a beforeResponseFlush event here in order
 		// to execute last the FireStatusCode
-		// (which will reset the whole response's body, status code and headers setted from normal flow or other transactions too)
+		// (which will reset the whole response's body, status code and headers set from normal flow or other transactions too)
 		ctx.ResponseWriter().SetBeforeFlush(func() {
 			// we need to re-take the context's response writer
 			// because inside here the response writer is changed to the original's
@@ -168,8 +168,7 @@ var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrR
 				ctx.ContentType(maybeErr.ContentType)
 			} else {
 				// else execute the registered user error and skip the next transactions and all normal flow,
-				ctx.StatusCode(maybeErr.StatusCode)
-				ctx.StopExecution()
+				ctx.StopWithStatus(maybeErr.StatusCode)
 			}
 		})
 

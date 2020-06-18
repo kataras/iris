@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -12,7 +12,7 @@ func main() {
 	// [...]
 
 	// Good when you want to modify the whole configuration.
-	app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.Configuration{ // default configuration:
+	app.Listen(":8080", iris.WithConfiguration(iris.Configuration{ // default configuration:
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,
@@ -21,7 +21,7 @@ func main() {
 		DisableBodyConsumptionOnUnmarshal: false,
 		DisableAutoFireStatusCode:         false,
 		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
-		Charset:                           "UTF-8",
+		Charset:                           "utf-8",
 	}))
 
 	// or before Run:

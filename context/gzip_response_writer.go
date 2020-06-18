@@ -18,7 +18,7 @@ type compressionPool struct {
 //  |GZIP raw io.writer, our gzip response writer will use that. |
 //  +------------------------------------------------------------+
 
-// default writer pool with Compressor's level setted to -1
+// default writer pool with Compressor's level set to -1
 var gzipPool = &compressionPool{Level: -1}
 
 // acquireGzipWriter prepares a gzip writer and returns it.
@@ -117,8 +117,9 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
 	n, err = fmt.Fprintf(w, format, a...)
 	if err == nil {
-		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
-			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
+		h := w.ResponseWriter.Header()
+		if h[ContentTypeHeaderKey] == nil {
+			h.Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
 	}
 
@@ -130,10 +131,10 @@ func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err
 func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
 	n, err = w.Write([]byte(s))
 	if err == nil {
-		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
-			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
+		h := w.ResponseWriter.Header()
+		if h[ContentTypeHeaderKey] == nil {
+			h.Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
-
 	}
 	return
 }
@@ -184,14 +185,14 @@ func AddGzipHeaders(w ResponseWriter) {
 	w.Header().Add(ContentEncodingHeaderKey, GzipHeaderValue)
 }
 
-// FlushResponse validates the response headers in order to be compatible with the gzip written data
-// and writes the data to the underline ResponseWriter.
-func (w *GzipResponseWriter) FlushResponse() {
-	w.WriteNow(w.chunks)
-	w.ResponseWriter.FlushResponse()
+// Body returns the body tracked from the writer so far,
+// do not use this for edit.
+func (w *GzipResponseWriter) Body() []byte {
+	return w.chunks
 }
 
 // ResetBody resets the response body.
+// Implements the `ResponseWriterBodyReseter`.
 func (w *GzipResponseWriter) ResetBody() {
 	w.chunks = w.chunks[0:0]
 }
@@ -200,4 +201,31 @@ func (w *GzipResponseWriter) ResetBody() {
 // if called then the contents are being written in plain form.
 func (w *GzipResponseWriter) Disable() {
 	w.disabled = true
+}
+
+// Reset disables the gzip content writer, clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *GzipResponseWriter) Reset() bool {
+	// disable gzip content writer.
+	w.Disable()
+	// clear headers.
+	h := w.ResponseWriter.Header()
+	for k := range h {
+		h[k] = nil
+	}
+	// restore status code.
+	w.WriteHeader(defaultStatusCode)
+	// reset body.
+	w.ResetBody()
+
+	return true
+}
+
+// FlushResponse validates the response headers in order to be compatible with the gzip written data
+// and writes the data to the underline ResponseWriter.
+func (w *GzipResponseWriter) FlushResponse() {
+	_, _ = w.WriteNow(w.chunks)
+	w.ResponseWriter.FlushResponse()
 }

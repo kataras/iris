@@ -1,0 +1,7 @@
+{
+    "title": "product-1",
+    "category_id": 3,
+    "image_url": "https://images.product1.png",
+    "price": 42.42,
+    "description": "a description for product-1"
+}

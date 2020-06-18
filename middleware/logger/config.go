@@ -3,7 +3,7 @@ package logger
 import (
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 // The SkipperFunc signature, used to serve the main request without logs.
@@ -48,7 +48,7 @@ type Config struct {
 	// the contents with `ctx.Values().Get(MessageContextKey)`
 	// and if available then these contents will be
 	// appended as part of the logs (with `%v`, in order to be able to set a struct too),
-	// if Columns field was setted to true then
+	// if Columns field was set to true then
 	// a new column will be added named 'Message'.
 	//
 	// Defaults to empty.
@@ -59,7 +59,7 @@ type Config struct {
 	// the contents with `ctx.Values().Get(MessageHeaderKey)`
 	// and if available then these contents will be
 	// appended as part of the logs (with `%v`, in order to be able to set a struct too),
-	// if Columns field was setted to true then
+	// if Columns field was set to true then
 	// a new column will be added named 'HeaderMessage'.
 	//
 	// Defaults to empty.
@@ -68,7 +68,10 @@ type Config struct {
 	// LogFunc is the writer which logs are written to,
 	// if missing the logger middleware uses the app.Logger().Infof instead.
 	// Note that message argument can be empty.
-	LogFunc func(now time.Time, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{})
+	LogFunc func(endTime time.Time, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{})
+	// LogFuncCtx can be used instead of `LogFunc` if handlers need to customize the output based on
+	// custom request-time information that the LogFunc isn't aware of.
+	LogFuncCtx func(ctx context.Context, latency time.Duration)
 	// Skippers used to skip the logging i.e by `ctx.Path()` and serve
 	// the next/main handler immediately.
 	Skippers []SkipperFunc
@@ -83,15 +86,16 @@ type Config struct {
 // LogFunc and Skippers to nil as well.
 func DefaultConfig() Config {
 	return Config{
-		Status:   true,
-		IP:       true,
-		Method:   true,
-		Path:     true,
-		Query:    false,
-		Columns:  false,
-		LogFunc:  nil,
-		Skippers: nil,
-		skip:     nil,
+		Status:     true,
+		IP:         true,
+		Method:     true,
+		Path:       true,
+		Query:      false,
+		Columns:    false,
+		LogFunc:    nil,
+		LogFuncCtx: nil,
+		Skippers:   nil,
+		skip:       nil,
 	}
 }
 

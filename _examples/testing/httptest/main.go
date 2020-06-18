@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/basicauth"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/basicauth"
 )
 
 func newApp() *iris.Application {
@@ -42,5 +42,5 @@ func h(ctx iris.Context) {
 
 func main() {
 	app := newApp()
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

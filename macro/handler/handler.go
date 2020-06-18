@@ -3,8 +3,9 @@
 package handler
 
 import (
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/v12/macro"
 )
 
 // CanMakeHandler reports whether a macro template needs a special macro's evaluator handler to be validated
@@ -34,23 +35,83 @@ func CanMakeHandler(tmpl macro.Template) (needsMacroHandler bool) {
 // If the template does not contain any dynamic attributes and a special handler is NOT required
 // then it returns a nil handler.
 func MakeHandler(tmpl macro.Template) context.Handler {
+	filter := MakeFilter(tmpl)
+
+	return func(ctx context.Context) {
+		if !filter(ctx) {
+			if ctx.GetCurrentRoute().StatusErrorCode() == ctx.GetStatusCode() {
+				ctx.Next()
+			} else {
+				ctx.StopExecution()
+			}
+
+			return
+		}
+
+		// if all passed or the next is the registered error handler to handle this status code,
+		// just continue.
+		ctx.Next()
+	}
+}
+
+// MakeFilter returns a Filter which reports whether a specific macro template
+// and its parameters pass the serve-time validation.
+func MakeFilter(tmpl macro.Template) context.Filter {
 	if !CanMakeHandler(tmpl) {
 		return nil
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx context.Context) bool {
 		for _, p := range tmpl.Params {
 			if !p.CanEval() {
 				continue // allow.
 			}
 
-			if !p.Eval(ctx.Params().Get(p.Name), &ctx.Params().Store) {
-				ctx.StatusCode(p.ErrCode)
-				ctx.StopExecution()
-				return
+			// 07-29-2019
+			// changed to retrieve by param index in order to support
+			// different parameter names for routes with
+			// different param types (and probably different param names i.e {name:string}, {id:uint64})
+			// in the exact same path pattern.
+			//
+			// Same parameter names are not allowed, different param types in the same path
+			// should have different name e.g. {name} {id:uint64};
+			// something like {name} and {name:uint64}
+			// is bad API design and we do NOT allow it by-design.
+			entry, found := ctx.Params().Store.GetEntryAt(p.Index)
+			if !found {
+				// should never happen.
+				return false
 			}
+
+			value := p.Eval(entry.String())
+			if value == nil {
+				ctx.StatusCode(p.ErrCode)
+				return false
+			}
+
+			// Fixes binding different path parameters names,
+			//
+			// app.Get("/{fullname:string}", strHandler)
+			// app.Get("/{id:int}", idHandler)
+			//
+			// before that user didn't see anything
+			// but under the hoods the set-ed value was a type of string instead of type of int,
+			// because store contained both "fullname" (which set-ed by the router itself on its string representation)
+			// and "id" by the param evaluator (see core/router/handler.go and bindMultiParamTypesHandler->MakeFilter)
+			// and the MVC get by index (e.g. 0) therefore
+			// it got the "fullname" of type string instead of "id" int if /{int} requested.
+			// which is critical for faster type assertion in the upcoming, new iris dependency injection (20 Feb 2020).
+			ctx.Params().Store[p.Index] = memstore.Entry{
+				Key:      p.Name,
+				ValueRaw: value,
+			}
+
+			// for i, v := range ctx.Params().Store {
+			// 	fmt.Printf("[%d:%s] macro/handler/handler.go: param passed: %s(%v of type: %T)\n", i, v.Key,
+			// 		p.Src, v.ValueRaw, v.ValueRaw)
+			// }
 		}
-		// if all passed, just continue.
-		ctx.Next()
+
+		return true
 	}
 }

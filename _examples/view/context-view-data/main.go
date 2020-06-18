@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 const (
@@ -29,7 +29,7 @@ func main() {
 	})
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.ViewData("BodyMessage", "a sample text here... setted by the route handler")
+		ctx.ViewData("BodyMessage", "a sample text here... set by the route handler")
 		if err := ctx.View("index.html"); err != nil {
 			ctx.Application().Logger().Infof(err.Error())
 		}
@@ -37,7 +37,7 @@ func main() {
 
 	app.Get("/about", func(ctx iris.Context) {
 		ctx.ViewData("Title", "My About Page")
-		ctx.ViewData("BodyMessage", "about text here... setted by the route handler")
+		ctx.ViewData("BodyMessage", "about text here... set by the route handler")
 
 		// same file, just to keep things simple.
 		if err := ctx.View("index.html"); err != nil {
@@ -47,7 +47,7 @@ func main() {
 
 	// http://localhost:8080
 	// http://localhost:8080/about
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // Notes: ViewData("", myCustomStruct{}) will set this myCustomStruct value as a root binding data,

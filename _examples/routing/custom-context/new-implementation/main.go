@@ -3,8 +3,8 @@ package main
 import (
 	"sync"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/sessions"
 )
 
 // Owner is our application structure, it contains the methods or fields we need,
@@ -99,5 +99,5 @@ func main() {
 	// GET: http://localhost:8080
 	// POST: http://localhost:8080/set
 	// GET: http://localhost:8080/get
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

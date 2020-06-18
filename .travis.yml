@@ -3,30 +3,22 @@ os:
   - linux
   - osx
 go:
-  - 1.9.x
-  - 1.10.x
-  - 1.11.x
-go_import_path: github.com/kataras/iris
-# we disable test caching via GOCACHE=off
-# env:
-#  global:
-#    - GOCACHE=off
+  - 1.14.x
+go_import_path: github.com/kataras/iris/v12
+env:
+ global:
+   - GO111MODULE=on
 install:
-  - go get ./... # for iris-contrib/httpexpect, kataras/golog
+  - go get ./...
 script:
-  - go test -v -cover ./...
+  - go test -count=1 -v -cover ./...
 after_script:
   # examples
   - cd ./_examples
   - go get ./...
-  - go test -v -cover ./...
+  - go test -count=1 -v -cover ./...
   - cd ../
-  # typescript examples
-  - cd ./typescript/_examples
-  - go get ./...
-  - go test -v -cover ./...
-  - cd ../../
   # make sure that the _benchmarks code is working
   - cd ./_benchmarks
   - go get ./...
-  - go test -v -cover ./...
+  - go test -count=1 -v -cover ./...

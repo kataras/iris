@@ -1,6 +1,6 @@
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 func newApp() *iris.Application {
 	app := iris.New()
@@ -60,5 +60,5 @@ func main() {
 	// GET:    http://localhost:8080/cookies/my_name/my_value
 	// GET:    http://localhost:8080/cookies/my_name
 	// DELETE: http://localhost:8080/cookies/my_name
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

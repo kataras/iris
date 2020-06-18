@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 // ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
@@ -21,21 +21,9 @@ type ExecutionRules struct {
 	Main ExecutionOptions
 }
 
-func handlersNames(handlers context.Handlers) (names []string) {
-	for _, h := range handlers {
-		if h == nil {
-			continue
-		}
-
-		names = append(names, context.HandlerName(h))
-	}
-
-	return
-}
-
 func applyExecutionRules(rules ExecutionRules, begin, done, main *context.Handlers) {
 	if !rules.Begin.Force && !rules.Done.Force && !rules.Main.Force {
-		return // do not proceed and spend buld-time here if nothing changed.
+		return // do not proceed and spend build-time here if nothing changed.
 	}
 
 	beginOK := rules.Begin.apply(begin)

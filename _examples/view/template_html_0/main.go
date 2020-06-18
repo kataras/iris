@@ -1,17 +1,11 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
 	app := iris.New() // defaults to these
-
-	// - standard html  | iris.HTML(...)
-	// - django         | iris.Django(...)
-	// - pug(jade)      | iris.Pug(...)
-	// - handlebars     | iris.Handlebars(...)
-	// - amber          | iris.Amber(...)
 
 	tmpl := iris.HTML("./templates", ".html")
 	tmpl.Reload(true) // reload templates on each request (development mode)
@@ -30,7 +24,7 @@ func main() {
 	app.Get("/", hi)
 
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8")) // defaults to that but you can change it.
+	app.Listen(":8080", iris.WithCharset("utf-8")) // defaults to that but you can change it.
 }
 
 func hi(ctx iris.Context) {
@@ -43,8 +37,8 @@ func hi(ctx iris.Context) {
 /*
 Note:
 
-In case you're wondering, the code behind the view engines derives from the "github.com/kataras/iris/view" package,
-access to the engines' variables can be granded by "github.com/kataras/iris" package too.
+In case you're wondering, the code behind the view engines derives from the "github.com/kataras/iris/v12/view" package,
+access to the engines' variables can be granded by "github.com/kataras/iris/v12" package too.
 
     iris.HTML(...) is a shortcut of view.HTML(...)
     iris.Django(...)     >> >>      view.Django(...)

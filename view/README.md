@@ -1,16 +1,36 @@
 # View
 
-Iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
+Iris supports 6 template engines out-of-the-box, developers can still use any external golang template engine,
 as `context/context#ResponseWriter()` is an `io.Writer`.
 
-All of these five template engines have common features with common API,
+All of these six template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
 - The standard html, its template parser is the [golang.org/pkg/html/template/](https://golang.org/pkg/html/template/)
-- Django, its template parser is the [github.com/flosch/pongo2](https://github.com/flosch/pongo2)
+- Django, its template parser is the [github.com/iris-contrib/pongo2](https://github.com/iris-contrib/pongo2)
 - Pug(Jade), its template parser is the [github.com/Joker/jade](https://github.com/Joker/jade)
 - Handlebars, its template parser is the [github.com/aymerick/raymond](https://github.com/aymerick/raymond)
 - Amber, its template parser is the [github.com/eknkc/amber](https://github.com/eknkc/amber)
+- Jet, its template parser is the [github.com/CloudyKit/jet](https://github.com/CloudyKit/jet)
+
+## Examples
+
+- [Overview](https://github.com/kataras/iris/blob/master/_examples/view/overview/main.go)
+- [Hi](https://github.com/kataras/iris/blob/master/_examples/view/template_html_0/main.go)
+- [A simple Layout](https://github.com/kataras/iris/blob/master/_examples/view/template_html_1/main.go)
+- [Layouts: `yield` and `render` tmpl funcs](https://github.com/kataras/iris/blob/master/_examples/view/template_html_2/main.go)
+- [The `urlpath` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_3/main.go)
+- [The `url` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_4/main.go)
+- [Inject Data Between Handlers](https://github.com/kataras/iris/blob/master/_examples/view/context-view-data/main.go)
+- [Embedding Templates Into App Executable File](https://github.com/kataras/iris/blob/master/_examples/view/embedding-templates-into-app/main.go)
+- [Greeting with Pug (Jade)`](view/template_pug_0)
+- [Pug (Jade) Actions`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_1)
+- [Pug (Jade) Includes`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_2)
+- [Pug (Jade) Extends`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_3)
+- [Jet](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_0) **NEW**
+- [Jet Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_1_embedded) **NEW**
+
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
 
 ## Overview
 
@@ -18,7 +38,7 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 // file: main.go
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
@@ -38,13 +58,13 @@ func main() {
 
     // Method:    GET
     // Resource:  http://localhost:8080/user/42
-    app.Get("/user/{id:long}", func(ctx iris.Context) {
+    app.Get("/user/{id:int64}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
         ctx.Writef("User ID: %d", userID)
     })
 
     // Start the server using a network address.
-    app.Run(iris.Addr(":8080"))
+    app.Listen(":8080")
 }
 ```
 
@@ -65,19 +85,13 @@ func main() {
 ```go
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
-
-    // - standard html  | iris.HTML(...)
-    // - django         | iris.Django(...)
-    // - pug(jade)      | iris.Pug(...)
-    // - handlebars     | iris.Handlebars(...)
-    // - amber          | iris.Amber(...)
     tmpl := iris.HTML("./templates", ".html")
 
-    // built'n template funcs are:
+    // builtin template funcs are:
     //
     // - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
     // - {{ render "header.html" }}
@@ -96,7 +110,7 @@ func main() {
     app.Get("/", hi)
 
     // http://localhost:8080
-    app.Run(iris.Addr(":8080"))
+    app.Listen(":8080")
 }
 
 func hi(ctx iris.Context) {
@@ -112,20 +126,20 @@ func hi(ctx iris.Context) {
 
 ## Embedded
 
-View engine supports bundled(https://github.com/shuLhan/go-bindata) template files too.
+View engine supports bundled(https://github.com/go-bindata/go-bindata) template files too.
 `go-bindata` gives you two functions, `Assset` and `AssetNames`,
-these can be setted to each of the template engines using the `.Binary` function.
+these can be set to each of the template engines using the `.Binary` function.
 
 Example code:
 
 ```go
 package main
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
-    // $ go get -u github.com/shuLhan/go-bindata/...
+    // $ go get -u github.com/go-bindata/go-bindata/...
     // $ go-bindata ./templates/...
     // $ go build
     // $ ./embedding-templates-into-app
@@ -134,7 +148,7 @@ func main() {
     app.Get("/", hi)
 
     // http://localhost:8080
-    app.Run(iris.Addr(":8080"))
+    app.Listen(":8080")
 }
 
 type page struct {
@@ -162,16 +176,3 @@ pugEngine := iris.Pug("./templates", ".jade")
 pugEngine.Reload(true) // <--- set to true to re-build the templates on each request.
 app.RegisterView(pugEngine)
 ```
-
-## Examples
-
-- [Overview](https://github.com/kataras/iris/blob/master/_examples/view/overview/main.go)
-- [Hi](https://github.com/kataras/iris/blob/master/_examples/view/template_html_0/main.go)
-- [A simple Layout](https://github.com/kataras/iris/blob/master/_examples/view/template_html_1/main.go)
-- [Layouts: `yield` and `render` tmpl funcs](https://github.com/kataras/iris/blob/master/_examples/view/template_html_2/main.go)
-- [The `urlpath` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_3/main.go)
-- [The `url` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_4/main.go)
-- [Inject Data Between Handlers](https://github.com/kataras/iris/blob/master/_examples/view/context-view-data/main.go)
-- [Embedding Templates Into App Executable File](https://github.com/kataras/iris/blob/master/_examples/view/embedding-templates-into-app/main.go)
-
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [iris/_examples/http_responsewriter/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/http_responsewriter/quicktemplate) example.

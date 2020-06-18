@@ -3,14 +3,14 @@
 package main
 
 import (
-	"github.com/kataras/iris/_examples/mvc/overview/datasource"
-	"github.com/kataras/iris/_examples/mvc/overview/repositories"
-	"github.com/kataras/iris/_examples/mvc/overview/services"
-	"github.com/kataras/iris/_examples/mvc/overview/web/controllers"
-	"github.com/kataras/iris/_examples/mvc/overview/web/middleware"
+	"github.com/kataras/iris/v12/_examples/mvc/overview/datasource"
+	"github.com/kataras/iris/v12/_examples/mvc/overview/repositories"
+	"github.com/kataras/iris/v12/_examples/mvc/overview/services"
+	"github.com/kataras/iris/v12/_examples/mvc/overview/web/controllers"
+	"github.com/kataras/iris/v12/_examples/mvc/overview/web/middleware"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 func main() {
@@ -30,14 +30,7 @@ func main() {
 	// http://localhost:8080/hello/iris
 	// http://localhost:8080/movies
 	// http://localhost:8080/movies/1
-	app.Run(
-		// Start the web server at localhost:8080
-		iris.Addr("localhost:8080"),
-		// skip err server closed when CTRL/CMD+C pressed:
-		iris.WithoutServerError(iris.ErrServerClosed),
-		// enables faster json serialization and more:
-		iris.WithOptimizations,
-	)
+	app.Listen(":8080", iris.WithOptimizations)
 }
 
 // note the mvc.Application, it's not iris.Application.

@@ -3,7 +3,7 @@ package handler
 import (
 	"testing"
 
-	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/v12/macro"
 )
 
 func TestCanMakeHandler(t *testing.T) {

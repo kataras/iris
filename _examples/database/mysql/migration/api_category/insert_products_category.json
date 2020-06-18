@@ -1,0 +1,31 @@
+[{
+    "title": "product-1",
+    "image_url": "https://images.product1.png",
+    "price": 42.42,
+    "description": "a description for product-1"
+}, {
+    "title": "product-2",
+    "image_url": "https://images.product2.png",
+    "price": 32.1,
+    "description": "a description for product-2"
+}, {
+    "title": "product-3",
+    "image_url": "https://images.product3.png",
+    "price": 52321321.32,
+    "description": "a description for product-3"
+}, {
+    "title": "product-4",
+    "image_url": "https://images.product4.png",
+    "price": 77.4221,
+    "description": "a description for product-4"
+}, {
+    "title": "product-5",
+    "image_url": "https://images.product5.png",
+    "price": 55.1,
+    "description": "a description for product-5"
+}, {
+    "title": "product-6",
+    "image_url": "https://images.product6.png",
+    "price": 53.32,
+    "description": "a description for product-6"
+}]

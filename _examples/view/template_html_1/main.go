@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 type mypage struct {
@@ -25,5 +25,5 @@ func main() {
 	})
 
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

@@ -1,20 +1,16 @@
 package sessions
 
 import (
+	"errors"
 	"sync"
 	"time"
-
-	"github.com/kataras/iris/core/errors"
 )
 
 type (
 	// provider contains the sessions and external databases (load and update).
 	// It's the session memory manager
 	provider struct {
-		// we don't use RWMutex because all actions have read and write at the same action function.
-		// (or write to a *Session's value which is race if we don't lock)
-		// narrow locks are fasters but are useless here.
-		mu               sync.Mutex
+		mu               sync.RWMutex
 		sessions         map[string]*Session
 		db               Database
 		destroyListeners []DestroyListener
@@ -23,23 +19,38 @@ type (
 
 // newProvider returns a new sessions provider
 func newProvider() *provider {
-	return &provider{
-		sessions: make(map[string]*Session, 0),
+	p := &provider{
+		sessions: make(map[string]*Session),
 		db:       newMemDB(),
 	}
+
+	return p
 }
 
 // RegisterDatabase sets a session database.
 func (p *provider) RegisterDatabase(db Database) {
+	if db == nil {
+		return
+	}
+
 	p.mu.Lock() // for any case
 	p.db = db
 	p.mu.Unlock()
 }
 
 // newSession returns a new session from sessionid
-func (p *provider) newSession(sid string, expires time.Duration) *Session {
+func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) *Session {
+	sess := &Session{
+		sid:      sid,
+		Man:      man,
+		provider: p,
+		flashes:  make(map[string]*flashMessage),
+	}
+
 	onExpire := func() {
-		p.Destroy(sid)
+		p.mu.Lock()
+		p.deleteSession(sess)
+		p.mu.Unlock()
 	}
 
 	lifetime := p.db.Acquire(sid, expires)
@@ -59,28 +70,26 @@ func (p *provider) newSession(sid string, expires time.Duration) *Session {
 		lifetime.Begin(expires, onExpire)
 	}
 
-	sess := &Session{
-		sid:      sid,
-		provider: p,
-		flashes:  make(map[string]*flashMessage),
-		Lifetime: lifetime,
-	}
-
+	sess.Lifetime = lifetime
 	return sess
 }
 
 // Init creates the session  and returns it
-func (p *provider) Init(sid string, expires time.Duration) *Session {
-	newSession := p.newSession(sid, expires)
+func (p *provider) Init(man *Sessions, sid string, expires time.Duration) *Session {
+	newSession := p.newSession(man, sid, expires)
 	p.mu.Lock()
 	p.sessions[sid] = newSession
 	p.mu.Unlock()
 	return newSession
 }
 
-// ErrNotFound can be returned when calling `UpdateExpiration` on a non-existing or invalid session entry.
-// It can be matched directly, i.e: `isErrNotFound := sessions.ErrNotFound.Equal(err)`.
-var ErrNotFound = errors.New("not found")
+// ErrNotFound may be returned from `UpdateExpiration` of a non-existing or
+// invalid session entry from memory storage or databases.
+// Usage:
+// if err != nil && err.Is(err, sessions.ErrNotFound) {
+//     [handle error...]
+// }
+var ErrNotFound = errors.New("session not found")
 
 // UpdateExpiration resets the expiration of a session.
 // if expires > 0 then it will try to update the expiration and destroy task is delayed.
@@ -95,9 +104,9 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 		return nil
 	}
 
-	p.mu.Lock()
+	p.mu.RLock()
 	sess, found := p.sessions[sid]
-	p.mu.Unlock()
+	p.mu.RUnlock()
 	if !found {
 		return ErrNotFound
 	}
@@ -107,17 +116,17 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 }
 
 // Read returns the store which sid parameter belongs
-func (p *provider) Read(sid string, expires time.Duration) *Session {
-	p.mu.Lock()
+func (p *provider) Read(man *Sessions, sid string, expires time.Duration) *Session {
+	p.mu.RLock()
 	if sess, found := p.sessions[sid]; found {
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session
-		p.mu.Unlock()
+		p.mu.RUnlock()
 
 		return sess
 	}
-	p.mu.Unlock()
+	p.mu.RUnlock()
 
-	return p.Init(sid, expires) // if not found create new
+	return p.Init(man, sid, expires) // if not found create new
 }
 
 func (p *provider) registerDestroyListener(ln DestroyListener) {

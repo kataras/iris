@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/core/router"
 )
 
 func main() {
@@ -35,6 +35,5 @@ func main() {
 	//
 	// See view/template_html_4 example for more reverse routing examples
 	// using the reverse router component and the {{url}} and {{urlpath}} template functions.
-	app.Run(iris.Addr(":8080"))
-
+	app.Listen(":8080")
 }

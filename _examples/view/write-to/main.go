@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 type mailData struct {
@@ -34,10 +34,9 @@ func main() {
 		RefTitle: "Iris web framework",
 		RefLink:  "https://iris-go.com",
 	})
-
 	if err != nil {
 		app.Logger().Errorf("error from app.View: %v", err)
 	}
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

@@ -9,10 +9,10 @@ package router_test
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 // test registering of below handlers
@@ -76,6 +76,7 @@ func TestMiddlewareByRouteDef(t *testing.T) {
 
 	testResponse(t, app, "/mypath")
 }
+
 func TestMiddlewareByUseAndDoneDef(t *testing.T) {
 	app := iris.New()
 	app.Use(firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler)

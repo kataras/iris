@@ -28,7 +28,9 @@ func ExampleSupervisor_RegisterOnError() {
 
 	go su.ListenAndServe()
 	time.Sleep(1 * time.Second)
-	su.Shutdown(context.TODO())
+	if err := su.Shutdown(context.TODO()); err != nil {
+		panic(err)
+	}
 	time.Sleep(1 * time.Second)
 
 	// Output:
@@ -49,38 +51,30 @@ func (m myTestTask) OnServe(host TaskHost) {
 	ticker := time.NewTicker(m.restartEvery)
 	defer ticker.Stop()
 	rans := 0
-	for {
-		select {
-		case _, ok := <-ticker.C:
-			{
-				if !ok {
-					m.logger.Println("ticker issue, closed channel, exiting from this task...")
-					return
-				}
-				exitAfterXRestarts := m.maxRestarts
-				if rans == exitAfterXRestarts {
-					m.logger.Println("exit")
-					ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
-					defer cancel()
-					host.Supervisor.Shutdown(ctx) // total shutdown
-					host.Supervisor.RestoreFlow() // free to exit (if shutdown)
-					return
-				}
-
-				rans++
-
-				m.logger.Println(fmt.Sprintf("closed %d times", rans))
-				host.Shutdown(context.TODO())
-
-				startDelay := 2 * time.Second
-				time.AfterFunc(startDelay, func() {
-					m.logger.Println("restart")
-					host.Serve() // restart
-
-				})
-
-			}
+	for range ticker.C {
+		exitAfterXRestarts := m.maxRestarts
+		if rans == exitAfterXRestarts {
+			m.logger.Println("exit")
+			ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+			defer cancel()
+			_ = host.Supervisor.Shutdown(ctx) // total shutdown
+			host.Supervisor.RestoreFlow()     // free to exit (if shutdown)
+			return
 		}
+
+		rans++
+
+		m.logger.Println(fmt.Sprintf("closed %d times", rans))
+		host.Shutdown(context.TODO())
+
+		startDelay := 2 * time.Second
+		time.AfterFunc(startDelay, func() {
+			m.logger.Println("restart")
+			if err := host.Serve(); err != nil { // restart
+				panic(err)
+			}
+		})
+
 	}
 }
 
@@ -93,7 +87,7 @@ func ExampleSupervisor_RegisterOnServe() {
 	logger := log.New(os.Stdout, "Supervisor: ", 0)
 
 	mytask := myTestTask{
-		restartEvery: 6 * time.Second,
+		restartEvery: 3 * time.Second,
 		maxRestarts:  2,
 		logger:       logger,
 	}

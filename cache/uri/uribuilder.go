@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/cache/cfg"
+	"github.com/kataras/iris/v12/cache/cfg"
 )
 
 // URIBuilder is the requested url builder
@@ -62,7 +62,7 @@ func (r *URIBuilder) ContentType(s string) *URIBuilder {
 }
 
 // String returns the full url which should be passed to get a cache entry response back
-// (it could be setted by server too but we need some client-freedom on the requested key)
+// (it could be set by server too but we need some client-freedom on the requested key)
 // in order to be sure that the registered cache entries are unique among different clients with the same key
 // note1: we do it manually*,
 // note2: on fasthttp that is not required because the query args added as expected but we will use it there too to be align with net/http
@@ -71,7 +71,6 @@ func (r URIBuilder) String() string {
 }
 
 func (r URIBuilder) build() string {
-
 	remoteURL := r.serverAddr
 
 	// fasthttp appends the "/" in the last uri (with query args also, that's probably a fasthttp bug which I'll fix later)

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {
@@ -15,9 +15,9 @@ func main() {
 	// Prefix: "With", code editors will help you navigate through all
 	// configuration options without even a glitch to the documentation.
 
-	app.Run(iris.Addr(":8080"), iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
+	app.Listen(":8080", iris.WithoutStartupLog, iris.WithCharset("utf-8"))
 
 	// or before run:
-	// app.Configure(iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
-	// app.Run(iris.Addr(":8080"))
+	// app.Configure(iris.WithoutStartupLog, iris.WithCharset("utf-8"))
+	// app.Listen(":8080")
 }

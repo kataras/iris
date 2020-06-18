@@ -1,7 +1,7 @@
 *.go linguist-language=Go
-vendor/* linguist-vendored
 _examples/* linguist-documentation
 _benchmarks/* linguist-documentation
+go.sum linguist-generated
 # Set the default behavior, in case people don't have core.autocrlf set.
 # if from windows: 
 # git config --global core.autocrlf true

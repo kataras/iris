@@ -3,97 +3,140 @@ package hero
 import (
 	"fmt"
 	"reflect"
-	"runtime"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/hero/di"
+	"github.com/kataras/iris/v12/context"
+)
 
-	"github.com/kataras/golog"
+type (
+	// ErrorHandler describes an interface to handle errors per hero handler and its dependencies.
+	//
+	// Handles non-nil errors return from a hero handler or a controller's method (see `getBindingsFor` and `Handler`)
+	// the error may return from a request-scoped dependency too (see `Handler`).
+	ErrorHandler interface {
+		HandleError(context.Context, error)
+	}
+	// ErrorHandlerFunc implements the `ErrorHandler`.
+	// It describes the type defnition for an error function handler.
+	ErrorHandlerFunc func(context.Context, error)
+)
+
+// HandleError fires when a non-nil error returns from a request-scoped dependency at serve-time or the handler itself.
+func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
+	fn(ctx, err)
+}
+
+var (
+	// ErrSeeOther may be returned from a dependency handler to skip a specific dependency
+	// based on custom logic.
+	ErrSeeOther = fmt.Errorf("see other")
+	// ErrStopExecution may be returned from a dependency handler to stop
+	// and return the execution of the function without error (it calls ctx.StopExecution() too).
+	// It may be occurred from request-scoped dependencies as well.
+	ErrStopExecution = fmt.Errorf("stop execution")
 )
 
 var (
-	contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
+	// DefaultErrStatusCode is the default error status code (400)
+	// when the response contains a non-nil error or a request-scoped binding error occur.
+	DefaultErrStatusCode = 400
+
+	// DefaultErrorHandler is the default error handler which is fired
+	// when a function returns a non-nil error or a request-scoped dependency failed to binded.
+	DefaultErrorHandler = ErrorHandlerFunc(func(ctx context.Context, err error) {
+		if err != ErrStopExecution {
+			if status := ctx.GetStatusCode(); status == 0 || !context.StatusCodeNotSuccessful(status) {
+				ctx.StatusCode(DefaultErrStatusCode)
+			}
+
+			_, _ = ctx.WriteString(err.Error())
+		}
+
+		ctx.StopExecution()
+	})
 )
 
-// IsContext returns true if the "inTyp" is a type of Context.
-func IsContext(inTyp reflect.Type) bool {
-	return inTyp.Implements(contextTyp)
-}
-
-// checks if "handler" is context.Handler: func(context.Context).
-func isContextHandler(handler interface{}) (context.Handler, bool) {
-	h, is := handler.(context.Handler)
-	if !is {
-		fh, is := handler.(func(context.Context))
-		if is {
-			return fh, is
-		}
-	}
-	return h, is
-}
-
-func validateHandler(handler interface{}) error {
-	if typ := reflect.TypeOf(handler); !di.IsFunc(typ) {
-		return fmt.Errorf("handler expected to be a kind of func but got typeof(%s)", typ.String())
-	}
-	return nil
-}
-
-// makeHandler accepts a "handler" function which can accept any input arguments that match
-// with the "values" types and any output result, that matches the hero types, like string, int (string,int),
-// custom structs, Result(View | Response) and anything that you can imagine,
-// and returns a low-level `context/iris.Handler` which can be used anywhere in the Iris Application,
-// as middleware or as simple route handler or party handler or subdomain handler-router.
-func makeHandler(handler interface{}, values ...reflect.Value) (context.Handler, error) {
-	if err := validateHandler(handler); err != nil {
-		return nil, err
+func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler {
+	if fn == nil {
+		panic("makeHandler: function is nil")
 	}
 
-	if h, is := isContextHandler(handler); is {
-		golog.Warnf("the standard API to register a context handler could be used instead")
-		return h, nil
+	// 0. A normal handler.
+	if handler, ok := isHandler(fn); ok {
+		return handler
 	}
 
-	fn := reflect.ValueOf(handler)
-	n := fn.Type().NumIn()
-
-	if n == 0 {
-		h := func(ctx context.Context) {
-			DispatchFuncResult(ctx, fn.Call(di.EmptyIn))
-		}
-
-		return h, nil
-	}
-
-	funcInjector := di.Func(fn, values...)
-	valid := funcInjector.Length == n
-
-	if !valid {
-		// is invalid when input len and values are not match
-		// or their types are not match, we will take look at the
-		// second statement, here we will re-try it
-		// using binders for path parameters: string, int, int64, uint8, uint64, bool and so on.
-		// We don't have access to the path, so neither to the macros here,
-		// but in mvc. So we have to do it here.
-		if valid = funcInjector.Retry(new(params).resolve); !valid {
-			pc := fn.Pointer()
-			fpc := runtime.FuncForPC(pc)
-			callerFileName, callerLineNumber := fpc.FileLine(pc)
-			callerName := fpc.Name()
-
-			err := fmt.Errorf("input arguments length(%d) and valid binders length(%d) are not equal for typeof '%s' which is defined at %s:%d by %s",
-				n, funcInjector.Length, fn.Type().String(), callerFileName, callerLineNumber, callerName)
-			return nil, err
+	// 1. A handler which returns just an error, handle it faster.
+	if handlerWithErr, ok := isHandlerWithError(fn); ok {
+		return func(ctx context.Context) {
+			if err := handlerWithErr(ctx); err != nil {
+				c.GetErrorHandler(ctx).HandleError(ctx, err)
+			}
 		}
 	}
 
-	h := func(ctx context.Context) {
-		// in := make([]reflect.Value, n, n)
-		// funcInjector.Inject(&in, reflect.ValueOf(ctx))
-		// DispatchFuncResult(ctx, fn.Call(in))
-		DispatchFuncResult(ctx, funcInjector.Call(reflect.ValueOf(ctx)))
+	v := valueOf(fn)
+	typ := v.Type()
+	numIn := typ.NumIn()
+
+	bindings := getBindingsForFunc(v, c.Dependencies, paramsCount)
+
+	resultHandler := defaultResultHandler
+	for i, lidx := 0, len(c.resultHandlers)-1; i <= lidx; i++ {
+		resultHandler = c.resultHandlers[lidx-i](resultHandler)
 	}
 
-	return h, nil
+	return func(ctx context.Context) {
+		inputs := make([]reflect.Value, numIn)
 
+		for _, binding := range bindings {
+			input, err := binding.Dependency.Handle(ctx, binding.Input)
+			if err != nil {
+				if err == ErrSeeOther {
+					continue
+				}
+				// handled inside ErrorHandler.
+				// else if err == ErrStopExecution {
+				// 	ctx.StopExecution()
+				// 	return // return without error.
+				// }
+
+				c.GetErrorHandler(ctx).HandleError(ctx, err)
+				return
+			}
+
+			// If ~an error status code is set or~ execution has stopped
+			// from within the dependency (something went wrong while validating the request),
+			// then stop everything and let handler fire that status code.
+			if ctx.IsStopped() /* || context.StatusCodeNotSuccessful(ctx.GetStatusCode())*/ {
+				return
+			}
+
+			inputs[binding.Input.Index] = input
+		}
+
+		outputs := v.Call(inputs)
+		if err := dispatchFuncResult(ctx, outputs, resultHandler); err != nil {
+			c.GetErrorHandler(ctx).HandleError(ctx, err)
+		}
+	}
+}
+
+func isHandler(fn interface{}) (context.Handler, bool) {
+	if handler, ok := fn.(context.Handler); ok {
+		return handler, ok
+	}
+
+	if handler, ok := fn.(func(context.Context)); ok {
+		return handler, ok
+	}
+
+	return nil, false
+}
+
+func isHandlerWithError(fn interface{}) (func(context.Context) error, bool) {
+	if handlerWithErr, ok := fn.(func(context.Context) error); ok {
+		return handlerWithErr, true
+	}
+
+	return nil, false
 }

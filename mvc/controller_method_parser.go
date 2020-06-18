@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/macro"
 )
 
 const (
@@ -51,7 +51,7 @@ func (l *methodLexer) reset(s string) {
 		}
 
 		if end > 0 && len(s) >= end {
-			words = append(words, s[start:end])
+			words = append(words, s[start:])
 		}
 	}
 
@@ -87,15 +87,6 @@ func (l *methodLexer) peekNext() (w string) {
 	return l.peek(l.cur + 1)
 }
 
-func (l *methodLexer) peekPrev() (w string) {
-	if l.cur > 0 {
-		cur := l.cur - 1
-		w = l.words[cur]
-	}
-
-	return w
-}
-
 func genParamKey(argIdx int) string {
 	return "param" + strconv.Itoa(argIdx) // param0, param1, param2...
 }
@@ -103,10 +94,10 @@ func genParamKey(argIdx int) string {
 type methodParser struct {
 	lexer  *methodLexer
 	fn     reflect.Method
-	macros macro.Macros
+	macros *macro.Macros
 }
 
-func parseMethod(macros macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
+func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
 	if skipper(fn.Name) {
 		return "", "", errSkip
 	}
@@ -127,6 +118,14 @@ func methodTitle(httpMethod string) string {
 var errSkip = errors.New("skip")
 
 var allMethods = append(router.AllMethods[0:], []string{"ALL", "ANY"}...)
+
+func addPathWord(path, w string) string {
+	if path[len(path)-1] != '/' {
+		path += "/"
+	}
+	path += strings.ToLower(w)
+	return path
+}
 
 func (p *methodParser) parse() (method, path string, err error) {
 	funcArgPos := 0
@@ -173,7 +172,7 @@ func (p *methodParser) parse() (method, path string, err error) {
 			continue
 		}
 		// static path.
-		path += "/" + strings.ToLower(w)
+		path = addPathWord(path, w)
 	}
 	return
 }
@@ -184,7 +183,7 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 	if typ.NumIn() <= funcArgPos {
 
 		// By found but input arguments are not there, so act like /by path without restricts.
-		path += "/" + strings.ToLower(w)
+		path = addPathWord(path, w)
 		return path, funcArgPos, nil
 	}
 
@@ -227,8 +226,11 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 		}
 	}
 
-	// /{argfirst:path}, /{argfirst:long}...
-	path += fmt.Sprintf("/{%s:%s}", paramKey, m.Indent())
+	// /{argfirst:path}, /{argfirst:int64}...
+	if path[len(path)-1] != '/' {
+		path += "/"
+	}
+	path += fmt.Sprintf("{%s:%s}", paramKey, m.Indent())
 
 	if nextWord == "" && typ.NumIn() > funcArgPos+1 {
 		// By is the latest word but func is expected

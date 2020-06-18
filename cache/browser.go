@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris/cache/client"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/cache/client"
+	"github.com/kataras/iris/v12/context"
 )
 
 // CacheControlHeaderValue is the header value of the
@@ -92,7 +92,7 @@ const ifNoneMatchHeaderKey = "If-None-Match"
 //
 // Usage with combination of `StaticCache`:
 // assets := app.Party("/assets", cache.StaticCache(24 * time.Hour), ETag)
-// assets.StaticWeb("/", "./assets") or StaticEmbedded("/", "./assets") or StaticEmbeddedGzip("/", "./assets").
+// assets.HandleDir("/", "./assets")
 //
 // Similar to `Cache304` but it doesn't depends on any "modified date", it uses just the ETag and If-None-Match headers.
 //
@@ -111,7 +111,7 @@ var ETag = func(ctx context.Context) {
 // Cache304 sends a `StatusNotModified` (304) whenever
 // the "If-Modified-Since" request header (time) is before the
 // time.Now() + expiresEvery (always compared to their UTC values).
-// Use this `cache#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
+// Use this `cache#Cache304` instead of the "github.com/kataras/iris/v12/cache" or iris.Cache
 // for better performance.
 // Clients that are compatible with the http RCF (all browsers are and tools like postman)
 // will handle the caching.
@@ -124,7 +124,7 @@ var ETag = func(ctx context.Context) {
 // by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
 // with a "modtime" based on the file modified date,
 // can be used on Party's that contains a static handler,
-// i.e `StaticWeb`, `StaticEmbedded` or even `StaticEmbeddedGzip`.
+// i.e `HandleDir`.
 var Cache304 = func(expiresEvery time.Duration) context.Handler {
 	return func(ctx context.Context) {
 		now := time.Now()

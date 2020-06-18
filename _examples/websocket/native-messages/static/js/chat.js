@@ -1,38 +1,35 @@
-var messageTxt;
-var messages;
+var messageTxt = document.getElementById("messageTxt");
+var messages = document.getElementById("messages");
+var sendBtn = document.getElementById("sendBtn")
 
-$(function () {
+w = new WebSocket("ws://" + HOST + "/my_endpoint");
+w.onopen = function () {
+	console.log("Websocket connection enstablished");
+};
 
-	messageTxt = $("#messageTxt");
-	messages = $("#messages");
+w.onclose = function () {
+	appendMessage("<div><center><h3>Disconnected</h3></center></div>");
+};
+w.onmessage = function (message) {
+	appendMessage("<div>" + message.data + "</div>");
+};
 
+sendBtn.onclick = function () {
+	myText = messageTxt.value;
+	messageTxt.value = "";
 
-	w = new WebSocket("ws://" + HOST + "/my_endpoint");
-	w.onopen = function () {
-		console.log("Websocket connection enstablished");
-	};
+	appendMessage("<div style='color: red'> me: " + myText + "</div>");
+	w.send(myText);
+};
 
-	w.onclose = function () {
-		appendMessage($("<div><center><h3>Disconnected</h3></center></div>"));
-	};
-	w.onmessage = function(message){
-		appendMessage($("<div>" + message.data + "</div>"));
-	};
+messageTxt.addEventListener("keyup", function (e) {
+	if (e.keyCode === 13) {
+		e.preventDefault();
 
+		sendBtn.click();
+	}
+});
 
-	$("#sendBtn").click(function () {
-		w.send(messageTxt.val().toString());
-		messageTxt.val("");
-	});
-
-})
-
-
-function appendMessage(messageDiv) {
-    var theDiv = messages[0];
-    var doScroll = theDiv.scrollTop == theDiv.scrollHeight - theDiv.clientHeight;
-    messageDiv.appendTo(messages);
-    if (doScroll) {
-        theDiv.scrollTop = theDiv.scrollHeight - theDiv.clientHeight;
-    }
+function appendMessage(messageDivHTML) {
+	messages.insertAdjacentHTML('afterbegin', messageDivHTML);
 }

@@ -9,15 +9,15 @@ Example code:
 		 import (
 		 	"time"
 
-		 	"github.com/kataras/iris"
-		 	"github.com/kataras/iris/cache"
+		 	"github.com/kataras/iris/v12"
+		 	"github.com/kataras/iris/v12/cache"
 		 )
 
 		 func main(){
 		 	app := iris.Default()
 		 	middleware := cache.Handler(2 *time.Minute)
 		 	app.Get("/hello", middleware, h)
-		 	app.Run(iris.Addr(":8080"))
+		 	app.Listen(":8080")
 		 }
 
 		 func h(ctx iris.Context) {
@@ -30,37 +30,29 @@ package cache
 import (
 	"time"
 
-	"github.com/kataras/iris/cache/client"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/cache/client"
+	"github.com/kataras/iris/v12/context"
 )
 
-// Cache accepts the cache expiration duration
-// if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
-// returns context.Handler, which you can use as your default router or per-route handler
+// Cache accepts the cache expiration duration.
+// If the "expiration" input argument is invalid, <=2 seconds,
+// then expiration is taken by the "cache-control's maxage" header.
+// Returns a Handler structure which you can use to customize cache further.
 //
 // All types of response can be cached, templates, json, text, anything.
 //
 // Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
-// may fit your needs most.
+// may be more suited to your needs.
 //
 // You can add validators with this function.
 func Cache(expiration time.Duration) *client.Handler {
 	return client.NewHandler(expiration)
 }
 
-// Handler accepts one single parameter:
-// the cache expiration duration
-// if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
-// returns context.Handler.
+// Handler like `Cache` but returns an Iris Handler to be used as a middleware.
+// For more options use the `Cache`.
 //
-// All types of response can be cached, templates, json, text, anything.
-//
-// Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
-// may fit your needs most.
-//
-// it returns a context.Handler which can be used as a middleware, for more options use the `Cache`.
-//
-// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
+// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/response-writer/cache
 func Handler(expiration time.Duration) context.Handler {
 	h := Cache(expiration).ServeHTTP
 	return h

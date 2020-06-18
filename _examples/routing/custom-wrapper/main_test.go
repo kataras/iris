@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 type resource string
@@ -56,4 +56,6 @@ func TestCustomWrapper(t *testing.T) {
 			Status(httptest.StatusOK).
 			Body().Equal(contents)
 	}
+
+	e.GET("/other/something").Expect().Status(httptest.StatusOK)
 }

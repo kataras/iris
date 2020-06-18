@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 type resource string
@@ -15,7 +15,7 @@ type resource string
 func (r resource) contentType() string {
 	switch filepath.Ext(r.String()) {
 	case ".js":
-		return "application/javascript"
+		return "text/javascript"
 	case ".css":
 		return "text/css"
 	default:
@@ -35,8 +35,8 @@ func (r resource) strip(strip string) string {
 func (r resource) loadFromBase(dir string) string {
 	filename := r.String()
 
-	if filename == "/" {
-		filename = "/index.html"
+	if strings.HasSuffix(filename, "/") {
+		filename = filename + "index.html"
 	}
 
 	fullpath := filepath.Join(dir, filename)
@@ -47,7 +47,8 @@ func (r resource) loadFromBase(dir string) string {
 	}
 	result := string(b)
 	if runtime.GOOS != "windows" {
-		// result = strings.Replace(result, "\n", "\r\n", -1)
+		result = strings.Replace(result, "\n", "\r\n", -1)
+		result = strings.Replace(result, "\r\r", "", -1)
 	}
 	return result
 }
@@ -57,6 +58,8 @@ var urls = []resource{
 	"/index.html",
 	"/app.js",
 	"/css/main.css",
+	"/app2/",
+	"/app2/index.html",
 }
 
 func TestSPAEmbedded(t *testing.T) {

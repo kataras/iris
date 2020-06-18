@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // $ go test -v -run TestConfiguration*
@@ -61,7 +61,7 @@ func TestConfigurationOptions(t *testing.T) {
 		t.Fatalf("Expected configuration DisableStartupLog to be: %#v but got: %#v", disableBanner, got)
 	}
 
-	// now check if other default values are setted (should be setted automatically)
+	// now check if other default values are set (should be set automatically)
 
 	expected := DefaultConfiguration()
 	expected.Charset = charset
@@ -112,10 +112,13 @@ func createGlobalConfiguration(t *testing.T) {
 }
 
 func TestConfigurationGlobal(t *testing.T) {
+	t.Cleanup(func() {
+		os.Remove(homeConfigurationFilename(".yml"))
+	})
+
 	createGlobalConfiguration(t)
 
 	testConfigurationGlobal(t, WithGlobalConfiguration)
-	// globalConfigurationKeyword = "~""
 	testConfigurationGlobal(t, WithConfiguration(YAML(globalConfigurationKeyword)))
 }
 
@@ -143,18 +146,21 @@ func TestConfigurationYAML(t *testing.T) {
 	yamlConfigurationContents := `
 DisablePathCorrection: false
 DisablePathCorrectionRedirection: true
+EnablePathIntelligence: true
 EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
 DisableBodyConsumptionOnUnmarshal: true
-TimeFormat: "Mon, 01 Jan 2006 15:04:05 GMT"
-Charset: "UTF-8"
-
+TimeFormat: "Mon, 02 Jan 2006 15:04:05 GMT"
+Charset: "utf-8"
 RemoteAddrHeaders:
   X-Real-Ip: true
   X-Forwarded-For: true
   CF-Connecting-IP: true
-
+HostProxyHeaders:
+  X-Host: true
+SSLProxyHeaders:
+  X-Forwarded-Proto: https
 Other:
   MyServerName: "Iris: https://github.com/kataras/iris"
 `
@@ -170,6 +176,10 @@ Other:
 
 	if expected := true; c.DisablePathCorrectionRedirection != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
+	}
+
+	if expected := true; c.EnablePathIntelligence != expected {
+		t.Fatalf("error on TestConfigurationYAML: Expected EnablePathIntelligence %v but got %v", expected, c.EnablePathIntelligence)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {
@@ -188,11 +198,11 @@ Other:
 		t.Fatalf("error on TestConfigurationYAML: Expected DisableBodyConsumptionOnUnmarshal %v but got %v", expected, c.DisableBodyConsumptionOnUnmarshal)
 	}
 
-	if expected := "Mon, 01 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
+	if expected := "Mon, 02 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
-	if expected := "UTF-8"; c.Charset != expected {
+	if expected := "utf-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected Charset %s but got %s", expected, c.Charset)
 	}
 
@@ -216,6 +226,34 @@ Other:
 		}
 	}
 
+	expectedHostProxyHeaders := map[string]bool{
+		"X-Host": true,
+	}
+
+	if expected, got := len(c.HostProxyHeaders), len(expectedHostProxyHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected HostProxyHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.HostProxyHeaders {
+		if expected, got := expectedHostProxyHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected HostProxyHeaders[%s] = %t but got %t", k, expected, got)
+		}
+	}
+
+	expectedSSLProxyHeaders := map[string]string{
+		"X-Forwarded-Proto": "https",
+	}
+
+	if expected, got := len(c.SSLProxyHeaders), len(c.SSLProxyHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected SSLProxyHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.SSLProxyHeaders {
+		if expected, got := expectedSSLProxyHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected SSLProxyHeaders[%s] = %s but got %s", k, expected, got)
+		}
+	}
+
 	if len(c.Other) == 0 {
 		t.Fatalf("error on TestConfigurationYAML: Expected Other to be filled")
 	}
@@ -223,7 +261,6 @@ Other:
 	if expected, got := "Iris: https://github.com/kataras/iris", c.Other["MyServerName"]; expected != got {
 		t.Fatalf("error on TestConfigurationYAML: Expected Other['MyServerName'] %s but got %s", expected, got)
 	}
-
 }
 
 func TestConfigurationTOML(t *testing.T) {
@@ -245,8 +282,8 @@ EnablePathEscape = false
 FireMethodNotAllowed = true
 EnableOptimizations = true
 DisableBodyConsumptionOnUnmarshal = true
-TimeFormat = "Mon, 01 Jan 2006 15:04:05 GMT"
-Charset = "UTF-8"
+TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
+Charset = "utf-8"
 
 [RemoteAddrHeaders]
     X-Real-Ip = true
@@ -288,11 +325,11 @@ Charset = "UTF-8"
 		t.Fatalf("error on TestConfigurationTOML: Expected DisableBodyConsumptionOnUnmarshal %v but got %v", expected, c.DisableBodyConsumptionOnUnmarshal)
 	}
 
-	if expected := "Mon, 01 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
+	if expected := "Mon, 02 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
-	if expected := "UTF-8"; c.Charset != expected {
+	if expected := "utf-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected Charset %s but got %s", expected, c.Charset)
 	}
 

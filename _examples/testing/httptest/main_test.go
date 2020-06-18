@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 // $ go test -v
@@ -27,5 +27,4 @@ func TestNewApp(t *testing.T) {
 	// with invalid basic auth
 	e.GET("/admin/settings").WithBasicAuth("invalidusername", "invalidpassword").
 		Expect().Status(httptest.StatusUnauthorized)
-
 }

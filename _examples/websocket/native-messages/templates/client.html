@@ -1,20 +1,18 @@
 <html>
 
 <head>
-<title>{{ .Title}}</title>
+	<title>{{ .Title}}</title>
 </head>
 
-<body>
-	<div id="messages"
-		style="border-width: 1px; border-style: solid; height: 400px; width: 375px;">
-
-	</div>
+<body style="padding:10px;">
 	<input type="text" id="messageTxt" />
 	<button type="button" id="sendBtn">Send</button>
+	<div id="messages" style="width: 375px;margin:10 0 0 0px;border-top: 1px solid black;">
+	</div>
+
 	<script type="text/javascript">
-		var HOST = {{.Host}}
+		var HOST = {{.Host }}
 	</script>
-	<script src="js/vendor/jquery-2.2.3.min.js" type="text/javascript"></script>
 	<script src="js/chat.js" type="text/javascript"></script>
 </body>
 

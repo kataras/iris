@@ -5,15 +5,15 @@ package main
 import (
 	"time"
 
-	"github.com/kataras/iris/_examples/mvc/login/datasource"
-	"github.com/kataras/iris/_examples/mvc/login/repositories"
-	"github.com/kataras/iris/_examples/mvc/login/services"
-	"github.com/kataras/iris/_examples/mvc/login/web/controllers"
-	"github.com/kataras/iris/_examples/mvc/login/web/middleware"
+	"github.com/kataras/iris/v12/_examples/mvc/login/datasource"
+	"github.com/kataras/iris/v12/_examples/mvc/login/repositories"
+	"github.com/kataras/iris/v12/_examples/mvc/login/services"
+	"github.com/kataras/iris/v12/_examples/mvc/login/web/controllers"
+	"github.com/kataras/iris/v12/_examples/mvc/login/web/middleware"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
+	"github.com/kataras/iris/v12/sessions"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 		Reload(true)
 	app.RegisterView(tmpl)
 
-	app.StaticWeb("/public", "./web/public")
+	app.HandleDir("/public", "./web/public")
 
 	app.OnAnyErrorCode(func(ctx iris.Context) {
 		ctx.ViewData("Message", ctx.Values().
@@ -76,12 +76,8 @@ func main() {
 	// http://localhost:8080/user/me
 	// http://localhost:8080/user/logout
 	// basic auth: "admin", "password", see "./middleware/basicauth.go" source file.
-	app.Run(
-		// Starts the web server at localhost:8080
-		iris.Addr("localhost:8080"),
-		// Ignores err server closed log when CTRL/CMD+C pressed.
-		iris.WithoutServerError(iris.ErrServerClosed),
-		// Enables faster json serialization and more.
-		iris.WithOptimizations,
-	)
+
+	// Starts the web server at localhost:8080
+	// Enables faster json serialization and more.
+	app.Listen(":8080", iris.WithOptimizations)
 }

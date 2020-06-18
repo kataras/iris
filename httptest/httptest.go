@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/iris-contrib/httpexpect"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
+
+	"github.com/iris-contrib/httpexpect/v2"
 )
 
 type (
@@ -47,7 +48,7 @@ func (c Configuration) Set(main *Configuration) {
 }
 
 var (
-	// URL if setted then it sets the httptest's BaseURL.
+	// URL if set then it sets the httptest's BaseURL.
 	// Defaults to empty string "".
 	URL = func(schemeAndHost string) OptionSet {
 		return func(c *Configuration) {
@@ -88,7 +89,7 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 	app.Logger().SetLevel(conf.LogLevel)
 
 	if err := app.Build(); err != nil {
-		if conf.Debug && (conf.LogLevel == "disable" || conf.LogLevel == "disabled") {
+		if conf.LogLevel != "disable" {
 			app.Logger().Println(err.Error())
 			return nil
 		}

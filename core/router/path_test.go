@@ -9,26 +9,44 @@ func TestCleanPath(t *testing.T) {
 		path     string
 		expected string
 	}{
-		{"/",
-			"/"},
-		{"noslashPrefix",
-			"/noslashPrefix"},
-		{"slashSuffix/",
-			"/slashSuffix"},
-		{"noSlashPrefixAndslashSuffix/",
-			"/noSlashPrefixAndslashSuffix"},
+		{
+			"/",
+			"/",
+		},
+		{
+			"noslashPrefix",
+			"/noslashPrefix",
+		},
+		{
+			"slashSuffix/",
+			"/slashSuffix",
+		},
+		{
+			"noSlashPrefixAndslashSuffix/",
+			"/noSlashPrefixAndslashSuffix",
+		},
 		// don't do any clean up inside {},
 		// fixes #927.
-		{"/total/{year:string regexp(\\d{4})}",
-			"/total/{year:string regexp(\\d{4})}"},
-		{"/total/{year:string regexp(\\d{4})}/more",
-			"/total/{year:string regexp(\\d{4})}/more"},
-		{"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}",
-			"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}"},
-		{"/single_no_params",
-			"/single_no_params"},
-		{"/single/{id:uint64}",
-			"/single/{id:uint64}"},
+		{
+			"/total/{year:string regexp(\\d{4})}",
+			"/total/{year:string regexp(\\d{4})}",
+		},
+		{
+			"/total/{year:string regexp(\\d{4})}/more",
+			"/total/{year:string regexp(\\d{4})}/more",
+		},
+		{
+			"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}",
+			"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}",
+		},
+		{
+			"/single_no_params",
+			"/single_no_params",
+		},
+		{
+			"/single/{id:uint64}",
+			"/single/{id:uint64}",
+		},
 	}
 
 	for i, tt := range tests {
@@ -43,18 +61,30 @@ func TestSplitPath(t *testing.T) {
 		path     string
 		expected []string
 	}{
-		{"/v2/stores/{id:string format(uuid)} /v3",
-			[]string{"/v2/stores/{id:string format(uuid)}", "/v3"}},
-		{"/user/{id:uint64} /admin/{id:uint64}",
-			[]string{"/user/{id:uint64}", "/admin/{id:uint64}"}},
-		{"/users/{id:int} /admins/{id:int64}",
-			[]string{"/users/{id:int}", "/admins/{id:int64}"}},
-		{"/user /admin",
-			[]string{"/user", "/admin"}},
-		{"/single_no_params",
-			[]string{"/single_no_params"}},
-		{"/single/{id:int}",
-			[]string{"/single/{id:int}"}},
+		{
+			"/v2/stores/{id:string format(uuid)} /v3",
+			[]string{"/v2/stores/{id:string format(uuid)}", "/v3"},
+		},
+		{
+			"/user/{id:uint64} /admin/{id:uint64}",
+			[]string{"/user/{id:uint64}", "/admin/{id:uint64}"},
+		},
+		{
+			"/users/{id:int} /admins/{id:int64}",
+			[]string{"/users/{id:int}", "/admins/{id:int64}"},
+		},
+		{
+			"/user /admin",
+			[]string{"/user", "/admin"},
+		},
+		{
+			"/single_no_params",
+			[]string{"/single_no_params"},
+		},
+		{
+			"/single/{id:int}",
+			[]string{"/single/{id:int}"},
+		},
 	}
 
 	equalSlice := func(s1 []string, s2 []string) bool {
@@ -78,6 +108,7 @@ func TestSplitPath(t *testing.T) {
 		}
 	}
 }
+
 func TestSplitSubdomainAndPath(t *testing.T) {
 	tests := []struct {
 		original  string
@@ -85,6 +116,8 @@ func TestSplitSubdomainAndPath(t *testing.T) {
 		path      string
 	}{
 		{"admin./users/42", "admin.", "/users/42"},
+		{"static.", "static.", "/"},
+		{"static./" + WildcardFileParam(), "static.", "/" + WildcardFileParam()},
 		{"//api/users\\42", "", "/api/users/42"},
 		{"admin./users//42", "admin.", "/users/42"},
 		{"*./users/42/", "*.", "/users/42"},
