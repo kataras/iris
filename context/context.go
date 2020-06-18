@@ -1163,13 +1163,13 @@ type Context interface {
 	// through APIContainer(app.ConfigureContainer) or MVC(mvc.New)
 	// in sake of minimum performance cost.
 	//
-	// See `UnRegisterDependency` too.
+	// See `UnregisterDependency` too.
 	RegisterDependency(v interface{})
-	// UnRegisterDependency removes a dependency based on its type.
+	// UnregisterDependency removes a dependency based on its type.
 	// Reports whether a dependency with that type was found and removed successfully.
 	//
 	// See `RegisterDependency` too.
-	UnRegisterDependency(typ reflect.Type) bool
+	UnregisterDependency(typ reflect.Type) bool
 
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
@@ -5607,9 +5607,9 @@ func (ctx *context) RegisterDependency(v interface{}) {
 	})
 }
 
-// UnRegisterDependency removes a dependency based on its type.
+// UnregisterDependency removes a dependency based on its type.
 // Reports whether a dependency with that type was found and removed successfully.
-func (ctx *context) UnRegisterDependency(typ reflect.Type) bool {
+func (ctx *context) UnregisterDependency(typ reflect.Type) bool {
 	cv := ctx.Values().Get(DependenciesContextKey)
 	if cv != nil {
 		m, ok := cv.(DependenciesMap)

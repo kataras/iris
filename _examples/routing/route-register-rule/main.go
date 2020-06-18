@@ -23,6 +23,10 @@ func newApp() *iris.Application {
 
 	// Stops the execution and fires an error before server boot.
 	app.SetRegisterRule(iris.RouteError)
+
+	// If ctx.StopExecution or StopWithXXX then the next route will be executed
+	// (see mvc/authenticated-controller example too).
+	app.SetRegisterRule(iris.RouteOverlap)
 	*/
 
 	app.Get("/", getHandler)

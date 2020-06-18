@@ -771,9 +771,15 @@ func (tc TunnelingConfiguration) createTunnel(tunnelAPIRequest ngrokTunnel, publ
 	return nil
 }
 
-// Configuration the whole configuration for an iris instance
-// these can be passed via options also, look at the top of this file(configuration.go).
-// Configuration is a valid OptionSetter.
+// Configuration holds the necessary settings for an Iris Application instance.
+// All fields are optionally, the default values will work for a common web application.
+//
+// A Configuration value can be passed through `WithConfiguration` Configurator.
+// Usage:
+// conf := iris.Configuration{ ... }
+// app := iris.New()
+// app.Configure(iris.WithConfiguration(conf)) OR
+// app.Run/Listen(..., iris.WithConfiguration(conf)).
 type Configuration struct {
 	// vhost is private and set only with .Run/Listen methods, it cannot be changed after the first set.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
