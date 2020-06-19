@@ -283,3 +283,24 @@ func NewConditionalHandler(filter Filter, handlers ...Handler) Handler {
 		ctx.Next()
 	}
 }
+
+// JoinHandlers returns a copy of "h1" and "h2" Handlers slice joined as one slice of Handlers.
+func JoinHandlers(h1 Handlers, h2 Handlers) Handlers {
+	if len(h1) == 0 {
+		return h2
+	}
+
+	if len(h2) == 0 {
+		return h1
+	}
+
+	nowLen := len(h1)
+	totalLen := nowLen + len(h2)
+	// create a new slice of Handlers in order to merge the "h1" and "h2"
+	newHandlers := make(Handlers, totalLen)
+	// copy the already Handlers to the just created
+	copy(newHandlers, h1)
+	// start from there we finish, and store the new Handlers too
+	copy(newHandlers[nowLen:], h2)
+	return newHandlers
+}

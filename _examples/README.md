@@ -190,6 +190,7 @@
     * [Regexp](mvc/regexp/main.go)
     * [Session Controller](mvc/session-controller/main.go)
     * [Authenticated Controller](mvc/authenticated-controller/main.go)
+    * [Versioned Controller](mvc/versioned-controller/main.go)
     * [Websocket Controller](mvc/websocket)
     * [Register Middleware](mvc/middleware)
     * [gRPC](mvc/grpc-compatible)

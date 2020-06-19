@@ -146,13 +146,25 @@ func (app *Application) Register(dependencies ...interface{}) *Application {
 	return app
 }
 
-// Option is an interface which does contain a single `Apply` method that accepts
-// a `ControllerActivator`. It can be passed on `Application.Handle` method to
-// mdoify the behavior right after the `BeforeActivation` state.
-//
-// See `GRPC` package-level structure too.
-type Option interface {
-	Apply(*ControllerActivator)
+type (
+	// Option is an interface which does contain a single `Apply` method that accepts
+	// a `ControllerActivator`. It can be passed on `Application.Handle` method to
+	// mdoify the behavior right after the `BeforeActivation` state.
+	//
+	// See `GRPC` package-level structure
+	// and `Version` package-level function too.
+	Option interface {
+		Apply(*ControllerActivator)
+	}
+
+	// OptionFunc is the functional type of `Option`.
+	// Read `Option` docs.
+	OptionFunc func(*ControllerActivator)
+)
+
+// Apply completes the `Option` interface.
+func (opt OptionFunc) Apply(c *ControllerActivator) {
+	opt(c)
 }
 
 // Handle serves a controller for the current mvc application's Router.

@@ -703,6 +703,31 @@ func TestControllerOverlapping(t *testing.T) {
 	m.Handle(new(publicController))
 
 	e := httptest.New(t, app)
-	e.GET("/").WithQuery("name", "kataras").Expect().Status(httptest.StatusOK).JSON().Equal(iris.Map{"id": 1})
-	e.GET("/").Expect().Status(httptest.StatusOK).JSON().Equal(iris.Map{"data": "things"})
+	e.GET("/").WithQuery("name", "kataras").Expect().Status(httptest.StatusOK).
+		JSON().Equal(iris.Map{"id": 1})
+	e.GET("/").Expect().Status(httptest.StatusOK).
+		JSON().Equal(iris.Map{"data": "things"})
+}
+
+type testControllerMethodHandlerBindStruct struct{}
+
+type queryData struct {
+	Name string `json:"name" url:"name"`
+}
+
+func (*testControllerMethodHandlerBindStruct) Any(data queryData) queryData {
+	return data
+}
+
+func TestControllerMethodHandlerBindStruct(t *testing.T) {
+	app := iris.New()
+
+	New(app).Handle(new(testControllerMethodHandlerBindStruct))
+
+	data := iris.Map{"name": "kataras"}
+
+	e := httptest.New(t, app)
+	e.GET("/").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
+	e.PATCH("/").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
+	// more tests inside the hero package itself.
 }

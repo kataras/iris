@@ -78,6 +78,12 @@ type ControllerActivator struct {
 	// End-devs can change some properties of the *Route on the `BeforeActivator` by using the
 	// `GetRoute/GetRoutes(functionName)`.
 	routes map[string][]*router.Route
+	// BeginHandlers is a slice of middleware for this controller.
+	// These handlers will be prependend to each one of
+	// the route that this controller will register(Handle/HandleMany/struct methods)
+	// to the targeted Party.
+	// Look the `Use` method too.
+	BeginHandlers context.Handlers
 
 	// true if this controller listens and serves to websocket events.
 	servesWebsocket bool
@@ -197,6 +203,15 @@ func (c *ControllerActivator) GetRoutes(methodName string) []*router.Route {
 		}
 	}
 	return nil
+}
+
+// Use registers a middleware for this Controller.
+// It appends one or more handlers to the `BeginHandlers`.
+// It's like the `Party.Use` but specifically
+// for the routes that this controller will register to the targeted `Party`.
+func (c *ControllerActivator) Use(handlers ...context.Handler) *ControllerActivator {
+	c.BeginHandlers = append(c.BeginHandlers, handlers...)
+	return c
 }
 
 // Singleton returns new if all incoming clients' requests
@@ -343,6 +358,7 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 	}
 
 	handler := c.handlerOf(path, funcName)
+	middleware = context.JoinHandlers(c.BeginHandlers, middleware)
 
 	// register the handler now.
 	routes := c.app.Router.HandleMany(method, path, append(middleware, handler)...)

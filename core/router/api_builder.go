@@ -118,7 +118,7 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 
 var defaultOverlapFilter = func(ctx context.Context) bool {
 	if ctx.IsStopped() {
-		// It's stopped and the response can be overriden by a new handler.
+		// It's stopped and the response can be overridden by a new handler.
 		rs, ok := ctx.ResponseWriter().(context.ResponseWriterReseter)
 		return ok && rs.Reset()
 	}
@@ -509,8 +509,8 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 	)
 
 	if errorCode == 0 {
-		beginHandlers = joinHandlers(api.middleware, beginHandlers)
-		doneHandlers = joinHandlers(api.doneHandlers, doneHandlers)
+		beginHandlers = context.JoinHandlers(api.middleware, beginHandlers)
+		doneHandlers = context.JoinHandlers(api.doneHandlers, doneHandlers)
 	}
 
 	mainHandlers := context.Handlers(handlers)
@@ -528,9 +528,9 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
-	routeHandlers := joinHandlers(beginHandlers, mainHandlers)
+	routeHandlers := context.JoinHandlers(beginHandlers, mainHandlers)
 	// -> done handlers
-	routeHandlers = joinHandlers(routeHandlers, doneHandlers)
+	routeHandlers = context.JoinHandlers(routeHandlers, doneHandlers)
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
@@ -618,7 +618,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 
 	fullpath := parentPath + relativePath
 	// append the parent's + child's handlers
-	middleware := joinHandlers(api.middleware, handlers)
+	middleware := context.JoinHandlers(api.middleware, handlers)
 
 	// the allow methods per party and its children.
 	allowMethods := make([]string, len(api.allowMethods))
@@ -1058,19 +1058,6 @@ func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
 	})
 
 	return api
-}
-
-// joinHandlers uses to create a copy of all Handlers and return them in order to use inside the node
-func joinHandlers(h1 context.Handlers, h2 context.Handlers) context.Handlers {
-	nowLen := len(h1)
-	totalLen := nowLen + len(h2)
-	// create a new slice of Handlers in order to merge the "h1" and "h2"
-	newHandlers := make(context.Handlers, totalLen)
-	// copy the already Handlers to the just created
-	copy(newHandlers, h1)
-	// start from there we finish, and store the new Handlers too
-	copy(newHandlers[nowLen:], h2)
-	return newHandlers
 }
 
 // https://golang.org/doc/go1.9#callersframes

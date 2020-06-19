@@ -271,6 +271,7 @@ func dispatchFuncResult(ctx context.Context, values []reflect.Value, handler Res
 				contentType = value
 			} else {
 				// otherwise is content
+				contentType = context.ContentTextHeaderValue
 				content = []byte(value)
 			}
 
