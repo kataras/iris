@@ -205,10 +205,19 @@ func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix stri
 		if len(replies) == 2 {
 			// take the second, it must contain the slice of keys.
 			if keysSliceAsBytes, ok := replies[1].([]interface{}); ok {
-				keys := make([]string, len(keysSliceAsBytes))
+				n := len(keysSliceAsBytes) - 1 // scan match returns the session id key too.
+				if n <= 0 {
+					return nil, nil
+				}
+
+				keys := make([]string, n)
 
 				for i, k := range keysSliceAsBytes {
-					keys[i] = fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
+					key := fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
+					if key == prefix {
+						continue // it's the session id itself.
+					}
+					keys[i] = key
 				}
 
 				if cur := fmt.Sprintf("%s", replies[0]); cur != "0" {

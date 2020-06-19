@@ -263,7 +263,12 @@ func (r *RadixDriver) getKeys(cursor, prefix string) ([]string, error) {
 		return nil, err
 	}
 
-	keys := res.keys[0:]
+	if len(res.keys) <= 1 {
+		return nil, nil
+	}
+
+	keys := res.keys[1:] // the first one is always the session id itself.
+
 	if res.cur != "0" {
 		moreKeys, err := r.getKeys(res.cur, prefix)
 		if err != nil {

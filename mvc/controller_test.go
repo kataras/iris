@@ -663,27 +663,22 @@ func TestApplicationDependency(t *testing.T) {
 // Authenticated type.
 type Authenticated int64
 
-// BasePublicPrivateController base controller between public and private controllers.
-type BasePublicPrivateController struct {
+// BasePrivateController base controller for private controllers.
+type BasePrivateController struct {
 	CurrentUserID Authenticated
-	Ctx           iris.Context
+	Ctx           iris.Context // not-used.
 }
 
 type publicController struct {
-	Ctx iris.Context
+	Ctx iris.Context // not-used.
 }
 
-// Get desc
-// Route / [GET]
 func (c *publicController) Get() iris.Map {
 	return iris.Map{"data": "things"}
 }
 
-// privateController serves the "public-private" Customer API.
-type privateController struct{ BasePublicPrivateController }
+type privateController struct{ BasePrivateController }
 
-// Get desc
-// Route / [GET]
 func (c *privateController) Get() iris.Map {
 	return iris.Map{"id": c.CurrentUserID}
 }
