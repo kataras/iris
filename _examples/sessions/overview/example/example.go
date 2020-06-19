@@ -36,9 +36,11 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 	// set session values.
 	app.Get("/set", func(ctx iris.Context) {
 		session := sessions.Get(ctx)
+		isNew := session.IsNew()
+
 		session.Set("name", "iris")
 
-		ctx.Writef("All ok session set to: %s", session.GetString("name"))
+		ctx.Writef("All ok session set to: %s [isNew=%t]", session.GetString("name"), isNew)
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
@@ -68,9 +70,11 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 
 		key := ctx.Params().Get("key")
 		value := ctx.Params().Get("value")
+		isNew := session.IsNew()
+
 		session.Set(key, value)
 
-		ctx.Writef("All ok session value of the '%s' is: %s", key, session.GetString(key))
+		ctx.Writef("All ok session value of the '%s' is: %s [isNew=%t]", key, session.GetString(key), isNew)
 	})
 
 	app.Get("/get/{key}", func(ctx iris.Context) {

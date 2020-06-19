@@ -156,6 +156,12 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 	return
 }
 
+// validSessionItem reports whether the current iterator's item key
+// is a value of the session id "prefix".
+func validSessionItem(key, prefix []byte) bool {
+	return len(key) > len(prefix) && bytes.Equal(key[0:len(prefix)], prefix)
+}
+
 // Visit loops through all session keys and values.
 func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 	prefix := makePrefix(sid)
@@ -166,30 +172,28 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 	iter := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer iter.Close()
 
-	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
+	for iter.Rewind(); ; iter.Next() {
+		if !iter.Valid() {
+			break
+		}
+
 		item := iter.Item()
+		key := item.Key()
+		if !validSessionItem(key, prefix) {
+			continue
+		}
+
 		var value interface{}
-
-		// err := item.Value(func(valueBytes []byte) {
-		// 	if err := sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
-		// 		golog.Error(err)
-		// 	}
-		// })
-
-		// if err != nil {
-		// 	golog.Error(err)
-		// 	continue
-		// }
 
 		err := item.Value(func(valueBytes []byte) error {
 			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 		})
 		if err != nil {
-			golog.Error(err)
+			golog.Errorf("[sessionsdb.badger.Visit] %v", err)
 			continue
 		}
 
-		cb(string(bytes.TrimPrefix(item.Key(), prefix)), value)
+		cb(string(bytes.TrimPrefix(key, prefix)), value)
 	}
 }
 
@@ -207,8 +211,14 @@ func (db *Database) Len(sid string) (n int) {
 	txn := db.Service.NewTransaction(false)
 	iter := txn.NewIterator(iterOptionsNoValues)
 
-	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
-		n++
+	for iter.Rewind(); ; iter.Next() {
+		if !iter.Valid() {
+			break
+		}
+
+		if validSessionItem(iter.Item().Key(), prefix) {
+			n++
+		}
 	}
 
 	iter.Close()

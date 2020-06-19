@@ -83,6 +83,13 @@ func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOpt
 		sid := s.config.SessionIDGenerator(ctx)
 
 		sess := s.provider.Init(s, sid, s.config.Expires)
+		// n := s.provider.db.Len(sid)
+		// fmt.Printf("db.Len(%s) = %d\n", sid, n)
+		// if n > 0 {
+		// 	s.provider.db.Visit(sid, func(key string, value interface{}) {
+		// 		fmt.Printf("%s=%s\n", key, value)
+		// 	})
+		// }
 		sess.isNew = s.provider.db.Len(sid) == 0
 
 		s.updateCookie(ctx, sid, s.config.Expires, cookieOptions...)
