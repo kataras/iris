@@ -14,14 +14,14 @@ func TestSessionsEncodeDecode(t *testing.T) {
 	es := e.GET("/set").Expect()
 	es.Status(iris.StatusOK)
 	es.Cookies().NotEmpty()
-	es.Body().Equal("All ok session set to: iris")
+	es.Body().Equal("All ok session set to: iris [isNew=true]")
 
 	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal("The name on the /set was: iris")
 	// delete and re-get
 	e.GET("/delete").Expect().Status(iris.StatusOK)
 	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal("The name on the /set was: ")
 	// set, clear and re-get
-	e.GET("/set").Expect().Body().Equal("All ok session set to: iris")
+	e.GET("/set").Expect().Body().Equal("All ok session set to: iris [isNew=false]")
 	e.GET("/clear").Expect().Status(iris.StatusOK)
 	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal("The name on the /set was: ")
 }
