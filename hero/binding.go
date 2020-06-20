@@ -221,7 +221,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 
 func isPayloadType(in reflect.Type) bool {
 	switch indirectType(in).Kind() {
-	case reflect.Struct, reflect.Slice:
+	case reflect.Struct, reflect.Slice, reflect.Ptr:
 		return true
 	default:
 		return false

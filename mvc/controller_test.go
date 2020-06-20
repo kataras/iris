@@ -719,8 +719,20 @@ func (*testControllerMethodHandlerBindStruct) Any(data bindStructData) bindStruc
 	return data
 }
 
-func (*testControllerMethodHandlerBindStruct) PostByProducts(id uint64, data []bindStructData) []bindStructData {
-	return data
+func (*testControllerMethodHandlerBindStruct) PostBySlice(id uint64, manyData []bindStructData) []bindStructData {
+	return manyData
+}
+
+type dataSlice []bindStructData
+
+func (*testControllerMethodHandlerBindStruct) PostBySlicetype(id uint64, manyData dataSlice) dataSlice {
+	return manyData
+}
+
+type dataSlicePtr []*bindStructData
+
+func (*testControllerMethodHandlerBindStruct) PostBySlicetypeptr(id uint64, manyData dataSlicePtr) dataSlicePtr {
+	return manyData
 }
 
 func TestControllerMethodHandlerBindStruct(t *testing.T) {
@@ -734,11 +746,13 @@ func TestControllerMethodHandlerBindStruct(t *testing.T) {
 	m.Handle(new(testControllerMethodHandlerBindStruct))
 
 	data := bindStructData{Name: "kataras"}
-	manyData := []bindStructData{{"kataras"}, {"john doe"}}
+	manyData := []bindStructData{data, {"john doe"}}
 
 	e := httptest.New(t, app)
 	e.GET("/data").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
 	e.PATCH("/data").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
-	e.POST("/data/42/products").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
+	e.POST("/data/42/slice").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
+	e.POST("/data/42/slicetype").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
+	e.POST("/data/42/slicetypeptr").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
 	// more tests inside the hero package itself.
 }
