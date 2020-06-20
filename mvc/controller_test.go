@@ -711,23 +711,34 @@ func TestControllerOverlapping(t *testing.T) {
 
 type testControllerMethodHandlerBindStruct struct{}
 
-type queryData struct {
+type bindStructData struct {
 	Name string `json:"name" url:"name"`
 }
 
-func (*testControllerMethodHandlerBindStruct) Any(data queryData) queryData {
+func (*testControllerMethodHandlerBindStruct) Any(data bindStructData) bindStructData {
+	return data
+}
+
+func (*testControllerMethodHandlerBindStruct) PostByProducts(id uint64, data []bindStructData) []bindStructData {
 	return data
 }
 
 func TestControllerMethodHandlerBindStruct(t *testing.T) {
 	app := iris.New()
 
-	New(app).Handle(new(testControllerMethodHandlerBindStruct))
+	m := New(app.Party("/data"))
+	m.HandleError(func(ctx iris.Context, err error) {
+		t.Fatalf("Path: %s, Error: %v", ctx.Path(), err)
+	})
 
-	data := iris.Map{"name": "kataras"}
+	m.Handle(new(testControllerMethodHandlerBindStruct))
+
+	data := bindStructData{Name: "kataras"}
+	manyData := []bindStructData{{"kataras"}, {"john doe"}}
 
 	e := httptest.New(t, app)
-	e.GET("/").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
-	e.PATCH("/").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
+	e.GET("/data").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
+	e.PATCH("/data").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
+	e.POST("/data/42/products").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
 	// more tests inside the hero package itself.
 }

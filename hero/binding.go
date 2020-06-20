@@ -209,7 +209,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 			}
 
 			// else add builtin bindings that may be registered by user too, but they didn't.
-			if indirectType(in).Kind() == reflect.Struct {
+			if isPayloadType(in) {
 				bindings = append(bindings, payloadBinding(i, in))
 				continue
 			}
@@ -217,6 +217,15 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 	}
 
 	return
+}
+
+func isPayloadType(in reflect.Type) bool {
+	switch indirectType(in).Kind() {
+	case reflect.Struct, reflect.Slice:
+		return true
+	default:
+		return false
+	}
 }
 
 func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramsCount int) []*binding {
@@ -331,9 +340,15 @@ func payloadBinding(index int, typ reflect.Type) *binding {
 					}
 				}
 
-				newValue = reflect.New(indirectType(input.Type))
+				if input.Type.Kind() == reflect.Slice {
+					newValue = reflect.New(reflect.SliceOf(indirectType(input.Type)))
+				} else {
+					newValue = reflect.New(indirectType(input.Type))
+				}
+
 				ptr := newValue.Interface()
 				err = ctx.ReadBody(ptr)
+
 				if !wasPtr {
 					newValue = newValue.Elem()
 				}
