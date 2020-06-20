@@ -430,7 +430,6 @@ New Context Methods:
 - `Context.GetDomain() string` returns the domain.
 - `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
 - `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
-- `Context.SetVersion(constraint string)` force-sets an [API Version](https://github.com/kataras/iris/wiki/API-versioning)
 - `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
 - `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
 - `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2

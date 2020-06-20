@@ -9,23 +9,39 @@ import (
 // If reports whether the "version" is matching to the "is".
 // the "is" can be a constraint like ">= 1, < 3".
 func If(v string, is string) bool {
+	_, ok := check(v, is)
+	return ok
+}
+
+func check(v string, is string) (string, bool) {
 	ver, err := version.NewVersion(v)
 	if err != nil {
-		return false
+		return "", false
 	}
 
 	constraints, err := version.NewConstraint(is)
 	if err != nil {
-		return false
+		return "", false
 	}
 
-	return constraints.Check(ver)
+	// return the extracted version from request, even if not matched.
+	return ver.String(), constraints.Check(ver)
 }
 
 // Match acts exactly the same as `If` does but instead it accepts
 // a Context, so it can be called by a handler to determinate the requested version.
+//
+// If matched then it sets the "X-API-Version" response header and
+// stores the matched version into Context (see `GetVersion` too).
 func Match(ctx context.Context, expectedVersion string) bool {
-	return If(GetVersion(ctx), expectedVersion)
+	versionString, matched := check(GetVersion(ctx), expectedVersion)
+	if !matched {
+		return false
+	}
+
+	SetVersion(ctx, versionString)
+	ctx.Header("X-API-Version", versionString)
+	return true
 }
 
 // Map is a map of versions targets to a handlers,
@@ -63,7 +79,7 @@ func NewMatcher(versions Map) context.Handler {
 		}
 
 		// pass the not matched version so the not found handler can have knowedge about it.
-		// ctx.SetVersion(versionString)
+		// SetVersion(ctx, versionString)
 		// or let a manual cal of GetVersion(ctx) do that instead.
 		notFoundHandler(ctx)
 	}
