@@ -1,9 +1,18 @@
 package main
 
 import (
+	"time"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 )
+
+// Optional deprecated X-API-XXX headers for version 1.
+var opts = mvc.DeprecationOptions{
+	WarnMessage:     "deprecated, see <this link>",
+	DeprecationDate: time.Now().UTC(),
+	DeprecationInfo: "a bigger version is available, see <this link> for more information",
+}
 
 func main() {
 	app := newApp()
@@ -18,9 +27,10 @@ func newApp() *iris.Application {
 	dataRouter := app.Party("/data")
 	{
 		m := mvc.New(dataRouter)
-		m.Handle(new(v1Controller), mvc.Version("1"))       // 1 or 1.0, 1.0.0 ...
-		m.Handle(new(v2Controller), mvc.Version("2.3"))     // 2.3 or 2.3.0
-		m.Handle(new(v3Controller), mvc.Version(">=3, <4")) // 3, 3.x, 3.x.x ...
+
+		m.Handle(new(v1Controller), mvc.Version("1"), mvc.Deprecated(opts)) // 1 or 1.0, 1.0.0 ...
+		m.Handle(new(v2Controller), mvc.Version("2.3"))                     // 2.3 or 2.3.0
+		m.Handle(new(v3Controller), mvc.Version(">=3, <4"))                 // 3, 3.x, 3.x.x ...
 		m.Handle(new(noVersionController))
 	}
 

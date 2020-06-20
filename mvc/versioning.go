@@ -13,7 +13,7 @@ import (
 //
 // Usage:
 // 	m := mvc.New(dataRouter)
-// 	m.Handle(new(v1Controller), mvc.Version("1"))
+// 	m.Handle(new(v1Controller), mvc.Version("1"), mvc.Deprecated(mvc.DeprecationOptions{}))
 // 	m.Handle(new(v2Controller), mvc.Version("2.3"))
 // 	m.Handle(new(v3Controller), mvc.Version(">=3, <4"))
 // 	m.Handle(new(noVersionController))
@@ -32,6 +32,18 @@ func Version(version string) OptionFunc {
 				return
 			}
 
+			ctx.Next()
+		})
+	}
+}
+
+// Deprecated marks a specific Controller as a deprecated one.
+// Deprecated can be used to tell the clients that
+// a newer version of that specific resource is available instead.
+func Deprecated(options DeprecationOptions) OptionFunc {
+	return func(c *ControllerActivator) {
+		c.Use(func(ctx context.Context) {
+			versioning.WriteDeprecated(ctx, options)
 			ctx.Next()
 		})
 	}
