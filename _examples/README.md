@@ -197,7 +197,7 @@
     * [Login (Repository and Service layers)](mvc/login)
     * [Login (Single Responsibility)](mvc/login-mvc-single-responsibility)
     * [Vue.js Todo App](mvc/vuejs-todo-mvc)
-* [Bootstrapper](bootstrap)
+* [Bootstrapper](bootstrapper)
 * Desktop Applications
     * [The blink package](desktop/blink)
     * [The lorca package](desktop/lorca)
