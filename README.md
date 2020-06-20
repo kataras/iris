@@ -2,7 +2,7 @@
 
 > This is the under-development branch. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next).
 
-![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)!
+<!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
 
 ![](https://iris-go.com/images/cli.png) The official [Iris Command Line Interface](https://github.com/kataras/iris-cli) will soon be near you in 2020!
 
@@ -31,7 +31,7 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 
 ```sh
 # https://github.com/kataras/iris/wiki/Installation
-$ go get github.com/kataras/iris/v12@latest
+$ go get github.com/kataras/iris/v12@master
 # assume the following code in example.go file
 $ cat example.go
 ```
@@ -67,7 +67,7 @@ Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wi
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
-For a more detailed technical documentation you can head over to our [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0). And for executable code you can always visit the [\_examples](_examples/) repository's subdirectory.
+For a more detailed technical documentation you can head over to our [godocs](https://godoc.org/github.com/kataras/iris). And for executable code you can always visit the [./_examples](_examples) repository's subdirectory.
 
 ### Do you like to read while traveling?
 

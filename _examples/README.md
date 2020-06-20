@@ -182,7 +182,8 @@
     * [JWT](dependency-injection/jwt/main.go)
         * [JWT (iris-contrib)](dependency-injection/jwt/contrib/main.go)
 * MVC
-    * [Overview - Repository and Service layers](mvc/overview)
+    * [Overview](mvc/overview)
+    * [Repository and Service layers](mvc/repository)
     * [Hello world](mvc/hello-world/main.go)
     * [Basic](mvc/basic/main.go)
         * [Wildcard](mvc/basic/wildcard/main.go)
