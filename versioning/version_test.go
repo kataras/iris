@@ -17,7 +17,7 @@ func TestGetVersion(t *testing.T) {
 
 	app.Get("/", writeVesion)
 	app.Get("/manual", func(ctx iris.Context) {
-		ctx.SetVersion("11.0.5")
+		versioning.SetVersion(ctx, "11.0.5")
 		ctx.Next()
 	}, writeVesion)
 
