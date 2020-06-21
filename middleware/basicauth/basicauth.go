@@ -23,7 +23,7 @@ type (
 		logged      bool
 		expires     time.Time
 	}
-	encodedUsers []encodedUser
+	encodedUsers []*encodedUser
 
 	basicAuthMiddleware struct {
 		config Config
@@ -75,7 +75,7 @@ func (b *basicAuthMiddleware) init() {
 	for k, v := range b.config.Users {
 		fullUser := k + ":" + v
 		header := "Basic " + base64.StdEncoding.EncodeToString([]byte(fullUser))
-		b.auth = append(b.auth, encodedUser{HeaderValue: header, Username: k, logged: false, expires: DefaultExpireTime})
+		b.auth = append(b.auth, &encodedUser{HeaderValue: header, Username: k, logged: false, expires: DefaultExpireTime})
 	}
 
 	// set the auth realm header's value
@@ -85,20 +85,16 @@ func (b *basicAuthMiddleware) init() {
 	b.askHandlerEnabled = b.config.OnAsk != nil
 }
 
-func (b *basicAuthMiddleware) findAuth(headerValue string) (auth *encodedUser, found bool) {
-	if len(headerValue) == 0 {
-		return
-	}
-
-	for _, user := range b.auth {
-		if user.HeaderValue == headerValue {
-			auth = &user
-			found = true
-			break
+func (b *basicAuthMiddleware) findAuth(headerValue string) (*encodedUser, bool) {
+	if headerValue != "" {
+		for _, user := range b.auth {
+			if user.HeaderValue == headerValue {
+				return user, true
+			}
 		}
 	}
 
-	return
+	return nil, false
 }
 
 func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {

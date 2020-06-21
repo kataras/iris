@@ -343,7 +343,7 @@ func TestBindingsForStruct(t *testing.T) {
 
 		controller3 struct {
 			Emb1 embedded1
-			emb2 embedded2
+			emb2 embedded2 // unused
 		}
 	)
 

@@ -87,7 +87,7 @@ func (l *Lexer) NextToken() (t token.Token) {
 		if isLetter(l.ch) {
 			// letters
 			lit := l.readIdentifier()
-			typ := token.LookupIdent(lit)
+			typ = token.LookupIdent(lit)
 			t = l.newToken(typ, lit)
 			return
 		}

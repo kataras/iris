@@ -139,7 +139,7 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 			var (
 				val interface{}
 
-				panicIfErr = func(err error) {
+				panicIfErr = func(i int, err error) {
 					if err != nil {
 						panic(fmt.Sprintf("on field index: %d: %v", i, err))
 					}
@@ -150,55 +150,55 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 			switch field.Kind() {
 			case reflect.Int:
 				v, err := strconv.Atoi(arg)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Int8:
 				v, err := strconv.ParseInt(arg, 10, 8)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = int8(v)
 			case reflect.Int16:
 				v, err := strconv.ParseInt(arg, 10, 16)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = int16(v)
 			case reflect.Int32:
 				v, err := strconv.ParseInt(arg, 10, 32)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = int32(v)
 			case reflect.Int64:
 				v, err := strconv.ParseInt(arg, 10, 64)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Uint:
 				v, err := strconv.ParseUint(arg, 10, strconv.IntSize)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint(v)
 			case reflect.Uint8:
 				v, err := strconv.ParseUint(arg, 10, 8)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint8(v)
 			case reflect.Uint16:
 				v, err := strconv.ParseUint(arg, 10, 16)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint16(v)
 			case reflect.Uint32:
 				v, err := strconv.ParseUint(arg, 10, 32)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint32(v)
 			case reflect.Uint64:
 				v, err := strconv.ParseUint(arg, 10, 64)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Float32:
 				v, err := strconv.ParseFloat(arg, 32)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = float32(v)
 			case reflect.Float64:
 				v, err := strconv.ParseFloat(arg, 64)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Bool:
 				v, err := strconv.ParseBool(arg)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Slice:
 				if len(arg) > 1 {

@@ -15,15 +15,6 @@ func valueOf(v interface{}) reflect.Value {
 	return reflect.ValueOf(v)
 }
 
-func typeOf(typ interface{}) reflect.Type {
-	if v, ok := typ.(reflect.Type); ok {
-		// check if it's already a reflect.Type.
-		return v
-	}
-
-	return reflect.TypeOf(typ)
-}
-
 // indirectType returns the value of a pointer-type "typ".
 // If "typ" is a pointer, array, chan, map or slice it returns its Elem,
 // otherwise returns the typ as it's.

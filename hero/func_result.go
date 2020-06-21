@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/kataras/iris/v12/context"
 
 	"github.com/fatih/structs"
+	"google.golang.org/protobuf/proto"
 )
 
 // ResultHandler describes the function type which should serve the "v" struct value.

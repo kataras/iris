@@ -87,7 +87,7 @@ func resolveDependency(v reflect.Value, dest *Dependency, funcDependencies ...*D
 		len(funcDependencies) > 0 && fromDependentFunc(v, dest, funcDependencies)
 }
 
-func fromDependencyHandler(v reflect.Value, dest *Dependency) bool {
+func fromDependencyHandler(_ reflect.Value, dest *Dependency) bool {
 	// It's already on the desired form, just return it.
 	dependency := dest.OriginalValue
 	handler, ok := dependency.(DependencyHandler)

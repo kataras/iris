@@ -30,7 +30,6 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
-	"github.com/golang/protobuf/proto"
 	"github.com/iris-contrib/blackfriday"
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
@@ -39,6 +38,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
+	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
 )
 
@@ -1879,8 +1879,6 @@ func (ctx *context) FullRequestURI() string {
 	return ctx.AbsoluteURI(ctx.Path())
 }
 
-const xForwardedForHeaderKey = "X-Forwarded-For"
-
 // RemoteAddr tries to parse and return the real client's request IP.
 //
 // Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -2396,13 +2394,11 @@ func (ctx *context) URLParamBool(name string) (bool, error) {
 // URLParams returns a map of GET query parameters separated by comma if more than one
 // it returns an empty map if nothing found.
 func (ctx *context) URLParams() map[string]string {
-	values := map[string]string{}
-
 	q := ctx.request.URL.Query()
-	if q != nil {
-		for k, v := range q {
-			values[k] = strings.Join(v, ",")
-		}
+	values := make(map[string]string, len(q))
+
+	for k, v := range q {
+		values[k] = strings.Join(v, ",")
 	}
 
 	return values
@@ -4815,7 +4811,7 @@ func (rs *rateReadSeeker) Read(buf []byte) (int, error) {
 	if n <= 0 {
 		return n, err
 	}
-	rs.limiter.WaitN(rs.ctx, n)
+	err = rs.limiter.WaitN(rs.ctx, n)
 	return n, err
 }
 

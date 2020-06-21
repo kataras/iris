@@ -182,7 +182,12 @@ func (w *ResponseRecorder) Clone() ResponseWriter {
 	wc.headers = w.headers
 	wc.chunks = w.chunks[0:]
 	if resW, ok := w.ResponseWriter.(*responseWriter); ok {
-		wc.ResponseWriter = &(*resW) // clone it
+		wc.ResponseWriter = &responseWriter{
+			ResponseWriter: resW.ResponseWriter,
+			statusCode:     resW.statusCode,
+			written:        resW.written,
+			beforeFlush:    resW.beforeFlush,
+		} // clone it
 	} else { // else just copy, may pointer, developer can change its behavior
 		wc.ResponseWriter = w.ResponseWriter
 	}
