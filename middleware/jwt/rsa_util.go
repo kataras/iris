@@ -41,7 +41,7 @@ func exportToFile(key *rsa.PrivateKey, filename string) error {
 		},
 	)
 
-	return ioutil.WriteFile(filename, encoded, 0644)
+	return ioutil.WriteFile(filename, encoded, 0600)
 }
 
 func importFromFile(filename string) (*rsa.PrivateKey, error) {

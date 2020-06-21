@@ -530,7 +530,7 @@ func WithSitemap(startURL string) Configurator {
 
 			handler := func(ctx Context) {
 				ctx.ContentType(context.ContentXMLHeaderValue)
-				ctx.Write(contentCopy)
+				ctx.Write(contentCopy) // nolint:errcheck
 			}
 			if app.builded {
 				routes := app.CreateRoutes([]string{MethodGet, MethodHead, MethodOptions}, s.Path, handler)
@@ -625,7 +625,8 @@ func (tc *TunnelingConfiguration) isEnabled() bool {
 }
 
 func (tc *TunnelingConfiguration) isNgrokRunning() bool {
-	_, err := http.Get(tc.WebInterface)
+	resp, err := http.Get(tc.WebInterface)
+	resp.Body.Close()
 	return err == nil
 }
 
@@ -723,6 +724,7 @@ func (tc TunnelingConfiguration) stopTunnel(t Tunnel) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != StatusNoContent {
 		return fmt.Errorf("stop return an unexpected status code: %d", resp.StatusCode)
@@ -904,7 +906,7 @@ type Configuration struct {
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
 	// will return an `iris.ErrEmptyForm` on empty request form data.
-	FireEmptyFormError bool `json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" yaml:"FireEmptyFormError"`
+	FireEmptyFormError bool `json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" toml:"FireEmptyFormError"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".

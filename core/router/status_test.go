@@ -85,7 +85,7 @@ func TestOnAnyErrorCode(t *testing.T) {
 func checkAndClearBuf(t *testing.T, buff *bytes.Buffer, expected string) {
 	t.Helper()
 
-	if got, expected := buff.String(), expected; got != expected {
+	if got := buff.String(); got != expected {
 		t.Fatalf("expected middleware to run before the error handler, expected: '%s' but got: '%s'", expected, got)
 	}
 

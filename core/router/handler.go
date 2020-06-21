@@ -128,7 +128,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	// before sort.
 	for _, r := range registeredRoutes {
 		if r.topLink != nil {
-			bindMultiParamTypesHandler(r.topLink, r)
+			bindMultiParamTypesHandler(r)
 		}
 	}
 
@@ -279,7 +279,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	return errgroup.Check(rp)
 }
 
-func bindMultiParamTypesHandler(top *Route, r *Route) {
+func bindMultiParamTypesHandler(r *Route) {
 	r.BuildHandlers()
 
 	// println("here for top: " + top.Name + " and current route: " + r.Name)

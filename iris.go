@@ -1198,7 +1198,7 @@ func (app *Application) tryInjectLiveReload() error {
 				rec.SetBody(body)
 			} else {
 				// Just append it.
-				rec.Write(scriptReloadJS)
+				rec.Write(scriptReloadJS) // nolint:errcheck
 			}
 
 			if _, has := rec.Header()[context.ContentLengthHeaderKey]; has {
@@ -1245,7 +1245,7 @@ func (app *Application) tryStartTunneling() {
 				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
 				directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
-				app.logger.Printer.Write(directLog)
+				app.logger.Printer.Write(directLog) // nolint:errcheck
 			}
 		})
 	})

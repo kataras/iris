@@ -10,7 +10,6 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
-	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v1.8.2
 	github.com/google/uuid v1.1.2-0.20200519141726-cb32006e483f
 	github.com/hashicorp/go-version v1.2.1
@@ -37,6 +36,7 @@ require (
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
+	google.golang.org/protobuf v1.24.0
 	gopkg.in/ini.v1 v1.57.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
