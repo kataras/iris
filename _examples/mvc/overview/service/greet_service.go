@@ -1,9 +1,10 @@
 package service
 
 import (
+	"fmt"
+
 	"app/database"
 	"app/environment"
-	"fmt"
 )
 
 // GreetService example service.

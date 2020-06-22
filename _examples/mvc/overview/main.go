@@ -12,10 +12,17 @@ import (
 
 func main() {
 	app := iris.New()
+	app.Get("/ping", pong).Describe("healthcheck")
+
 	mvc.Configure(app.Party("/greet"), setup)
 
 	// http://localhost:8080/greet?name=kataras
-	app.Listen(":8080", iris.WithLogLevel("debug"))
+	addr := ":" + environment.Getenv("PORT", ":8080")
+	app.Listen(addr, iris.WithLogLevel("debug"))
+}
+
+func pong(ctx iris.Context) {
+	ctx.WriteString("pong")
 }
 
 /*
@@ -35,9 +42,9 @@ func main() {
                    |                               |   |                            |
                    |                               |   |                            |
                    |                               |   |                            |
-      +------------+-----+     +-------------------v---v-----------------+     +----+------+
-      |  greeterWithLog  |     |  NewGreetService(Env, DB) GreetService  |     |  greeter  |
-      -------------+-----+     +---------------------------+-------------+     +----+------+
+    +--------------+-----+     +-------------------v---v-----------------+     +----+------+
+    | greeterWithLogging |     |  NewGreetService(Env, DB) GreetService  |     |  greeter  |
+    +--------------+-----+     +---------------------------+-------------+     +----+------+
                    |                                       |                        |
                    |                                       |                        |
                    |           +-----------------------------------------+          |
@@ -66,8 +73,9 @@ func main() {
 func setup(app *mvc.Application) {
 	// Register Dependencies.
 	// Tip: A dependency can depend on other dependencies too.
+	env := environment.ReadEnv("ENVIRONMENT", environment.DEV)
 	app.Register(
-		environment.DEV,         // DEV, PROD
+		env,                     // DEV, PROD
 		database.NewDB,          // sqlite, mysql
 		service.NewGreetService, // greeterWithLogging, greeter
 	)
