@@ -92,9 +92,7 @@ Create a `database/database.go` file and copy-paste the following:
 ```go
 package database
 
-import (
-	"app/environment"
-)
+import "app/environment"
 
 type DB interface {
 	Exec(q string) error
@@ -260,7 +258,7 @@ func (c *GreetController) Get(req model.Request) (model.Response, error) {
 }
 ```
 
-The `GreetController` depends on the `GreetService`. It serves the `GET: /greet` index path through its `Get` method. The `Get` method expecting a `model.Request` which contains a single field name of `Name` which will be extracted from the `URL Query Parameter 'name'` (because it's a `GET` requst and its `url:"name"` struct field).
+The `GreetController` depends on the `GreetService`. It serves the `GET: /greet` index path through its `Get` method. The `Get` method accepts a `model.Request` which contains a single field name of `Name` which will be extracted from the `URL Query Parameter 'name'` (because it's a `GET` requst and its `url:"name"` struct field).
 
 ## Wrap up
 
@@ -364,14 +362,17 @@ Install [Go](https://golang.org/dl) and run the application with:
 go run main.go
 ```
 
-### Docker
+<details><summary>Docker</summary>
+
+Download the [Dockerfile](https://raw.githubusercontent.com/kataras/iris/9b93c0dbb491dcedf49c91e89ca13bab884d116f/_examples/mvc/overview/Dockerfile) and [docker-compose.yml](https://raw.githubusercontent.com/kataras/iris/9b93c0dbb491dcedf49c91e89ca13bab884d116f/_examples/mvc/overview/docker-compose.yml) files to the `app` folder.
 
 Install [Docker](https://www.docker.com/) and execute the following command:
 
 ```sh
 $ docker-compose up
 ```
+</details>
 
 Visit http://localhost:8080?name=kataras.
 
-Now, replace the `main.go`'s `app.Register(environment.DEV` with `environment.PROD`, restart the application and refresh. You will see that a new database (`sqlite`) and another service of (`greeterWithLogging`) will be binded to the `GreetController`. With **a single change** you achieve to completety change the result.
+Optionally, replace the `main.go`'s `app.Register(environment.DEV` with `environment.PROD`, restart the application and refresh. You will see that a new database (`sqlite`) and another service of (`greeterWithLogging`) will be binded to the `GreetController`. With **a single change** you achieve to completety change the result.

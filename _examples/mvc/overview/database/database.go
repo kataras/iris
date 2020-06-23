@@ -1,8 +1,6 @@
 package database
 
-import (
-	"app/environment"
-)
+import "app/environment"
 
 // DB example database interface.
 type DB interface {

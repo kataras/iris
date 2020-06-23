@@ -1153,11 +1153,12 @@ type Context interface {
 	// Controller returns a reflect Value of the custom Controller from which this handler executed.
 	// It will return a Kind() == reflect.Invalid if the handler was not executed from within a controller.
 	Controller() reflect.Value
-	// RegisterDependency registers a struct dependency at serve-time
+	// RegisterDependency registers a struct or slice
+	// or pointer to struct dependency at request-time
 	// for the next handler in the chain. One value per type.
 	// Note that it's highly recommended to register
 	// your dependencies before server ran
-	// through APIContainer(app.ConfigureContainer) or MVC(mvc.New)
+	// through Party.ConfigureContainer or mvc.Application.Register
 	// in sake of minimum performance cost.
 	//
 	// See `UnregisterDependency` too.
@@ -5562,12 +5563,15 @@ const DependenciesContextKey = "iris.dependencies"
 // struct dependencies are stored with.
 type DependenciesMap map[reflect.Type]reflect.Value
 
-// RegisterDependency registers a struct dependency at serve-time
+// RegisterDependency registers a struct or slice
+// or pointer to struct dependency at request-time
 // for the next handler in the chain. One value per type.
 // Note that it's highly recommended to register
 // your dependencies before server ran
-// through APIContainer(app.ConfigureContainer) or MVC(mvc.New)
+// through Party.ConfigureContainer or mvc.Application.Register
 // in sake of minimum performance cost.
+//
+// See `UnregisterDependency` too.
 func (ctx *context) RegisterDependency(v interface{}) {
 	if v == nil {
 		return
