@@ -33,25 +33,14 @@ func (c *VisitController) Get() string {
 
 func newApp() *iris.Application {
 	app := iris.New()
+	// Configure sessions manager as we used to.
 	sess := sessions.New(sessions.Config{Cookie: "mysession_cookie_name"})
 	app.Use(sess.Handler())
 
 	visitApp := mvc.New(app)
-	// bind the current *session.Session, which is required, to the `VisitController.Session`
-	// and the time.Now() to the `VisitController.StartTime`.
-	visitApp.Register(
-		// if dependency is a function which accepts
-		// a Context and returns a single value
-		// then the result type of this function is resolved by the controller
-		// and on each request it will call the function with its Context
-		// and set the result(the *sessions.Session here) to the controller's field.
-		//
-		// If dependencies are registered without field or function's input arguments as
-		// consumers then those dependencies are being ignored before the server ran,
-		// so you can bind many dependecies and use them in different controllers.
-		// sess.Start, // However after version 12.2 sessions are automatically binded.
-		time.Now(),
-	)
+	visitApp.Register(time.Now())
+	// The `VisitController.Session` is automatically binded to the current `sessions.Session`.
+
 	visitApp.Handle(new(VisitController))
 
 	return app
@@ -60,7 +49,7 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 
-	// 1. open the browser
+	// 1. Prepare a client, e.g. your browser
 	// 2. navigate to http://localhost:8080
 	// 3. refresh the page some times
 	// 4. close the browser

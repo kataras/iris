@@ -24,6 +24,17 @@ func main() {
 		DisableSubdomainPersistence: false,
 		// Allow getting the session value stored by the request from the same request.
 		AllowReclaim: true,
+		/*
+			SessionIDGenerator: func(ctx iris.Context) string {
+				id:= ctx.GetHeader("X-Session-Id")
+				if id == "" {
+					id = // [generate ID here and set the header]
+					ctx.Header("X-Session-Id", id)
+				}
+
+				return id
+			},
+		*/
 	})
 
 	app := example.NewApp(sess)

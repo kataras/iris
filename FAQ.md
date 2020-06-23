@@ -55,4 +55,4 @@ Yes, https://chat.iris-go.com
 
 By people like you, who help us by donating small or large amounts of money.
 
-Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://www.paypal.me/kataras). Your name will be published [here](https://iris-go.com) after your approval via e-mail.
+Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://iris-go.com/donate). Your name will be published [here](https://iris-go.com) after your approval via e-mail.
