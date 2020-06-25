@@ -132,6 +132,7 @@
     * [Content Negotiation](response-writer/content-negotiation)
     * [Text, Markdown, YAML, HTML, JSON, JSONP, Msgpack, XML and Binary](response-writer/write-rest/main.go)
     * [Write Gzip](response-writer/write-gzip/main.go)
+    * [HTTP/2 Server Push](response-writer/http2push/main.go)
     * [Stream Writer](response-writer/stream-writer/main.go)
     * [Transactions](response-writer/transactions/main.go)
     * [SSE](response-writer/sse/main.go)
@@ -181,6 +182,7 @@
     * [Smart Contract](dependency-injection/smart-contract/main.go)
     * [JWT](dependency-injection/jwt/main.go)
         * [JWT (iris-contrib)](dependency-injection/jwt/contrib/main.go)
+    * [Register Dependency from Context](dependency-injection/context-register-dependency/main.go)
 * MVC
     * [Overview](mvc/overview)
     * [Repository and Service layers](mvc/repository)

@@ -605,6 +605,16 @@ var (
 	// ErrStopExecution if returned from a hero middleware or a request-scope dependency
 	// stops the handler's execution, see _examples/dependency-injection/basic/middleware.
 	ErrStopExecution = hero.ErrStopExecution
+	// ErrHijackNotSupported is returned by the Hijack method to
+	// indicate that Hijack feature is not available.
+	//
+	// A shortcut for the `context#ErrHijackNotSupported`.
+	ErrHijackNotSupported = context.ErrHijackNotSupported
+	// ErrPushNotSupported is returned by the Push method to
+	// indicate that HTTP/2 Push support is not available.
+	//
+	// A shortcut for the `context#ErrPushNotSupported`.
+	ErrPushNotSupported = context.ErrPushNotSupported
 )
 
 // Constants for input argument at `router.RouteRegisterRule`.
