@@ -349,6 +349,10 @@ func (w *responseWriter) WriteTo(to ResponseWriter) {
 	// the body is not copied, this writer doesn't support recording
 }
 
+// ErrHijackNotSupported is returned by the Hijack method to
+// indicate that Hijack feature is not available.
+var ErrHijackNotSupported = errors.New("hijack is not supported by this ResponseWriter")
+
 // Hijack lets the caller take over the connection.
 // After a call to Hijack(), the HTTP server library
 // will not do anything else with the connection.
@@ -366,7 +370,7 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return h.Hijack()
 	}
 
-	return nil, nil, errors.New("hijack is not supported by this ResponseWriter")
+	return nil, nil, ErrHijackNotSupported
 }
 
 // Flusher indicates if `Flush` is supported by the client.

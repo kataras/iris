@@ -84,6 +84,10 @@ func main() {
 		ctx.YAML(ExampleYAML{Name: "Iris", ServerAddr: "localhost:8080"})
 	})
 
+	// app.Get("/protobuf", func(ctx iris.Context) {
+	// 	ctx.Protobuf(proto.Message)
+	// })
+
 	app.Get("/msgpack", func(ctx iris.Context) {
 		u := User{
 			Firstname: "John",

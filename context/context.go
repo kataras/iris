@@ -3624,7 +3624,7 @@ type JSON struct {
 	Indent       string
 	Prefix       string
 	ASCII        bool // if true writes with unicode to ASCII content.
-	Secure       bool // if true then it adds a "while(1);" when Go slice (to JSON Array) value.
+	Secure       bool // if true then it prepends a "while(1);" when Go slice (to JSON Array) value.
 }
 
 // JSONP contains the options for the JSONP (Context's) Renderer.

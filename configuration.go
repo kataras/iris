@@ -626,8 +626,12 @@ func (tc *TunnelingConfiguration) isEnabled() bool {
 
 func (tc *TunnelingConfiguration) isNgrokRunning() bool {
 	resp, err := http.Get(tc.WebInterface)
+	if err != nil {
+		return false
+	}
+
 	resp.Body.Close()
-	return err == nil
+	return true
 }
 
 // https://ngrok.com/docs
