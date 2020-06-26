@@ -18,10 +18,10 @@ func main() {
 	// Start the server (HTTPS) on port 443,
 	// and a secondary of (HTTP) on port :80 which redirects requests to their HTTPS version.
 	// This is a blocking func.
-	app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key"))
+	app.Run(iris.TLS("127.0.0.1:443", "mycert.crt", "mykey.key"))
 
 	// Note: to disable automatic "http://" to "https://" redirections pass the `iris.TLSNoRedirect`
 	// host configurator to TLS or AutoTLS functions, e.g:
 	//
-	// app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))
+	// app.Run(iris.TLS("127.0.0.1:443", "mycert.crt", "mykey.key", iris.TLSNoRedirect))
 }

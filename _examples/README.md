@@ -15,11 +15,11 @@
     * [UNIX socket file](http-server/listen-unix/main.go)
     * [TLS](http-server/listen-tls/main.go)
     * [Letsencrypt (Automatic Certifications)](http-server/listen-letsencrypt/main.go)
+    * [Socket Sharding (SO_REUSEPORT)](http-server/socket-sharding/main.go)
     * [Graceful Shutdown](http-server/graceful-shutdown/default-notifier/main.go)
     * [Notify on shutdown](http-server/notify-on-shutdown/main.go)
     * Custom TCP Listener
         * [Common net.Listener](http-server/custom-listener/main.go)
-        * [SO_REUSEPORT for unix systems](http-server/custom-listener/unix-reuseport/main.go)
     * Custom HTTP Server
         * [Pass a custom Server](http-server/custom-httpserver/easy-way/main.go)
         * [Use Iris as a single http.Handler](http-server/custom-httpserver/std-way/main.go)

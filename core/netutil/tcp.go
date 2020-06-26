@@ -1,6 +1,7 @@
 package netutil
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -38,16 +39,17 @@ func (l tcpKeepAliveListener) Accept() (net.Conn, error) {
 }
 
 // TCP returns a new tcp(ipv6 if supported by network) and an error on failure.
-func TCP(addr string) (net.Listener, error) {
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		return nil, err
+func TCP(addr string, reuse bool) (net.Listener, error) {
+	var cfg net.ListenConfig
+	if reuse {
+		cfg.Control = control
 	}
-	return l, nil
+
+	return cfg.Listen(context.Background(), "tcp", addr)
 }
 
 // TCPKeepAlive returns a new tcp keep alive Listener and an error on failure.
-func TCPKeepAlive(addr string) (ln net.Listener, err error) {
+func TCPKeepAlive(addr string, reuse bool) (ln net.Listener, err error) {
 	// if strings.HasPrefix(addr, "127.0.0.1") {
 	// 	// it's ipv4, use ipv4 tcp listener instead of the default ipv6. Don't.
 	// 	ln, err = net.Listen("tcp4", addr)
@@ -55,7 +57,7 @@ func TCPKeepAlive(addr string) (ln net.Listener, err error) {
 	// 	ln, err = TCP(addr)
 	// }
 
-	ln, err = TCP(addr)
+	ln, err = TCP(addr, reuse)
 	if err != nil {
 		return nil, err
 	}
@@ -110,19 +112,20 @@ func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
 // LETSENCRYPT returns a new Automatic TLS Listener using letsencrypt.org service
 // receives three parameters,
 // the first is the host of the server,
-// second can be the server name(domain) or empty if skip verification is the expected behavior (not recommended)
-// and the third is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
+// second one should declare if the underline tcp listener can be binded more than once,
+// third can be the server name(domain) or empty if skip verification is the expected behavior (not recommended),
+// and the forth is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
 // if you want to disable cache directory then simple give it a value of empty string ""
 //
 // does NOT supports localhost domains for testing.
 //
 // this is the recommended function to use when you're ready for production state.
-func LETSENCRYPT(addr string, serverName string, cacheDirOptional ...string) (net.Listener, error) {
+func LETSENCRYPT(addr string, reuse bool, serverName string, cacheDirOptional ...string) (net.Listener, error) {
 	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
 		addr += ":443"
 	}
 
-	l, err := TCP(addr)
+	l, err := TCP(addr, reuse)
 	if err != nil {
 		return nil, err
 	}

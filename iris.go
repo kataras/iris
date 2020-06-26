@@ -1107,6 +1107,10 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 		return err
 	}
 
+	app.ConfigureHost(func(host *Supervisor) {
+		host.SocketSharding = app.config.SocketSharding
+	})
+
 	app.tryStartTunneling()
 
 	if len(app.Hosts) > 0 {

@@ -12,6 +12,8 @@ type ConfigurationReadOnly interface {
 	GetVHost() string
 	// GetLogLevel returns the LogLevel field.
 	GetLogLevel() string
+	// GetSocketSharding returns the SocketSharding field.
+	GetSocketSharding() bool
 	// GetDisablePathCorrection returns the DisablePathCorrection field
 	GetDisablePathCorrection() bool
 	// GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.

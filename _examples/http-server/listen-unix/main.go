@@ -15,5 +15,3 @@ func main() {
 
 	app.Run(iris.Listener(l))
 }
-
-// Look "custom-listener/unix-reuseport" too.

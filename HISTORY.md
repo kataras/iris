@@ -371,6 +371,8 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
+
 - Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/master/_examples/mvc/versioned-controller/main.go).
 
 - Fix [#1539](https://github.com/kataras/iris/issues/1539).

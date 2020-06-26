@@ -192,6 +192,13 @@ func WithLogLevel(level string) Configurator {
 	}
 }
 
+// WithSocketSharding sets the `Configuration.SocketSharding` field to true.
+func WithSocketSharding(app *Application) {
+	// Note(@kataras): It could be a host Configurator but it's an application setting in order
+	// to configure it through yaml/toml files as well.
+	app.config.SocketSharding = true
+}
+
 // WithoutServerError will cause to ignore the matched "errors"
 // from the main application's `Run/Listen` function.
 //
@@ -805,10 +812,22 @@ type Configuration struct {
 	// * "debug"
 	LogLevel string `json:"logLevel" yaml:"LogLevel" toml:"LogLevel" env:"LOG_LEVEL"`
 
+	// SocketSharding enables SO_REUSEPORT (or SO_REUSEADDR for windows)
+	// on all registered Hosts.
+	// This option allows linear scaling server performance on multi-CPU servers.
+	//
+	// Please read the following:
+	// 1. https://stackoverflow.com/a/14388707
+	// 2. https://stackoverflow.com/a/59692868
+	// 3. https://www.nginx.com/blog/socket-sharding-nginx-release-1-9-1/
+	// 4. (BOOK) Learning HTTP/2: A Practical Guide for Beginners:
+	//	  Page 37, To Shard or Not to Shard?
+	//
+	// Defaults to false.
+	SocketSharding bool `json:"socketSharding" yaml:"SocketSharding" toml:"SocketSharding" env:"SOCKET_SHARDING"`
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
 	Tunneling TunnelingConfiguration `json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
-
 	// IgnoreServerErrors will cause to ignore the matched "errors"
 	// from the main application's `Run` function.
 	// This is a slice of string, not a slice of error
@@ -1046,6 +1065,11 @@ func (c Configuration) GetLogLevel() string {
 	return c.vhost
 }
 
+// GetSocketSharding returns the SocketSharding field.
+func (c Configuration) GetSocketSharding() bool {
+	return c.SocketSharding
+}
+
 // GetDisablePathCorrection returns the DisablePathCorrection field.
 func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
@@ -1180,6 +1204,10 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.LogLevel; v != "" {
 			main.LogLevel = v
+		}
+
+		if v := c.SocketSharding; v {
+			main.SocketSharding = v
 		}
 
 		if c.Tunneling.isEnabled() {
@@ -1320,6 +1348,7 @@ func WithConfiguration(c Configuration) Configurator {
 func DefaultConfiguration() Configuration {
 	return Configuration{
 		LogLevel:                          "info",
+		SocketSharding:                    false,
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,

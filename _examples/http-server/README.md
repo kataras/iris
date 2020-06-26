@@ -11,7 +11,8 @@ we use the `iris.Addr` which is an `iris.Runner` type
 
 ```go
 // Listening on tcp with network address 0.0.0.0:8080
-app.Listen(":8080")
+// app.Listen(":8080") it's a shortcut of:
+app.Run(iris.Addr(":8080"))
 ```
 
 Sometimes you have created a standard net/http server somewhere else in your app and want to use that to serve the Iris web app
@@ -59,53 +60,6 @@ func main() {
     }
 
     if err = os.Chmod(socketFile, mode); err != nil {
-        app.Logger().Fatal(err)
-    }
-
-    app.Run(iris.Listener(l))
-}
-```
-
-UNIX and BSD hosts can take advantage of the reuse port feature
-
-```go
-package main
-
-import (
-    // Package tcplisten provides customizable TCP net.Listener with various
-    // performance-related options:
-    //
-    //   - SO_REUSEPORT. This option allows linear scaling server performance
-    //     on multi-CPU servers.
-    //     See https://www.nginx.com/blog/socket-sharding-nginx-release-1-9-1/ for details.
-    //
-    //   - TCP_DEFER_ACCEPT. This option expects the server reads from the accepted
-    //     connection before writing to them.
-    //
-    //   - TCP_FASTOPEN. See https://lwn.net/Articles/508865/ for details.
-    "github.com/valyala/tcplisten"
-
-    "github.com/kataras/iris/v12"
-)
-
-// go get github.com/valyala/tcplisten
-// go run main.go
-
-func main() {
-    app := iris.New()
-
-    app.Get("/", func(ctx iris.Context) {
-        ctx.HTML("<h1>Hello World!</h1>")
-    })
-
-    listenerCfg := tcplisten.Config{
-        ReusePort:   true,
-        DeferAccept: true,
-        FastOpen:    true,
-    }
-
-    l, err := listenerCfg.NewListener("tcp", ":8080")
-    if err != nil {
         app.Logger().Fatal(err)
     }
 
