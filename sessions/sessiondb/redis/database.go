@@ -31,7 +31,6 @@ type Config struct {
 	Addr string
 	// Clusters a list of network addresses for clusters.
 	// If not empty "Addr" is ignored.
-	// Currently only RadixCluster() Driver supports it.
 	Clusters []string
 	// Password string .If no password then no 'AUTH'. Defaults to "".
 	Password string
@@ -51,7 +50,7 @@ type Config struct {
 	// See https://golang.org/pkg/crypto/tls/#Config
 	TLSConfig *tls.Config
 
-	// Driver supports `Redigo()` or `Radix()` or `RadixCluster()` go clients for redis.
+	// Driver supports `Redigo()` or `Radix()` go clients for redis.
 	// Configure each driver by the return value of their constructors.
 	//
 	// Defaults to `Redigo()`.
