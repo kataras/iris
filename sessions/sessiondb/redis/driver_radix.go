@@ -4,12 +4,17 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strconv"
 
 	"github.com/mediocregopher/radix/v3"
 	"github.com/mediocregopher/radix/v3/resp/resp2"
 )
+
+// radixPool an interface to complete both *radix.Pool and *radix.Cluster.
+type radixPool interface {
+	Do(a radix.Action) error
+	Close() error
+}
 
 // RadixDriver the Redis service based on the radix go client,
 // contains the config and the redis pool.
@@ -18,7 +23,7 @@ type RadixDriver struct {
 	Connected bool
 	// Config the read-only redis database config.
 	Config Config
-	pool   *radix.Pool
+	pool   radixPool
 }
 
 // Connect connects to the redis, called only once
@@ -70,6 +75,12 @@ func (r *RadixDriver) Connect(c Config) error {
 
 	var connFunc radix.ConnFunc
 
+	/* Note(@kataras): according to #1545 the below does NOT work, and we should
+	use the Cluster instance itself to fire requests.
+	We need a separate `radix.Cluster` instance to do the calls,
+	fortunally both Pool and Cluster implement the same Do and Close methods we need,
+	so a new `radixPool` interface to remove any dupl code is used instead.
+
 	if len(c.Clusters) > 0 {
 		cluster, err := radix.NewCluster(c.Clusters)
 		if err != nil {
@@ -84,14 +95,31 @@ func (r *RadixDriver) Connect(c Config) error {
 			return radix.Dial(c.Network, node.Addr, options...)
 		}
 	} else {
-		connFunc = func(network, addr string) (radix.Conn, error) {
-			return radix.Dial(c.Network, c.Addr, options...)
-		}
+	*/
+	connFunc = func(network, addr string) (radix.Conn, error) {
+		return radix.Dial(c.Network, c.Addr, options...)
 	}
 
-	pool, err := radix.NewPool(c.Network, c.Addr, c.MaxActive, radix.PoolConnFunc(connFunc))
-	if err != nil {
-		return err
+	var pool radixPool
+
+	if len(c.Clusters) > 0 {
+		poolFunc := func(network, addr string) (radix.Client, error) {
+			return radix.NewPool(network, addr, c.MaxActive, radix.PoolConnFunc(connFunc))
+		}
+
+		cluster, err := radix.NewCluster(c.Clusters, radix.ClusterPoolFunc(poolFunc))
+		if err != nil {
+			return err
+		}
+
+		pool = cluster
+	} else {
+		p, err := radix.NewPool(c.Network, c.Addr, c.MaxActive, radix.PoolConnFunc(connFunc))
+		if err != nil {
+			return err
+		}
+
+		pool = p
 	}
 
 	r.Connected = true
