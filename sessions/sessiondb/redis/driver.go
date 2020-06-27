@@ -19,7 +19,6 @@ type Driver interface {
 var (
 	_ Driver = (*RedigoDriver)(nil)
 	_ Driver = (*RadixDriver)(nil)
-	_ Driver = (*RadixClusterDriver)(nil)
 )
 
 // Redigo returns the driver for the redigo go redis client.
@@ -32,9 +31,4 @@ func Redigo() *RedigoDriver {
 // Radix returns the driver for the radix go redis client.
 func Radix() *RadixDriver {
 	return &RadixDriver{}
-}
-
-// RadixCluster returns the driver for the radix go redis client(only support redis cluster).
-func RadixCluster() *RadixClusterDriver {
-	return &RadixClusterDriver{}
 }
