@@ -31,7 +31,6 @@ type Config struct {
 	Addr string
 	// Clusters a list of network addresses for clusters.
 	// If not empty "Addr" is ignored.
-	// Currently only Radix() Driver supports it.
 	Clusters []string
 	// Password string .If no password then no 'AUTH'. Defaults to "".
 	Password string
@@ -119,8 +118,7 @@ func New(cfg ...Config) *Database {
 	db := &Database{c: c}
 	_, err := db.c.Driver.PingPong()
 	if err != nil {
-		golog.Debugf("error connecting to redis: %v", err)
-		return nil
+		panic(err)
 	}
 	// runtime.SetFinalizer(db, closeDB)
 	return db
