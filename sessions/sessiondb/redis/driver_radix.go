@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strconv"
 
 	"github.com/mediocregopher/radix/v3"
@@ -69,26 +68,9 @@ func (r *RadixDriver) Connect(c Config) error {
 	}
 
 	var connFunc radix.ConnFunc
-
-	if len(c.Clusters) > 0 {
-		cluster, err := radix.NewCluster(c.Clusters)
-		if err != nil {
-			// maybe an
-			// ERR This instance has cluster support disabled
-			return err
-		}
-
-		connFunc = func(network, addr string) (radix.Conn, error) {
-			topo := cluster.Topo()
-			node := topo[rand.Intn(len(topo))]
-			return radix.Dial(c.Network, node.Addr, options...)
-		}
-	} else {
-		connFunc = func(network, addr string) (radix.Conn, error) {
-			return radix.Dial(c.Network, c.Addr, options...)
-		}
+	connFunc = func(network, addr string) (radix.Conn, error) {
+		return radix.Dial(c.Network, c.Addr, options...)
 	}
-
 	pool, err := radix.NewPool(c.Network, c.Addr, c.MaxActive, radix.PoolConnFunc(connFunc))
 	if err != nil {
 		return err
