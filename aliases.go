@@ -66,6 +66,10 @@ type (
 	//
 	// It is an alias of the `context#JSON` type.
 	JSON = context.JSON
+	// ProtoMarshalOptions is a type alias for protojson.MarshalOptions.
+	ProtoMarshalOptions = context.ProtoMarshalOptions
+	// ProtoUnmarshalOptions is a type alias for protojson.UnmarshalOptions.
+	ProtoUnmarshalOptions = context.ProtoUnmarshalOptions
 	// XML the optional settings for XML renderer.
 	//
 	// It is an alias of the `context#XML` type.

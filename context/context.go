@@ -38,6 +38,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
 )
@@ -681,7 +682,11 @@ type Context interface {
 	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 	ReadQuery(ptr interface{}) error
 	// ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
+	// Look `ReadJSONProtobuf` too.
 	ReadProtobuf(ptr proto.Message) error
+	// ReadJSONProtobuf reads a JSON body request into the given "ptr" proto.Message.
+	// Look `ReadProtobuf` too.
+	ReadJSONProtobuf(ptr proto.Message, opts ...protojson.UnmarshalOptions) error
 	// ReadMsgPack binds the request body of msgpack format to the "ptr" and returns any error.
 	ReadMsgPack(ptr interface{}) error
 	// ReadBody binds the request body to the "ptr" depending on the HTTP Method and the Request's Content-Type.
@@ -883,6 +888,8 @@ type Context interface {
 	// HTML writes out a string as text/html.
 	HTML(format string, args ...interface{}) (int, error)
 	// JSON marshals the given interface object and writes the JSON response.
+	// If the value is a compatible `proto.Message` one
+	// then it only uses the options.Proto settings to marshal.
 	JSON(v interface{}, options ...JSON) (int, error)
 	// JSONP marshals the given interface object and writes the JSON response.
 	JSONP(v interface{}, options ...JSONP) (int, error)
@@ -3000,6 +3007,7 @@ func (ctx *context) ReadQuery(ptr interface{}) error {
 }
 
 // ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
+// Look `ReadJSONProtobuf` too.
 func (ctx *context) ReadProtobuf(ptr proto.Message) error {
 	rawData, err := ctx.GetBody()
 	if err != nil {
@@ -3007,6 +3015,27 @@ func (ctx *context) ReadProtobuf(ptr proto.Message) error {
 	}
 
 	return proto.Unmarshal(rawData, ptr)
+}
+
+// ProtoUnmarshalOptions is a type alias for protojson.UnmarshalOptions.
+type ProtoUnmarshalOptions = protojson.UnmarshalOptions
+
+var defaultProtobufUnmarshalOptions ProtoUnmarshalOptions
+
+// ReadJSONProtobuf reads a JSON body request into the given "ptr" proto.Message.
+// Look `ReadProtobuf` too.
+func (ctx *context) ReadJSONProtobuf(ptr proto.Message, opts ...ProtoUnmarshalOptions) error {
+	rawData, err := ctx.GetBody()
+	if err != nil {
+		return err
+	}
+
+	opt := defaultProtobufUnmarshalOptions
+	if len(opts) > 0 {
+		opt = opts[1]
+	}
+
+	return opt.Unmarshal(rawData, ptr)
 }
 
 // ReadMsgPack binds the request body of msgpack format to the "ptr" and returns any error.
@@ -3615,6 +3644,9 @@ func (ctx *context) HTML(format string, args ...interface{}) (int, error) {
 	return ctx.Writef(format, args...)
 }
 
+// ProtoMarshalOptions is a type alias for protojson.MarshalOptions.
+type ProtoMarshalOptions = protojson.MarshalOptions
+
 // JSON contains the options for the JSON (Context's) Renderer.
 type JSON struct {
 	// http-specific
@@ -3625,6 +3657,8 @@ type JSON struct {
 	Prefix       string
 	ASCII        bool // if true writes with unicode to ASCII content.
 	Secure       bool // if true then it prepends a "while(1);" when Go slice (to JSON Array) value.
+	// proto.Message specific marshal options.
+	Proto ProtoMarshalOptions
 }
 
 // JSONP contains the options for the JSONP (Context's) Renderer.
@@ -3672,6 +3706,15 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 		result []byte
 		err    error
 	)
+
+	if m, ok := v.(proto.Message); ok {
+		result, err = options.Proto.Marshal(m)
+		if err != nil {
+			return 0, err
+		}
+
+		return writer.Write(result)
+	}
 
 	if !optimize && options.Indent == "" {
 		options.Indent = "  "
@@ -3746,6 +3789,8 @@ func stringToBytes(s string) []byte {
 var DefaultJSONOptions = JSON{}
 
 // JSON marshals the given interface object and writes the JSON response to the client.
+// If the value is a compatible `proto.Message` one
+// then it only uses the options.Proto settings to marshal.
 func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	options := DefaultJSONOptions
 

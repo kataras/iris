@@ -131,6 +131,7 @@
 * Response Writer
     * [Content Negotiation](response-writer/content-negotiation)
     * [Text, Markdown, YAML, HTML, JSON, JSONP, Msgpack, XML and Binary](response-writer/write-rest/main.go)
+    * [Protocol Buffers](response-writer/protobuf/main.go)
     * [Write Gzip](response-writer/write-gzip/main.go)
     * [HTTP/2 Server Push](response-writer/http2push/main.go)
     * [Stream Writer](response-writer/stream-writer/main.go)

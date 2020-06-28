@@ -73,7 +73,9 @@ func main() {
 	})
 
 	app.Get("/xml", func(ctx iris.Context) {
-		ctx.XML(ExampleXML{One: "hello", Two: "xml"}) // or iris.Map{"One":"hello"...}
+		ctx.XML(ExampleXML{One: "hello", Two: "xml"})
+		// OR:
+		// ctx.XML(iris.XMLMap("keys", iris.Map{"key": "value"}))
 	})
 
 	app.Get("/markdown", func(ctx iris.Context) {
@@ -82,6 +84,8 @@ func main() {
 
 	app.Get("/yaml", func(ctx iris.Context) {
 		ctx.YAML(ExampleYAML{Name: "Iris", ServerAddr: "localhost:8080"})
+		// OR:
+		// ctx.YAML(iris.Map{"name": "Iris", "serverAddr": "localhost:8080"})
 	})
 
 	// app.Get("/protobuf", func(ctx iris.Context) {

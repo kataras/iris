@@ -23,18 +23,18 @@ require (
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.8
 	github.com/kataras/sitemap v0.0.5
-	github.com/klauspost/compress v1.10.9
+	github.com/klauspost/compress v1.10.10
 	github.com/mediocregopher/radix/v3 v3.5.1
 	github.com/microcosm-cc/bluemonday v1.0.3
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
-	github.com/square/go-jose/v3 v3.0.0-20200603004136-8ccb8a19e809
+	github.com/square/go-jose/v3 v3.0.0-20200622023058-052237293361
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	go.etcd.io/bbolt v1.3.5
-	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
-	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
-	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/net v0.0.0-20200625001655-4c5254603344
+	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 	google.golang.org/protobuf v1.24.0
