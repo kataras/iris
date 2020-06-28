@@ -442,7 +442,7 @@ New Context Methods:
 - `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
 - `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
 - `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
-- `Context.Protobuf(proto.Message)` sends protobuf to the client
+- `Context.Protobuf(proto.Message)` sends protobuf to the client (note that the `Context.JSON` is able to send protobuf as JSON)
 - `Context.MsgPack(interface{})` sends msgpack format data to the client
 - `Context.ReadProtobuf(ptr)` binds request body to a proto message
 - `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
