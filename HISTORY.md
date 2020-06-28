@@ -445,6 +445,7 @@ New Context Methods:
 - `Context.Protobuf(proto.Message)` sends protobuf to the client
 - `Context.MsgPack(interface{})` sends msgpack format data to the client
 - `Context.ReadProtobuf(ptr)` binds request body to a proto message
+- `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
 - `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
 - `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
 - `Context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead

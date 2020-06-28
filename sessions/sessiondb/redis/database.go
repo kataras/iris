@@ -31,6 +31,7 @@ type Config struct {
 	Addr string
 	// Clusters a list of network addresses for clusters.
 	// If not empty "Addr" is ignored.
+	// Currently only Radix() Driver supports it.
 	Clusters []string
 	// Password string .If no password then no 'AUTH'. Defaults to "".
 	Password string
