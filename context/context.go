@@ -286,15 +286,14 @@ type Context interface {
 	// it will also fire the specified error code handler.
 	StopWithProblem(statusCode int, problem Problem)
 
-	// OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
+	// OnConnectionClose registers the "cb" function which will fire
+	// (on its own goroutine, no need to be registered goroutine by the end-dev)
 	// when the underlying connection has gone away.
 	//
 	// This mechanism can be used to cancel long operations on the server
 	// if the client has disconnected before the response is ready.
 	//
-	// It depends on the `http#CloseNotify`.
-	// CloseNotify may wait to notify until Request.Body has been
-	// fully read.
+	// It depends on the Request's Context.Done() channel.
 	//
 	// After the main Handler has returned, there is no guarantee
 	// that the channel receives a value.
@@ -303,8 +302,6 @@ type Context interface {
 	// The "cb" will not fire for sure if the output value is false.
 	//
 	// Note that you can register only one callback for the entire request handler chain/per route.
-	//
-	// Look the `ResponseWriter#CloseNotifier` for more.
 	OnConnectionClose(fnGoroutine func()) bool
 	// OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
 	// and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
@@ -775,10 +772,7 @@ type Context interface {
 	//     * if response body is streamed from slow external sources.
 	//     * if response body must be streamed to the client in chunks.
 	//     (aka `http server push`).
-	//
-	// receives a function which receives the response writer
-	// and returns false when it should stop writing, otherwise true in order to continue
-	StreamWriter(writer func(w io.Writer) bool)
+	StreamWriter(writer func(w io.Writer) error) error
 
 	//  +------------------------------------------------------------+
 	//  | Body Writers with compression                              |
@@ -1644,15 +1638,14 @@ func (ctx *context) StopWithProblem(statusCode int, problem Problem) {
 	ctx.Problem(problem)
 }
 
-// OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
+// OnConnectionClose registers the "cb" function which will fire
+// (on its own goroutine, no need to be registered goroutine by the end-dev)
 // when the underlying connection has gone away.
 //
 // This mechanism can be used to cancel long operations on the server
 // if the client has disconnected before the response is ready.
 //
-// It depends on the `http#CloseNotify`.
-// CloseNotify may wait to notify until Request.Body has been
-// fully read.
+// It depends on the Request's Context.Done() channel.
 //
 // After the main Handler has returned, there is no guarantee
 // that the channel receives a value.
@@ -1661,25 +1654,21 @@ func (ctx *context) StopWithProblem(statusCode int, problem Problem) {
 // The "cb" will not fire for sure if the output value is false.
 //
 // Note that you can register only one callback for the entire request handler chain/per route.
-//
-// Look the `ResponseWriter#CloseNotifier` for more.
 func (ctx *context) OnConnectionClose(cb func()) bool {
 	if cb == nil {
 		return false
 	}
 
-	// Note that `ctx.ResponseWriter().CloseNotify()` can already do the same
-	// but it returns a channel which will never fire if it the protocol version is not compatible,
-	// here we don't want to allocate an empty channel, just skip it.
-	notifier, ok := ctx.writer.CloseNotifier()
-	if !ok {
+	notifyClose := ctx.Request().Context().Done()
+	if notifyClose == nil {
 		return false
 	}
 
-	notify := notifier.CloseNotify()
 	go func() {
-		<-notify
+		<-notifyClose
 		cb()
+		// Callers can check the error
+		// through `Context.Request().Context().Err()`.
 	}()
 
 	return true
@@ -3294,23 +3283,20 @@ func (ctx *context) WriteWithExpiration(body []byte, modtime time.Time) (int, er
 //     * if response body is streamed from slow external sources.
 //     * if response body must be streamed to the client in chunks.
 //     (aka `http server push`).
-//
-// receives a function which receives the response writer
-// and returns false when it should stop writing, otherwise true in order to continue
-func (ctx *context) StreamWriter(writer func(w io.Writer) bool) {
-	w := ctx.writer
-	notifyClosed := w.CloseNotify()
+func (ctx *context) StreamWriter(writer func(w io.Writer) error) error {
+	cancelCtx := ctx.Request().Context()
+	notifyClosed := cancelCtx.Done()
+
 	for {
 		select {
 		// response writer forced to close, exit.
 		case <-notifyClosed:
-			return
+			return cancelCtx.Err()
 		default:
-			shouldContinue := writer(w)
-			w.Flush()
-			if !shouldContinue {
-				return
+			if err := writer(ctx.writer); err != nil {
+				return err
 			}
+			ctx.writer.Flush()
 		}
 	}
 }
