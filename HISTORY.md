@@ -454,7 +454,7 @@ New Context Methods:
 
 Breaking Changes:
 
-
+- `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
 - Fixed handler's error response not be respected when response recorder or gzip writer was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder or gzip writer).
 - `Context.String()` (rarely used by end-developers) it does not return a unique string anymore, to achieve the old representation you must call the new `Context.SetID` method first.
 - `iris.CookieEncode` and `CookieDecode` are replaced with the `iris.CookieEncoding`.
