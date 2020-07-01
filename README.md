@@ -58,7 +58,7 @@ $ go run main.go
 
 </details>
 
-[![run in the browser](https://img.shields.io/badge/Run-in%20the%20Browser-348798.svg?style=for-the-badge&logo=repl.it)](https://repl.it/@kataras/Iris-Hello-World)
+[![run in the browser](https://img.shields.io/badge/Run-in%20the%20Browser-348798.svg?style=for-the-badge&logo=repl.it)](https://bit.ly/2YJeSZe)
 
 Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wiki)** making it easy to get started with the framework.
 

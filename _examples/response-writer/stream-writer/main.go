@@ -18,7 +18,8 @@ func main() {
 		ctx.Header("Transfer-Encoding", "chunked")
 		i := 0
 		ints := []int{1, 2, 3, 5, 7, 9, 11, 13, 15, 17, 23, 29}
-		// Send the response in chunks and wait for half a second between each chunk.
+		// Send the response in chunks and wait for half a second between each chunk,
+		// until connection close.
 		err := ctx.StreamWriter(func(w io.Writer) error {
 			ctx.Writef("Message number %d<br>", ints[i])
 			time.Sleep(500 * time.Millisecond) // simulate delay.
@@ -40,20 +41,30 @@ func main() {
 		Number int `json:"number"`
 	}
 
-	app.Get("/alternative", func(ctx iris.Context) {
+	app.Get("/json", func(ctx iris.Context) {
 		ctx.Header("Transfer-Encoding", "chunked")
 		i := 0
 		ints := []int{1, 2, 3, 5, 7, 9, 11, 13, 15, 17, 23, 29}
-		// Send the response in chunks and wait for half a second between each chunk.
+		// Send the response in chunks and wait for half a second between each chunk,
+		// until connection close.
+		notifyClose := ctx.Request().Context().Done()
 		for {
-			ctx.JSON(messageNumber{Number: ints[i]})
-			ctx.WriteString("\n")
-			time.Sleep(500 * time.Millisecond) // simulate delay.
-			if i == len(ints)-1 {
-				break
+			select {
+			case <-notifyClose:
+				// err := ctx.Request().Context().Err()
+				ctx.Application().Logger().Infof("Connection closed, loop end.")
+				return
+			default:
+				ctx.JSON(messageNumber{Number: ints[i]})
+				ctx.WriteString("\n")
+				time.Sleep(500 * time.Millisecond) // simulate delay.
+				if i == len(ints)-1 {
+					ctx.Application().Logger().Infof("Loop end.")
+					return
+				}
+				i++
+				ctx.ResponseWriter().Flush()
 			}
-			i++
-			ctx.ResponseWriter().Flush()
 		}
 	})
 
