@@ -425,6 +425,8 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.Clone() Context` returns a copy of the Context.
+- `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
 - `Context.GzipReader(enable bool)` method and `iris.GzipReader` middleware to enable future request read body calls to decompress data using gzip, [example](_examples/request-body/read-gzip).
 - `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
@@ -448,12 +450,12 @@ New Context Methods:
 - `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
 - `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
 - `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
-- `Context.Defer(Handler)` works like `Party.Done` but for the request life-cycle instead
 - `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
 - `Context.Controller() reflect.Value` returns the current MVC Controller value.
 
 Breaking Changes:
 
+- `Context.OnClose` and `Context.OnCloseConnection` now both accept an `iris.Handler` instead of a simple `func()` as their callback.
 - `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
 - Fixed handler's error response not be respected when response recorder or gzip writer was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder or gzip writer).
 - `Context.String()` (rarely used by end-developers) it does not return a unique string anymore, to achieve the old representation you must call the new `Context.SetID` method first.

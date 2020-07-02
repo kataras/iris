@@ -21,7 +21,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	"unsafe"
 
@@ -98,6 +97,13 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 // context.Context is very extensible and developers can override
 // its methods if that is actually needed.
 type Context interface {
+	// Clone returns a copy of the context that
+	// can be safely used outside the request's scope.
+	// Note that if the request-response lifecycle terminated
+	// or request canceled by the client (can be checked by `ctx.IsCanceled()`)
+	// then the response writer is totally useless.
+	// The http.Request pointer value is shared.
+	Clone() Context
 	// BeginRequest is executing once for each request
 	// it should prepare the (new or acquired from pool) context's fields for the new request.
 	// Do NOT call it manually. Framework calls it automatically.
@@ -112,14 +118,42 @@ type Context interface {
 	// EndRequest is executing once after a response to the request was sent and this context is useless or released.
 	// Do NOT call it manually. Framework calls it automatically.
 	//
-	// 1. executes the Defer function (if any).
+	// 1. executes the OnClose function (if any).
 	// 2. flushes the response writer's result or fire any error handler.
 	// 3. releases the response writer.
 	EndRequest()
-	// Defer executes a handler on this Context right before the request ends.
-	// The `StopExecution` does not effect the execution of this defer handler.
-	// The "h" runs before `FireErrorCode` (when response status code is not successful).
-	Defer(Handler)
+	// IsCanceled reports whether the client canceled the request
+	// or the underlying connection has gone.
+	// Note that it will always return true
+	// when called from a goroutine after the request-response lifecycle.
+	IsCanceled() bool
+	// OnConnectionClose registers the "cb" Handler
+	// which will be fired on its on goroutine on a cloned Context
+	// when the underlying connection has gone away.
+	//
+	// The code inside the given callback is running on its own routine,
+	// as explained above, therefore the callback should NOT
+	// try to access to handler's Context response writer.
+	//
+	// This mechanism can be used to cancel long operations on the server
+	// if the client has disconnected before the response is ready.
+	//
+	// It depends on the Request's Context.Done() channel.
+	//
+	// Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
+	// The "cb" will not fire for sure if the output value is false.
+	//
+	// Note that you can register only one callback per route.
+	//
+	// See `OnClose` too.
+	OnConnectionClose(Handler) bool
+	// OnClose registers a callback which
+	// will be fired when the underlying connection has gone away(request canceled)
+	// on its own goroutine or in the end of the request-response lifecylce
+	// on the handler's routine itself (Context access).
+	//
+	// See `OnConnectionClose` too.
+	OnClose(Handler)
 
 	// ResponseWriter returns an http.ResponseWriter compatible response writer, as expected.
 	ResponseWriter() ResponseWriter
@@ -285,31 +319,6 @@ type Context interface {
 	// If the status code is a failure one then
 	// it will also fire the specified error code handler.
 	StopWithProblem(statusCode int, problem Problem)
-
-	// OnConnectionClose registers the "cb" function which will fire
-	// (on its own goroutine, no need to be registered goroutine by the end-dev)
-	// when the underlying connection has gone away.
-	//
-	// This mechanism can be used to cancel long operations on the server
-	// if the client has disconnected before the response is ready.
-	//
-	// It depends on the Request's Context.Done() channel.
-	//
-	// After the main Handler has returned, there is no guarantee
-	// that the channel receives a value.
-	//
-	// Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
-	// The "cb" will not fire for sure if the output value is false.
-	//
-	// Note that you can register only one callback for the entire request handler chain/per route.
-	OnConnectionClose(fnGoroutine func()) bool
-	// OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
-	// and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
-	// Note that you can register only one callback for the entire request handler chain/per route.
-	// Note that the "cb" will only be called once.
-	//
-	// Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
-	OnClose(cb func())
 
 	//  +------------------------------------------------------------+
 	//  | Current "user/request" storage                             |
@@ -1251,7 +1260,6 @@ type context struct {
 	request *http.Request
 	// the current route registered to this request path.
 	currentRoute RouteReadOnly
-	deferFunc    Handler
 
 	// the local key-value storage
 	params RequestParams  // url named parameters.
@@ -1274,6 +1282,30 @@ func NewContext(app Application) Context {
 	return &context{app: app}
 }
 
+// Clone returns a copy of the context that
+// can be safely used outside the request's scope.
+// Note that if the request-response lifecycle terminated
+// or request canceled by the client (can be checked by `ctx.IsCanceled()`)
+// then the response writer is totally useless.
+// The http.Request pointer value is shared.
+func (ctx *context) Clone() Context {
+	valuesCopy := make(memstore.Store, len(ctx.values))
+	copy(valuesCopy, ctx.values)
+
+	paramsCopy := make(memstore.Store, len(ctx.params.Store))
+	copy(paramsCopy, ctx.params.Store)
+
+	return &context{
+		app:                 ctx.app,
+		values:              valuesCopy,
+		params:              RequestParams{Store: paramsCopy},
+		writer:              ctx.writer.Clone(),
+		request:             ctx.request,
+		currentHandlerIndex: stopExecutionIndex,
+		currentRoute:        ctx.currentRoute,
+	}
+}
+
 // BeginRequest is executing once for each request
 // it should prepare the (new or acquired from pool) context's fields for the new request.
 // Do NOT call it manually. Framework calls it automatically.
@@ -1291,7 +1323,6 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.params.Store = ctx.params.Store[0:0]
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
-	ctx.deferFunc = nil
 	ctx.writer = AcquireResponseWriter()
 	ctx.writer.BeginResponse(w)
 }
@@ -1299,14 +1330,10 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 // EndRequest is executing once after a response to the request was sent and this context is useless or released.
 // Do NOT call it manually. Framework calls it automatically.
 //
-// 1. executes the Defer function (if any).
+// 1. executes the OnClose function (if any).
 // 2. flushes the response writer's result or fire any error handler.
 // 3. releases the response writer.
 func (ctx *context) EndRequest() {
-	if ctx.deferFunc != nil {
-		ctx.deferFunc(ctx)
-	}
-
 	if !ctx.app.ConfigurationReadOnly().GetDisableAutoFireStatusCode() &&
 		StatusCodeNotSuccessful(ctx.GetStatusCode()) {
 		ctx.app.FireErrorCode(ctx)
@@ -1316,11 +1343,88 @@ func (ctx *context) EndRequest() {
 	ctx.writer.EndResponse()
 }
 
-// Defer executes a handler on this Context right before the request ends.
-// The `StopExecution` does not effect the execution of this defer handler.
-// The "h" runs before `FireErrorCode` (when response status code is not successful).
-func (ctx *context) Defer(h Handler) {
-	ctx.deferFunc = h
+// IsCanceled reports whether the client canceled the request
+// or the underlying connection has gone.
+// Note that it will always return true
+// when called from a goroutine after the request-response lifecycle.
+func (ctx *context) IsCanceled() bool {
+	if reqCtx := ctx.request.Context(); reqCtx != nil {
+		err := reqCtx.Err()
+		if errors.Is(err, stdContext.Canceled) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// OnConnectionClose registers the "cb" Handler
+// which will be fired on its on goroutine on a cloned Context
+// when the underlying connection has gone away.
+//
+// The code inside the given callback is running on its own routine,
+// as explained above, therefore the callback should NOT
+// try to access to handler's Context response writer.
+//
+// This mechanism can be used to cancel long operations on the server
+// if the client has disconnected before the response is ready.
+//
+// It depends on the Request's Context.Done() channel.
+//
+// Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
+// The "cb" will not fire for sure if the output value is false.
+//
+// Note that you can register only one callback per route.
+//
+// See `OnClose` too.
+func (ctx *context) OnConnectionClose(cb Handler) bool {
+	if cb == nil {
+		return false
+	}
+
+	reqCtx := ctx.Request().Context()
+	if reqCtx == nil {
+		return false
+	}
+
+	notifyClose := reqCtx.Done()
+	if notifyClose == nil {
+		return false
+	}
+
+	go func() {
+		<-notifyClose
+		// Note(@kataras): No need to clone if not canceled,
+		// EndRequest will be called on the end of the handler chain,
+		// no matter the cancelation.
+		// therefore the context will still be there.
+		cb(ctx.Clone())
+	}()
+
+	return true
+}
+
+// OnClose registers a callback which
+// will be fired when the underlying connection has gone away(request canceled)
+// on its own goroutine or in the end of the request-response lifecylce
+// on the handler's routine itself (Context access).
+//
+// See `OnConnectionClose` too.
+func (ctx *context) OnClose(cb Handler) {
+	if cb == nil {
+		return
+	}
+
+	ctx.OnConnectionClose(cb)
+
+	fn := func() {
+		if !ctx.IsCanceled() {
+			// If the callback not fired by OnConnectionClose already.
+			cb(ctx)
+		}
+	}
+
+	ctx.writer.SetBeforeFlush(fn)
 }
 
 // ResponseWriter returns an http.ResponseWriter compatible response writer, as expected.
@@ -1636,81 +1740,6 @@ func (ctx *context) StopWithProblem(statusCode int, problem Problem) {
 	ctx.StopWithStatus(statusCode)
 	problem.Status(statusCode)
 	ctx.Problem(problem)
-}
-
-// OnConnectionClose registers the "cb" function which will fire
-// (on its own goroutine, no need to be registered goroutine by the end-dev)
-// when the underlying connection has gone away.
-//
-// This mechanism can be used to cancel long operations on the server
-// if the client has disconnected before the response is ready.
-//
-// It depends on the Request's Context.Done() channel.
-//
-// After the main Handler has returned, there is no guarantee
-// that the channel receives a value.
-//
-// Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
-// The "cb" will not fire for sure if the output value is false.
-//
-// Note that you can register only one callback for the entire request handler chain/per route.
-func (ctx *context) OnConnectionClose(cb func()) bool {
-	if cb == nil {
-		return false
-	}
-
-	notifyClose := ctx.Request().Context().Done()
-	if notifyClose == nil {
-		return false
-	}
-
-	go func() {
-		<-notifyClose
-		cb()
-		// Callers can check the error
-		// through `Context.Request().Context().Err()`.
-	}()
-
-	return true
-}
-
-// OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
-// and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
-// Note that you can register only one callback for the entire request handler chain/per route.
-//
-// Note that the "cb" will only be called once.
-//
-// Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
-func (ctx *context) OnClose(cb func()) {
-	if cb == nil {
-		return
-	}
-
-	once := new(sync.Once)
-
-	callOnce := func() {
-		once.Do(cb)
-	}
-
-	// Register the on underline connection close handler first.
-	ctx.OnConnectionClose(callOnce)
-
-	// Author's notes:
-	// This is fired on `ctx.ResponseWriter().FlushResponse()` which is fired by the framework automatically, internally, on the end of request handler(s),
-	// it is not fired on the underline streaming function of the writer: `ctx.ResponseWriter().Flush()` (which can be fired more than one if streaming is supported by the client).
-	// The `FlushResponse` is called only once, so add the "cb" here, no need to add done request handlers each time `OnClose` is called by the end-dev.
-	//
-	// Don't allow more than one because we don't allow that on `OnConnectionClose` too:
-	// old := ctx.writer.GetBeforeFlush()
-	// if old != nil {
-	// 	ctx.writer.SetBeforeFlush(func() {
-	// 		old()
-	// 		cb()
-	// 	})
-	// 	return
-	// }
-
-	ctx.writer.SetBeforeFlush(callOnce)
 }
 
 //  +------------------------------------------------------------+

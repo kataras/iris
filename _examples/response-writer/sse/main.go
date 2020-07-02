@@ -76,8 +76,7 @@ func (b *Broker) ServeHTTP(ctx iris.Context) {
 
 	flusher, ok := ctx.ResponseWriter().Flusher()
 	if !ok {
-		ctx.StatusCode(iris.StatusHTTPVersionNotSupported)
-		ctx.WriteString("Streaming unsupported!")
+		ctx.StopWithText(iris.StatusHTTPVersionNotSupported, "Streaming unsupported!")
 		return
 	}
 
