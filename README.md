@@ -70,7 +70,7 @@ For a more detailed technical documentation you can head over to our [godocs](ht
 
 <a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
-[![follow author](https://img.shields.io/twitter/follow/makismaropoulos?color=ee7506&logoColor=ee7506&style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
+[![follow Iris web framework on twitter](https://img.shields.io/twitter/follow/iris_framework?color=ee7506&logoColor=ee7506&style=for-the-badge)](https://twitter.com/intent/follow?screen_name=iris_framework)
 
 You can [request](https://bit.ly/iris-req-book) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
 
