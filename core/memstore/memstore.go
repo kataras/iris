@@ -815,6 +815,19 @@ func (r *Store) Get(key string) interface{} {
 	return r.GetDefault(key, nil)
 }
 
+// GetOrSet is like `GetDefault` but it accepts a function which is
+// fired and its result is used to `Set` if
+// the "key" was not found or its value is nil.
+func (r *Store) GetOrSet(key string, setFunc func() interface{}) interface{} {
+	if v, ok := r.GetEntry(key); ok && v.ValueRaw != nil {
+		return v.Value()
+	}
+
+	value := setFunc()
+	r.Set(key, value)
+	return value
+}
+
 // Visit accepts a visitor which will be filled
 // by the key-value objects.
 func (r *Store) Visit(visitor func(key string, value interface{})) {

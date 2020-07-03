@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -1350,7 +1351,7 @@ func (ctx *context) EndRequest() {
 func (ctx *context) IsCanceled() bool {
 	if reqCtx := ctx.request.Context(); reqCtx != nil {
 		err := reqCtx.Err()
-		if errors.Is(err, stdContext.Canceled) {
+		if err != nil && errors.Is(err, stdContext.Canceled) {
 			return true
 		}
 	}
@@ -1415,17 +1416,73 @@ func (ctx *context) OnClose(cb Handler) {
 		return
 	}
 
-	ctx.OnConnectionClose(cb)
+	// Note(@kataras):
+	// - on normal request-response lifecycle
+	// the `SetBeforeFlush` will be called first
+	// and then `OnConnectionClose`,
+	// - when request was canceled before handler finish its job
+	// then the `OnConnectionClose` will be called first instead,
+	// and when the handler function completed then `SetBeforeFlush` is fired.
+	// These are synchronized, they cannot be executed the same exact time,
+	// below we just make sure the "cb" is executed once
+	// by simple boolean check or an atomic one.
+	var executed uint32
 
-	fn := func() {
-		if !ctx.IsCanceled() {
-			// If the callback not fired by OnConnectionClose already.
+	callback := func(ctx Context) {
+		if atomic.CompareAndSwapUint32(&executed, 0, 1) {
 			cb(ctx)
 		}
 	}
 
-	ctx.writer.SetBeforeFlush(fn)
+	ctx.OnConnectionClose(callback)
+
+	onFlush := func() {
+		callback(ctx)
+	}
+
+	ctx.writer.SetBeforeFlush(onFlush)
 }
+
+/* Note(@kataras): just leave end-developer decide.
+const goroutinesContextKey = "iris.goroutines"
+
+type goroutines struct {
+	wg     *sync.WaitGroup
+	length int
+	mu     sync.RWMutex
+}
+
+var acquireGoroutines = func() interface{} {
+	return &goroutines{wg: new(sync.WaitGroup)}
+}
+
+func (ctx *context) Go(fn func(cancelCtx stdContext.Context)) (running int) {
+	g := ctx.Values().GetOrSet(goroutinesContextKey, acquireGoroutines).(*goroutines)
+	if fn != nil {
+		g.wg.Add(1)
+
+		g.mu.Lock()
+		g.length++
+		g.mu.Unlock()
+
+		ctx.waitFunc = g.wg.Wait
+
+		go func(reqCtx stdContext.Context) {
+			fn(reqCtx)
+			g.wg.Done()
+
+			g.mu.Lock()
+			g.length--
+			g.mu.Unlock()
+		}(ctx.request.Context())
+	}
+
+	g.mu.RLock()
+	running = g.length
+	g.mu.RUnlock()
+	return
+}
+*/
 
 // ResponseWriter returns an http.ResponseWriter compatible response writer, as expected.
 func (ctx *context) ResponseWriter() ResponseWriter {

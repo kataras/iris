@@ -40,6 +40,7 @@
     * [Dynamic Path](routing/dynamic-path/main.go)
         * [Root Wildcard](routing/dynamic-path/root-wildcard/main.go)
         * [Implement a Parameter Type](routing/macros/main.go)
+        * [Same Path Pattern but Func](routing/dynamic-path/same-pattern-different-func/main.go)
     * Middleware
         * [Per Route](routing/writing-a-middleware/per-route/main.go)
         * [Globally](routing/writing-a-middleware/globally/main.go)
