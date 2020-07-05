@@ -51,13 +51,7 @@ type Route struct {
 	RegisterFileName   string `json:"registerFileName"`
 	RegisterLineNumber int    `json:"registerLineNumber"`
 
-	// StaticSites if not empty, refers to the system (or virtual if embedded) directory
-	// and sub directories that this "GET" route was registered to serve files and folders
-	// that contain index.html (a site). The index handler may registered by other
-	// route, manually or automatic by the framework,
-	// get the route by `Application#GetRouteByPath(staticSite.RequestPath)`.
-	StaticSites []context.StaticSite `json:"staticSites"`
-	topLink     *Route
+	topLink *Route
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
 	LastMod    time.Time `json:"lastMod,omitempty"`
@@ -519,10 +513,6 @@ func (rd routeReadOnlyWrapper) MainHandlerName() string {
 
 func (rd routeReadOnlyWrapper) MainHandlerIndex() int {
 	return rd.Route.MainHandlerIndex
-}
-
-func (rd routeReadOnlyWrapper) StaticSites() []context.StaticSite {
-	return rd.Route.StaticSites
 }
 
 func (rd routeReadOnlyWrapper) GetLastMod() time.Time {

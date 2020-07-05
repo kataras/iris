@@ -316,10 +316,22 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				if d.IsDir() {
 					name += "/"
 				}
+
+				upath := ""
+				// if ctx.Path() == "/" && dirName == strings.TrimPrefix(directory, "./") {
+				if ctx.Path() == "/" {
+					upath = ctx.GetCurrentRoute().StaticPath() + "/" + name
+				} else {
+					upath = "./" + dirName + "/" + name
+				}
+
+				url := url.URL{
+					Path: upath,
+				} // edit here to redirect correctly, standard library misses that.
+
 				// name may contain '?' or '#', which must be escaped to remain
 				// part of the URL path, and not indicate the start of a query
 				// string or fragment.
-				url := url.URL{Path: joinPath("./"+dirName, name)} // edit here to redirect correctly, standard library misses that.
 				_, err = ctx.Writef("<a href=\"%s\">%s</a>\n", url.String(), htmlReplacer.Replace(name))
 				if err != nil {
 					return err

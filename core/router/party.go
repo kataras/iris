@@ -152,14 +152,14 @@ type Party interface {
 	// second parameter : the system or the embedded directory that needs to be served
 	// third parameter  : not required, the directory options, set fields is optional.
 	//
-	// for more options look router.FileServer.
+	// Alternatively, to get just the handler for that look the FileServer function instead.
 	//
 	//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
 	//
-	// Returns the GET *Route.
+	// Returns all the registered routes, including GET index and path patterm and HEAD.
 	//
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-	HandleDir(requestPath, directory string, opts ...DirOptions) *Route
+	HandleDir(requestPath, directory string, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and

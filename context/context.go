@@ -444,16 +444,18 @@ type Context interface {
 	// Header adds a header to the response writer.
 	Header(name string, value string)
 
-	// ContentType sets the response writer's header key "Content-Type" to the 'cType'.
+	// ContentType sets the response writer's
+	// header "Content-Type" to the 'cType'.
 	ContentType(cType string)
-	// GetContentType returns the response writer's header value of "Content-Type"
-	// which may, set before with the 'ContentType'.
+	// GetContentType returns the response writer's
+	// header value of "Content-Type".
 	GetContentType() string
-	// GetContentType returns the request's header value of "Content-Type".
+	// GetContentType returns the request's
+	// trim-ed(without the charset and priority values)
+	// header value of "Content-Type".
 	GetContentTypeRequested() string
-
-	// GetContentLength returns the request's header value of "Content-Length".
-	// Returns 0 if header was unable to be found or its value was not a valid number.
+	// GetContentLength returns the request's
+	// header value of "Content-Length".
 	GetContentLength() int64
 
 	// StatusCode sets the status code header to the response.
@@ -2256,7 +2258,8 @@ func (ctx *context) contentTypeOnce(cType string, charset string) {
 	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
 }
 
-// ContentType sets the response writer's header key "Content-Type" to the 'cType'.
+// ContentType sets the response writer's
+// header "Content-Type" to the 'cType'.
 func (ctx *context) ContentType(cType string) {
 	if cType == "" {
 		return
@@ -2282,19 +2285,21 @@ func (ctx *context) ContentType(cType string) {
 	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
 }
 
-// GetContentType returns the response writer's header value of "Content-Type"
-// which may, set before with the 'ContentType'.
+// GetContentType returns the response writer's
+// header value of "Content-Type".
 func (ctx *context) GetContentType() string {
 	return ctx.writer.Header().Get(ContentTypeHeaderKey)
 }
 
-// GetContentType returns the request's header value of "Content-Type".
+// GetContentType returns the request's
+// trim-ed(without the charset and priority values)
+// header value of "Content-Type".
 func (ctx *context) GetContentTypeRequested() string {
 	return TrimHeaderValue(ctx.GetHeader(ContentTypeHeaderKey))
 }
 
-// GetContentLength returns the request's header value of "Content-Length".
-// Returns 0 if header was unable to be found or its value was not a valid number.
+// GetContentLength returns the request's
+// header value of "Content-Length".
 func (ctx *context) GetContentLength() int64 {
 	if v := ctx.GetHeader(ContentLengthHeaderKey); v != "" {
 		n, _ := strconv.ParseInt(v, 10, 64)
@@ -3427,7 +3432,7 @@ func (ctx *context) TryWriteGzip(b []byte) (int, error) {
 	n, err := ctx.WriteGzip(b)
 	if err != nil {
 		// check if the error came from gzip not allowed and not the writer itself
-		if errors.Is(err, ErrGzipNotSupported) {
+		if err == ErrGzipNotSupported {
 			// client didn't supported gzip, write them uncompressed:
 			return ctx.writer.Write(b)
 		}
@@ -4239,6 +4244,8 @@ type N struct {
 	Other []byte // custom content types.
 }
 
+var _ ContentSelector = N{}
+
 // SelectContent returns a content based on the matched negotiated "mime".
 func (n N) SelectContent(mime string) interface{} {
 	switch mime {
@@ -4419,7 +4426,6 @@ func (ctx *context) Negotiate(v interface{}) (int, error) {
 			ctx.StatusCode(http.StatusNotAcceptable)
 			return -1, ErrContentNotSupported
 		}
-
 	}
 }
 
