@@ -80,6 +80,7 @@
 * [Recovery](recover/main.go)
 * [Profiling](pprof/main.go)
 * File Server
+    * [File Server](file-server/file-server/main.go)
     * [Favicon](file-server/favicon/main.go)
     * [Basic](file-server/basic/main.go)
     * [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)

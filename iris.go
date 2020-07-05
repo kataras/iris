@@ -212,6 +212,9 @@ func Default() *Application {
 	app := New()
 	app.Use(recover.New())
 	app.Use(requestLogger.New())
+	app.Use(Gzip)
+	app.Use(GzipReader)
+
 	app.defaultMode = true
 
 	return app
@@ -615,6 +618,12 @@ var (
 	//
 	// A shortcut for the `context#ErrPushNotSupported`.
 	ErrPushNotSupported = context.ErrPushNotSupported
+	// ErrGzipNotSupported may be returned from
+	// `WriteGzip` and `GzipReader` methods if
+	// the client does not support the "gzip" compression.
+	//
+	// A shortcut for the `context#ErrGzipNotSupported`.
+	ErrGzipNotSupported = context.ErrGzipNotSupported
 )
 
 // Constants for input argument at `router.RouteRegisterRule`.

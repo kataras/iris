@@ -5,3 +5,4 @@ go.sum
 node_modules
 /_examples/issue-*/
 /_examples/feature-*/
+_examples/**/uploads/*

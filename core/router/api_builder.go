@@ -390,12 +390,11 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 //
 //     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
 //
-// Returns the GET *Route.
+// Returns all the registered routes, including GET index and path patterm and HEAD.
 //
 // Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptions) (getRoute *Route) {
+func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptions) (routes []*Route) {
 	options := getDirOptions(opts...)
-
 	h := FileServer(directory, options)
 	description := directory
 	fileName, lineNumber := context.HandlerFileLine(h) // take those before StripPrefix.
@@ -408,41 +407,14 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 		h = StripPrefix(fullpath, h)
 	}
 
-	requestPath = joinPath(requestPath, WildcardFileParam())
-	routes := api.CreateRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)
-	getRoute = routes[0]
-	// we get all index, including sub directories even if those
-	// are already managed by the static handler itself.
-	staticSites := context.GetStaticSites(directory, getRoute.StaticPath(), options.IndexName)
-	for _, s := range staticSites {
-		// if the end-dev did manage that index route manually already
-		// then skip the auto-registration.
-		//
-		// Also keep note that end-dev is still able to replace this route and manage by him/herself
-		// later on by a simple `Handle/Get/` call, refer to `repository#register`.
-		if api.GetRouteByPath(s.RequestPath) != nil {
-			continue
-		}
-
-		if n := len(api.relativePath); n > 0 && api.relativePath[n-1] == SubdomainPrefix[0] {
-			// this api is a subdomain-based.
-			slashIdx := strings.IndexByte(s.RequestPath, '/')
-			if slashIdx == -1 {
-				slashIdx = 0
-			}
-
-			requestPath = s.RequestPath[slashIdx:]
-		} else {
-			requestPath = s.RequestPath[strings.Index(s.RequestPath, api.relativePath)+len(api.relativePath):]
-		}
-
-		if requestPath == "" {
-			requestPath = "/"
-		}
-
-		routes = append(routes, api.CreateRoutes([]string{http.MethodGet}, requestPath, h)...)
-		getRoute.StaticSites = append(getRoute.StaticSites, s)
+	if api.GetRouteByPath(fullpath) == nil {
+		// register index if not registered by the end-developer.
+		routes = api.CreateRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)
 	}
+
+	requestPath = joinPath(requestPath, WildcardFileParam())
+
+	routes = append(routes, api.CreateRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)...)
 
 	for _, route := range routes {
 		if route.Method == http.MethodHead {
@@ -457,7 +429,7 @@ func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptio
 		}
 	}
 
-	return getRoute
+	return routes
 }
 
 // CreateRoutes returns a list of Party-based Routes.

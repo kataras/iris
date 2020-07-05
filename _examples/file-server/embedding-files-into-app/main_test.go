@@ -78,10 +78,6 @@ func TestEmbeddingFilesIntoApp(t *testing.T) {
 		t.Fatalf("expected a route to serve embedded files")
 	}
 
-	if len(route.StaticSites()) > 0 {
-		t.Fatalf("not expected a static site, the ./assets directory or its subdirectories do not contain any index.html")
-	}
-
 	if runtime.GOOS != "windows" {
 		// remove the embedded static favicon for !windows,
 		// it should be built for unix-specific in order to be work
