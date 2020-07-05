@@ -395,6 +395,10 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
 func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptions) (routes []*Route) {
 	options := getDirOptions(opts...)
+	// TODO(@kataras): Add option(s) to enable file & directory deletion (DELETE wildcard route)
+	// and integrade it with the new `DirListRich` helper
+	// (either context menu override on right-click of the file name or to a new table column)
+	// Note that, an auth middleware can be already registered, so no need to add options for that here.
 	h := FileServer(directory, options)
 	description := directory
 	fileName, lineNumber := context.HandlerFileLine(h) // take those before StripPrefix.

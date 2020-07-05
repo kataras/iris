@@ -395,7 +395,6 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			ctx.SetLastModified(info.ModTime())
 			err = dirList(ctx, info.Name(), f)
 			if err != nil {
-				println(err.Error())
 				plainStatusCode(ctx, http.StatusInternalServerError)
 				return
 			}
