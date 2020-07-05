@@ -371,6 +371,8 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
+
 - Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
 
 - Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/master/_examples/mvc/versioned-controller/main.go).
@@ -419,6 +421,9 @@ Other Improvements:
 
 New Package-level Variables:
 
+- `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
+- `iris.ErrGzipNotSupported` to export the `context.ErrGzipNotSupported` when trying to write gzip but client does not support.
+- `iris.GzipReader` middleware to decode gzip requests on next read actions.
 - `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
 - `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
 - `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
@@ -455,6 +460,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `Party.HandleDir` now returns a list of `[]*Route` (GET and HEAD) instead of GET only.
 - `Context.OnClose` and `Context.OnCloseConnection` now both accept an `iris.Handler` instead of a simple `func()` as their callback.
 - `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
 - Fixed handler's error response not be respected when response recorder or gzip writer was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder or gzip writer).
