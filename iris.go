@@ -439,6 +439,10 @@ var (
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
 	// A shortcut for the `router.FileServer`.
 	FileServer = router.FileServer
+	// DirListRich can be passed to `DirOptions.DirList` field
+	// to override the default file listing appearance.
+	// Read more at: `core/router.DirListRich`.
+	DirListRich = router.DirListRich
 	// StripPrefix returns a handler that serves HTTP requests
 	// by removing the given prefix from the request URL's Path
 	// and invoking the handler h. StripPrefix handles a

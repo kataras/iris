@@ -3,6 +3,8 @@ package router
 import (
 	"bytes"
 	"fmt"
+	"html"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -19,6 +21,9 @@ import (
 
 const indexName = "/index.html"
 
+// DirListFunc is the function signature for customizing directory and file listing.
+type DirListFunc func(ctx context.Context, dirName string, dir http.File) error
+
 // DirOptions contains the optional settings that
 // `FileServer` and `Party#HandleDir` can use to serve files and assets.
 type DirOptions struct {
@@ -33,7 +38,7 @@ type DirOptions struct {
 	// List the files inside the current requested directory if `IndexName` not found.
 	ShowList bool
 	// If `ShowList` is true then this function will be used instead of the default one to show the list of files of a current requested directory(dir).
-	DirList func(ctx context.Context, dirName string, dir http.File) error
+	DirList DirListFunc
 
 	// When embedded.
 	Asset      func(name string) ([]byte, error)      // we need this to make it compatible os.File.
@@ -283,16 +288,6 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		ctx.StatusCode(statusCode)
 	}
 
-	htmlReplacer := strings.NewReplacer(
-		"&", "&amp;",
-		"<", "&lt;",
-		">", "&gt;",
-		// "&#34;" is shorter than "&quot;".
-		`"`, "&#34;",
-		// "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
-		"'", "&#39;",
-	)
-
 	dirList := options.DirList
 	if dirList == nil {
 		dirList = func(ctx context.Context, dirName string, dir http.File) error {
@@ -300,9 +295,6 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			if err != nil {
 				return err
 			}
-
-			// dst, _ := dir.Stat()
-			// dirName := dst.Name()
 
 			sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
 
@@ -332,7 +324,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				// name may contain '?' or '#', which must be escaped to remain
 				// part of the URL path, and not indicate the start of a query
 				// string or fragment.
-				_, err = ctx.Writef("<a href=\"%s\">%s</a>\n", url.String(), htmlReplacer.Replace(name))
+				_, err = ctx.Writef("<a href=\"%s\">%s</a>\n", url.String(), html.EscapeString(name))
 				if err != nil {
 					return err
 				}
@@ -403,6 +395,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			ctx.SetLastModified(info.ModTime())
 			err = dirList(ctx, info.Name(), f)
 			if err != nil {
+				println(err.Error())
 				plainStatusCode(ctx, http.StatusInternalServerError)
 				return
 			}
@@ -572,3 +565,175 @@ func DirectoryExists(dir string) bool {
 	}
 	return true
 }
+
+// DirListRich is a `DirListFunc` which can be passed to `DirOptions.DirList` field
+// to override the default file listing appearance.
+// See `DirListRichTemplate` to modify the template, if necessary.
+func DirListRich(ctx context.Context, dirName string, dir http.File) error {
+	dirs, err := dir.Readdir(-1)
+	if err != nil {
+		return err
+	}
+
+	sortBy := ctx.URLParam("sort")
+	switch sortBy {
+	case "name":
+		sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
+	case "size":
+		sort.Slice(dirs, func(i, j int) bool { return dirs[i].Size() < dirs[j].Size() })
+	default:
+		sort.Slice(dirs, func(i, j int) bool { return dirs[i].ModTime().After(dirs[j].ModTime()) })
+	}
+
+	pageData := listPageData{
+		Title: fmt.Sprintf("List of %d files", len(dirs)),
+		Files: make([]fileInfoData, 0, len(dirs)),
+	}
+
+	for _, d := range dirs {
+		name := d.Name()
+		if d.IsDir() {
+			name += "/"
+		}
+
+		upath := ""
+		if ctx.Path() == "/" {
+			upath = ctx.GetCurrentRoute().StaticPath() + "/" + name
+		} else {
+			upath = "./" + dirName + "/" + name
+		}
+
+		url := url.URL{Path: upath}
+
+		pageData.Files = append(pageData.Files, fileInfoData{
+			Info:    d,
+			ModTime: d.ModTime().UTC().Format(http.TimeFormat),
+			Path:    url.String(),
+			Name:    html.EscapeString(name),
+		})
+	}
+
+	return DirListRichTemplate.Execute(ctx, pageData)
+}
+
+type (
+	listPageData struct {
+		Title string // the document's title.
+		Files []fileInfoData
+	}
+
+	fileInfoData struct {
+		Info    os.FileInfo
+		ModTime string // format-ed time.
+		Path    string // the request path.
+		Name    string // the html-escaped name.
+	}
+)
+
+// DirListRichTemplate is the html template the `DirListRich` function is using to render
+// the directories and files.
+var DirListRichTemplate = template.Must(template.New("").
+	Funcs(template.FuncMap{
+		"formatBytes": func(b int64) string {
+			const unit = 1000
+			if b < unit {
+				return fmt.Sprintf("%d B", b)
+			}
+			div, exp := int64(unit), 0
+			for n := b / unit; n >= unit; n /= unit {
+				div *= unit
+				exp++
+			}
+			return fmt.Sprintf("%.1f %cB",
+				float64(b)/float64(div), "kMGTPE"[exp])
+		},
+	}).Parse(`
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{.Title}}</title>
+    <style>
+        a {
+            padding: 8px 8px;
+            text-decoration:none;
+            cursor:pointer;
+            color: #10a2ff;
+        }
+        table {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            empty-cells: show;
+            border: 1px solid #cbcbcb;
+        }
+        
+        table caption {
+            color: #000;
+            font: italic 85%/1 arial, sans-serif;
+            padding: 1em 0;
+            text-align: center;
+        }
+        
+        table td,
+        table th {
+            border-left: 1px solid #cbcbcb;
+            border-width: 0 0 0 1px;
+            font-size: inherit;
+            margin: 0;
+            overflow: visible;
+            padding: 0.5em 1em;
+        }
+        
+        table thead {
+            background-color: #10a2ff;
+            color: #fff;
+            text-align: left;
+            vertical-align: bottom;
+        }
+        
+        table td {
+            background-color: transparent;
+        }
+
+        .table-odd td {
+            background-color: #f2f2f2;
+        }
+
+        .table-bordered td {
+            border-bottom: 1px solid #cbcbcb;
+        }
+        .table-bordered tbody > tr:last-child > td {
+            border-bottom-width: 0;
+        }
+	</style>
+</head>
+<body>
+    <table class="table-bordered table-odd">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Size</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range $idx, $file := .Files }}
+            <tr>
+                <td>{{ $idx }}</td>
+                <td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}">{{ $file.Name }}</a></td>
+                <td>{{ formatBytes $file.Info.Size }}</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</body></html>
+`))
