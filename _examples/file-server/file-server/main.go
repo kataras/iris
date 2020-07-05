@@ -31,6 +31,7 @@ func main() {
 	app.HandleDir("/files", "./uploads", iris.DirOptions{
 		Gzip:     true,
 		ShowList: true,
+		DirList:  iris.DirListRich,
 	})
 
 	app.Listen(":8080")
@@ -49,7 +50,7 @@ func uploadView(ctx iris.Context) {
 	ctx.View("upload.html", token)
 }
 
-const maxSize = 10 * iris.MB
+const maxSize = 1 * iris.GB
 
 func upload(ctx iris.Context) {
 	ctx.SetMaxRequestBodySize(maxSize)
