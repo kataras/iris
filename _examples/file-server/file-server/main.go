@@ -20,6 +20,8 @@ func init() {
 func main() {
 	app := iris.New()
 	app.RegisterView(iris.HTML("./views", ".html"))
+	// Serve assets (e.g. javascript, css).
+	// app.HandleDir("/public", "./public")
 
 	app.Get("/", index)
 
@@ -47,10 +49,14 @@ func uploadView(ctx iris.Context) {
 	ctx.View("upload.html", token)
 }
 
+const maxSize = 10 * iris.MB
+
 func upload(ctx iris.Context) {
+	ctx.SetMaxRequestBodySize(maxSize)
+
 	_, err := ctx.UploadFormFiles("./uploads", beforeSave)
 	if err != nil {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
+		ctx.StopWithError(iris.StatusPayloadTooRage, err)
 		return
 	}
 
