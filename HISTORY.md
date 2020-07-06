@@ -371,6 +371,11 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Update jet parser to v4.0.0, closes [#1551](https://github.com/kataras/iris/issues/1551). It contains two breaking changes by its author:
+    - Relative paths on `extends, import, include...` tmpl functions, e.g. `{{extends "../layouts/application.jet"}}` instead of `layouts/application.jet`
+    - the new [jet.Ranger](https://github.com/CloudyKit/jet/pull/165) interface now requires a `ProvidesIndex() bool` method too
+    - Example has been [updated](https://github.com/kataras/iris/tree/master/_examples/view/template_jet_0)
+
 - Fix [#1552](https://github.com/kataras/iris/issues/1552).
 
 - Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.

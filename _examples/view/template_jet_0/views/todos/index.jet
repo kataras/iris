@@ -1,4 +1,4 @@
-{{extends "layouts/application.jet"}}
+{{extends "../layouts/application.jet"}}
 
 {{block button(label, href="javascript:void(0)")}}
   <a href="{{ href }}">{{ label }}</a>

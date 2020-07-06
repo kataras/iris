@@ -5,12 +5,13 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/CloudyKit/jet/v3"
+	"github.com/CloudyKit/jet/v4"
 )
 
 const jetEngineName = "jet"
@@ -32,7 +33,7 @@ type JetEngine struct {
 	// If AddFunc or AddVar called before `Load` then these will be set here to be used via `Load` and clear.
 	vars map[string]interface{}
 
-	jetRangerRendererContextKey string
+	jetDataContextKey string
 }
 
 var _ Engine = (*JetEngine)(nil)
@@ -64,10 +65,10 @@ func Jet(directory, extension string) *JetEngine {
 	}
 
 	s := &JetEngine{
-		directory:                   directory,
-		extension:                   extension,
-		loader:                      jet.NewOSFileSystemLoader(directory),
-		jetRangerRendererContextKey: "_jet",
+		directory:         directory,
+		extension:         extension,
+		loader:            jet.NewOSFileSystemLoader(directory),
+		jetDataContextKey: "_jet",
 	}
 
 	return s
@@ -269,7 +270,7 @@ func (f *embeddedFile) Read(p []byte) (int, error) {
 
 // Open opens a file from OS file system.
 func (l *embeddedLoader) Open(name string) (io.ReadCloser, error) {
-	// name = path.Join(l.vdir, name)
+	name = path.Join(l.vdir, filepath.ToSlash(name))
 	contents, err := l.asset(name)
 	if err != nil {
 		return nil, err
@@ -282,9 +283,10 @@ func (l *embeddedLoader) Open(name string) (io.ReadCloser, error) {
 // Exists checks if the template name exists by walking the list of template paths
 // returns string with the full path of the template and bool true if the template file was found
 func (l *embeddedLoader) Exists(name string) (string, bool) {
-	fileName := path.Join(l.vdir, name)
-	if _, ok := l.names[fileName]; ok {
-		return fileName, true
+	name = path.Join(l.vdir, filepath.ToSlash(name))
+
+	if _, ok := l.names[name]; ok {
+		return name, true
 	}
 
 	return "", false
@@ -368,6 +370,21 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 				vars = jetVars
 			}
 		}
+
+		if v := ctx.Values().Get(s.jetDataContextKey); v != nil {
+			if bindingData == nil {
+				// if bindingData is nil, try to fill them by context key (a middleware can set data).
+				bindingData = v
+			} else if m, ok := bindingData.(context.Map); ok {
+				// else if bindingData are passed to App/Context.View
+				// and it's map try to fill with the new values passed from a middleware.
+				if mv, ok := v.(context.Map); ok {
+					for key, value := range mv {
+						m[key] = value
+					}
+				}
+			}
+		}
 	}
 
 	if bindingData == nil {
@@ -378,10 +395,11 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 		vars = make(JetRuntimeVars)
 	}
 
+	/* fixed on jet v4.0.0, so no need of this:
 	if m, ok := bindingData.(context.Map); ok {
 		var jetData interface{}
 		for k, v := range m {
-			if k == s.jetRangerRendererContextKey {
+			if k == s.jetDataContextKey {
 				jetData = v
 				continue
 			}
@@ -396,7 +414,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 		if jetData != nil {
 			bindingData = jetData
 		}
-	}
+	}*/
 
 	return tmpl.Execute(w, vars, bindingData)
 }

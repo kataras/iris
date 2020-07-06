@@ -13,7 +13,7 @@ import (
 
 // $ go get -u github.com/go-bindata/go-bindata/...
 // $ go-bindata ./views/...
-// $ go build
+// $ go run .
 func main() {
 	app := iris.New()
 	tmpl := iris.Jet("./views", ".jet").Binary(Asset, AssetNames)
