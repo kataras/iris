@@ -95,7 +95,7 @@ func (b *Broker) ServeHTTP(ctx iris.Context) {
 	b.newClients <- messageChan
 
 	// Listen to connection close and when the entire request handler chain exits(this handler here) and un-register messageChan.
-	ctx.OnClose(func() {
+	ctx.OnClose(func(iris.Context) {
 		// Remove this client from the map of connected clients
 		// when this handler exits.
 		b.closingClients <- messageChan
