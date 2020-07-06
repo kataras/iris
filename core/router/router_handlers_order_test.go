@@ -64,6 +64,8 @@ var (
 		firstUseResponse + secondUseResponse + mainResponse + firstDoneResponse + secondDoneResponse
 
 	testResponse = func(t *testing.T, app *iris.Application, path string) {
+		t.Helper()
+
 		e := httptest.New(t, app)
 		e.GET(path).Expect().Status(httptest.StatusOK).Body().Equal(finalResponse)
 	}

@@ -477,13 +477,14 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 	// but dev may change the rules for that child Party, so we have to make clones of them here.
 
 	var (
-		beginHandlers context.Handlers
-		doneHandlers  context.Handlers
+		// global middleware to error handlers as well.
+		beginHandlers = api.beginGlobalHandlers
+		doneHandlers  = api.doneGlobalHandlers
 	)
 
 	if errorCode == 0 {
-		beginHandlers = context.JoinHandlers(api.middleware, beginHandlers)
-		doneHandlers = context.JoinHandlers(api.doneHandlers, doneHandlers)
+		beginHandlers = context.JoinHandlers(beginHandlers, api.middleware)
+		doneHandlers = context.JoinHandlers(doneHandlers, api.doneHandlers)
 	}
 
 	mainHandlers := context.Handlers(handlers)
@@ -532,8 +533,8 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 		route.SourceLineNumber = mainHandlerFileNumber
 
 		// Add UseGlobal & DoneGlobal Handlers
-		route.Use(api.beginGlobalHandlers...)
-		route.Done(api.doneGlobalHandlers...)
+		// route.Use(api.beginGlobalHandlers...)
+		// route.Done(api.doneGlobalHandlers...)
 
 		routes[i] = route
 	}
@@ -771,7 +772,11 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 // It's always a good practise to call it right before the `Application#Run` function.
 func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 	for _, r := range api.routes.routes {
-		r.Use(handlers...) // prepend the handlers to the existing routes
+		// r.beginHandlers = append(handlers, r.beginHandlers...)
+		// ^ this is correct but we act global begin handlers as one chain, so
+		// if called last more than one time, after all routes registered, we must somehow
+		// register them by order, so:
+		r.Use(handlers...)
 	}
 	// set as begin handlers for the next routes as well.
 	api.beginGlobalHandlers = append(api.beginGlobalHandlers, handlers...)

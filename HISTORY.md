@@ -371,6 +371,8 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Fix [#1552](https://github.com/kataras/iris/issues/1552).
+
 - Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
 
 - Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
@@ -422,6 +424,7 @@ Other Improvements:
 New Package-level Variables:
 
 - `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
+- `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
 - `iris.ErrGzipNotSupported` to export the `context.ErrGzipNotSupported` when trying to write gzip but client does not support.
 - `iris.GzipReader` middleware to decode gzip requests on next read actions.
 - `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
