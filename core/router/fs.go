@@ -395,6 +395,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			ctx.SetLastModified(info.ModTime())
 			err = dirList(ctx, info.Name(), f)
 			if err != nil {
+				ctx.Application().Logger().Errorf("FileServer: dirList: %v", err)
 				plainStatusCode(ctx, http.StatusInternalServerError)
 				return
 			}
@@ -565,54 +566,72 @@ func DirectoryExists(dir string) bool {
 	return true
 }
 
+// DirListRichOptions the options for the `DirListRich` helper function.
+// The Tmpl's "dirlist" template will be executed.
+type DirListRichOptions struct {
+	Tmpl *template.Template
+}
+
 // DirListRich is a `DirListFunc` which can be passed to `DirOptions.DirList` field
 // to override the default file listing appearance.
 // See `DirListRichTemplate` to modify the template, if necessary.
-func DirListRich(ctx context.Context, dirName string, dir http.File) error {
-	dirs, err := dir.Readdir(-1)
-	if err != nil {
-		return err
+func DirListRich(opts ...DirListRichOptions) DirListFunc {
+	var options DirListRichOptions
+	if len(opts) > 0 {
+		options = opts[0]
 	}
 
-	sortBy := ctx.URLParam("sort")
-	switch sortBy {
-	case "name":
-		sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
-	case "size":
-		sort.Slice(dirs, func(i, j int) bool { return dirs[i].Size() < dirs[j].Size() })
-	default:
-		sort.Slice(dirs, func(i, j int) bool { return dirs[i].ModTime().After(dirs[j].ModTime()) })
+	if options.Tmpl == nil {
+		options.Tmpl = DirListRichTemplate
 	}
 
-	pageData := listPageData{
-		Title: fmt.Sprintf("List of %d files", len(dirs)),
-		Files: make([]fileInfoData, 0, len(dirs)),
-	}
-
-	for _, d := range dirs {
-		name := d.Name()
-		if d.IsDir() {
-			name += "/"
+	return func(ctx context.Context, dirName string, dir http.File) error {
+		dirs, err := dir.Readdir(-1)
+		if err != nil {
+			return err
 		}
 
-		upath := ""
-		if ctx.Path() == "/" {
-			upath = ctx.GetCurrentRoute().StaticPath() + "/" + name
-		} else {
-			upath = "./" + dirName + "/" + name
+		sortBy := ctx.URLParam("sort")
+		switch sortBy {
+		case "name":
+			sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
+		case "size":
+			sort.Slice(dirs, func(i, j int) bool { return dirs[i].Size() < dirs[j].Size() })
+		default:
+			sort.Slice(dirs, func(i, j int) bool { return dirs[i].ModTime().After(dirs[j].ModTime()) })
 		}
 
-		url := url.URL{Path: upath}
+		pageData := listPageData{
+			Title: fmt.Sprintf("List of %d files", len(dirs)),
+			Files: make([]fileInfoData, 0, len(dirs)),
+		}
 
-		pageData.Files = append(pageData.Files, fileInfoData{
-			Info:    d,
-			ModTime: d.ModTime().UTC().Format(http.TimeFormat),
-			Path:    url.String(),
-			Name:    html.EscapeString(name),
-		})
+		for _, d := range dirs {
+			name := d.Name()
+			if d.IsDir() {
+				name += "/"
+			}
+
+			upath := ""
+			if ctx.Path() == "/" {
+				upath = ctx.GetCurrentRoute().StaticPath() + "/" + name
+			} else {
+				upath = "./" + dirName + "/" + name
+			}
+
+			url := url.URL{Path: upath}
+
+			pageData.Files = append(pageData.Files, fileInfoData{
+				Info:    d,
+				ModTime: d.ModTime().UTC().Format(http.TimeFormat),
+				Path:    url.String(),
+				RelPath: path.Join(ctx.Path(), name),
+				Name:    html.EscapeString(name),
+			})
+		}
+
+		return options.Tmpl.ExecuteTemplate(ctx, "dirlist", pageData)
 	}
-
-	return DirListRichTemplate.Execute(ctx, pageData)
 }
 
 type (
@@ -625,13 +644,14 @@ type (
 		Info    os.FileInfo
 		ModTime string // format-ed time.
 		Path    string // the request path.
+		RelPath string // file path without the system directory itself (we are not exposing it to the user).
 		Name    string // the html-escaped name.
 	}
 )
 
 // DirListRichTemplate is the html template the `DirListRich` function is using to render
 // the directories and files.
-var DirListRichTemplate = template.Must(template.New("").
+var DirListRichTemplate = template.Must(template.New("dirlist").
 	Funcs(template.FuncMap{
 		"formatBytes": func(b int64) string {
 			const unit = 1000
@@ -721,18 +741,22 @@ var DirListRichTemplate = template.Must(template.New("").
             <tr>
                 <th>#</th>
                 <th>Name</th>
-                <th>Size</th>
+				<th>Size</th>
             </tr>
         </thead>
         <tbody>
             {{ range $idx, $file := .Files }}
             <tr>
                 <td>{{ $idx }}</td>
-                <td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}">{{ $file.Name }}</a></td>
-                <td>{{ formatBytes $file.Info.Size }}</td>
+				<td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}">{{ $file.Name }}</a></td>
+				{{ if $file.Info.IsDir }}
+				<td>Dir</td>
+				{{ else }}
+				<td>{{ formatBytes $file.Info.Size }}</td>
+				{{ end }}
             </tr>
             {{ end }}
         </tbody>
-    </table>
+	</table>
 </body></html>
 `))
