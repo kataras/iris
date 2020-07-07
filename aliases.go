@@ -99,7 +99,6 @@ type (
 	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.
 	DirOptions = router.DirOptions
 	// DirListRichOptions the options for the `DirListRich` helper function.
-	// The Tmpl's "dirlist" template will be executed.
 	// A shortcut for the `router.DirListRichOptions`.
 	// Useful when `DirListRich` function is passed to `DirOptions.DirList` field.
 	DirListRichOptions = router.DirListRichOptions
