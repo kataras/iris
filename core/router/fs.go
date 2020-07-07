@@ -567,9 +567,13 @@ func DirectoryExists(dir string) bool {
 }
 
 // DirListRichOptions the options for the `DirListRich` helper function.
-// The Tmpl's "dirlist" template will be executed.
 type DirListRichOptions struct {
+	// If not nil then this template's "dirlist" is used to render the listing page.
 	Tmpl *template.Template
+	// If not empty then this view file is used to render the listing page.
+	// The view should be registered with `Application.RegisterView`.
+	// E.g. "dirlist.html"
+	TmplName string
 }
 
 // DirListRich is a `DirListFunc` which can be passed to `DirOptions.DirList` field
@@ -580,8 +584,7 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 	if len(opts) > 0 {
 		options = opts[0]
 	}
-
-	if options.Tmpl == nil {
+	if options.TmplName == "" && options.Tmpl == nil {
 		options.Tmpl = DirListRichTemplate
 	}
 
@@ -628,6 +631,10 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 				RelPath: path.Join(ctx.Path(), name),
 				Name:    html.EscapeString(name),
 			})
+		}
+
+		if options.TmplName != "" {
+			return ctx.View(options.TmplName, pageData)
 		}
 
 		return options.Tmpl.ExecuteTemplate(ctx, "dirlist", pageData)

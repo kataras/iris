@@ -379,6 +379,7 @@ Other Improvements:
 - Fix [#1552](https://github.com/kataras/iris/issues/1552).
 
 - Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
+    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/master/_examples/file-server/file-server)
 
 - Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
 
