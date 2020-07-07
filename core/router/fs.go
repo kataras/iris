@@ -24,6 +24,19 @@ const indexName = "/index.html"
 // DirListFunc is the function signature for customizing directory and file listing.
 type DirListFunc func(ctx context.Context, dirName string, dir http.File) error
 
+// Attachments options for files to be downloaded and saved locally by the client.
+// See `DirOptions`.
+type Attachments struct {
+	// Set to true to enable the files to be downloaded and
+	// saved locally by the client, instead of serving the file.
+	Enable bool
+	// Options to send files with a limit of bytes sent per second.
+	Limit float64
+	Burst int
+	// Use this function to change the sent filename.
+	NameFunc func(systemName string) (attachmentName string)
+}
+
 // DirOptions contains the optional settings that
 // `FileServer` and `Party#HandleDir` can use to serve files and assets.
 type DirOptions struct {
@@ -37,8 +50,15 @@ type DirOptions struct {
 
 	// List the files inside the current requested directory if `IndexName` not found.
 	ShowList bool
-	// If `ShowList` is true then this function will be used instead of the default one to show the list of files of a current requested directory(dir).
+	// If `ShowList` is true then this function will be used instead
+	// of the default one to show the list of files of a current requested directory(dir).
+	// See `DirListRich` package-level function too.
 	DirList DirListFunc
+
+	// Files downloaded and saved locally.
+	// Gzip option MUST be false in order for this to work.
+	// TODO(@kataras): find a way to make it work.
+	Attachments Attachments
 
 	// When embedded.
 	Asset      func(name string) ([]byte, error)      // we need this to make it compatible os.File.
@@ -343,6 +363,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			// if false then check if the dev did something like `ctx.Gzip(true)`.
 			_, gzip = ctx.ResponseWriter().(*context.GzipResponseWriter)
 		}
+		// ctx.Gzip(options.Gzip)
 
 		f, err := fs.Open(name)
 		if err != nil {
@@ -454,7 +475,17 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			return
 		}
 
-		http.ServeContent(ctx.ResponseWriter(), ctx.Request(), info.Name(), info.ModTime(), f)
+		if options.Attachments.Enable {
+			destName := info.Name()
+			if nameFunc := options.Attachments.NameFunc; nameFunc != nil {
+				destName = nameFunc(destName)
+			}
+
+			ctx.ResponseWriter().Header().Set(context.ContentDispositionHeaderKey, "attachment;filename="+destName)
+		}
+
+		// If limit is 0 then same as ServeContent.
+		ctx.ServeContentWithRate(f, info.Name(), info.ModTime(), options.Attachments.Limit, options.Attachments.Burst)
 		if serveCode := ctx.GetStatusCode(); context.StatusCodeNotSuccessful(serveCode) {
 			plainStatusCode(ctx, serveCode)
 			return

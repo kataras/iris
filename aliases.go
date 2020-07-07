@@ -98,6 +98,9 @@ type (
 	// `FileServer` and `Party#HandleDir` can use to serve files and assets.
 	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.
 	DirOptions = router.DirOptions
+	// Attachments options for files to be downloaded and saved locally by the client.
+	// See `DirOptions`.
+	Attachments = router.Attachments
 	// DirListRichOptions the options for the `DirListRich` helper function.
 	// A shortcut for the `router.DirListRichOptions`.
 	// Useful when `DirListRich` function is passed to `DirOptions.DirList` field.

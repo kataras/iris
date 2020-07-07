@@ -54,8 +54,19 @@ func main() {
 	filesRouter := app.Party("/files")
 	{
 		filesRouter.HandleDir("/", uploadDir, iris.DirOptions{
-			Gzip:     true,
+			Gzip:     false,
 			ShowList: true,
+
+			// Optionally, force-send files to the client inside of showing to the browser.
+			Attachments: iris.Attachments{
+				Enable: true,
+				// Optionally, control data sent per second:
+				Limit: 50.0 * iris.KB,
+				Burst: 100 * iris.KB,
+				// Change the destination name through:
+				// NameFunc: func(systemName string) string {...}
+			},
+
 			DirList: iris.DirListRich(iris.DirListRichOptions{
 				// Optionally, use a custom template for listing:
 				// Tmpl: dirListRichTemplate,
