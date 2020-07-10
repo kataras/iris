@@ -73,7 +73,7 @@ func (p Problem) getURI(key string) string {
 }
 
 // Updates "type" field to absolute URI, recursively.
-func (p Problem) updateURIsToAbs(ctx Context) {
+func (p Problem) updateURIsToAbs(ctx *Context) {
 	if p == nil {
 		return
 	}
@@ -271,7 +271,7 @@ type ProblemOptions struct {
 	// Should return time.Time, time.Duration, int64, int, float64 or string.
 	//
 	// Overrides the RetryAfter field.
-	RetryAfterFunc func(Context) interface{}
+	RetryAfterFunc func(*Context) interface{}
 }
 
 func parseDurationToSeconds(dur time.Duration) int64 {
@@ -310,7 +310,7 @@ func (o *ProblemOptions) parseRetryAfter(value interface{}, timeLayout string) s
 }
 
 // Apply accepts a Context and applies specific response-time options.
-func (o *ProblemOptions) Apply(ctx Context) {
+func (o *ProblemOptions) Apply(ctx *Context) {
 	retryAfterHeaderValue := ""
 	timeLayout := ctx.Application().ConfigurationReadOnly().GetTimeFormat()
 

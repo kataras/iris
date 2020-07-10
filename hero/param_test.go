@@ -13,7 +13,7 @@ func TestPathParams(t *testing.T) {
 		got = firstname + lastname
 	})
 
-	h.Register(func(ctx context.Context) func() string { return func() string { return "" } })
+	h.Register(func(ctx *context.Context) func() string { return func() string { return "" } })
 	handlerWithOther := h.Handler(func(f func() string, firstname string, lastname string) {
 		got = f() + firstname + lastname
 	})

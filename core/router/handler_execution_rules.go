@@ -72,7 +72,7 @@ func (e ExecutionOptions) buildHandler(h context.Handler) context.Handler {
 		return h
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		// Proceed will fire the handler and return false here if it doesn't contain a `ctx.Next()`,
 		// so we add the `ctx.Next()` wherever is necessary in order to eliminate any dev's misuse.
 		if !ctx.Proceed(h) {

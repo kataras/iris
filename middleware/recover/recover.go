@@ -13,7 +13,7 @@ func init() {
 	context.SetHandlerName("iris/middleware/recover.*", "iris.recover")
 }
 
-func getRequestLogs(ctx context.Context) string {
+func getRequestLogs(ctx *context.Context) string {
 	var status, ip, method, path string
 	status = strconv.Itoa(ctx.GetStatusCode())
 	path = ctx.Path()
@@ -27,7 +27,7 @@ func getRequestLogs(ctx context.Context) string {
 // it recovers from panics and logs
 // the panic message to the application's logger "Warn" level.
 func New() context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				if ctx.IsStopped() {

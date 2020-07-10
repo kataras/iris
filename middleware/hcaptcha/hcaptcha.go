@@ -19,7 +19,7 @@ var (
 	ResponseContextKey string = "iris.hcaptcha"
 	// DefaultFailureHandler is the default HTTP handler that is fired on hcaptcha failures.
 	// See `Client.FailureHandler`.
-	DefaultFailureHandler = func(ctx context.Context) {
+	DefaultFailureHandler = func(ctx *context.Context) {
 		ctx.StopWithStatus(http.StatusTooManyRequests)
 	}
 )
@@ -73,7 +73,7 @@ func New(secret string, options ...Option) context.Handler {
 //  otherwise it calls the Client's `FailureHandler`.
 // The hcaptcha's `Response` (which contains any `ErrorCodes`)
 // is saved on the Request's Context (see `GetResponseFromContext`).
-func (c *Client) Handler(ctx context.Context) {
+func (c *Client) Handler(ctx *context.Context) {
 	v := SiteVerify(ctx, c.secret)
 	ctx.Values().Set(ResponseContextKey, v)
 	if v.Success {
@@ -93,7 +93,7 @@ const apiURL = "https://hcaptcha.com/siteverify"
 // It returns the hcaptcha's `Response`.
 // The `response.Success` reports whether the validation passed.
 // Any errors are passed through the `response.ErrorCodes` field.
-func SiteVerify(ctx context.Context, secret string) (response Response) {
+func SiteVerify(ctx *context.Context, secret string) (response Response) {
 	generatedResponseID := ctx.FormValue("h-captcha-response")
 
 	if generatedResponseID == "" {
@@ -130,7 +130,7 @@ func SiteVerify(ctx context.Context, secret string) (response Response) {
 }
 
 // Get returns the hcaptcha `Response` of the current request and reports whether was found or not.
-func Get(ctx context.Context) (Response, bool) {
+func Get(ctx *context.Context) (Response, bool) {
 	v := ctx.Values().Get(ResponseContextKey)
 	if v != nil {
 		if response, ok := v.(Response); ok {
@@ -161,6 +161,6 @@ func ParseForm(dataSiteKey, postActionRelativePath string) string {
 
 // RenderForm writes the `HTMLForm` to "w" response writer.
 // See `_examples/auth/hcaptcha/templates/register_form.html` example for a custom form instead.
-func RenderForm(ctx context.Context, dataSiteKey, postActionRelativePath string) (int, error) {
+func RenderForm(ctx *context.Context, dataSiteKey, postActionRelativePath string) (int, error) {
 	return ctx.HTML(ParseForm(dataSiteKey, postActionRelativePath))
 }

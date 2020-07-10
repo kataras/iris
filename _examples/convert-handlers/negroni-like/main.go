@@ -39,6 +39,3 @@ func negronilikeTestMiddleware(w http.ResponseWriter, r *http.Request, next http
 	w.WriteHeader(iris.StatusBadRequest)
 	w.Write([]byte("Bad request"))
 }
-
-// Look "routing/custom-context" if you want to convert a custom handler with a custom Context
-// to a context.Handler.

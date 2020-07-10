@@ -431,18 +431,18 @@ New Package-level Variables:
 
 - `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
 - `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
-- `iris.ErrGzipNotSupported` to export the `context.ErrGzipNotSupported` when trying to write gzip but client does not support.
-- `iris.GzipReader` middleware to decode gzip requests on next read actions.
+- `iris.Compress` and `iris.CompressReader` middleware to compress responses and decode compressed request data respectfully.
 - `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
 - `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
 - `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
 
 New Context Methods:
 
+- `Context.Compress(bool) error` and `Context.CompressReader(bool) error`
 - `Context.Clone() Context` returns a copy of the Context.
 - `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
-- `Context.GzipReader(enable bool)` method and `iris.GzipReader` middleware to enable future request read body calls to decompress data using gzip, [example](_examples/request-body/read-gzip).
+- `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).
 - `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
 - `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
 - `Context.GetDomain() string` returns the domain.
@@ -469,22 +469,30 @@ New Context Methods:
 
 Breaking Changes:
 
+- `ctx.Gzip(boolean)` replaced with `ctx.Compress(boolean) error`.
+- `ctx.GzipReader(boolean) error` replaced with `ctx.CompressReader(boolean) error`.
+- `iris.Gzip` replaced with `iris.Compress` (middleware).
+- `iris.GzipReader` replaced with `iris.CompressReader` (middleware).
+- `ctx.ClientSupportsGzip() bool` replaced with `ctx.ClientSupportsEncoding("gzip", "br" ...) bool`.
+- `ctx.GzipResponseWriter()` is **removed**.
 - `Party.HandleDir` now returns a list of `[]*Route` (GET and HEAD) instead of GET only.
 - `Context.OnClose` and `Context.OnCloseConnection` now both accept an `iris.Handler` instead of a simple `func()` as their callback.
 - `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
-- Fixed handler's error response not be respected when response recorder or gzip writer was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder or gzip writer).
+- Fixed handler's error response not be respected when response recorder was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder).
 - `Context.String()` (rarely used by end-developers) it does not return a unique string anymore, to achieve the old representation you must call the new `Context.SetID` method first.
 - `iris.CookieEncode` and `CookieDecode` are replaced with the `iris.CookieEncoding`.
 - `sessions#Config.Encode` and `Decode` are removed in favor of (the existing) `Encoding` field.
 - `versioning.GetVersion` now returns an empty string if version wasn't found.
 - Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
-- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Gzip)`) or a prior call to `Context.Gzip(true)` will enable gzip compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
+- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Compress)`) or a prior call to `Context.Compress(true)` will enable compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
 - `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
 - `route.Trace() string` changed to `route.Trace(w io.Writer)`, to achieve the same result just pass a `bytes.Buffer`
 - `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)).
 - `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
 - `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
 - **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
+
+There is a breaking change on the type alias of `iris.Context` which now points to the `*context.Context` instead of the `context.Context` interface. The **interface has been removed** and the ability to **override** the Context **is not** available any more. When we added the ability from end-developers to override the Context years ago, we have never imagine that we will ever had such a featured Context with more than 4000 lines of code. As of Iris 2020, it is difficult and un-productive from an end-developer to override the Iris Context, and as far as we know, nobody uses this feature anymore because of that exact reason. Beside the overriding feature support end, if you still use the `context.Context` instead of `iris.Context`, it's the time to do it: please find-and-replace to `iris.Context` as wikis, book and all examples shows for the past 3 years. For the 99.9% of the users there is no a single breaking change, you already using `iris.Context` so you are in the "safe zone".
 
 # Su, 16 February 2020 | v12.1.8
 

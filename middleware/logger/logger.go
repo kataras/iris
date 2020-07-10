@@ -36,7 +36,7 @@ func New(cfg ...Config) context.Handler {
 }
 
 // Serve serves the middleware
-func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
+func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 	// skip logs and serve the main request immediately
 	if l.config.skip != nil {
 		if l.config.skip(ctx) {

@@ -40,7 +40,7 @@ var _ Option = GRPC{}
 func (g GRPC) Apply(c *ControllerActivator) {
 	defer c.Activated()
 
-	pre := func(ctx context.Context) {
+	pre := func(ctx *context.Context) {
 		if ctx.IsGRPC() { // gRPC, consumes and produces protobuf.
 			g.Server.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 			ctx.StopExecution()

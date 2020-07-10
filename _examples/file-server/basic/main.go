@@ -23,7 +23,7 @@ func newApp() *iris.Application {
 		// if end developer does not managed to handle it by hand.
 		IndexName: "/index.html",
 		// When files should served under compression.
-		Gzip: false,
+		Compress: false,
 		// List the files inside the current requested directory if `IndexName` not found.
 		ShowList: false,
 		// If `ShowList` is true then this function will be used instead of the default one to show the list of files of a current requested directory(dir).

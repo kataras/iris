@@ -116,7 +116,7 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 	return route, nil
 }
 
-var defaultOverlapFilter = func(ctx context.Context) bool {
+var defaultOverlapFilter = func(ctx *context.Context) bool {
 	if ctx.IsStopped() {
 		// It's stopped and the response can be overridden by a new handler.
 		rs, ok := ctx.ResponseWriter().(context.ResponseWriterReseter)
@@ -131,7 +131,7 @@ func overlapRoute(r *Route, next *Route) {
 	next.BuildHandlers()
 	nextHandlers := next.Handlers[0:]
 
-	decisionHandler := func(ctx context.Context) {
+	decisionHandler := func(ctx *context.Context) {
 		ctx.Next()
 
 		if !defaultOverlapFilter(ctx) {
@@ -925,7 +925,7 @@ func (api *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) 
 // Returns the GET *Route.
 func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byte) *Route {
 	modtime := time.Now()
-	h := func(ctx context.Context) {
+	h := func(ctx *context.Context) {
 		ctx.ContentType(cType)
 		if _, err := ctx.WriteWithExpiration(content, modtime); err != nil {
 			ctx.StatusCode(http.StatusInternalServerError)
@@ -975,7 +975,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 
 	modtime := time.Now()
 	cType := TypeByFilename(favPath)
-	h := func(ctx context.Context) {
+	h := func(ctx *context.Context) {
 		ctx.ContentType(cType)
 		if _, err := ctx.WriteWithExpiration(cacheFav, modtime); err != nil {
 			ctx.StatusCode(http.StatusInternalServerError)
@@ -1030,7 +1030,7 @@ func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Ro
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/view
 func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
-	api.Use(func(ctx context.Context) {
+	api.Use(func(ctx *context.Context) {
 		ctx.ViewLayout(tmplLayoutFile)
 		ctx.Next()
 	})

@@ -101,7 +101,7 @@ const (
 // if <=minimumAllowedCacheDuration then the server will try to parse from "cache-control" header
 //
 // client-side function
-func (h *ClientHandler) ServeHTTP(ctx context.Context) {
+func (h *ClientHandler) ServeHTTP(ctx *context.Context) {
 	// check for deniers, if at least one of them return true
 	// for this specific request, then skip the whole cache
 	if !h.rule.Claim(ctx) {

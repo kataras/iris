@@ -25,54 +25,54 @@ func TestDependency(t *testing.T) {
 			Expected:   struct{ Name string }{"name"},
 		},
 		{
-			Dependency: func(context.Context, *Input) (reflect.Value, error) {
+			Dependency: func(*context.Context, *Input) (reflect.Value, error) {
 				return reflect.ValueOf(42), nil
 			},
 			Expected: 42,
 		},
 		{
-			Dependency: DependencyHandler(func(context.Context, *Input) (reflect.Value, error) {
+			Dependency: DependencyHandler(func(*context.Context, *Input) (reflect.Value, error) {
 				return reflect.ValueOf(255), nil
 			}),
 			Expected: 255,
 		},
 		{
-			Dependency: func(context.Context) (reflect.Value, error) {
+			Dependency: func(*context.Context) (reflect.Value, error) {
 				return reflect.ValueOf("OK without Input"), nil
 			},
 			Expected: "OK without Input",
 		},
 		{
 
-			Dependency: func(context.Context, ...string) (reflect.Value, error) {
+			Dependency: func(*context.Context, ...string) (reflect.Value, error) {
 				return reflect.ValueOf("OK variadic ignored"), nil
 			},
 			Expected: "OK variadic ignored",
 		},
 		{
 
-			Dependency: func(context.Context) reflect.Value {
+			Dependency: func(*context.Context) reflect.Value {
 				return reflect.ValueOf("OK without Input and error")
 			},
 			Expected: "OK without Input and error",
 		},
 		{
 
-			Dependency: func(context.Context, ...int) reflect.Value {
+			Dependency: func(*context.Context, ...int) reflect.Value {
 				return reflect.ValueOf("OK without error and variadic ignored")
 			},
 			Expected: "OK without error and variadic ignored",
 		},
 		{
 
-			Dependency: func(context.Context) interface{} {
+			Dependency: func(*context.Context) interface{} {
 				return "1"
 			},
 			Expected: "1",
 		},
 		{
 
-			Dependency: func(context.Context) interface{} {
+			Dependency: func(*context.Context) interface{} {
 				return false
 			},
 			Expected: false,

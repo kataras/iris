@@ -82,7 +82,7 @@ func (expr *nameExpr) MatchString(s string) bool {
 //
 // If Handler panics, the server (the caller of Handler) assumes that the effect of the panic was isolated to the active request.
 // It recovers the panic, logs a stack trace to the server error log, and hangs up the connection.
-type Handler func(Context)
+type Handler func(*Context)
 
 // Handlers is just a type of slice of []Handler.
 //
@@ -235,7 +235,7 @@ func ingoreMainHandlerName(name string) bool {
 // based on the incoming request.
 //
 // See `NewConditionalHandler` for more.
-type Filter func(Context) bool
+type Filter func(*Context) bool
 
 // NewConditionalHandler returns a single Handler which can be registered
 // as a middleware.
@@ -254,7 +254,7 @@ type Filter func(Context) bool
 //
 // Example can be found at: _examples/routing/conditional-chain.
 func NewConditionalHandler(filter Filter, handlers ...Handler) Handler {
-	return func(ctx Context) {
+	return func(ctx *Context) {
 		if filter(ctx) {
 			// Note that we don't want just to fire the incoming handlers, we must make sure
 			// that it won't break any further handler chain

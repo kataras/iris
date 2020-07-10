@@ -34,14 +34,14 @@ func NewTransactionErrResult() TransactionErrResult {
 type TransactionScope interface {
 	// EndTransaction returns if can continue to the next transactions or not (false)
 	// called after Complete, empty or not empty error
-	EndTransaction(maybeErr TransactionErrResult, ctx Context) bool
+	EndTransaction(maybeErr TransactionErrResult, ctx *Context) bool
 }
 
 // TransactionScopeFunc the transaction's scope signature
-type TransactionScopeFunc func(maybeErr TransactionErrResult, ctx Context) bool
+type TransactionScopeFunc func(maybeErr TransactionErrResult, ctx *Context) bool
 
 // EndTransaction ends the transaction with a callback to itself, implements the TransactionScope interface
-func (tsf TransactionScopeFunc) EndTransaction(maybeErr TransactionErrResult, ctx Context) bool {
+func (tsf TransactionScopeFunc) EndTransaction(maybeErr TransactionErrResult, ctx *Context) bool {
 	return tsf(maybeErr, ctx)
 }
 
@@ -60,13 +60,13 @@ func (tsf TransactionScopeFunc) EndTransaction(maybeErr TransactionErrResult, ct
 //
 // For more information please visit the tests.
 type Transaction struct {
-	context  Context
-	parent   Context
+	context  *Context
+	parent   *Context
 	hasError bool
 	scope    TransactionScope
 }
 
-func newTransaction(from *context) *Transaction {
+func newTransaction(from *Context) *Transaction {
 	tempCtx := *from
 	writer := tempCtx.ResponseWriter().Clone()
 	tempCtx.ResetResponseWriter(writer)
@@ -80,7 +80,7 @@ func newTransaction(from *context) *Transaction {
 }
 
 // Context returns the current context of the transaction.
-func (t *Transaction) Context() Context {
+func (t *Transaction) Context() *Context {
 	return t.context
 }
 
@@ -138,7 +138,7 @@ func (t *Transaction) Complete(err error) {
 // independent 'silent' scope, if transaction fails (if transaction.IsFailure() == true)
 // then its response is not written to the real context no error is provided to the user.
 // useful for the most cases.
-var TransientTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrResult, ctx Context) bool {
+var TransientTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrResult, ctx *Context) bool {
 	if maybeErr.IsFailure() {
 		ctx.Recorder().Reset() // this response is skipped because it's empty.
 	}
@@ -150,7 +150,7 @@ var TransientTransactionScope = TransactionScopeFunc(func(maybeErr TransactionEr
 // if scope fails (if transaction.IsFailure() == true)
 // then the rest of the context's response  (transaction or normal flow)
 // is not written to the client, and an error status code is written instead.
-var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrResult, ctx Context) bool {
+var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrResult, ctx *Context) bool {
 	if maybeErr.IsFailure() {
 
 		// we need to register a beforeResponseFlush event here in order

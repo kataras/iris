@@ -33,7 +33,7 @@ const (
 
 // NotFoundHandler is the default version not found handler that
 // is executed from `NewMatcher` when no version is registered as available to dispatch a resource.
-var NotFoundHandler = func(ctx context.Context) {
+var NotFoundHandler = func(ctx *context.Context) {
 	// 303 is an option too,
 	// end-dev has the chance to change that behavior by using the NotFound in the map:
 	//
@@ -60,7 +60,7 @@ var NotFoundHandler = func(ctx context.Context) {
 // for versions (see `Key` for further details on that).
 //
 // See `SetVersion` too.
-func GetVersion(ctx context.Context) string {
+func GetVersion(ctx *context.Context) string {
 	// firstly by context store, if manually set by a middleware.
 	version := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetVersionContextKey())
 	if version != "" {
@@ -104,6 +104,6 @@ func GetVersion(ctx context.Context) string {
 // SetVersion force-sets the API Version.
 // It can be used inside a middleware.
 // See `GetVersion` too.
-func SetVersion(ctx context.Context, constraint string) {
+func SetVersion(ctx *context.Context, constraint string) {
 	ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetVersionContextKey(), constraint)
 }

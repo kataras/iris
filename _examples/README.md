@@ -54,9 +54,6 @@
     * [Reverse Routing](routing/reverse/main.go)
     * [Router Wrapper](routing/custom-wrapper/main.go)
     * [Custom Router](routing/custom-router/main.go)
-    * Custom Context
-        * [Method Overriding](routing/custom-context/method-overriding/main.go)
-        * [New Implementation](routing/custom-context/new-implementation/main.go)
     * Subdomains
         * [Single](routing/subdomains/single/main.go)
         * [Multi](routing/subdomains/multi/main.go)
@@ -129,12 +126,10 @@
     * [Bind Custom per type](request-body/read-custom-per-type/main.go)
     * [Bind Custom via Unmarshaler](request-body/read-custom-via-unmarshaler/main.go)
     * [Bind Many times](request-body/read-many/main.go)
-    * [Read/Bind Gzip compressed data](request-body/read-gzip/main.go)
 * Response Writer
     * [Content Negotiation](response-writer/content-negotiation)
     * [Text, Markdown, YAML, HTML, JSON, JSONP, Msgpack, XML and Binary](response-writer/write-rest/main.go)
     * [Protocol Buffers](response-writer/protobuf/main.go)
-    * [Write Gzip](response-writer/write-gzip/main.go)
     * [HTTP/2 Server Push](response-writer/http2push/main.go)
     * [Stream Writer](response-writer/stream-writer/main.go)
     * [Transactions](response-writer/transactions/main.go)
@@ -143,6 +138,10 @@
     * Cache
         * [Simple](response-writer/cache/simple/main.go)
         * [Client-Side (304)](response-writer/cache/client-side/main.go)
+* Compression
+    * [Server-Side](compression/main.go)
+    * [Client-Side](compression/client/main.go)
+    * [Client-Side (using Iris)](compress/client-using-iris/main.go)
 * Localization and Internationalization
     * [i18n](i18n/main.go)
 * Authentication, Authorization & Bot Detection 

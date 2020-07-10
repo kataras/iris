@@ -17,7 +17,7 @@ func main() {
 	app := iris.New()
 
 	app.Get("/users", func(ctx iris.Context) {
-		ctx.Gzip(true)
+		ctx.Compress(true)
 		ctx.ContentType("text/html")
 
 		userList := []string{
@@ -35,11 +35,9 @@ func main() {
 		// template.UserList(userList, buffer)
 		// ctx.Write(buffer.Bytes())
 
-		// using an io.Writer for automatic buffer management (i.e. hero built-in buffer pool),
-		// iris context implements the io.Writer by its ResponseWriter
-		// which is an enhanced version of the standard http.ResponseWriter
-		// but still 100% compatible, GzipResponseWriter too:
-		// _, err := template.UserListToWriter(userList, ctx.GzipResponseWriter())
+		// iris context implements the io.Writer:
+		// _, err := template.UserListToWriter(userList, ctx)
+		// OR:
 		buffer := new(bytes.Buffer)
 		template.UserList(userList, buffer)
 

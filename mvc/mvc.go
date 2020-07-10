@@ -288,9 +288,9 @@ func (app *Application) handle(controller interface{}, options ...Option) *Contr
 // HandleError registers a `hero.ErrorHandlerFunc` which will be fired when
 // application's controllers' functions returns an non-nil error.
 // Each controller can override it by implementing the `hero.ErrorHandler`.
-func (app *Application) HandleError(handler func(ctx context.Context, err error)) *Application {
+func (app *Application) HandleError(handler func(ctx *context.Context, err error)) *Application {
 	errorHandler := hero.ErrorHandlerFunc(handler)
-	app.container.GetErrorHandler = func(context.Context) hero.ErrorHandler {
+	app.container.GetErrorHandler = func(*context.Context) hero.ErrorHandler {
 		return errorHandler
 	}
 	return app

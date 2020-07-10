@@ -42,7 +42,7 @@ var Client = netutil.Client(time.Duration(20 * time.Second))
 //
 // Use `SiteVerify` to verify a request inside another handler if needed.
 func New(secret string) context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		if SiteVerify(ctx, secret).Success {
 			ctx.Next()
 		}
@@ -54,7 +54,7 @@ func New(secret string) context.Handler {
 // then validation passed.
 //
 // Use `New` for middleware use instead.
-func SiteVerify(ctx context.Context, secret string) (response Response) {
+func SiteVerify(ctx *context.Context, secret string) (response Response) {
 	generatedResponseID := ctx.FormValue("g-recaptcha-response")
 	if generatedResponseID == "" {
 		response.ErrorCodes = append(response.ErrorCodes,
@@ -113,7 +113,7 @@ var recaptchaForm = `<form action="%s" method="POST">
 // Example Code:
 //
 // Method: "POST" | Path: "/contact"
-// func postContact(ctx context.Context) {
+// func postContact(ctx *context.Context) {
 // 	// [...]
 // 	response := recaptcha.SiteVerify(ctx, recaptchaSecret)
 //
@@ -125,7 +125,7 @@ var recaptchaForm = `<form action="%s" method="POST">
 // }
 //
 // Method: "GET" | Path: "/contact"
-// func getContact(ctx context.Context) {
+// func getContact(ctx *context.Context) {
 // 	// render the recaptcha form
 // 	ctx.HTML(recaptcha.GetFormHTML(recaptchaPublic, "/contact"))
 // }

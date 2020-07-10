@@ -13,15 +13,15 @@ type (
 	// Handles non-nil errors return from a hero handler or a controller's method (see `getBindingsFor` and `Handler`)
 	// the error may return from a request-scoped dependency too (see `Handler`).
 	ErrorHandler interface {
-		HandleError(context.Context, error)
+		HandleError(*context.Context, error)
 	}
 	// ErrorHandlerFunc implements the `ErrorHandler`.
 	// It describes the type defnition for an error function handler.
-	ErrorHandlerFunc func(context.Context, error)
+	ErrorHandlerFunc func(*context.Context, error)
 )
 
 // HandleError fires when a non-nil error returns from a request-scoped dependency at serve-time or the handler itself.
-func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
+func (fn ErrorHandlerFunc) HandleError(ctx *context.Context, err error) {
 	fn(ctx, err)
 }
 
@@ -42,7 +42,7 @@ var (
 
 	// DefaultErrorHandler is the default error handler which is fired
 	// when a function returns a non-nil error or a request-scoped dependency failed to binded.
-	DefaultErrorHandler = ErrorHandlerFunc(func(ctx context.Context, err error) {
+	DefaultErrorHandler = ErrorHandlerFunc(func(ctx *context.Context, err error) {
 		if err != ErrStopExecution {
 			if status := ctx.GetStatusCode(); status == 0 || !context.StatusCodeNotSuccessful(status) {
 				ctx.StatusCode(DefaultErrStatusCode)
@@ -67,7 +67,7 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 
 	// 1. A handler which returns just an error, handle it faster.
 	if handlerWithErr, ok := isHandlerWithError(fn); ok {
-		return func(ctx context.Context) {
+		return func(ctx *context.Context) {
 			if err := handlerWithErr(ctx); err != nil {
 				c.GetErrorHandler(ctx).HandleError(ctx, err)
 			}
@@ -85,7 +85,7 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 		resultHandler = c.resultHandlers[lidx-i](resultHandler)
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		inputs := make([]reflect.Value, numIn)
 
 		for _, binding := range bindings {
@@ -131,15 +131,15 @@ func isHandler(fn interface{}) (context.Handler, bool) {
 		return handler, ok
 	}
 
-	if handler, ok := fn.(func(context.Context)); ok {
+	if handler, ok := fn.(func(*context.Context)); ok {
 		return handler, ok
 	}
 
 	return nil, false
 }
 
-func isHandlerWithError(fn interface{}) (func(context.Context) error, bool) {
-	if handlerWithErr, ok := fn.(func(context.Context) error); ok {
+func isHandlerWithError(fn interface{}) (func(*context.Context) error, bool) {
+	if handlerWithErr, ok := fn.(func(*context.Context) error); ok {
 		return handlerWithErr, true
 	}
 

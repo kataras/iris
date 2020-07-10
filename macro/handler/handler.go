@@ -37,7 +37,7 @@ func CanMakeHandler(tmpl macro.Template) (needsMacroHandler bool) {
 func MakeHandler(tmpl macro.Template) context.Handler {
 	filter := MakeFilter(tmpl)
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		if !filter(ctx) {
 			if ctx.GetCurrentRoute().StatusErrorCode() == ctx.GetStatusCode() {
 				ctx.Next()
@@ -61,7 +61,7 @@ func MakeFilter(tmpl macro.Template) context.Filter {
 		return nil
 	}
 
-	return func(ctx context.Context) bool {
+	return func(ctx *context.Context) bool {
 		for _, p := range tmpl.Params {
 			if !p.CanEval() {
 				continue // allow.

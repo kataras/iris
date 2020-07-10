@@ -194,7 +194,7 @@ func (router *Router) WrapRouter(wrapperFunc WrapperFunc) {
 }
 
 // ServeHTTPC serves the raw context, useful if we have already a context, it by-pass the wrapper.
-func (router *Router) ServeHTTPC(ctx context.Context) {
+func (router *Router) ServeHTTPC(ctx *context.Context) {
 	router.requestHandler.HandleRequest(ctx)
 }
 
@@ -204,6 +204,6 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // RouteExists reports whether a particular route exists
 // It will search from the current subdomain of context's host, if not inside the root domain.
-func (router *Router) RouteExists(ctx context.Context, method, path string) bool {
+func (router *Router) RouteExists(ctx *context.Context, method, path string) bool {
 	return router.requestHandler.RouteExists(ctx, method, path)
 }

@@ -26,7 +26,7 @@ func New() context.Handler {
 	threadcreateHandler := handlerconv.FromStd(pprof.Handler("threadcreate"))
 	debugBlockHandler := handlerconv.FromStd(pprof.Handler("block"))
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		ctx.ContentType("text/html")
 		action := ctx.Params().Get("action")
 		if action != "" {

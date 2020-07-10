@@ -13,10 +13,10 @@ func NotSatisfied() Rule {
 	return &notSatisfiedRule{}
 }
 
-func (n *notSatisfiedRule) Claim(context.Context) bool {
+func (n *notSatisfiedRule) Claim(*context.Context) bool {
 	return false
 }
 
-func (n *notSatisfiedRule) Valid(context.Context) bool {
+func (n *notSatisfiedRule) Valid(*context.Context) bool {
 	return false
 }

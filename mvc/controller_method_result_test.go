@@ -12,7 +12,7 @@ import (
 )
 
 type testControllerMethodResult struct {
-	Ctx context.Context
+	Ctx *context.Context
 }
 
 func (c *testControllerMethodResult) Get() Result {
@@ -103,7 +103,7 @@ func TestControllerMethodResult(t *testing.T) {
 }
 
 type testControllerMethodResultTypes struct {
-	Ctx context.Context
+	Ctx *context.Context
 }
 
 func (c *testControllerMethodResultTypes) GetText() string {
@@ -132,7 +132,7 @@ type testControllerMethodCustomResult struct {
 }
 
 // The only one required function to make that a custom Response dispatcher.
-func (r testControllerMethodCustomResult) Dispatch(ctx context.Context) {
+func (r testControllerMethodCustomResult) Dispatch(ctx *context.Context) {
 	ctx.HTML(r.HTML)
 }
 
@@ -227,11 +227,11 @@ type testControllerViewResultRespectCtxViewData struct {
 	T *testing.T
 }
 
-func (t *testControllerViewResultRespectCtxViewData) BeginRequest(ctx context.Context) {
+func (t *testControllerViewResultRespectCtxViewData) BeginRequest(ctx *context.Context) {
 	ctx.ViewData("name_begin", "iris_begin")
 }
 
-func (t *testControllerViewResultRespectCtxViewData) EndRequest(ctx context.Context) {
+func (t *testControllerViewResultRespectCtxViewData) EndRequest(ctx *context.Context) {
 	// check if data is not overridden by return View {Data: context.Map...}
 
 	dataWritten := ctx.GetViewData()

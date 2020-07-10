@@ -8,7 +8,7 @@ import (
 
 // The SkipperFunc signature, used to serve the main request without logs.
 // See `Configuration` too.
-type SkipperFunc func(ctx context.Context) bool
+type SkipperFunc func(ctx *context.Context) bool
 
 // Config contains the options for the logger middleware
 // can be optionally be passed to the `New`.
@@ -71,7 +71,7 @@ type Config struct {
 	LogFunc func(endTime time.Time, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{})
 	// LogFuncCtx can be used instead of `LogFunc` if handlers need to customize the output based on
 	// custom request-time information that the LogFunc isn't aware of.
-	LogFuncCtx func(ctx context.Context, latency time.Duration)
+	LogFuncCtx func(ctx *context.Context, latency time.Duration)
 	// Skippers used to skip the logging i.e by `ctx.Path()` and serve
 	// the next/main handler immediately.
 	Skippers []SkipperFunc
@@ -110,7 +110,7 @@ func (c *Config) buildSkipper() {
 		return
 	}
 	skippersLocked := c.Skippers[0:]
-	c.skip = func(ctx context.Context) bool {
+	c.skip = func(ctx *context.Context) bool {
 		for _, s := range skippersLocked {
 			if s(ctx) {
 				return true

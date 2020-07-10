@@ -45,11 +45,11 @@ func HeaderValid(valid ruleset.HeaderPredicate) Rule {
 }
 
 // Claim validator
-func (h *headerRule) Claim(ctx context.Context) bool {
+func (h *headerRule) Claim(ctx *context.Context) bool {
 	return h.claim(ctx.Request().Header.Get)
 }
 
 // Valid validator
-func (h *headerRule) Valid(ctx context.Context) bool {
+func (h *headerRule) Valid(ctx *context.Context) bool {
 	return h.valid(ctx.ResponseWriter().Header().Get)
 }

@@ -20,43 +20,43 @@ import (
 // response should be the same at all cases.
 var (
 	mainResponse = "main"
-	mainHandler  = func(ctx context.Context) {
+	mainHandler  = func(ctx *context.Context) {
 		ctx.WriteString(mainResponse)
 		ctx.Next()
 	}
 
 	firstUseResponse = "use1"
-	firstUseHandler  = func(ctx context.Context) {
+	firstUseHandler  = func(ctx *context.Context) {
 		ctx.WriteString(firstUseResponse)
 		ctx.Next()
 	}
 
 	secondUseResponse = "use2"
-	secondUseHandler  = func(ctx context.Context) {
+	secondUseHandler  = func(ctx *context.Context) {
 		ctx.WriteString(secondUseResponse)
 		ctx.Next()
 	}
 
 	firstUseGlobalResponse = "useglobal1"
-	firstUseGlobalHandler  = func(ctx context.Context) {
+	firstUseGlobalHandler  = func(ctx *context.Context) {
 		ctx.WriteString(firstUseGlobalResponse)
 		ctx.Next()
 	}
 
 	secondUseGlobalResponse = "useglobal2"
-	secondUseGlobalHandler  = func(ctx context.Context) {
+	secondUseGlobalHandler  = func(ctx *context.Context) {
 		ctx.WriteString(secondUseGlobalResponse)
 		ctx.Next()
 	}
 
 	firstDoneResponse = "done1"
-	firstDoneHandler  = func(ctx context.Context) {
+	firstDoneHandler  = func(ctx *context.Context) {
 		ctx.WriteString(firstDoneResponse)
 		ctx.Next()
 	}
 
 	secondDoneResponse = "done2"
-	secondDoneHandler  = func(ctx context.Context) {
+	secondDoneHandler  = func(ctx *context.Context) {
 		ctx.WriteString(secondDoneResponse)
 	}
 

@@ -179,7 +179,7 @@ func main() {
 	app.Get("/profile/{id:uint64 min(1)}/friends/{friendid:uint64 min(1) else 504}", func(ctx iris.Context) {
 		id := ctx.Params().GetUint64Default("id", 0)
 		friendid := ctx.Params().GetUint64Default("friendid", 0)
-		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
+		ctx.Writef("Hello id: %d looking for friend id: %d", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
 
 	// :uint8 0 to 255.

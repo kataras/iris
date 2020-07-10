@@ -14,7 +14,7 @@ import (
 	  Build(provider router.RoutesProvider) error
    - RouteExists reports whether a particular route exists.
 	  RouteExists(ctx iris.Context, method, path string) bool
-   - FireErrorCode(ctx context.Context) should handle the given ctx.GetStatusCode().
+   - FireErrorCode(ctx iris.Context) should handle the given ctx.GetStatusCode().
 
 For a more detailed, complete and useful example
 you can take a look at the iris' router itself which is located at:

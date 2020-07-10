@@ -201,9 +201,9 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"views/includes/_partial.jet": viewsIncludes_partialJet,
-	"views/includes/blocks.jet": viewsIncludesBlocksJet,
-	"views/index.jet": viewsIndexJet,
+	"views/includes/_partial.jet":   viewsIncludes_partialJet,
+	"views/includes/blocks.jet":     viewsIncludesBlocksJet,
+	"views/index.jet":               viewsIndexJet,
 	"views/layouts/application.jet": viewsLayoutsApplicationJet,
 }
 
@@ -246,15 +246,16 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
-	"views": &bintree{nil, map[string]*bintree{
-		"includes": &bintree{nil, map[string]*bintree{
-			"_partial.jet": &bintree{viewsIncludes_partialJet, map[string]*bintree{}},
-			"blocks.jet": &bintree{viewsIncludesBlocksJet, map[string]*bintree{}},
+	"views": {nil, map[string]*bintree{
+		"includes": {nil, map[string]*bintree{
+			"_partial.jet": {viewsIncludes_partialJet, map[string]*bintree{}},
+			"blocks.jet":   {viewsIncludesBlocksJet, map[string]*bintree{}},
 		}},
-		"index.jet": &bintree{viewsIndexJet, map[string]*bintree{}},
-		"layouts": &bintree{nil, map[string]*bintree{
-			"application.jet": &bintree{viewsLayoutsApplicationJet, map[string]*bintree{}},
+		"index.jet": {viewsIndexJet, map[string]*bintree{}},
+		"layouts": {nil, map[string]*bintree{
+			"application.jet": {viewsLayoutsApplicationJet, map[string]*bintree{}},
 		}},
 	}},
 }}
@@ -305,4 +306,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

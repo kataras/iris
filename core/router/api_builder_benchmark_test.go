@@ -73,7 +73,7 @@ func genPaths(routesLength, minCharLength, maxCharLength int) []string {
 func BenchmarkAPIBuilder(b *testing.B) {
 	rand.Seed(time.Now().Unix())
 
-	noOpHandler := func(ctx context.Context) {}
+	noOpHandler := func(ctx *context.Context) {}
 	handlersPerRoute := make(context.Handlers, 12)
 	for i := 0; i < cap(handlersPerRoute); i++ {
 		handlersPerRoute[i] = noOpHandler

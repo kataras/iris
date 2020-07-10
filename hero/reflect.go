@@ -58,11 +58,11 @@ func toError(v reflect.Value) error {
 	return v.Interface().(error)
 }
 
-var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
+var contextType = reflect.TypeOf((*context.Context)(nil))
 
 // isContext returns true if the "typ" is a type of Context.
 func isContext(typ reflect.Type) bool {
-	return typ.Implements(contextTyp)
+	return typ == contextType
 }
 
 var errorHandlerTyp = reflect.TypeOf((*ErrorHandler)(nil)).Elem()

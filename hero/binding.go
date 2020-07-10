@@ -176,7 +176,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 				// wrap the existing dependency handler.
 				paramHandler := paramDependencyHandler(getParamIndex())
 				prevHandler := d.Handle
-				d.Handle = func(ctx context.Context, input *Input) (reflect.Value, error) {
+				d.Handle = func(ctx *context.Context, input *Input) (reflect.Value, error) {
 					v, err := paramHandler(ctx, input)
 					if err != nil {
 						v, err = prevHandler(ctx, input)
@@ -315,7 +315,7 @@ func paramBinding(index, paramIndex int, typ reflect.Type) *binding {
 }
 
 func paramDependencyHandler(paramIndex int) DependencyHandler {
-	return func(ctx context.Context, input *Input) (reflect.Value, error) {
+	return func(ctx *context.Context, input *Input) (reflect.Value, error) {
 		if ctx.Params().Len() <= paramIndex {
 			return emptyValue, ErrSeeOther
 		}
@@ -329,7 +329,7 @@ func paramDependencyHandler(paramIndex int) DependencyHandler {
 func payloadBinding(index int, typ reflect.Type) *binding {
 	return &binding{
 		Dependency: &Dependency{
-			Handle: func(ctx context.Context, input *Input) (newValue reflect.Value, err error) {
+			Handle: func(ctx *context.Context, input *Input) (newValue reflect.Value, err error) {
 				wasPtr := input.Type.Kind() == reflect.Ptr
 
 				if serveDepsV := ctx.Values().Get(context.DependenciesContextKey); serveDepsV != nil {

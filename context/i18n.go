@@ -6,7 +6,7 @@ import "golang.org/x/text/language"
 // Read the "i18n" package fo details.
 type I18nReadOnly interface {
 	Tags() []language.Tag
-	GetLocale(ctx Context) Locale
+	GetLocale(ctx *Context) Locale
 	Tr(lang string, format string, args ...interface{}) string
 }
 

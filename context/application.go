@@ -35,7 +35,7 @@ type Application interface {
 	// i.e: routing within a foreign context.
 	//
 	// It is ready to use after Build state.
-	ServeHTTPC(ctx Context)
+	ServeHTTPC(ctx *Context)
 
 	// ServeHTTP is the main router handler which calls the .Serve and acquires a new context from the pool.
 	//
@@ -65,11 +65,11 @@ type Application interface {
 	// then it will try to reset the headers and the body before calling the
 	// registered (or default) error handler for that error code set by
 	// `ctx.StatusCode` method.
-	FireErrorCode(ctx Context)
+	FireErrorCode(ctx *Context)
 
 	// RouteExists reports whether a particular route exists
 	// It will search from the current subdomain of context's host, if not inside the root domain.
-	RouteExists(ctx Context, method, path string) bool
+	RouteExists(ctx *Context, method, path string) bool
 	// FindClosestPaths returns a list of "n" paths close to "path" under the given "subdomain".
 	//
 	// Order may change.

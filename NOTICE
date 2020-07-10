@@ -22,7 +22,10 @@ Revision ID: d1c07411df0bb21f6b21f5b5d9325fac6f29c911
                      a16f63faca                                                   
  bluemonday          0a75d7616912ab9     https://github.com/microcosm-cc/         
                      beb9cc6f7283ec1     bluemonday                               
-                     917c61b135                                                   
+                     917c61b135
+ brotli              c3da72aa01ed78f     https://github.com/andybalholm/brotli       
+                     164593b9624fd91                                              
+                     d25082d2d2                                                    
  closestmatch        1fbe626be92eb4c     https://github.com/schollz/closestmatch  
                      347d182cae9f8f0                                              
                      0a046bf2f4                                                   
@@ -97,4 +100,4 @@ Revision ID: d1c07411df0bb21f6b21f5b5d9325fac6f29c911
                      f5c1929ae8                                            
  uuid                cb32006e483f2a2     https://github.com/google/uuid       
                      3230e24209cf185                                              
-                     c65b477dbf                
+                     c65b477dbf

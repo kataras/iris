@@ -31,7 +31,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 		"Secret": "dsads£2132215£%%Ssdsa",
 	}
 
-	writeValues := func(ctx context.Context) {
+	writeValues := func(ctx *context.Context) {
 		s := sessions.Get(ctx)
 		sessValues := s.GetAll()
 
@@ -45,7 +45,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 		app.Party("subdomain.").Get("/get", writeValues)
 	}
 
-	app.Post("/set", func(ctx context.Context) {
+	app.Post("/set", func(ctx *context.Context) {
 		s := sessions.Get(ctx)
 		vals := make(map[string]interface{})
 		if err := ctx.ReadJSON(&vals); err != nil {
@@ -56,16 +56,16 @@ func testSessions(t *testing.T, app *iris.Application) {
 		}
 	})
 
-	app.Get("/get", func(ctx context.Context) {
+	app.Get("/get", func(ctx *context.Context) {
 		writeValues(ctx)
 	})
 
-	app.Get("/clear", func(ctx context.Context) {
+	app.Get("/clear", func(ctx *context.Context) {
 		sessions.Get(ctx).Clear()
 		writeValues(ctx)
 	})
 
-	app.Get("/destroy", func(ctx context.Context) {
+	app.Get("/destroy", func(ctx *context.Context) {
 		session := sessions.Get(ctx)
 		if session.IsNew() {
 			t.Fatal("expected session not to be nil on destroy")
@@ -82,16 +82,16 @@ func testSessions(t *testing.T, app *iris.Application) {
 	})
 
 	// cookie should be new.
-	app.Get("/after_destroy_renew", func(ctx context.Context) {
+	app.Get("/after_destroy_renew", func(ctx *context.Context) {
 		isNew := sessions.Get(ctx).IsNew()
 		ctx.Writef("%v", isNew)
 	})
 
-	app.Get("/multi_start_set_get", func(ctx context.Context) {
+	app.Get("/multi_start_set_get", func(ctx *context.Context) {
 		s := sessions.Get(ctx)
 		s.Set("key", "value")
 		ctx.Next()
-	}, func(ctx context.Context) {
+	}, func(ctx *context.Context) {
 		s := sessions.Get(ctx)
 		_, err := ctx.Writef(s.GetString("key"))
 		if err != nil {
@@ -140,12 +140,12 @@ func TestFlashMessages(t *testing.T) {
 		"Secret":       "dsads£2132215£%%Ssdsa",
 	}
 
-	writeValues := func(ctx context.Context, values map[string]interface{}) error {
+	writeValues := func(ctx *context.Context, values map[string]interface{}) error {
 		_, err := ctx.JSON(values)
 		return err
 	}
 
-	app.Post("/set", func(ctx context.Context) {
+	app.Post("/set", func(ctx *context.Context) {
 		vals := make(map[string]interface{})
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot readjson. Trace %s", err.Error())
@@ -158,7 +158,7 @@ func TestFlashMessages(t *testing.T) {
 		ctx.StatusCode(iris.StatusOK)
 	})
 
-	writeFlashValues := func(ctx context.Context) {
+	writeFlashValues := func(ctx *context.Context) {
 		s := sess.Start(ctx)
 
 		flashes := s.GetFlashes()
@@ -167,23 +167,23 @@ func TestFlashMessages(t *testing.T) {
 		}
 	}
 
-	app.Get("/get_single", func(ctx context.Context) {
+	app.Get("/get_single", func(ctx *context.Context) {
 		s := sess.Start(ctx)
 		flashMsgString := s.GetFlashString(valueSingleKey)
 		ctx.WriteString(flashMsgString)
 	})
 
-	app.Get("/get", func(ctx context.Context) {
+	app.Get("/get", func(ctx *context.Context) {
 		writeFlashValues(ctx)
 	})
 
-	app.Get("/clear", func(ctx context.Context) {
+	app.Get("/clear", func(ctx *context.Context) {
 		s := sess.Start(ctx)
 		s.ClearFlashes()
 		writeFlashValues(ctx)
 	})
 
-	app.Get("/destroy", func(ctx context.Context) {
+	app.Get("/destroy", func(ctx *context.Context) {
 		sess.Destroy(ctx)
 		writeFlashValues(ctx)
 		ctx.StatusCode(iris.StatusOK)
@@ -191,7 +191,7 @@ func TestFlashMessages(t *testing.T) {
 	})
 
 	// request cookie should be empty
-	app.Get("/after_destroy", func(ctx context.Context) {
+	app.Get("/after_destroy", func(ctx *context.Context) {
 		ctx.StatusCode(iris.StatusOK)
 	})
 
@@ -233,7 +233,7 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 		Logged    bool   `json:"logged"`
 	}
 
-	var writeResponse = func(ctx context.Context) {
+	var writeResponse = func(ctx *context.Context) {
 		session := sessions.Get(ctx)
 		ctx.JSON(response{
 			SessionID: session.ID(),
@@ -241,7 +241,7 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 		})
 	}
 
-	app.Get("/get", func(ctx context.Context) {
+	app.Get("/get", func(ctx *context.Context) {
 		writeResponse(ctx)
 	})
 

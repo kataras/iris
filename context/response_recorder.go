@@ -1,13 +1,12 @@
 package context
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 )
 
 // Recorder the middleware to enable response writer recording ( ResponseWriter -> ResponseRecorder)
-var Recorder = func(ctx Context) {
+var Recorder = func(ctx *Context) {
 	ctx.Record()
 	ctx.Next()
 }
@@ -88,20 +87,6 @@ func (w *ResponseRecorder) Write(contents []byte) (int, error) {
 	// Remember that we should not return all the written length within `Write`:
 	// see https://github.com/kataras/iris/pull/931
 	return len(contents), nil
-}
-
-// Writef formats according to a format specifier and writes to the response.
-//
-// Returns the number of bytes written and any write error encountered.
-func (w *ResponseRecorder) Writef(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(w, format, a...)
-}
-
-// WriteString writes a simple string to the response.
-//
-// Returns the number of bytes written and any write error encountered
-func (w *ResponseRecorder) WriteString(s string) (n int, err error) {
-	return w.Write([]byte(s))
 }
 
 // SetBody overrides the body and sets it to a slice of bytes value.

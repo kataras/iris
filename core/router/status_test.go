@@ -12,7 +12,7 @@ import (
 	"github.com/kataras/iris/v12/httptest"
 )
 
-var defaultErrHandler = func(ctx context.Context) {
+var defaultErrHandler = func(ctx *context.Context) {
 	text := http.StatusText(ctx.GetStatusCode())
 	ctx.WriteString(text)
 }
@@ -25,18 +25,18 @@ func TestOnAnyErrorCode(t *testing.T) {
 	expectedPrintBeforeExecuteErr := "printed before error"
 
 	// with a middleware
-	app.OnAnyErrorCode(func(ctx context.Context) {
+	app.OnAnyErrorCode(func(ctx *context.Context) {
 		buff.WriteString(expectedPrintBeforeExecuteErr)
 		ctx.Next()
 	}, defaultErrHandler)
 
 	expectedFoundResponse := "found"
-	app.Get("/found", func(ctx context.Context) {
+	app.Get("/found", func(ctx *context.Context) {
 		ctx.WriteString(expectedFoundResponse)
 	})
 
 	expected407 := "this should be sent, we manage the response response by ourselves"
-	app.Get("/407", func(ctx context.Context) {
+	app.Get("/407", func(ctx *context.Context) {
 		ctx.Record()
 		ctx.WriteString(expected407)
 		ctx.StatusCode(iris.StatusProxyAuthRequired)
@@ -64,12 +64,12 @@ func TestOnAnyErrorCode(t *testing.T) {
 	app2 := iris.New()
 	app2.Configure(iris.WithResetOnFireErrorCode)
 
-	app2.OnAnyErrorCode(func(ctx context.Context) {
+	app2.OnAnyErrorCode(func(ctx *context.Context) {
 		buff.WriteString(expectedPrintBeforeExecuteErr)
 		ctx.Next()
 	}, defaultErrHandler)
 
-	app2.Get("/406", func(ctx context.Context) {
+	app2.Get("/406", func(ctx *context.Context) {
 		ctx.Record()
 		ctx.WriteString("this should not be sent, only status text will be sent")
 		ctx.WriteString("the handler can handle 'rollback' of the text when error code fired because of the recorder")

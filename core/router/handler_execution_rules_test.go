@@ -19,7 +19,7 @@ var (
 )
 
 func writeStringHandler(text string, withNext bool) context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		ctx.WriteString(text)
 		if withNext {
 			ctx.Next()
