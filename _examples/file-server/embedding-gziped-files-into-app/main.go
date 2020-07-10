@@ -9,19 +9,25 @@ import (
 // Follow these steps first:
 // $ go get -u github.com/kataras/bindata/cmd/bindata
 // $ bindata ./assets/...
-// $ go build
+// $ go run .
 // $ ./embedding-gziped-files-into-app
 // "physical" files are not used, you can delete the "assets" folder and run the example.
 
 func newApp() *iris.Application {
 	app := iris.New()
 
-	// Note the `GzipAsset` and `GzipAssetNames` are different from `go-bindata`'s `Asset`,
-	// do not set the `Gzip` option to true, it's already managed by the kataras/bindata.
+	// Note the `GzipAsset` and `GzipAssetNames` are different from go-bindata's `Asset`,
+	// do not set the `Compress` option to true, instead
+	// use the `AssetValidator` option to manually set the content-encoding to "gzip".
 	app.HandleDir("/static", "./assets", iris.DirOptions{
 		Asset:      GzipAsset,
 		AssetInfo:  GzipAssetInfo,
 		AssetNames: GzipAssetNames,
+		AssetValidator: func(ctx iris.Context, name string) bool {
+			ctx.Header("Vary", "Accept-Encoding")
+			ctx.Header("Content-Encoding", "gzip")
+			return true
+		},
 	})
 	return app
 }
