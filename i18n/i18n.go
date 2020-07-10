@@ -42,7 +42,7 @@ type I18n struct {
 	// ExtractFunc is the type signature for declaring custom logic
 	// to extract the language tag name.
 	// Defaults to nil.
-	ExtractFunc func(ctx context.Context) string
+	ExtractFunc func(ctx *context.Context) string
 	// If not empty, it is language identifier by url query.
 	//
 	// Defaults to "lang".
@@ -319,7 +319,7 @@ const acceptLanguageHeaderKey = "Accept-Language"
 
 // GetLocale returns the found locale of a request.
 // It will return the first registered language if nothing else matched.
-func (i *I18n) GetLocale(ctx context.Context) context.Locale {
+func (i *I18n) GetLocale(ctx *context.Context) context.Locale {
 	var (
 		index int
 		ok    bool
@@ -392,7 +392,7 @@ func (i *I18n) GetLocale(ctx context.Context) context.Locale {
 
 // GetMessage returns the localized text message for this "r" request based on the key "format".
 // It returns an empty string if locale or format not found.
-func (i *I18n) GetMessage(ctx context.Context, format string, args ...interface{}) string {
+func (i *I18n) GetMessage(ctx *context.Context, format string, args ...interface{}) string {
 	loc := i.GetLocale(ctx)
 	if loc != nil {
 		// it's not the default/fallback language and not message found for that lang:key.

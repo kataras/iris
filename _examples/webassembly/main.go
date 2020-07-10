@@ -17,7 +17,7 @@ func main() {
 	app.HandleDir("/", "./client")
 
 	app.Get("/", func(ctx iris.Context) {
-		// ctx.Gzip(true)
+		// ctx.Compress(true)
 		ctx.ServeFile("./client/hello.html")
 	})
 

@@ -15,8 +15,8 @@ import (
 // completed by the end controller then the BeginRequest and EndRequest
 // are called between the controller's method responsible for the incoming request.
 type BaseController interface {
-	BeginRequest(context.Context)
-	EndRequest(context.Context)
+	BeginRequest(*context.Context)
+	EndRequest(*context.Context)
 }
 
 type shared interface {
@@ -400,7 +400,7 @@ func (c *ControllerActivator) handlerOf(relPath, methodName string) context.Hand
 	handler := c.injector.MethodHandler(methodName, paramsCount)
 
 	if isBaseController(c.Type) {
-		return func(ctx context.Context) {
+		return func(ctx *context.Context) {
 			ctrl, err := c.injector.Acquire(ctx)
 			if err != nil {
 				// if err != hero.ErrStopExecution {

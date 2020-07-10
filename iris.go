@@ -1,7 +1,6 @@
 package iris
 
 import (
-	"bytes"
 	stdContext "context"
 	"errors"
 	"fmt"
@@ -10,137 +9,37 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12/cache"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
-	"github.com/kataras/iris/v12/core/handlerconv"
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/core/netutil"
 	"github.com/kataras/iris/v12/core/router"
-	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/i18n"
 	requestLogger "github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/view"
 
 	"github.com/kataras/golog"
-	"gopkg.in/yaml.v3"
+	"github.com/kataras/tunnel"
 )
 
 // Version is the current version number of the Iris Web Framework.
 const Version = "12.1.8"
 
-// HTTP status codes as registered with IANA.
-// See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
-// Raw Copy from the future(tip) net/http std package in order to recude the import path of "net/http" for the users.
+// Byte unit helpers.
 const (
-	StatusContinue             = 100 // RFC 7231, 6.2.1
-	StatusSwitchingProtocols   = 101 // RFC 7231, 6.2.2
-	StatusProcessing           = 102 // RFC 2518, 10.1
-	StatusEarlyHints           = 103 // RFC 8297
-	StatusOK                   = 200 // RFC 7231, 6.3.1
-	StatusCreated              = 201 // RFC 7231, 6.3.2
-	StatusAccepted             = 202 // RFC 7231, 6.3.3
-	StatusNonAuthoritativeInfo = 203 // RFC 7231, 6.3.4
-	StatusNoContent            = 204 // RFC 7231, 6.3.5
-	StatusResetContent         = 205 // RFC 7231, 6.3.6
-	StatusPartialContent       = 206 // RFC 7233, 4.1
-	StatusMultiStatus          = 207 // RFC 4918, 11.1
-	StatusAlreadyReported      = 208 // RFC 5842, 7.1
-	StatusIMUsed               = 226 // RFC 3229, 10.4.1
-
-	StatusMultipleChoices  = 300 // RFC 7231, 6.4.1
-	StatusMovedPermanently = 301 // RFC 7231, 6.4.2
-	StatusFound            = 302 // RFC 7231, 6.4.3
-	StatusSeeOther         = 303 // RFC 7231, 6.4.4
-	StatusNotModified      = 304 // RFC 7232, 4.1
-	StatusUseProxy         = 305 // RFC 7231, 6.4.5
-
-	StatusTemporaryRedirect = 307 // RFC 7231, 6.4.7
-	StatusPermanentRedirect = 308 // RFC 7538, 3
-
-	StatusBadRequest                   = 400 // RFC 7231, 6.5.1
-	StatusUnauthorized                 = 401 // RFC 7235, 3.1
-	StatusPaymentRequired              = 402 // RFC 7231, 6.5.2
-	StatusForbidden                    = 403 // RFC 7231, 6.5.3
-	StatusNotFound                     = 404 // RFC 7231, 6.5.4
-	StatusMethodNotAllowed             = 405 // RFC 7231, 6.5.5
-	StatusNotAcceptable                = 406 // RFC 7231, 6.5.6
-	StatusProxyAuthRequired            = 407 // RFC 7235, 3.2
-	StatusRequestTimeout               = 408 // RFC 7231, 6.5.7
-	StatusConflict                     = 409 // RFC 7231, 6.5.8
-	StatusGone                         = 410 // RFC 7231, 6.5.9
-	StatusLengthRequired               = 411 // RFC 7231, 6.5.10
-	StatusPreconditionFailed           = 412 // RFC 7232, 4.2
-	StatusRequestEntityTooLarge        = 413 // RFC 7231, 6.5.11
-	StatusPayloadTooRage               = StatusRequestEntityTooLarge
-	StatusRequestURITooLong            = 414 // RFC 7231, 6.5.12
-	StatusUnsupportedMediaType         = 415 // RFC 7231, 6.5.13
-	StatusRequestedRangeNotSatisfiable = 416 // RFC 7233, 4.4
-	StatusExpectationFailed            = 417 // RFC 7231, 6.5.14
-	StatusTeapot                       = 418 // RFC 7168, 2.3.3
-	StatusMisdirectedRequest           = 421 // RFC 7540, 9.1.2
-	StatusUnprocessableEntity          = 422 // RFC 4918, 11.2
-	StatusLocked                       = 423 // RFC 4918, 11.3
-	StatusFailedDependency             = 424 // RFC 4918, 11.4
-	StatusTooEarly                     = 425 // RFC 8470, 5.2.
-	StatusUpgradeRequired              = 426 // RFC 7231, 6.5.15
-	StatusPreconditionRequired         = 428 // RFC 6585, 3
-	StatusTooManyRequests              = 429 // RFC 6585, 4
-	StatusRequestHeaderFieldsTooLarge  = 431 // RFC 6585, 5
-	StatusUnavailableForLegalReasons   = 451 // RFC 7725, 3
-	// Unofficial Client Errors.
-	StatusPageExpired                      = context.StatusPageExpired
-	StatusBlockedByWindowsParentalControls = context.StatusBlockedByWindowsParentalControls
-	StatusInvalidToken                     = context.StatusInvalidToken
-	StatusTokenRequired                    = context.StatusTokenRequired
-	//
-	StatusInternalServerError           = 500 // RFC 7231, 6.6.1
-	StatusNotImplemented                = 501 // RFC 7231, 6.6.2
-	StatusBadGateway                    = 502 // RFC 7231, 6.6.3
-	StatusServiceUnavailable            = 503 // RFC 7231, 6.6.4
-	StatusGatewayTimeout                = 504 // RFC 7231, 6.6.5
-	StatusHTTPVersionNotSupported       = 505 // RFC 7231, 6.6.6
-	StatusVariantAlsoNegotiates         = 506 // RFC 2295, 8.1
-	StatusInsufficientStorage           = 507 // RFC 4918, 11.5
-	StatusLoopDetected                  = 508 // RFC 5842, 7.2
-	StatusNotExtended                   = 510 // RFC 2774, 7
-	StatusNetworkAuthenticationRequired = 511 // RFC 6585, 6
-	// Unofficial Server Errors.
-	StatusBandwidthLimitExceeded = context.StatusBandwidthLimitExceeded
-	StatusInvalidSSLCertificate  = context.StatusInvalidSSLCertificate
-	StatusSiteOverloaded         = context.StatusSiteOverloaded
-	StatusSiteFrozen             = context.StatusSiteFrozen
-	StatusNetworkReadTimeout     = context.StatusNetworkReadTimeout
+	B = 1 << (10 * iota)
+	KB
+	MB
+	GB
+	TB
+	PB
+	EB
 )
-
-// StatusText returns a text for the HTTP status code. It returns the empty
-// string if the code is unknown.
-//
-// Shortcut for core/router#StatusText.
-var StatusText = context.StatusText
-
-// HTTP Methods copied from `net/http`.
-const (
-	MethodGet     = "GET"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodDelete  = "DELETE"
-	MethodConnect = "CONNECT"
-	MethodHead    = "HEAD"
-	MethodPatch   = "PATCH"
-	MethodOptions = "OPTIONS"
-	MethodTrace   = "TRACE"
-)
-
-// MethodNone is an iris-specific "virtual" method
-// to store the "offline" routes.
-const MethodNone = "NONE"
 
 // Application is responsible to manage the state of the application.
 // It contains and handles all the necessary parts to create a fast web server.
@@ -198,7 +97,7 @@ func New() *Application {
 		Router:     router.NewRouter(),
 	}
 
-	app.ContextPool = context.New(func() context.Context {
+	app.ContextPool = context.New(func() interface{} {
 		return context.NewContext(app)
 	})
 
@@ -212,8 +111,8 @@ func Default() *Application {
 	app := New()
 	app.Use(recover.New())
 	app.Use(requestLogger.New())
-	app.Use(Gzip)
-	app.Use(GzipReader)
+	app.Use(Compress)
+	app.Use(CompressReader)
 
 	app.defaultMode = true
 
@@ -352,31 +251,6 @@ func (app *Application) Validate(v interface{}) error {
 	return nil
 }
 
-var (
-	// HTML view engine.
-	// Shortcut of the kataras/iris/view.HTML.
-	HTML = view.HTML
-	// Django view engine.
-	// Shortcut of the kataras/iris/view.Django.
-	Django = view.Django
-	// Handlebars view engine.
-	// Shortcut of the kataras/iris/view.Handlebars.
-	Handlebars = view.Handlebars
-	// Pug view engine.
-	// Shortcut of the kataras/iris/view.Pug.
-	Pug = view.Pug
-	// Amber view engine.
-	// Shortcut of the kataras/iris/view.Amber.
-	Amber = view.Amber
-	// Jet view engine.
-	// Shortcut of the kataras/iris/view.Jet.
-	Jet = view.Jet
-)
-
-// NoLayout to disable layout for a particular template file
-// A shortcut for the `view#NoLayout`.
-const NoLayout = view.NoLayout
-
 // RegisterView should be used to register view engines mapping to a root directory
 // and the template file(s) extension.
 func (app *Application) RegisterView(viewEngine view.Engine) {
@@ -405,271 +279,6 @@ func (app *Application) View(writer io.Writer, filename string, layout string, b
 	}
 	return err
 }
-
-var (
-	// LimitRequestBodySize is a middleware which sets a request body size limit
-	// for all next handlers in the chain.
-	//
-	// A shortcut for the `context#LimitRequestBodySize`.
-	LimitRequestBodySize = context.LimitRequestBodySize
-	// NewConditionalHandler returns a single Handler which can be registered
-	// as a middleware.
-	// Filter is just a type of Handler which returns a boolean.
-	// Handlers here should act like middleware, they should contain `ctx.Next` to proceed
-	// to the next handler of the chain. Those "handlers" are registered to the per-request context.
-	//
-	//
-	// It checks the "filter" and if passed then
-	// it, correctly, executes the "handlers".
-	//
-	// If passed, this function makes sure that the Context's information
-	// about its per-request handler chain based on the new "handlers" is always updated.
-	//
-	// If not passed, then simply the Next handler(if any) is executed and "handlers" are ignored.
-	// Example can be found at: _examples/routing/conditional-chain.
-	//
-	// A shortcut for the `context#NewConditionalHandler`.
-	NewConditionalHandler = context.NewConditionalHandler
-	// FileServer returns a Handler which serves files from a specific system, phyisical, directory
-	// or an embedded one.
-	// The first parameter is the directory, relative to the executable program.
-	// The second optional parameter is any optional settings that the caller can use.
-	//
-	// See `Party#HandleDir` too.
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-	// A shortcut for the `router.FileServer`.
-	FileServer = router.FileServer
-	// DirListRich can be passed to `DirOptions.DirList` field
-	// to override the default file listing appearance.
-	// Read more at: `core/router.DirListRich`.
-	DirListRich = router.DirListRich
-	// StripPrefix returns a handler that serves HTTP requests
-	// by removing the given prefix from the request URL's Path
-	// and invoking the handler h. StripPrefix handles a
-	// request for a path that doesn't begin with prefix by
-	// replying with an HTTP 404 not found error.
-	//
-	// Usage:
-	// fileserver := iris.FileServer("./static_files", DirOptions {...})
-	// h := iris.StripPrefix("/static", fileserver)
-	// app.Get("/static/{file:path}", h)
-	// app.Head("/static/{file:path}", h)
-	StripPrefix = router.StripPrefix
-	// Gzip is a middleware which enables writing
-	// using gzip compression, if client supports.
-	//
-	// A shortcut for the `context#Gzip`.
-	Gzip = context.Gzip
-	// GzipReader is a middleware which enables gzip decompression,
-	// when client sends gzip compressed data.
-	//
-	// Similar to: func(ctx iris.Context) {
-	//	ctx.GzipReader(true)
-	//	ctx.Next()
-	// }
-	//
-	// A shortcut for the `context#GzipReader`.
-	GzipReader = context.GzipReader
-	// FromStd converts native http.Handler, http.HandlerFunc & func(w, r, next) to context.Handler.
-	//
-	// Supported form types:
-	// 		 .FromStd(h http.Handler)
-	// 		 .FromStd(func(w http.ResponseWriter, r *http.Request))
-	// 		 .FromStd(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
-	//
-	// A shortcut for the `handlerconv#FromStd`.
-	FromStd = handlerconv.FromStd
-	// Cache is a middleware providing server-side cache functionalities
-	// to the next handlers, can be used as: `app.Get("/", iris.Cache, aboutHandler)`.
-	// It should be used after Static methods.
-	// See `iris#Cache304` for an alternative, faster way.
-	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
-	Cache = cache.Handler
-	// NoCache is a middleware which overrides the Cache-Control, Pragma and Expires headers
-	// in order to disable the cache during the browser's back and forward feature.
-	//
-	// A good use of this middleware is on HTML routes; to refresh the page even on "back" and "forward" browser's arrow buttons.
-	//
-	// See `iris#StaticCache` for the opposite behavior.
-	//
-	// A shortcut of the `cache#NoCache`
-	NoCache = cache.NoCache
-	// StaticCache middleware for caching static files by sending the "Cache-Control" and "Expires" headers to the client.
-	// It accepts a single input parameter, the "cacheDur", a time.Duration that it's used to calculate the expiration.
-	//
-	// If "cacheDur" <=0 then it returns the `NoCache` middleware instaed to disable the caching between browser's "back" and "forward" actions.
-	//
-	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.StaticCache(-1))`.
-	// A middleware, which is a simple Handler can be called inside another handler as well, example:
-	// cacheMiddleware := iris.StaticCache(...)
-	// func(ctx iris.Context){
-	//  cacheMiddleware(ctx)
-	//  [...]
-	// }
-	//
-	// A shortcut of the `cache#StaticCache`
-	StaticCache = cache.StaticCache
-	// Cache304 sends a `StatusNotModified` (304) whenever
-	// the "If-Modified-Since" request header (time) is before the
-	// time.Now() + expiresEvery (always compared to their UTC values).
-	// Use this, which is a shortcut of the, `chache#Cache304` instead of the "github.com/kataras/iris/v12/cache" or iris.Cache
-	// for better performance.
-	// Clients that are compatible with the http RCF (all browsers are and tools like postman)
-	// will handle the caching.
-	// The only disadvantage of using that instead of server-side caching
-	// is that this method will send a 304 status code instead of 200,
-	// So, if you use it side by side with other micro services
-	// you have to check for that status code as well for a valid response.
-	//
-	// Developers are free to extend this method's behavior
-	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
-	// with a "modtime" based on the file modified date,
-	// similar to the `HandleDir`(which sends status OK(200) and browser disk caching instead of 304).
-	//
-	// A shortcut of the `cache#Cache304`.
-	Cache304 = cache.Cache304
-
-	// CookieAllowReclaim accepts the Context itself.
-	// If set it will add the cookie to (on `CookieSet`, `CookieSetKV`, `CookieUpsert`)
-	// or remove the cookie from (on `CookieRemove`) the Request object too.
-	//
-	// A shortcut for the `context#CookieAllowReclaim`.
-	CookieAllowReclaim = context.CookieAllowReclaim
-	// CookieAllowSubdomains set to the Cookie Options
-	// in order to allow subdomains to have access to the cookies.
-	// It sets the cookie's Domain field (if was empty) and
-	// it also sets the cookie's SameSite to lax mode too.
-	//
-	// A shortcut for the `context#CookieAllowSubdomains`.
-	CookieAllowSubdomains = context.CookieAllowSubdomains
-	// CookieSameSite sets a same-site rule for cookies to set.
-	// SameSite allows a server to define a cookie attribute making it impossible for
-	// the browser to send this cookie along with cross-site requests. The main
-	// goal is to mitigate the risk of cross-origin information leakage, and provide
-	// some protection against cross-site request forgery attacks.
-	//
-	// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
-	//
-	// A shortcut for the `context#CookieSameSite`.
-	CookieSameSite = context.CookieHTTPOnly
-	// CookieSecure sets the cookie's Secure option if the current request's
-	// connection is using TLS. See `CookieHTTPOnly` too.
-	//
-	// A shortcut for the `context#CookieSecure`.
-	CookieSecure = context.CookieSecure
-	// CookieHTTPOnly is a `CookieOption`.
-	// Use it to set the cookie's HttpOnly field to false or true.
-	// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
-	//
-	// A shortcut for the `context#CookieHTTPOnly`.
-	CookieHTTPOnly = context.CookieHTTPOnly
-	// CookiePath is a `CookieOption`.
-	// Use it to change the cookie's Path field.
-	//
-	// A shortcut for the `context#CookiePath`.
-	CookiePath = context.CookiePath
-	// CookieCleanPath is a `CookieOption`.
-	// Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
-	//
-	// A shortcut for the `context#CookieCleanPath`.
-	CookieCleanPath = context.CookieCleanPath
-	// CookieExpires is a `CookieOption`.
-	// Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
-	//
-	// A shortcut for the `context#CookieExpires`.
-	CookieExpires = context.CookieExpires
-	// CookieEncoding accepts a value which implements `Encode` and `Decode` methods.
-	// It calls its `Encode` on `Context.SetCookie, UpsertCookie, and SetCookieKV` methods.
-	// And on `Context.GetCookie` method it calls its `Decode`.
-	//
-	// A shortcut for the `context#CookieEncoding`.
-	CookieEncoding = context.CookieEncoding
-
-	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
-	// It reports whether the incoming error is type of `formbinder.ErrPath`,
-	// which can be ignored when server allows unknown post values to be sent by the client.
-	//
-	// A shortcut for the `context#IsErrPath`.
-	IsErrPath = context.IsErrPath
-	// ErrEmptyForm is the type error which API users can make use of
-	// to check if a form was empty on `Context.ReadForm`.
-	//
-	// A shortcut for the `context#ErrEmptyForm`.
-	ErrEmptyForm = context.ErrEmptyForm
-	// NewProblem returns a new Problem.
-	// Head over to the `Problem` type godoc for more.
-	//
-	// A shortcut for the `context#NewProblem`.
-	NewProblem = context.NewProblem
-	// XMLMap wraps a map[string]interface{} to compatible xml marshaler,
-	// in order to be able to render maps as XML on the `Context.XML` method.
-	//
-	// Example: `Context.XML(XMLMap("Root", map[string]interface{}{...})`.
-	//
-	// A shortcut for the `context#XMLMap`.
-	XMLMap = context.XMLMap
-	// ErrStopExecution if returned from a hero middleware or a request-scope dependency
-	// stops the handler's execution, see _examples/dependency-injection/basic/middleware.
-	ErrStopExecution = hero.ErrStopExecution
-	// ErrHijackNotSupported is returned by the Hijack method to
-	// indicate that Hijack feature is not available.
-	//
-	// A shortcut for the `context#ErrHijackNotSupported`.
-	ErrHijackNotSupported = context.ErrHijackNotSupported
-	// ErrPushNotSupported is returned by the Push method to
-	// indicate that HTTP/2 Push support is not available.
-	//
-	// A shortcut for the `context#ErrPushNotSupported`.
-	ErrPushNotSupported = context.ErrPushNotSupported
-	// ErrGzipNotSupported may be returned from
-	// `WriteGzip` and `GzipReader` methods if
-	// the client does not support the "gzip" compression.
-	//
-	// A shortcut for the `context#ErrGzipNotSupported`.
-	ErrGzipNotSupported = context.ErrGzipNotSupported
-)
-
-// Constants for input argument at `router.RouteRegisterRule`.
-// See `Party#SetRegisterRule`.
-const (
-	// RouteOverride replaces an existing route with the new one, the default rule.
-	RouteOverride = router.RouteOverride
-	// RouteSkip keeps the original route and skips the new one.
-	RouteSkip = router.RouteSkip
-	// RouteError log when a route already exists, shown after the `Build` state,
-	// server never starts.
-	RouteError = router.RouteError
-	// RouteOverlap will overlap the new route to the previous one.
-	// If the route stopped and its response can be reset then the new route will be execute.
-	RouteOverlap = router.RouteOverlap
-)
-
-// Contains the enum values of the `Context.GetReferrer()` method,
-// shortcuts of the context subpackage.
-const (
-	ReferrerInvalid  = context.ReferrerInvalid
-	ReferrerIndirect = context.ReferrerIndirect
-	ReferrerDirect   = context.ReferrerDirect
-	ReferrerEmail    = context.ReferrerEmail
-	ReferrerSearch   = context.ReferrerSearch
-	ReferrerSocial   = context.ReferrerSocial
-
-	ReferrerNotGoogleSearch     = context.ReferrerNotGoogleSearch
-	ReferrerGoogleOrganicSearch = context.ReferrerGoogleOrganicSearch
-	ReferrerGoogleAdwords       = context.ReferrerGoogleAdwords
-)
-
-// Byte unit helpers.
-const (
-	B = 1 << (10 * iota)
-	KB
-	MB
-	GB
-	TB
-	PB
-	EB
-)
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run`,
@@ -766,11 +375,6 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	return su
 }
 
-// RegisterOnInterrupt registers a global function to call when CTRL+C/CMD+C pressed or a unix kill command received.
-//
-// A shortcut for the `host#RegisterOnInterrupt`.
-var RegisterOnInterrupt = host.RegisterOnInterrupt
-
 // Shutdown gracefully terminates all the application's server hosts and any tunnels.
 // Returns an error on the first failure, otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
@@ -790,7 +394,7 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 			continue
 		}
 
-		if err := app.config.Tunneling.stopTunnel(t); err != nil {
+		if err := app.config.Tunneling.StopTunnel(t); err != nil {
 			return err
 		}
 	}
@@ -880,7 +484,7 @@ func (app *Application) Build() error {
 
 	if !app.Router.Downgraded() {
 		// router
-		if err := app.tryInjectLiveReload(); err != nil {
+		if _, err := injectLiveReload(app.ContextPool, app.Router); err != nil {
 			rp.Errf("LiveReload: init: failed: %v", err)
 		}
 
@@ -1139,141 +743,26 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	return err
 }
 
-// tryInjectLiveReload tries to check if this application
-// runs under https://github.com/kataras/iris-cli and if so
-// then it checks if the livereload is enabled and then injects
-// the watch listener (js script) on every HTML response.
-// It has a slight performance cost but
-// this (iris-cli with watch and livereload enabled)
-// is meant to be used only in development mode.
-// It does a full reload at the moment and if the port changed
-// at runtime it will fire 404 instead of redirecting to the correct port (that's a TODO).
-//
-// tryInjectLiveReload runs right before Build -> BuildRouter.
-func (app *Application) tryInjectLiveReload() error {
-	conf := struct {
-		Running    bool `yaml:"Running,omitempty"`
-		LiveReload struct {
-			Disable bool `yaml:"Disable"`
-			Port    int  `yaml:"Port"`
-		} `yaml:"LiveReload"`
-	}{}
-	// defaults to disabled here.
-	conf.LiveReload.Disable = true
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	for _, path := range []string{".iris.yml" /*, "../.iris.yml", "../../.iris.yml" */} {
-		path = filepath.Join(wd, path)
-
-		if _, err := os.Stat(path); err == nil {
-			inFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
-			if err != nil {
-				return err
-			}
-
-			dec := yaml.NewDecoder(inFile)
-			err = dec.Decode(&conf)
-			inFile.Close()
-			if err != nil {
-				return err
-			}
-
-			break
-		}
-	}
-
-	if !conf.Running || conf.LiveReload.Disable {
-		return nil
-	}
-
-	scriptReloadJS := []byte(fmt.Sprintf(`<script>(function () {
-    const scheme = document.location.protocol == "https:" ? "wss" : "ws";
-    const endpoint = scheme + "://" + document.location.hostname + ":%d/livereload";
-
-    w = new WebSocket(endpoint);
-    w.onopen = function () {
-        console.info("LiveReload: initialization");
-    };
-    w.onclose = function () {
-        console.info("LiveReload: terminated");
-    };
-    w.onmessage = function (message) {
-        // NOTE: full-reload, at least for the moment. Also if backend changed its port then we will get 404 here. 
-        window.location.reload();
-    };
-}());</script>`, conf.LiveReload.Port))
-
-	bodyCloseTag := []byte("</body>")
-
-	app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, _ http.HandlerFunc) {
-		ctx := app.ContextPool.Acquire(w, r)
-		rec := ctx.Recorder() // Record everything and write all in once at the Context release.
-		app.ServeHTTPC(ctx)   // We directly call request handler with Context.
-
-		if strings.HasPrefix(ctx.GetContentType(), "text/html") {
-			// delete(rec.Header(), context.ContentLengthHeaderKey)
-
-			body := rec.Body()
-
-			if idx := bytes.LastIndex(body, bodyCloseTag); idx > 0 {
-				// add the script right before last </body>.
-				body = append(body[:idx], bytes.Replace(body[idx:], bodyCloseTag, append(scriptReloadJS, bodyCloseTag...), 1)...)
-				rec.SetBody(body)
-			} else {
-				// Just append it.
-				rec.Write(scriptReloadJS) // nolint:errcheck
-			}
-
-			if _, has := rec.Header()[context.ContentLengthHeaderKey]; has {
-				rec.Header().Set(context.ContentLengthHeaderKey, fmt.Sprintf("%d", len(rec.Body())))
-			}
-		}
-
-		app.ContextPool.Release(ctx)
-	})
-
-	return nil
-}
-
 // https://ngrok.com/docs
 func (app *Application) tryStartTunneling() {
-	if !app.config.Tunneling.isEnabled() {
+	if len(app.config.Tunneling.Tunnels) == 0 {
 		return
 	}
 
 	app.ConfigureHost(func(su *host.Supervisor) {
 		su.RegisterOnServe(func(h host.TaskHost) {
-			tc := app.config.Tunneling
-			if tc.WebInterface == "" {
-				tc.WebInterface = "http://127.0.0.1:4040"
+			publicAddrs, err := tunnel.Start(app.config.Tunneling)
+			if err != nil {
+				app.logger.Errorf("Host: tunneling error: %v", err)
+				return
 			}
 
-			for tunnIdx, t := range tc.Tunnels {
-				if t.Name == "" {
-					t.Name = fmt.Sprintf("iris-app-%d-%s", tunnIdx+1, time.Now().Format(app.config.TimeFormat))
-				}
+			publicAddr := publicAddrs[0]
+			// to make subdomains resolution still based on this new remote, public addresses.
+			app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
-				if t.Addr == "" {
-					t.Addr = su.Server.Addr
-				}
-
-				var publicAddr string
-				err := tc.startTunnel(t, &publicAddr)
-				if err != nil {
-					app.logger.Errorf("Host: tunneling error: %v", err)
-					return
-				}
-
-				// to make subdomains resolution still based on this new remote, public addresses.
-				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
-
-				directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
-				app.logger.Printer.Write(directLog) // nolint:errcheck
-			}
+			directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
+			app.logger.Printer.Write(directLog) // nolint:errcheck
 		})
 	})
 }

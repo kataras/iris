@@ -154,7 +154,10 @@ type Party interface {
 	//
 	// Alternatively, to get just the handler for that look the FileServer function instead.
 	//
-	//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
+	//     api.HandleDir("/static", "./assets",  DirOptions {
+	//								ShowList: true,
+	//								Compress: true,
+	//								IndexName: "index.html"})
 	//
 	// Returns all the registered routes, including GET index and path patterm and HEAD.
 	//

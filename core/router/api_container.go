@@ -42,9 +42,9 @@ func (api *APIContainer) PartyFunc(relativePath string, fn func(*APIContainer)) 
 // Container.GetErrorHandler = func(ctx iris.Context) hero.ErrorHandler { return errorHandler }
 //
 // See `RegisterDependency`, `Use`, `Done` and `Handle` too.
-func (api *APIContainer) OnError(errorHandler func(context.Context, error)) {
+func (api *APIContainer) OnError(errorHandler func(*context.Context, error)) {
 	errHandler := hero.ErrorHandlerFunc(errorHandler)
-	api.Container.GetErrorHandler = func(ctx context.Context) hero.ErrorHandler {
+	api.Container.GetErrorHandler = func(ctx *context.Context) hero.ErrorHandler {
 		return errHandler
 	}
 }

@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CloudyKit/jet/v4 v4.0.0
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
+	github.com/andybalholm/brotli v1.0.1-0.20200619015827-c3da72aa01ed
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
@@ -23,6 +24,7 @@ require (
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.8
 	github.com/kataras/sitemap v0.0.5
+	github.com/kataras/tunnel v0.0.1
 	github.com/klauspost/compress v1.10.10
 	github.com/mediocregopher/radix/v3 v3.5.2
 	github.com/microcosm-cc/bluemonday v1.0.3
@@ -32,7 +34,7 @@ require (
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	go.etcd.io/bbolt v1.3.5
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae
 	golang.org/x/text v0.3.3

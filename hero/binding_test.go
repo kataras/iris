@@ -45,9 +45,9 @@ func TestGetBindingsForFunc(t *testing.T) {
 	var testRequestTyp = reflect.TypeOf(testRequest{})
 
 	var deps = []*Dependency{
-		NewDependency(func(ctx context.Context) testRequest { return testRequest{Email: "should be ignored"} }),
+		NewDependency(func(ctx *context.Context) testRequest { return testRequest{Email: "should be ignored"} }),
 		NewDependency(42),
-		NewDependency(func(ctx context.Context) (v testRequest, err error) {
+		NewDependency(func(ctx *context.Context) (v testRequest, err error) {
 			err = ctx.ReadJSON(&v)
 			return
 		}),
@@ -55,7 +55,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 		NewDependency("should not be ignored when requested"),
 
 		// Dependencies like these should always be registered last.
-		NewDependency(func(ctx context.Context, input *Input) (newValue reflect.Value, err error) {
+		NewDependency(func(ctx *context.Context, input *Input) (newValue reflect.Value, err error) {
 			wasPtr := input.Type.Kind() == reflect.Ptr
 
 			newValue = reflect.New(indirectType(input.Type))
@@ -75,19 +75,19 @@ func TestGetBindingsForFunc(t *testing.T) {
 		Expected []*binding
 	}{
 		{ // 0
-			Func: func(ctx context.Context) {
+			Func: func(ctx *context.Context) {
 				ctx.WriteString("t1")
 			},
 			Expected: []*binding{contextBinding(0)},
 		},
 		{ // 1
-			Func: func(ctx context.Context) error {
+			Func: func(ctx *context.Context) error {
 				return fmt.Errorf("err1")
 			},
 			Expected: []*binding{contextBinding(0)},
 		},
 		{ // 2
-			Func: func(ctx context.Context) testResponse {
+			Func: func(ctx *context.Context) testResponse {
 				return testResponse{Name: "name"}
 			},
 			Expected: []*binding{contextBinding(0)},
@@ -105,19 +105,19 @@ func TestGetBindingsForFunc(t *testing.T) {
 			Expected: []*binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}},
 		},
 		{ // 5
-			Func: func(ctx context.Context, in testRequest) testResponse {
+			Func: func(ctx *context.Context, in testRequest) testResponse {
 				return testResponse{Name: "(with ctx) email of " + in.Email}
 			},
 			Expected: []*binding{contextBinding(0), {Dependency: deps[2], Input: &Input{Index: 1, Type: testRequestTyp}}},
 		},
 		{ // 6
-			Func: func(in testRequest, ctx context.Context) testResponse { // reversed.
+			Func: func(in testRequest, ctx *context.Context) testResponse { // reversed.
 				return testResponse{Name: "(with ctx) email of " + in.Email}
 			},
 			Expected: []*binding{{Dependency: deps[2], Input: &Input{Index: 0, Type: testRequestTyp}}, contextBinding(1)},
 		},
 		{ // 7
-			Func: func(in testRequest, ctx context.Context, in2 string) testResponse { // reversed.
+			Func: func(in testRequest, ctx *context.Context, in2 string) testResponse { // reversed.
 				return testResponse{Name: "(with ctx) email of " + in.Email + "and in2: " + in2}
 			},
 			Expected: []*binding{
@@ -133,7 +133,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 			},
 		},
 		{ // 8
-			Func: func(in testRequest, ctx context.Context, in2, in3 string) testResponse { // reversed.
+			Func: func(in testRequest, ctx *context.Context, in2, in3 string) testResponse { // reversed.
 				return testResponse{Name: "(with ctx) email of " + in.Email + " | in2: " + in2 + " in3: " + in3}
 			},
 			Expected: []*binding{
@@ -153,7 +153,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 			},
 		},
 		{ // 9
-			Func: func(ctx context.Context, in testRequest, in2 testRequest2) testResponse {
+			Func: func(ctx *context.Context, in testRequest, in2 testRequest2) testResponse {
 				return testResponse{Name: fmt.Sprintf("(with ctx) email of %s and in2.Age %d", in.Email, in2.Age)}
 			},
 			Expected: []*binding{
@@ -363,7 +363,7 @@ func TestBindingsForStruct(t *testing.T) {
 	}
 
 	var depsInterfaces = []*Dependency{
-		NewDependency(func(ctx context.Context) interface{} {
+		NewDependency(func(ctx *context.Context) interface{} {
 			return "name"
 		}),
 	}

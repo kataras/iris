@@ -37,7 +37,7 @@ var (
 	New = neffos.New
 	// DefaultIDGenerator returns a universal unique identifier for a new connection.
 	// It's the default `IDGenerator` if missing.
-	DefaultIDGenerator = func(ctx context.Context) string {
+	DefaultIDGenerator = func(ctx *context.Context) string {
 		return neffos.DefaultIDGenerator(ctx.ResponseWriter(), ctx.Request())
 	}
 
@@ -138,10 +138,10 @@ func SetDefaultUnmarshaler(fn func(data []byte, v interface{}) error) {
 }
 
 // IDGenerator is an iris-specific IDGenerator for new connections.
-type IDGenerator func(context.Context) string
+type IDGenerator func(*context.Context) string
 
-func wrapIDGenerator(idGen IDGenerator) func(ctx context.Context) neffos.IDGenerator {
-	return func(ctx context.Context) neffos.IDGenerator {
+func wrapIDGenerator(idGen IDGenerator) func(ctx *context.Context) neffos.IDGenerator {
+	return func(ctx *context.Context) neffos.IDGenerator {
 		return func(w http.ResponseWriter, r *http.Request) string {
 			return idGen(ctx)
 		}
@@ -157,7 +157,7 @@ func Handler(s *neffos.Server, IDGenerator ...IDGenerator) context.Handler {
 		idGen = IDGenerator[0]
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		if ctx.IsStopped() {
 			return
 		}
@@ -167,7 +167,7 @@ func Handler(s *neffos.Server, IDGenerator ...IDGenerator) context.Handler {
 
 // Upgrade upgrades the request and returns a new websocket Conn.
 // Use `Handler` for higher-level implementation instead.
-func Upgrade(ctx context.Context, idGen IDGenerator, s *neffos.Server) *neffos.Conn {
+func Upgrade(ctx *context.Context, idGen IDGenerator, s *neffos.Server) *neffos.Conn {
 	conn, _ := s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
 		return &socketWrapper{
 			Socket: socket,
@@ -180,11 +180,11 @@ func Upgrade(ctx context.Context, idGen IDGenerator, s *neffos.Server) *neffos.C
 
 type socketWrapper struct {
 	neffos.Socket
-	ctx context.Context
+	ctx *context.Context
 }
 
 // GetContext returns the Iris Context from a websocket connection.
-func GetContext(c *neffos.Conn) context.Context {
+func GetContext(c *neffos.Conn) *context.Context {
 	if sw, ok := c.Socket().(*socketWrapper); ok {
 		return sw.ctx
 	}

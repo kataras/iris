@@ -43,15 +43,15 @@ func TestProxy(t *testing.T) {
 	t.Log(listener.Addr().String())
 
 	app := iris.New()
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx *context.Context) {
 		ctx.WriteString(expectedIndex)
 	})
 
-	app.Get("/about", func(ctx context.Context) {
+	app.Get("/about", func(ctx *context.Context) {
 		ctx.WriteString(expectedAbout)
 	})
 
-	app.OnErrorCode(iris.StatusNotFound, func(ctx context.Context) {
+	app.OnErrorCode(iris.StatusNotFound, func(ctx *context.Context) {
 		ctx.WriteString(unexpectedRoute)
 	})
 

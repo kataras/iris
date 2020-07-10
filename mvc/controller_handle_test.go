@@ -28,7 +28,7 @@ func (s *testServiceImpl) Say(message string) string {
 }
 
 type testControllerHandle struct {
-	Ctx     context.Context
+	Ctx     *context.Context
 	Service testService
 
 	reqField string
@@ -110,7 +110,7 @@ func (c *testControllerHandle) CustomWithParameters(param1, param2 string) strin
 type testSmallController struct{}
 
 // test ctx + id in the same time.
-func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx context.Context, id string) string {
+func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx *context.Context, id string) string {
 	return "empty in but served with ctx.Params.Get('param2')= " + ctx.Params().Get("param2") + " == id == " + id
 }
 

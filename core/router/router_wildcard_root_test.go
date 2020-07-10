@@ -36,18 +36,18 @@ type testRoute struct {
 	requests []testRouteRequest
 }
 
-var h = func(ctx context.Context) {
+var h = func(ctx *context.Context) {
 	ctx.WriteString(ctx.Path())
 }
 
-var h2 = func(ctx context.Context) {
+var h2 = func(ctx *context.Context) {
 	ctx.StatusCode(iris.StatusForbidden) // ! 200 but send the body as expected,
 	// we need that kind of behavior to determinate which handler is executed for routes that
 	// both having wildcard path but first one is registered on root level.
 	ctx.WriteString(ctx.Path())
 }
 
-func h3(ctx context.Context) {
+func h3(ctx *context.Context) {
 	ctx.Writef(staticPathPrefixBody + ctx.Path())
 }
 

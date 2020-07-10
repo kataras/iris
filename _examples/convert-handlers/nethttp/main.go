@@ -29,6 +29,3 @@ func main() {
 func nativeTestMiddleware(w http.ResponseWriter, r *http.Request) {
 	println("Request path: " + r.URL.Path)
 }
-
-// Look "routing/custom-context" if you want to convert a custom handler with a custom Context
-// to a context.Handler.

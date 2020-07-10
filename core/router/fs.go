@@ -6,7 +6,6 @@ import (
 	"html"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,7 +21,7 @@ import (
 const indexName = "/index.html"
 
 // DirListFunc is the function signature for customizing directory and file listing.
-type DirListFunc func(ctx context.Context, dirName string, dir http.File) error
+type DirListFunc func(ctx *context.Context, dirOptions DirOptions, dirName string, dir http.File) error
 
 // Attachments options for files to be downloaded and saved locally by the client.
 // See `DirOptions`.
@@ -46,7 +45,7 @@ type DirOptions struct {
 	// if end developer does not managed to handle it by hand.
 	IndexName string
 	// When files should served under compression.
-	Gzip bool
+	Compress bool
 
 	// List the files inside the current requested directory if `IndexName` not found.
 	ShowList bool
@@ -56,8 +55,6 @@ type DirOptions struct {
 	DirList DirListFunc
 
 	// Files downloaded and saved locally.
-	// Gzip option MUST be false in order for this to work.
-	// TODO(@kataras): find a way to make it work.
 	Attachments Attachments
 
 	// When embedded.
@@ -66,7 +63,7 @@ type DirOptions struct {
 	AssetNames func() []string                        // called once.
 
 	// Optional validator that loops through each requested resource.
-	AssetValidator func(ctx context.Context, name string) bool
+	AssetValidator func(ctx *context.Context, name string) bool
 }
 
 func getDirOptions(opts ...DirOptions) (options DirOptions) {
@@ -78,6 +75,12 @@ func getDirOptions(opts ...DirOptions) (options DirOptions) {
 		options.IndexName = indexName
 	} else {
 		options.IndexName = prefix(options.IndexName, "/")
+	}
+
+	if !options.Attachments.Enable {
+		// make sure rate limiting is not used when attachments are not.
+		options.Attachments.Limit = 0
+		options.Attachments.Burst = 0
 	}
 
 	return
@@ -300,17 +303,16 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 	// 	panic("FileServer: system directory: " + directory + " does not exist")
 	// }
 
-	plainStatusCode := func(ctx context.Context, statusCode int) {
-		if writer, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok && writer != nil {
-			writer.ResetBody()
-			writer.Disable()
+	plainStatusCode := func(ctx *context.Context, statusCode int) {
+		if writer, ok := ctx.ResponseWriter().(*context.CompressResponseWriter); ok {
+			writer.Disabled = true
 		}
 		ctx.StatusCode(statusCode)
 	}
 
 	dirList := options.DirList
 	if dirList == nil {
-		dirList = func(ctx context.Context, dirName string, dir http.File) error {
+		dirList = func(ctx *context.Context, dirOptions DirOptions, dirName string, dir http.File) error {
 			dirs, err := dir.Readdir(-1)
 			if err != nil {
 				return err
@@ -323,6 +325,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			if err != nil {
 				return err
 			}
+
 			for _, d := range dirs {
 				name := d.Name()
 				if d.IsDir() {
@@ -341,10 +344,14 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 					Path: upath,
 				} // edit here to redirect correctly, standard library misses that.
 
+				downloadAttr := ""
+				if dirOptions.Attachments.Enable && !d.IsDir() {
+					downloadAttr = " download" // fixes chrome Resource interpreted, other browsers will just ignore this <a> attribute.
+				}
 				// name may contain '?' or '#', which must be escaped to remain
 				// part of the URL path, and not indicate the start of a query
 				// string or fragment.
-				_, err = ctx.Writef("<a href=\"%s\">%s</a>\n", url.String(), html.EscapeString(name))
+				_, err = ctx.Writef("<a href=\"%s\"%s>%s</a>\n", url.String(), downloadAttr, html.EscapeString(name))
 				if err != nil {
 					return err
 				}
@@ -354,16 +361,9 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		}
 	}
 
-	h := func(ctx context.Context) {
+	h := func(ctx *context.Context) {
 		name := prefix(ctx.Request().URL.Path, "/")
 		ctx.Request().URL.Path = name
-
-		gzip := options.Gzip
-		if !gzip {
-			// if false then check if the dev did something like `ctx.Gzip(true)`.
-			_, gzip = ctx.ResponseWriter().(*context.GzipResponseWriter)
-		}
-		// ctx.Gzip(options.Gzip)
 
 		f, err := fs.Open(name)
 		if err != nil {
@@ -378,6 +378,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			return
 		}
 
+		indexFound := false
 		// use contents of index.html for directory, if present
 		if info.IsDir() && options.IndexName != "" {
 			// Note that, in contrast of the default net/http mechanism;
@@ -397,6 +398,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				if err == nil {
 					info = infoIndex
 					f = fIndex
+					indexFound = true
 				}
 			}
 		}
@@ -414,7 +416,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				return
 			}
 			ctx.SetLastModified(info.ModTime())
-			err = dirList(ctx, info.Name(), f)
+			err = dirList(ctx, options, info.Name(), f)
 			if err != nil {
 				ctx.Application().Logger().Errorf("FileServer: dirList: %v", err)
 				plainStatusCode(ctx, http.StatusInternalServerError)
@@ -451,38 +453,24 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		// and the binary data inside "f".
 		detectOrWriteContentType(ctx, info.Name(), f)
 
-		if gzip {
-			// set the last modified as "serveContent" does.
-			ctx.SetLastModified(info.ModTime())
-
-			// write the file to the response writer.
-			contents, err := ioutil.ReadAll(f)
-			if err != nil {
-				ctx.Application().Logger().Debugf("err reading file: %v", err)
-				plainStatusCode(ctx, http.StatusInternalServerError)
-				return
-			}
-
-			// Use `WriteNow` instead of `Write`
-			// because we need to know the compressed written size before
-			// the `FlushResponse`.
-			_, err = ctx.GzipResponseWriter().Write(contents)
-			if err != nil {
-				ctx.Application().Logger().Debugf("short write: %v", err)
-				plainStatusCode(ctx, http.StatusInternalServerError)
-				return
-			}
-			return
-		}
-
-		if options.Attachments.Enable {
+		// if not index file and attachments should be force-sent:
+		if !indexFound && options.Attachments.Enable {
 			destName := info.Name()
+			// diposition := "attachment"
 			if nameFunc := options.Attachments.NameFunc; nameFunc != nil {
 				destName = nameFunc(destName)
 			}
 
 			ctx.ResponseWriter().Header().Set(context.ContentDispositionHeaderKey, "attachment;filename="+destName)
 		}
+
+		ctx.Compress(options.Compress)
+		// if gzip {
+		// 	ctx.Compress(true)
+		// 	context.AddCompressHeaders(ctx.ResponseWriter().Header())
+		// 	// to not write the content-length( see http.serveContent):
+		// 	// ctx.ResponseWriter().Header().Set(context.ContentEncodingHeaderKey, context.GzipHeaderValue)
+		// }
 
 		// If limit is 0 then same as ServeContent.
 		ctx.ServeContentWithRate(f, info.Name(), info.ModTime(), options.Attachments.Limit, options.Attachments.Burst)
@@ -520,7 +508,7 @@ func StripPrefix(prefix string, h context.Handler) context.Handler {
 	}
 	canonicalPrefix = toWebPath(canonicalPrefix)
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		if p := strings.TrimPrefix(ctx.Request().URL.Path, canonicalPrefix); len(p) < len(ctx.Request().URL.Path) {
 			ctx.Request().URL.Path = p
 			h(ctx)
@@ -551,7 +539,7 @@ func Abs(path string) string {
 // The algorithm uses at most sniffLen bytes to make its decision.
 const sniffLen = 512
 
-func detectOrWriteContentType(ctx context.Context, name string, content io.ReadSeeker) (string, error) {
+func detectOrWriteContentType(ctx *context.Context, name string, content io.ReadSeeker) (string, error) {
 	// If Content-Type isn't set, use the file's extension to find it, but
 	// if the Content-Type is unset explicitly, do not sniff the type.
 	ctypes, haveType := ctx.ResponseWriter().Header()["Content-Type"]
@@ -580,7 +568,7 @@ func detectOrWriteContentType(ctx context.Context, name string, content io.ReadS
 
 // localRedirect gives a Moved Permanently response.
 // It does not convert relative paths to absolute paths like Redirect does.
-func localRedirect(ctx context.Context, newPath string) {
+func localRedirect(ctx *context.Context, newPath string) {
 	if q := ctx.Request().URL.RawQuery; q != "" {
 		newPath += "?" + q
 	}
@@ -619,7 +607,7 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 		options.Tmpl = DirListRichTemplate
 	}
 
-	return func(ctx context.Context, dirName string, dir http.File) error {
+	return func(ctx *context.Context, dirOptions DirOptions, dirName string, dir http.File) error {
 		dirs, err := dir.Readdir(-1)
 		if err != nil {
 			return err
@@ -655,12 +643,14 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 
 			url := url.URL{Path: upath}
 
+			shouldDownload := dirOptions.Attachments.Enable && !d.IsDir()
 			pageData.Files = append(pageData.Files, fileInfoData{
-				Info:    d,
-				ModTime: d.ModTime().UTC().Format(http.TimeFormat),
-				Path:    url.String(),
-				RelPath: path.Join(ctx.Path(), name),
-				Name:    html.EscapeString(name),
+				Info:     d,
+				ModTime:  d.ModTime().UTC().Format(http.TimeFormat),
+				Path:     url.String(),
+				RelPath:  path.Join(ctx.Path(), name),
+				Name:     html.EscapeString(name),
+				Download: shouldDownload,
 			})
 		}
 
@@ -679,11 +669,12 @@ type (
 	}
 
 	fileInfoData struct {
-		Info    os.FileInfo
-		ModTime string // format-ed time.
-		Path    string // the request path.
-		RelPath string // file path without the system directory itself (we are not exposing it to the user).
-		Name    string // the html-escaped name.
+		Info     os.FileInfo
+		ModTime  string // format-ed time.
+		Path     string // the request path.
+		RelPath  string // file path without the system directory itself (we are not exposing it to the user).
+		Name     string // the html-escaped name.
+		Download bool   // the file should be downloaded (attachment instead of inline view).
 	}
 )
 
@@ -786,7 +777,11 @@ var DirListRichTemplate = template.Must(template.New("dirlist").
             {{ range $idx, $file := .Files }}
             <tr>
                 <td>{{ $idx }}</td>
-				<td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}">{{ $file.Name }}</a></td>
+                {{ if $file.Download }}
+                <td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}" download>{{ $file.Name }}</a></td> 
+                {{ else }}
+                <td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}">{{ $file.Name }}</a></td>
+                {{ end }}
 				{{ if $file.Info.IsDir }}
 				<td>Dir</td>
 				{{ else }}

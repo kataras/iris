@@ -54,7 +54,7 @@ func main() {
 	filesRouter := app.Party("/files")
 	{
 		filesRouter.HandleDir("/", uploadDir, iris.DirOptions{
-			Gzip:     false,
+			Compress: true,
 			ShowList: true,
 
 			// Optionally, force-send files to the client inside of showing to the browser.

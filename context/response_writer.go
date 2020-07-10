@@ -3,8 +3,6 @@ package context
 import (
 	"bufio"
 	"errors"
-	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -15,8 +13,8 @@ import (
 //
 // Note: Only this ResponseWriter is an interface in order to be able
 // for developers to change the response writer of the Context via `context.ResetResponseWriter`.
-// The rest of the response writers implementations (ResponseRecorder & GzipResponseWriter) are coupled to the internal
-// ResponseWriter implementation(*responseWriter).
+// The rest of the response writers implementations (ResponseRecorder & CompressResponseWriter)
+// are coupled to the internal ResponseWriter implementation(*responseWriter).
 //
 // A ResponseWriter may not be used after the Handler
 // has returned.
@@ -44,16 +42,6 @@ type ResponseWriter interface {
 
 	// IsHijacked reports whether this response writer's connection is hijacked.
 	IsHijacked() bool
-
-	// Writef formats according to a format specifier and writes to the response.
-	//
-	// Returns the number of bytes written and any write error encountered.
-	Writef(format string, a ...interface{}) (n int, err error)
-
-	// WriteString writes a simple string to the response.
-	//
-	// Returns the number of bytes written and any write error encountered.
-	WriteString(s string) (n int, err error)
 
 	// StatusCode returns the status code header value.
 	StatusCode() int
@@ -275,23 +263,6 @@ func (w *responseWriter) IsHijacked() bool {
 func (w *responseWriter) Write(contents []byte) (int, error) {
 	w.tryWriteHeader()
 	n, err := w.ResponseWriter.Write(contents)
-	w.written += n
-	return n, err
-}
-
-// Writef formats according to a format specifier and writes to the response.
-//
-// Returns the number of bytes written and any write error encountered.
-func (w *responseWriter) Writef(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(w, format, a...)
-}
-
-// WriteString writes a simple string to the response.
-//
-// Returns the number of bytes written and any write error encountered.
-func (w *responseWriter) WriteString(s string) (int, error) {
-	w.tryWriteHeader()
-	n, err := io.WriteString(w.ResponseWriter, s)
 	w.written += n
 	return n, err
 }

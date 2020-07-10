@@ -63,17 +63,17 @@ func (h *Handler) AddRule(r rule.Rule) *Handler {
 	return h
 }
 
-var emptyHandler = func(ctx context.Context) {
+var emptyHandler = func(ctx *context.Context) {
 	ctx.StopWithText(500, "cache: empty body handler")
 }
 
-func parseLifeChanger(ctx context.Context) entry.LifeChanger {
+func parseLifeChanger(ctx *context.Context) entry.LifeChanger {
 	return func() time.Duration {
 		return time.Duration(ctx.MaxAge()) * time.Second
 	}
 }
 
-func (h *Handler) ServeHTTP(ctx context.Context) {
+func (h *Handler) ServeHTTP(ctx *context.Context) {
 	// check for pre-cache validators, if at least one of them return false
 	// for this specific request, then skip the whole cache
 	bodyHandler := ctx.NextHandler()

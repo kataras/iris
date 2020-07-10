@@ -13,14 +13,14 @@ import (
 func TestRouteExists(t *testing.T) {
 	// build the api
 	app := iris.New()
-	emptyHandler := func(context.Context) {}
+	emptyHandler := func(*context.Context) {}
 
 	// setup the tested routes
 	app.Handle("GET", "/route-exists", emptyHandler)
 	app.Handle("POST", "/route-with-param/{param}", emptyHandler)
 
 	// check RouteExists
-	app.Handle("GET", "/route-test", func(ctx context.Context) {
+	app.Handle("GET", "/route-test", func(ctx *context.Context) {
 		if ctx.RouteExists("GET", "/route-not-exists") {
 			t.Error("Route with path should not exists")
 		}

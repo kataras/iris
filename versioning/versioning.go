@@ -33,7 +33,7 @@ func check(v string, is string) (string, bool) {
 //
 // If matched then it sets the "X-API-Version" response header and
 // stores the matched version into Context (see `GetVersion` too).
-func Match(ctx context.Context, expectedVersion string) bool {
+func Match(ctx *context.Context, expectedVersion string) bool {
 	versionString, matched := check(GetVersion(ctx), expectedVersion)
 	if !matched {
 		return false
@@ -57,7 +57,7 @@ type Map map[string]context.Handler
 func NewMatcher(versions Map) context.Handler {
 	constraintsHandlers, notFoundHandler := buildConstraints(versions)
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		versionString := GetVersion(ctx)
 		if versionString == "" || versionString == NotFound {
 			notFoundHandler(ctx)

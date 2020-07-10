@@ -25,11 +25,11 @@ type (
 		HTTPErrorHandler
 
 		// HandleRequest should handle the request based on the Context.
-		HandleRequest(ctx context.Context)
+		HandleRequest(ctx *context.Context)
 		// Build should builds the handler, it's being called on router's BuildRouter.
 		Build(provider RoutesProvider) error
 		// RouteExists reports whether a particular route exists.
-		RouteExists(ctx context.Context, method, path string) bool
+		RouteExists(ctx *context.Context, method, path string) bool
 	}
 
 	// HTTPErrorHandler should contain a method `FireErrorCode` which
@@ -37,7 +37,7 @@ type (
 	HTTPErrorHandler interface {
 		// FireErrorCode should send an error response to the client based
 		// on the given context's response status code.
-		FireErrorCode(ctx context.Context)
+		FireErrorCode(ctx *context.Context)
 	}
 )
 
@@ -294,7 +294,7 @@ func bindMultiParamTypesHandler(r *Route) {
 		currentStatusCode = http.StatusOK
 	}
 
-	decisionHandler := func(ctx context.Context) {
+	decisionHandler := func(ctx *context.Context) {
 		// println("core/router/handler.go: decision handler; " + ctx.Path() + " route.Name: " + r.Name + " vs context's " + ctx.GetCurrentRoute().Name())
 		currentRoute := ctx.GetCurrentRoute()
 
@@ -318,7 +318,7 @@ func bindMultiParamTypesHandler(r *Route) {
 	r.topLink.beginHandlers = append(context.Handlers{decisionHandler}, r.topLink.beginHandlers...)
 }
 
-func (h *routerHandler) canHandleSubdomain(ctx context.Context, subdomain string) bool {
+func (h *routerHandler) canHandleSubdomain(ctx *context.Context, subdomain string) bool {
 	if subdomain == "" {
 		return true
 	}
@@ -356,7 +356,7 @@ func (h *routerHandler) canHandleSubdomain(ctx context.Context, subdomain string
 	return true
 }
 
-func (h *routerHandler) HandleRequest(ctx context.Context) {
+func (h *routerHandler) HandleRequest(ctx *context.Context) {
 	method := ctx.Method()
 	path := ctx.Path()
 	config := h.config // ctx.Application().GetConfigurationReadOnly()
@@ -445,18 +445,18 @@ func statusCodeSuccessful(statusCode int) bool {
 
 // FireErrorCode handles the response's error response.
 // If `Configuration.ResetOnFireErrorCode()` is true
-// and the response writer was a recorder or a gzip writer one
+// and the response writer was a recorder one
 // then it will try to reset the headers and the body before calling the
 // registered (or default) error handler for that error code set by
 // `ctx.StatusCode` method.
-func (h *routerHandler) FireErrorCode(ctx context.Context) {
+func (h *routerHandler) FireErrorCode(ctx *context.Context) {
 	// On common response writer, always check
 	// if we can't reset the body and the body has been filled
 	// which means that the status code already sent,
 	// then do not fire this custom error code,
 	// rel: context/context.go#EndRequest.
 	//
-	// Note that, this is set to 0 on recorder and gzip writer because they cache the response,
+	// Note that, this is set to 0 on recorder because it holds the response before sent,
 	// so we check their len(Body()) instead, look below.
 	if ctx.ResponseWriter().Written() > 0 {
 		return
@@ -473,18 +473,14 @@ func (h *routerHandler) FireErrorCode(ctx context.Context) {
 			// reset if previous content and it's recorder, keep the status code.
 			w.ClearHeaders()
 			w.ResetBody()
-		} else if w, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok {
+		} else if w, ok := ctx.ResponseWriter().(*context.CompressResponseWriter); ok {
 			// reset and disable the gzip in order to be an expected form of http error result
-			w.ResetBody()
-			w.Disable()
+			w.Disabled = true
 		}
 	} else {
-		// check if a body already set (the error response is handled by the handler itself, see `Context.EndRequest`)
+		// check if a body already set (the error response is handled by the handler itself,
+		// see `Context.EndRequest`)
 		if w, ok := ctx.IsRecording(); ok {
-			if len(w.Body()) > 0 {
-				return
-			}
-		} else if w, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok {
 			if len(w.Body()) > 0 {
 				return
 			}
@@ -526,7 +522,7 @@ func (h *routerHandler) FireErrorCode(ctx context.Context) {
 			// because may the user want to add a fallback error code
 			// i.e
 			// users := app.Party("/users")
-			// users.Done(func(ctx context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
+			// users.Done(func(ctx *context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
 
 			// use .HandlerIndex
 			// that sets the current handler index to zero
@@ -556,7 +552,7 @@ func (h *routerHandler) FireErrorCode(ctx context.Context) {
 	ctx.WriteString(context.StatusText(statusCode))
 }
 
-func (h *routerHandler) subdomainAndPathAndMethodExists(ctx context.Context, t *trie, method, path string) bool {
+func (h *routerHandler) subdomainAndPathAndMethodExists(ctx *context.Context, t *trie, method, path string) bool {
 	if method != "" && method != t.method {
 		return false
 	}
@@ -599,7 +595,7 @@ func (h *routerHandler) subdomainAndPathAndMethodExists(ctx context.Context, t *
 
 // RouteExists reports whether a particular route exists
 // It will search from the current subdomain of context's host, if not inside the root domain.
-func (h *routerHandler) RouteExists(ctx context.Context, method, path string) bool {
+func (h *routerHandler) RouteExists(ctx *context.Context, method, path string) bool {
 	for i := range h.trees {
 		t := h.trees[i]
 		if h.subdomainAndPathAndMethodExists(ctx, t, method, path) {

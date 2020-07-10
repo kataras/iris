@@ -54,7 +54,7 @@ type (
 		// return a unique session id.
 		// By default we will use a uuid impl package to generate
 		// that, but developers can change that with simple assignment.
-		SessionIDGenerator func(ctx context.Context) string
+		SessionIDGenerator func(ctx *context.Context) string
 
 		// DisableSubdomainPersistence set it to true in order dissallow your subdomains to have access to the session cookie
 		//
@@ -70,7 +70,7 @@ func (c Config) Validate() Config {
 	}
 
 	if c.SessionIDGenerator == nil {
-		c.SessionIDGenerator = func(context.Context) string {
+		c.SessionIDGenerator = func(*context.Context) string {
 			id, _ := uuid.NewRandom()
 			return id.String()
 		}

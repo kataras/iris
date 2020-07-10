@@ -54,7 +54,7 @@ func TestFromStdWithNext(t *testing.T) {
 	}
 
 	h := handlerconv.FromStdWithNext(stdWNext)
-	next := func(ctx context.Context) {
+	next := func(ctx *context.Context) {
 		ctx.WriteString(ctx.Request().Context().Value(contextKey("key")).(string))
 	}
 

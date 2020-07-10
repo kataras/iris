@@ -26,7 +26,7 @@ func Version(version string) OptionFunc {
 	return func(c *ControllerActivator) {
 		c.Router().SetRegisterRule(router.RouteOverlap) // required for this feature.
 
-		c.Use(func(ctx context.Context) {
+		c.Use(func(ctx *context.Context) {
 			if !versioning.Match(ctx, version) {
 				ctx.StopExecution()
 				return
@@ -42,7 +42,7 @@ func Version(version string) OptionFunc {
 // a newer version of that specific resource is available instead.
 func Deprecated(options DeprecationOptions) OptionFunc {
 	return func(c *ControllerActivator) {
-		c.Use(func(ctx context.Context) {
+		c.Use(func(ctx *context.Context) {
 			versioning.WriteDeprecated(ctx, options)
 			ctx.Next()
 		})

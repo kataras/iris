@@ -35,7 +35,7 @@ func ExceedHandler(handler context.Handler) Option {
 // ClientData is an `Option` that can be passed at the `Limit` package-level function.
 // It accepts a function which provides the Iris Context and should return custom data
 // that will be stored to the Client and be retrieved as `Get(ctx).Client.Data` later on.
-func ClientData(clientDataFunc func(ctx context.Context) interface{}) Option {
+func ClientData(clientDataFunc func(ctx *context.Context) interface{}) Option {
 	return func(l *Limiter) {
 		l.clientDataFunc = clientDataFunc
 	}
@@ -79,8 +79,8 @@ type (
 	// old clients from the memory. Limiter is not exposed by a function,
 	// callers should use it inside an `Option` for the `Limit` package-level function.
 	Limiter struct {
-		clientDataFunc func(ctx context.Context) interface{} // fill the Client's Data field.
-		exceedHandler  context.Handler                       // when too many requests.
+		clientDataFunc func(ctx *context.Context) interface{} // fill the Client's Data field.
+		exceedHandler  context.Handler                        // when too many requests.
 
 		limit     rate.Limit
 		burstSize int
@@ -116,7 +116,7 @@ func Limit(limit float64, burst int, options ...Option) context.Handler {
 		clients:   make(map[string]*Client),
 		limit:     rate.Limit(limit),
 		burstSize: burst,
-		exceedHandler: func(ctx context.Context) {
+		exceedHandler: func(ctx *context.Context) {
 			ctx.StopWithStatus(429) // Too Many Requests.
 		},
 	}
@@ -139,7 +139,7 @@ func (l *Limiter) Purge(condition func(*Client) bool) {
 	l.mu.Unlock()
 }
 
-func (l *Limiter) serveHTTP(ctx context.Context) {
+func (l *Limiter) serveHTTP(ctx *context.Context) {
 	id := getIdentifier(ctx)
 	l.mu.RLock()
 	client, ok := l.clients[id]
@@ -182,11 +182,11 @@ const identifierContextKey = "iris.ratelimit.identifier"
 
 // SetIdentifier can be called manually from a handler or a middleare
 // to change the identifier per client. The default key for a client is its Remote IP.
-func SetIdentifier(ctx context.Context, key string) {
+func SetIdentifier(ctx *context.Context, key string) {
 	ctx.Values().Set(identifierContextKey, key)
 }
 
-func getIdentifier(ctx context.Context) string {
+func getIdentifier(ctx *context.Context) string {
 	if entry, ok := ctx.Values().GetEntry(identifierContextKey); ok {
 		return entry.ValueRaw.(string)
 	}
@@ -202,7 +202,7 @@ const clientContextKey = "iris.ratelimit.client"
 // You can read more about X-RateLimit response headers at:
 // https://tools.ietf.org/id/draft-polli-ratelimit-headers-00.html.
 // A good example of that is the GitHub API itself: https://developer.github.com/v3/#rate-limiting
-func Get(ctx context.Context) *Client {
+func Get(ctx *context.Context) *Client {
 	if v := ctx.Values().Get(clientContextKey); v != nil {
 		if c, ok := v.(*Client); ok {
 			return c

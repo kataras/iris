@@ -32,7 +32,7 @@ var DefaultDeprecationOptions = DeprecationOptions{
 // It can be used inside a middleware.
 //
 // See `Deprecated` to wrap an existing handler instead.
-func WriteDeprecated(ctx context.Context, options DeprecationOptions) {
+func WriteDeprecated(ctx *context.Context, options DeprecationOptions) {
 	if options.WarnMessage == "" {
 		options.WarnMessage = DefaultDeprecationOptions.WarnMessage
 	}
@@ -52,7 +52,7 @@ func WriteDeprecated(ctx context.Context, options DeprecationOptions) {
 // Deprecated can be used to tell the clients that
 // a newer version of that specific resource is available instead.
 func Deprecated(handler context.Handler, options DeprecationOptions) context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		WriteDeprecated(ctx, options)
 		handler(ctx)
 	}

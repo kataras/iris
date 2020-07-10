@@ -97,12 +97,12 @@ func TestClientNoCache(t *testing.T) {
 	app := iris.New()
 	var n uint32
 
-	app.Get("/", cache.Handler(cacheDuration), func(ctx context.Context) {
+	app.Get("/", cache.Handler(cacheDuration), func(ctx *context.Context) {
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
 	})
 
-	app.Get("/nocache", cache.Handler(cacheDuration), func(ctx context.Context) {
+	app.Get("/nocache", cache.Handler(cacheDuration), func(ctx *context.Context) {
 		client.NoCache(ctx) // <----
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
@@ -120,7 +120,7 @@ func TestCache(t *testing.T) {
 
 	app.Use(cache.Handler(cacheDuration))
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx *context.Context) {
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
 	})
@@ -130,7 +130,7 @@ func TestCache(t *testing.T) {
 		expectedBodyStr2 = "This is the other"
 	)
 
-	app.Get("/other", func(ctx context.Context) {
+	app.Get("/other", func(ctx *context.Context) {
 		atomic.AddUint32(&n2, 1)
 		ctx.Write([]byte(expectedBodyStr2))
 	})
@@ -154,7 +154,7 @@ func TestCacheValidator(t *testing.T) {
 	app := iris.New()
 	var n uint32
 
-	h := func(ctx context.Context) {
+	h := func(ctx *context.Context) {
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
 	}
@@ -164,7 +164,7 @@ func TestCacheValidator(t *testing.T) {
 
 	managedCache := cache.Cache(cacheDuration)
 	managedCache.AddRule(rule.Validator([]rule.PreValidator{
-		func(ctx context.Context) bool {
+		func(ctx *context.Context) bool {
 			// should always invalid for cache, don't bother to go to try to get or set cache
 			return ctx.Request().URL.Path != "/invalid"
 		},
@@ -173,7 +173,7 @@ func TestCacheValidator(t *testing.T) {
 	managedCache2 := cache.Cache(cacheDuration)
 	managedCache2.AddRule(rule.Validator(nil,
 		[]rule.PostValidator{
-			func(ctx context.Context) bool {
+			func(ctx *context.Context) bool {
 				// it's passed the Claim and now Valid checks if the response contains a header of "DONT"
 				return ctx.ResponseWriter().Header().Get("DONT") == ""
 			},
@@ -183,7 +183,7 @@ func TestCacheValidator(t *testing.T) {
 	app.Get("/valid", validCache.ServeHTTP, h)
 
 	app.Get("/invalid", managedCache.ServeHTTP, h)
-	app.Get("/invalid2", managedCache2.ServeHTTP, func(ctx context.Context) {
+	app.Get("/invalid2", managedCache2.ServeHTTP, func(ctx *context.Context) {
 		atomic.AddUint32(&n, 1)
 		ctx.Header("DONT", "DO not cache that response even if it was claimed")
 		ctx.Write([]byte(expectedBodyStr))

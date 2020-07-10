@@ -27,7 +27,7 @@ func FromStd(handler interface{}) context.Handler {
 			//
 			// handlerFunc.ServeHTTP(w,r)
 			//
-			return func(ctx context.Context) {
+			return func(ctx *context.Context) {
 				h.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 			}
 		}
@@ -51,7 +51,7 @@ func FromStd(handler interface{}) context.Handler {
 			// No valid handler passed
 			//
 			panic(fmt.Errorf(`
-			Passed argument is not a func(context.Context) neither one of these types:
+			Passed argument is not a func(iris.Context) neither one of these types:
 			- http.Handler
 			- func(w http.ResponseWriter, r *http.Request)
 			- func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
@@ -64,7 +64,7 @@ func FromStd(handler interface{}) context.Handler {
 // FromStdWithNext receives a standar handler - middleware form - and returns a
 // compatible context.Handler wrapper.
 func FromStdWithNext(h func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)) context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		next := func(w http.ResponseWriter, r *http.Request) {
 			ctx.ResetRequest(r)
 			ctx.Next()

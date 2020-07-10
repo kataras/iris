@@ -21,12 +21,12 @@ func init() {
 // TokenExtractor is a function that takes a context as input and returns
 // a token. An empty string should be returned if no token found
 // without additional information.
-type TokenExtractor func(context.Context) string
+type TokenExtractor func(*context.Context) string
 
 // FromHeader is a token extractor.
 // It reads the token from the Authorization request header of form:
 // Authorization: "Bearer {token}".
-func FromHeader(ctx context.Context) string {
+func FromHeader(ctx *context.Context) string {
 	authHeader := ctx.GetHeader("Authorization")
 	if authHeader == "" {
 		return ""
@@ -43,7 +43,7 @@ func FromHeader(ctx context.Context) string {
 
 // FromQuery is a token extractor.
 // It reads the token from the "token" url query parameter.
-func FromQuery(ctx context.Context) string {
+func FromQuery(ctx *context.Context) string {
 	return ctx.URLParam("token")
 }
 
@@ -52,7 +52,7 @@ func FromQuery(ctx context.Context) string {
 // The request content-type should contain the: application/json header value, otherwise
 // this method will not try to read and consume the body.
 func FromJSON(jsonKey string) TokenExtractor {
-	return func(ctx context.Context) string {
+	return func(ctx *context.Context) string {
 		if ctx.GetContentTypeRequested() != context.ContentJSONHeaderValue {
 			return ""
 		}
@@ -388,7 +388,7 @@ func validateMapClaims(m map[string]interface{}, e jwt.Expected, leeway time.Dur
 // a new token to the client in plain text format.
 //
 // Use the `Token` method to get a new generated token raw string value.
-func (j *JWT) WriteToken(ctx context.Context, claims interface{}) error {
+func (j *JWT) WriteToken(ctx *context.Context, claims interface{}) error {
 	token, err := j.Token(claims)
 	if err != nil {
 		ctx.StatusCode(500)
@@ -418,18 +418,18 @@ type (
 		Validate() error
 	}
 	claimsContextValidator interface {
-		Validate(ctx context.Context) error
+		Validate(ctx *context.Context) error
 	}
 )
 
 // IsValidated reports whether a token is already validated through
 // `VerifyToken`. It returns true when the claims are compatible
 // validators: a `Claims` value or a value that implements the `Validate() error` method.
-func IsValidated(ctx context.Context) bool { // see the `ReadClaims`.
+func IsValidated(ctx *context.Context) bool { // see the `ReadClaims`.
 	return ctx.Values().Get(needsValidationContextKey) == nil
 }
 
-func validateClaims(ctx context.Context, claims interface{}) (err error) {
+func validateClaims(ctx *context.Context, claims interface{}) (err error) {
 	switch c := claims.(type) {
 	case claimsValidator:
 		err = c.ValidateWithLeeway(jwt.Expected{Time: time.Now()}, 0)
@@ -467,7 +467,7 @@ func validateClaims(ctx context.Context, claims interface{}) (err error) {
 // VerifyToken verifies (and decrypts) the request token,
 // it also validates and binds the parsed token's claims to the "claimsPtr" (destination).
 // It does return a nil error on success.
-func (j *JWT) VerifyToken(ctx context.Context, claimsPtr interface{}) error {
+func (j *JWT) VerifyToken(ctx *context.Context, claimsPtr interface{}) error {
 	var token string
 
 	for _, extract := range j.Extractors {
@@ -520,7 +520,7 @@ const (
 //
 // A call of `ReadClaims` is required to validate and acquire the jwt claims
 // on the next request.
-func (j *JWT) Verify(ctx context.Context) {
+func (j *JWT) Verify(ctx *context.Context) {
 	var raw json.RawMessage
 	if err := j.VerifyToken(ctx, &raw); err != nil {
 		ctx.StopWithStatus(401)
@@ -534,7 +534,7 @@ func (j *JWT) Verify(ctx context.Context) {
 // ReadClaims binds the "claimsPtr" (destination)
 // to the verified (and decrypted) claims.
 // The `Verify` method should be called  first (registered as middleware).
-func ReadClaims(ctx context.Context, claimsPtr interface{}) error {
+func ReadClaims(ctx *context.Context, claimsPtr interface{}) error {
 	v := ctx.Values().Get(ClaimsContextKey)
 	if v == nil {
 		return ErrMissing
@@ -589,7 +589,7 @@ func ReadClaims(ctx context.Context, claimsPtr interface{}) error {
 // 	}
 //  [use claims...]
 // })
-func Get(ctx context.Context) (interface{}, error) {
+func Get(ctx *context.Context) (interface{}, error) {
 	claims := ctx.Values().Get(ClaimsContextKey)
 	if claims == nil {
 		return nil, ErrMissing

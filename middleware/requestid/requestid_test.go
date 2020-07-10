@@ -24,7 +24,7 @@ func TestRequestID(t *testing.T) {
 	const expectedCustomID = "my_id"
 	custom := app.Party("/custom")
 	{
-		customGen := func(ctx context.Context) string {
+		customGen := func(ctx *context.Context) string {
 			return expectedCustomID
 		}
 
@@ -35,7 +35,7 @@ func TestRequestID(t *testing.T) {
 	const expectedErrMsg = "no id"
 	customWithErr := app.Party("/custom_err")
 	{
-		customGen := func(ctx context.Context) string {
+		customGen := func(ctx *context.Context) string {
 			ctx.StopWithText(iris.StatusUnauthorized, expectedErrMsg)
 			return ""
 		}

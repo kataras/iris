@@ -14,10 +14,10 @@ import (
 )
 
 type testController struct {
-	Ctx context.Context
+	Ctx *context.Context
 }
 
-var writeMethod = func(ctx context.Context) {
+var writeMethod = func(ctx *context.Context) {
 	ctx.Writef(ctx.Method())
 }
 
@@ -58,8 +58,8 @@ func (c *testController) Trace() {
 }
 
 type (
-	testControllerAll struct{ Ctx context.Context }
-	testControllerAny struct{ Ctx context.Context } // exactly the same as All.
+	testControllerAll struct{ Ctx *context.Context }
+	testControllerAny struct{ Ctx *context.Context } // exactly the same as All.
 )
 
 func (c *testControllerAll) All() {
@@ -92,7 +92,7 @@ func TestControllerMethodFuncs(t *testing.T) {
 }
 
 type testControllerBeginAndEndRequestFunc struct {
-	Ctx context.Context
+	Ctx *context.Context
 
 	Username string
 }
@@ -101,12 +101,12 @@ type testControllerBeginAndEndRequestFunc struct {
 //
 // useful when more than one methods using the
 // same request values or context's function calls.
-func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
+func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx *context.Context) {
 	c.Username = ctx.Params().Get("username")
 }
 
 // called after every method (Get() or Post()).
-func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
+func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx *context.Context) {
 	ctx.Writef("done") // append "done" to the response
 }
 
@@ -152,7 +152,7 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		"bill":           true,
 		"whoisyourdaddy": false,
 	}
-	middlewareCheck := func(ctx context.Context) {
+	middlewareCheck := func(ctx *context.Context) {
 		for username, allow := range usernames {
 			if ctx.Params().Get("username") == username && allow {
 				ctx.Next()
@@ -197,7 +197,7 @@ type Model struct {
 }
 
 type testControllerEndRequestAwareness struct {
-	Ctx context.Context
+	Ctx *context.Context
 }
 
 func (c *testControllerEndRequestAwareness) Get() {
@@ -209,7 +209,7 @@ func (c *testControllerEndRequestAwareness) Get() {
 		})
 }
 
-func writeModels(ctx context.Context, names ...string) {
+func writeModels(ctx *context.Context, names ...string) {
 	if expected, got := len(names), len(ctx.GetViewData()); expected != got {
 		ctx.Writef("expected view data length: %d but got: %d for names: %s", expected, got, names)
 		return
@@ -233,8 +233,8 @@ func writeModels(ctx context.Context, names ...string) {
 	}
 }
 
-func (c *testControllerEndRequestAwareness) BeginRequest(ctx context.Context) {}
-func (c *testControllerEndRequestAwareness) EndRequest(ctx context.Context) {
+func (c *testControllerEndRequestAwareness) BeginRequest(ctx *context.Context) {}
+func (c *testControllerEndRequestAwareness) EndRequest(ctx *context.Context) {
 	writeModels(ctx, "TestModel", "myModel")
 }
 
@@ -259,7 +259,7 @@ type testBindType struct {
 }
 
 type testControllerBindStruct struct {
-	Ctx context.Context
+	Ctx *context.Context
 
 	//  should start with upper letter of course
 	TitlePointer *testBindType // should have the value of the "myTitlePtr" on test
@@ -335,7 +335,7 @@ func (c *testCtrl0) Get() string {
 	return c.Ctx.Params().Get("username")
 }
 
-func (c *testCtrl0) EndRequest(ctx context.Context) {
+func (c *testCtrl0) EndRequest(ctx *context.Context) {
 	if c.TitlePointer == nil {
 		ctx.Writef("\nTitlePointer is nil!\n")
 	} else {
@@ -347,7 +347,7 @@ func (c *testCtrl0) EndRequest(ctx context.Context) {
 }
 
 type testCtrl00 struct {
-	Ctx context.Context
+	Ctx *context.Context
 
 	testCtrl000
 }
@@ -361,8 +361,8 @@ type testCtrl000 struct {
 type testCtrl0000 struct {
 }
 
-func (c *testCtrl0000) BeginRequest(ctx context.Context) {}
-func (c *testCtrl0000) EndRequest(ctx context.Context) {
+func (c *testCtrl0000) BeginRequest(ctx *context.Context) {}
+func (c *testCtrl0000) EndRequest(ctx *context.Context) {
 	ctx.Writef("finish")
 }
 
@@ -385,8 +385,8 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 
 type testControllerRelPathFromFunc struct{}
 
-func (c *testControllerRelPathFromFunc) BeginRequest(ctx context.Context) {}
-func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
+func (c *testControllerRelPathFromFunc) BeginRequest(ctx *context.Context) {}
+func (c *testControllerRelPathFromFunc) EndRequest(ctx *context.Context) {
 	ctx.Writef("%s:%s", ctx.Method(), ctx.Path())
 }
 
@@ -565,7 +565,7 @@ func (c *testControllerRequestScopedDependencies) GetCustomContext() string {
 	return c.MyContext.OtherField
 }
 
-func newRequestDep1(ctx context.Context) *testCustomStruct {
+func newRequestDep1(ctx *context.Context) *testCustomStruct {
 	return &testCustomStruct{
 		Name: ctx.URLParam("name"),
 		Age:  ctx.URLParamIntDefault("age", 0),
@@ -573,11 +573,11 @@ func newRequestDep1(ctx context.Context) *testCustomStruct {
 }
 
 type testMyContext struct {
-	Context    context.Context
+	Context    *context.Context
 	OtherField string
 }
 
-func newRequestDep2(ctx context.Context) *testMyContext {
+func newRequestDep2(ctx *context.Context) *testMyContext {
 	return &testMyContext{
 		Context:    ctx,
 		OtherField: "test",

@@ -15,10 +15,10 @@ func Satisfied() Rule {
 	return &satisfiedRule{}
 }
 
-func (n *satisfiedRule) Claim(context.Context) bool {
+func (n *satisfiedRule) Claim(*context.Context) bool {
 	return true
 }
 
-func (n *satisfiedRule) Valid(context.Context) bool {
+func (n *satisfiedRule) Valid(*context.Context) bool {
 	return true
 }

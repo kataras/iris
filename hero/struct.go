@@ -92,7 +92,7 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 		Explicitly().
 		DestType = typ
 
-	newContainer.GetErrorHandler = func(ctx context.Context) ErrorHandler {
+	newContainer.GetErrorHandler = func(ctx *context.Context) ErrorHandler {
 		if isErrHandler {
 			return ctx.Controller().Interface().(ErrorHandler)
 		}
@@ -108,7 +108,7 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 // If the dependencies are all static then these are already set-ed at the initialization of this Struct
 // and the same struct value instance will be returned, ignoring the Context. Otherwise
 // a new struct value with filled fields by its pre-calculated bindings will be returned instead.
-func (s *Struct) Acquire(ctx context.Context) (reflect.Value, error) {
+func (s *Struct) Acquire(ctx *context.Context) (reflect.Value, error) {
 	if s.Singleton {
 		ctx.Values().Set(context.ControllerContextKey, s.ptrValue)
 		return s.ptrValue, nil

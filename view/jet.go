@@ -331,7 +331,7 @@ const JetRuntimeVarsContextKey = "iris.jetvarmap"
 //
 // Usage: view.AddJetRuntimeVars(ctx, view.JetRuntimeVars{...}).
 // See `JetEngine.AddRuntimeVars` too.
-func AddJetRuntimeVars(ctx context.Context, jetVarMap JetRuntimeVars) {
+func AddJetRuntimeVars(ctx *context.Context, jetVarMap JetRuntimeVars) {
 	if v := ctx.Values().Get(JetRuntimeVarsContextKey); v != nil {
 		if vars, ok := v.(JetRuntimeVars); ok {
 			for key, value := range jetVarMap {
@@ -350,7 +350,7 @@ func AddJetRuntimeVars(ctx context.Context, jetVarMap JetRuntimeVars) {
 //
 // Usage: view.AddJetRuntimeVars(ctx, view.JetRuntimeVars{...}).
 // See `view.AddJetRuntimeVars` if package-level access is more meanful to the code flow.
-func (s *JetEngine) AddRuntimeVars(ctx context.Context, vars JetRuntimeVars) {
+func (s *JetEngine) AddRuntimeVars(ctx *context.Context, vars JetRuntimeVars) {
 	AddJetRuntimeVars(ctx, vars)
 }
 
@@ -363,7 +363,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 
 	var vars JetRuntimeVars
 
-	if ctx, ok := w.(context.Context); ok {
+	if ctx, ok := w.(*context.Context); ok {
 		runtimeVars := ctx.Values().Get(JetRuntimeVarsContextKey)
 		if runtimeVars != nil {
 			if jetVars, ok := runtimeVars.(JetRuntimeVars); ok {

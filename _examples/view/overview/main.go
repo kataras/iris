@@ -14,9 +14,9 @@ func main() {
 	// - {{ current }}
 	app.RegisterView(iris.HTML("./templates", ".html"))
 	app.Get("/", func(ctx iris.Context) {
-		ctx.ViewData("Name", "iris") // the .Name inside the ./templates/hi.html
-		ctx.Gzip(true)               // enable gzip for big files
-		ctx.View("hi.html")          // render the template with the file name relative to the './templates'
+		ctx.Compress(true)           // enable compression based on Accept-Encoding (e.g. "gzip").
+		ctx.ViewData("Name", "iris") // the .Name inside the ./templates/hi.html.
+		ctx.View("hi.html")          // render the template with the file name relative to the './templates'.
 	})
 
 	// http://localhost:8080/

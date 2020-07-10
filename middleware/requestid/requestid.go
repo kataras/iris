@@ -14,7 +14,7 @@ const xRequestIDHeaderValue = "X-Request-Id"
 
 // Generator defines the function which should extract or generate
 // a Request ID. See `DefaultGenerator` and `New` package-level functions.
-type Generator func(ctx context.Context) string
+type Generator func(ctx *context.Context) string
 
 // DefaultGenerator is the default `Generator` that is used
 // when nil is passed on `New` package-level function.
@@ -22,7 +22,7 @@ type Generator func(ctx context.Context) string
 // or, if missing, it generates a new UUID(v4) and sets the header and context value.
 //
 // See `Get` package-level function too.
-var DefaultGenerator Generator = func(ctx context.Context) string {
+var DefaultGenerator Generator = func(ctx *context.Context) string {
 	id := ctx.GetHeader(xRequestIDHeaderValue)
 
 	if id == "" {
@@ -50,7 +50,7 @@ func New(generator ...Generator) context.Handler {
 		gen = generator[0]
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		if Get(ctx) != "" {
 			ctx.Next()
 			return
@@ -71,7 +71,7 @@ func New(generator ...Generator) context.Handler {
 // Get returns the Request ID or empty string.
 //
 // A shortcut of `context.GetID().(string)`.
-func Get(ctx context.Context) string {
+func Get(ctx *context.Context) string {
 	v := ctx.GetID()
 	if v != nil {
 		if id, ok := v.(string); ok {

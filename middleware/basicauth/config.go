@@ -50,6 +50,6 @@ func DefaultConfig() Config {
 }
 
 // User returns the user from context key same as  ctx.Request().BasicAuth().
-func (c Config) User(ctx context.Context) (string, string, bool) {
+func (c Config) User(ctx *context.Context) (string, string, bool) {
 	return ctx.Request().BasicAuth()
 }

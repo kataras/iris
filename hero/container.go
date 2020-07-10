@@ -32,7 +32,7 @@ type Container struct {
 	Dependencies []*Dependency
 	// GetErrorHandler should return a valid `ErrorHandler` to handle bindings AND handler dispatch errors.
 	// Defaults to a functon which returns the `DefaultErrorHandler`.
-	GetErrorHandler func(context.Context) ErrorHandler // cannot be nil.
+	GetErrorHandler func(*context.Context) ErrorHandler // cannot be nil.
 
 	// resultHandlers is a list of functions that serve the return struct value of a function handler.
 	// Defaults to "defaultResultHandler" but it can be overridden.
@@ -43,13 +43,13 @@ type Container struct {
 // Contains the iris context, standard context, iris sessions and time dependencies.
 var BuiltinDependencies = []*Dependency{
 	// iris context dependency.
-	NewDependency(func(ctx context.Context) context.Context { return ctx }).Explicitly(),
+	NewDependency(func(ctx *context.Context) *context.Context { return ctx }).Explicitly(),
 	// standard context dependency.
-	NewDependency(func(ctx context.Context) stdContext.Context {
+	NewDependency(func(ctx *context.Context) stdContext.Context {
 		return ctx.Request().Context()
 	}).Explicitly(),
 	// iris session dependency.
-	NewDependency(func(ctx context.Context) *sessions.Session {
+	NewDependency(func(ctx *context.Context) *sessions.Session {
 		session := sessions.Get(ctx)
 		if session == nil {
 			panic("binding: session is nil - app.Use(sess.Handler()) to fix it")
@@ -58,19 +58,19 @@ var BuiltinDependencies = []*Dependency{
 		return session
 	}).Explicitly(),
 	// time.Time to time.Now dependency.
-	NewDependency(func(ctx context.Context) time.Time {
+	NewDependency(func(ctx *context.Context) time.Time {
 		return time.Now()
 	}).Explicitly(),
 	// standard http Request dependency.
-	NewDependency(func(ctx context.Context) *http.Request {
+	NewDependency(func(ctx *context.Context) *http.Request {
 		return ctx.Request()
 	}).Explicitly(),
 	// standard http ResponseWriter dependency.
-	NewDependency(func(ctx context.Context) http.ResponseWriter {
+	NewDependency(func(ctx *context.Context) http.ResponseWriter {
 		return ctx.ResponseWriter()
 	}).Explicitly(),
 	// http headers dependency.
-	NewDependency(func(ctx context.Context) http.Header {
+	NewDependency(func(ctx *context.Context) http.Header {
 		return ctx.Request().Header
 	}).Explicitly(),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
@@ -86,7 +86,7 @@ func New(dependencies ...interface{}) *Container {
 	c := &Container{
 		Sorter:       sortByNumMethods,
 		Dependencies: deps,
-		GetErrorHandler: func(context.Context) ErrorHandler {
+		GetErrorHandler: func(*context.Context) ErrorHandler {
 			return DefaultErrorHandler
 		},
 	}

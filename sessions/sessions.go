@@ -44,7 +44,7 @@ func (s *Sessions) GetCookieOptions() []context.CookieOption {
 }
 
 // updateCookie gains the ability of updating the session browser cookie to any method which wants to update it
-func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Duration, options ...context.CookieOption) {
+func (s *Sessions) updateCookie(ctx *context.Context, sid string, expires time.Duration, options ...context.CookieOption) {
 	cookie := &http.Cookie{}
 
 	// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
@@ -76,7 +76,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 // on MVC and APIContainer as well.
 //
 // NOTE: Use `app.Use(sess.Handler())` instead, avoid using `Start` manually.
-func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOption) *Session {
+func (s *Sessions) Start(ctx *context.Context, cookieOptions ...context.CookieOption) *Session {
 	cookieValue := ctx.GetCookie(s.config.Cookie, cookieOptions...)
 
 	if cookieValue == "" { // cookie doesn't exist, let's generate a session and set a cookie.
@@ -123,7 +123,7 @@ func (s *Sessions) Handler(cookieOptions ...context.CookieOption) context.Handle
 		requestOptions = append(requestOptions, context.CookieEncoding(s.config.Encoding, s.config.Cookie))
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		ctx.AddCookieOptions(requestOptions...) // request life-cycle options.
 
 		session := s.Start(ctx, cookieOptions...) // this cookie's end-developer's custom options.
@@ -142,7 +142,7 @@ func (s *Sessions) Handler(cookieOptions ...context.CookieOption) context.Handle
 // Note: It will return nil if the session got destroyed by the same request.
 // If you need to destroy and start a new session in the same request you need to call
 // sessions manager's `Start` method after Destroy.
-func Get(ctx context.Context) *Session {
+func Get(ctx *context.Context) *Session {
 	if v := ctx.Values().Get(sessionContextKey); v != nil {
 		if sess, ok := v.(*Session); ok {
 			return sess
@@ -154,14 +154,14 @@ func Get(ctx context.Context) *Session {
 }
 
 // StartWithPath same as `Start` but it explicitly accepts the cookie path option.
-func (s *Sessions) StartWithPath(ctx context.Context, path string) *Session {
+func (s *Sessions) StartWithPath(ctx *context.Context, path string) *Session {
 	return s.Start(ctx, context.CookiePath(path))
 }
 
 // ShiftExpiration move the expire date of a session to a new date
 // by using session default timeout configuration.
 // It will return `ErrNotImplemented` if a database is used and it does not support this feature, yet.
-func (s *Sessions) ShiftExpiration(ctx context.Context, cookieOptions ...context.CookieOption) error {
+func (s *Sessions) ShiftExpiration(ctx *context.Context, cookieOptions ...context.CookieOption) error {
 	return s.UpdateExpiration(ctx, s.config.Expires, cookieOptions...)
 }
 
@@ -169,7 +169,7 @@ func (s *Sessions) ShiftExpiration(ctx context.Context, cookieOptions ...context
 // by using timeout value passed by `expires` receiver.
 // It will return `ErrNotFound` when trying to update expiration on a non-existence or not valid session entry.
 // It will return `ErrNotImplemented` if a database is used and it does not support this feature, yet.
-func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration, cookieOptions ...context.CookieOption) error {
+func (s *Sessions) UpdateExpiration(ctx *context.Context, expires time.Duration, cookieOptions ...context.CookieOption) error {
 	cookieValue := ctx.GetCookie(s.config.Cookie)
 	if cookieValue == "" {
 		return ErrNotFound
@@ -203,7 +203,7 @@ func (s *Sessions) OnDestroy(listeners ...DestroyListener) {
 // Next calls of `sessions.Get` will occur to a nil Session,
 // use `Sessions#Start` method for renewal
 // or use the Session's Destroy method which does keep the session entry with its values cleared.
-func (s *Sessions) Destroy(ctx context.Context) {
+func (s *Sessions) Destroy(ctx *context.Context) {
 	cookieValue := ctx.GetCookie(s.config.Cookie)
 	if cookieValue == "" { // nothing to destroy
 		return

@@ -83,7 +83,11 @@
             {{ range $idx, $file := .Files }}
             <tr>
                 <td>{{ $idx }}</td>
+                {{ if $file.Download }}
+                <td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}" download>{{ $file.Name }}</a></td> 
+                {{ else }}
                 <td><a href="{{ $file.Path }}" title="{{ $file.ModTime }}">{{ $file.Name }}</a></td>
+                {{ end }}
                 {{ if $file.Info.IsDir }}
                 <td>Dir</td>
                 {{ else }}

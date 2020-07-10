@@ -10,7 +10,7 @@ import (
 
 type (
 	// DependencyHandler is the native function declaration which implementors should return a value match to an input.
-	DependencyHandler func(ctx context.Context, input *Input) (reflect.Value, error)
+	DependencyHandler func(ctx *context.Context, input *Input) (reflect.Value, error)
 	// Dependency describes the design-time dependency to be injected at serve time.
 	// Contains its source location, the dependency handler (provider) itself and information
 	// such as static for static struct values or explicit to bind a value to its exact DestType and not if just assignable to it (interfaces).
@@ -92,11 +92,11 @@ func fromDependencyHandler(_ reflect.Value, dest *Dependency) bool {
 	dependency := dest.OriginalValue
 	handler, ok := dependency.(DependencyHandler)
 	if !ok {
-		handler, ok = dependency.(func(context.Context, *Input) (reflect.Value, error))
+		handler, ok = dependency.(func(*context.Context, *Input) (reflect.Value, error))
 		if !ok {
 			// It's almost a handler, only the second `Input` argument is missing.
-			if h, is := dependency.(func(context.Context) (reflect.Value, error)); is {
-				handler = func(ctx context.Context, _ *Input) (reflect.Value, error) {
+			if h, is := dependency.(func(*context.Context) (reflect.Value, error)); is {
+				handler = func(ctx *context.Context, _ *Input) (reflect.Value, error) {
 					return h(ctx)
 				}
 				ok = is
@@ -114,7 +114,7 @@ func fromDependencyHandler(_ reflect.Value, dest *Dependency) bool {
 func fromStructValue(v reflect.Value, dest *Dependency) bool {
 	if !isFunc(v) {
 		// It's just a static value.
-		handler := func(context.Context, *Input) (reflect.Value, error) {
+		handler := func(*context.Context, *Input) (reflect.Value, error) {
 			return v, nil
 		}
 
@@ -183,7 +183,7 @@ func handlerFromFunc(v reflect.Value, typ reflect.Type) DependencyHandler {
 	hasErrorOut := typ.NumOut() == 2 // if two, always an error type here.
 	hasInputIn := typ.NumIn() == 2 && typ.In(1) == inputTyp
 
-	return func(ctx context.Context, input *Input) (reflect.Value, error) {
+	return func(ctx *context.Context, input *Input) (reflect.Value, error) {
 		inputs := ctx.ReflectValue()
 		if hasInputIn {
 			inputs = append(inputs, input.selfValue)
@@ -214,7 +214,7 @@ func fromDependentFunc(v reflect.Value, dest *Dependency, funcDependencies []*De
 	firstOutIsError := numOut == 1 && isError(typ.Out(0))
 	secondOutIsError := numOut == 2 && isError(typ.Out(1))
 
-	handler := func(ctx context.Context, _ *Input) (reflect.Value, error) {
+	handler := func(ctx *context.Context, _ *Input) (reflect.Value, error) {
 		inputs := make([]reflect.Value, numIn)
 
 		for _, binding := range bindings {
