@@ -438,6 +438,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.SetErr(error)` and `Context.GetErr() error` helpers
 - `Context.Compress(bool) error` and `Context.CompressReader(bool) error`
 - `Context.Clone() Context` returns a copy of the Context.
 - `Context.IsCanceled() bool` reports whether the request has been canceled by the client.

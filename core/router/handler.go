@@ -548,8 +548,14 @@ func (h *routerHandler) FireErrorCode(ctx *context.Context) {
 		break
 	}
 
-	// not error handler found, write a default message.
-	ctx.WriteString(context.StatusText(statusCode))
+	// not error handler found,
+	// see if failed with a stored error, and if so
+	// then render it, otherwise write a default message.
+	if err := ctx.GetErr(); err != nil {
+		ctx.WriteString(err.Error())
+	} else {
+		ctx.WriteString(context.StatusText(statusCode))
+	}
 }
 
 func (h *routerHandler) subdomainAndPathAndMethodExists(ctx *context.Context, t *trie, method, path string) bool {

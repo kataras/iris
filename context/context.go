@@ -4505,6 +4505,32 @@ func (ctx *Context) Application() Application {
 	return ctx.app
 }
 
+const errorContextKey = "iris.context.error"
+
+// SetErr is just a helper that sets an error value
+// as a context value, it does nothing more.
+// Also, by-default this error's value is written to the client
+// on failures when no registered error handler is available (see `Party.On(Any)ErrorCode`).
+// See `GetError` to retrieve it back.
+//
+// Note that, if you want to stop the chain
+// with an error see the `StopWithError` instead.
+func (ctx *Context) SetErr(err error) {
+	ctx.Values().Set(errorContextKey, err)
+}
+
+// GetErr is a helper which retrieves
+// the error value stored by `SetErr`.
+func (ctx *Context) GetErr() error {
+	if v := ctx.Values().Get(errorContextKey); v != nil {
+		if err, ok := v.(error); ok {
+			return err
+		}
+	}
+
+	return nil
+}
+
 const idContextKey = "iris.context.id"
 
 // SetID sets an ID, any value, to the Request Context.

@@ -114,14 +114,23 @@ type compatibleErr interface {
 	Error() string
 }
 
-// dispatchErr writes the error to the response.
+// dispatchErr sets the error status code
+// and the error value to the context.
+// The APIBuilder's On(Any)ErrorCode is responsible to render this error code.
 func dispatchErr(ctx *context.Context, status int, err error) bool {
 	if err == nil {
 		return false
 	}
 
-	ctx.StatusCode(status)
-	DefaultErrorHandler.HandleError(ctx, err)
+	if err != ErrStopExecution {
+		if status == 0 || !context.StatusCodeNotSuccessful(status) {
+			status = DefaultErrStatusCode
+		}
+
+		ctx.StatusCode(status)
+	}
+
+	ctx.SetErr(err)
 	return true
 }
 
