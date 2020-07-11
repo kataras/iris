@@ -2,7 +2,7 @@ package iris
 
 //  +------------------------------------------------------------+
 //  | Bridge code between iris-cli and iris web application      |
-//  | https://github.com/kataras/iris-cli						 |
+//  | https://github.com/kataras/iris-cli                        |
 //  +------------------------------------------------------------+
 
 import (

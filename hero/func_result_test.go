@@ -258,3 +258,24 @@ func TestPreflightResult(t *testing.T) {
 	e.POST("/alternative").WithJSON(testInput{expected4.Name}).
 		Expect().Status(httptest.StatusAccepted).JSON().Equal(expected4)
 }
+
+func TestResponseErr(t *testing.T) {
+	app := iris.New()
+	var expectedErr = errors.New("response error")
+
+	app.OnAnyErrorCode(func(ctx iris.Context) {
+		err := ctx.GetErr()
+		if err != expectedErr {
+			t.Fatalf("expected error value does not match")
+		}
+
+		ctx.WriteString(err.Error())
+	})
+
+	app.ConfigureContainer().Get("/", func() Response {
+		return Response{Code: iris.StatusBadGateway, Err: expectedErr}
+	})
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusBadGateway).Body().Equal("response error")
+}

@@ -10,7 +10,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/s2"
+	"github.com/klauspost/compress/s2" // snappy output but likely faster decompression.
 	"github.com/klauspost/compress/snappy"
 )
 
@@ -184,11 +184,10 @@ func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int)
 		return nil, ErrResponseNotCompressed
 	}
 
-	encoding := negotiateAcceptHeader(acceptEncoding, []string{"gzip", "deflate", "br", "snappy", "s2"}, "")
+	encoding := negotiateAcceptHeader(acceptEncoding, []string{GZIP, DEFLATE, BROTLI, SNAPPY, S2}, IDENTITY)
 	if encoding == "" {
 		return nil, fmt.Errorf("%w: %s", ErrNotSupportedCompression, encoding)
 	}
-	AddCompressHeaders(w.Header(), encoding)
 
 	v := compressWritersPool.Get().(*CompressResponseWriter)
 	v.ResponseWriter = w
@@ -212,6 +211,8 @@ func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int)
 	}
 
 	v.CompressWriter = encWriter
+
+	AddCompressHeaders(w.Header(), encoding)
 	return v, nil
 }
 
