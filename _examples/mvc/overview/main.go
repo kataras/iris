@@ -17,7 +17,7 @@ func main() {
 	mvc.Configure(app.Party("/greet"), setup)
 
 	// http://localhost:8080/greet?name=kataras
-	addr := ":" + environment.Getenv("PORT", ":8080")
+	addr := ":" + environment.Getenv("PORT", "8080")
 	app.Listen(addr, iris.WithLogLevel("debug"))
 }
 
