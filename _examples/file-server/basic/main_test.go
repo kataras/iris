@@ -59,7 +59,7 @@ func (r resource) loadFromBase(dir string, strip string) string {
 func TestFileServerBasic(t *testing.T) {
 	urls := []resource{
 		"/v1/static/css/main.css",
-		"/v1/static/js/jquery-2.1.1.js",
+		"/v1/static/js/main.js",
 		"/v1/static/favicon.ico",
 		"/v1/static/app2",
 		"/v1/static/app2/app2app3",

@@ -123,7 +123,7 @@ func NewCompressReader(src io.Reader, encoding string) (*CompressReader, error) 
 	case GZIP:
 		rc, err = gzip.NewReader(src)
 	case DEFLATE:
-		rc = &noOpReadCloser{flate.NewReader(src)}
+		rc = flate.NewReader(src)
 	case BROTLI:
 		rc = &noOpReadCloser{brotli.NewReader(src)}
 	case SNAPPY:

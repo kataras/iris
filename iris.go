@@ -28,7 +28,7 @@ import (
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.1.8"
+const Version = "12.2.0"
 
 // Byte unit helpers.
 const (
