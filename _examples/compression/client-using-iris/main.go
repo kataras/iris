@@ -101,7 +101,7 @@ func postExample() {
 	if err != nil {
 		panic(err)
 	}
-	defer cr.Close() // Closes the request body too.
+	defer cr.Close()
 
 	body, err := ioutil.ReadAll(cr)
 	if err != nil {
