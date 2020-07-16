@@ -79,10 +79,12 @@
 * File Server
     * [File Server](file-server/file-server/main.go)
     * [HTTP/2 Push Targets](file-server/http2push/main.go)
+    * [HTTP/2 Push Targets (Embedded)](file-server/http2push-embedded/main.go)
+    * [HTTP/2 Push Targets (Gzipped Embedded)](file-server/http2push-embedded-gzipped/main.go)
     * [Favicon](file-server/favicon/main.go)
     * [Basic](file-server/basic/main.go)
     * [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-    * [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
+    * [Embedding Gzipped Files Into App Executable File](file-server/embedding-gzipped-files-into-app/main.go)
     * [Send Files (rate limiter included)](file-server/send-files/main.go)
     * Single Page Applications
         * [Basic SPA](file-server/single-page-application/basic/main.go)

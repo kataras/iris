@@ -12,7 +12,7 @@ var opts = iris.DirOptions{
 	// E.g. "/" (which serves the `IndexName` if not empty).
 	//
 	// Note: Requires running server under TLS,
-	// that's why we use ListenAndServeTLS below.
+	// that's why we use `iris.TLS` below.
 	PushTargets: map[string][]string{
 		"/": {
 			"/public/favicon.ico",

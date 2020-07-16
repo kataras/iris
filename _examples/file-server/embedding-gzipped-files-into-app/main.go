@@ -10,7 +10,7 @@ import (
 // $ go get -u github.com/kataras/bindata/cmd/bindata
 // $ bindata ./assets/...
 // $ go run .
-// $ ./embedding-gziped-files-into-app
+// $ ./embedding-gzipped-files-into-app
 // "physical" files are not used, you can delete the "assets" folder and run the example.
 
 func newApp() *iris.Application {
