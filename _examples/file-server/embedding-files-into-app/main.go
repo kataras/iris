@@ -7,8 +7,7 @@ import (
 // Follow these steps first:
 // $ go get -u github.com/go-bindata/go-bindata/...
 // $ go-bindata ./assets/...
-// $ go build
-// $ ./embedding-files-into-app
+// $ go run .
 // "physical" files are not used, you can delete the "assets" folder and run the example.
 //
 // See `file-server/embedding-gziped-files-into-app` example as well.

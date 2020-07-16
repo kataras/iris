@@ -20,12 +20,6 @@ import (
 // has returned.
 type ResponseWriter interface {
 	http.ResponseWriter
-	http.Flusher
-	http.Hijacker
-	// Note:
-	// The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
-	http.CloseNotifier
-	http.Pusher
 
 	// Naive returns the simple, underline and original http.ResponseWriter
 	// that backends this response writer.
@@ -87,10 +81,8 @@ type ResponseWriter interface {
 	// the buffered data may not reach the client until the response
 	// completes.
 	Flusher() (http.Flusher, bool)
-
-	// CloseNotifier indicates if the protocol supports the underline connection closure notification.
-	// Warning: The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
-	CloseNotifier() (http.CloseNotifier, bool)
+	// Flush sends any buffered data to the client.
+	Flush() // required by compress writer.
 }
 
 // ResponseWriterBodyReseter can be implemented by
@@ -139,6 +131,11 @@ func releaseResponseWriter(w ResponseWriter) {
 // it writes directly to the underline http.ResponseWriter
 type responseWriter struct {
 	http.ResponseWriter
+	http.Pusher
+	http.Hijacker // Note:
+	// The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
+	http.CloseNotifier
+
 	statusCode int // the saved status code which will be used from the cache service
 	// statusCodeSent bool // reply header has been (logically) written | no needed any more as we have a variable to catch total len of written bytes
 	written int // the total size of bytes were written
@@ -172,6 +169,29 @@ func (w *responseWriter) BeginResponse(underline http.ResponseWriter) {
 	w.written = NoWritten
 	w.statusCode = defaultStatusCode
 	w.ResponseWriter = underline
+
+	pusher, ok := underline.(http.Pusher)
+	if !ok {
+		pusher = nil // make sure interface value is nil.
+	}
+
+	hijacker, ok := underline.(http.Hijacker)
+	if !ok {
+		hijacker = nil
+	}
+
+	// This interface is obselete by Go authors
+	// and we only capture it
+	// for compatible reasons. End-developers SHOULD replace
+	// the use of CloseNotifier with the: Request.Context().Done() channel.
+	closeNotifier, ok := underline.(http.CloseNotifier)
+	if !ok {
+		closeNotifier = nil
+	}
+
+	w.Pusher = pusher
+	w.Hijacker = hijacker
+	w.CloseNotifier = closeNotifier
 }
 
 // EndResponse is the last function which is called right before the server sent the final response.
@@ -364,72 +384,4 @@ func (w *responseWriter) Flush() {
 	if flusher, ok := w.Flusher(); ok {
 		flusher.Flush()
 	}
-}
-
-// ErrPushNotSupported is returned by the Push method to
-// indicate that HTTP/2 Push support is not available.
-var ErrPushNotSupported = errors.New("push feature is not supported by this ResponseWriter")
-
-// Push initiates an HTTP/2 server push. This constructs a synthetic
-// request using the given target and options, serializes that request
-// into a PUSH_PROMISE frame, then dispatches that request using the
-// server's request handler. If opts is nil, default options are used.
-//
-// The target must either be an absolute path (like "/path") or an absolute
-// URL that contains a valid host and the same scheme as the parent request.
-// If the target is a path, it will inherit the scheme and host of the
-// parent request.
-//
-// The HTTP/2 spec disallows recursive pushes and cross-authority pushes.
-// Push may or may not detect these invalid pushes; however, invalid
-// pushes will be detected and canceled by conforming clients.
-//
-// Handlers that wish to push URL X should call Push before sending any
-// data that may trigger a request for URL X. This avoids a race where the
-// client issues requests for X before receiving the PUSH_PROMISE for X.
-//
-// Push returns ErrPushNotSupported if the client has disabled push or if push
-// is not supported on the underlying connection.
-func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, isPusher := w.ResponseWriter.(http.Pusher); isPusher {
-		err := pusher.Push(target, opts)
-		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
-			return ErrPushNotSupported
-		}
-		return err
-	}
-	return ErrPushNotSupported
-}
-
-// CloseNotifier indicates if the protocol supports the underline connection closure notification.
-func (w *responseWriter) CloseNotifier() (http.CloseNotifier, bool) {
-	notifier, supportsCloseNotify := w.ResponseWriter.(http.CloseNotifier)
-	return notifier, supportsCloseNotify
-}
-
-// CloseNotify returns a channel that receives at most a
-// single value (true) when the client connection has gone
-// away.
-//
-// CloseNotify may wait to notify until Request.Body has been
-// fully read.
-//
-// After the Handler has returned, there is no guarantee
-// that the channel receives a value.
-//
-// If the protocol is HTTP/1.1 and CloseNotify is called while
-// processing an idempotent request (such a GET) while
-// HTTP/1.1 pipelining is in use, the arrival of a subsequent
-// pipelined request may cause a value to be sent on the
-// returned channel. In practice HTTP/1.1 pipelining is not
-// enabled in browsers and not seen often in the wild. If this
-// is a problem, use HTTP/2 or only use CloseNotify on methods
-// such as POST.
-func (w *responseWriter) CloseNotify() <-chan bool {
-	if notifier, ok := w.CloseNotifier(); ok {
-		return notifier.CloseNotify()
-	}
-
-	ch := make(chan bool, 1)
-	return ch
 }

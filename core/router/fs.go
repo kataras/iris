@@ -44,6 +44,11 @@ type DirOptions struct {
 	// that another handler, called index handler, is auto-registered by the framework
 	// if end developer does not managed to handle it by hand.
 	IndexName string
+	// PushTargets optionally absolute filenames (map's value) to be served without any
+	// additional client's requests (HTTP/2 Push)
+	// when a specific path (map's key) is requested and
+	// it's not a directory (it's an `IndexFile`).
+	PushTargets map[string][]string
 	// When files should served under compression.
 	Compress bool
 
@@ -471,6 +476,16 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		// 	// to not write the content-length( see http.serveContent):
 		// 	// ctx.ResponseWriter().Header().Set(context.ContentEncodingHeaderKey, context.GzipHeaderValue)
 		// }
+
+		if indexFound && len(options.PushTargets) > 0 && !options.Attachments.Enable {
+			if indexAssets, ok := options.PushTargets[name]; ok {
+				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+					for _, indexAsset := range indexAssets {
+						pusher.Push(indexAsset, nil)
+					}
+				}
+			}
+		}
 
 		// If limit is 0 then same as ServeContent.
 		ctx.ServeContentWithRate(f, info.Name(), info.ModTime(), options.Attachments.Limit, options.Attachments.Burst)
