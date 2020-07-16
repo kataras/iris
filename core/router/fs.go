@@ -142,7 +142,12 @@ type embeddedFileSystem struct {
 var _ http.FileSystem = (*embeddedFileSystem)(nil)
 
 func (fs *embeddedFileSystem) Open(name string) (http.File, error) {
-	// name = fs.vdir + name <- no need, check the TrimPrefix(name, vdir) on names loop and the asset and assetInfo redefined on `HandleDir`.
+	if name != "/" {
+		// http://localhost:8080/app2/app2app3/dirs/
+		// = http://localhost:8080/app2/app2app3/dirs
+		name = strings.TrimSuffix(name, "/")
+	}
+
 	if d, ok := fs.dirNames[name]; ok {
 		return d, nil
 	}
@@ -172,6 +177,7 @@ func (info *embeddedBaseFileInfo) Name() string {
 
 type embeddedDir struct {
 	name          string
+	baseName      string
 	modTimeUnix   int64
 	list          []os.FileInfo
 	*bytes.Reader // never used, will always be nil.
@@ -180,7 +186,7 @@ type embeddedDir struct {
 var _ http.File = (*embeddedDir)(nil)
 
 func (f *embeddedDir) Close() error               { return nil }
-func (f *embeddedDir) Name() string               { return f.name }
+func (f *embeddedDir) Name() string               { return f.baseName }
 func (f *embeddedDir) Size() int64                { return 0 }
 func (f *embeddedDir) Mode() os.FileMode          { return os.ModeDir }
 func (f *embeddedDir) ModTime() time.Time         { return time.Unix(f.modTimeUnix, 0) }
@@ -283,6 +289,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			if !ok {
 				d = &embeddedDir{
 					name:        dirName,
+					baseName:    path.Base(dirName),
 					modTimeUnix: time.Now().Unix(),
 				}
 				dirNames[dirName] = d
@@ -292,7 +299,15 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			if err != nil {
 				panic(fmt.Sprintf("FileServer: report as bug: file info: %s not found in: %s", name, dirName))
 			}
-			d.list = append(d.list, &embeddedBaseFileInfo{path.Base(name), info})
+
+			// Add the directory file info (=this dir) to the parent one,
+			// so `ShowList` can render sub-directories of this dir.
+			if parent, hasParent := dirNames[path.Dir(dirName)]; hasParent {
+				parent.list = append(parent.list, d)
+			}
+
+			f := &embeddedBaseFileInfo{path.Base(name), info}
+			d.list = append(d.list, f)
 		}
 
 		fs = &embeddedFileSystem{
@@ -333,30 +348,30 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 
 			for _, d := range dirs {
 				name := d.Name()
-				if d.IsDir() {
-					name += "/"
-				}
 
 				upath := ""
-				// if ctx.Path() == "/" && dirName == strings.TrimPrefix(directory, "./") {
-				if ctx.Path() == "/" {
-					upath = ctx.GetCurrentRoute().StaticPath() + "/" + name
+				if !strings.HasSuffix(ctx.Path(), "/") && dirName != "" {
+					upath = "./" + path.Base(dirName) + "/" + name
 				} else {
-					upath = "./" + dirName + "/" + name
+					upath = "./" + name
 				}
 
-				url := url.URL{
-					Path: upath,
-				} // edit here to redirect correctly, standard library misses that.
+				url := url.URL{Path: upath}
 
 				downloadAttr := ""
 				if dirOptions.Attachments.Enable && !d.IsDir() {
 					downloadAttr = " download" // fixes chrome Resource interpreted, other browsers will just ignore this <a> attribute.
 				}
+
+				viewName := name
+				if d.IsDir() {
+					viewName += "/"
+				}
+
 				// name may contain '?' or '#', which must be escaped to remain
 				// part of the URL path, and not indicate the start of a query
 				// string or fragment.
-				_, err = ctx.Writef("<a href=\"%s\"%s>%s</a>\n", url.String(), downloadAttr, html.EscapeString(name))
+				_, err = ctx.Writef("<a href=\"%s\"%s>%s</a>\n", url.String(), downloadAttr, html.EscapeString(viewName))
 				if err != nil {
 					return err
 				}
@@ -470,12 +485,6 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		}
 
 		ctx.Compress(options.Compress)
-		// if gzip {
-		// 	ctx.Compress(true)
-		// 	context.AddCompressHeaders(ctx.ResponseWriter().Header())
-		// 	// to not write the content-length( see http.serveContent):
-		// 	// ctx.ResponseWriter().Header().Set(context.ContentEncodingHeaderKey, context.GzipHeaderValue)
-		// }
 
 		if indexFound && len(options.PushTargets) > 0 && !options.Attachments.Enable {
 			if indexAssets, ok := options.PushTargets[name]; ok {
@@ -645,18 +654,20 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 
 		for _, d := range dirs {
 			name := d.Name()
-			if d.IsDir() {
-				name += "/"
-			}
 
 			upath := ""
-			if ctx.Path() == "/" {
-				upath = ctx.GetCurrentRoute().StaticPath() + "/" + name
+			if !strings.HasSuffix(ctx.Path(), "/") && dirName != "" {
+				upath = "./" + path.Base(dirName) + "/" + name
 			} else {
-				upath = "./" + dirName + "/" + name
+				upath = "./" + name
 			}
 
 			url := url.URL{Path: upath}
+
+			viewName := name
+			if d.IsDir() {
+				viewName += "/"
+			}
 
 			shouldDownload := dirOptions.Attachments.Enable && !d.IsDir()
 			pageData.Files = append(pageData.Files, fileInfoData{
@@ -664,7 +675,7 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 				ModTime:  d.ModTime().UTC().Format(http.TimeFormat),
 				Path:     url.String(),
 				RelPath:  path.Join(ctx.Path(), name),
-				Name:     html.EscapeString(name),
+				Name:     html.EscapeString(viewName),
 				Download: shouldDownload,
 			})
 		}

@@ -10,7 +10,7 @@ import (
 // $ go run .
 // "physical" files are not used, you can delete the "assets" folder and run the example.
 //
-// See `file-server/embedding-gziped-files-into-app` example as well.
+// See `file-server/embedding-gzipped-files-into-app` example as well.
 func newApp() *iris.Application {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
