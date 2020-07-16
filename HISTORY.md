@@ -429,8 +429,9 @@ Other Improvements:
 
 New Package-level Variables:
 
-- `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
 - `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
+- `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
+- `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/master/_examples/file-server/http2push/main.go).
 - `iris.Compress` and `iris.CompressReader` middleware to compress responses and decode compressed request data respectfully.
 - `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
 - `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)

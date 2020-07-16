@@ -1,6 +1,7 @@
 package context
 
 import (
+	"errors"
 	"net/http"
 	"sync"
 )
@@ -31,6 +32,10 @@ func releaseResponseRecorder(w *ResponseRecorder) {
 // rec := context.Recorder()
 type ResponseRecorder struct {
 	ResponseWriter
+
+	http.Hijacker
+	http.CloseNotifier
+
 	// keep track of the body in order to be
 	// resetable and useful inside custom transactions
 	chunks []byte
@@ -50,6 +55,20 @@ func (w *ResponseRecorder) Naive() http.ResponseWriter {
 // prepares itself, the response recorder, to record and send response to the client.
 func (w *ResponseRecorder) BeginRecord(underline ResponseWriter) {
 	w.ResponseWriter = underline
+
+	hijacker, ok := underline.(http.Hijacker)
+	if !ok {
+		hijacker = nil
+	}
+
+	closeNotifier, ok := underline.(http.CloseNotifier)
+	if !ok {
+		closeNotifier = nil
+	}
+
+	w.Hijacker = hijacker
+	w.CloseNotifier = closeNotifier
+
 	w.headers = underline.Header()
 	w.ResetBody()
 }
@@ -236,6 +255,10 @@ func (w *ResponseRecorder) Flush() {
 	w.ResetBody()
 }
 
+// ErrPushNotSupported is returned by the Push method to
+// indicate that HTTP/2 Push support is not available.
+var ErrPushNotSupported = errors.New("push feature is not supported by this ResponseWriter")
+
 // Push initiates an HTTP/2 server push. This constructs a synthetic
 // request using the given target and options, serializes that request
 // into a PUSH_PROMISE frame, then dispatches that request using the
@@ -256,12 +279,19 @@ func (w *ResponseRecorder) Flush() {
 //
 // Push returns ErrPushNotSupported if the client has disabled push or if push
 // is not supported on the underlying connection.
-func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) error {
+func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) (err error) {
 	w.FlushResponse()
-	err := w.ResponseWriter.Push(target, opts)
+
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		err = pusher.Push(target, opts)
+		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
+			return ErrPushNotSupported
+		}
+	}
+
 	// NOTE: we have to reset them even if the push failed.
 	w.ResetBody()
 	w.ResetHeaders()
 
-	return err
+	return ErrPushNotSupported
 }

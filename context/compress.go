@@ -164,6 +164,10 @@ type CompressResponseWriter struct {
 	CompressWriter
 	ResponseWriter
 
+	http.Pusher
+	http.Hijacker
+	http.CloseNotifier
+
 	Disabled bool
 	Encoding string
 	Level    int
@@ -195,12 +199,15 @@ func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int)
 	if level == -1 && encoding == BROTLI {
 		level = 6
 	}
-	// Writer exists, encoding matching and it's valid because it has a non nil encWriter;
-	// just reset to reduce allocations.
-	if v.Encoding == encoding && v.Level == level && v.CompressWriter != nil {
-		v.CompressWriter.Reset(w)
-		return v, nil
-	}
+
+	/*
+		// Writer exists, encoding matching and it's valid because it has a non nil encWriter;
+		// just reset to reduce allocations.
+		if v.Encoding == encoding && v.Level == level && v.CompressWriter != nil {
+			v.CompressWriter.Reset(w)
+			return v, nil
+		}
+	*/
 
 	v.Encoding = encoding
 
@@ -213,6 +220,26 @@ func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int)
 	v.CompressWriter = encWriter
 
 	AddCompressHeaders(w.Header(), encoding)
+
+	pusher, ok := w.(http.Pusher)
+	if !ok {
+		pusher = nil // make sure interface value is nil.
+	}
+
+	hijacker, ok := w.(http.Hijacker)
+	if !ok {
+		hijacker = nil
+	}
+
+	closeNotifier, ok := w.(http.CloseNotifier)
+	if !ok {
+		closeNotifier = nil
+	}
+
+	v.Pusher = pusher
+	v.Hijacker = hijacker
+	v.CloseNotifier = closeNotifier
+
 	return v, nil
 }
 

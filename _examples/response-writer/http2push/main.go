@@ -4,7 +4,11 @@
 // to need for the page they’re requesting.
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"net/http"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	app := iris.New()
@@ -22,14 +26,17 @@ func pushHandler(ctx iris.Context) {
 	// If the target is a path, it will inherit the scheme and host of the
 	// parent request.
 	target := "/main.js"
-	err := ctx.ResponseWriter().Push(target, nil)
-	if err != nil {
-		if err == iris.ErrPushNotSupported {
-			ctx.StopWithText(iris.StatusHTTPVersionNotSupported, "HTTP/2 push not supported.")
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
+
+	if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+		err := pusher.Push(target, nil)
+		if err != nil {
+			if err == iris.ErrPushNotSupported {
+				ctx.StopWithText(iris.StatusHTTPVersionNotSupported, "HTTP/2 push not supported.")
+			} else {
+				ctx.StopWithError(iris.StatusInternalServerError, err)
+			}
+			return
 		}
-		return
 	}
 
 	ctx.HTML(`<html><body><script src="%s"></script></body></html>`, target)
