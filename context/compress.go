@@ -182,8 +182,8 @@ var _ ResponseWriter = (*CompressResponseWriter)(nil)
 // It returns the best candidate among "gzip", "defate", "br", "snappy" and "s2"
 // based on the request's "Accept-Encoding" header value.
 func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int) (*CompressResponseWriter, error) {
-	acceptEncoding := r.Header.Values(AcceptEncodingHeaderKey)
-
+	// acceptEncoding := r.Header.Values(AcceptEncodingHeaderKey)
+	acceptEncoding := r.Header[AcceptEncodingHeaderKey]
 	if len(acceptEncoding) == 0 {
 		return nil, ErrResponseNotCompressed
 	}

@@ -17,10 +17,11 @@ import (
 var opts = iris.DirOptions{
 	IndexName: "/index.html",
 	PushTargets: map[string][]string{
-		"/": {
-			"/public/favicon.ico",
-			"/public/js/main.js",
-			"/public/css/main.css",
+		"/": { // Relative path without route prefix.
+			"favicon.ico",
+			"js/main.js",
+			"css/main.css",
+			// ^ Relative to the index, if need absolute ones start with a slash ('/').
 		},
 	},
 	Compress:   false, // SHOULD be set to false, files already compressed.
@@ -30,7 +31,7 @@ var opts = iris.DirOptions{
 	AssetNames: GzipAssetNames,
 	// Required for pre-compressed files:
 	AssetValidator: func(ctx iris.Context, _ string) bool {
-		ctx.Header("Vary", "Content-Encoding")
+		// ctx.Header("Vary", "Content-Encoding")
 		ctx.Header("Content-Encoding", "gzip")
 		return true
 	},
