@@ -44,10 +44,10 @@ type DirOptions struct {
 	// that another handler, called index handler, is auto-registered by the framework
 	// if end developer does not managed to handle it by hand.
 	IndexName string
-	// PushTargets optionally absolute filenames (map's value) to be served without any
-	// additional client's requests (HTTP/2 Push)
-	// when a specific path (map's key) is requested and
-	// it's not a directory (it's an `IndexFile`).
+	// PushTargets filenames (map's value) to
+	// be served without additional client's requests (HTTP/2 Push)
+	// when a specific request path (map's key WITHOUT prefix)
+	// is requested and it's not a directory (it's an `IndexFile`).
 	PushTargets map[string][]string
 	// When files should served under compression.
 	Compress bool
@@ -86,6 +86,14 @@ func getDirOptions(opts ...DirOptions) (options DirOptions) {
 		// make sure rate limiting is not used when attachments are not.
 		options.Attachments.Limit = 0
 		options.Attachments.Burst = 0
+	}
+
+	// Make sure PushTarget's paths are in the proper form.
+	for path, filenames := range options.PushTargets {
+		for idx, filename := range filenames {
+			filenames[idx] = filepath.ToSlash(filename)
+		}
+		options.PushTargets[path] = filenames
 	}
 
 	return
@@ -382,8 +390,9 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 	}
 
 	h := func(ctx *context.Context) {
-		name := prefix(ctx.Request().URL.Path, "/")
-		ctx.Request().URL.Path = name
+		r := ctx.Request()
+		name := prefix(r.URL.Path, "/")
+		r.URL.Path = name
 
 		f, err := fs.Open(name)
 		if err != nil {
@@ -419,6 +428,30 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 					info = infoIndex
 					f = fIndex
 					indexFound = true
+				}
+			}
+		}
+
+		if indexFound && !options.Attachments.Enable {
+			if indexAssets, ok := options.PushTargets[name]; ok {
+				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+					for _, indexAsset := range indexAssets {
+						// pushOpts := &http.PushOptions{
+						// 	Method: "GET",
+						// 	Header: http.Header{
+						// 		"Vary":             []string{"Accept-Encoding"},
+						// 		"Content-Encoding": []string{"gzip"},
+						// 	},
+						// }
+						if indexAsset[0] != '/' {
+							// it's relative path.
+							indexAsset = path.Join(r.RequestURI, indexAsset)
+						}
+
+						if err = pusher.Push(indexAsset, nil); err != nil {
+							break
+						}
+					}
 				}
 			}
 		}
@@ -485,16 +518,6 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		}
 
 		ctx.Compress(options.Compress)
-
-		if indexFound && len(options.PushTargets) > 0 && !options.Attachments.Enable {
-			if indexAssets, ok := options.PushTargets[name]; ok {
-				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
-					for _, indexAsset := range indexAssets {
-						pusher.Push(indexAsset, nil)
-					}
-				}
-			}
-		}
 
 		// If limit is 0 then same as ServeContent.
 		ctx.ServeContentWithRate(f, info.Name(), info.ModTime(), options.Attachments.Limit, options.Attachments.Burst)

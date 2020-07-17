@@ -6,7 +6,7 @@ import (
 
 var opts = iris.DirOptions{
 	IndexName: "/index.html",
-	// Optionally register files (map's absolute values) to be served
+	// Optionally register files (map's values) to be served
 	// when a specific path (map's key WITHOUT prefix) is requested
 	// is fired before client asks (HTTP/2 Push).
 	// E.g. "/" (which serves the `IndexName` if not empty).
@@ -14,10 +14,11 @@ var opts = iris.DirOptions{
 	// Note: Requires running server under TLS,
 	// that's why we use `iris.TLS` below.
 	PushTargets: map[string][]string{
-		"/": {
-			"/public/favicon.ico",
-			"/public/js/main.js",
-			"/public/css/main.css",
+		"/": { // Relative path without route prefix.
+			"favicon.ico",
+			"js/main.js",
+			"css/main.css",
+			// ^ Relative to the index, if need absolute ones start with a slash ('/').
 		},
 	},
 	Compress: true,
