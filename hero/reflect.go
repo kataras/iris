@@ -101,22 +101,34 @@ func structFieldIgnored(f reflect.StructField) bool {
 		return true // if not anonymous(embedded), ignore it.
 	}
 
-	s := f.Tag.Get("ignore")
-	return s == "true" // if has an ignore tag then ignore it.
+	if s := f.Tag.Get("ignore"); s == "true" {
+		return true
+	}
+
+	if s := f.Tag.Get("stateless"); s == "true" {
+		return true
+	}
+
+	return false
 }
 
 // all except non-zero.
-func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, parentIndex []int) (fields []reflect.StructField) {
+func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, parentIndex []int) (fields []reflect.StructField, stateless int) {
 	elemTyp := elem.Type()
 	for i, n := 0, elem.NumField(); i < n; i++ {
+		field := elemTyp.Field(i)
 		fieldValue := elem.Field(i)
 
-		field := elemTyp.Field(i)
-
 		// embed any fields from other structs.
-		if indirectType(field.Type).Kind() == reflect.Struct && !structFieldIgnored(field) {
-			fields = append(fields, lookupFields(fieldValue, skipUnexported, onlyZeros, append(parentIndex, i))...)
-			continue
+		if indirectType(field.Type).Kind() == reflect.Struct {
+			if structFieldIgnored(field) {
+				stateless++ // don't skip the loop yet, e.g. iris.Context.
+			} else {
+				structFields, statelessN := lookupFields(fieldValue, skipUnexported, onlyZeros, append(parentIndex, i))
+				stateless += statelessN
+				fields = append(fields, structFields...)
+				continue
+			}
 		}
 
 		if onlyZeros && !isZero(fieldValue) {
@@ -144,7 +156,7 @@ func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, paren
 }
 
 func lookupNonZeroFieldValues(elem reflect.Value) (nonZeroFields []reflect.StructField) {
-	fields := lookupFields(elem, true, false, nil)
+	fields, _ := lookupFields(elem, true, false, nil)
 	for _, f := range fields {
 		if fieldVal := elem.FieldByIndex(f.Index); goodVal(fieldVal) && !isZero(fieldVal) {
 			/* && f.Type.Kind() == reflect.Ptr &&*/

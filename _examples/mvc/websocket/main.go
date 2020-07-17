@@ -14,7 +14,7 @@ func main() {
 	app.Logger().SetLevel("debug")
 
 	// load templates.
-	app.RegisterView(iris.HTML("./views", ".html"))
+	// app.RegisterView(iris.HTML("./views", ".html"))
 
 	// render the ./browser/index.html.
 	app.HandleDir("/", "./browser")

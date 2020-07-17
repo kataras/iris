@@ -265,7 +265,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 		})
 	}
 
-	fields := lookupFields(elem, true, true, nil)
+	fields, stateless := lookupFields(elem, true, true, nil)
 	n := len(fields)
 
 	if n > 1 && sorter != nil {
@@ -276,19 +276,23 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 
 	inputs := make([]reflect.Type, n)
 	for i := 0; i < n; i++ {
-		//	fmt.Printf("Controller [%s] | Field Index: %v | Field Type: %s\n", typ, fields[i].Index, fields[i].Type)
+		// fmt.Printf("Controller [%s] | Field Index: %v | Field Type: %s\n", typ, fields[i].Index, fields[i].Type)
 		inputs[i] = fields[i].Type
 	}
 	exportedBindings := getBindingsFor(inputs, dependencies, paramsCount)
+	// fmt.Printf("Controller [%s] | Inputs length: %d vs Bindings length: %d\n", typ, n, len(exportedBindings))
 
-	// fmt.Printf("Controller [%s] Inputs length: %d vs Bindings length: %d\n", typ, n, len(exportedBindings))
-	if len(nonZero) >= len(exportedBindings) { // if all are fields are defined then just return.
+	if stateless == 0 && len(nonZero) >= len(exportedBindings) {
+		// if we have not a single stateless and fields are defined then just return.
+		// Note(@kataras): this can accept further improvements.
 		return
 	}
 
 	// get declared bindings from deps.
 	bindings = append(bindings, exportedBindings...)
 	for _, binding := range bindings {
+		// fmt.Printf(""Controller [%s] | Binding: %s\n", typ, binding.String())
+
 		if len(binding.Input.StructFieldIndex) == 0 {
 			// set correctly the input's field index.
 			structFieldIndex := fields[binding.Input.Index].Index
@@ -296,8 +300,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 		}
 
 		// fmt.Printf("Controller [%s] | binding Index: %v | binding Type: %s\n", typ, binding.Input.StructFieldIndex, binding.Input.Type)
-
-		// fmt.Printf("Controller [%s] Set [%s] to struct field index: %v\n", typ.String(), binding.Input.Type.String(), structFieldIndex)
+		// fmt.Printf("Controller [%s] Set [%s] to struct field index: %v\n", typ.String(), binding.Input.Type.String(), binding.Input.StructFieldIndex)
 	}
 
 	return
