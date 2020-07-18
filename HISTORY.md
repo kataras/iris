@@ -371,7 +371,20 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
-- Fix [#1562](https://github.com/kataras/iris/issues/1562)
+- New `DirOptions.PushTargets` and `PushTargetsRegexp` to push index' assets to the client without additional requests. Inspirated by issue [#1562](https://github.com/kataras/iris/issues/1562). Example matching all `.js, .css and .ico` files (recursively):
+
+```go
+var opts = iris.DirOptions{
+	IndexName: "/index.html",
+	PushTargetsRegexp: map[string]*regexp.Regexp{
+        "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
+        // OR:
+		// "/": iris.MatchCommonAssets,
+	},
+	Compress: true,
+}
+```
+
 - Update jet parser to v4.0.2, closes [#1551](https://github.com/kataras/iris/issues/1551). It contains two breaking changes by its author:
     - Relative paths on `extends, import, include...` tmpl functions, e.g. `{{extends "../layouts/application.jet"}}` instead of `layouts/application.jet`
     - the new [jet.Ranger](https://github.com/CloudyKit/jet/pull/165) interface now requires a `ProvidesIndex() bool` method too
@@ -380,7 +393,7 @@ Other Improvements:
 - Fix [#1552](https://github.com/kataras/iris/issues/1552).
 
 - Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
-    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/master/_examples/file-server/file-server)
+    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/master/_examples/file-server/file-server).
 
 - Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
 

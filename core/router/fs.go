@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -48,7 +49,23 @@ type DirOptions struct {
 	// be served without additional client's requests (HTTP/2 Push)
 	// when a specific request path (map's key WITHOUT prefix)
 	// is requested and it's not a directory (it's an `IndexFile`).
+	//
+	// Example:
+	// 	"/": {
+	// 		"favicon.ico",
+	// 		"js/main.js",
+	// 		"css/main.css",
+	// 	}
 	PushTargets map[string][]string
+	// PushTargetsRegexp like `PushTargets` but accepts regexp which
+	// is compared against all files under a directory (recursively).
+	// The `IndexName` should be set.
+	//
+	// Example:
+	// "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$")
+	// See `iris.MatchCommonAssets` too.
+	PushTargetsRegexp map[string]*regexp.Regexp
+
 	// When files should served under compression.
 	Compress bool
 
@@ -407,7 +424,11 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			return
 		}
 
-		indexFound := false
+		var (
+			indexFound     bool
+			indexDirectory http.File
+		)
+
 		// use contents of index.html for directory, if present
 		if info.IsDir() && options.IndexName != "" {
 			// Note that, in contrast of the default net/http mechanism;
@@ -425,9 +446,11 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				defer fIndex.Close()
 				infoIndex, err := fIndex.Stat()
 				if err == nil {
-					info = infoIndex
-					f = fIndex
 					indexFound = true
+					indexDirectory = f
+
+					f = fIndex
+					info = infoIndex
 				}
 			}
 		}
@@ -450,6 +473,25 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 
 						if err = pusher.Push(indexAsset, nil); err != nil {
 							break
+						}
+					}
+				}
+			}
+
+			if regex, ok := options.PushTargetsRegexp[r.URL.Path]; ok {
+				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+					for _, indexAsset := range getFilenamesRecursively(fs, indexDirectory, "") {
+						// it's an index file, do not pushed that.
+						if strings.HasSuffix("/"+indexAsset, options.IndexName) {
+							continue
+						}
+						// match using relative path (without the first '/' slash)
+						// to keep consistency between the `PushTargets` behavior
+						if regex.MatchString(indexAsset) {
+							// println("Regex Matched: " + indexAsset)
+							if err = pusher.Push(path.Join(r.RequestURI, indexAsset), nil); err != nil {
+								break
+							}
 						}
 					}
 				}
@@ -530,6 +572,38 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 	}
 
 	return h
+}
+
+func getFilenamesRecursively(fs http.FileSystem, f http.File, parent string) []string {
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return nil
+	}
+
+	var filenames []string
+
+	if info.IsDir() {
+		fileinfos, err := f.Readdir(-1)
+		if err != nil {
+			return nil
+		}
+
+		for _, fileinfo := range fileinfos {
+			fullname := path.Join(parent, fileinfo.Name())
+			ff, err := fs.Open(fullname)
+			if err != nil {
+				return nil
+			}
+
+			filenames = append(filenames, getFilenamesRecursively(fs, ff, fullname)...)
+		}
+
+		return filenames
+	}
+
+	filenames = append(filenames, path.Dir(path.Join(parent, info.Name())))
+	return filenames
 }
 
 // StripPrefix returns a handler that serves HTTP requests
