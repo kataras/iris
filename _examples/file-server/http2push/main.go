@@ -28,7 +28,9 @@ var opts = iris.DirOptions{
 		// Match all js, css and ico files
 		// from all files (recursively).
 		// "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
-		"/": iris.MatchCommonAssets,
+		// OR:
+		"/":              iris.MatchCommonAssets,
+		"/app2/app2app3": iris.MatchCommonAssets,
 	},
 	Compress: true,
 	ShowList: true,
