@@ -16,11 +16,36 @@ type RequestParams struct {
 	memstore.Store
 }
 
-// Set inserts a value to the key-value storage.
-//
-// See `SetImmutable` and `Get` too.
+// Set inserts a parameter value.
+// See `Get` too.
 func (r *RequestParams) Set(key, value string) {
-	r.Store.Set(key, value)
+	if ln := len(r.Store); cap(r.Store) > ln {
+		r.Store = r.Store[:ln+1]
+		p := &r.Store[ln]
+		p.Key = key
+		p.ValueRaw = value
+		return
+	}
+
+	r.Store = append(r.Store, memstore.Entry{
+		Key:      key,
+		ValueRaw: value,
+	})
+}
+
+// Get returns a path parameter's value based on its route's dynamic path key.
+func (r *RequestParams) Get(key string) string {
+	for i := 0; i < len(r.Store); i++ {
+		if kv := r.Store[i]; kv.Key == key {
+			if v, ok := kv.ValueRaw.(string); ok {
+				return v // it should always be string here on :string parameter.
+			}
+
+			return fmt.Sprintf("%s", kv.ValueRaw)
+		}
+	}
+
+	return ""
 }
 
 // GetEntryAt will return the parameter's internal store's `Entry` based on the index.
@@ -45,24 +70,19 @@ func (r *RequestParams) Visit(visitor func(key string, value string)) {
 	})
 }
 
-// Get returns a path parameter's value based on its route's dynamic path key.
-func (r RequestParams) Get(key string) string {
-	return r.GetString(key)
-}
-
 // GetTrim returns a path parameter's value without trailing spaces based on its route's dynamic path key.
-func (r RequestParams) GetTrim(key string) string {
+func (r *RequestParams) GetTrim(key string) string {
 	return strings.TrimSpace(r.Get(key))
 }
 
 // GetEscape returns a path parameter's double-url-query-escaped value based on its route's dynamic path key.
-func (r RequestParams) GetEscape(key string) string {
+func (r *RequestParams) GetEscape(key string) string {
 	return DecodeQuery(DecodeQuery(r.Get(key)))
 }
 
 // GetDecoded returns a path parameter's double-url-query-escaped value based on its route's dynamic path key.
 // same as `GetEscape`.
-func (r RequestParams) GetDecoded(key string) string {
+func (r *RequestParams) GetDecoded(key string) string {
 	return r.GetEscape(key)
 }
 
@@ -70,7 +90,7 @@ func (r RequestParams) GetDecoded(key string) string {
 // Usage: Get an id from a wildcard path.
 //
 // Returns -1 and false if not path parameter with that "key" found.
-func (r RequestParams) GetIntUnslashed(key string) (int, bool) {
+func (r *RequestParams) GetIntUnslashed(key string) (int, bool) {
 	v := r.Get(key)
 	if v != "" {
 		if len(v) > 1 {
