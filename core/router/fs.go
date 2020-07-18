@@ -248,30 +248,29 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 	if options.Asset != nil && options.AssetInfo != nil && options.AssetNames != nil {
 		// Depends on the command the user gave to the go-bindata
 		// the assset path (names) may be or may not be prepended with a slash.
-		// What we do: we remove the ./ from the vdir which should be
+		// What we do: we remove the ./ from the directory which should be
 		// the same with the asset path (names).
 		// we don't pathclean, because that will prepend a slash
 		//					   go-bindata should give a correct path format.
 		// On serve time we check the "paramName" (which is the path after the "requestPath")
-		// so it has the first directory part missing, we use the "vdir" to complete it
+		// so it has the first directory part missing, we use the "directory" to complete it
 		// and match with the asset path (names).
-		vdir := directory
 
-		if vdir[0] == '.' {
-			vdir = vdir[1:]
+		if directory[0] == '.' {
+			directory = directory[1:]
 		}
 
 		// second check for /something, (or ./something if we had dot on 0 it will be removed)
-		if vdir[0] == '/' || vdir[0] == os.PathSeparator {
-			vdir = vdir[1:]
+		if directory[0] == '/' || directory[0] == os.PathSeparator {
+			directory = directory[1:]
 		}
 
 		// check for trailing slashes because new users may be do that by mistake
 		// although all examples are showing the correct way but you never know
 		// i.e "./assets/" is not correct, if was inside "./assets".
 		// remove last "/".
-		if trailingSlashIdx := len(vdir) - 1; vdir[trailingSlashIdx] == '/' {
-			vdir = vdir[0:trailingSlashIdx]
+		if trailingSlashIdx := len(directory) - 1; directory[trailingSlashIdx] == '/' {
+			directory = directory[0:trailingSlashIdx]
 		}
 
 		// select only the paths that we care;
@@ -281,11 +280,18 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		for _, name := range options.AssetNames() {
 			// i.e: name = static/css/main.css (including the directory, see `embeddedFileSystem.vdir`)
 
-			if !strings.HasPrefix(name, vdir) {
+			if !strings.HasPrefix(name, directory) {
 				continue
 			}
 
-			names = append(names, strings.TrimPrefix(name, vdir))
+			names = append(names, strings.TrimPrefix(name, directory))
+		}
+
+		// Update the options.AssetNames with
+		// the pre-calculated files we only care about.
+		// See PushTargets(Regexp) bellow.
+		options.AssetNames = func() []string {
+			return names
 		}
 
 		if len(names) == 0 {
@@ -293,11 +299,11 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		}
 
 		asset := func(name string) ([]byte, error) {
-			return options.Asset(vdir + name)
+			return options.Asset(directory + name)
 		}
 
 		assetInfo := func(name string) (os.FileInfo, error) {
-			return options.AssetInfo(vdir + name)
+			return options.AssetInfo(directory + name)
 		}
 
 		dirNames := make(map[string]*embeddedDir)
@@ -336,7 +342,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		}
 
 		fs = &embeddedFileSystem{
-			vdir:     vdir,
+			vdir:     directory,
 			dirNames: dirNames,
 
 			asset:     asset,
@@ -479,17 +485,53 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			}
 
 			if regex, ok := options.PushTargetsRegexp[r.URL.Path]; ok {
+				// TODO(@kataras): Fix: on physical directory the push targets regexp
+				// will work on root indexes but NOT
+				// at subindex(sub directory that contain an index file and assets).
 				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
-					for _, indexAsset := range getFilenamesRecursively(fs, indexDirectory, "") {
+
+					var (
+						prefixURL   string
+						indexAssets []string
+					)
+
+					// Use of the AssetNames (static list of filenames (no dirs)),
+					// improves performance vs searching on files each time.
+					if options.AssetNames != nil {
+						// This is required on embedded, and we can use it
+						// because info.Name returns the full name,
+						// http.Dir does not though.
+						prefixDir := strings.TrimPrefix(path.Dir(info.Name()), directory)
+						if prefixDir == "" || prefixDir == "." {
+							prefixDir = "/"
+						}
+						prefixURL = strings.TrimSuffix(r.RequestURI, prefixDir)
+						//	currentDirname := strings.TrimPrefix(r.RequestURI, prefixURL)
+
+						for _, assetName := range options.AssetNames() {
+							// The file server may contain more than one directory with an index file
+							// so we must use the files under THIS index directory one.
+							if strings.HasPrefix(assetName, prefixDir) {
+								assetName = strings.TrimPrefix(assetName, prefixURL)
+								indexAssets = append(indexAssets, assetName)
+							}
+						}
+					} else {
+						prefixURL = r.RequestURI
+						indexAssets = getFilenamesRecursively(fs, indexDirectory, "")
+					}
+
+					for _, indexAsset := range indexAssets {
 						// it's an index file, do not pushed that.
-						if strings.HasSuffix("/"+indexAsset, options.IndexName) {
+						if strings.HasSuffix(prefix(indexAsset, "/"), options.IndexName) {
 							continue
 						}
+
 						// match using relative path (without the first '/' slash)
 						// to keep consistency between the `PushTargets` behavior
 						if regex.MatchString(indexAsset) {
 							// println("Regex Matched: " + indexAsset)
-							if err = pusher.Push(path.Join(r.RequestURI, indexAsset), nil); err != nil {
+							if err = pusher.Push(path.Join(prefixURL, indexAsset), nil); err != nil {
 								break
 							}
 						}
@@ -595,7 +637,6 @@ func getFilenamesRecursively(fs http.FileSystem, f http.File, parent string) []s
 			if err != nil {
 				return nil
 			}
-
 			filenames = append(filenames, getFilenamesRecursively(fs, ff, fullname)...)
 		}
 

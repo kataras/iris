@@ -1,6 +1,8 @@
 package main
 
 import (
+	"regexp"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -16,13 +18,9 @@ import (
 
 var opts = iris.DirOptions{
 	IndexName: "/index.html",
-	PushTargets: map[string][]string{
-		"/": { // Relative path without route prefix.
-			"favicon.ico",
-			"js/main.js",
-			"css/main.css",
-			// ^ Relative to the index, if need absolute ones start with a slash ('/').
-		},
+	PushTargetsRegexp: map[string]*regexp.Regexp{
+		"/":              iris.MatchCommonAssets,
+		"/app2/app2app3": iris.MatchCommonAssets,
 	},
 	Compress:   false,
 	ShowList:   true,
