@@ -146,7 +146,7 @@ func newApp() *iris.Application {
 			})
 			// http://v1.localhost:8080/api/users/42
 			usersAPI.Get("/{userid:int}", func(ctx iris.Context) {
-				ctx.Writef("user with id: %s", ctx.Params().Get("userid"))
+				ctx.Writef("user with id: %d", ctx.Params().GetIntDefault("userid", 0))
 			})
 		}
 	}
