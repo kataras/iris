@@ -2,6 +2,7 @@ package iris
 
 import (
 	"net/http"
+	"regexp"
 
 	"github.com/kataras/iris/v12/cache"
 	"github.com/kataras/iris/v12/context"
@@ -216,6 +217,13 @@ var (
 		ctx.CompressReader(true)
 		ctx.Next()
 	}
+
+	// MatchCommonAssets is a simple regex expression which
+	// can be used on `DirOptions.PushTargetsRegexp`.
+	// It will match and Push
+	// all available js, css, font and media files.
+	// Ideal for Single Page Applications.
+	MatchCommonAssets = regexp.MustCompile("((.*).js|(.*).css|(.*).ico|(.*).png|(.*).ttf|(.*).svg|(.*).webp|(.*).gif)$")
 )
 
 var (

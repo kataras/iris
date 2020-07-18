@@ -1,6 +1,8 @@
 package main
 
 import (
+	"regexp"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -13,13 +15,20 @@ var opts = iris.DirOptions{
 	//
 	// Note: Requires running server under TLS,
 	// that's why we use `iris.TLS` below.
-	PushTargets: map[string][]string{
-		"/": { // Relative path without route prefix.
-			"favicon.ico",
-			"js/main.js",
-			"css/main.css",
-			// ^ Relative to the index, if need absolute ones start with a slash ('/').
-		},
+	// PushTargets: map[string][]string{
+	// 	"/": { // Relative path without prefix.
+	// 		"favicon.ico",
+	// 		"js/main.js",
+	// 		"css/main.css",
+	// 		// ^ Relative to the index, if need absolute ones start with a slash ('/').
+	// 	},
+	// },
+	// OR use regexp:
+	PushTargetsRegexp: map[string]*regexp.Regexp{
+		// Match all js, css and ico files
+		// from all files (recursively).
+		// "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
+		"/": iris.MatchCommonAssets,
 	},
 	Compress: true,
 	ShowList: true,
