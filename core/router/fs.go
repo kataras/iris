@@ -166,6 +166,8 @@ type embeddedFileSystem struct {
 
 var _ http.FileSystem = (*embeddedFileSystem)(nil)
 
+// Open implements FileSystem using os.Open, opening files for reading rooted
+// and relative to the virtual directory.
 func (fs *embeddedFileSystem) Open(name string) (http.File, error) {
 	if name != "/" {
 		// http://localhost:8080/app2/app2app3/dirs/
@@ -173,6 +175,7 @@ func (fs *embeddedFileSystem) Open(name string) (http.File, error) {
 		name = strings.TrimSuffix(name, "/")
 	}
 
+	name = path.Join(fs.vdir, path.Clean("/"+name))
 	if d, ok := fs.dirNames[name]; ok {
 		return d, nil
 	}
@@ -278,13 +281,11 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 		// skip any unnecessary the end-dev or the 3rd party tool may set.
 		var names []string
 		for _, name := range options.AssetNames() {
-			// i.e: name = static/css/main.css (including the directory, see `embeddedFileSystem.vdir`)
-
 			if !strings.HasPrefix(name, directory) {
 				continue
 			}
 
-			names = append(names, strings.TrimPrefix(name, directory))
+			names = append(names, filepath.ToSlash(name))
 		}
 
 		// Update the options.AssetNames with
@@ -298,12 +299,17 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			panic("FileServer: zero embedded files")
 		}
 
-		asset := func(name string) ([]byte, error) {
-			return options.Asset(directory + name)
-		}
-
-		assetInfo := func(name string) (os.FileInfo, error) {
-			return options.AssetInfo(directory + name)
+		assetInfo := options.AssetInfo
+		// make .Name() infos like http.Dir (base names instead of full names).
+		options.AssetInfo = func(name string) (os.FileInfo, error) {
+			info, err := assetInfo(name)
+			if err != nil {
+				return nil, err
+			}
+			return &embeddedBaseFileInfo{
+				baseName: path.Base(info.Name()),
+				FileInfo: info,
+			}, nil
 		}
 
 		dirNames := make(map[string]*embeddedDir)
@@ -326,7 +332,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 				dirNames[dirName] = d
 			}
 
-			info, err := assetInfo(name)
+			info, err := options.AssetInfo(name)
 			if err != nil {
 				panic(fmt.Sprintf("FileServer: report as bug: file info: %s not found in: %s", name, dirName))
 			}
@@ -345,8 +351,8 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			vdir:     directory,
 			dirNames: dirNames,
 
-			asset:     asset,
-			assetInfo: assetInfo,
+			asset:     options.Asset,
+			assetInfo: options.AssetInfo,
 		}
 	}
 	// Let it for now.
@@ -485,43 +491,9 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			}
 
 			if regex, ok := options.PushTargetsRegexp[r.URL.Path]; ok {
-				// TODO(@kataras): Fix: on physical directory the push targets regexp
-				// will work on root indexes but NOT
-				// at subindex(sub directory that contain an index file and assets).
 				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
-
-					var (
-						prefixURL   string
-						indexAssets []string
-					)
-
-					// Use of the AssetNames (static list of filenames (no dirs)),
-					// improves performance vs searching on files each time.
-					if options.AssetNames != nil {
-						// This is required on embedded, and we can use it
-						// because info.Name returns the full name,
-						// http.Dir does not though.
-						prefixDir := strings.TrimPrefix(path.Dir(info.Name()), directory)
-						if prefixDir == "" || prefixDir == "." {
-							prefixDir = "/"
-						}
-						prefixURL = strings.TrimSuffix(r.RequestURI, prefixDir)
-						//	currentDirname := strings.TrimPrefix(r.RequestURI, prefixURL)
-
-						for _, assetName := range options.AssetNames() {
-							// The file server may contain more than one directory with an index file
-							// so we must use the files under THIS index directory one.
-							if strings.HasPrefix(assetName, prefixDir) {
-								assetName = strings.TrimPrefix(assetName, prefixURL)
-								indexAssets = append(indexAssets, assetName)
-							}
-						}
-					} else {
-						prefixURL = r.RequestURI
-						indexAssets = getFilenamesRecursively(fs, indexDirectory, "")
-					}
-
-					for _, indexAsset := range indexAssets {
+					prefixURL := strings.TrimSuffix(r.RequestURI, name)
+					for _, indexAsset := range getFilenamesRecursively(fs, indexDirectory, name) {
 						// it's an index file, do not pushed that.
 						if strings.HasSuffix(prefix(indexAsset, "/"), options.IndexName) {
 							continue

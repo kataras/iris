@@ -24,6 +24,11 @@ var opts = iris.DirOptions{
 			// ^ Relative to the index, if need absolute ones start with a slash ('/').
 		},
 	},
+	// OR:
+	// PushTargetsRegexp: map[string]*regexp.Regexp{
+	// 	"/":              iris.MatchCommonAssets,
+	// 	"/app2/app2app3": iris.MatchCommonAssets,
+	// },
 	Compress:   false, // SHOULD be set to false, files already compressed.
 	ShowList:   true,
 	Asset:      GzipAsset,
