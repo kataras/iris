@@ -335,7 +335,10 @@ func (ctx *Context) ResponseWriter() ResponseWriter {
 	return ctx.writer
 }
 
-// ResetResponseWriter should change or upgrade the context's ResponseWriter.
+// ResetResponseWriter sets a new ResponseWriter implementation
+// to this Context to use as its writer.
+// Note, to change the underline http.ResponseWriter use
+// ctx.ResponseWriter().SetWriter(http.ResponseWRiter) instead.
 func (ctx *Context) ResetResponseWriter(newResponseWriter ResponseWriter) {
 	ctx.writer = newResponseWriter
 }
