@@ -3,6 +3,7 @@ package redis
 import (
 	"crypto/tls"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12/sessions"
@@ -133,11 +134,12 @@ func (db *Database) Config() *Config {
 // Acquire receives a session's lifetime from the database,
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
 func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
-	seconds, hasExpiration, found := db.c.Driver.TTL(sid)
+	key := db.makeKey(sid, "")
+	seconds, hasExpiration, found := db.c.Driver.TTL(key)
 	if !found {
 		// fmt.Printf("db.Acquire expires: %s. Seconds: %v\n", expires, expires.Seconds())
 		// not found, create an entry with ttl and return an empty lifetime, session manager will do its job.
-		if err := db.c.Driver.Set(sid, sid, int64(expires.Seconds())); err != nil {
+		if err := db.c.Driver.Set(key, sid, int64(expires.Seconds())); err != nil {
 			golog.Debug(err)
 		}
 
@@ -154,11 +156,14 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 // OnUpdateExpiration will re-set the database's session's entry ttl.
 // https://redis.io/commands/expire#refreshing-expires
 func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) error {
-	return db.c.Driver.UpdateTTLMany(sid, int64(newExpires.Seconds()))
+	return db.c.Driver.UpdateTTLMany(db.makeKey(sid, ""), int64(newExpires.Seconds()))
 }
 
 func (db *Database) makeKey(sid, key string) string {
-	return sid + db.c.Delim + key
+	if key == "" {
+		return db.c.Prefix + sid
+	}
+	return db.c.Prefix + sid + db.c.Delim + key
 }
 
 // Set sets a key value of a specific session.
@@ -183,20 +188,23 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 	return
 }
 
-func (db *Database) get(key string, outPtr interface{}) {
+func (db *Database) get(key string, outPtr interface{}) error {
 	data, err := db.c.Driver.Get(key)
 	if err != nil {
 		// not found.
-		return
+		return err
 	}
 
 	if err = sessions.DefaultTranscoder.Unmarshal(data.([]byte), outPtr); err != nil {
 		golog.Debugf("unable to unmarshal value of key: '%s': %v", key, err)
+		return err
 	}
+
+	return nil
 }
 
 func (db *Database) keys(sid string) []string {
-	keys, err := db.c.Driver.GetKeys(sid)
+	keys, err := db.c.Driver.GetKeys(db.makeKey(sid, ""))
 	if err != nil {
 		golog.Debugf("unable to get all redis keys of session '%s': %v", sid, err)
 		return nil
@@ -211,6 +219,7 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 	for _, key := range keys {
 		var value interface{} // new value each time, we don't know what user will do in "cb".
 		db.get(key, &value)
+		key = strings.TrimPrefix(key, db.c.Prefix+sid+db.c.Delim)
 		cb(key, value)
 	}
 }
@@ -245,7 +254,7 @@ func (db *Database) Release(sid string) {
 	// clear all $sid-$key.
 	db.Clear(sid)
 	// and remove the $sid.
-	err := db.c.Driver.Delete(sid)
+	err := db.c.Driver.Delete(db.c.Prefix + sid)
 	if err != nil {
 		golog.Debugf("Database.Release.Driver.Delete: %s: %v", sid, err)
 	}

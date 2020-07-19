@@ -61,9 +61,9 @@ func (r *RedigoDriver) Set(key string, value interface{}, secondsLifetime int64)
 
 	// if has expiration, then use the "EX" to delete the key automatically.
 	if secondsLifetime > 0 {
-		_, err = c.Do("SETEX", r.Config.Prefix+key, secondsLifetime, value)
+		_, err = c.Do("SETEX", key, secondsLifetime, value)
 	} else {
-		_, err = c.Do("SET", r.Config.Prefix+key, value)
+		_, err = c.Do("SET", key, value)
 	}
 
 	return
@@ -78,7 +78,7 @@ func (r *RedigoDriver) Get(key string) (interface{}, error) {
 		return nil, err
 	}
 
-	redisVal, err := c.Do("GET", r.Config.Prefix+key)
+	redisVal, err := c.Do("GET", key)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (r *RedigoDriver) Get(key string) (interface{}, error) {
 func (r *RedigoDriver) TTL(key string) (seconds int64, hasExpiration bool, found bool) {
 	c := r.pool.Get()
 	defer c.Close()
-	redisVal, err := c.Do("TTL", r.Config.Prefix+key)
+	redisVal, err := c.Do("TTL", key)
 	if err != nil {
 		return -2, false, false
 	}
@@ -106,7 +106,7 @@ func (r *RedigoDriver) TTL(key string) (seconds int64, hasExpiration bool, found
 }
 
 func (r *RedigoDriver) updateTTLConn(c redis.Conn, key string, newSecondsLifeTime int64) error {
-	reply, err := c.Do("EXPIRE", r.Config.Prefix+key, newSecondsLifeTime)
+	reply, err := c.Do("EXPIRE", key, newSecondsLifeTime)
 	if err != nil {
 		return err
 	}
@@ -143,14 +143,14 @@ func (r *RedigoDriver) UpdateTTL(key string, newSecondsLifeTime int64) error {
 // UpdateTTLMany like `UpdateTTL` but for all keys starting with that "prefix",
 // it is a bit faster operation if you need to update all sessions keys (although it can be even faster if we used hash but this will limit other features),
 // look the `sessions/Database#OnUpdateExpiration` for example.
-func (r *RedigoDriver) UpdateTTLMany(prefix string, newSecondsLifeTime int64) error {
+func (r *RedigoDriver) UpdateTTLMany(prefix string /* prefix is the sid */, newSecondsLifeTime int64) error {
 	c := r.pool.Get()
 	defer c.Close()
 	if err := c.Err(); err != nil {
 		return err
 	}
 
-	keys, err := r.getKeysConn(c, 0, prefix)
+	keys, err := r.getKeysConn(c, 0, prefix, true)
 	if err != nil {
 		return err
 	}
@@ -184,8 +184,13 @@ func (r *RedigoDriver) GetAll() (interface{}, error) {
 	return redisVal, nil
 }
 
-func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix string) ([]string, error) {
-	if err := c.Send("SCAN", cursor, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", 300000); err != nil {
+func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix string, includeSID bool) ([]string, error) {
+	if !includeSID {
+		prefix += r.Config.Delim // delim can be used for fast matching of only keys.
+	}
+	pattern := prefix + "*"
+
+	if err := c.Send("SCAN", cursor, "MATCH", pattern, "COUNT", 300000); err != nil {
 		return nil, err
 	}
 
@@ -205,7 +210,7 @@ func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix stri
 		if len(replies) == 2 {
 			// take the second, it must contain the slice of keys.
 			if keysSliceAsBytes, ok := replies[1].([]interface{}); ok {
-				n := len(keysSliceAsBytes) - 1 // scan match returns the session id key too.
+				n := len(keysSliceAsBytes)
 				if n <= 0 {
 					return nil, nil
 				}
@@ -213,15 +218,15 @@ func (r *RedigoDriver) getKeysConn(c redis.Conn, cursor interface{}, prefix stri
 				keys := make([]string, n)
 
 				for i, k := range keysSliceAsBytes {
-					key := fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
-					if key == prefix {
-						continue // it's the session id itself.
-					}
-					keys[i] = key
+					// key := fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
+					// if key == prefix {
+					// 	continue // it's the session id itself.
+					// }
+					keys[i] = fmt.Sprintf("%s", k)
 				}
 
 				if cur := fmt.Sprintf("%s", replies[0]); cur != "0" {
-					moreKeys, err := r.getKeysConn(c, cur, prefix)
+					moreKeys, err := r.getKeysConn(c, cur, prefix, includeSID)
 					if err != nil {
 						return nil, err
 					}
@@ -247,7 +252,7 @@ func (r *RedigoDriver) GetKeys(prefix string) ([]string, error) {
 		return nil, err
 	}
 
-	return r.getKeysConn(c, 0, prefix)
+	return r.getKeysConn(c, 0, prefix, false)
 }
 
 // GetBytes returns value, err by its key
@@ -260,7 +265,7 @@ func (r *RedigoDriver) GetBytes(key string) ([]byte, error) {
 		return nil, err
 	}
 
-	redisVal, err := c.Do("GET", r.Config.Prefix+key)
+	redisVal, err := c.Do("GET", key)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +281,7 @@ func (r *RedigoDriver) Delete(key string) error {
 	c := r.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("DEL", r.Config.Prefix+key)
+	_, err := c.Do("DEL", key)
 	return err
 }
 

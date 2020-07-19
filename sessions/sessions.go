@@ -20,15 +20,30 @@ type Sessions struct {
 	config   Config
 	provider *provider
 
-	handlerCookieOpts []context.CookieOption // see `Handler`.
+	cookieOptions []context.CookieOption // options added on each session cookie action.
 }
 
 // New returns a new fast, feature-rich sessions manager
 // it can be adapted to an iris station
 func New(cfg Config) *Sessions {
+	var cookieOptions []context.CookieOption
+	if cfg.AllowReclaim {
+		cookieOptions = append(cookieOptions, context.CookieAllowReclaim(cfg.Cookie))
+	}
+	if !cfg.DisableSubdomainPersistence {
+		cookieOptions = append(cookieOptions, context.CookieAllowSubdomains(cfg.Cookie))
+	}
+	if cfg.CookieSecureTLS {
+		cookieOptions = append(cookieOptions, context.CookieSecure)
+	}
+	if cfg.Encoding != nil {
+		cookieOptions = append(cookieOptions, context.CookieEncoding(cfg.Encoding, cfg.Cookie))
+	}
+
 	return &Sessions{
-		config:   cfg.Validate(),
-		provider: newProvider(),
+		cookieOptions: cookieOptions,
+		config:        cfg.Validate(),
+		provider:      newProvider(),
 	}
 }
 
@@ -38,9 +53,10 @@ func (s *Sessions) UseDatabase(db Database) {
 	s.provider.RegisterDatabase(db)
 }
 
-// GetCookieOptions returns any cookie options registered for the `Handler` method.
+// GetCookieOptions returns the cookie options registered
+// for this sessions manager based on the configuration.
 func (s *Sessions) GetCookieOptions() []context.CookieOption {
-	return s.handlerCookieOpts
+	return s.cookieOptions
 }
 
 // updateCookie gains the ability of updating the session browser cookie to any method which wants to update it
@@ -65,7 +81,25 @@ func (s *Sessions) updateCookie(ctx *context.Context, sid string, expires time.D
 		cookie.MaxAge = int(time.Until(cookie.Expires).Seconds())
 	}
 
-	ctx.UpsertCookie(cookie, options...)
+	s.upsertCookie(ctx, cookie, options)
+}
+
+func (s *Sessions) upsertCookie(ctx *context.Context, cookie *http.Cookie, cookieOptions []context.CookieOption) {
+	opts := s.cookieOptions
+	if len(cookieOptions) > 0 {
+		opts = append(opts, cookieOptions...)
+	}
+
+	ctx.UpsertCookie(cookie, opts...)
+}
+
+func (s *Sessions) getCookie(ctx *context.Context, cookieOptions []context.CookieOption) string {
+	opts := s.cookieOptions
+	if len(cookieOptions) > 0 {
+		opts = append(opts, cookieOptions...)
+	}
+
+	return ctx.GetCookie(s.config.Cookie, opts...)
 }
 
 // Start creates or retrieves an existing session for the particular request.
@@ -77,7 +111,7 @@ func (s *Sessions) updateCookie(ctx *context.Context, sid string, expires time.D
 //
 // NOTE: Use `app.Use(sess.Handler())` instead, avoid using `Start` manually.
 func (s *Sessions) Start(ctx *context.Context, cookieOptions ...context.CookieOption) *Session {
-	cookieValue := ctx.GetCookie(s.config.Cookie, cookieOptions...)
+	cookieValue := s.getCookie(ctx, cookieOptions)
 
 	if cookieValue == "" { // cookie doesn't exist, let's generate a session and set a cookie.
 		sid := s.config.SessionIDGenerator(ctx)
@@ -106,27 +140,9 @@ const sessionContextKey = "iris.session"
 // To return the request's Session call the `Get(ctx)` package-level function.
 //
 // Call `Handler()` once per sessions manager.
-func (s *Sessions) Handler(cookieOptions ...context.CookieOption) context.Handler {
-	s.handlerCookieOpts = cookieOptions
-
-	var requestOptions []context.CookieOption
-	if s.config.AllowReclaim {
-		requestOptions = append(requestOptions, context.CookieAllowReclaim(s.config.Cookie))
-	}
-	if !s.config.DisableSubdomainPersistence {
-		requestOptions = append(requestOptions, context.CookieAllowSubdomains(s.config.Cookie))
-	}
-	if s.config.CookieSecureTLS {
-		requestOptions = append(requestOptions, context.CookieSecure)
-	}
-	if s.config.Encoding != nil {
-		requestOptions = append(requestOptions, context.CookieEncoding(s.config.Encoding, s.config.Cookie))
-	}
-
+func (s *Sessions) Handler(requestOptions ...context.CookieOption) context.Handler {
 	return func(ctx *context.Context) {
-		ctx.AddCookieOptions(requestOptions...) // request life-cycle options.
-
-		session := s.Start(ctx, cookieOptions...) // this cookie's end-developer's custom options.
+		session := s.Start(ctx, requestOptions...) // this cookie's end-developer's custom options.
 
 		ctx.Values().Set(sessionContextKey, session)
 		ctx.Next()
@@ -170,7 +186,7 @@ func (s *Sessions) ShiftExpiration(ctx *context.Context, cookieOptions ...contex
 // It will return `ErrNotFound` when trying to update expiration on a non-existence or not valid session entry.
 // It will return `ErrNotImplemented` if a database is used and it does not support this feature, yet.
 func (s *Sessions) UpdateExpiration(ctx *context.Context, expires time.Duration, cookieOptions ...context.CookieOption) error {
-	cookieValue := ctx.GetCookie(s.config.Cookie)
+	cookieValue := s.getCookie(ctx, cookieOptions)
 	if cookieValue == "" {
 		return ErrNotFound
 	}
@@ -204,7 +220,7 @@ func (s *Sessions) OnDestroy(listeners ...DestroyListener) {
 // use `Sessions#Start` method for renewal
 // or use the Session's Destroy method which does keep the session entry with its values cleared.
 func (s *Sessions) Destroy(ctx *context.Context) {
-	cookieValue := ctx.GetCookie(s.config.Cookie)
+	cookieValue := s.getCookie(ctx, nil)
 	if cookieValue == "" { // nothing to destroy
 		return
 	}
