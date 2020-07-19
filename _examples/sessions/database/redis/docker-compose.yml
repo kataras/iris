@@ -1,0 +1,24 @@
+# docker-compose up [--build]
+version: '3'
+
+services:
+  redis-server:
+    image: redis
+  app1:
+    build: .
+    depends_on:
+      - redis-server
+    ports:
+      - 8080:8080
+    environment: 
+      - PORT=8080
+      - REDIS_ADDR=redis-server:6379
+  app2:
+    build: .
+    depends_on:
+      - redis-server
+    ports:
+      - 9090:9090
+    environment: 
+      - PORT=9090
+      - REDIS_ADDR=redis-server:6379
