@@ -24,11 +24,12 @@ type ResponseWriter interface {
 	// Naive returns the simple, underline and original http.ResponseWriter
 	// that backends this response writer.
 	Naive() http.ResponseWriter
-
+	// SetWriter sets the underline http.ResponseWriter
+	// that this responseWriter should write on.
+	SetWriter(underline http.ResponseWriter)
 	// BeginResponse receives an http.ResponseWriter
 	// and initialize or reset the response writer's field's values.
 	BeginResponse(http.ResponseWriter)
-
 	// EndResponse is the last function which is called right before the server sent the final response.
 	//
 	// Here is the place which we can make the last checks or do a cleanup.
@@ -168,6 +169,12 @@ func (w *responseWriter) BeginResponse(underline http.ResponseWriter) {
 	w.beforeFlush = nil
 	w.written = NoWritten
 	w.statusCode = defaultStatusCode
+	w.SetWriter(underline)
+}
+
+// SetWriter sets the underline http.ResponseWriter
+// that this responseWriter should write on.
+func (w *responseWriter) SetWriter(underline http.ResponseWriter) {
 	w.ResponseWriter = underline
 
 	pusher, ok := underline.(http.Pusher)
