@@ -26,9 +26,6 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 
 ## 📖 Learning Iris
 
-<details>
-<summary>Quick start</summary>
-
 ```sh
 # https://github.com/kataras/iris/wiki/Installation
 $ go get github.com/kataras/iris/v12@master
@@ -42,18 +39,110 @@ package main
 import "github.com/kataras/iris/v12"
 
 func main() {
-  app := iris.New()
-  app.Get("/", index)
-  app.Listen(":8080")
+	app := iris.New()
+
+	booksAPI := app.Party("/books")
+	{
+		booksAPI.Use(iris.Compression)
+
+		// GET: http://localhost:8080/books
+		booksAPI.Get("/", list)
+		// POST: http://localhost:8080/books
+		booksAPI.Post("/", create)
+	}
+
+	app.Listen(":8080")
 }
 
-func index(ctx iris.Context) {
-  ctx.HTML("<h1>Hello, World!</h1>")
+// Book example.
+type Book struct {
+	Title string `json:"title"`
+}
+
+func list(ctx iris.Context) {
+	books := []Book{
+		{"Mastering Concurrency in Go"},
+		{"Go Design Patterns"},
+		{"Black Hat Go"},
+	}
+
+	ctx.JSON(books)
+	// TIP: negotiate the response between server's prioritizes
+	// and client's requirements, instead of ctx.JSON:
+	// ctx.Negotiation().JSON().MsgPack().Protobuf()
+	// ctx.Negotiate(books)
+}
+
+func create(ctx iris.Context) {
+	var b Book
+	err := ctx.ReadJSON(&b)
+	// TIP: use ctx.ReadBody(&b) to bind
+	// any type of incoming data instead.
+	if err != nil {
+		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
+			Title("Book creation failure").DetailErr(err))
+		// TIP: use ctx.StopWithError(code, err) when only
+		// plain text responses are expected on errors.
+		return
+	}
+
+	println("Received Book: " + b.Title)
+
+	ctx.StatusCode(iris.StatusCreated)
 }
 ```
 
+**Run** your Iris web server:
+
 ```sh
 $ go run main.go
+> Now listening on: http://localhost:8080
+> Application started. Press CTRL+C to shut down.
+```
+
+**List** Books:
+
+```sh
+$ curl --header 'Accept-Encoding:gzip' http://localhost:8080/books
+
+[
+  {
+    "title": "Mastering Concurrency in Go"
+  },
+  {
+    "title": "Go Design Patterns"
+  },
+  {
+    "title": "Black Hat Go"
+  }
+]
+```
+
+**Create** a new Book:
+
+```sh
+$ curl -i -X POST \
+--header 'Content-Encoding:gzip' \
+--header 'Content-Type:application/json' \
+--data "{\"title\":\"Writing An Interpreter In Go\"}" \
+http://localhost:8080/books
+
+> HTTP/1.1 201 Created
+```
+
+That's how an **error** response looks like:
+
+```sh
+$ curl -X POST --data "{\"title\" \"not valid one\"}" \
+http://localhost:8080/books
+
+> HTTP/1.1 400 Bad Request
+
+{
+  "status": 400,
+  "title": "Book creation failure"
+  "detail": "invalid character '\"' after object key",
+}
 ```
 
 </details>

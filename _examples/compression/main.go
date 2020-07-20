@@ -11,7 +11,7 @@ func main() {
 func newApp() *iris.Application {
 	app := iris.New()
 	// HERE and you are ready to GO:
-	app.Use(iris.Compress, iris.CompressReader)
+	app.Use(iris.Compression)
 
 	app.Get("/", send)
 	app.Post("/", receive)
@@ -41,7 +41,7 @@ func receive(ctx iris.Context) {
 /* Manually:
 func enableCompression(ctx iris.Context) {
 	// Enable writing using compression (deflate, gzip, brotli, snappy, s2):
-	err := ctx.Compress(true)
+	err := ctx.CompressWriter(true)
 	if err != nil {
 		ctx.Application().Logger().Debugf("writer: %v", err)
 		// if you REQUIRE server to SEND compressed data then `return` here.

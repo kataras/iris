@@ -2238,8 +2238,9 @@ func (ctx *Context) StreamWriter(writer func(w io.Writer) error) error {
 // ClientSupportsEncoding reports whether the
 // client expects one of the given "encodings" compression.
 //
-// Note, instead of `Compress` method, this one just reports back the first valid encoding it sees,
+// Note, this method just reports back the first valid encoding it sees,
 // meaning that request accept-encoding offers don't matter here.
+// See `CompressWriter` too.
 func (ctx *Context) ClientSupportsEncoding(encodings ...string) bool {
 	if len(encodings) == 0 {
 		return false
@@ -2258,20 +2259,20 @@ func (ctx *Context) ClientSupportsEncoding(encodings ...string) bool {
 	return false
 }
 
-// Compress enables or disables the compress response writer.
+// CompressWriter enables or disables the compress response writer.
 // if the client expects a valid compression algorithm then this
 // will change the response writer to a compress writer instead.
 // All future write and rich write methods will respect this option.
 // Usage:
 // app.Use(func(ctx iris.Context){
-// 	err := ctx.Compress(true)
+// 	err := ctx.CompressWriter(true)
 // 	ctx.Next()
 // })
 // The recommendation is to compress data as much as possible and therefore to use this field,
 // but some types of resources, such as jpeg images, are already compressed.
 // Sometimes, using additional compression doesn't reduce payload size and
 // can even make the payload longer.
-func (ctx *Context) Compress(enable bool) error {
+func (ctx *Context) CompressWriter(enable bool) error {
 	cw, ok := ctx.writer.(*CompressResponseWriter)
 	if enable {
 		if ok {
@@ -2592,7 +2593,7 @@ var (
 )
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
-// Ignores StatusCode, Compress, StreamingJSON options.
+// Ignores StatusCode and StreamingJSON options.
 func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (int, error) {
 	var (
 		result []byte
@@ -3176,7 +3177,7 @@ func (ctx *Context) Negotiate(v interface{}) (int, error) {
 	}
 
 	if encoding != "" {
-		ctx.Compress(true)
+		ctx.CompressWriter(true)
 	}
 
 	ctx.contentTypeOnce(contentType, charset)
@@ -3679,7 +3680,8 @@ func (n *NegotiationAcceptBuilder) EncodingGzip() *NegotiationAcceptBuilder {
 // ServeContent uses it to handle requests using If-Match, If-None-Match, or If-Range.
 //
 // Note that *os.File implements the io.ReadSeeker interface.
-// Note that compression can be registered through `ctx.Compress(true)` or `app.Use(iris.Compress)`.
+// Note that compression can be registered
+// through `ctx.CompressWriter(true)` or `app.Use(iris.Compression)`.
 func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time) {
 	ctx.ServeContentWithRate(content, filename, modtime, 0, 0)
 }
@@ -3730,7 +3732,8 @@ func (ctx *Context) ServeContentWithRate(content io.ReadSeeker, filename string,
 //
 // Use it when you want to serve assets like css and javascript files.
 // If client should confirm and save the file use the `SendFile` instead.
-// Note that compression can be registered through `ctx.Compress(true)` or `app.Use(iris.Compress)`.
+// Note that compression can be registered
+// through `ctx.CompressWriter(true)` or `app.Use(iris.Compression)`.
 func (ctx *Context) ServeFile(filename string) error {
 	return ctx.ServeFileWithRate(filename, 0, 0)
 }
@@ -3769,7 +3772,8 @@ func (ctx *Context) ServeFileWithRate(filename string, limit float64, burst int)
 }
 
 // SendFile sends a file as an attachment, that is downloaded and saved locally from client.
-// Note that compression can be registered through `ctx.Compress(true)` or `app.Use(iris.Compress)`.
+// Note that compression can be registered
+// through `ctx.CompressWriter(true)` or `app.Use(iris.Compression)`.
 // Use `ServeFile` if a file should be served as a page asset instead.
 func (ctx *Context) SendFile(src string, destName string) error {
 	return ctx.SendFileWithRate(src, destName, 0, 0)

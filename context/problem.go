@@ -170,6 +170,15 @@ func (p Problem) Detail(detail string) Problem {
 	return p.Key("detail", detail)
 }
 
+// DetailErr calls `Detail(err.Error())`.
+func (p Problem) DetailErr(err error) Problem {
+	if err == nil {
+		return p
+	}
+
+	return p.Key("detail", err.Error())
+}
+
 // Instance sets the problem's instance field.
 // A URI reference that identifies the specific
 // occurrence of the problem.  It may or may not yield further

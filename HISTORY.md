@@ -448,7 +448,7 @@ New Package-level Variables:
 - `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
 - `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
 - `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/master/_examples/file-server/http2push/main.go).
-- `iris.Compress` and `iris.CompressReader` middleware to compress responses and decode compressed request data respectfully.
+- `iris.Compression` middleware to compress responses and decode compressed request data respectfully.
 - `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
 - `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
 - `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
@@ -456,7 +456,7 @@ New Package-level Variables:
 New Context Methods:
 
 - `Context.SetErr(error)` and `Context.GetErr() error` helpers
-- `Context.Compress(bool) error` and `Context.CompressReader(bool) error`
+- `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`
 - `Context.Clone() Context` returns a copy of the Context.
 - `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
@@ -487,10 +487,9 @@ New Context Methods:
 
 Breaking Changes:
 
-- `ctx.Gzip(boolean)` replaced with `ctx.Compress(boolean) error`.
+- `ctx.Gzip(boolean)` replaced with `ctx.CompressWriter(boolean) error`.
 - `ctx.GzipReader(boolean) error` replaced with `ctx.CompressReader(boolean) error`.
-- `iris.Gzip` replaced with `iris.Compress` (middleware).
-- `iris.GzipReader` replaced with `iris.CompressReader` (middleware).
+- `iris.Gzip` and `iris.GzipReader` replaced with `iris.Compression` (middleware).
 - `ctx.ClientSupportsGzip() bool` replaced with `ctx.ClientSupportsEncoding("gzip", "br" ...) bool`.
 - `ctx.GzipResponseWriter()` is **removed**.
 - `Party.HandleDir` now returns a list of `[]*Route` (GET and HEAD) instead of GET only.
@@ -502,7 +501,7 @@ Breaking Changes:
 - `sessions#Config.Encode` and `Decode` are removed in favor of (the existing) `Encoding` field.
 - `versioning.GetVersion` now returns an empty string if version wasn't found.
 - Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
-- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.Compress)`) or a prior call to `Context.Compress(true)` will enable compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
+- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.CompressWriter)`) or a prior call to `Context.CompressWriter(true)` will enable compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
 - `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
 - `route.Trace() string` changed to `route.Trace(w io.Writer)`, to achieve the same result just pass a `bytes.Buffer`
 - `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)).

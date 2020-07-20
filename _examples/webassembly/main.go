@@ -17,7 +17,7 @@ func main() {
 	app.HandleDir("/", "./client")
 
 	app.Get("/", func(ctx iris.Context) {
-		// ctx.Compress(true)
+		// ctx.CompressWriter(true)
 		ctx.ServeFile("./client/hello.html")
 	})
 
