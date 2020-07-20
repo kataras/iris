@@ -111,8 +111,7 @@ func Default() *Application {
 	app := New()
 	app.Use(recover.New())
 	app.Use(requestLogger.New())
-	app.Use(Compress)
-	app.Use(CompressReader)
+	app.Use(Compression)
 
 	app.defaultMode = true
 

@@ -8,7 +8,7 @@ import (
 
 // ExecuteTemplate renders a "tmpl" partial template to the `Context.ResponseWriter`.
 func ExecuteTemplate(ctx iris.Context, tmpl templates.Partial) {
-	ctx.Compress(true)
+	ctx.CompressWriter(true)
 	ctx.ContentType("text/html")
 	templates.WriteTemplate(ctx, tmpl)
 }

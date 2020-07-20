@@ -35,8 +35,10 @@ func TestHandlerUsingNetHTTP(t *testing.T) {
 		ctx.WriteString("Hello, World!")
 	}
 
+	// A shortcut for net/http/httptest.NewRecorder/NewRequest.
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
+
 	httptest.Do(w, r, handler)
 	if expected, got := "Hello, World!", w.Body.String(); expected != got {
 		t.Fatalf("expected body: %s but got: %s", expected, got)

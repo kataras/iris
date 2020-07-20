@@ -573,7 +573,7 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			ctx.ResponseWriter().Header().Set(context.ContentDispositionHeaderKey, "attachment;filename="+destName)
 		}
 
-		ctx.Compress(options.Compress)
+		ctx.CompressWriter(options.Compress)
 
 		// If limit is 0 then same as ServeContent.
 		ctx.ServeContentWithRate(f, info.Name(), info.ModTime(), options.Attachments.Limit, options.Attachments.Burst)

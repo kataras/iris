@@ -17,7 +17,7 @@ func main() {
 	app := iris.New()
 
 	app.Get("/users", func(ctx iris.Context) {
-		ctx.Compress(true)
+		ctx.CompressWriter(true)
 		ctx.ContentType("text/html")
 
 		userList := []string{

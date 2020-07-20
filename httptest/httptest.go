@@ -159,11 +159,12 @@ var (
 func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfigurators ...iris.Configurator) {
 	app := new(iris.Application)
 	app.Configure(iris.WithConfiguration(iris.DefaultConfiguration()), iris.WithLogLevel("disable"))
+	app.Configure(irisConfigurators...)
+
 	app.HTTPErrorHandler = router.NewDefaultHandler(app.ConfigurationReadOnly(), app.Logger())
 	app.ContextPool = context.New(func() interface{} {
 		return context.NewContext(app)
 	})
-	app.Configure(irisConfigurators...)
 
 	ctx := app.ContextPool.Acquire(w, r)
 	handler(ctx)

@@ -200,20 +200,10 @@ var (
 )
 
 var (
-	// Compress is a middleware which enables writing
-	// using compression, if client supports.
-	Compress = func(ctx Context) {
-		ctx.Compress(true)
-		ctx.Next()
-	}
-	// CompressReader is a middleware which enables decompression,
-	// when client sends compressed data.
-	//
-	// Similar to: func(ctx iris.Context) {
-	//	ctx.CompressReader(true)
-	//	ctx.Next()
-	// }
-	CompressReader = func(ctx Context) {
+	// Compression is a middleware which enables
+	// writing and reading using the best offered compression.
+	Compression = func(ctx Context) {
+		ctx.CompressWriter(true)
 		ctx.CompressReader(true)
 		ctx.Next()
 	}
