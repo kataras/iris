@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/netutil"
 
@@ -184,6 +185,11 @@ var WithGlobalConfiguration = func(app *Application) {
 // WithLogLevel sets the `Configuration.LogLevel` field.
 func WithLogLevel(level string) Configurator {
 	return func(app *Application) {
+		if app.logger == nil {
+			app.logger = golog.Default
+		}
+		app.logger.SetLevel(level) // can be fired through app.Configure.
+
 		app.config.LogLevel = level
 	}
 }
@@ -989,6 +995,11 @@ func (c Configuration) GetOther() map[string]interface{} {
 func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
+
+		if main == nil {
+			app.config = &c
+			return
+		}
 
 		if v := c.LogLevel; v != "" {
 			main.LogLevel = v
