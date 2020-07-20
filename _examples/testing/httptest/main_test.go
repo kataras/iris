@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 )
 
@@ -27,4 +28,17 @@ func TestNewApp(t *testing.T) {
 	// with invalid basic auth
 	e.GET("/admin/settings").WithBasicAuth("invalidusername", "invalidpassword").
 		Expect().Status(httptest.StatusUnauthorized)
+}
+
+func TestHandlerUsingNetHTTP(t *testing.T) {
+	handler := func(ctx iris.Context) {
+		ctx.WriteString("Hello, World!")
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	httptest.Do(w, r, handler)
+	if expected, got := "Hello, World!", w.Body.String(); expected != got {
+		t.Fatalf("expected body: %s but got: %s", expected, got)
+	}
 }

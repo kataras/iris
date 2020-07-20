@@ -3,9 +3,12 @@ package httptest
 import (
 	"crypto/tls"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/router"
 
 	"github.com/iris-contrib/httpexpect/v2"
 )
@@ -140,4 +143,29 @@ func NewInsecure(t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
 	}
 
 	return httpexpect.WithConfig(testConfiguration)
+}
+
+// Aliases for "net/http/httptest" package. See `Do` package-level function.
+var (
+	NewRecorder = httptest.NewRecorder
+	NewRequest  = httptest.NewRequest
+)
+
+// Do is a simple helper which can be used to test handlers individually
+// with the "net/http/httptest" package.
+// This package contains aliases for `NewRequest` and `NewRecorder` too.
+//
+// For a more efficient testing please use the `New` function instead.
+func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfigurators ...iris.Configurator) {
+	app := new(iris.Application)
+	app.Configure(iris.WithConfiguration(iris.DefaultConfiguration()), iris.WithLogLevel("disable"))
+	app.HTTPErrorHandler = router.NewDefaultHandler(app.ConfigurationReadOnly(), app.Logger())
+	app.ContextPool = context.New(func() interface{} {
+		return context.NewContext(app)
+	})
+	app.Configure(irisConfigurators...)
+
+	ctx := app.ContextPool.Acquire(w, r)
+	handler(ctx)
+	app.ContextPool.Release(ctx)
 }
