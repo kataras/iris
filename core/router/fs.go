@@ -302,16 +302,16 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 
 		if indexFound && !options.Attachments.Enable {
 			if indexAssets, ok := options.PushTargets[name]; ok {
-				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+				if pusher, ok := ctx.ResponseWriter().Naive().(http.Pusher); ok {
+					var pushOpts *http.PushOptions
+					if encoding != "" {
+						pushOpts = &http.PushOptions{Header: r.Header}
+					}
+
 					for _, indexAsset := range indexAssets {
 						if indexAsset[0] != '/' {
 							// it's relative path.
 							indexAsset = path.Join(r.RequestURI, indexAsset)
-						}
-
-						var pushOpts *http.PushOptions
-						if encoding != "" {
-							pushOpts = &http.PushOptions{Header: r.Header}
 						}
 
 						if err = pusher.Push(indexAsset, pushOpts); err != nil {
@@ -322,7 +322,12 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 			}
 
 			if regex, ok := options.PushTargetsRegexp[r.URL.Path]; ok {
-				if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+				if pusher, ok := ctx.ResponseWriter().Naive().(http.Pusher); ok {
+					var pushOpts *http.PushOptions
+					if encoding != "" {
+						pushOpts = &http.PushOptions{Header: r.Header}
+					}
+
 					prefixURL := strings.TrimSuffix(r.RequestURI, name)
 					names, err := findNames(fs, name)
 					if err == nil {
@@ -335,10 +340,6 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 							// match using relative path (without the first '/' slash)
 							// to keep consistency between the `PushTargets` behavior
 							if regex.MatchString(indexAsset) {
-								var pushOpts *http.PushOptions
-								if encoding != "" {
-									pushOpts = &http.PushOptions{Header: r.Header}
-								}
 
 								// println("Regex Matched: " + indexAsset)
 								if err = pusher.Push(path.Join(prefixURL, indexAsset), pushOpts); err != nil {

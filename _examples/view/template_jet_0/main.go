@@ -97,8 +97,11 @@ func main() {
 	}
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("todos/index.jet", todos) // <--
+		err := ctx.View("todos/index.jet", todos) // <--
 		// Note that the `ctx.View` already logs the error if logger level is allowing it and returns the error.
+		if err != nil {
+			ctx.StopWithText(iris.StatusInternalServerError, "Templates not rendered!")
+		}
 	})
 
 	app.Get("/todo", func(ctx iris.Context) {

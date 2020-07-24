@@ -132,10 +132,6 @@ func releaseResponseWriter(w ResponseWriter) {
 // it writes directly to the underline http.ResponseWriter
 type responseWriter struct {
 	http.ResponseWriter
-	http.Pusher
-	http.Hijacker // Note:
-	// The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
-	http.CloseNotifier
 
 	statusCode int // the saved status code which will be used from the cache service
 	// statusCodeSent bool // reply header has been (logically) written | no needed any more as we have a variable to catch total len of written bytes
@@ -176,29 +172,6 @@ func (w *responseWriter) BeginResponse(underline http.ResponseWriter) {
 // that this responseWriter should write on.
 func (w *responseWriter) SetWriter(underline http.ResponseWriter) {
 	w.ResponseWriter = underline
-
-	pusher, ok := underline.(http.Pusher)
-	if !ok {
-		pusher = nil // make sure interface value is nil.
-	}
-
-	hijacker, ok := underline.(http.Hijacker)
-	if !ok {
-		hijacker = nil
-	}
-
-	// This interface is obselete by Go authors
-	// and we only capture it
-	// for compatible reasons. End-developers SHOULD replace
-	// the use of CloseNotifier with the: Request.Context().Done() channel.
-	closeNotifier, ok := underline.(http.CloseNotifier)
-	if !ok {
-		closeNotifier = nil
-	}
-
-	w.Pusher = pusher
-	w.Hijacker = hijacker
-	w.CloseNotifier = closeNotifier
 }
 
 // EndResponse is the last function which is called right before the server sent the final response.

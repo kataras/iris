@@ -33,9 +33,6 @@ func releaseResponseRecorder(w *ResponseRecorder) {
 type ResponseRecorder struct {
 	ResponseWriter
 
-	http.Hijacker
-	http.CloseNotifier
-
 	// keep track of the body in order to be
 	// resetable and useful inside custom transactions
 	chunks []byte
@@ -55,20 +52,6 @@ func (w *ResponseRecorder) Naive() http.ResponseWriter {
 // prepares itself, the response recorder, to record and send response to the client.
 func (w *ResponseRecorder) BeginRecord(underline ResponseWriter) {
 	w.ResponseWriter = underline
-
-	hijacker, ok := underline.(http.Hijacker)
-	if !ok {
-		hijacker = nil
-	}
-
-	closeNotifier, ok := underline.(http.CloseNotifier)
-	if !ok {
-		closeNotifier = nil
-	}
-
-	w.Hijacker = hijacker
-	w.CloseNotifier = closeNotifier
-
 	w.headers = underline.Header()
 	w.ResetBody()
 }
@@ -282,7 +265,7 @@ var ErrPushNotSupported = errors.New("push feature is not supported by this Resp
 func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) (err error) {
 	w.FlushResponse()
 
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+	if pusher, ok := w.ResponseWriter.Naive().(http.Pusher); ok {
 		err = pusher.Push(target, opts)
 		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
 			return ErrPushNotSupported

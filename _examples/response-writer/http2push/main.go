@@ -27,7 +27,7 @@ func pushHandler(ctx iris.Context) {
 	// parent request.
 	target := "/main.js"
 
-	if pusher, ok := ctx.ResponseWriter().(http.Pusher); ok {
+	if pusher, ok := ctx.ResponseWriter().Naive().(http.Pusher); ok {
 		err := pusher.Push(target, nil)
 		if err != nil {
 			if err == iris.ErrPushNotSupported {
