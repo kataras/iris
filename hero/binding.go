@@ -281,9 +281,10 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 	}
 
 	exportedBindings := getBindingsFor(inputs, dependencies, paramsCount)
-	// fmt.Printf("Controller [%s] | Inputs length: %d vs Bindings length: %d | Stateless : %d\n", typ, n, len(exportedBindings), stateless)
+	// fmt.Printf("Controller [%s] | Inputs length: %d vs Bindings length: %d | NonZero: %d | Stateless : %d\n",
+	// 	typ, n, len(exportedBindings), len(nonZero), stateless)
 	// for i, b := range exportedBindings {
-	// 	fmt.Printf("[%d] [Static=%v] %s\n", i, b.Dependency.Static, b.Dependency.DestType)
+	// 	fmt.Printf("[%d] [Static=%v] %#+v\n", i, b.Dependency.Static, b.Dependency.OriginalValue)
 	// }
 
 	if stateless == 0 && len(nonZero) >= len(exportedBindings) {
@@ -332,8 +333,11 @@ func paramDependencyHandler(paramIndex int) DependencyHandler {
 }
 
 // registered if input parameters are more than matched dependencies.
-// It binds an input to a request body based on the request content-type header (JSON, XML, YAML, Query, Form).
+// It binds an input to a request body based on the request content-type header
+// (JSON, Protobuf, Msgpack, XML, YAML, Query, Form).
 func payloadBinding(index int, typ reflect.Type) *binding {
+	// fmt.Printf("Register payload binding for index: %d and type: %s\n", index, typ.String())
+
 	return &binding{
 		Dependency: &Dependency{
 			Handle: func(ctx *context.Context, input *Input) (newValue reflect.Value, err error) {

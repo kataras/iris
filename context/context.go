@@ -1909,8 +1909,6 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 }
 
 // ReadQuery binds url query to "ptr". The struct field tag is "url".
-// If a client sent an unknown field, this method will return an error,
-// in order to ignore that error use the `err != nil && !iris.IsErrPath(err)`.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 func (ctx *Context) ReadQuery(ptr interface{}) error {
@@ -1980,6 +1978,16 @@ func (ctx *Context) ReadMsgPack(ptr interface{}) error {
 // JSON, Protobuf, MsgPack, XML, YAML, MultipartForm and binds the result to the "ptr".
 func (ctx *Context) ReadBody(ptr interface{}) error {
 	if ctx.Method() == http.MethodGet {
+		if ctx.Request().URL.RawQuery != "" {
+			// try read from query.
+			return ctx.ReadQuery(ptr)
+		}
+
+		// otherwise use the ReadForm,
+		// it's actually the same except
+		// ReadQuery will not fire errors on:
+		// 1. unknown or empty url query parameters
+		// 2. empty query or form (if FireEmptyFormError is enabled).
 		return ctx.ReadForm(ptr)
 	}
 
