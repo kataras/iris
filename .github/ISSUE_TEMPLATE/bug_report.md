@@ -23,5 +23,16 @@ If applicable, add screenshots to help explain your problem.
 **Desktop (please complete the following information):**
  - OS: [e.g. ubuntu, windows]
 
+**iris.Version**
+- e.g. v12.2.0 or master
+
+Please make sure the bug is reproducible over the `master` branch:
+
+```sh
+$ cd PROJECT
+$ go get -u github.com/kataras/iris/v12@master
+$ go run .
+```
+
 **Additional context**
 Add any other context about the problem here.
