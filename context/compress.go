@@ -184,10 +184,6 @@ type CompressResponseWriter struct {
 	CompressWriter
 	ResponseWriter
 
-	http.Pusher
-	http.Hijacker
-	http.CloseNotifier
-
 	Disabled bool
 	Encoding string
 	Level    int
@@ -234,26 +230,6 @@ func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int)
 	v.CompressWriter = encWriter
 
 	AddCompressHeaders(w.Header(), encoding)
-
-	pusher, ok := w.(http.Pusher)
-	if !ok {
-		pusher = nil // make sure interface value is nil.
-	}
-
-	hijacker, ok := w.(http.Hijacker)
-	if !ok {
-		hijacker = nil
-	}
-
-	closeNotifier, ok := w.(http.CloseNotifier)
-	if !ok {
-		closeNotifier = nil
-	}
-
-	v.Pusher = pusher
-	v.Hijacker = hijacker
-	v.CloseNotifier = closeNotifier
-
 	return v, nil
 }
 
