@@ -279,8 +279,12 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 		// fmt.Printf("Controller [%s] | Field Index: %v | Field Type: %s\n", typ, fields[i].Index, fields[i].Type)
 		inputs[i] = fields[i].Type
 	}
+
 	exportedBindings := getBindingsFor(inputs, dependencies, paramsCount)
-	// fmt.Printf("Controller [%s] | Inputs length: %d vs Bindings length: %d\n", typ, n, len(exportedBindings))
+	// fmt.Printf("Controller [%s] | Inputs length: %d vs Bindings length: %d | Stateless : %d\n", typ, n, len(exportedBindings), stateless)
+	// for i, b := range exportedBindings {
+	// 	fmt.Printf("[%d] [Static=%v] %s\n", i, b.Dependency.Static, b.Dependency.DestType)
+	// }
 
 	if stateless == 0 && len(nonZero) >= len(exportedBindings) {
 		// if we have not a single stateless and fields are defined then just return.

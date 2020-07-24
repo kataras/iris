@@ -168,3 +168,39 @@ func testDependencies(t *testing.T, tests []testDependencyTest) {
 		// t.Logf("[%d] output: %#+v", i, val.Interface())
 	}
 }
+
+func TestDependentDependencyInheritanceStatic(t *testing.T) {
+	// Tests the following case #1564:
+	// Logger
+	// func(Logger) S1
+	// ^ Should be static because Logger
+	// is a structure, a static dependency.
+	//
+	// func(Logger) S2
+	// func(S1, S2) S3
+	// ^ Should be marked as static dependency
+	// because everything that depends on are static too.
+
+	type S1 struct {
+		msg string
+	}
+
+	type S2 struct {
+		msg2 string
+	}
+
+	serviceDep := NewDependency(&testServiceImpl{prefix: "1"})
+	d1 := NewDependency(func(t testService) S1 {
+		return S1{t.Say("2")}
+	}, serviceDep)
+	if !d1.Static {
+		t.Fatalf("d1 dependency should be static: %#+v", d1)
+	}
+
+	d2 := NewDependency(func(t testService, s S1) S2 {
+		return S2{"3"}
+	}, serviceDep, d1)
+	if !d2.Static {
+		t.Fatalf("d2 dependency should be static: %#+v", d2)
+	}
+}
