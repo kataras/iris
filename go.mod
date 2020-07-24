@@ -18,7 +18,7 @@ require (
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/pongo2 v0.0.1
-	github.com/iris-contrib/schema v0.0.1
+	github.com/iris-contrib/schema v0.0.2
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/golog v0.0.18
 	github.com/kataras/neffos v0.0.16

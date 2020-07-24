@@ -407,7 +407,11 @@ func (c *ControllerActivator) handlerOf(relPath, methodName string) context.Hand
 				// 	c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
 				// }
 				c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
-				return
+				// allow skipping struct field bindings
+				// errors by a custom error handler.
+				if ctx.IsStopped() {
+					return
+				}
 			}
 
 			b := ctrl.Interface().(BaseController)
