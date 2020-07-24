@@ -101,7 +101,7 @@ func main() {
     app.RegisterView(iris.HTML("./views", ".html"))
 
     // Make the /public route path to statically serve the ./public/... contents
-    app.HandleDir("/public", "./public")
+    app.HandleDir("/public", iris.Dir("./public"))
 
     // Render the actual form
     // GET: http://localhost:8080

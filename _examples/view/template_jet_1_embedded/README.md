@@ -14,7 +14,7 @@ which overrides any previous loaders like `JetEngine.Binary` we use on this exam
 ## How to run
 
 ```sh
-$ go get -u github.com/go-bindata/go-bindata/...
+$ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
 $ go-bindata ./views/...
 $ go build
 $ ./template_jet_0_embedded

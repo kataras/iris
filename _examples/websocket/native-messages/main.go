@@ -42,7 +42,7 @@ func main() {
 		log.Printf("[%s] Disconnected from server", c.ID())
 	}
 
-	app.HandleDir("/js", "./static/js") // serve our custom javascript code.
+	app.HandleDir("/js", iris.Dir("./static/js")) // serve our custom javascript code.
 
 	// register the server on an endpoint.
 	// see the inline javascript code i the websockets.html, this endpoint is used to connect to the server.

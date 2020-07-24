@@ -28,7 +28,7 @@ func main() {
 		Reload(true)
 	app.RegisterView(tmpl)
 
-	app.HandleDir("/public", "./web/public")
+	app.HandleDir("/public", iris.Dir("./web/public"))
 
 	app.OnAnyErrorCode(func(ctx iris.Context) {
 		ctx.ViewData("Message", ctx.Values().

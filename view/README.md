@@ -139,7 +139,7 @@ import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
-    // $ go get -u github.com/go-bindata/go-bindata/...
+    // $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
     // $ go-bindata ./templates/...
     // $ go build
     // $ ./embedding-templates-into-app

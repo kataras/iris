@@ -383,21 +383,28 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // with the contents of a file system (physical or embedded).
 //
 // first parameter  : the route path
-// second parameter : the system or the embedded directory that needs to be served
-// third parameter  : not required, the directory options, set fields is optional.
+// second parameter : the file system needs to be served
+// third parameter  : not required, the serve directory options.
 //
 // Alternatively, to get just the handler for that look the FileServer function instead.
 //
-//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
+//     api.HandleDir("/static", iris.Dir("./assets"), iris.DirOptions{IndexName: "/index.html", Compress: true})
 //
 // Returns all the registered routes, including GET index and path patterm and HEAD.
 //
 // Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptions) (routes []*Route) {
-	options := getDirOptions(opts...)
+func (api *APIBuilder) HandleDir(requestPath string, fs http.FileSystem, opts ...DirOptions) (routes []*Route) {
+	options := DefaultDirOptions
+	if len(opts) > 0 {
+		options = opts[0]
+	}
 
-	h := FileServer(directory, options)
-	description := directory
+	h := FileServer(fs, options)
+	description := "file server"
+	if d, ok := fs.(http.Dir); ok {
+		description = string(d)
+	}
+
 	fileName, lineNumber := context.HandlerFileLine(h) // take those before StripPrefix.
 
 	// if subdomain, we get the full path of the path only,

@@ -13,7 +13,7 @@ func main() {
 		return "Greetings " + s + "!"
 	})
 
-	// $ go get -u github.com/go-bindata/go-bindata/...
+	// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
 	// $ go-bindata ./templates/...
 	// $ go build
 	// $ ./embedding-templates-into-app

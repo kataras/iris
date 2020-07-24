@@ -14,7 +14,7 @@ func main() {
 
 	// we could serve your assets like this the sake of the example,
 	// never include the .go files there in production.
-	app.HandleDir("/", "./client")
+	app.HandleDir("/", iris.Dir("./client"))
 
 	app.Get("/", func(ctx iris.Context) {
 		// ctx.CompressWriter(true)

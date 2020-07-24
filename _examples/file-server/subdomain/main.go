@@ -14,7 +14,7 @@ func newApp() *iris.Application {
 	app.Favicon("./assets/favicon.ico")
 
 	v1 := app.Subdomain(subdomain)
-	v1.HandleDir("/", "./assets", iris.DirOptions{})
+	v1.HandleDir("/", iris.Dir("./assets"))
 
 	// http://v1.example.com
 	// http://v1.example.com/css/main.css

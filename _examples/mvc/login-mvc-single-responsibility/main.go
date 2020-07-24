@@ -18,7 +18,7 @@ func main() {
 
 	app.RegisterView(iris.HTML("./views", ".html").Layout("shared/layout.html"))
 
-	app.HandleDir("/public", "./public")
+	app.HandleDir("/public", iris.Dir("./public"))
 
 	userRouter := app.Party("/user")
 	{

@@ -41,7 +41,7 @@ func main() {
 	app.WrapRouter(c.ServeHTTP)
 
 	// Serve ./public/index.html, main.js.
-	app.HandleDir("/", "./public")
+	app.HandleDir("/", iris.Dir("./public"))
 
 	// Register routes here...
 	app.Get("/data", listData)

@@ -114,7 +114,7 @@ func main() {
 	})
 
 	// serves the npm browser websocket client usage example.
-	app.HandleDir("/browserify", "./browserify")
+	app.HandleDir("/browserify", iris.Dir("./browserify"))
 
 	app.Listen(":8080")
 }

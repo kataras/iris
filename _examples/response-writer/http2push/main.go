@@ -1,7 +1,7 @@
 // Server push lets the server preemptively "push" website assets
 // to the client without the user having explicitly asked for them.
 // When used with care, we can send what we know the user is going
-// to need for the page they’re requesting.
+// to need for the page they're requesting.
 package main
 
 import (

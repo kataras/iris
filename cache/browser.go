@@ -92,7 +92,7 @@ const ifNoneMatchHeaderKey = "If-None-Match"
 //
 // Usage with combination of `StaticCache`:
 // assets := app.Party("/assets", cache.StaticCache(24 * time.Hour), ETag)
-// assets.HandleDir("/", "./assets")
+// assets.HandleDir("/", iris.Dir("./assets"))
 //
 // Similar to `Cache304` but it doesn't depends on any "modified date", it uses just the ETag and If-None-Match headers.
 //

@@ -41,6 +41,26 @@ var (
 	ErrNotSupportedCompression = errors.New("compress: unsupported compression")
 )
 
+// AllEncodings is a slice of default content encodings.
+// See `AcquireCompressResponseWriter`.
+var AllEncodings = []string{GZIP, DEFLATE, BROTLI, SNAPPY}
+
+// GetEncoding extracts the best available encoding from the request.
+func GetEncoding(r *http.Request, offers []string) (string, error) {
+	acceptEncoding := r.Header[AcceptEncodingHeaderKey]
+
+	if len(acceptEncoding) == 0 {
+		return "", ErrResponseNotCompressed
+	}
+
+	encoding := negotiateAcceptHeader(acceptEncoding, offers, IDENTITY)
+	if encoding == "" {
+		return "", fmt.Errorf("%w: %s", ErrNotSupportedCompression, encoding)
+	}
+
+	return encoding, nil
+}
+
 type (
 	noOpWriter struct{}
 
@@ -182,15 +202,9 @@ var _ ResponseWriter = (*CompressResponseWriter)(nil)
 // It returns the best candidate among "gzip", "defate", "br", "snappy" and "s2"
 // based on the request's "Accept-Encoding" header value.
 func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int) (*CompressResponseWriter, error) {
-	// acceptEncoding := r.Header.Values(AcceptEncodingHeaderKey)
-	acceptEncoding := r.Header[AcceptEncodingHeaderKey]
-	if len(acceptEncoding) == 0 {
-		return nil, ErrResponseNotCompressed
-	}
-
-	encoding := negotiateAcceptHeader(acceptEncoding, []string{GZIP, DEFLATE, BROTLI, SNAPPY, S2}, IDENTITY)
-	if encoding == "" {
-		return nil, fmt.Errorf("%w: %s", ErrNotSupportedCompression, encoding)
+	encoding, err := GetEncoding(r, AllEncodings)
+	if err != nil {
+		return nil, err
 	}
 
 	v := compressWritersPool.Get().(*CompressResponseWriter)

@@ -12,11 +12,11 @@ func newApp() *iris.Application {
 	// first parameter is the request path
 	// second is the system directory
 	//
-	// app.HandleDir("/css", "./assets/css")
-	// app.HandleDir("/js", "./assets/js")
+	// app.HandleDir("/css", iris.Dir("./assets/css"))
+	// app.HandleDir("/js",  iris.Dir("./assets/js"))
 
 	v1 := app.Party("/v1")
-	v1.HandleDir("/static", "./assets", iris.DirOptions{
+	v1.HandleDir("/static", iris.Dir("./assets"), iris.DirOptions{
 		// Defaults to "/index.html", if request path is ending with **/*/$IndexName
 		// then it redirects to **/*(/) which another handler is handling it,
 		// that another handler, called index handler, is auto-registered by the framework
@@ -26,7 +26,19 @@ func newApp() *iris.Application {
 		Compress: false,
 		// List the files inside the current requested directory if `IndexName` not found.
 		ShowList: false,
-		// If `ShowList` is true then this function will be used instead of the default one to show the list of files of a current requested directory(dir).
+		Cache: iris.DirCacheOptions{
+			// enable in-memory cache and pre-compress the files.
+			Enable: true,
+			// ignore image types (and pdf).
+			CompressIgnore: iris.MatchImagesAssets,
+			// do not compress files smaller than size.
+			CompressMinSize: 300,
+			// available encodings that will be negotiated with client's needs.
+			Encodings: []string{"gzip", "br" /* you can also add: deflate, snappy */},
+		},
+		DirList: iris.DirListRich(),
+		// If `ShowList` is true then this function will be used instead of the default
+		// one to show the list of files of a current requested directory(dir).
 		// DirList: func(ctx iris.Context, dirName string, dir http.File) error { ... }
 		//
 		// Optional validator that loops through each requested resource.

@@ -21,7 +21,7 @@ func newApp() *iris.Application {
 		ctx.Writef("Hello %s", ctx.Params().Get("username"))
 	})
 
-	app.HandleDir("/", "./public")
+	app.HandleDir("/", iris.Dir("./public"))
 
 	myOtherHandler := func(ctx iris.Context) {
 		ctx.Writef("inside a handler which is fired manually by our custom router wrapper")

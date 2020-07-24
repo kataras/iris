@@ -20,7 +20,7 @@ func newApp() *iris.Application {
 		ctx.View("index.html")
 	})
 
-	app.HandleDir("/", "./public")
+	app.HandleDir("/", iris.Dir("./public"))
 
 	return app
 }

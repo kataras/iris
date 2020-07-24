@@ -44,7 +44,7 @@ func main() {
 	app.RegisterView(view)
 
 	// Serve assets (e.g. javascript, css).
-	// app.HandleDir("/public", "./public")
+	// app.HandleDir("/public", iris.Dir("./public"))
 
 	app.Get("/", index)
 
@@ -53,7 +53,7 @@ func main() {
 
 	filesRouter := app.Party("/files")
 	{
-		filesRouter.HandleDir("/", uploadDir, iris.DirOptions{
+		filesRouter.HandleDir("/", iris.Dir(uploadDir), iris.DirOptions{
 			Compress: true,
 			ShowList: true,
 
