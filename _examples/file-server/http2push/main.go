@@ -7,7 +7,7 @@ import (
 )
 
 var opts = iris.DirOptions{
-	IndexName: "/index.html",
+	IndexName: "index.html",
 	// Optionally register files (map's values) to be served
 	// when a specific path (map's key WITHOUT prefix) is requested
 	// is fired before client asks (HTTP/2 Push).
@@ -38,10 +38,15 @@ var opts = iris.DirOptions{
 
 func main() {
 	app := iris.New()
-	app.HandleDir("/public", "./assets", opts)
+	app.HandleDir("/public", iris.Dir("./assets"), opts)
 
 	// Open your browser's Network tools,
 	// navigate to https://127.0.0.1/public.
 	// you should see `Initiator` tab:  "Push / public".
+	//
+	// https://127.0.0.1/public
+	// https://127.0.0.1/public/app2
+	// https://127.0.0.1/public/app2/app2app3
+	// https://127.0.0.1/public/app2/app2app3/dirs
 	app.Run(iris.TLS(":443", "mycert.crt", "mykey.key"))
 }

@@ -373,17 +373,38 @@ Other Improvements:
 
 - Fix [#1553](https://github.com/kataras/iris/issues/1553).
 
+- New `DirOptions.Cache` to cache assets in-memory among with their compressed contents (in order to be ready to served if client ask). Learn more about this feature by reading [all #1556 comments](https://github.com/kataras/iris/issues/1556#issuecomment-661057446). Usage:
+
+```go
+var dirOpts = DirOptions{
+    // [...other options]
+    Cache: DirCacheOptions{
+        Enable: true,
+        // Don't compress files smaller than 300 bytes.
+        CompressMinSize: 300,
+        // Ignore compress already compressed file types
+        // (some images and pdf).
+        CompressIgnore: iris.MatchImagesAssets,
+        // Gzip, deflate, br(brotli), snappy.
+        Encodings: []string{"gzip", "deflate", "br", "snappy"},
+        // Log to the stdout the total reduced file size.
+        Verbose: 1,
+    },
+}
+```
+
 - New `DirOptions.PushTargets` and `PushTargetsRegexp` to push index' assets to the client without additional requests. Inspirated by issue [#1562](https://github.com/kataras/iris/issues/1562). Example matching all `.js, .css and .ico` files (recursively):
 
 ```go
-var opts = iris.DirOptions{
-	IndexName: "/index.html",
-	PushTargetsRegexp: map[string]*regexp.Regexp{
+var dirOpts = iris.DirOptions{
+    // [...other options]
+    IndexName: "/index.html",
+    PushTargetsRegexp: map[string]*regexp.Regexp{
         "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
         // OR:
-		// "/": iris.MatchCommonAssets,
-	},
-	Compress: true,
+        // "/": iris.MatchCommonAssets,
+    },
+    Compress: true,
 }
 ```
 
@@ -492,7 +513,7 @@ Breaking Changes:
 - `iris.Gzip` and `iris.GzipReader` replaced with `iris.Compression` (middleware).
 - `ctx.ClientSupportsGzip() bool` replaced with `ctx.ClientSupportsEncoding("gzip", "br" ...) bool`.
 - `ctx.GzipResponseWriter()` is **removed**.
-- `Party.HandleDir` now returns a list of `[]*Route` (GET and HEAD) instead of GET only.
+- `Party.HandleDir/iris.FileServer` now accepts a `http.FileSystem` instead of a string and returns a list of `[]*Route` (GET and HEAD) instead of GET only. Write: `app.HandleDir("/", iris.Dir("./assets"))` instead of `app.HandleDir("/", "./assets")` and `DirOptions.Asset, AssetNames, AssetInfo` removed, use `go-bindata -fs [..]` and `app.HandleDir("/", AssetFile())` instead.
 - `Context.OnClose` and `Context.OnCloseConnection` now both accept an `iris.Handler` instead of a simple `func()` as their callback.
 - `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
 - Fixed handler's error response not be respected when response recorder was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder).

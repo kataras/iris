@@ -11,7 +11,7 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// $ go get -u github.com/go-bindata/go-bindata/...
+// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
 // $ go-bindata ./views/...
 // $ go run .
 func main() {

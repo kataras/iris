@@ -70,7 +70,9 @@ var urls = []resource{
 // and secondly if the HandleDir had successfully registered
 // the routes and gave the correct response.
 func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
+	dirOptions.Cache.Verbose = 0
 	app := newApp()
+
 	e := httptest.New(t, app)
 
 	if runtime.GOOS != "windows" {
@@ -81,17 +83,25 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 
 	for i, u := range urls {
 		url := u.String()
-		rawContents := u.loadFromBase("./assets")
+		rawContents := u.loadFromBase("../embedding-files-into-app/assets")
+		shouldBeCompressed := int64(len(rawContents)) >= dirOptions.Cache.CompressMinSize
 
-		response := e.GET(url).Expect()
+		request := e.GET(url)
+		if shouldBeCompressed {
+			request.WithHeader("Accept-Encoding", "gzip")
+		}
+		response := request.Expect()
 		response.ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset())
-		response.ContentEncoding("gzip")
+		if shouldBeCompressed {
+			response.ContentEncoding("gzip")
+		}
+
 		if expected, got := response.Raw().StatusCode, httptest.StatusOK; expected != got {
 			t.Fatalf("[%d] of '%s': expected %d status code but got %d", i, url, expected, got)
 		}
 		rawBody := response.Body().Raw()
 
-		func() {
+		if shouldBeCompressed {
 			reader, err := gzip.NewReader(strings.NewReader(rawBody))
 			defer reader.Close()
 			if err != nil {
@@ -105,6 +115,11 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 				// they are big files, no need to check for length here.
 				t.Fatalf("[%d] %s, expected body to look like: '%s...%s' but got '%s...%s'", i, url, expected[:40], expected[len(rawContents)-40:], got[:40], got[len(got)-40:])
 			}
-		}()
+		} else {
+			if expected, got := rawContents, rawBody; expected != got {
+				t.Fatalf("[%d] %s, expected body to look like: '%s...%s' but got '%s...%s'", i, url, expected[:40], expected[len(rawContents)-40:], got[:40], got[len(got)-40:])
+			}
+		}
+
 	}
 }

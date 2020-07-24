@@ -4,31 +4,39 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// NOTE: need different tool than the "embedding-files-into-app" example.
+// How to run:
 //
-// Follow these steps first:
-// $ go get -u github.com/kataras/bindata/cmd/bindata
-// $ bindata ./assets/...
+// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// $ go-bindata -prefix "../embedding-files-into-app/assets/" -fs ../embedding-files-into-app/assets/...
 // $ go run .
-// $ ./embedding-gzipped-files-into-app
-// "physical" files are not used, you can delete the "assets" folder and run the example.
+// Time to complete the compression and caching of [2/3] files: 31.9998ms
+// Total size reduced from 156.6 kB to:
+// br      (22.9 kB) [85.37%]
+// snappy  (41.7 kB) [73.37%]
+// gzip    (27.9 kB) [82.16%]
+// deflate (27.9 kB) [82.19%]
+
+var dirOptions = iris.DirOptions{
+	IndexName: "index.html",
+	// The `Compress` field is ignored
+	// when the file is cached (when Cache.Enable is true),
+	// because the cache file has a map of pre-compressed contents for each encoding
+	// that is served based on client's accept-encoding.
+	Compress: true, // true or false does not matter here.
+	Cache: iris.DirCacheOptions{
+		Enable:         true,
+		CompressIgnore: iris.MatchImagesAssets,
+		// Here, define the encodings that the cached files should be pre-compressed
+		// and served based on client's needs.
+		Encodings:       []string{"gzip", "deflate", "br", "snappy"},
+		CompressMinSize: 50, // files smaller than this size will NOT be compressed.
+		Verbose:         1,
+	},
+}
 
 func newApp() *iris.Application {
 	app := iris.New()
-
-	// Note the `GzipAsset` and `GzipAssetNames` are different from go-bindata's `Asset`,
-	// do not set the `Compress` option to true, instead
-	// use the `AssetValidator` option to manually set the content-encoding to "gzip".
-	app.HandleDir("/static", "./assets", iris.DirOptions{
-		Asset:      GzipAsset,
-		AssetInfo:  GzipAssetInfo,
-		AssetNames: GzipAssetNames,
-		AssetValidator: func(ctx iris.Context, name string) bool {
-			// ctx.Header("Vary", "Accept-Encoding")
-			ctx.Header("Content-Encoding", "gzip")
-			return true
-		},
-	})
+	app.HandleDir("/static", AssetFile(), dirOptions)
 	return app
 }
 

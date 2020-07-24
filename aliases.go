@@ -2,6 +2,7 @@ package iris
 
 import (
 	"net/http"
+	"path"
 	"regexp"
 
 	"github.com/kataras/iris/v12/cache"
@@ -100,17 +101,26 @@ type (
 	// ResultHandler describes the function type which should serve the "v" struct value.
 	// See `APIContainer.UseResultHandler`.
 	ResultHandler = hero.ResultHandler
+
 	// DirOptions contains the optional settings that
 	// `FileServer` and `Party#HandleDir` can use to serve files and assets.
 	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.
 	DirOptions = router.DirOptions
-	// Attachments options for files to be downloaded and saved locally by the client.
+	// DirCacheOptions holds the options for the cached file system.
 	// See `DirOptions`.
-	Attachments = router.Attachments
+	DirCacheOptions = router.DirCacheOptions
 	// DirListRichOptions the options for the `DirListRich` helper function.
 	// A shortcut for the `router.DirListRichOptions`.
 	// Useful when `DirListRich` function is passed to `DirOptions.DirList` field.
 	DirListRichOptions = router.DirListRichOptions
+	// Attachments options for files to be downloaded and saved locally by the client.
+	// See `DirOptions`.
+	Attachments = router.Attachments
+	// Dir implements FileSystem using the native file system restricted to a
+	// specific directory tree, can be passed to the `FileServer` function
+	// and `HandleDir` method. It's an alias of `http.Dir`.
+	Dir = http.Dir
+
 	// ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
 	// Usage:
 	// Party#SetExecutionRules(ExecutionRules {
@@ -199,6 +209,22 @@ var (
 	Jet = view.Jet
 )
 
+// PrefixDir returns a new FileSystem that opens files
+// by adding the given "prefix" to the directory tree of "fs".
+func PrefixDir(prefix string, fs http.FileSystem) http.FileSystem {
+	return &prefixedDir{prefix, fs}
+}
+
+type prefixedDir struct {
+	prefix string
+	fs     http.FileSystem
+}
+
+func (p *prefixedDir) Open(name string) (http.File, error) {
+	name = path.Join(p.prefix, name)
+	return p.fs.Open(name)
+}
+
 var (
 	// Compression is a middleware which enables
 	// writing and reading using the best offered compression.
@@ -208,6 +234,11 @@ var (
 		ctx.Next()
 	}
 
+	// MatchImagesAssets is a simple regex expression
+	// that can be passed to the DirOptions.Cache.CompressIgnore field
+	// in order to skip compression on already-compressed file types
+	// such as images and pdf.
+	MatchImagesAssets = regexp.MustCompile("((.*).pdf|(.*).jpg|(.*).jpeg|(.*).gif|(.*).tif|(.*).tiff)$")
 	// MatchCommonAssets is a simple regex expression which
 	// can be used on `DirOptions.PushTargetsRegexp`.
 	// It will match and Push

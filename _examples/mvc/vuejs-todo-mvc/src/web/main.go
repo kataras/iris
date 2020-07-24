@@ -20,7 +20,7 @@ func main() {
 	// no need for any server-side template here,
 	// actually if you're going to just use vue without any
 	// back-end services, you can just stop afer this line and start the server.
-	app.HandleDir("/", "./public")
+	app.HandleDir("/", iris.Dir("./public"))
 
 	// configure the http sessions.
 	sess := sessions.New(sessions.Config{

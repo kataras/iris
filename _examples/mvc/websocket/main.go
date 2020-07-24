@@ -17,7 +17,7 @@ func main() {
 	// app.RegisterView(iris.HTML("./views", ".html"))
 
 	// render the ./browser/index.html.
-	app.HandleDir("/", "./browser")
+	app.HandleDir("/", iris.Dir("./browser"))
 
 	websocketAPI := app.Party("/websocket")
 

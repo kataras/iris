@@ -1,6 +1,8 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/macro"
@@ -149,20 +151,17 @@ type Party interface {
 	// with the contents of a file system (physical or embedded).
 	//
 	// first parameter  : the route path
-	// second parameter : the system or the embedded directory that needs to be served
-	// third parameter  : not required, the directory options, set fields is optional.
+	// second parameter : the file system needs to be served
+	// third parameter  : not required, the serve directory options.
 	//
 	// Alternatively, to get just the handler for that look the FileServer function instead.
 	//
-	//     api.HandleDir("/static", "./assets",  DirOptions {
-	//								ShowList: true,
-	//								Compress: true,
-	//								IndexName: "index.html"})
+	//     api.HandleDir("/static", iris.Dir("./assets"), iris.DirOptions{IndexName: "/index.html", Compress: true})
 	//
 	// Returns all the registered routes, including GET index and path patterm and HEAD.
 	//
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-	HandleDir(requestPath, directory string, opts ...DirOptions) []*Route
+	HandleDir(requestPath string, fs http.FileSystem, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and

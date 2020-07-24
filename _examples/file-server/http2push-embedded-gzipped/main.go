@@ -1,50 +1,41 @@
 package main
 
 import (
+	"regexp"
+
 	"github.com/kataras/iris/v12"
 )
 
-// Follow the steps below:
-// $ go get -u github.com/kataras/bindata/cmd/bindata
-//
-// $ bindata -prefix "../http2push/" ../http2push/assets/...
-// # OR if the ./assets directory was inside this example foder:
-// # bindata ./assets/...
-//
+// How to run:
+// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// $ go-bindata -nomemcopy -fs -prefix "../http2push/assets" ../http2push/assets/...
 // $ go run .
-// Physical files are not used, you can delete the "assets" folder and run the example.
 
 var opts = iris.DirOptions{
-	IndexName: "/index.html",
-	PushTargets: map[string][]string{
-		"/": { // Relative path without route prefix.
-			"favicon.ico",
-			"js/main.js",
-			"css/main.css",
-			// ^ Relative to the index, if need absolute ones start with a slash ('/').
-		},
+	IndexName: "index.html",
+	PushTargetsRegexp: map[string]*regexp.Regexp{
+		"/":              iris.MatchCommonAssets,
+		"/app2/app2app3": iris.MatchCommonAssets,
 	},
-	// OR:
-	// PushTargetsRegexp: map[string]*regexp.Regexp{
-	// 	"/":              iris.MatchCommonAssets,
-	// 	"/app2/app2app3": iris.MatchCommonAssets,
-	// },
-	Compress:   false, // SHOULD be set to false, files already compressed.
-	ShowList:   true,
-	Asset:      GzipAsset,
-	AssetInfo:  GzipAssetInfo,
-	AssetNames: GzipAssetNames,
-	// Required for pre-compressed files:
-	AssetValidator: func(ctx iris.Context, _ string) bool {
-		// ctx.Header("Vary", "Content-Encoding")
-		ctx.Header("Content-Encoding", "gzip")
-		return true
+	ShowList: true,
+	Cache: iris.DirCacheOptions{
+		Enable:         true,
+		CompressIgnore: iris.MatchImagesAssets,
+		// Here, define the encodings that the cached files should be pre-compressed
+		// and served based on client's needs.
+		Encodings:       []string{"gzip", "deflate", "br", "snappy"},
+		CompressMinSize: 50, // files smaller than this size will NOT be compressed.
+		Verbose:         1,
 	},
 }
 
 func main() {
 	app := iris.New()
-	app.HandleDir("/public", "./assets", opts)
+	app.HandleDir("/public", AssetFile(), opts)
 
+	// https://127.0.0.1/public
+	// https://127.0.0.1/public/app2
+	// https://127.0.0.1/public/app2/app2app3
+	// https://127.0.0.1/public/app2/app2app3/dirs
 	app.Run(iris.TLS(":443", "../http2push/mycert.crt", "../http2push/mykey.key"))
 }

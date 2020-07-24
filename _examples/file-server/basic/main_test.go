@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 )
 
@@ -98,7 +99,7 @@ func TestHandleDirDot(t *testing.T) {
 		"/v1/assets.system/css/main.css",
 	}
 	app := newApp()
-	app.Subdomain("test").Party("/v1").HandleDir("/assets.system", "./assets.system")
+	app.Subdomain("test").Party("/v1").HandleDir("/assets.system", iris.Dir("./assets.system"))
 
 	e := httptest.New(t, app, httptest.URL("http://test.example.com"))
 	for _, u := range urls {

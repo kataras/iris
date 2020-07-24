@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/zserge/webview"
+	"github.com/webview/webview"
 )
 
 const addr = "127.0.0.1:8080"
@@ -18,7 +18,7 @@ const addr = "127.0.0.1:8080"
 	#
 	#
 	# Note: if you see "use option -std=c99 or -std=gnu99 to compile your code"
-	# please refer to: https://github.com/zserge/webview/issues/188
+	# please refer to: https://github.com/webview/webview/issues/188
 */
 func main() {
 	go runServer()
