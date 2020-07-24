@@ -208,8 +208,27 @@ func fromDependentFunc(v reflect.Value, dest *Dependency, funcDependencies []*De
 	}
 
 	bindings := getBindingsForFunc(v, funcDependencies, -1 /* parameter bindings are disabled for depent dependencies */)
+
 	numIn := typ.NumIn()
 	numOut := typ.NumOut()
+
+	// d1 = Logger
+	// d2 = func(Logger) S1
+	// d2 should be static: it accepts dependencies that are static
+	// (note: we don't check the output argument(s) of this dependnecy).
+	if numIn == len(bindings) {
+		static := true
+		for _, b := range bindings {
+			if !b.Dependency.Static && matchDependency(b.Dependency, typ.In(b.Input.Index)) {
+				static = false
+				break
+			}
+		}
+
+		if static {
+			dest.Static = static
+		}
+	}
 
 	firstOutIsError := numOut == 1 && isError(typ.Out(0))
 	secondOutIsError := numOut == 2 && isError(typ.Out(1))
@@ -241,5 +260,6 @@ func fromDependentFunc(v reflect.Value, dest *Dependency, funcDependencies []*De
 
 	dest.DestType = typ.Out(0)
 	dest.Handle = handler
+
 	return true
 }
