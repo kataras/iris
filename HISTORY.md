@@ -371,6 +371,8 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Fix [#1569#issuecomment-663739177](https://github.com/kataras/iris/issues/1569#issuecomment-663739177).
+
 - Fix [#1564](https://github.com/kataras/iris/issues/1564).
 
 - Fix [#1553](https://github.com/kataras/iris/issues/1553).

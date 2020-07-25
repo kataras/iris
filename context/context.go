@@ -600,6 +600,7 @@ func (ctx *Context) StopWithText(statusCode int, plainText string) {
 
 // StopWithError stops the handlers chain and writes the "statusCode"
 // among with the error "err".
+// It Calls the `SetErr` method so error handlers can access the given error.
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
@@ -608,6 +609,7 @@ func (ctx *Context) StopWithError(statusCode int, err error) {
 		return
 	}
 
+	ctx.SetErr(err)
 	ctx.StopWithText(statusCode, err.Error())
 }
 
@@ -4255,7 +4257,9 @@ func (ctx *Context) MaxAge() int64 {
 // which can be used to reset the body, reset headers, get the body,
 // get & set the status code at any time and more.
 func (ctx *Context) Record() {
-	if w, ok := ctx.writer.(*responseWriter); ok {
+	switch w := ctx.writer.(type) {
+	case *ResponseRecorder:
+	default:
 		recorder := AcquireResponseRecorder()
 		recorder.BeginRecord(w)
 		ctx.ResetResponseWriter(recorder)

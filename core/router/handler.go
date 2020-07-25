@@ -473,6 +473,11 @@ func (h *routerHandler) FireErrorCode(ctx *context.Context) {
 			// reset if previous content and it's recorder, keep the status code.
 			w.ClearHeaders()
 			w.ResetBody()
+
+			if cw, ok := w.ResponseWriter.(*context.CompressResponseWriter); ok {
+				// recorder wraps a compress writer.
+				cw.Disabled = true
+			}
 		} else if w, ok := ctx.ResponseWriter().(*context.CompressResponseWriter); ok {
 			// reset and disable the gzip in order to be an expected form of http error result
 			w.Disabled = true
