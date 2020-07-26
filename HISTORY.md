@@ -357,6 +357,10 @@ Response:
 
 Other Improvements:
 
+- Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
+
+[![](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)
+
 - [gRPC](https://grpc.io/) features:
     - New Router [Wrapper](middleware/grpc).
     - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
@@ -370,10 +374,6 @@ Other Improvements:
 #### DBUG Routes (2)
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
-
-- Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
-
-[![](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)
 
 - Fix [#1569#issuecomment-663739177](https://github.com/kataras/iris/issues/1569#issuecomment-663739177).
 
