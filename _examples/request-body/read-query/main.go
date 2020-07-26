@@ -1,4 +1,5 @@
-// package main contains an example on how to use the ReadForm, but with the same way you can do the ReadJSON & ReadJSON
+// package main contains an example on how to use the ReadQuery,
+// same way you can do the ReadJSON & ReadProtobuf and e.t.c.
 package main
 
 import (

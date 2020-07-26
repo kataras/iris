@@ -152,13 +152,23 @@ func (w *ResponseRecorder) FlushResponse() {
 		}
 	}
 
-	// NOTE: before the ResponseWriter.Write in order to:
-	// set the given status code even if the body is empty.
-	w.ResponseWriter.FlushResponse()
+	cw, mustWriteToClose := w.ResponseWriter.(*CompressResponseWriter)
+	if mustWriteToClose { // see #1569#issuecomment-664003098
+		cw.FlushHeaders()
+	} else {
+		// NOTE: before the ResponseWriter.Write in order to:
+		// set the given status code even if the body is empty.
+		w.ResponseWriter.FlushResponse()
+	}
 
 	if len(w.chunks) > 0 {
 		// ignore error
 		w.ResponseWriter.Write(w.chunks)
+	}
+
+	if mustWriteToClose {
+		cw.CompressWriter.Close()
+		cw.ResponseWriter.FlushResponse()
 	}
 }
 

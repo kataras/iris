@@ -241,17 +241,22 @@ func releaseCompressResponseWriter(w *CompressResponseWriter) {
 // and writes the status code.
 // Called automatically before `EndResponse`.
 func (w *CompressResponseWriter) FlushResponse() {
+	w.FlushHeaders()
+
+	// write the status, after header set and before any flushed content sent.
+	w.ResponseWriter.FlushResponse()
+
+	w.CompressWriter.Close() // flushes and closes.
+}
+
+func (w *CompressResponseWriter) FlushHeaders() {
 	if w.Disabled {
 		w.Header().Del(VaryHeaderKey)
 		w.Header().Del(ContentEncodingHeaderKey)
 		w.CompressWriter.Reset(&noOpWriter{})
-		w.CompressWriter.Close()
 	} else {
 		w.ResponseWriter.Header().Del(ContentLengthHeaderKey)
-		w.CompressWriter.Close() // flushes and closes.
 	}
-
-	w.ResponseWriter.FlushResponse()
 }
 
 // EndResponse reeases the writers.
