@@ -57,7 +57,9 @@ type ConfigurationReadOnly interface {
 	GetViewDataContextKey() string
 
 	// GetRemoteAddrHeaders returns RemoteAddrHeaders field.
-	GetRemoteAddrHeaders() map[string]bool
+	GetRemoteAddrHeaders() []string
+	// GetRemoteAddrHeadersForce returns RemoteAddrHeadersForce field.
+	GetRemoteAddrHeadersForce() bool
 	// GetRemoteAddrPrivateSubnets returns the RemoteAddrPrivateSubnets field.
 	GetRemoteAddrPrivateSubnets() []netutil.IPRange
 	// GetSSLProxyHeaders returns the SSLProxyHeaders field.

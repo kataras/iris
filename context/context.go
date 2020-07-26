@@ -803,24 +803,38 @@ func (ctx *Context) FullRequestURI() string {
 // Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
 //
 // If parse based on these headers fail then it will return the Request's `RemoteAddr` field
-// which is filled by the server before the HTTP handler.
+// which is filled by the server before the HTTP handler,
+// unless the Configuration.RemoteAddrHeadersForce was set to true
+// which will force this method to return the first IP from RemoteAddrHeaders
+// even if it's part of a private network.
 //
 // Look `Configuration.RemoteAddrHeaders`,
+//		`Configuration.RemoteAddrHeadersForce`,
 //      `Configuration.WithRemoteAddrHeader(...)`,
 //      `Configuration.WithoutRemoteAddrHeader(...)` and
 //      `Configuration.RemoteAddrPrivateSubnets` for more.
 func (ctx *Context) RemoteAddr() string {
-	remoteHeaders := ctx.app.ConfigurationReadOnly().GetRemoteAddrHeaders()
-	privateSubnets := ctx.app.ConfigurationReadOnly().GetRemoteAddrPrivateSubnets()
+	if remoteHeaders := ctx.app.ConfigurationReadOnly().GetRemoteAddrHeaders(); len(remoteHeaders) > 0 {
+		privateSubnets := ctx.app.ConfigurationReadOnly().GetRemoteAddrPrivateSubnets()
 
-	for headerName, enabled := range remoteHeaders {
-		if !enabled {
-			continue
+		for _, headerName := range remoteHeaders {
+			ipAddresses := strings.Split(ctx.GetHeader(headerName), ",")
+			if ip, ok := netutil.GetIPAddress(ipAddresses, privateSubnets); ok {
+				return ip
+			}
 		}
 
-		ipAddresses := strings.Split(ctx.GetHeader(headerName), ",")
-		if ip, ok := netutil.GetIPAddress(ipAddresses, privateSubnets); ok {
-			return ip
+		if ctx.app.ConfigurationReadOnly().GetRemoteAddrHeadersForce() {
+			for _, headerName := range remoteHeaders {
+				// return the first valid IP,
+				//  even if it's a part of a private network.
+				ipAddresses := strings.Split(ctx.GetHeader(headerName), ",")
+				for _, addr := range ipAddresses {
+					if ip, _, err := net.SplitHostPort(addr); err == nil {
+						return ip
+					}
+				}
+			}
 		}
 	}
 

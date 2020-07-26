@@ -375,6 +375,8 @@ Other Improvements:
 
 ![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
+- Add `Configuration.RemoteAddrHeadersForce bool` to force `Context.RemoteAddr() string` to return the first entry of request headers as a fallback instead of the `Request.RemoteAddr` one, as requested at: [1567#issuecomment-663972620](https://github.com/kataras/iris/issues/1567#issuecomment-663972620).
+
 - Fix [#1569#issuecomment-663739177](https://github.com/kataras/iris/issues/1569#issuecomment-663739177).
 
 - Fix [#1564](https://github.com/kataras/iris/issues/1564).
@@ -516,6 +518,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `Configuration.RemoteAddrHeaders` from `map[string]bool` to `[]string`. If you used `With(out)RemoteAddrHeader` then you are ready to proceed without any code changes for that one.
 - `ctx.Gzip(boolean)` replaced with `ctx.CompressWriter(boolean) error`.
 - `ctx.GzipReader(boolean) error` replaced with `ctx.CompressReader(boolean) error`.
 - `iris.Gzip` and `iris.GzipReader` replaced with `iris.Compression` (middleware).

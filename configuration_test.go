@@ -154,9 +154,9 @@ DisableBodyConsumptionOnUnmarshal: true
 TimeFormat: "Mon, 02 Jan 2006 15:04:05 GMT"
 Charset: "utf-8"
 RemoteAddrHeaders:
-  X-Real-Ip: true
-  X-Forwarded-For: true
-  CF-Connecting-IP: true
+  - X-Real-Ip
+  - X-Forwarded-For
+  - CF-Connecting-IP
 HostProxyHeaders:
   X-Host: true
 SSLProxyHeaders:
@@ -210,19 +210,19 @@ Other:
 		t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders to be filled")
 	}
 
-	expectedRemoteAddrHeaders := map[string]bool{
-		"X-Real-Ip":        true,
-		"X-Forwarded-For":  true,
-		"CF-Connecting-IP": true,
+	expectedRemoteAddrHeaders := []string{
+		"X-Real-Ip",
+		"X-Forwarded-For",
+		"CF-Connecting-IP",
 	}
 
 	if expected, got := len(c.RemoteAddrHeaders), len(expectedRemoteAddrHeaders); expected != got {
 		t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders' len(%d) and got(%d), len is not the same", expected, got)
 	}
 
-	for k, v := range c.RemoteAddrHeaders {
-		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
-			t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+	for i, v := range c.RemoteAddrHeaders {
+		if expected, got := expectedRemoteAddrHeaders[i], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders[%d] = %s but got %s", i, expected, got)
 		}
 	}
 
@@ -285,10 +285,7 @@ DisableBodyConsumptionOnUnmarshal = true
 TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 Charset = "utf-8"
 
-[RemoteAddrHeaders]
-    X-Real-Ip = true
-    X-Forwarded-For = true
-    CF-Connecting-IP = true
+RemoteAddrHeaders = ["X-Real-Ip", "X-Forwarded-For", "CF-Connecting-IP"]
 
 [Other]
 	# Indentation (tabs and/or spaces) is allowed but not required
@@ -337,19 +334,19 @@ Charset = "utf-8"
 		t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders to be filled")
 	}
 
-	expectedRemoteAddrHeaders := map[string]bool{
-		"X-Real-Ip":        true,
-		"X-Forwarded-For":  true,
-		"CF-Connecting-IP": true,
+	expectedRemoteAddrHeaders := []string{
+		"X-Real-Ip",
+		"X-Forwarded-For",
+		"CF-Connecting-IP",
 	}
 
 	if expected, got := len(c.RemoteAddrHeaders), len(expectedRemoteAddrHeaders); expected != got {
 		t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders' len(%d) and got(%d), len is not the same", expected, got)
 	}
 
-	for k, v := range c.RemoteAddrHeaders {
-		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
-			t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+	for i, got := range c.RemoteAddrHeaders {
+		if expected := expectedRemoteAddrHeaders[i]; expected != got {
+			t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders[%d] = %s but got %s", i, expected, got)
 		}
 	}
 

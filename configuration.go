@@ -351,48 +351,38 @@ func WithPostMaxMemory(limit int64) Configurator {
 	}
 }
 
-// WithRemoteAddrHeader enables or adds a new or existing request header name
+// WithRemoteAddrHeader adds a new request header name
 // that can be used to validate the client's real IP.
-//
-// By-default no "X-" header is consired safe to be used for retrieving the
-// client's IP address, because those headers can manually change by
-// the client. But sometimes are useful e.g., when behind a proxy
-// you want to enable the "X-Forwarded-For" or when cloudflare
-// you want to enable the "CF-Connecting-IP", inneed you
-// can allow the `ctx.RemoteAddr()` to use any header
-// that the client may sent.
-//
-// Defaults to an empty map but an example usage is:
-// WithRemoteAddrHeader("X-Forwarded-For", "CF-Connecting-IP")
-//
-// Look `context.RemoteAddr()` for more.
 func WithRemoteAddrHeader(header ...string) Configurator {
 	return func(app *Application) {
-		if app.config.RemoteAddrHeaders == nil {
-			app.config.RemoteAddrHeaders = make(map[string]bool)
-		}
+		for _, h := range header {
+			exists := false
+			for _, v := range app.config.RemoteAddrHeaders {
+				if v == h {
+					exists = true
+				}
+			}
 
-		for _, k := range header {
-			app.config.RemoteAddrHeaders[k] = true
+			if !exists {
+				app.config.RemoteAddrHeaders = append(app.config.RemoteAddrHeaders, h)
+			}
 		}
 	}
 }
 
-// WithoutRemoteAddrHeader disables an existing request header name
+// WithoutRemoteAddrHeader removes an existing request header name
 // that can be used to validate and parse the client's real IP.
-//
-//
-// Keep note that RemoteAddrHeaders is already defaults to an empty map
-// so you don't have to call this Configurator if you didn't
-// add allowed headers via configuration or via `WithRemoteAddrHeader` before.
 //
 // Look `context.RemoteAddr()` for more.
 func WithoutRemoteAddrHeader(headerName string) Configurator {
 	return func(app *Application) {
-		if app.config.RemoteAddrHeaders == nil {
-			app.config.RemoteAddrHeaders = make(map[string]bool)
+		tmp := app.config.RemoteAddrHeaders[:0]
+		for _, v := range app.config.RemoteAddrHeaders {
+			if v != headerName {
+				tmp = append(tmp, v)
+			}
 		}
-		app.config.RemoteAddrHeaders[headerName] = false
+		app.config.RemoteAddrHeaders = tmp
 	}
 }
 
@@ -783,21 +773,27 @@ type Configuration struct {
 	// that can be valid to parse the client's IP based on.
 	// By-default no "X-" header is consired safe to be used for retrieving the
 	// client's IP address, because those headers can manually change by
-	// the client. But sometimes are useful e.g., when behind a proxy
+	// the client. But sometimes are useful e.g. when behind a proxy
 	// you want to enable the "X-Forwarded-For" or when cloudflare
-	// you want to enable the "CF-Connecting-IP", inneed you
+	// you want to enable the "CF-Connecting-IP", indeed you
 	// can allow the `ctx.RemoteAddr()` to use any header
 	// that the client may sent.
 	//
-	// Defaults to an empty map but an example usage is:
+	// Defaults to an empty slice but an example usage is:
 	// RemoteAddrHeaders {
-	//	"X-Real-Ip":             true,
-	//  "X-Forwarded-For":       true,
-	// 	"CF-Connecting-IP": 	 true,
+	//	"X-Real-Ip",
+	//  "X-Forwarded-For",
+	// 	"CF-Connecting-IP",
 	//	}
 	//
 	// Look `context.RemoteAddr()` for more.
-	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
+	RemoteAddrHeaders []string `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
+	// RemoteAddrHeadersForce forces the `Context.RemoteAddr()` method
+	// to return the first entry of a request header as a fallback,
+	// even if that IP is a part of the `RemoteAddrPrivateSubnets` list.
+	// The default behavior, if a remote address is part of the `RemoteAddrPrivateSubnets`,
+	// is to retrieve the IP from the `Request.RemoteAddr` field instead.
+	RemoteAddrHeadersForce bool `json:"remoteAddrHeadersForce,omitempty" yaml:"RemoteAddrHeadersForce" toml:"RemoteAddrHeadersForce"`
 	// RemoteAddrPrivateSubnets defines the private sub-networks.
 	// They are used to be compared against
 	// IP Addresses fetched through `RemoteAddrHeaders` or `Context.Request.RemoteAddr`.
@@ -960,8 +956,13 @@ func (c Configuration) GetViewDataContextKey() string {
 }
 
 // GetRemoteAddrHeaders returns the RemoteAddrHeaders field.
-func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
+func (c Configuration) GetRemoteAddrHeaders() []string {
 	return c.RemoteAddrHeaders
+}
+
+// GetRemoteAddrHeadersForce returns RemoteAddrHeadersForce field.
+func (c Configuration) GetRemoteAddrHeadersForce() bool {
+	return c.RemoteAddrHeadersForce
 }
 
 // GetSSLProxyHeaders returns the SSLProxyHeaders field.
@@ -1102,12 +1103,11 @@ func WithConfiguration(c Configuration) Configurator {
 		}
 
 		if v := c.RemoteAddrHeaders; len(v) > 0 {
-			if main.RemoteAddrHeaders == nil {
-				main.RemoteAddrHeaders = make(map[string]bool, len(v))
-			}
-			for key, value := range v {
-				main.RemoteAddrHeaders[key] = value
-			}
+			main.RemoteAddrHeaders = v
+		}
+
+		if v := c.RemoteAddrHeadersForce; v {
+			main.RemoteAddrHeadersForce = v
 		}
 
 		if v := c.RemoteAddrPrivateSubnets; len(v) > 0 {
@@ -1165,13 +1165,14 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:        32 << 20, // 32MB
-		LocaleContextKey:     "iris.locale",
-		LanguageContextKey:   "iris.locale.language",
-		VersionContextKey:    "iris.api.version",
-		ViewLayoutContextKey: "iris.viewLayout",
-		ViewDataContextKey:   "iris.viewData",
-		RemoteAddrHeaders:    make(map[string]bool),
+		PostMaxMemory:          32 << 20, // 32MB
+		LocaleContextKey:       "iris.locale",
+		LanguageContextKey:     "iris.locale.language",
+		VersionContextKey:      "iris.api.version",
+		ViewLayoutContextKey:   "iris.viewLayout",
+		ViewDataContextKey:     "iris.viewData",
+		RemoteAddrHeaders:      nil,
+		RemoteAddrHeadersForce: false,
 		RemoteAddrPrivateSubnets: []netutil.IPRange{
 			{
 				Start: net.ParseIP("10.0.0.0"),
