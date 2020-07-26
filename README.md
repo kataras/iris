@@ -92,6 +92,39 @@ func create(ctx iris.Context) {
 }
 ```
 
+**MVC** equivalent:
+
+```go
+import "github.com/kataras/iris/v12/mvc"
+```
+
+```go
+m := mvc.New(booksAPI)
+m.Handle(new(BookController))
+```
+
+```go
+type BookController struct {
+	/* dependencies */
+}
+
+// GET: http://localhost:8080/books
+func (c *BookController) Get() []Book {
+	return []Book{
+		{"Mastering Concurrency in Go"},
+		{"Go Design Patterns"},
+		{"Black Hat Go"},
+	}
+}
+
+// POST: http://localhost:8080/books
+func (c *BookController) Post(b Book) int {
+	println("Received Book: " + b.Title)
+
+	return iris.StatusCreated
+}
+```
+
 **Run** your Iris web server:
 
 ```sh
