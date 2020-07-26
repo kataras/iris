@@ -167,8 +167,8 @@ func (w *ResponseRecorder) FlushResponse() {
 	}
 
 	if mustWriteToClose {
-		cw.CompressWriter.Close()
 		cw.ResponseWriter.FlushResponse()
+		cw.CompressWriter.Close()
 	}
 }
 
