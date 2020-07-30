@@ -243,12 +243,24 @@ func releaseCompressResponseWriter(w *CompressResponseWriter) {
 func (w *CompressResponseWriter) FlushResponse() {
 	w.FlushHeaders()
 
+	/* this should NEVER happen, see `context.CompressWriter` method.
+	if rec, ok := w.ResponseWriter.(*ResponseRecorder); ok {
+		// Usecase: record, then compression.
+		w.CompressWriter.Close() // flushes and closes.
+		rec.FlushResponse()
+		return
+	}
+	*/
+
 	// write the status, after header set and before any flushed content sent.
 	w.ResponseWriter.FlushResponse()
 
 	w.CompressWriter.Close() // flushes and closes.
 }
 
+// FlushHeaders deletes the encoding headers if
+// the compressed writer was disabled otherwise
+// removes the content-length so next callers can re-calculate the correct length.
 func (w *CompressResponseWriter) FlushHeaders() {
 	if w.Disabled {
 		w.Header().Del(VaryHeaderKey)
@@ -293,4 +305,19 @@ func (w *CompressResponseWriter) Flush() {
 	}
 
 	w.ResponseWriter.Flush()
+}
+
+// WriteTo writes the "p" to "dest" Writer using the compression that this compress writer was made of.
+func (w *CompressResponseWriter) WriteTo(dest io.Writer, p []byte) (int, error) {
+	if w.Disabled {
+		return dest.Write(p)
+	}
+
+	cw, err := NewCompressWriter(dest, w.Encoding, w.Level)
+	if err != nil {
+		return 0, err
+	}
+	n, err := cw.Write(p)
+	cw.Close()
+	return n, err
 }

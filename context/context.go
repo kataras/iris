@@ -2297,22 +2297,42 @@ func (ctx *Context) ClientSupportsEncoding(encodings ...string) bool {
 // Sometimes, using additional compression doesn't reduce payload size and
 // can even make the payload longer.
 func (ctx *Context) CompressWriter(enable bool) error {
-	cw, ok := ctx.writer.(*CompressResponseWriter)
-	if enable {
-		if ok {
-			// already a compress writer.
+	switch w := ctx.writer.(type) {
+	case *CompressResponseWriter:
+		if enable {
 			return nil
 		}
 
-		w, err := AcquireCompressResponseWriter(ctx.writer, ctx.request, -1)
+		w.Disabled = true
+	case *ResponseRecorder:
+		if enable {
+			// Keep the Recorder as ctx.writer.
+			// Wrap the existing net/http response writer
+			// with the compressed writer and
+			// replace the recorder's response writer
+			// reference with that compressed one.
+			// Fixes an issue when Record is called before CompressWriter.
+			cw, err := AcquireCompressResponseWriter(w.ResponseWriter, ctx.request, -1)
+			if err != nil {
+				return err
+			}
+			w.ResponseWriter = cw
+		} else {
+			cw, ok := w.ResponseWriter.(*CompressResponseWriter)
+			if ok {
+				cw.Disabled = true
+			}
+		}
+	default:
+		if !enable {
+			return nil
+		}
+
+		cw, err := AcquireCompressResponseWriter(w, ctx.request, -1)
 		if err != nil {
 			return err
 		}
-		ctx.writer = w
-	} else {
-		if ok {
-			cw.Disabled = true
-		}
+		ctx.writer = cw
 	}
 
 	return nil
@@ -4341,7 +4361,7 @@ func (ctx *Context) BeginTransaction(pipe func(t *Transaction)) {
 		}
 
 		// write the temp contents to the original writer
-		t.Context().ResponseWriter().WriteTo(ctx.writer)
+		t.Context().ResponseWriter().CopyTo(ctx.writer)
 		// give back to the transaction the original writer (SetBeforeFlush works this way and only this way)
 		// this is tricky but nessecery if we want ctx.FireStatusCode to work inside transactions
 		t.Context().ResetResponseWriter(ctx.writer)

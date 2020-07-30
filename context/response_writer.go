@@ -3,6 +3,7 @@ package context
 import (
 	"bufio"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -68,8 +69,8 @@ type ResponseWriter interface {
 	// it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseRecorder.
 	Clone() ResponseWriter
 
-	// WiteTo writes a response writer (temp: status code, headers and body) to another response writer
-	WriteTo(ResponseWriter)
+	// CopyTo writes a response writer (temp: status code, headers and body) to another response writer
+	CopyTo(ResponseWriter)
 
 	// Flusher indicates if `Flush` is supported by the client.
 	//
@@ -110,6 +111,16 @@ type ResponseWriterReseter interface {
 	// Reset should reset the whole response and reports
 	// whether it could reset successfully.
 	Reset() bool
+}
+
+// ResponseWriterWriteTo can be implemented
+// by response writers that needs a special
+// encoding before writing to their buffers.
+// E.g. a custom recorder that wraps a custom compressed one.
+//
+// Not used by the framework itself.
+type ResponseWriterWriteTo interface {
+	WriteTo(dest io.Writer, p []byte)
 }
 
 //  +------------------------------------------------------------+
@@ -300,8 +311,8 @@ func (w *responseWriter) Clone() ResponseWriter {
 	return wc
 }
 
-// WriteTo writes a response writer (temp: status code, headers and body) to another response writer.
-func (w *responseWriter) WriteTo(to ResponseWriter) {
+// CopyTo writes a response writer (temp: status code, headers and body) to another response writer.
+func (w *responseWriter) CopyTo(to ResponseWriter) {
 	// set the status code, failure status code are first class
 	if w.statusCode >= 400 {
 		to.WriteHeader(w.statusCode)

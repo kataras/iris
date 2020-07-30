@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/httptest"
 )
@@ -15,7 +16,49 @@ func TestCompression(t *testing.T) {
 	e := httptest.New(t, app)
 
 	var expectedReply = payload{Username: "Makis"}
-	body := e.GET("/").WithHeader(context.AcceptEncodingHeaderKey, context.GZIP).Expect().
+	testBody(t, e.GET("/"), expectedReply)
+}
+
+func TestCompressionAfterRecorder(t *testing.T) {
+	var expectedReply = payload{Username: "Makis"}
+
+	app := iris.New()
+	app.Use(func(ctx iris.Context) {
+		ctx.Record()
+		ctx.Next()
+	})
+	app.Use(iris.Compression)
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.JSON(expectedReply)
+	})
+
+	e := httptest.New(t, app)
+	testBody(t, e.GET("/"), expectedReply)
+}
+
+func TestCompressionBeforeRecorder(t *testing.T) {
+	var expectedReply = payload{Username: "Makis"}
+
+	app := iris.New()
+	app.Use(iris.Compression)
+	app.Use(func(ctx iris.Context) {
+		ctx.Record()
+		ctx.Next()
+	})
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.JSON(expectedReply)
+	})
+
+	e := httptest.New(t, app)
+	testBody(t, e.GET("/"), expectedReply)
+}
+
+func testBody(t *testing.T, req *httptest.Request, expectedReply interface{}) {
+	t.Helper()
+
+	body := req.WithHeader(context.AcceptEncodingHeaderKey, context.GZIP).Expect().
 		Status(httptest.StatusOK).
 		ContentEncoding(context.GZIP).
 		ContentType(context.ContentJSONHeaderValue).Body().Raw()
