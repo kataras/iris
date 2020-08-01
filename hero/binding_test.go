@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/sessions"
 )
@@ -185,7 +186,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 		},
 		// test std context, session, time, request, response writer and headers  bindings.
 		{ // 12
-			Func: func(stdContext.Context, *sessions.Session, time.Time, *http.Request, http.ResponseWriter, http.Header) testResponse {
+			Func: func(stdContext.Context, *sessions.Session, *golog.Logger, time.Time, *http.Request, http.ResponseWriter, http.Header) testResponse {
 				return testResponse{"builtin deps"}
 			},
 			Expected: []*binding{
@@ -199,11 +200,11 @@ func TestGetBindingsForFunc(t *testing.T) {
 				},
 				{
 					Dependency: NewDependency(BuiltinDependencies[3]),
-					Input:      &Input{Index: 2, Type: timeTyp},
+					Input:      &Input{Index: 2, Type: BuiltinDependencies[3].DestType},
 				},
 				{
 					Dependency: NewDependency(BuiltinDependencies[4]),
-					Input:      &Input{Index: 3, Type: BuiltinDependencies[4].DestType},
+					Input:      &Input{Index: 3, Type: timeTyp},
 				},
 				{
 					Dependency: NewDependency(BuiltinDependencies[5]),
@@ -212,6 +213,10 @@ func TestGetBindingsForFunc(t *testing.T) {
 				{
 					Dependency: NewDependency(BuiltinDependencies[6]),
 					Input:      &Input{Index: 5, Type: BuiltinDependencies[6].DestType},
+				},
+				{
+					Dependency: NewDependency(BuiltinDependencies[7]),
+					Input:      &Input{Index: 6, Type: BuiltinDependencies[7].DestType},
 				},
 			},
 		},
@@ -225,8 +230,8 @@ func TestGetBindingsForFunc(t *testing.T) {
 			},
 			Expected: []*binding{
 				{
-					Dependency: NewDependency(BuiltinDependencies[6]),
-					Input:      &Input{Index: 0, Type: BuiltinDependencies[6].DestType},
+					Dependency: NewDependency(BuiltinDependencies[7]),
+					Input:      &Input{Index: 0, Type: BuiltinDependencies[7].DestType},
 				},
 			},
 		},
@@ -247,8 +252,8 @@ func TestGetBindingsForFunc(t *testing.T) {
 			},
 			Expected: []*binding{ // only http.Header should be binded, we don't have map[string][]string registered.
 				{
-					Dependency: NewDependency(BuiltinDependencies[6]),
-					Input:      &Input{Index: 0, Type: BuiltinDependencies[6].DestType},
+					Dependency: NewDependency(BuiltinDependencies[7]),
+					Input:      &Input{Index: 0, Type: BuiltinDependencies[7].DestType},
 				},
 				{
 					Dependency: deps[len(deps)-1],
