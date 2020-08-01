@@ -153,6 +153,8 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | [http.ResponseWriter](https://golang.org/pkg/net/http/#ResponseWriter) | `ctx.ResponseWriter()` |
 | [http.Header](https://golang.org/pkg/net/http/#Header) | `ctx.Request().Header` |
 | [time.Time](https://golang.org/pkg/time/#Time) | `time.Now()` |
+| [golog.Logger](https://pkg.go.dev/github.com/kataras/golog) | Iris Logger |
+| [net.IP](https://golang.org/pkg/net/#IP) | `net.ParseIP(ctx.RemoteAddr())` |
 | `string`, | |
 | `int, int8, int16, int32, int64`, | |
 | `uint, uint8, uint16, uint32, uint64`, | |

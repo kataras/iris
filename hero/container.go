@@ -3,12 +3,15 @@ package hero
 import (
 	stdContext "context"
 	"errors"
+	"net"
 	"net/http"
 	"reflect"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/sessions"
+
+	"github.com/kataras/golog"
 )
 
 // Default is the default container value which can be used for dependencies share.
@@ -57,6 +60,10 @@ var BuiltinDependencies = []*Dependency{
 
 		return session
 	}).Explicitly(),
+	// application's logger.
+	NewDependency(func(ctx *context.Context) *golog.Logger {
+		return ctx.Application().Logger()
+	}).Explicitly(),
 	// time.Time to time.Now dependency.
 	NewDependency(func(ctx *context.Context) time.Time {
 		return time.Now()
@@ -72,6 +79,10 @@ var BuiltinDependencies = []*Dependency{
 	// http headers dependency.
 	NewDependency(func(ctx *context.Context) http.Header {
 		return ctx.Request().Header
+	}).Explicitly(),
+	// Client IP.
+	NewDependency(func(ctx *context.Context) net.IP {
+		return net.ParseIP(ctx.RemoteAddr())
 	}).Explicitly(),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }

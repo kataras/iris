@@ -1,6 +1,7 @@
 package hero
 
 import (
+	"net"
 	"reflect"
 
 	"github.com/kataras/iris/v12/context"
@@ -41,9 +42,12 @@ func isFunc(kindable interface{ Kind() reflect.Kind }) bool {
 	return kindable.Kind() == reflect.Func
 }
 
-var inputTyp = reflect.TypeOf((*Input)(nil))
+var (
+	inputTyp = reflect.TypeOf((*Input)(nil))
+	errTyp   = reflect.TypeOf((*error)(nil)).Elem()
 
-var errTyp = reflect.TypeOf((*error)(nil)).Elem()
+	ipTyp = reflect.TypeOf(net.IP{})
+)
 
 // isError returns true if "typ" is type of `error`.
 func isError(typ reflect.Type) bool {
@@ -219,6 +223,10 @@ func isZero(v reflect.Value) bool {
 	if !v.CanInterface() {
 		// if can't interface, i.e return value from unexported field or method then return false
 		return false
+	}
+
+	if v.Type() == ipTyp {
+		return len(v.Interface().(net.IP)) == 0
 	}
 
 	zero := reflect.Zero(v.Type())
