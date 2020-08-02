@@ -172,6 +172,7 @@
         * [BoltDB](sessions/database/boltdb/main.go)
         * [Redis](sessions/database/redis/main.go)
 * Websocket
+    * [Gorilla FileWatch (3rd-party)](websocket/gorilla-filewatch/main.go)
     * [Basic](websocket/basic)
         * [Server](websocket/basic/server.go)
         * [Go Client](websocket/basic/go-client/client.go)
