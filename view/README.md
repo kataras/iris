@@ -1,7 +1,7 @@
 # View
 
-Iris supports 6 template engines out-of-the-box, developers can still use any external golang template engine,
-as `context/context#ResponseWriter()` is an `io.Writer`.
+Iris supports 7 template engines out-of-the-box, developers can still use any external golang template engine,
+as `Context.ResponseWriter()` is an `io.Writer`.
 
 All of these six template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
@@ -12,6 +12,7 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 - Handlebars, its template parser is the [github.com/aymerick/raymond](https://github.com/aymerick/raymond)
 - Amber, its template parser is the [github.com/eknkc/amber](https://github.com/eknkc/amber)
 - Jet, its template parser is the [github.com/CloudyKit/jet](https://github.com/CloudyKit/jet)
+- Ace, its template parser is the [github.com/yosssi/ace](https://github.com/yosssi/ace)
 
 ## Examples
 
@@ -27,8 +28,9 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 - [Pug (Jade) Actions`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_1)
 - [Pug (Jade) Includes`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_2)
 - [Pug (Jade) Extends`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_3)
-- [Jet](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_0) **NEW**
-- [Jet Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_1_embedded) **NEW**
+- [Jet](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_0)
+- [Jet Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_1_embedded)
+- [Ace](https://github.com/kataras/iris/blob/master/_examples/view/template_ace_0)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
 

@@ -81,7 +81,7 @@ func parseYAML(filename string) (Configuration, error) {
 //
 // Accepts the absolute path of the cfg.yml.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the cfg.yml doesn't exists or is not formatted correctly.
+// Error may occur when the cfg.yml does not exist or is not formatted correctly.
 //
 // Note: if the char '~' passed as "filename" then it tries to load and return
 // the configuration from the $home_directory + iris.yml,
@@ -115,7 +115,7 @@ func YAML(filename string) Configuration {
 //
 // Accepts the absolute path of the configuration file.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the file doesn't exists or is not formatted correctly.
+// Error may occur when the file does not exist or is not formatted correctly.
 //
 // Note: if the char '~' passed as "filename" then it tries to load and return
 // the configuration from the $home_directory + iris.tml,

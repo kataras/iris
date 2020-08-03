@@ -12,8 +12,7 @@ import (
 // Pug (or Jade) returns a new pug view engine.
 // It shares the same exactly logic with the
 // html view engine, it uses the same exactly configuration.
-// It has got some features and a lot of functions
-// which will make your life easier.
+//
 // Read more about the Jade Go Parser: https://github.com/Joker/jade
 //
 // Examples:

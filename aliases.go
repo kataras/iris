@@ -207,6 +207,9 @@ var (
 	// Jet view engine.
 	// Shortcut of the kataras/iris/view.Jet.
 	Jet = view.Jet
+	// Ace view engine.
+	// Shortcut of the kataras/iris/view.Ace.
+	Ace = view.Ace
 )
 
 // PrefixDir returns a new FileSystem that opens files

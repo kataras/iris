@@ -220,5 +220,5 @@ func (s *AmberEngine) ExecuteWriter(w io.Writer, filename string, layout string,
 		return tmpl.Execute(w, bindingData)
 	}
 
-	return fmt.Errorf("Template with name %s doesn't exists in the dir", filename)
+	return fmt.Errorf("Template with name: %s does not exist in the dir: %s", filename, s.directory)
 }

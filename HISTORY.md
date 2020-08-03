@@ -359,6 +359,8 @@ Response:
 
 Other Improvements:
 
+- Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements. <!-- a new html/template-based engine, with a different layout-page syntax but better performance, follows this week. -->
+
 - Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
 
 [![](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)

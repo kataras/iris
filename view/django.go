@@ -376,5 +376,5 @@ func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, layout string
 		return tmpl.ExecuteWriter(getPongoContext(bindingData), w)
 	}
 
-	return fmt.Errorf("template with name %s doesn't exists in the dir", filename)
+	return fmt.Errorf("template with name: %s ddoes not exist in the dir: %s", filename, s.directory)
 }

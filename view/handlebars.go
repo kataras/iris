@@ -291,5 +291,5 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		return err
 	}
 
-	return fmt.Errorf("template with name %s[original name = %s] doesn't exists in the dir", renderFilename, filename)
+	return fmt.Errorf("template with name: %s[original name = %s] does not exist in the dir: %s", renderFilename, filename, s.directory)
 }

@@ -26,8 +26,8 @@ type HTMLEngine struct {
 	right       string
 	layout      string
 	rmu         sync.RWMutex // locks for layoutFuncs and funcs
-	layoutFuncs map[string]interface{}
-	funcs       map[string]interface{}
+	layoutFuncs template.FuncMap
+	funcs       template.FuncMap
 
 	//
 	middleware func(name string, contents []byte) (string, error)
@@ -38,7 +38,7 @@ type HTMLEngine struct {
 var _ Engine = (*HTMLEngine)(nil)
 
 var emptyFuncs = template.FuncMap{
-	"yield": func() (string, error) {
+	"yield": func(binding interface{}) (string, error) {
 		return "", fmt.Errorf("yield was called, yet no layout defined")
 	},
 	"part": func() (string, error) {
@@ -52,7 +52,8 @@ var emptyFuncs = template.FuncMap{
 	},
 	"current": func() (string, error) {
 		return "", nil
-	}, "render": func() (string, error) {
+	},
+	"render": func() (string, error) {
 		return "", nil
 	},
 }
@@ -70,8 +71,8 @@ func HTML(directory, extension string) *HTMLEngine {
 		left:        "{{",
 		right:       "}}",
 		layout:      "",
-		layoutFuncs: make(map[string]interface{}),
-		funcs:       make(map[string]interface{}),
+		layoutFuncs: make(template.FuncMap),
+		funcs:       make(template.FuncMap),
 	}
 
 	return s
@@ -172,10 +173,34 @@ func (s *HTMLEngine) AddLayoutFunc(funcName string, funcBody interface{}) *HTMLE
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (template.HTML, error).
-func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) {
+func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) *HTMLEngine {
 	s.rmu.Lock()
 	s.funcs[funcName] = funcBody
 	s.rmu.Unlock()
+
+	return s
+}
+
+// SetFuncs overrides the template funcs with the given "funcMap".
+func (s *HTMLEngine) SetFuncs(funcMap template.FuncMap) *HTMLEngine {
+	s.rmu.Lock()
+	s.funcs = funcMap
+	s.rmu.Unlock()
+
+	return s
+}
+
+// Funcs adds the elements of the argument map to the template's function map.
+// It is legal to overwrite elements of the map. The return
+// value is the template, so calls can be chained.
+func (s *HTMLEngine) Funcs(funcMap template.FuncMap) *HTMLEngine {
+	s.rmu.Lock()
+	for k, v := range funcMap {
+		s.funcs[k] = v
+	}
+	s.rmu.Unlock()
+
+	return s
 }
 
 // Load parses the templates to the engine.
@@ -266,6 +291,7 @@ func (s *HTMLEngine) loadDirectory() error {
 				name := filepath.ToSlash(rel)
 				tmpl := s.Templates.New(name)
 				tmpl.Option(s.options...)
+
 				if s.middleware != nil {
 					contents, err = s.middleware(name, buf)
 				}
@@ -275,7 +301,12 @@ func (s *HTMLEngine) loadDirectory() error {
 				}
 				// s.mu.Lock()
 				// Add our funcmaps.
-				_, err = tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
+				_, err = tmpl.
+					Funcs(emptyFuncs).
+					//	Funcs(s.makeDefaultLayoutFuncs(name)).
+					//	Funcs(s.layoutFuncs).
+					Funcs(s.funcs).
+					Parse(contents)
 				// s.mu.Unlock()
 				if err != nil {
 					templateErr = err
@@ -393,15 +424,28 @@ func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (*byte
 	return buf, err
 }
 
-func (s *HTMLEngine) layoutFuncsFor(name string, binding interface{}) {
+func (s *HTMLEngine) layoutFuncsFor(lt *template.Template, name string, binding interface{}) {
+	s.runtimeFuncsFor(lt, name, binding)
+
 	funcs := template.FuncMap{
 		"yield": func() (template.HTML, error) {
 			buf, err := s.executeTemplateBuf(name, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(buf.String()), err
 		},
+	}
+
+	for k, v := range s.layoutFuncs {
+		funcs[k] = v
+	}
+
+	lt.Funcs(funcs)
+}
+
+func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding interface{}) {
+	funcs := template.FuncMap{
 		"part": func(partName string) (template.HTML, error) {
-			nameTemp := strings.Replace(name, ".html", "", -1)
+			nameTemp := strings.Replace(name, s.extension, "", -1)
 			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
 			buf, err := s.executeTemplateBuf(fullPartName, binding)
 			if err != nil {
@@ -440,25 +484,7 @@ func (s *HTMLEngine) layoutFuncsFor(name string, binding interface{}) {
 		},
 	}
 
-	for k, v := range s.layoutFuncs {
-		funcs[k] = v
-	}
-	if tpl := s.Templates.Lookup(name); tpl != nil {
-		tpl.Funcs(funcs)
-	}
-}
-
-func (s *HTMLEngine) runtimeFuncsFor(name string, binding interface{}) {
-	funcs := template.FuncMap{
-		"render": func(fullPartialName string) (template.HTML, error) {
-			buf, err := s.executeTemplateBuf(fullPartialName, binding)
-			return template.HTML(buf.String()), err
-		},
-	}
-
-	if tpl := s.Templates.Lookup(name); tpl != nil {
-		tpl.Funcs(funcs)
-	}
+	t.Funcs(funcs)
 }
 
 // ExecuteWriter executes a template and writes its result to the w writer.
@@ -474,14 +500,21 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 		}
 	}
 
-	layout = getLayout(layout, s.layout)
+	if layout = getLayout(layout, s.layout); layout != "" {
+		lt := s.Templates.Lookup(layout)
+		if lt == nil {
+			return fmt.Errorf("layout: %s does not exist in the dir: %s", name, s.directory)
+		}
 
-	if layout != "" {
-		s.layoutFuncsFor(name, bindingData)
-		name = layout
-	} else {
-		s.runtimeFuncsFor(name, bindingData)
+		s.layoutFuncsFor(lt, name, bindingData)
+		return lt.Execute(w, bindingData)
 	}
 
-	return s.Templates.ExecuteTemplate(w, name, bindingData)
+	t := s.Templates.Lookup(name)
+	if t == nil {
+		return fmt.Errorf("template: %s does not exist in the dir: %s", name, s.directory)
+	}
+	s.runtimeFuncsFor(t, name, bindingData)
+
+	return t.Execute(w, bindingData)
 }
