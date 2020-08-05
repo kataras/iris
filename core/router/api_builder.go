@@ -1022,6 +1022,24 @@ func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Ro
 	return
 }
 
+// RegisterView registers and loads a view engine middleware for that group of routes.
+// It overrides any of the application's root registered view engines.
+// To register a view engine per handler chain see the `Context.ViewEngine` instead.
+// Read `Configuration.ViewEngineContextKey` documentation for more.
+func (api *APIBuilder) RegisterView(viewEngine context.ViewEngine) {
+	if err := viewEngine.Load(); err != nil {
+		api.errors.Add(err)
+		return
+	}
+
+	api.Use(func(ctx *context.Context) {
+		ctx.ViewEngine(viewEngine)
+		ctx.Next()
+	})
+	// Note (@kataras): It does not return the Party in order
+	// to keep the iris.Application a compatible Party.
+}
+
 // Layout overrides the parent template layout with a more specific layout for this Party.
 // It returns the current Party.
 //

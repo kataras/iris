@@ -51,6 +51,9 @@ type ConfigurationReadOnly interface {
 	GetLanguageContextKey() string
 	// GetVersionContextKey returns the VersionContextKey field.
 	GetVersionContextKey() string
+
+	// GetViewEngineContextKey returns the ViewEngineContextKey field.
+	GetViewEngineContextKey() string
 	// GetViewLayoutContextKey returns the ViewLayoutContextKey field.
 	GetViewLayoutContextKey() string
 	// GetViewDataContextKey returns the ViewDataContextKey field.

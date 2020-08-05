@@ -756,18 +756,30 @@ type Configuration struct {
 	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, "1.0, 1.1")`.
 	// Defaults to "iris.api.version".
 	VersionContextKey string `json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
-	// GetViewLayoutContextKey is the key of the context's user values' key
-	// which is being used to set the template
-	// layout from a middleware or the main handler.
-	// Overrides the parent's or the configuration's.
+	// ViewEngineContextKey is the context's values key
+	// responsible to store and retrieve(view.Engine) the current view engine.
+	// A middleware or a Party can modify its associated value to change
+	// a view engine that `ctx.View` will render through.
+	// If not an engine is registered by the end-developer
+	// then its associated value is always nil,
+	// meaning that the default value is nil.
+	// See `Party.RegisterView` and `Context.ViewEngine` methods as well.
 	//
-	// Defaults to "iris.ViewLayout"
+	// Defaults to "iris.view.engine".
+	ViewEngineContextKey string `json:"viewEngineContextKey,omitempty" yaml:"ViewEngineContextKey" toml:"ViewEngineContextKey"`
+	// ViewLayoutContextKey is the context's values key
+	// responsible to store and retrieve(string) the current view layout.
+	// A middleware can modify its associated value to change
+	// the layout that `ctx.View` will use to render a template.
+	//
+	// Defaults to "iris.view.layout".
 	ViewLayoutContextKey string `json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
-	// GetViewDataContextKey is the key of the context's user values' key
-	// which is being used to set the template
-	// binding data from a middleware or the main handler.
+	// ViewDataContextKey is the context's values key
+	// responsible to store and retrieve(interface{}) the current view binding data.
+	// A middleware can modify its associated value to change
+	// the template's data on-fly.
 	//
-	// Defaults to "iris.viewData"
+	// Defaults to "iris.view.data".
 	ViewDataContextKey string `json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
 	// RemoteAddrHeaders are the allowed request headers names
 	// that can be valid to parse the client's IP based on.
@@ -945,6 +957,11 @@ func (c Configuration) GetVersionContextKey() string {
 	return c.VersionContextKey
 }
 
+// GetViewEngineContextKey returns the ViewEngineContextKey field.
+func (c Configuration) GetViewEngineContextKey() string {
+	return c.ViewEngineContextKey
+}
+
 // GetViewLayoutContextKey returns the ViewLayoutContextKey field.
 func (c Configuration) GetViewLayoutContextKey() string {
 	return c.ViewLayoutContextKey
@@ -1094,10 +1111,12 @@ func WithConfiguration(c Configuration) Configurator {
 			main.VersionContextKey = v
 		}
 
+		if v := c.ViewEngineContextKey; v != "" {
+			main.ViewEngineContextKey = v
+		}
 		if v := c.ViewLayoutContextKey; v != "" {
 			main.ViewLayoutContextKey = v
 		}
-
 		if v := c.ViewDataContextKey; v != "" {
 			main.ViewDataContextKey = v
 		}
@@ -1169,8 +1188,9 @@ func DefaultConfiguration() Configuration {
 		LocaleContextKey:       "iris.locale",
 		LanguageContextKey:     "iris.locale.language",
 		VersionContextKey:      "iris.api.version",
-		ViewLayoutContextKey:   "iris.viewLayout",
-		ViewDataContextKey:     "iris.viewData",
+		ViewEngineContextKey:   "iris.view.engine",
+		ViewLayoutContextKey:   "iris.view.layout",
+		ViewDataContextKey:     "iris.view.data",
 		RemoteAddrHeaders:      nil,
 		RemoteAddrHeadersForce: false,
 		RemoteAddrPrivateSubnets: []netutil.IPRange{

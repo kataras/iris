@@ -359,6 +359,8 @@ Response:
 
 Other Improvements:
 
+- Ability to register a view engine per group of routes or for the current chain of handlers through `Party.RegisterView` and `Context.ViewEngine` respectfully.
+
 - Add [Blocks](_examples/view/template_blocks_0) template engine. <!-- Reminder for @kataras: follow https://github.com/flosch/pongo2/pull/236#issuecomment-668950566 discussion so we can get back on using the original pongo2 repository as they fixed the issue about an incompatible 3rd party package (although they need more fixes, that's why I commented there) -->
 
 - Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements.
@@ -492,8 +494,9 @@ New Package-level Variables:
 
 New Context Methods:
 
-- `Context.SetErr(error)` and `Context.GetErr() error` helpers
-- `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`
+- `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
+- `Context.SetErr(error)` and `Context.GetErr() error` helpers.
+- `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`.
 - `Context.Clone() Context` returns a copy of the Context.
 - `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).

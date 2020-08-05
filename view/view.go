@@ -5,6 +5,18 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+
+	"github.com/kataras/iris/v12/context"
+)
+
+type (
+	// Engine is the interface for a compatible Iris view engine.
+	// It's an alias of context.ViewEngine.
+	Engine = context.ViewEngine
+	// EngineFuncer is the interface for a compatible Iris view engine
+	// which accepts builtin framework functions such as url, urlpath and tr.
+	// It's an alias of context.ViewEngineFuncer.
+	EngineFuncer = context.ViewEngineFuncer
 )
 
 // View is responsible to
@@ -72,4 +84,20 @@ func (v *View) Load() error {
 		}
 	}
 	return nil
+}
+
+// NoLayout disables the configuration's layout for a specific execution.
+const NoLayout = "iris.nolayout"
+
+// returns empty if it's no layout or empty layout and empty configuration's layout.
+func getLayout(layout string, globalLayout string) string {
+	if layout == NoLayout {
+		return ""
+	}
+
+	if layout == "" && globalLayout != "" {
+		return globalLayout
+	}
+
+	return layout
 }

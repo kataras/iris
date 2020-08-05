@@ -2392,16 +2392,22 @@ func (ctx *Context) CompressReader(enable bool) error {
 //  | Rich Body Content Writers/Renderers                        |
 //  +------------------------------------------------------------+
 
-const (
-	// NoLayout to disable layout for a particular template file
-	NoLayout = "iris.nolayout"
-)
+// ViewEngine registers a view engine for the current chain of handlers.
+// It overrides any previously registered engines, including the application's root ones.
+// Note that, because performance is everything,
+// the "engine" MUST be already ready-to-use,
+// meaning that its `Load` method should be called once before this method call.
+//
+// To register a view engine per-group of groups too see `Party.RegisterView` instead.
+func (ctx *Context) ViewEngine(engine ViewEngine) {
+	ctx.values.Set(ctx.app.ConfigurationReadOnly().GetViewEngineContextKey(), engine)
+}
 
 // ViewLayout sets the "layout" option if and when .View
 // is being called afterwards, in the same request.
 // Useful when need to set or/and change a layout based on the previous handlers in the chain.
 //
-// Note that the 'layoutTmplFile' argument can be set to iris.NoLayout || view.NoLayout || context.NoLayout
+// Note that the 'layoutTmplFile' argument can be set to iris.NoLayout
 // to disable the layout for a specific view render action,
 // it disables the engine's configuration's layout property.
 //
@@ -2418,7 +2424,7 @@ func (ctx *Context) ViewLayout(layoutTmplFile string) {
 //
 // If .View's "binding" argument is not nil and it's not a type of map
 // then these data are being ignored, binding has the priority, so the main route's handler can still decide.
-// If binding is a map or context.Map then these data are being added to the view data
+// If binding is a map or iris.Map then these data are being added to the view data
 // and passed to the template.
 //
 // After .View, the data are not destroyed, in order to be re-used if needed (again, in the same request as everything else),
@@ -2457,7 +2463,7 @@ func (ctx *Context) ViewData(key string, value interface{}) {
 // A check for nil is always a good practise if different
 // kind of values or no data are registered via `ViewData`.
 //
-// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
+// Similarly to `viewData := ctx.Values().Get("iris.view.data")` or
 // `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
 func (ctx *Context) GetViewData() map[string]interface{} {
 	viewDataContextKey := ctx.app.ConfigurationReadOnly().GetViewDataContextKey()
@@ -2514,12 +2520,36 @@ func (ctx *Context) View(filename string, optionalViewModel ...interface{}) erro
 		bindingData = ctx.values.Get(cfg.GetViewDataContextKey())
 	}
 
-	err := ctx.app.View(ctx, filename, layout, bindingData)
+	if key := cfg.GetViewEngineContextKey(); key != "" {
+		if engineV := ctx.values.Get(key); engineV != nil {
+			if engine, ok := engineV.(ViewEngine); ok {
+				err := engine.ExecuteWriter(ctx, filename, layout, bindingData)
+				if err != nil {
+					ctx.app.Logger().Errorf("View [%v] [%T]: %v", ctx.getLogIdentifier(), engine, err)
+					return err
+				}
+
+				return nil
+			}
+		}
+	}
+
+	err := ctx.app.View(ctx, filename, layout, bindingData) // if failed it logs the error.
 	if err != nil {
 		ctx.StopWithStatus(http.StatusInternalServerError)
 	}
 
 	return err
+}
+
+// getLogIdentifier returns the ID, or the client remote IP address,
+// useful for internal logging of context's method failure.
+func (ctx *Context) getLogIdentifier() interface{} {
+	if id := ctx.GetID(); id != nil {
+		return id
+	}
+
+	return ctx.RemoteAddr()
 }
 
 const (

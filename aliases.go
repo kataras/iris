@@ -23,6 +23,9 @@ type (
 	// Developers send responses to the client's request through a Context.
 	// Developers get request information from the client's request by a Context.
 	Context = *context.Context
+	// ViewEngine is an alias of `context.ViewEngine`.
+	// See HTML, Blocks, Django, Jet, Pug, Ace, Handlebars, Amber and e.t.c.
+	ViewEngine = context.ViewEngine
 	// UnmarshalerFunc a shortcut, an alias for the `context#UnmarshalerFunc` type
 	// which implements the `context#Unmarshaler` interface for reading request's body
 	// via custom decoders, most of them already implement the `context#UnmarshalerFunc`

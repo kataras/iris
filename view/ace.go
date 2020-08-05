@@ -21,10 +21,11 @@ func Ace(directory, extension string) *HTMLEngine {
 	once := new(sync.Once)
 	s.middleware = func(name string, text []byte) (contents string, err error) {
 		once.Do(func() { // on first template parse, all funcs are given.
-			for k, v := range s.funcs {
+			for k, v := range emptyFuncs {
 				funcs[k] = v
 			}
-			for k, v := range emptyFuncs {
+
+			for k, v := range s.funcs {
 				funcs[k] = v
 			}
 		})

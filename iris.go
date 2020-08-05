@@ -280,7 +280,7 @@ func (app *Application) View(writer io.Writer, filename string, layout string, b
 }
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
-// can access the host created by `app.Run`,
+// can access the host created by `app.Run` or `app.Listen`,
 // they're being executed when application is ready to being served to the public.
 //
 // It's an alternative way to interact with a host that is automatically created by

@@ -241,6 +241,11 @@ type Party interface {
 	// Returns the GET *Route.
 	Favicon(favPath string, requestPath ...string) *Route
 
+	// RegisterView registers and loads a view engine middleware for that group of routes.
+	// It overrides any of the application's root registered view engines.
+	// To register a view engine per handler chain see the `Context.ViewEngine` instead.
+	// Read `Configuration.ViewEngineContextKey` documentation for more.
+	RegisterView(viewEngine context.ViewEngine)
 	// Layout overrides the parent template layout with a more specific layout for this Party.
 	// It returns the current Party.
 	//
