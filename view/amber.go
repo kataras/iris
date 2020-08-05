@@ -29,6 +29,7 @@ type AmberEngine struct {
 var _ Engine = (*AmberEngine)(nil)
 
 // Amber creates and returns a new amber view engine.
+// The given "extension" MUST begin with a dot.
 func Amber(directory, extension string) *AmberEngine {
 	s := &AmberEngine{
 		directory:     directory,

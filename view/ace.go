@@ -10,6 +10,7 @@ import (
 // Ace returns a new ace view engine.
 // It shares the same exactly logic with the
 // html view engine, it uses the same exactly configuration.
+// The given "extension" MUST begin with a dot.
 //
 // Read more about the Ace Go Parser: https://github.com/yosssi/ace
 func Ace(directory, extension string) *HTMLEngine {

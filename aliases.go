@@ -190,25 +190,29 @@ const NoLayout = view.NoLayout
 
 var (
 	// HTML view engine.
-	// Shortcut of the kataras/iris/view.HTML.
+	// Shortcut of the view.HTML.
 	HTML = view.HTML
+	// Blocks view engine.
+	// Can be used as a faster alternative of the HTML engine.
+	// Shortcut of the view.Blocks.
+	Blocks = view.Blocks
 	// Django view engine.
-	// Shortcut of the kataras/iris/view.Django.
+	// Shortcut of the view.Django.
 	Django = view.Django
 	// Handlebars view engine.
-	// Shortcut of the kataras/iris/view.Handlebars.
+	// Shortcut of the view.Handlebars.
 	Handlebars = view.Handlebars
 	// Pug view engine.
-	// Shortcut of the kataras/iris/view.Pug.
+	// Shortcut of the view.Pug.
 	Pug = view.Pug
 	// Amber view engine.
-	// Shortcut of the kataras/iris/view.Amber.
+	// Shortcut of the view.Amber.
 	Amber = view.Amber
 	// Jet view engine.
-	// Shortcut of the kataras/iris/view.Jet.
+	// Shortcut of the view.Jet.
 	Jet = view.Jet
 	// Ace view engine.
-	// Shortcut of the kataras/iris/view.Ace.
+	// Shortcut of the view.Ace.
 	Ace = view.Ace
 )
 

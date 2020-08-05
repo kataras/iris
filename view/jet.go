@@ -47,6 +47,7 @@ var jetExtensions = [...]string{
 }
 
 // Jet creates and returns a new jet view engine.
+// The given "extension" MUST begin with a dot.
 func Jet(directory, extension string) *JetEngine {
 	// if _, err := os.Stat(directory); os.IsNotExist(err) {
 	// 	panic(err)

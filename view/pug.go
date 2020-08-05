@@ -12,6 +12,7 @@ import (
 // Pug (or Jade) returns a new pug view engine.
 // It shares the same exactly logic with the
 // html view engine, it uses the same exactly configuration.
+// The given "extension" MUST begin with a dot.
 //
 // Read more about the Jade Go Parser: https://github.com/Joker/jade
 //

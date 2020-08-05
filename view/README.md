@@ -1,18 +1,21 @@
 # View
 
-Iris supports 7 template engines out-of-the-box, developers can still use any external golang template engine,
+Iris supports 8 template engines out-of-the-box, developers can still use any external golang template engine,
 as `Context.ResponseWriter()` is an `io.Writer`.
 
-All of these six template engines have common features with common API,
-like Layout, Template Funcs, Party-specific layout, partial rendering and more.
+All template engines share a common API i.e.
+Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, Partial Render and more.
 
-- The standard html, its template parser is the [golang.org/pkg/html/template/](https://golang.org/pkg/html/template/)
-- Django, its template parser is the [github.com/iris-contrib/pongo2](https://github.com/iris-contrib/pongo2)
-- Pug(Jade), its template parser is the [github.com/Joker/jade](https://github.com/Joker/jade)
-- Handlebars, its template parser is the [github.com/aymerick/raymond](https://github.com/aymerick/raymond)
-- Amber, its template parser is the [github.com/eknkc/amber](https://github.com/eknkc/amber)
-- Jet, its template parser is the [github.com/CloudyKit/jet](https://github.com/CloudyKit/jet)
-- Ace, its template parser is the [github.com/yosssi/ace](https://github.com/yosssi/ace)
+| #  | Name       | Parser   |
+|:---|:-----------|----------|
+| 1 | HTML       | [html/template](https://pkg.go.dev/html/template) |
+| 2 | Blocks     | [kataras/blocks](https://github.com/kataras/blocks) |
+| 3 | Django     | [flosch/pongo2](https://github.com/flosch/pongo2) |
+| 4 | Pug        | [Joker/jade](https://github.com/Joker/jade) |
+| 5 | Handlebars | [aymerick/raymond](https://github.com/aymerick/raymond) |
+| 6 | Amber      | [eknkc/amber](https://github.com/eknkc/amber) |
+| 7 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
+| 8 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |
 
 ## Examples
 
@@ -24,6 +27,8 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 - [The `url` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_4/main.go)
 - [Inject Data Between Handlers](https://github.com/kataras/iris/blob/master/_examples/view/context-view-data/main.go)
 - [Embedding Templates Into App Executable File](https://github.com/kataras/iris/blob/master/_examples/view/embedding-templates-into-app/main.go)
+- [Blocks](https://github.com/kataras/iris/blob/master/_examples/view/template_blocks_0)
+- [Blocks Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_blocks_1_embedded)
 - [Greeting with Pug (Jade)`](view/template_pug_0)
 - [Pug (Jade) Actions`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_1)
 - [Pug (Jade) Includes`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_2)
@@ -32,7 +37,7 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 - [Jet Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_1_embedded)
 - [Ace](https://github.com/kataras/iris/blob/master/_examples/view/template_ace_0)
 
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
 
 ## Overview
 

@@ -103,6 +103,8 @@
     * [Inject Data Between Handlers](view/context-view-data/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
     * [Write to a custom `io.Writer`](view/write-to)
+    * [Blocks](view/template_blocks_0)
+    * [Blocks Embedded](view/template_blocks_1_embedded)
     * [Pug: Greeting](view/template_pug_0)
     * [Pug: `Actions`](view/template_pug_1)
     * [Pug: `Includes`](view/template_pug_2)

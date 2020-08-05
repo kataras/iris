@@ -14,12 +14,12 @@ require (
 	github.com/gomodule/redigo v1.8.2
 	github.com/google/uuid v1.1.2-0.20200519141726-cb32006e483f
 	github.com/hashicorp/go-version v1.2.1
-	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.2
 	github.com/json-iterator/go v1.1.10
+	github.com/kataras/blocks v0.0.1
 	github.com/kataras/golog v0.0.18
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.8
@@ -28,6 +28,7 @@ require (
 	github.com/klauspost/compress v1.10.10
 	github.com/mediocregopher/radix/v3 v3.5.2
 	github.com/microcosm-cc/bluemonday v1.0.3
+	github.com/russross/blackfriday/v2 v2.0.1
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect

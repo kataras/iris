@@ -108,7 +108,8 @@ type DjangoEngine struct {
 
 var _ Engine = (*DjangoEngine)(nil)
 
-// Django creates and returns a new amber view engine.
+// Django creates and returns a new django view engine.
+// The given "extension" MUST begin with a dot.
 func Django(directory, extension string) *DjangoEngine {
 	s := &DjangoEngine{
 		directory:     directory,

@@ -30,10 +30,10 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
-	"github.com/iris-contrib/blackfriday"
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"

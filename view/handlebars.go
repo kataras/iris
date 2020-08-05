@@ -30,6 +30,7 @@ type HandlebarsEngine struct {
 var _ Engine = (*HandlebarsEngine)(nil)
 
 // Handlebars creates and returns a new handlebars view engine.
+// The given "extension" MUST begin with a dot.
 func Handlebars(directory, extension string) *HandlebarsEngine {
 	s := &HandlebarsEngine{
 		directory:     directory,

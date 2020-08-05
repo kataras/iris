@@ -61,6 +61,7 @@ var emptyFuncs = template.FuncMap{
 // HTML creates and returns a new html view engine.
 // The html engine used like the "html/template" standard go package
 // but with a lot of extra features.
+// The given "extension" MUST begin with a dot.
 func HTML(directory, extension string) *HTMLEngine {
 	s := &HTMLEngine{
 		directory:   directory,
@@ -173,6 +174,7 @@ func (s *HTMLEngine) AddLayoutFunc(funcName string, funcBody interface{}) *HTMLE
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (template.HTML, error).
+// - tr func(lang, key string, args ...interface{}) string
 func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) *HTMLEngine {
 	s.rmu.Lock()
 	s.funcs[funcName] = funcBody
@@ -206,7 +208,7 @@ func (s *HTMLEngine) Funcs(funcMap template.FuncMap) *HTMLEngine {
 // Load parses the templates to the engine.
 // It's also responsible to add the necessary global functions.
 //
-// Returns an error if something bad happens, user is responsible to catch it.
+// Returns an error if something bad happens, caller is responsible to handle that.
 func (s *HTMLEngine) Load() error {
 	// No need to make this with a complicated and "pro" way, just add lockers to the `ExecuteWriter`.
 	// if `Reload(true)` and add a note for non conc access on dev mode.
@@ -500,6 +502,12 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 		}
 	}
 
+	t := s.Templates.Lookup(name)
+	if t == nil {
+		return fmt.Errorf("template: %s does not exist in the dir: %s", name, s.directory)
+	}
+	s.runtimeFuncsFor(t, name, bindingData)
+
 	if layout = getLayout(layout, s.layout); layout != "" {
 		lt := s.Templates.Lookup(layout)
 		if lt == nil {
@@ -509,12 +517,6 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 		s.layoutFuncsFor(lt, name, bindingData)
 		return lt.Execute(w, bindingData)
 	}
-
-	t := s.Templates.Lookup(name)
-	if t == nil {
-		return fmt.Errorf("template: %s does not exist in the dir: %s", name, s.directory)
-	}
-	s.runtimeFuncsFor(t, name, bindingData)
 
 	return t.Execute(w, bindingData)
 }

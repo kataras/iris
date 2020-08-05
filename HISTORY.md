@@ -359,7 +359,9 @@ Response:
 
 Other Improvements:
 
-- Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements. <!-- a new html/template-based engine, with a different layout-page syntax but better performance, follows this week. -->
+- Add [Blocks](_examples/view/template_blocks_0) template engine. <!-- Reminder for @kataras: follow https://github.com/flosch/pongo2/pull/236#issuecomment-668950566 discussion so we can get back on using the original pongo2 repository as they fixed the issue about an incompatible 3rd party package (although they need more fixes, that's why I commented there) -->
+
+- Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements.
 
 - Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
 
