@@ -303,7 +303,7 @@ var acquireGoroutines = func() interface{} {
 }
 
 func (ctx *Context) Go(fn func(cancelCtx stdContext.Context)) (running int) {
-	g := ctx.Values().GetOrSet(goroutinesContextKey, acquireGoroutines).(*goroutines)
+	g := ctx.values.GetOrSet(goroutinesContextKey, acquireGoroutines).(*goroutines)
 	if fn != nil {
 		g.wg.Add(1)
 
@@ -611,6 +611,18 @@ func (ctx *Context) StopWithError(statusCode int, err error) {
 
 	ctx.SetErr(err)
 	ctx.StopWithText(statusCode, err.Error())
+}
+
+// StopWithPlainError like `StopWithError` but it does NOT
+// write anything to the response writer, it stores the error
+// so any error handler matching the given "statusCode" can handle it by its own.
+func (ctx *Context) StopWithPlainError(statusCode int, err error) {
+	if err == nil {
+		return
+	}
+
+	ctx.SetErr(err)
+	ctx.StopWithStatus(statusCode)
 }
 
 // StopWithJSON stops the handlers chain, writes the status code
@@ -4459,7 +4471,7 @@ func (ctx *Context) Exec(method string, path string) {
 	// backup the request path information
 	backupPath := req.URL.Path
 	backupMethod := req.Method
-	// don't backupValues := ctx.Values().ReadOnly()
+	// don't backupValues := ctx.values.ReadOnly()
 	// set the request to be align with the 'againstRequestPath'
 	req.RequestURI = path
 	req.URL.Path = path
@@ -4548,7 +4560,7 @@ func (ctx *Context) RegisterDependency(v interface{}) {
 		val = reflect.ValueOf(v)
 	}
 
-	cv := ctx.Values().Get(DependenciesContextKey)
+	cv := ctx.values.Get(DependenciesContextKey)
 	if cv != nil {
 		m, ok := cv.(DependenciesMap)
 		if !ok {
@@ -4559,7 +4571,7 @@ func (ctx *Context) RegisterDependency(v interface{}) {
 		return
 	}
 
-	ctx.Values().Set(DependenciesContextKey, DependenciesMap{
+	ctx.values.Set(DependenciesContextKey, DependenciesMap{
 		val.Type(): val,
 	})
 }
@@ -4567,7 +4579,7 @@ func (ctx *Context) RegisterDependency(v interface{}) {
 // UnregisterDependency removes a dependency based on its type.
 // Reports whether a dependency with that type was found and removed successfully.
 func (ctx *Context) UnregisterDependency(typ reflect.Type) bool {
-	cv := ctx.Values().Get(DependenciesContextKey)
+	cv := ctx.values.Get(DependenciesContextKey)
 	if cv != nil {
 		m, ok := cv.(DependenciesMap)
 		if ok {
@@ -4594,18 +4606,25 @@ const errorContextKey = "iris.context.error"
 // as a context value, it does nothing more.
 // Also, by-default this error's value is written to the client
 // on failures when no registered error handler is available (see `Party.On(Any)ErrorCode`).
-// See `GetError` to retrieve it back.
+// See `GetErr` to retrieve it back.
+//
+// To remove an error simply pass nil.
 //
 // Note that, if you want to stop the chain
-// with an error see the `StopWithError` instead.
+// with an error see the `StopWithError/StopWithPlainError` instead.
 func (ctx *Context) SetErr(err error) {
-	ctx.Values().Set(errorContextKey, err)
+	if err == nil {
+		ctx.values.Remove(errorContextKey)
+		return
+	}
+
+	ctx.values.Set(errorContextKey, err)
 }
 
 // GetErr is a helper which retrieves
 // the error value stored by `SetErr`.
 func (ctx *Context) GetErr() error {
-	if v := ctx.Values().Get(errorContextKey); v != nil {
+	if v := ctx.values.Get(errorContextKey); v != nil {
 		if err, ok := v.(error); ok {
 			return err
 		}

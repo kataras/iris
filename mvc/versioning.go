@@ -25,15 +25,8 @@ import (
 func Version(version string) OptionFunc {
 	return func(c *ControllerActivator) {
 		c.Router().SetRegisterRule(router.RouteOverlap) // required for this feature.
-
-		c.Use(func(ctx *context.Context) {
-			if !versioning.Match(ctx, version) {
-				ctx.StopExecution()
-				return
-			}
-
-			ctx.Next()
-		})
+		// Note: Do not use a group, we need c.Use for the specific controller's routes.
+		c.Use(versioning.Handler(version))
 	}
 }
 

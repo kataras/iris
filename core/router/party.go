@@ -76,9 +76,14 @@ type Party interface {
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)
+	// UseOnce either inserts a middleware,
+	// or on the basis of the middleware already existing,
+	// replace that existing middleware instead.
+	UseOnce(handlers ...context.Handler)
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
+
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 	// and the execution rules.
 	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.

@@ -1,6 +1,7 @@
 package versioning
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
@@ -31,6 +32,10 @@ const (
 	NotFound = "iris.api.version.notfound"
 )
 
+// ErrNotFound reports whether a requested version
+// does not match with any of the server's implemented ones.
+var ErrNotFound = errors.New("version not found")
+
 // NotFoundHandler is the default version not found handler that
 // is executed from `NewMatcher` when no version is registered as available to dispatch a resource.
 var NotFoundHandler = func(ctx *context.Context) {
@@ -46,8 +51,7 @@ var NotFoundHandler = func(ctx *context.Context) {
 		recognize the request method and is not capable of supporting it for any resource.
 	*/
 
-	ctx.StatusCode(501)
-	ctx.WriteString("version not found")
+	ctx.StopWithPlainError(501, ErrNotFound)
 }
 
 // GetVersion returns the current request version.

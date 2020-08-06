@@ -46,7 +46,7 @@ type Attachments struct {
 type DirCacheOptions struct {
 	// Enable or disable cache.
 	Enable bool
-	// Minimium content size for compression in bytes.
+	// Minimum content size for compression in bytes.
 	CompressMinSize int64
 	// Ignore compress files that match this pattern.
 	CompressIgnore *regexp.Regexp

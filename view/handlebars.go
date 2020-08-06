@@ -27,7 +27,10 @@ type HandlebarsEngine struct {
 	templateCache map[string]*raymond.Template
 }
 
-var _ Engine = (*HandlebarsEngine)(nil)
+var (
+	_ Engine       = (*HandlebarsEngine)(nil)
+	_ EngineFuncer = (*HandlebarsEngine)(nil)
+)
 
 // Handlebars creates and returns a new handlebars view engine.
 // The given "extension" MUST begin with a dot.

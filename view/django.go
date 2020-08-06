@@ -106,7 +106,10 @@ type DjangoEngine struct {
 	templateCache map[string]*pongo2.Template
 }
 
-var _ Engine = (*DjangoEngine)(nil)
+var (
+	_ Engine       = (*DjangoEngine)(nil)
+	_ EngineFuncer = (*DjangoEngine)(nil)
+)
 
 // Django creates and returns a new django view engine.
 // The given "extension" MUST begin with a dot.

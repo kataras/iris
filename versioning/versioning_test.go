@@ -79,7 +79,7 @@ func TestNewGroup(t *testing.T) {
 	userAPI := app.Party("/api/user")
 	// [... static serving, middlewares and etc goes here].
 
-	userAPIV10 := versioning.NewGroup("1.0").Deprecated(versioning.DefaultDeprecationOptions)
+	userAPIV10 := versioning.NewGroup(userAPI, "1.0").Deprecated(versioning.DefaultDeprecationOptions)
 	// V10middlewareResponse := "m1"
 	// userAPIV10.Use(func(ctx iris.Context) {
 	// 	println("exec userAPIV10.Use - midl1")
@@ -97,7 +97,7 @@ func TestNewGroup(t *testing.T) {
 	// })
 
 	userAPIV10.Get("/", sendHandler(v10Response))
-	userAPIV2 := versioning.NewGroup(">= 2, < 3")
+	userAPIV2 := versioning.NewGroup(userAPI, ">= 2, < 3")
 	// V2middlewareResponse := "m2"
 	// userAPIV2.Use(func(ctx iris.Context) {
 	// 	println("exec userAPIV2.Use - midl1")
@@ -112,8 +112,6 @@ func TestNewGroup(t *testing.T) {
 	userAPIV2.Get("/", sendHandler(v2Response))
 	userAPIV2.Post("/", sendHandler(v2Response))
 	userAPIV2.Put("/other", sendHandler(v2Response))
-
-	versioning.RegisterGroups(userAPI, versioning.NotFoundHandler, userAPIV10, userAPIV2)
 
 	e := httptest.New(t, app)
 

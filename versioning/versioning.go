@@ -44,6 +44,22 @@ func Match(ctx *context.Context, expectedVersion string) bool {
 	return true
 }
 
+// Handler returns a handler which stop the execution
+// when the given "version" does not match with the requested one.
+func Handler(version string) context.Handler {
+	return func(ctx *context.Context) {
+		if !Match(ctx, version) {
+			// Any overlapped handler
+			// can just clear the status code
+			// and the error to ignore this (see `NewGroup`).
+			NotFoundHandler(ctx)
+			return
+		}
+
+		ctx.Next()
+	}
+}
+
 // Map is a map of versions targets to a handlers,
 // a handler per version or constraint, the key can be something like ">1, <=2" or just "1".
 type Map map[string]context.Handler

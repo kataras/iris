@@ -42,9 +42,16 @@ func examplePerRoute(app *iris.Application) {
 // Headers[1] = Accept-Version: "2"
 func examplePerParty(app *iris.Application) {
 	usersAPI := app.Party("/api/users")
+	// You can customize the way a version is extracting
+	// via middleware, for example:
+	// version url parameter, and, if it's missing we default it to "1".
+	usersAPI.Use(func(ctx iris.Context) {
+		versioning.SetVersion(ctx, ctx.URLParamDefault("version", "1"))
+		ctx.Next()
+	})
 
 	// version 1.
-	usersAPIV1 := versioning.NewGroup(">= 1, < 2")
+	usersAPIV1 := versioning.NewGroup(usersAPI, ">= 1, < 2")
 	usersAPIV1.Get("/", func(ctx iris.Context) {
 		ctx.Writef("v1 resource: /api/users handler")
 	})
@@ -53,15 +60,13 @@ func examplePerParty(app *iris.Application) {
 	})
 
 	// version 2.
-	usersAPIV2 := versioning.NewGroup(">= 2, < 3")
+	usersAPIV2 := versioning.NewGroup(usersAPI, ">= 2, < 3")
 	usersAPIV2.Get("/", func(ctx iris.Context) {
 		ctx.Writef("v2 resource: /api/users handler")
 	})
 	usersAPIV2.Post("/", func(ctx iris.Context) {
 		ctx.Writef("v2 resource: /api/users post handler")
 	})
-
-	versioning.RegisterGroups(usersAPI, versioning.NotFoundHandler, usersAPIV1, usersAPIV2)
 }
 
 func catsVersionExactly1Handler(ctx iris.Context) {

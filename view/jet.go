@@ -36,7 +36,10 @@ type JetEngine struct {
 	jetDataContextKey string
 }
 
-var _ Engine = (*JetEngine)(nil)
+var (
+	_ Engine       = (*JetEngine)(nil)
+	_ EngineFuncer = (*JetEngine)(nil)
+)
 
 // jet library does not export or give us any option to modify them via Set
 // (unless we parse the files by ourselves but this is not a smart choice).

@@ -359,6 +359,10 @@ Response:
 
 Other Improvements:
 
+- `*versioning.Group` type is a full `Party` now.
+
+- `Party.UseOnce` - either inserts a middleware, or on the basis of the middleware already existing, replace that existing middleware instead.
+
 - Ability to register a view engine per group of routes or for the current chain of handlers through `Party.RegisterView` and `Context.ViewEngine` respectfully.
 
 - Add [Blocks](_examples/view/template_blocks_0) template engine. <!-- Reminder for @kataras: follow https://github.com/flosch/pongo2/pull/236#issuecomment-668950566 discussion so we can get back on using the original pongo2 repository as they fixed the issue about an incompatible 3rd party package (although they need more fixes, that's why I commented there) -->
@@ -527,6 +531,8 @@ New Context Methods:
 
 Breaking Changes:
 
+- `versioning.NewGroup(string)` now accepts a `Party` as its first input argument: `NewGroup(Party, string)`.
+- `versioning.RegisterGroups` is **removed** as it is no longer necessary.
 - `Configuration.RemoteAddrHeaders` from `map[string]bool` to `[]string`. If you used `With(out)RemoteAddrHeader` then you are ready to proceed without any code changes for that one.
 - `ctx.Gzip(boolean)` replaced with `ctx.CompressWriter(boolean) error`.
 - `ctx.GzipReader(boolean) error` replaced with `ctx.CompressReader(boolean) error`.

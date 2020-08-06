@@ -101,6 +101,7 @@
     * [The `urlpath` tmpl func](view/template_html_3/main.go)
     * [The `url` tmpl func](view/template_html_4/main.go)
     * [Inject Data Between Handlers](view/context-view-data/main.go)
+    * [Inject Engine Between Handlers](view/context-view-engine/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
     * [Write to a custom `io.Writer`](view/write-to)
     * [Blocks](view/template_blocks_0)

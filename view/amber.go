@@ -26,7 +26,10 @@ type AmberEngine struct {
 	templateCache map[string]*template.Template
 }
 
-var _ Engine = (*AmberEngine)(nil)
+var (
+	_ Engine       = (*AmberEngine)(nil)
+	_ EngineFuncer = (*AmberEngine)(nil)
+)
 
 // Amber creates and returns a new amber view engine.
 // The given "extension" MUST begin with a dot.

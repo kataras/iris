@@ -138,6 +138,8 @@ func overlapRoute(r *Route, next *Route) {
 			return
 		}
 
+		ctx.SetErr(nil) // clear any stored error.
+		// Set the route to the next one and execute it.
 		ctx.SetCurrentRoute(next.ReadOnly)
 		ctx.HandlerIndex(0)
 		ctx.Do(nextHandlers)
@@ -766,6 +768,25 @@ func (api *APIBuilder) GetRouteReadOnlyByPath(tmplPath string) context.RouteRead
 // that should be always run before all application's routes.
 func (api *APIBuilder) Use(handlers ...context.Handler) {
 	api.middleware = append(api.middleware, handlers...)
+}
+
+// UseOnce either inserts a middleware,
+// or on the basis of the middleware already existing,
+// replace that existing middleware instead.
+func (api *APIBuilder) UseOnce(handlers ...context.Handler) {
+reg:
+	for _, handler := range handlers {
+		name := context.HandlerName(handler)
+		for i, registeredHandler := range api.middleware {
+			registeredName := context.HandlerName(registeredHandler)
+			if name == registeredName {
+				api.middleware[i] = handler // replace this handler with the new one.
+				continue reg                // break and continue to the next handler.
+			}
+		}
+
+		api.middleware = append(api.middleware, handler) // or just insert it.
+	}
 }
 
 // UseGlobal registers handlers that should run at the very beginning.

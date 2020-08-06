@@ -17,25 +17,7 @@ Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, 
 | 7 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
 | 8 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |
 
-## Examples
-
-- [Overview](https://github.com/kataras/iris/blob/master/_examples/view/overview/main.go)
-- [Hi](https://github.com/kataras/iris/blob/master/_examples/view/template_html_0/main.go)
-- [A simple Layout](https://github.com/kataras/iris/blob/master/_examples/view/template_html_1/main.go)
-- [Layouts: `yield` and `render` tmpl funcs](https://github.com/kataras/iris/blob/master/_examples/view/template_html_2/main.go)
-- [The `urlpath` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_3/main.go)
-- [The `url` tmpl func](https://github.com/kataras/iris/blob/master/_examples/view/template_html_4/main.go)
-- [Inject Data Between Handlers](https://github.com/kataras/iris/blob/master/_examples/view/context-view-data/main.go)
-- [Embedding Templates Into App Executable File](https://github.com/kataras/iris/blob/master/_examples/view/embedding-templates-into-app/main.go)
-- [Blocks](https://github.com/kataras/iris/blob/master/_examples/view/template_blocks_0)
-- [Blocks Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_blocks_1_embedded)
-- [Greeting with Pug (Jade)`](view/template_pug_0)
-- [Pug (Jade) Actions`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_1)
-- [Pug (Jade) Includes`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_2)
-- [Pug (Jade) Extends`](https://github.com/kataras/iris/blob/master/_examples/view/template_pug_3)
-- [Jet](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_0)
-- [Jet Embedded](https://github.com/kataras/iris/blob/master/_examples/view/template_jet_1_embedded)
-- [Ace](https://github.com/kataras/iris/blob/master/_examples/view/template_ace_0)
+[List of Examples](https://github.com/kataras/iris/tree/master/_examples/view).
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
 

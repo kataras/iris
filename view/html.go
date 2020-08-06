@@ -35,7 +35,10 @@ type HTMLEngine struct {
 	//
 }
 
-var _ Engine = (*HTMLEngine)(nil)
+var (
+	_ Engine       = (*HTMLEngine)(nil)
+	_ EngineFuncer = (*HTMLEngine)(nil)
+)
 
 var emptyFuncs = template.FuncMap{
 	"yield": func(binding interface{}) (string, error) {
@@ -175,12 +178,10 @@ func (s *HTMLEngine) AddLayoutFunc(funcName string, funcBody interface{}) *HTMLE
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (template.HTML, error).
 // - tr func(lang, key string, args ...interface{}) string
-func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) *HTMLEngine {
+func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) {
 	s.rmu.Lock()
 	s.funcs[funcName] = funcBody
 	s.rmu.Unlock()
-
-	return s
 }
 
 // SetFuncs overrides the template funcs with the given "funcMap".

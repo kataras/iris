@@ -24,7 +24,10 @@ type BlocksEngine struct {
 	Engine *blocks.Blocks
 }
 
-var _ Engine = (*BlocksEngine)(nil)
+var (
+	_ Engine       = (*BlocksEngine)(nil)
+	_ EngineFuncer = (*BlocksEngine)(nil)
+)
 
 // WrapBlocks wraps an initialized blocks engine and returns its Iris adapter.
 // See `Blocks` package-level function too.
@@ -53,9 +56,8 @@ func (s *BlocksEngine) Ext() string {
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - tr func(lang, key string, args ...interface{}) string
-func (s *BlocksEngine) AddFunc(funcName string, funcBody interface{}) *BlocksEngine {
+func (s *BlocksEngine) AddFunc(funcName string, funcBody interface{}) {
 	s.Engine.Funcs(template.FuncMap{funcName: funcBody})
-	return s
 }
 
 // AddLayoutFunc adds a template function for templates that are marked as layouts.
