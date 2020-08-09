@@ -4216,14 +4216,14 @@ func (ctx *Context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) b
 // SetCookieKVExpiration is 365 days by-default
 // you can change it or simple, use the SetCookie for more control.
 //
-// See CookieExpires` for more.
+// See `CookieExpires` and `AddCookieOptions` for more.
 var SetCookieKVExpiration = time.Duration(8760) * time.Hour
 
 // SetCookieKV adds a cookie, requires the name(string) and the value(string).
 //
-// By default it expires at 2 hours and it's added to the root path,
+// By default it expires after 365 days and it is added to the root URL path,
 // use the `CookieExpires` and `CookiePath` to modify them.
-// Alternatively: ctx.SetCookie(&http.Cookie{...})
+// Alternatively: ctx.SetCookie(&http.Cookie{...}) or ctx.AddCookieOptions(...)
 //
 // If you want to set custom the path:
 // ctx.SetCookieKV(name, value, iris.CookiePath("/custom/path/cookie/will/be/stored"))
