@@ -1,8 +1,4 @@
-<div style="font-family: Roboto, Arial, sans-serif;line-height: 1.3;text-align: center;font-size: 1rem;
-background-color: #000;color: #fff!important;display: block;padding: 1rem">
-Black Lives Matter.
-<a style="color:#fff;text-decoration: underline" href="https://support.eji.org/give/153413/#!/donation/checkout" target="_blank" rel="noopener">Support the Equal Justice Initiative.</a>
-</div><br/>
+[![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
 
 <!-- # News -->
 
