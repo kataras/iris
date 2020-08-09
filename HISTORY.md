@@ -359,6 +359,8 @@ Response:
 
 Other Improvements:
 
+- `Application.UseRouter(...Handler)` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming requests. Example of use-case: CORS.
+
 - `*versioning.Group` type is a full `Party` now.
 
 - `Party.UseOnce` - either inserts a middleware, or on the basis of the middleware already existing, replace that existing middleware instead.

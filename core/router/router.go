@@ -18,7 +18,8 @@ import (
 // User can refresh the router with `RefreshRouter` whenever a route's field is changed by him.
 type Router struct {
 	mu sync.Mutex // for Downgrade, WrapRouter & BuildRouter,
-	// not indeed but we don't to risk its usage by third-parties.
+
+	preHandlers    context.Handlers // run before requestHandler, as middleware, same way context's handlers run, see `UseRouter`.
 	requestHandler RequestHandler   // build-accessible, can be changed to define a custom router or proxy, used on RefreshRouter too.
 	mainHandler    http.HandlerFunc // init-accessible
 	wrapperFunc    WrapperFunc
@@ -86,6 +87,25 @@ func (router *Router) FindClosestPaths(subdomain, searchPath string, n int) []st
 	return list
 }
 
+// UseRouter registers one or more handlers that are fired
+// before the main router's request handler.
+//
+// Use this method to register handlers, that can ran
+// independently of the incoming request's method and path values,
+// that they will be executed ALWAYS against ALL incoming requests.
+// Example of use-case: CORS.
+//
+// Note that because these are executed before the router itself
+// the Context should not have access to the `GetCurrentRoute`
+// as it is not decided yet which route is responsible to handle the incoming request.
+// It's one level higher than the `WrapRouter`.
+// The context SHOULD call its `Next` method in order to proceed to
+// the next handler in the chain or the main request handler one.
+// ExecutionRules are NOT applied here.
+func (router *Router) UseRouter(handlers ...context.Handler) {
+	router.preHandlers = append(router.preHandlers, handlers...)
+}
+
 // BuildRouter builds the router based on
 // the context factory (explicit pool in this case),
 // the request handler which manages how the main handler will multiplexes the routes
@@ -130,12 +150,27 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 	}
 
 	// the important
-	router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
-		ctx := cPool.Acquire(w, r)
-		// Note: we can't get all r.Context().Value key-value pairs
-		// and save them to ctx.values.
-		router.requestHandler.HandleRequest(ctx)
-		cPool.Release(ctx)
+	if len(router.preHandlers) > 0 {
+		handlers := append(router.preHandlers, func(ctx *context.Context) {
+			// set the handler index back to 0 so the route's handlers can be executed as exepcted.
+			ctx.HandlerIndex(0)
+			// execute the main request handler, this will fire the found route's handlers
+			// or if error the error code's associated handler.
+			router.requestHandler.HandleRequest(ctx)
+		})
+
+		router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
+			ctx := cPool.Acquire(w, r)
+			// execute the final handlers chain.
+			ctx.Do(handlers)
+			cPool.Release(ctx)
+		}
+	} else {
+		router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
+			ctx := cPool.Acquire(w, r)
+			router.requestHandler.HandleRequest(ctx)
+			cPool.Release(ctx)
+		}
 	}
 
 	if router.wrapperFunc != nil { // if wrapper used then attach that as the router service

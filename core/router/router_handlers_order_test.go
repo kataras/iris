@@ -7,11 +7,10 @@
 package router_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-
 	"github.com/kataras/iris/v12/httptest"
 )
 
@@ -19,48 +18,43 @@ import (
 // with a different order but the route's final
 // response should be the same at all cases.
 var (
-	mainResponse = "main"
-	mainHandler  = func(ctx *context.Context) {
-		ctx.WriteString(mainResponse)
-		ctx.Next()
+	writeHandler = func(s string) iris.Handler {
+		return func(ctx iris.Context) {
+			ctx.WriteString(s)
+			ctx.Next()
+		}
 	}
+
+	mainResponse = "main"
+	mainHandler  = writeHandler(mainResponse)
 
 	firstUseResponse = "use1"
-	firstUseHandler  = func(ctx *context.Context) {
-		ctx.WriteString(firstUseResponse)
-		ctx.Next()
-	}
+	firstUseHandler  = writeHandler(firstUseResponse)
 
 	secondUseResponse = "use2"
-	secondUseHandler  = func(ctx *context.Context) {
-		ctx.WriteString(secondUseResponse)
-		ctx.Next()
-	}
+	secondUseHandler  = writeHandler(secondUseResponse)
+
+	firstUseRouterResponse = "userouter1"
+	firstUseRouterHandler  = writeHandler(firstUseRouterResponse)
+
+	secondUseRouterResponse = "userouter2"
+	secondUseRouterHandler  = writeHandler(secondUseRouterResponse)
 
 	firstUseGlobalResponse = "useglobal1"
-	firstUseGlobalHandler  = func(ctx *context.Context) {
-		ctx.WriteString(firstUseGlobalResponse)
-		ctx.Next()
-	}
+	firstUseGlobalHandler  = writeHandler(firstUseGlobalResponse)
 
 	secondUseGlobalResponse = "useglobal2"
-	secondUseGlobalHandler  = func(ctx *context.Context) {
-		ctx.WriteString(secondUseGlobalResponse)
-		ctx.Next()
-	}
+	secondUseGlobalHandler  = writeHandler(secondUseGlobalResponse)
 
 	firstDoneResponse = "done1"
-	firstDoneHandler  = func(ctx *context.Context) {
-		ctx.WriteString(firstDoneResponse)
-		ctx.Next()
-	}
+	firstDoneHandler  = writeHandler(firstDoneResponse)
 
 	secondDoneResponse = "done2"
-	secondDoneHandler  = func(ctx *context.Context) {
+	secondDoneHandler  = func(ctx iris.Context) {
 		ctx.WriteString(secondDoneResponse)
 	}
 
-	finalResponse = firstUseGlobalResponse + secondUseGlobalResponse +
+	finalResponse = firstUseRouterResponse + secondUseRouterResponse + firstUseGlobalResponse + secondUseGlobalResponse +
 		firstUseResponse + secondUseResponse + mainResponse + firstDoneResponse + secondDoneResponse
 
 	testResponse = func(t *testing.T, app *iris.Application, path string) {
@@ -73,6 +67,9 @@ var (
 
 func TestMiddlewareByRouteDef(t *testing.T) {
 	app := iris.New()
+	app.UseRouter(firstUseRouterHandler)
+	app.UseRouter(secondUseRouterHandler)
+
 	app.Get("/mypath", firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler,
 		mainHandler, firstDoneHandler, secondDoneHandler)
 
@@ -81,6 +78,7 @@ func TestMiddlewareByRouteDef(t *testing.T) {
 
 func TestMiddlewareByUseAndDoneDef(t *testing.T) {
 	app := iris.New()
+	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
 	app.Use(firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler)
 	app.Done(firstDoneHandler, secondDoneHandler)
 
@@ -91,12 +89,14 @@ func TestMiddlewareByUseAndDoneDef(t *testing.T) {
 
 func TestMiddlewareByUseUseGlobalAndDoneDef(t *testing.T) {
 	app := iris.New()
+
 	app.Use(firstUseHandler, secondUseHandler)
 	// if failed then UseGlobal didnt' registered these handlers even before the
 	// existing middleware.
 	app.UseGlobal(firstUseGlobalHandler, secondUseGlobalHandler)
 	app.Done(firstDoneHandler, secondDoneHandler)
 
+	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
 	app.Get("/mypath", mainHandler)
 
 	testResponse(t, app, "/mypath")
@@ -104,6 +104,7 @@ func TestMiddlewareByUseUseGlobalAndDoneDef(t *testing.T) {
 
 func TestMiddlewareByUseDoneAndUseGlobalDef(t *testing.T) {
 	app := iris.New()
+	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
 
 	app.Use(firstUseHandler, secondUseHandler)
 	app.Done(firstDoneHandler, secondDoneHandler)
@@ -123,6 +124,8 @@ func TestMiddlewareByUseDoneAndUseGlobalDef(t *testing.T) {
 
 func TestMiddlewareByUseGlobalUseAndDoneGlobalDef(t *testing.T) {
 	app := iris.New()
+	app.UseRouter(firstUseRouterHandler)
+	app.UseRouter(secondUseRouterHandler)
 
 	app.UseGlobal(firstUseGlobalHandler)
 	app.UseGlobal(secondUseGlobalHandler)
@@ -137,6 +140,7 @@ func TestMiddlewareByUseGlobalUseAndDoneGlobalDef(t *testing.T) {
 
 func TestMiddlewareByDoneUseAndUseGlobalDef(t *testing.T) {
 	app := iris.New()
+	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
 	app.Done(firstDoneHandler, secondDoneHandler)
 
 	app.Use(firstUseHandler, secondUseHandler)
@@ -147,4 +151,30 @@ func TestMiddlewareByDoneUseAndUseGlobalDef(t *testing.T) {
 	app.UseGlobal(secondUseGlobalHandler)
 
 	testResponse(t, app, "/mypath")
+}
+
+func TestUseRouterStopExecution(t *testing.T) {
+	app := iris.New()
+	app.UseRouter(func(ctx iris.Context) {
+		ctx.WriteString("stop")
+		// no ctx.Next, so the router has not even the chance to work.
+	})
+	app.Get("/", writeHandler("index"))
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal("stop")
+
+	app = iris.New()
+	app.OnErrorCode(iris.StatusForbidden, func(ctx iris.Context) {
+		ctx.Writef("err: %v", ctx.GetErr())
+	})
+	app.UseRouter(func(ctx iris.Context) {
+		ctx.StopWithPlainError(iris.StatusForbidden, fmt.Errorf("custom error"))
+		// stopped but not data written yet, the error code handler
+		// should be responsible of it (use StopWithError to write and close).
+	})
+	app.Get("/", writeHandler("index"))
+
+	e = httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusForbidden).Body().Equal("err: custom error")
 }
