@@ -2,8 +2,8 @@
 
 <!-- # News -->
 
-> 这是一个**开发中的分支**. 敬请关注即将发布的版本 [v12.2.0](HISTORY.md#Next). 如果想要一个稳定的版本，请用使用 [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) .
-> 
+> 这是一个**开发中的版本**。敬请关注即将发布的版本 [v12.2.0](HISTORY.md#Next)。如果想使用稳定版本，请查看 [v12.1.8 分支](https://github.com/kataras/iris/tree/v12.1.8) 。
+>
 > ![](https://iris-go.com/images/cli.png) 立即尝试官方的[Iris命令行工具](https://github.com/kataras/iris-cli)！
 
 <!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
@@ -162,7 +162,7 @@ http://localhost:8080/books
 > HTTP/1.1 201 Created
 ```
 
-这是**错误**影响所展示的样子：
+这是**错误**响应所展示的样子：
 
 ```sh
 $ curl -X POST --data "{\"title\" \"not valid one\"}" \
@@ -181,7 +181,7 @@ http://localhost:8080/books
 
 [![run in the browser](https://img.shields.io/badge/Run-in%20the%20Browser-348798.svg?style=for-the-badge&logo=repl.it)](https://bit.ly/2YJeSZe)
 
-Iris 有一个完整且详尽的 **[使用文档](https://github.com/kataras/iris/wiki)** ，让您可以轻松地使用此框架。
+Iris 有完整且详尽的 **[使用文档](https://github.com/kataras/iris/wiki)** ，让您可以轻松地使用此框架。
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
