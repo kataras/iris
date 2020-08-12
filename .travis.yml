@@ -7,7 +7,7 @@ os:
 go:
   - 1.14.x
   - 1.15.x
-  - master
+# - master
 go_import_path: github.com/kataras/iris/v12
 env:
  global:
