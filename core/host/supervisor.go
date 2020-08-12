@@ -31,6 +31,7 @@ type Configurator func(su *Supervisor)
 // Interfaces are separated to return relative functionality to them.
 type Supervisor struct {
 	Server                         *http.Server
+	friendlyAddr                   string // e.g mydomain.com instead of :443 when AutoTLS is used, see `WriteStartupLogOnServe` task.
 	disableHTTP1ToHTTP2Redirection bool
 	closedManually                 uint32 // future use, accessed atomically (non-zero means we've called the Shutdown)
 	closedByInterruptHandler       uint32 // non-zero means that the end-developer interrupted it by-purpose.
@@ -347,8 +348,9 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 		cache = autocert.DirCache(cacheDir)
 	}
 
-	if domain != "" {
+	if strings.TrimSpace(domain) != "" {
 		domains := strings.Split(domain, " ")
+		su.friendlyAddr = domains[0]
 		hostPolicy = autocert.HostWhitelist(domains...)
 	}
 

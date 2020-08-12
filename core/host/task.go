@@ -22,8 +22,12 @@ import (
 // This function should be registered on Serve.
 func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 	return func(h TaskHost) {
-		guessScheme := netutil.ResolveScheme(h.Supervisor.manuallyTLS)
-		listeningURI := netutil.ResolveURL(guessScheme, h.Supervisor.Server.Addr)
+		guessScheme := netutil.ResolveScheme(h.Supervisor.manuallyTLS || h.Supervisor.Fallback != nil)
+		addr := h.Supervisor.friendlyAddr
+		if addr == "" {
+			addr = h.Supervisor.Server.Addr
+		}
+		listeningURI := netutil.ResolveURL(guessScheme, addr)
 		interruptkey := "CTRL"
 		if runtime.GOOS == "darwin" {
 			interruptkey = "CMD"
