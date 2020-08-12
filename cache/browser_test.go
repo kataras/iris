@@ -13,7 +13,6 @@ import (
 )
 
 func TestNoCache(t *testing.T) {
-	t.Parallel()
 	app := iris.New()
 	app.Get("/", cache.NoCache, func(ctx iris.Context) {
 		ctx.WriteString("no_cache")
@@ -30,7 +29,6 @@ func TestNoCache(t *testing.T) {
 }
 
 func TestStaticCache(t *testing.T) {
-	t.Parallel()
 	// test change the time format, which is not recommended but can be done.
 	app := iris.New().Configure(iris.WithTimeFormat("02 Jan 2006 15:04:05 GMT"))
 
@@ -52,7 +50,7 @@ func TestStaticCache(t *testing.T) {
 }
 
 func TestCache304(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	app := iris.New()
 
 	expiresEvery := 4 * time.Second
@@ -78,7 +76,7 @@ func TestCache304(t *testing.T) {
 }
 
 func TestETag(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	app := iris.New()
 	n := "_"

@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"sync"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -15,6 +16,8 @@ type LifeTime struct {
 	// (this should be a bug(go1.9-rc1) or not. We don't care atm)
 	time.Time
 	timer *time.Timer
+
+	mu sync.RWMutex
 }
 
 // Begin will begin the life based on the time.Now().Add(d).
@@ -24,8 +27,10 @@ func (lt *LifeTime) Begin(d time.Duration, onExpire func()) {
 		return
 	}
 
+	lt.mu.Lock()
 	lt.Time = time.Now().Add(d)
 	lt.timer = time.AfterFunc(d, onExpire)
+	lt.mu.Unlock()
 }
 
 // Revive will continue the life based on the stored Time.
@@ -38,24 +43,30 @@ func (lt *LifeTime) Revive(onExpire func()) {
 	now := time.Now()
 	if lt.Time.After(now) {
 		d := lt.Time.Sub(now)
+		lt.mu.Lock()
 		lt.timer = time.AfterFunc(d, onExpire)
+		lt.mu.Unlock()
 	}
 }
 
 // Shift resets the lifetime based on "d".
 func (lt *LifeTime) Shift(d time.Duration) {
+	lt.mu.Lock()
 	if d > 0 && lt.timer != nil {
 		lt.Time = time.Now().Add(d)
 		lt.timer.Reset(d)
 	}
+	lt.mu.Unlock()
 }
 
 // ExpireNow reduce the lifetime completely.
 func (lt *LifeTime) ExpireNow() {
+	lt.mu.Lock()
 	lt.Time = context.CookieExpireDelete
 	if lt.timer != nil {
 		lt.timer.Stop()
 	}
+	lt.mu.Unlock()
 }
 
 // HasExpired reports whether "lt" represents is expired.
