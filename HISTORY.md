@@ -359,7 +359,41 @@ Response:
 
 Other Improvements:
 
-- `Application.UseRouter(...Handler)` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming requests. Example of use-case: CORS.
+- Fix `AutoTLS` when used with `iris.TLSNoRedirect` [*](https://github.com/kataras/iris/issues/1577). The `AutoTLS` runner can be customized through the new `iris.AutoTLSNoRedirect` instead, read its go documentation. Example of having both TLS and non-TLS versions of the same application without conflicts with letsencrypt `./well-known` path:
+
+```go
+package main
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/kataras/iris/v12"
+)
+
+func main() {
+	app := iris.New()
+	app.Logger().SetLevel("debug")
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{
+			"time": time.Now().Unix(),
+			"tls":  ctx.Request().TLS != nil,
+		})
+	})
+
+	var fallbackServer = func(acme func(http.Handler) http.Handler) *http.Server {
+		srv := &http.Server{Handler: acme(app)}
+		go srv.ListenAndServe()
+		return srv
+	}
+
+	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com",
+		iris.AutoTLSNoRedirect(fallbackServer)))
+}
+```
+
+- `Application.UseRouter(...Handler)` - per party to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
 
 - `*versioning.Group` type is a full `Party` now.
 
@@ -464,7 +498,7 @@ var dirOpts = iris.DirOptions{
 - `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
 
 - `iris.TLS` can now accept certificates in form of raw `[]byte` contents too.
-- `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS` (or `iris.AutoTLS`), e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`.
+- `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS`, e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`. There is `iris.AutoTLSNoRedirect` option for `AutoTLS` too.
 
 - Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
 

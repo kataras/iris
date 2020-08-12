@@ -1,9 +1,13 @@
+sudo: false
 language: go
+
 os:
   - linux
   - osx
 go:
   - 1.14.x
+  - 1.15.x
+  - master
 go_import_path: github.com/kataras/iris/v12
 env:
  global:
@@ -11,14 +15,10 @@ env:
 install:
   - go get ./...
 script:
-  - go test -count=1 -v -cover ./...
+  - go test -count=1 -v -cover -race ./...
 after_script:
   # examples
   - cd ./_examples
   - go get ./...
-  - go test -count=1 -v -cover ./...
+  - go test -count=1 -v -cover -race ./...
   - cd ../
-  # make sure that the _benchmarks code is working
-  - cd ./_benchmarks
-  - go get ./...
-  - go test -count=1 -v -cover ./...

@@ -21,7 +21,7 @@ func main() {
 	app.Run(iris.TLS("127.0.0.1:443", "mycert.crt", "mykey.key"))
 
 	// Note: to disable automatic "http://" to "https://" redirections pass the `iris.TLSNoRedirect`
-	// host configurator to TLS or AutoTLS functions, e.g:
+	// host configurator to TLS function, example:
 	//
 	// app.Run(iris.TLS("127.0.0.1:443", "mycert.crt", "mykey.key", iris.TLSNoRedirect))
 }

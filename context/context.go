@@ -740,7 +740,9 @@ func (ctx *Context) RequestPath(escape bool) string {
 // 	return false
 // } no, it will not work because map is a random peek data structure.
 
-// Host returns the host part of the current URI.
+// Host returns the host:port part of the request URI, calls the `Request().Host`.
+// To get the subdomain part as well use the `Request().URL.Host` method instead.
+// To get the subdomain only use the `Subdomain` method instead.
 // This method makes use of the `Configuration.HostProxyHeaders` field too.
 func (ctx *Context) Host() string {
 	for header, ok := range ctx.app.ConfigurationReadOnly().GetHostProxyHeaders() {
@@ -762,13 +764,14 @@ func GetHost(r *http.Request) string {
 		return host
 	}
 
+	// contains subdomain.
 	return r.URL.Host
 }
 
 // Subdomain returns the subdomain of this request, if any.
 // Note that this is a fast method which does not cover all cases.
 func (ctx *Context) Subdomain() (subdomain string) {
-	host := ctx.Host()
+	host := ctx.request.URL.Host // ctx.Host()
 	if index := strings.IndexByte(host, '.'); index > 0 {
 		subdomain = host[0:index]
 	}

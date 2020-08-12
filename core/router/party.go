@@ -13,6 +13,10 @@ import (
 //
 // Look the `APIBuilder` structure for its implementation.
 type Party interface {
+	// IsRoot reports whether this Party is the root Application's one.
+	// It will return false on all children Parties, no exception.
+	IsRoot() bool
+
 	// ConfigureContainer accepts one or more functions that can be used
 	// to configure dependency injection features of this Party
 	// such as register dependency and register handlers that will automatically inject any valid dependency.
@@ -44,10 +48,14 @@ type Party interface {
 	// Look `OnErrorCode` too.
 	OnAnyErrorCode(handlers ...context.Handler) []*Route
 
-	// Party groups routes which may have the same prefix and share same handlers,
-	// returns that new rich subrouter.
+	// Party returns a new child Party which inherites its
+	// parent's options and middlewares.
+	// If "relativePath" matches the parent's one then it returns the current Party.
+	// A Party groups routes which may have the same prefix or subdomain and share same middlewares.
 	//
-	// You can even declare a subdomain with relativePath as "mysub." or see `Subdomain`.
+	// To create a group of routes for subdomains
+	// use the `Subdomain` or `WildcardSubdomain` methods
+	// or pass a "relativePath" as "admin." or "*." respectfully.
 	Party(relativePath string, middleware ...context.Handler) Party
 	// PartyFunc same as `Party`, groups routes that share a base path or/and same handlers.
 	// However this function accepts a function that receives this created Party instead.
@@ -73,6 +81,21 @@ type Party interface {
 	// So if app.Subdomain("admin").Subdomain("panel") then the result is: "panel.admin.".
 	Subdomain(subdomain string, middleware ...context.Handler) Party
 
+	// UseRouter upserts one or more handlers that will be fired
+	// right before the main router's request handler.
+	//
+	// Use this method to register handlers, that can ran
+	// independently of the incoming request's values,
+	// that they will be executed ALWAYS against ALL children incoming requests.
+	// Example of use-case: CORS.
+	//
+	// Note that because these are executed before the router itself
+	// the Context should not have access to the `GetCurrentRoute`
+	// as it is not decided yet which route is responsible to handle the incoming request.
+	// It's one level higher than the `WrapRouter`.
+	// The context SHOULD call its `Next` method in order to proceed to
+	// the next handler in the chain or the main request handler one.
+	UseRouter(handlers ...context.Handler)
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)

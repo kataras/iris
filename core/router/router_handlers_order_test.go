@@ -35,7 +35,13 @@ var (
 	secondUseHandler  = writeHandler(secondUseResponse)
 
 	firstUseRouterResponse = "userouter1"
-	firstUseRouterHandler  = writeHandler(firstUseRouterResponse)
+	// Use inline handler, no the `writeHandler`,
+	// because it will be overriden by `secondUseRouterHandler` otherwise,
+	// look `UseRouter:context.UpsertHandlers` for more.
+	firstUseRouterHandler = func(ctx iris.Context) {
+		ctx.WriteString(firstUseRouterResponse)
+		ctx.Next()
+	}
 
 	secondUseRouterResponse = "userouter2"
 	secondUseRouterHandler  = writeHandler(secondUseRouterResponse)
@@ -177,4 +183,105 @@ func TestUseRouterStopExecution(t *testing.T) {
 
 	e = httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusForbidden).Body().Equal("err: custom error")
+}
+
+func TestUseRouterParentDisallow(t *testing.T) {
+	const expectedResponse = "no_userouter_allowed"
+
+	app := iris.New()
+	app.UseRouter(func(ctx iris.Context) {
+		ctx.WriteString("always")
+		ctx.Next()
+	})
+	app.Get("/index", func(ctx iris.Context) {
+		ctx.WriteString(expectedResponse)
+	})
+
+	app.SetPartyMatcher(func(p iris.Party, ctx iris.Context) bool {
+		// modifies the PartyMatcher to not match any UseRouter,
+		// tests should receive the handlers response alone.
+		return false
+	})
+
+	app.PartyFunc("/", func(p iris.Party) { // it's the same instance of app.
+		p.UseRouter(func(ctx iris.Context) {
+			ctx.WriteString("_2")
+			ctx.Next()
+		})
+		p.Get("/", func(ctx iris.Context) {
+			ctx.WriteString(expectedResponse)
+		})
+	})
+
+	app.PartyFunc("/user", func(p iris.Party) {
+		p.UseRouter(func(ctx iris.Context) {
+			ctx.WriteString("_3")
+			ctx.Next()
+		})
+
+		p.Get("/", func(ctx iris.Context) {
+			ctx.WriteString(expectedResponse)
+		})
+	})
+
+	e := httptest.New(t, app)
+	e.GET("/index").Expect().Status(iris.StatusOK).Body().Equal(expectedResponse)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedResponse)
+	e.GET("/user").Expect().Status(iris.StatusOK).Body().Equal(expectedResponse)
+}
+
+func TestUseRouterSubdomains(t *testing.T) {
+	app := iris.New()
+	app.UseRouter(func(ctx iris.Context) {
+		if ctx.Subdomain() == "old" {
+			ctx.Next() // call the router, do not write.
+			return
+		}
+
+		// if we write here, it will always give 200 OK,
+		// even on not registered routes, that's the point at the end,
+		// full control here when we need it.
+		ctx.WriteString("always_")
+		ctx.Next()
+	})
+
+	adminAPI := app.Subdomain("admin")
+	adminAPI.UseRouter(func(ctx iris.Context) {
+		ctx.WriteString("admin always_")
+		ctx.Next()
+	})
+	adminAPI.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("admin")
+	})
+
+	adminControlAPI := adminAPI.Subdomain("control")
+	adminControlAPI.UseRouter(func(ctx iris.Context) {
+		ctx.WriteString("control admin always_")
+		ctx.Next()
+	})
+	adminControlAPI.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("control admin")
+	})
+
+	oldAPI := app.Subdomain("old")
+	oldAPI.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("chat")
+	})
+
+	e := httptest.New(t, app, httptest.URL("http://example.com"))
+	e.GET("/notfound").Expect().Status(iris.StatusOK).Body().Equal("always_")
+
+	e.GET("/").WithURL("http://admin.example.com").Expect().Status(iris.StatusOK).Body().
+		Equal("always_admin always_admin")
+
+	e.GET("/").WithURL("http://control.admin.example.com").Expect().Status(iris.StatusOK).Body().
+		Equal("always_admin always_control admin always_control admin")
+
+	// It has a route, and use router just proceeds to the router.
+	e.GET("/").WithURL("http://old.example.com").Expect().Status(iris.StatusOK).Body().
+		Equal("chat")
+	// this is not a registered path, should fire 404, the UseRouter does not write
+	// anything to the response writer, so the router has control over it.
+	e.GET("/notfound").WithURL("http://old.example.com").Expect().Status(iris.StatusNotFound).Body().
+		Equal("Not Found")
 }

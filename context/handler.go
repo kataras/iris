@@ -116,6 +116,31 @@ func HandlerName(h interface{}) string {
 	return trimHandlerName(name)
 }
 
+// HandlersNames returns a slice of "handlers" names
+// separated by commas. Can be used for debugging
+// or to determinate if end-developer
+// called the same exactly Use/UseRouter/Done... API methods
+// so framework can give a warning.
+func HandlersNames(handlers ...interface{}) string {
+	if len(handlers) == 1 {
+		if hs, ok := handlers[0].(Handlers); ok {
+			asInterfaces := make([]interface{}, 0, len(hs))
+			for _, h := range hs {
+				asInterfaces = append(asInterfaces, h)
+			}
+
+			return HandlersNames(asInterfaces...)
+		}
+	}
+
+	names := make([]string, 0, len(handlers))
+	for _, h := range handlers {
+		names = append(names, HandlerName(h))
+	}
+
+	return strings.Join(names, ",")
+}
+
 // HandlerFileLine returns the handler's file and line information.
 // See `context.HandlerFileLine` to get the file, line of the current running handler in the chain.
 func HandlerFileLine(h interface{}) (file string, line int) {
@@ -303,4 +328,24 @@ func JoinHandlers(h1 Handlers, h2 Handlers) Handlers {
 	// start from there we finish, and store the new Handlers too
 	copy(newHandlers[nowLen:], h2)
 	return newHandlers
+}
+
+// UpsertHandlers like `JoinHandlers` but it does
+// NOT copies the handlers entries and it does remove duplicates.
+func UpsertHandlers(h1 Handlers, h2 Handlers) Handlers {
+reg:
+	for _, handler := range h2 {
+		name := HandlerName(handler)
+		for i, registeredHandler := range h1 {
+			registeredName := HandlerName(registeredHandler)
+			if name == registeredName {
+				h1[i] = handler // replace this handler with the new one.
+				continue reg    // break and continue to the next handler.
+			}
+		}
+
+		h1 = append(h1, handler) // or just insert it.
+	}
+
+	return h1
 }

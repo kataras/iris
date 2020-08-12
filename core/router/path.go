@@ -235,6 +235,14 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 		subdomain = s[0:slashIdx]
 	}
 
+	if slashIdx == -1 {
+		// this will only happen when this function
+		// is called to Party's relative path (e.g. control.admin.),
+		// and not a route's one (the route's one always contains a slash).
+		// return all as subdomain and "/" as path.
+		return s, "/"
+	}
+
 	path = s[slashIdx:]
 	if !strings.Contains(path, "{") {
 		path = strings.ReplaceAll(path, "//", "/")

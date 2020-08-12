@@ -25,8 +25,18 @@ func main() {
 	// and a non-public e-mail instead or edit your hosts file.
 	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com"))
 
-	// Note: to disable automatic "http://" to "https://" redirections pass the `iris.TLSNoRedirect`
-	// host configurator to TLS or AutoTLS functions, e.g:
-	//
-	// app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com", iris.TLSNoRedirect))
+	// Note: to disable automatic "http://" to "https://" redirections pass
+	// the `iris.AutoTLSNoRedirect` host configurator to AutoTLS function, example:
+	/*
+		var fallbackServer = func(acme func(http.Handler) http.Handler) *http.Server {
+			// Use any http.Server and Handler, as long as it's wrapped by `acme` one.
+			// In that case we share the application through non-tls users too:
+			srv := &http.Server{Handler: acme(app)}
+			go srv.ListenAndServe()
+			return srv
+		}
+
+		app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com",
+			iris.AutoTLSNoRedirect(fallbackServer)))
+	*/
 }

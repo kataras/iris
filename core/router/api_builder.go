@@ -153,6 +153,10 @@ func overlapRoute(r *Route, next *Route) {
 // APIBuilder the visible API for constructing the router
 // and child routers.
 type APIBuilder struct {
+	// parent is the creator of this Party.
+	// It is nil on Root.
+	parent *APIBuilder // currently it's used only on UseRouter feature.
+
 	// the per-party APIBuilder with DI.
 	apiBuilderDI *APIContainer
 
@@ -184,7 +188,7 @@ type APIBuilder struct {
 
 	// the per-party relative path.
 	relativePath string
-	// allowMethods are filled with the `AllowMethods` func.
+	// allowMethods are filled with the `AllowMethods` method.
 	// They are used to create new routes
 	// per any party's (and its children) routes registered
 	// if the method "x" wasn't registered already via  the `Handle` (and its extensions like `Get`, `Post`...).
@@ -194,22 +198,63 @@ type APIBuilder struct {
 	handlerExecutionRules ExecutionRules
 	// the per-party (and its children) route registration rule, see `SetRegisterRule`.
 	routeRegisterRule RouteRegisterRule
+
+	// routerFilters field is shared across Parties. Each Party registers
+	// one or more middlewares to run before the router itself using the `UseRouter` method.
+	// Each Party calls the shared filter (`partyMatcher`) that decides if its `UseRouter` handlers
+	// can be executed. By default it's based on party's static path and/or subdomain,
+	// it can be modified through an `Application.SetPartyMatcher` call
+	// once before or after routerFilters filled.
+	//
+	// The Key is the Party (instance of APIBuilder),
+	// value wraps the partyFilter + the handlers registered through `UseRouter`.
+	// See `GetRouterFilters` too.
+	routerFilters map[Party]*Filter
+	// partyMatcher field is shared across all Parties,
+	// can be modified through the Application level only.
+	//
+	// It defaults to the internal, simple, "defaultPartyMatcher".
+	// It applies when "routerFilters" are used.
+	partyMatcher PartyMatcherFunc
 }
 
-var _ Party = (*APIBuilder)(nil)
-var _ RoutesProvider = (*APIBuilder)(nil) // passed to the default request handler (routerHandler)
+var (
+	_ Party          = (*APIBuilder)(nil)
+	_ PartyMatcher   = (*APIBuilder)(nil)
+	_ RoutesProvider = (*APIBuilder)(nil) // passed to the default request handler (routerHandler)
+)
 
 // NewAPIBuilder creates & returns a new builder
 // which is responsible to build the API and the router handler.
 func NewAPIBuilder() *APIBuilder {
 	return &APIBuilder{
-		macros:       macro.Defaults,
-		errors:       errgroup.New("API Builder"),
-		relativePath: "/",
-		routes:       new(repository),
-		apiBuilderDI: &APIContainer{Container: hero.New()},
+		parent:        nil,
+		macros:        macro.Defaults,
+		errors:        errgroup.New("API Builder"),
+		relativePath:  "/",
+		routes:        new(repository),
+		apiBuilderDI:  &APIContainer{Container: hero.New()},
+		routerFilters: make(map[Party]*Filter),
+		partyMatcher:  defaultPartyMatcher,
 	}
 }
+
+// IsRoot reports whether this Party is the root Application's one.
+// It will return false on all children Parties, no exception.
+func (api *APIBuilder) IsRoot() bool {
+	return api.parent == nil
+}
+
+/* If requested:
+// GetRoot returns the very first Party (the Application).
+func (api *APIBuilder) GetRoot() *APIBuilder {
+	root := api.parent
+	for root != nil {
+		root = api.parent
+	}
+
+	return root
+}*/
 
 // ConfigureContainer accepts one or more functions that can be used
 // to configure dependency injection features of this Party
@@ -565,14 +610,18 @@ func removeDuplicates(elements []string) (result []string) {
 	return result
 }
 
-// Party groups routes which may have the same prefix and share same handlers,
-// returns that new rich subrouter.
+// Party returns a new child Party which inherites its
+// parent's options and middlewares.
+// If "relativePath" matches the parent's one then it returns the current Party.
+// A Party groups routes which may have the same prefix or subdomain and share same middlewares.
 //
-// You can even declare a subdomain with relativePath as "mysub." or see `Subdomain`.
+// To create a group of routes for subdomains
+// use the `Subdomain` or `WildcardSubdomain` methods
+// or pass a "relativePath" as "admin." or "*." respectfully.
 func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
-	// if app.Party("/"), root party, then just add the middlewares
-	// and return itself.
-	if api.relativePath == "/" && (relativePath == "" || relativePath == "/") {
+	// if app.Party("/"), root party or app.Party("/user") == app.Party("/user")
+	// then just add the middlewares and return itself.
+	if relativePath == "" || api.relativePath == relativePath {
 		api.Use(handlers...)
 		return api
 	}
@@ -614,7 +663,10 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		beginGlobalHandlers: api.beginGlobalHandlers,
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 		errors:              api.errors,
+		routerFilters:       api.routerFilters, // shared.
+		partyMatcher:        api.partyMatcher,  // shared.
 		// per-party/children
+		parent:                api,
 		middleware:            middleware,
 		doneHandlers:          api.doneHandlers[0:],
 		relativePath:          fullpath,
@@ -758,6 +810,134 @@ func (api *APIBuilder) GetRouteReadOnlyByPath(tmplPath string) context.RouteRead
 	return r.ReadOnly
 }
 
+type (
+	// PartyMatcherFunc used to build a filter which decides
+	// if the given Party is responsible to fire its `UseRouter` handlers or not.
+	// Can be customized through `SetPartyMatcher` method. See `Match` method too.
+	PartyMatcherFunc func(Party, *context.Context) bool
+	// PartyMatcher decides if `UseRouter` handlers should be executed or not.
+	// A different interface becauwe we want to separate
+	// the Party's public API from `UseRouter` internals.
+	PartyMatcher interface {
+		Match(ctx *context.Context) bool
+	}
+	// Filter is a wraper for a Router Filter contains information
+	// for its Party's fullpath, subdomain the Party's
+	// matcher and the associated handlers to be executed before main router's request handler.
+	Filter struct {
+		Party     Party        // the Party itself
+		Matcher   PartyMatcher // it's a Party, for freedom that can be changed through a custom matcher which accepts the same filter.
+		Subdomain string
+		Path      string
+		Handlers  context.Handlers
+	}
+)
+
+// SetPartyMatcher accepts a function which runs against
+// a Party and should report whether its `UseRouter` handlers should be executed.
+// PartyMatchers are run through parent to children.
+// It modifies the default Party filter that decides
+// which `UseRouter` middlewares to run before the Router,
+// each one of those middlewares can skip `Context.Next` or call `Context.StopXXX`
+// to stop the main router from searching for a route match.
+// Can be called before or after `UseRouter`, it doesn't matter.
+func (api *APIBuilder) SetPartyMatcher(matcherFunc PartyMatcherFunc) {
+	if matcherFunc == nil {
+		matcherFunc = defaultPartyMatcher
+	}
+	api.partyMatcher = matcherFunc
+}
+
+// Match reports whether the `UseRouter` handlers should be executed.
+// Calls its parent's Match if possible.
+// Implements the `PartyMatcher` interface.
+func (api *APIBuilder) Match(ctx *context.Context) bool {
+	return api.partyMatcher(api, ctx)
+}
+
+func defaultPartyMatcher(p Party, ctx *context.Context) bool {
+	subdomain, path := splitSubdomainAndPath(p.GetRelPath())
+	staticPath := staticPath(path)
+	hosts := subdomain != ""
+
+	if p.IsRoot() {
+		// ALWAYS executed first when registered
+		// through an `Application.UseRouter` call.
+		return true
+	}
+
+	if hosts {
+		// Note(@kataras): do NOT try to implement something like party matcher for each party
+		// separately. We will introduce a new problem with subdomain inside a subdomain:
+		// they are not by prefix, so parenting calls will not help
+		// e.g. admin. and control.admin, control.admin is a sub of the admin.
+		if !canHandleSubdomain(ctx, subdomain) {
+			return false
+		}
+	}
+
+	// this is the longest static path.
+	return strings.HasPrefix(ctx.Path(), staticPath)
+}
+
+// GetRouterFilters returns the global router filters.
+// Read `UseRouter` for more.
+// The map can be altered before router built.
+// The router internally prioritized them by the subdomains and
+// longest static path.
+// Implements the `RoutesProvider` interface.
+func (api *APIBuilder) GetRouterFilters() map[Party]*Filter {
+	return api.routerFilters
+}
+
+// UseRouter upserts one or more handlers that will be fired
+// right before the main router's request handler.
+//
+// Use this method to register handlers, that can ran
+// independently of the incoming request's values,
+// that they will be executed ALWAYS against ALL children incoming requests.
+// Example of use-case: CORS.
+//
+// Note that because these are executed before the router itself
+// the Context should not have access to the `GetCurrentRoute`
+// as it is not decided yet which route is responsible to handle the incoming request.
+// It's one level higher than the `WrapRouter`.
+// The context SHOULD call its `Next` method in order to proceed to
+// the next handler in the chain or the main request handler one.
+func (api *APIBuilder) UseRouter(handlers ...context.Handler) {
+	if len(handlers) == 0 {
+		return
+	}
+
+	beginHandlers := context.Handlers(handlers)
+	// respect any execution rules (begin).
+	api.handlerExecutionRules.Begin.apply(&beginHandlers)
+
+	if f := api.routerFilters[api]; f != nil && len(f.Handlers) > 0 { // exists.
+		beginHandlers = context.UpsertHandlers(f.Handlers, beginHandlers) // remove dupls.
+	} else {
+		// Note(@kataras): we don't add the parent's filter handlers
+		// on `Party` method because we need to know if a `UseRouter` call exist
+		// before prepending the parent's ones and fill a new Filter on `routerFilters`,
+		// that key should NOT exist on a Party without `UseRouter` handlers (see router.go).
+		// That's the only reason we need the `parent` field.
+		if api.parent != nil {
+			// If it's not root, add the parent's handlers here.
+			if root, ok := api.routerFilters[api.parent]; ok {
+				beginHandlers = context.UpsertHandlers(root.Handlers, beginHandlers)
+			}
+		}
+	}
+
+	subdomain, path := splitSubdomainAndPath(api.relativePath)
+	api.routerFilters[api] = &Filter{
+		Matcher:   api,
+		Subdomain: subdomain,
+		Path:      path,
+		Handlers:  beginHandlers,
+	}
+}
+
 // Use appends Handler(s) to the current Party's routes and child routes.
 // If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 //
@@ -774,19 +954,7 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 // or on the basis of the middleware already existing,
 // replace that existing middleware instead.
 func (api *APIBuilder) UseOnce(handlers ...context.Handler) {
-reg:
-	for _, handler := range handlers {
-		name := context.HandlerName(handler)
-		for i, registeredHandler := range api.middleware {
-			registeredName := context.HandlerName(registeredHandler)
-			if name == registeredName {
-				api.middleware[i] = handler // replace this handler with the new one.
-				continue reg                // break and continue to the next handler.
-			}
-		}
-
-		api.middleware = append(api.middleware, handler) // or just insert it.
-	}
+	api.middleware = context.UpsertHandlers(api.middleware, handlers)
 }
 
 // UseGlobal registers handlers that should run at the very beginning.

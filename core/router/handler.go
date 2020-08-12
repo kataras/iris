@@ -118,6 +118,10 @@ func (h *routerHandler) AddRoute(r *Route) error {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
+	// GetRouterFilters returns the app's router filters.
+	// Read `UseRouter` for more.
+	// The map can be altered before router built.
+	GetRouterFilters() map[Party]*Filter
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
@@ -318,12 +322,12 @@ func bindMultiParamTypesHandler(r *Route) {
 	r.topLink.beginHandlers = append(context.Handlers{decisionHandler}, r.topLink.beginHandlers...)
 }
 
-func (h *routerHandler) canHandleSubdomain(ctx *context.Context, subdomain string) bool {
+func canHandleSubdomain(ctx *context.Context, subdomain string) bool {
 	if subdomain == "" {
 		return true
 	}
 
-	requestHost := ctx.Host()
+	requestHost := ctx.Request().URL.Host
 	if netutil.IsLoopbackSubdomain(requestHost) {
 		// this fixes a bug when listening on
 		// 127.0.0.1:8080 for example
@@ -349,7 +353,7 @@ func (h *routerHandler) canHandleSubdomain(ctx *context.Context, subdomain strin
 			return false
 		}
 		// continue to that, any subdomain is valid.
-	} else if !strings.HasPrefix(requestHost, subdomain) { // subdomain contains the dot.
+	} else if !strings.HasPrefix(requestHost, subdomain) { // subdomain contains the dot, e.g. "admin."
 		return false
 	}
 
@@ -396,7 +400,7 @@ func (h *routerHandler) HandleRequest(ctx *context.Context) {
 			continue
 		}
 
-		if h.hosts && !h.canHandleSubdomain(ctx, t.subdomain) {
+		if h.hosts && !canHandleSubdomain(ctx, t.subdomain) {
 			continue
 		}
 
@@ -499,7 +503,7 @@ func (h *routerHandler) FireErrorCode(ctx *context.Context) {
 			continue
 		}
 
-		if h.errorHosts && !h.canHandleSubdomain(ctx, t.subdomain) {
+		if h.errorHosts && !canHandleSubdomain(ctx, t.subdomain) {
 			continue
 		}
 

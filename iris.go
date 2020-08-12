@@ -589,10 +589,39 @@ func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 	}
 }
 
-// TLSNoRedirect is a `host.Configurator` which can be passed as last argument
-// to the `TLS` and `AutoTLS` functions. It disables the automatic
-// registration of redirection from "http://" to "https://" requests.
-var TLSNoRedirect = func(su *host.Supervisor) { su.NoRedirect() }
+var (
+	// TLSNoRedirect is a `host.Configurator` which can be passed as last argument
+	// to the `TLS` runner function. It disables the automatic
+	// registration of redirection from "http://" to "https://" requests.
+	// Applies only to the `TLS` runner.
+	// See `AutoTLSNoRedirect` to register a custom fallback server for `AutoTLS` runner.
+	TLSNoRedirect = func(su *host.Supervisor) { su.NoRedirect() }
+	// AutoTLSNoRedirect is a `host.Configurator`.
+	// It registers a fallback HTTP/1.1 server for the `AutoTLS` one.
+	// The function accepts the letsencrypt wrapper and it
+	// should return a valid instance of http.Server which its handler should be the result
+	// of the "acmeHandler" wrapper.
+	// Usage:
+	//	 getServer := func(acme func(http.Handler) http.Handler) *http.Server {
+	//	     srv := &http.Server{Handler: acme(yourCustomHandler), ...otherOptions}
+	//	     go srv.ListenAndServe()
+	//	     return srv
+	//   }
+	//   app.Run(iris.AutoTLS(":443", "example.com example2.com", "mail@example.com", getServer))
+	//
+	// Note that if Server.Handler is nil then the server is automatically ran
+	// by the framework and the handler set to automatic redirection, it's still
+	// a valid option when the caller wants just to customize the server's fields (except Addr).
+	// With this host configurator the caller can customize the server
+	// that letsencrypt relies to perform the challenge.
+	// LetsEncrypt Certification Manager relies on http://%s:80/.well-known/acme-challenge/<TOKEN>.
+	AutoTLSNoRedirect = func(getFallbackServer func(acmeHandler func(fallback http.Handler) http.Handler) *http.Server) host.Configurator {
+		return func(su *host.Supervisor) {
+			su.NoRedirect()
+			su.Fallback = getFallbackServer
+		}
+	}
+)
 
 // TLS can be used as an argument for the `Run` method.
 // It will start the Application's secure server.

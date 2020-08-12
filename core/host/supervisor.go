@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -30,7 +31,7 @@ type Configurator func(su *Supervisor)
 // Interfaces are separated to return relative functionality to them.
 type Supervisor struct {
 	Server                         *http.Server
-	disableHTTP1ToHTTP2Redirection bool   // if true then no secondary server on `ListenAndServeTLS/AutoTLS` will be registered, exposed through `NoRedirect`.
+	disableHTTP1ToHTTP2Redirection bool
 	closedManually                 uint32 // future use, accessed atomically (non-zero means we've called the Shutdown)
 	closedByInterruptHandler       uint32 // non-zero means that the end-developer interrupted it by-purpose.
 	manuallyTLS                    bool   // we need that in order to determinate what to output on the console before the server begin.
@@ -48,6 +49,21 @@ type Supervisor struct {
 	// Defaults to empty.
 	IgnoredErrors []string
 	onErr         []func(error)
+
+	// Fallback should return a http.Server, which may already running
+	// to handle the HTTP/1.1 clients when TLS/AutoTLS.
+	// On manual TLS the accepted "challengeHandler" just returns the passed handler,
+	// otherwise it binds to the acme challenge wrapper.
+	// Example:
+	//      Fallback = func(h func(fallback http.Handler) http.Handler) *http.Server {
+	//          s := &http.Server{
+	//             Handler: h(myServerHandler),
+	//             ...otherOptions
+	//          }
+	//          go s.ListenAndServe()
+	//          return s
+	//      }
+	Fallback func(challegeHandler func(fallback http.Handler) http.Handler) *http.Server
 
 	// See `iris.Configuration.SocketSharding`.
 	SocketSharding bool
@@ -83,7 +99,7 @@ func (su *Supervisor) Configure(configurators ...Configurator) *Supervisor {
 	return su
 }
 
-// NoRedirect should be called before `ListenAndServeTLS/AutoTLS` when
+// NoRedirect should be called before `ListenAndServeTLS` when
 // secondary http1 to http2 server is not required. This method will disable
 // the automatic registration of secondary http.Server
 // which would redirect "http://" requests to their "https://" equivalent.
@@ -295,11 +311,8 @@ func (su *Supervisor) ListenAndServeTLS(certFileOrContents string, keyFileOrCont
 		}
 	}
 
-	target, _ := url.Parse("https://" + netutil.ResolveVHost(su.Server.Addr)) // e.g. https://localhost:443
-	http1Handler := RedirectHandler(target, http.StatusMovedPermanently)
-
 	su.manuallyTLS = true
-	return su.runTLS(getCertificate, http1Handler)
+	return su.runTLS(getCertificate, nil)
 }
 
 // ListenAndServeAutoTLS acts identically to ListenAndServe, except that it
@@ -346,44 +359,77 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 		Cache:      cache,
 	}
 
-	return su.runTLS(autoTLSManager.GetCertificate, autoTLSManager.HTTPHandler(nil /* nil for redirect */))
+	return su.runTLS(autoTLSManager.GetCertificate, autoTLSManager.HTTPHandler)
 }
 
-func (su *Supervisor) runTLS(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), http1Handler http.Handler) error {
-	if !su.disableHTTP1ToHTTP2Redirection && http1Handler != nil {
-		// Note: no need to use a function like ping(":http") to see
-		// if there is another server running, if it is
-		// then this server will errored and not start at all.
-		http1RedirectServer := &http.Server{
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 60 * time.Second,
-			Addr:         ":http",
-			Handler:      http1Handler,
+func (su *Supervisor) runTLS(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), challengeHandler func(fallback http.Handler) http.Handler) error {
+	if su.manuallyTLS && !su.disableHTTP1ToHTTP2Redirection {
+		// If manual TLS and auto-redirection is enabled,
+		// then create an empty challenge handler so the :80 server starts.
+		challengeHandler = func(h http.Handler) http.Handler { // it is always nil on manual TLS.
+			target, _ := url.Parse("https://" + netutil.ResolveVHost(su.Server.Addr)) // e.g. https://localhost:443
+			http1Handler := RedirectHandler(target, http.StatusMovedPermanently)
+			return http1Handler
+		}
+	}
+
+	if challengeHandler != nil {
+		http1Server := &http.Server{
+			Addr:              ":http",
+			Handler:           challengeHandler(nil), // nil for redirection.
+			ReadTimeout:       su.Server.ReadTimeout,
+			ReadHeaderTimeout: su.Server.ReadHeaderTimeout,
+			WriteTimeout:      su.Server.WriteTimeout,
+			IdleTimeout:       su.Server.IdleTimeout,
+			MaxHeaderBytes:    su.Server.MaxHeaderBytes,
 		}
 
-		// register a shutdown callback to this
-		// supervisor in order to close the "secondary redirect server" as well.
+		if su.Fallback == nil {
+			if !su.manuallyTLS && su.disableHTTP1ToHTTP2Redirection {
+				// automatic redirection was disabled but Fallback was not registered.
+				return fmt.Errorf("autotls: use iris.AutoTLSNoRedirect instead")
+			}
+			go http1Server.ListenAndServe()
+		} else {
+			// if it's manual TLS still can have its own Fallback server here,
+			// the handler will be the redirect one, the difference is that it can run on any port.
+			srv := su.Fallback(challengeHandler)
+			if srv == nil {
+				if !su.manuallyTLS {
+					return fmt.Errorf("autotls: relies on an HTTP/1.1 server")
+				}
+				// for any case the end-developer decided to return nil here,
+				// we proceed with the automatic redirection.
+				srv = http1Server
+				go srv.ListenAndServe()
+			} else {
+				if srv.Addr == "" {
+					srv.Addr = ":http"
+				} else if !su.manuallyTLS && srv.Addr != ":80" && srv.Addr != ":http" {
+					return fmt.Errorf("autotls: The HTTP-01 challenge relies on http://%s:80/.well-known/acme-challenge/", netutil.ResolveVHost(su.Server.Addr))
+				}
+
+				if srv.Handler == nil {
+					// handler was nil, caller wanted to change the server's options like read/write timeout.
+					srv.Handler = http1Server.Handler
+					go srv.ListenAndServe() // automatically start it, we assume the above ^
+				}
+				http1Server = srv // to register the shutdown event.
+			}
+		}
+
 		su.RegisterOnShutdown(func() {
-			// give it some time to close itself...
 			timeout := 10 * time.Second
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
-			http1RedirectServer.Shutdown(ctx)
+			http1Server.Shutdown(ctx)
 		})
-
-		ln, err := netutil.TCP(":http", su.SocketSharding)
-		if err != nil {
-			return err
-		}
-
-		go http1RedirectServer.Serve(ln)
 	}
 
 	if su.Server.TLSConfig == nil {
 		// If tls.Config is NOT configured manually through a host configurator,
 		// then create it.
 		su.Server.TLSConfig = &tls.Config{
-
 			MinVersion:               tls.VersionTLS12,
 			GetCertificate:           getCertificate,
 			PreferServerCipherSuites: true,
