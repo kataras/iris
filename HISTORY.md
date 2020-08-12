@@ -361,6 +361,8 @@ Other Improvements:
 
 - Fix `AutoTLS` when used with `iris.TLSNoRedirect` [*](https://github.com/kataras/iris/issues/1577). The `AutoTLS` runner can be customized through the new `iris.AutoTLSNoRedirect` instead, read its go documentation. Example of having both TLS and non-TLS versions of the same application without conflicts with letsencrypt `./well-known` path:
 
+![](https://iris-go.com/images/github/autotls-1.png)
+
 ```go
 package main
 

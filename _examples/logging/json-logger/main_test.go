@@ -50,6 +50,10 @@ func TestJSONLogger(t *testing.T) {
 	got := out.String()
 	got = got[strings.Index(got, "{"):] // take only the json we care and after.
 	if expected != got {
-		t.Fatalf("expected:\n%s\nbut got:\n%s", expected, got)
+		if !strings.HasSuffix(got, expected) {
+			// C:/mygopath vs /home/travis vs any file system,
+			// pure check but it does the job.
+			t.Fatalf("expected:\n%s\nbut got:\n%s", expected, got)
+		}
 	}
 }
