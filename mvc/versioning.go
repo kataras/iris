@@ -1,9 +1,9 @@
 package mvc
 
 import (
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
-	"github.com/kataras/iris/v12/versioning"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/versioning"
 )
 
 // Version returns a valid `Option` that can be passed to the `Application.Handle` method.

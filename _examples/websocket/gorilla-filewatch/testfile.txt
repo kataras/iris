@@ -1,4 +1,0 @@
-Some Contents
-# you can edit this file locally
-# and http://localhost:8080
-# will render the new contents through the live websocket connection.

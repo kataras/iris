@@ -3,7 +3,7 @@ package router
 import (
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 const (

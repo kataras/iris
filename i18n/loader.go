@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 
 	"github.com/BurntSushi/toml"
 	"golang.org/x/text/language"

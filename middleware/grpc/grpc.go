@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/core/router"
 )
 
 // New returns a new gRPC Iris router wrapper for a gRPC server.
@@ -13,7 +13,7 @@ import (
 // The Iris server SHOULD run under HTTP/2 and clients too.
 //
 // Usage:
-//  import grpcWrapper "github.com/kataras/iris/v12/middleware/grpc"
+//  import grpcWrapper "github.com/kataras/iris/middleware/grpc"
 //  [...]
 //  app := iris.New()
 //  grpcServer := grpc.NewServer()

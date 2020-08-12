@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 func init() {

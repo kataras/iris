@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12/cache/client/rule"
-	"github.com/kataras/iris/v12/cache/entry"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/cache/client/rule"
+	"github.com/kataras/iris/cache/entry"
+	"github.com/kataras/iris/context"
 )
 
 func init() {

@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router"
 	"gopkg.in/yaml.v3"
 )
 

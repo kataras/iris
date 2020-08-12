@@ -31,7 +31,7 @@ var (
 // If the name starts with "iris" then it replaces that string with the
 // full Iris module package name,
 // e.g. iris/middleware/logger.(*requestLoggerMiddleware).ServeHTTP-fm to
-// github.com/kataras/iris/v12/middleware/logger.(*requestLoggerMiddleware).ServeHTTP-fm
+// github.com/kataras/iris/middleware/logger.(*requestLoggerMiddleware).ServeHTTP-fm
 // for convenient between Iris versions.
 func SetHandlerName(original string, replacement string) {
 	if strings.HasPrefix(original, "iris") {

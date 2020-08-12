@@ -1,1 +1,0 @@
-window.alert("app.js loaded from \"/");

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/core/memstore"
 )
 
 type (

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 // FromStd converts native http.Handler & http.HandlerFunc to context.Handler.

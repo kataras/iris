@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 // GRPC registers a controller which serves gRPC clients.

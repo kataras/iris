@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
-	"github.com/kataras/iris/v12/hero"
-	"github.com/kataras/iris/v12/macro"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/hero"
+	"github.com/kataras/iris/macro"
 )
 
 // BaseController is the optional controller interface, if it's

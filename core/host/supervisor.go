@@ -14,7 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kataras/iris/v12/core/netutil"
+	"github.com/kataras/iris/core/netutil"
 
 	"golang.org/x/crypto/acme/autocert"
 )

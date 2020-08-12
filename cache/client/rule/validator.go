@@ -1,6 +1,6 @@
 package rule
 
-import "github.com/kataras/iris/v12/context"
+import "github.com/kataras/iris/context"
 
 // Validators are introduced to implement the RFC about cache (https://tools.ietf.org/html/rfc7234#section-1.1).
 

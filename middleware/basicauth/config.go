@@ -3,7 +3,7 @@ package basicauth
 import (
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 const (

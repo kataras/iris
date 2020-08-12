@@ -13,22 +13,37 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errgroup"
-	"github.com/kataras/iris/v12/core/host"
-	"github.com/kataras/iris/v12/core/netutil"
-	"github.com/kataras/iris/v12/core/router"
-	"github.com/kataras/iris/v12/i18n"
-	requestLogger "github.com/kataras/iris/v12/middleware/logger"
-	"github.com/kataras/iris/v12/middleware/recover"
-	"github.com/kataras/iris/v12/view"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/errgroup"
+	"github.com/kataras/iris/core/host"
+	"github.com/kataras/iris/core/netutil"
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/i18n"
+	requestLogger "github.com/kataras/iris/middleware/logger"
+	"github.com/kataras/iris/middleware/recover"
+	"github.com/kataras/iris/view"
 
 	"github.com/kataras/golog"
 	"github.com/kataras/tunnel"
 )
 
 // Version is the current version number of the Iris Web Framework.
-const Version = "12.2.0"
+const Version = "stale"
+
+func init() {
+	golog.Fatal(`You have installed an invalid version. Install with:
+go get -u github.com/kataras/iris/v12@latest
+
+If your Open Source project depends on that pre-go1.9 version please open an issue
+at https://github.com/kataras/iris/issues/new and share your repository with us,
+we will upgrade your project's code base to the latest version for free.
+
+If you have a commercial project that you cannot share publically, please contact with
+@kataras at https://chat.iris-go.com. Assistance will be provided to you and your colleagues
+for free.
+`)
+
+}
 
 // Byte unit helpers.
 const (
@@ -408,7 +423,7 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 // If error occurred while building the Application, the returns type of error will be an *errgroup.Group
 // which let the callers to inspect the errors and cause, usage:
 //
-// import "github.com/kataras/iris/v12/core/errgroup"
+// import "github.com/kataras/iris/core/errgroup"
 //
 // errgroup.Walk(app.Build(), func(typ interface{}, err error) {
 // 	app.Logger().Errorf("%s: %s", typ, err)

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 func init() {

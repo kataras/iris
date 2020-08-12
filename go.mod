@@ -1,4 +1,4 @@
-module github.com/kataras/iris/v12
+module github.com/kataras/iris
 
 go 1.14
 

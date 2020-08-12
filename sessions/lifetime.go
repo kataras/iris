@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 // LifeTime controls the session expiration datetime.

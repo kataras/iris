@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/core/memstore"
 )
 
 // RequestParams is a key string - value string storage which

@@ -3,9 +3,9 @@ package router
 import (
 	"net/http"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errgroup"
-	"github.com/kataras/iris/v12/macro"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/errgroup"
+	"github.com/kataras/iris/macro"
 )
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.

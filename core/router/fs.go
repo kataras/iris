@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 const indexName = "/index.html"

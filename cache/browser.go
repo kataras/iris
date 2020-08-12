@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris/v12/cache/client"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/cache/client"
+	"github.com/kataras/iris/context"
 )
 
 // CacheControlHeaderValue is the header value of the
@@ -111,7 +111,7 @@ var ETag = func(ctx *context.Context) {
 // Cache304 sends a `StatusNotModified` (304) whenever
 // the "If-Modified-Since" request header (time) is before the
 // time.Now() + expiresEvery (always compared to their UTC values).
-// Use this `cache#Cache304` instead of the "github.com/kataras/iris/v12/cache" or iris.Cache
+// Use this `cache#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
 // for better performance.
 // Clients that are compatible with the http RCF (all browsers are and tools like postman)
 // will handle the caching.

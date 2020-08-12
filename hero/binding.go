@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 )
 
 // binding contains the Dependency and the Input, it's the result of a function or struct + dependencies.

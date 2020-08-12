@@ -30,7 +30,7 @@ Please make sure the bug is reproducible over the `master` branch:
 
 ```sh
 $ cd PROJECT
-$ go get -u github.com/kataras/iris/v12@master
+$ go get -u github.com/kataras/iris@master
 $ go run .
 ```
 

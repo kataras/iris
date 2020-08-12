@@ -1,3 +1,0 @@
-{{block menu()}}
-  <p>The menu block was invoked.</p>
-{{end}}

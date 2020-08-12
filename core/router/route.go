@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/macro"
-	"github.com/kataras/iris/v12/macro/handler"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/macro/handler"
 
 	"github.com/kataras/pio"
 )

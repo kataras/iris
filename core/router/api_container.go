@@ -3,9 +3,9 @@ package router
 import (
 	"net/http"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/hero"
-	"github.com/kataras/iris/v12/macro"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/hero"
+	"github.com/kataras/iris/macro"
 )
 
 // APIContainer is a wrapper of a common `Party` featured by Dependency Injection.

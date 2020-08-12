@@ -1,6 +1,6 @@
 package context
 
-import "github.com/kataras/iris/v12/core/netutil"
+import "github.com/kataras/iris/core/netutil"
 
 // ConfigurationReadOnly can be implemented
 // by Configuration, it's being used inside the Context.

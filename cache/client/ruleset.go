@@ -1,10 +1,10 @@
 package client
 
 import (
-	"github.com/kataras/iris/v12/cache/cfg"
-	"github.com/kataras/iris/v12/cache/client/rule"
-	"github.com/kataras/iris/v12/cache/ruleset"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/cache/cfg"
+	"github.com/kataras/iris/cache/client/rule"
+	"github.com/kataras/iris/cache/ruleset"
+	"github.com/kataras/iris/context"
 )
 
 // DefaultRuleSet is a list of the default pre-cache validators

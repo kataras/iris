@@ -3,9 +3,9 @@
 package handler
 
 import (
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/memstore"
-	"github.com/kataras/iris/v12/macro"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/memstore"
+	"github.com/kataras/iris/macro"
 )
 
 // CanMakeHandler reports whether a macro template needs a special macro's evaluator handler to be validated

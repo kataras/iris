@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/netutil"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/netutil"
 )
 
 type subdomainRedirectWrapper struct {

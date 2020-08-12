@@ -25,8 +25,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/kataras/iris/v12/core/memstore"
-	"github.com/kataras/iris/v12/core/netutil"
+	"github.com/kataras/iris/core/memstore"
+	"github.com/kataras/iris/core/netutil"
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"

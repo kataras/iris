@@ -3,8 +3,8 @@ package macro
 import (
 	"reflect"
 
-	"github.com/kataras/iris/v12/macro/interpreter/ast"
-	"github.com/kataras/iris/v12/macro/interpreter/parser"
+	"github.com/kataras/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/parser"
 )
 
 // Template contains a route's path full parsed template.

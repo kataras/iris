@@ -1,5 +1,0 @@
-= include partials/header.ace .
-
-h2 {{.Title}}
-
-= include partials/footer.ace .

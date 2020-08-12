@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/context"
 
 	"github.com/square/go-jose/v3"
 	"github.com/square/go-jose/v3/jwt"

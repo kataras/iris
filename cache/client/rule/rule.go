@@ -1,6 +1,6 @@
 package rule
 
-import "github.com/kataras/iris/v12/context"
+import "github.com/kataras/iris/context"
 
 // Rule a superset of validators
 type Rule interface {
