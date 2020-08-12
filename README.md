@@ -24,6 +24,26 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 
 [![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
+## 👑 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=7DPAYRDR28MMJ&item_name=Iris+Web+Framework&currency_code=EUR&source=url">Supporters</a>
+
+<p float="left">
+  <a href="https://github.com/LYF123123"><img src="https://avatars1.githubusercontent.com/u/33317812?v=4" alt ="陆 轶丰" title="LYF123123" with="75" style="width:75px"/></a>
+  <a href="https://github.com/xiaozhuai"><img src="https://avatars1.githubusercontent.com/u/4773701?v=4" alt ="Weihang Ding" title="xiaozhuai" with="75" style="width:75px"/></a>
+  <a href="https://github.com/fangli"><img src="https://avatars1.githubusercontent.com/u/3032639?v=4" alt ="Li Fang" title="fangli" with="75" style="width:75px"/></a>
+  <a href="https://github.com/TechMaster"><img src="https://avatars1.githubusercontent.com/u/1491686?v=4" alt ="TechMaster" title="TechMaster" with="75" style="width:75px"/></a>
+  <a href="https://github.com/lensesio"><img src="https://avatars1.githubusercontent.com/u/11728472?v=4" alt ="lenses.io" title="lensesio" with="75" style="width:75px"/></a>
+  <a href="https://github.com/celsosz"><img src="https://avatars1.githubusercontent.com/u/3466493?v=4" alt ="Celso Souza" title="celsosz" with="75" style="width:75px"/></a>
+  <a href="https://github.com/altafino"><img src="https://avatars1.githubusercontent.com/u/24539467?v=4" alt ="Altafino" title="altafino" with="75" style="width:75px"/></a>
+  <a href="https://github.com/thomasfr"><img src="https://avatars1.githubusercontent.com/u/287432?v=4" alt ="Thomas Fritz" title="thomasfr" with="75" style="width:75px"/></a>
+  <a href="https://github.com/hengestone"><img src="https://avatars1.githubusercontent.com/u/362587?v=4" alt ="Conrad Steenberg" title="hengestone" with="75" style="width:75px"/></a>
+  <a href="https://github.com/se77en"><img src="https://avatars1.githubusercontent.com/u/1468284?v=4" alt ="Damon Zhao" title="se77en" with="75" style="width:75px"/></a>
+  <a href="https://github.com/International"><img src="https://avatars1.githubusercontent.com/u/1022918?v=4" alt ="George Opritescu" title="International" with="75" style="width:75px"/></a>
+  <a href="https://github.com/Juanses"><img src="https://avatars1.githubusercontent.com/u/6137970?v=4" alt ="Juanses" title="Juanses" with="75" style="width:75px"/></a>
+  <a href="https://github.com/ansrivas"><img src="https://avatars1.githubusercontent.com/u/1695056?v=4" alt ="Ankur Srivastava" title="ansrivas" with="75" style="width:75px"/></a>
+  <a href="https://github.com/lexrus"><img src="https://avatars1.githubusercontent.com/u/219689?v=4" alt ="Lex Tang" title="lexrus" with="75" style="width:75px"/></a>
+  <a href="https://github.com/li3p"><img src="https://avatars1.githubusercontent.com/u/55519?v=4" alt ="li3p" title="li3p" with="75" style="width:75px"/></a>
+</p>
+
 ## 📖 Learning Iris
 
 ```sh
@@ -190,11 +210,11 @@ For a more detailed technical documentation you can head over to our [godocs](ht
 
 ### Do you like to read while traveling?
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 [![follow Iris web framework on twitter](https://img.shields.io/twitter/follow/iris_framework?color=ee7506&logoColor=ee7506&style=for-the-badge)](https://twitter.com/intent/follow?screen_name=iris_framework)
 
-You can [request](https://bit.ly/iris-req-book) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
+You can [request](https://iris-go.com/#book) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
 
 ## 🙌 Contributing
 
