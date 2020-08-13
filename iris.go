@@ -614,7 +614,7 @@ var (
 	// a valid option when the caller wants just to customize the server's fields (except Addr).
 	// With this host configurator the caller can customize the server
 	// that letsencrypt relies to perform the challenge.
-	// LetsEncrypt Certification Manager relies on http://%s:80/.well-known/acme-challenge/<TOKEN>.
+	// LetsEncrypt Certification Manager relies on http://example.com/.well-known/acme-challenge/<TOKEN>.
 	AutoTLSNoRedirect = func(getFallbackServer func(acmeHandler func(fallback http.Handler) http.Handler) *http.Server) host.Configurator {
 		return func(su *host.Supervisor) {
 			su.NoRedirect()

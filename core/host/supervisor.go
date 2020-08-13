@@ -407,9 +407,11 @@ func (su *Supervisor) runTLS(getCertificate func(*tls.ClientHelloInfo) (*tls.Cer
 			} else {
 				if srv.Addr == "" {
 					srv.Addr = ":http"
-				} else if !su.manuallyTLS && srv.Addr != ":80" && srv.Addr != ":http" {
-					return fmt.Errorf("autotls: The HTTP-01 challenge relies on http://%s:80/.well-known/acme-challenge/", netutil.ResolveVHost(su.Server.Addr))
 				}
+				// } else if !su.manuallyTLS && srv.Addr != ":80" && srv.Addr != ":http" {
+				// 	hostname, _, _ := net.SplitHostPort(su.Server.Addr)
+				// 	return fmt.Errorf("autotls: The HTTP-01 challenge relies on http://%s:80/.well-known/acme-challenge/", hostname)
+				// }
 
 				if srv.Handler == nil {
 					// handler was nil, caller wanted to change the server's options like read/write timeout.
