@@ -295,6 +295,9 @@ var (
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
 	// A shortcut for the `router.FileServer`.
 	FileServer = router.FileServer
+	// DirList is the default `DirOptions.DirList` field.
+	// Read more at: `core/router.DirList`.
+	DirList = router.DirList
 	// DirListRich can be passed to `DirOptions.DirList` field
 	// to override the default file listing appearance.
 	// Read more at: `core/router.DirListRich`.
