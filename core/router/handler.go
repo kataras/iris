@@ -327,7 +327,7 @@ func canHandleSubdomain(ctx *context.Context, subdomain string) bool {
 		return true
 	}
 
-	requestHost := ctx.Request().URL.Host
+	requestHost := ctx.Host()
 	if netutil.IsLoopbackSubdomain(requestHost) {
 		// this fixes a bug when listening on
 		// 127.0.0.1:8080 for example

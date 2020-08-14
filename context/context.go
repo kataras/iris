@@ -785,12 +785,11 @@ func (ctx *Context) Host() string {
 
 // GetHost returns the host part of the current URI.
 func GetHost(r *http.Request) string {
-	if host := r.Host; host != "" {
+	// contains subdomain.
+	if host := r.URL.Host; host != "" {
 		return host
 	}
-
-	// contains subdomain.
-	return r.URL.Host
+	return r.Host
 }
 
 // Subdomain returns the subdomain of this request, if any.
