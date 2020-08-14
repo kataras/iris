@@ -38,12 +38,11 @@ var IsLoopbackSubdomain = func(s string) bool {
 // GetLoopbackSubdomain returns the part of the loopback subdomain.
 func GetLoopbackSubdomain(s string) string {
 	if strings.HasPrefix(s, "127.0.0.1:") || s == "127.0.0.1" ||
-		strings.HasPrefix(s, "0.0.0.0:") || s == "0.0.0.0" /* let's resolve that without regex (see below)*/ {
+		strings.HasPrefix(s, "0.0.0.0:") || s == "0.0.0.0" {
 		return s
 	}
 
-	ss := loopbackSubRegex.FindString(s)
-	return ss
+	return loopbackSubRegex.FindString(s)
 }
 
 // IsLoopbackHost tries to catch the local addresses when a developer

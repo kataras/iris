@@ -910,7 +910,6 @@ func GetDomain(hostport string) string {
 		host = tmp
 	}
 
-	// has port.
 	switch host {
 	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
 		// loopback.

@@ -115,7 +115,7 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 	if loopback := netutil.GetLoopbackSubdomain(root); loopback != "" {
 		root = strings.Replace(root, loopback, context.GetDomain(host), 1)
 	}
-	// println("root: " + root)
+
 	hasSubdomain := host != root
 
 	if !hasSubdomain && !s.isFromRoot {
