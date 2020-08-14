@@ -122,6 +122,12 @@ type Context struct {
 	handlers Handlers
 	// the current position of the handler's chain
 	currentHandlerIndex int
+	// proceeded reports whether `Proceed` method
+	// called before a `Next`. It is a flash field and it is set
+	// to true on `Next` call when its called on the last handler in the chain.
+	// Reports whether a `Next` is called,
+	// even if the handler index remains the same (last handler).
+	proceeded uint32
 }
 
 // NewContext returns a new Context instance.
@@ -149,6 +155,7 @@ func (ctx *Context) Clone() *Context {
 		writer:              ctx.writer.Clone(),
 		request:             ctx.request,
 		currentHandlerIndex: stopExecutionIndex,
+		proceeded:           atomic.LoadUint32(&ctx.proceeded),
 		currentRoute:        ctx.currentRoute,
 	}
 }
@@ -170,6 +177,7 @@ func (ctx *Context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.params.Store = ctx.params.Store[0:0]
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
+	ctx.proceeded = 0
 	ctx.writer = AcquireResponseWriter()
 	ctx.writer.BeginResponse(w)
 }
@@ -430,7 +438,10 @@ func (ctx *Context) HandlerIndex(n int) (currentIndex int) {
 }
 
 // Proceed is an alternative way to check if a particular handler
-// has been executed and called the `ctx.Next` function inside it.
+// has been executed.
+// The given "h" Handler can report a failure with `StopXXX` methods
+// or ignore calling a `Next` (see `iris.ExecutionRules` too).
+//
 // This is useful only when you run a handler inside
 // another handler. It justs checks for before index and the after index.
 //
@@ -467,11 +478,23 @@ func (ctx *Context) HandlerIndex(n int) (currentIndex int) {
 // Alternative way is `!ctx.IsStopped()` if middleware make use of the `ctx.StopExecution()` on failure.
 func (ctx *Context) Proceed(h Handler) bool {
 	beforeIdx := ctx.currentHandlerIndex
+	atomic.StoreUint32(&ctx.proceeded, 0)
 	h(ctx)
-	if ctx.currentHandlerIndex > beforeIdx && !ctx.IsStopped() {
-		return true
+
+	if ctx.currentHandlerIndex == stopExecutionIndex {
+		return false
 	}
-	return false
+
+	if ctx.currentHandlerIndex <= beforeIdx {
+		// If "h" didn't call its Next
+		// or it doesn't have a next handler,
+		// that index will be the same,
+		// so we check if at least once the
+		// Next is called on the last handler.
+		return atomic.CompareAndSwapUint32(&ctx.proceeded, 1, 0)
+	}
+
+	return true
 }
 
 // HandlerName returns the current handler's name, helpful for debugging.
@@ -505,7 +528,9 @@ func (ctx *Context) Next() {
 	nextIndex := ctx.currentHandlerIndex + 1
 	handlers := ctx.handlers
 
-	if nextIndex < len(handlers) {
+	if n := len(handlers); nextIndex == n {
+		atomic.StoreUint32(&ctx.proceeded, 1) // last handler but Next is called.
+	} else if nextIndex < n {
 		ctx.currentHandlerIndex = nextIndex
 		handlers[nextIndex](ctx)
 	}

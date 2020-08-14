@@ -36,7 +36,7 @@ var (
 
 	firstUseRouterResponse = "userouter1"
 	// Use inline handler, no the `writeHandler`,
-	// because it will be overriden by `secondUseRouterHandler` otherwise,
+	// because it will be overridden by `secondUseRouterHandler` otherwise,
 	// look `UseRouter:context.UpsertHandlers` for more.
 	firstUseRouterHandler = func(ctx iris.Context) {
 		ctx.WriteString(firstUseRouterResponse)
