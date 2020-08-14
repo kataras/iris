@@ -293,6 +293,12 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 			// if it's cached and its settings didnt allow this file to be compressed
 			// then don't try to compress it on the fly, even if the options.Compress was set to true.
 			if encoding != "" {
+				if ctx.ResponseWriter().Header().Get(context.ContentEncodingHeaderKey) != "" {
+					// disable any compression writer if that header exist,
+					// note that, we don't directly check for CompressResponseWriter type
+					// because it may be a ResponseRecorder.
+					ctx.CompressWriter(false)
+				}
 				// Set the response header we need, the data are already compressed.
 				context.AddCompressHeaders(ctx.ResponseWriter().Header(), encoding)
 			}
