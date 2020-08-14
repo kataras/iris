@@ -904,24 +904,29 @@ func (ctx *Context) GetHeader(name string) string {
 }
 
 // GetDomain resolves and returns the server's domain.
-func (ctx *Context) GetDomain() string {
-	hostport := ctx.Host()
-	if host, _, err := net.SplitHostPort(hostport); err == nil {
-		// has port.
-		switch host {
-		case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
-			// loopback.
-			return "localhost"
-		default:
-			if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
-				host = domain
-			}
-
-			return host
-		}
+func GetDomain(hostport string) string {
+	host := hostport
+	if tmp, _, err := net.SplitHostPort(hostport); err == nil {
+		host = tmp
 	}
 
-	return hostport
+	// has port.
+	switch host {
+	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
+		// loopback.
+		return "localhost"
+	default:
+		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+			host = domain
+		}
+
+		return host
+	}
+}
+
+// GetDomain resolves and returns the server's domain.
+func (ctx *Context) GetDomain() string {
+	return GetDomain(ctx.Host())
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
