@@ -395,7 +395,9 @@ func main() {
 }
 ```
 
-- `Application.UseRouter(...Handler)` - per party to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
+- `Party.UseError(...Handler)` - to register handlers to run before the `OnErrorCode/OnAnyErrorCode` ones.
+
+- `Party.UseRouter(...Handler)` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
 
 - `*versioning.Group` type is a full `Party` now.
 

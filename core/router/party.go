@@ -41,11 +41,11 @@ type Party interface {
 
 	// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 	// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-	// Look `OnAnyErrorCode` too.
+	// Look `UseError` and `OnAnyErrorCode` too.
 	OnErrorCode(statusCode int, handlers ...context.Handler) []*Route
 	// OnAnyErrorCode registers a handlers chain for all error codes
 	// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
-	// Look `OnErrorCode` too.
+	// Look `UseError` and `OnErrorCode` too.
 	OnAnyErrorCode(handlers ...context.Handler) []*Route
 
 	// Party returns a new child Party which inherites its
@@ -96,6 +96,10 @@ type Party interface {
 	// The context SHOULD call its `Next` method in order to proceed to
 	// the next handler in the chain or the main request handler one.
 	UseRouter(handlers ...context.Handler)
+	// UseError upserts one or more handlers that will be fired,
+	// as middleware, before any error handler registered through `On(Any)ErrorCode`.
+	// See `OnErrorCode` too.
+	UseError(handlers ...context.Handler)
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)

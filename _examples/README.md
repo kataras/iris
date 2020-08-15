@@ -61,6 +61,7 @@
         * [Wildcard](routing/subdomains/wildcard/main.go)
         * [WWW](routing/subdomains/www/main.go)
         * [Redirection](routing/subdomains/redirect/main.go)
+        * [HTTP Errors View](routing/subdomains/http-errors-view/main.go)
     * [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
     * [API Versioning](routing/versioning/main.go)
     * [Sitemap](routing/sitemap/main.go)

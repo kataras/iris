@@ -173,7 +173,8 @@ type APIBuilder struct {
 
 	// the per-party handlers, order
 	// of handlers registration matters.
-	middleware context.Handlers
+	middleware          context.Handlers
+	middlewareErrorCode context.Handlers
 	// the global middleware handlers, order of call doesn't matters, order
 	// of handlers registration matters. We need a secondary field for this
 	// because `UseGlobal` registers handlers that should be executed
@@ -539,6 +540,8 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 	if errorCode == 0 {
 		beginHandlers = context.JoinHandlers(beginHandlers, api.middleware)
 		doneHandlers = context.JoinHandlers(doneHandlers, api.doneHandlers)
+	} else {
+		beginHandlers = context.JoinHandlers(beginHandlers, api.middlewareErrorCode)
 	}
 
 	mainHandlers := context.Handlers(handlers)
@@ -549,7 +552,7 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 	mainHandlerFileName, mainHandlerFileNumber := context.HandlerFileLineRel(handlers[mainHandlerIndex])
 
 	// re-calculate mainHandlerIndex in favor of the middlewares.
-	mainHandlerIndex = len(api.middleware) + len(api.beginGlobalHandlers) + mainHandlerIndex
+	mainHandlerIndex = len(beginHandlers) + mainHandlerIndex
 
 	// TODO: for UseGlobal/DoneGlobal that doesn't work.
 	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
@@ -668,6 +671,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		// per-party/children
 		parent:                api,
 		middleware:            middleware,
+		middlewareErrorCode:   context.JoinHandlers(api.middlewareErrorCode, context.Handlers{}),
 		doneHandlers:          api.doneHandlers[0:],
 		relativePath:          fullpath,
 		allowMethods:          allowMethods,
@@ -938,6 +942,13 @@ func (api *APIBuilder) UseRouter(handlers ...context.Handler) {
 	}
 }
 
+// UseError upserts one or more handlers that will be fired,
+// as middleware, before any error handler registered through `On(Any)ErrorCode`.
+// See `OnErrorCode` too.
+func (api *APIBuilder) UseError(handlers ...context.Handler) {
+	api.middlewareErrorCode = context.UpsertHandlers(api.middlewareErrorCode, handlers)
+}
+
 // Use appends Handler(s) to the current Party's routes and child routes.
 // If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 //
@@ -1011,6 +1022,7 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 // Returns this Party.
 func (api *APIBuilder) Reset() Party {
 	api.middleware = api.middleware[0:0]
+	api.middlewareErrorCode = api.middlewareErrorCode[0:0]
 	api.doneHandlers = api.doneHandlers[0:0]
 	api.handlerExecutionRules = ExecutionRules{}
 	api.routeRegisterRule = RouteOverride
@@ -1189,7 +1201,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 
 // OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 // Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-// Look `OnAnyErrorCode` too.
+// Look `UseError` and `OnAnyErrorCode` too.
 func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) (routes []*Route) {
 	routes = append(routes, api.handle(statusCode, "", "/", handlers...))
 
@@ -1202,7 +1214,7 @@ func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) 
 
 // OnAnyErrorCode registers a handlers chain for all error codes
 // (4xxx and 5xxx, change the `context.ClientErrorCodes` and `context.ServerErrorCodes` variables to modify those)
-// Look `OnErrorCode` too.
+// Look `UseError` and `OnErrorCode` too.
 func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Route) {
 	for _, statusCode := range context.ClientAndServerErrorCodes {
 		routes = append(routes, api.OnErrorCode(statusCode, handlers...)...)
@@ -1221,10 +1233,12 @@ func (api *APIBuilder) RegisterView(viewEngine context.ViewEngine) {
 		return
 	}
 
-	api.Use(func(ctx *context.Context) {
+	handler := func(ctx *context.Context) {
 		ctx.ViewEngine(viewEngine)
 		ctx.Next()
-	})
+	}
+	api.Use(handler)
+	api.UseError(handler)
 	// Note (@kataras): It does not return the Party in order
 	// to keep the iris.Application a compatible Party.
 }
@@ -1244,10 +1258,13 @@ func (api *APIBuilder) RegisterView(viewEngine context.ViewEngine) {
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/view
 func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
-	api.Use(func(ctx *context.Context) {
+	handler := func(ctx *context.Context) {
 		ctx.ViewLayout(tmplLayoutFile)
 		ctx.Next()
-	})
+	}
+
+	api.Use(handler)
+	api.UseError(handler)
 
 	return api
 }

@@ -1,0 +1,9 @@
+<div style="background-color: black; color: red">
+    <h1>Oups, you've got an error!</h1>
+    {{ if .ErrorCode }}
+        {{ $tmplName := print "partials/" .ErrorCode ".html"}}
+        {{ render $tmplName }}
+    {{ else }}
+        {{ render "partials/500.html" }}
+    {{ end }}
+</div>
