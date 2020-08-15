@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kataras/golog"
+	"github.com/tdewolff/minify/v2"
 )
 
 // Application is the context's owner.
@@ -25,6 +26,14 @@ type Application interface {
 	// the failure reason if not.
 	Validate(interface{}) error
 
+	// Minifier returns the minifier instance.
+	// By default it can minifies:
+	// - text/html
+	// - text/css
+	// - image/svg+xml
+	// - application/text(javascript, ecmascript, json, xml).
+	// Use that instance to add custom Minifiers before server ran.
+	Minifier() *minify.M
 	// View executes and write the result of a template file to the writer.
 	//
 	// Use context.View to render templates to the client instead.

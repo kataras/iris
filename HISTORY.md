@@ -395,6 +395,10 @@ func main() {
 }
 ```
 
+- `iris.Minify` middleware to minify responses based on their media/content-type.
+
+- `Context.OnCloseErr` and `Context.OnConnectionCloseErr` - to call a function of `func() error`  instead of an `iris.Handler` when request is closed or manually canceled.
+
 - `Party.UseError(...Handler)` - to register handlers to run before the `OnErrorCode/OnAnyErrorCode` ones.
 
 - `Party.UseRouter(...Handler)` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.

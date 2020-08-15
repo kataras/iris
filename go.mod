@@ -32,6 +32,7 @@ require (
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693
+	github.com/tdewolff/minify/v2 v2.8.0
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.5

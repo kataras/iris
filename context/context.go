@@ -259,6 +259,35 @@ func (ctx *Context) OnConnectionClose(cb Handler) bool {
 	return true
 }
 
+// OnConnectionCloseErr same as `OnConnectionClose` but instead it
+// receives a function which returns an error.
+// If error is not nil, it will be logged as a debug message.
+func (ctx *Context) OnConnectionCloseErr(cb func() error) bool {
+	if cb == nil {
+		return false
+	}
+
+	reqCtx := ctx.Request().Context()
+	if reqCtx == nil {
+		return false
+	}
+
+	notifyClose := reqCtx.Done()
+	if notifyClose == nil {
+		return false
+	}
+
+	go func() {
+		<-notifyClose
+		if err := cb(); err != nil {
+			// Can be ignored.
+			ctx.app.Logger().Debugf("OnConnectionCloseErr: received error: %v", err)
+		}
+	}()
+
+	return true
+}
+
 // OnClose registers a callback which
 // will be fired when the underlying connection has gone away(request canceled)
 // on its own goroutine or in the end of the request-response lifecylce
@@ -292,6 +321,36 @@ func (ctx *Context) OnClose(cb Handler) {
 
 	onFlush := func() {
 		callback(ctx)
+	}
+
+	ctx.writer.SetBeforeFlush(onFlush)
+}
+
+// OnCloseErr same as `OnClose` but instead it
+// receives a function which returns an error.
+// If error is not nil, it will be logged as a debug message.
+func (ctx *Context) OnCloseErr(cb func() error) {
+	if cb == nil {
+		return
+	}
+
+	var executed uint32
+
+	callback := func() error {
+		if atomic.CompareAndSwapUint32(&executed, 0, 1) {
+			return cb()
+		}
+
+		return nil
+	}
+
+	ctx.OnConnectionCloseErr(callback)
+
+	onFlush := func() {
+		if err := callback(); err != nil {
+			// Can be ignored.
+			ctx.app.Logger().Debugf("OnClose: SetBeforeFlush: received error: %v", err)
+		}
 	}
 
 	ctx.writer.SetBeforeFlush(onFlush)
@@ -795,7 +854,7 @@ func GetHost(r *http.Request) string {
 // Subdomain returns the subdomain of this request, if any.
 // Note that this is a fast method which does not cover all cases.
 func (ctx *Context) Subdomain() (subdomain string) {
-	host := ctx.request.URL.Host // ctx.Host()
+	host := ctx.Host()
 	if index := strings.IndexByte(host, '.'); index > 0 {
 		subdomain = host[0:index]
 	}

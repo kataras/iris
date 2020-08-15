@@ -9,11 +9,18 @@ func main() {
 func newApp() *iris.Application {
 	app := iris.New()
 
+	// Create the "test.mydomain.com" subdomain.
 	test := app.Subdomain("test")
+	// Register views for the test subdomain.
 	test.RegisterView(iris.HTML("./views", ".html").
 		Layout("layouts/test.layout.html"))
 
+	// Optionally, to minify the HTML5 error response.
+	// Note that minification might be slower, caching is advised.
+	test.UseError(iris.Minify)
+	// Register error code 404 handler.
 	test.OnErrorCode(iris.StatusNotFound, handleNotFoundTestSubdomain)
+
 	test.Get("/", testIndex)
 
 	return app

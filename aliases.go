@@ -244,6 +244,23 @@ var (
 		ctx.Next()
 	}
 
+	// Minify is a middleware which minifies the responses
+	// based on the response content type.
+	// Note that minification might be slower, caching is advised.
+	// Customize the minifier through `Application.Minifier()`.
+	Minify = func(ctx Context) {
+		w := ctx.Application().Minifier().ResponseWriter(ctx.ResponseWriter().Naive(), ctx.Request())
+		// Note(@kataras):
+		// We don't use defer w.Close()
+		// because this response writer holds a sync.WaitGroup under the hoods
+		// and we MUST be sure that its wg.Wait is called on request cancelation
+		// and not in the end of handlers chain execution
+		// (which if running a time-consuming task it will delay its resource release).
+		ctx.OnCloseErr(w.Close)
+		ctx.ResponseWriter().SetWriter(w)
+		ctx.Next()
+	}
+
 	// MatchImagesAssets is a simple regex expression
 	// that can be passed to the DirOptions.Cache.CompressIgnore field
 	// in order to skip compression on already-compressed file types

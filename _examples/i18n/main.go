@@ -14,6 +14,7 @@ func newApp() *iris.Application {
 	if err != nil {
 		panic(err)
 	}
+	app.I18n.Subdomain
 	// app.I18n.LoadAssets for go-bindata.
 
 	// Default values:
@@ -29,7 +30,6 @@ func newApp() *iris.Application {
 
 	app.Get("/", func(ctx iris.Context) {
 		hi := ctx.Tr("hi", "iris")
-
 		locale := ctx.GetLocale()
 
 		ctx.Writef("From the language %s translated output: %s", locale.Language(), hi)

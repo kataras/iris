@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -25,6 +26,14 @@ import (
 
 	"github.com/kataras/golog"
 	"github.com/kataras/tunnel"
+
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/css"
+	"github.com/tdewolff/minify/v2/html"
+	"github.com/tdewolff/minify/v2/js"
+	"github.com/tdewolff/minify/v2/json"
+	"github.com/tdewolff/minify/v2/svg"
+	"github.com/tdewolff/minify/v2/xml"
 )
 
 // Version is the current version number of the Iris Web Framework.
@@ -65,6 +74,8 @@ type Application struct {
 
 	// Validator is the request body validator, defaults to nil.
 	Validator context.Validator
+	// Minifier to minify responses.
+	minifier *minify.M
 
 	// view engine
 	view view.View
@@ -92,6 +103,7 @@ func New() *Application {
 	app := &Application{
 		config:     &config,
 		logger:     golog.Default,
+		minifier:   newMinifier(),
 		I18n:       i18n.New(),
 		APIBuilder: router.NewAPIBuilder(),
 		Router:     router.NewRouter(),
@@ -248,6 +260,28 @@ func (app *Application) Validate(v interface{}) error {
 	}
 
 	return nil
+}
+
+func newMinifier() *minify.M {
+	m := minify.New()
+	m.AddFunc("text/css", css.Minify)
+	m.AddFunc("text/html", html.Minify)
+	m.AddFunc("image/svg+xml", svg.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
+	return m
+}
+
+// Minifier returns the minifier instance.
+// By default it can minifies:
+// - text/html
+// - text/css
+// - image/svg+xml
+// - application/text(javascript, ecmascript, json, xml).
+// Use that instance to add custom Minifiers before server ran.
+func (app *Application) Minifier() *minify.M {
+	return app.minifier
 }
 
 // RegisterView should be used to register view engines mapping to a root directory
