@@ -20,7 +20,7 @@ type Config struct {
 	Users map[string]string
 	// Realm http://tools.ietf.org/html/rfc2617#section-1.2. Default is "Authorization Required"
 	Realm string
-	// Expires expiration duration, default is 0 never expires
+	// Expires expiration duration, default is 0 never expires.
 	Expires time.Duration
 
 	// OnAsk fires each time the server asks to the client for credentials in order to gain access and continue to the next handler.

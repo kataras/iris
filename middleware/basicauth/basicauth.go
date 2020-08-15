@@ -6,6 +6,7 @@ package basicauth
 import (
 	"encoding/base64"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -22,6 +23,7 @@ type (
 		Username    string
 		logged      bool
 		expires     time.Time
+		mu          sync.RWMutex
 	}
 	encodedUsers []*encodedUser
 
@@ -117,11 +119,19 @@ func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 	// all ok
 	if b.expireEnabled {
 		if !auth.logged {
+			auth.mu.Lock()
 			auth.expires = time.Now().Add(b.config.Expires)
 			auth.logged = true
+			auth.mu.Unlock()
 		}
 
-		if time.Now().After(auth.expires) {
+		auth.mu.RLock()
+		expired := time.Now().After(auth.expires)
+		auth.mu.RUnlock()
+		if expired {
+			auth.mu.Lock()
+			auth.logged = false
+			auth.mu.Unlock()
 			b.askForCredentials(ctx) // ask for authentication again
 			ctx.StopExecution()
 			return
