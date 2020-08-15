@@ -957,6 +957,7 @@ func (api *APIBuilder) UseError(handlers ...context.Handler) {
 // If it's called after the routes then these handlers will never be executed.
 // Use `UseGlobal` if you want to register begin handlers(middleware)
 // that should be always run before all application's routes.
+// To register a middleware for error handlers, look `UseError` method instead.
 func (api *APIBuilder) Use(handlers ...context.Handler) {
 	api.middleware = append(api.middleware, handlers...)
 }
@@ -964,6 +965,7 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 // UseOnce either inserts a middleware,
 // or on the basis of the middleware already existing,
 // replace that existing middleware instead.
+// To register a middleware for error handlers, look `UseError` method instead.
 func (api *APIBuilder) UseOnce(handlers ...context.Handler) {
 	api.middleware = context.UpsertHandlers(api.middleware, handlers)
 }

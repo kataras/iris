@@ -102,10 +102,12 @@ type Party interface {
 	UseError(handlers ...context.Handler)
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
+	// To register a middleware for error handlers, look `UseError` method instead.
 	Use(middleware ...context.Handler)
 	// UseOnce either inserts a middleware,
 	// or on the basis of the middleware already existing,
 	// replace that existing middleware instead.
+	// To register a middleware for error handlers, look `UseError` method instead.
 	UseOnce(handlers ...context.Handler)
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
