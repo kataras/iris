@@ -531,7 +531,7 @@ func (app *Application) Build() error {
 	if app.I18n.Loaded() {
 		// {{ tr "lang" "key" arg1 arg2 }}
 		app.view.AddFunc("tr", app.I18n.Tr)
-		app.Router.AddRouterWrapper(app.I18n.Wrapper())
+		app.Router.PrependRouterWrapper(app.I18n.Wrapper())
 	}
 
 	if n := app.view.Len(); n > 0 {

@@ -405,6 +405,22 @@ func (i *I18n) GetMessage(ctx *context.Context, format string, args ...interface
 	return ""
 }
 
+func (i *I18n) setLangWithoutContext(w http.ResponseWriter, r *http.Request, lang string) {
+	if i.Cookie != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:  i.Cookie,
+			Value: lang,
+			// allow subdomain sharing.
+			Domain:   context.GetDomain(context.GetHost(r)),
+			SameSite: http.SameSiteLaxMode,
+		})
+	} else if i.URLParameter != "" {
+		r.URL.Query().Set(i.URLParameter, lang)
+	}
+
+	r.Header.Set(acceptLanguageHeaderKey, lang)
+}
+
 // Wrapper returns a new router wrapper.
 // The result function can be passed on `Application.WrapRouter/AddRouterWrapper`.
 // It compares the path prefix for translated language and
@@ -437,7 +453,7 @@ func (i *I18n) Wrapper() router.WrapperFunc {
 
 				r.RequestURI = path
 				r.URL.Path = path
-				r.Header.Set(acceptLanguageHeaderKey, lang)
+				i.setLangWithoutContext(w, r, lang)
 				found = true
 			}
 		}
@@ -450,7 +466,7 @@ func (i *I18n) Wrapper() router.WrapperFunc {
 						host = host[dotIdx+1:]
 						r.URL.Host = host
 						r.Host = host
-						r.Header.Set(acceptLanguageHeaderKey, tag.String())
+						i.setLangWithoutContext(w, r, tag.String())
 					}
 				}
 			}
