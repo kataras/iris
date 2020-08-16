@@ -159,3 +159,40 @@ func TestRouterWrapperOrder(t *testing.T) {
 		e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedOrderStr)
 	}
 }
+
+func TestNewSubdomainPartyRedirectHandler(t *testing.T) {
+	app := iris.New()
+	app.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("root index")
+	})
+
+	test := app.Subdomain("test")
+	test.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
+		ctx.WriteString("test 404")
+	})
+	test.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("test index")
+	})
+
+	testold := app.Subdomain("testold")
+	// redirects testold.mydomain.com to test.mydomain.com .
+	testold.UseRouter(router.NewSubdomainPartyRedirectHandler(test))
+	testold.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("test old index (should never be fired)")
+	})
+	testoldLeveled := testold.Subdomain("leveled")
+	testoldLeveled.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("leveled.testold this can be fired")
+	})
+
+	if redirectHandler := router.NewSubdomainPartyRedirectHandler(app.WildcardSubdomain()); redirectHandler != nil {
+		t.Fatal("redirect handler should be nil, we cannot redirect to a wildcard")
+	}
+
+	e := httptest.New(t, app)
+	e.GET("/").WithURL("http://mydomain.com").Expect().Status(iris.StatusOK).Body().Equal("root index")
+	e.GET("/").WithURL("http://test.mydomain.com").Expect().Status(iris.StatusOK).Body().Equal("test index")
+	e.GET("/").WithURL("http://testold.mydomain.com").Expect().Status(iris.StatusOK).Body().Equal("test index")
+	e.GET("/").WithURL("http://testold.mydomain.com/notfound").Expect().Status(iris.StatusNotFound).Body().Equal("test 404")
+	e.GET("/").WithURL("http://leveled.testold.mydomain.com").Expect().Status(iris.StatusOK).Body().Equal("leveled.testold this can be fired")
+}

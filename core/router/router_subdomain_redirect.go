@@ -92,16 +92,6 @@ func NewSubdomainRedirectWrapper(rootDomainGetter func() string, from, to string
 	return sd.Wrapper
 }
 
-const sufscheme = "://"
-
-func getFullScheme(r *http.Request) string {
-	if !r.URL.IsAbs() {
-		// url scheme is empty.
-		return netutil.SchemeHTTP + sufscheme
-	}
-	return r.URL.Scheme + sufscheme
-}
-
 // Wrapper is the function that is being used to wrap the router with a redirect
 // service that is able to redirect between (sub)domains as fast as possible.
 // Please take a look at the `NewSubdomainRedirectWrapper` function for more.
@@ -142,11 +132,11 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 			resturi := r.URL.RequestURI()
 			if s.isToRoot {
 				// from a specific subdomain or any subdomain to the root domain.
-				redirectAbsolute(w, r, getFullScheme(r)+root+resturi, http.StatusMovedPermanently)
+				redirectAbsolute(w, r, context.GetScheme(r)+root+resturi, http.StatusMovedPermanently)
 				return
 			}
 			// from a specific subdomain or any subdomain to a specific subdomain.
-			redirectAbsolute(w, r, getFullScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
+			redirectAbsolute(w, r, context.GetScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
 			return
 		}
 
@@ -172,7 +162,7 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 		resturi := r.URL.RequestURI()
 		// we are not inside a subdomain, so we are in the root domain
 		// and the redirect is configured to be used from root domain to a subdomain.
-		redirectAbsolute(w, r, getFullScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
+		redirectAbsolute(w, r, context.GetScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
 		return
 	}
 
@@ -197,5 +187,32 @@ func redirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code i
 	if !hadCT && r.Method == "GET" {
 		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
 		fmt.Fprintln(w, body)
+	}
+}
+
+// NewSubdomainPartyRedirectHandler returns a handler which can be registered
+// through `UseRouter` or `Use` to redirect from the current request's
+// subdomain to the one which the given `to` Party can handle.
+func NewSubdomainPartyRedirectHandler(to Party) context.Handler {
+	return NewSubdomainRedirectHandler(to.GetRelPath())
+}
+
+// NewSubdomainRedirectHandler returns a handler which can be registered
+// through `UseRouter` or `Use` to redirect from the current request's
+// subdomain to the given "toSubdomain".
+func NewSubdomainRedirectHandler(toSubdomain string) context.Handler {
+	toSubdomain, _ = splitSubdomainAndPath(toSubdomain) // let it here so users can just pass the GetRelPath of a Party.
+	if pathIsWildcard(toSubdomain) {
+		return nil
+	}
+
+	return func(ctx *context.Context) {
+		// en-us.test.mydomain.com
+		host := ctx.Host()
+		fullSubdomain := ctx.SubdomainFull()
+		newHost := strings.Replace(host, fullSubdomain, toSubdomain, 1)
+		resturi := ctx.Request().URL.RequestURI()
+		urlToRedirect := ctx.Scheme() + newHost + resturi
+		redirectAbsolute(ctx.ResponseWriter(), ctx.Request(), urlToRedirect, http.StatusMovedPermanently)
 	}
 }

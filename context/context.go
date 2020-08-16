@@ -810,6 +810,28 @@ func (ctx *Context) RequestPath(escape bool) string {
 	return ctx.request.URL.Path // RawPath returns empty, requesturi can be used instead also.
 }
 
+const sufscheme = "://"
+
+// GetScheme returns the full scheme of the request URL (https://, http:// or ws:// and e.t.c.``).
+func GetScheme(r *http.Request) string {
+	scheme := r.URL.Scheme
+
+	if scheme == "" {
+		if r.TLS != nil {
+			scheme = netutil.SchemeHTTPS
+		} else {
+			scheme = netutil.SchemeHTTP
+		}
+	}
+
+	return scheme + sufscheme
+}
+
+// Scheme returns the full scheme of the request (including :// suffix).
+func (ctx *Context) Scheme() string {
+	return GetScheme(ctx.Request())
+}
+
 // PathPrefixMap accepts a map of string and a handler.
 // The key of "m" is the key, which is the prefix, regular expressions are not valid.
 // The value of "m" is the handler that will be executed if HasPrefix(context.Path).
@@ -823,6 +845,15 @@ func (ctx *Context) RequestPath(escape bool) string {
 // 	}
 // 	return false
 // } no, it will not work because map is a random peek data structure.
+
+// GetHost returns the host part of the current URI.
+func GetHost(r *http.Request) string {
+	// contains subdomain.
+	if host := r.URL.Host; host != "" {
+		return host
+	}
+	return r.Host
+}
 
 // Host returns the host:port part of the request URI, calls the `Request().Host`.
 // To get the subdomain part as well use the `Request().URL.Host` method instead.
@@ -842,17 +873,47 @@ func (ctx *Context) Host() string {
 	return GetHost(ctx.request)
 }
 
-// GetHost returns the host part of the current URI.
-func GetHost(r *http.Request) string {
-	// contains subdomain.
-	if host := r.URL.Host; host != "" {
+// GetDomain resolves and returns the server's domain.
+func GetDomain(hostport string) string {
+	host := hostport
+	if tmp, _, err := net.SplitHostPort(hostport); err == nil {
+		host = tmp
+	}
+
+	switch host {
+	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
+		// loopback.
+		return "localhost"
+	default:
+		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+			host = domain
+		}
+
 		return host
 	}
-	return r.Host
 }
 
-// Subdomain returns the subdomain of this request, if any.
-// Note that this is a fast method which does not cover all cases.
+// Domain returns the root level domain.
+func (ctx *Context) Domain() string {
+	return GetDomain(ctx.Host())
+}
+
+// SubdomainFull returnst he full subdomain level, e.g.
+// [test.user.]mydomain.com.
+func (ctx *Context) SubdomainFull() string {
+	host := ctx.Host()            // host:port
+	rootDomain := GetDomain(host) // mydomain.com
+	rootDomainIdx := strings.Index(host, rootDomain)
+	if rootDomainIdx == -1 {
+		return ""
+	}
+
+	return host[0:rootDomainIdx]
+}
+
+// Subdomain returns the first subdomain of this request,
+// e.g. [user.]mydomain.com.
+// See `SubdomainFull` too.
 func (ctx *Context) Subdomain() (subdomain string) {
 	host := ctx.Host()
 	if index := strings.IndexByte(host, '.'); index > 0 {
@@ -960,31 +1021,6 @@ func TrimHeaderValue(v string) string {
 // GetHeader returns the request header's value based on its name.
 func (ctx *Context) GetHeader(name string) string {
 	return ctx.request.Header.Get(name)
-}
-
-// GetDomain resolves and returns the server's domain.
-func GetDomain(hostport string) string {
-	host := hostport
-	if tmp, _, err := net.SplitHostPort(hostport); err == nil {
-		host = tmp
-	}
-
-	switch host {
-	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
-		// loopback.
-		return "localhost"
-	default:
-		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
-			host = domain
-		}
-
-		return host
-	}
-}
-
-// GetDomain resolves and returns the server's domain.
-func (ctx *Context) GetDomain() string {
-	return GetDomain(ctx.Host())
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
@@ -4072,7 +4108,7 @@ func CookieAllowSubdomains(cookieNames ...string) CookieOption {
 			return
 		}
 
-		c.Domain = ctx.GetDomain()
+		c.Domain = ctx.Domain()
 		c.SameSite = http.SameSiteLaxMode // allow subdomain sharing.
 	}
 }

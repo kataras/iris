@@ -551,7 +551,9 @@ New Context Methods:
 - `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).
 - `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
 - `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
-- `Context.GetDomain() string` returns the domain.
+- `Context.Scheme() string` returns the full scheme of the request URL.
+- `Context.SubdomainFull() string` returns the full subdomain(s) part of the host (`host[0:rootLevelDomain]`).
+- `Context.Domain() string` returns the root level domain.
 - `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
 - `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
 - `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`

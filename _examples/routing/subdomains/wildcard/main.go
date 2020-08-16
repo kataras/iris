@@ -54,6 +54,7 @@ func main() {
 	// http://username1.mydomain.com:8080
 	// http://username2.mydomain.com:8080/something
 	// http://username3.mydomain.com:8080/something/yourname
+	// http://en-us.test.mydomain.com:8080/something/42
 	app.Listen("mydomain.com:8080") // for beginners: look ../hosts file
 }
 
@@ -66,6 +67,6 @@ func dynamicSubdomainHandler(ctx iris.Context) {
 
 func dynamicSubdomainHandlerWithParam(ctx iris.Context) {
 	username := ctx.Subdomain()
-	ctx.Writef("Hello from dynamic subdomain path: %s, here you can handle the route for dynamic subdomains, handle the user: %s", ctx.Path(), username)
+	ctx.Writef("Hello from dynamic (full) subdomain: %s and path: %s, here you can handle the route for dynamic subdomains, handle the user: %s", ctx.SubdomainFull(), ctx.Path(), username)
 	ctx.Writef("The paramfirst is: %s", ctx.Params().Get("paramfirst"))
 }
