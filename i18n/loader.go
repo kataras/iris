@@ -188,7 +188,11 @@ func (l MemoryLocalizer) GetLocale(index int) context.Locale {
 		index = 0
 	}
 
-	return l[index]
+	if locale, ok := l[index]; ok {
+		return locale
+	}
+
+	return l[0]
 }
 
 // SetDefault changes the default language based on the "index".

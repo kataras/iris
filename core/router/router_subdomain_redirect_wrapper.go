@@ -150,6 +150,7 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
+		/* Think of another way. As it's a breaking change.
 		if s.isFromRoot && !s.isFromAny {
 			// Then we must not continue,
 			// the subdomain didn't match the "to" but the from
@@ -159,8 +160,9 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 			// http://registered_host_but_not_in_app.your.mydomain.com
 			http.NotFound(w, r)
 			return
-
 		}
+		*/
+
 		// the from subdomain is not matched and it's not from root.
 		router(w, r)
 		return
