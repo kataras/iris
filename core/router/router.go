@@ -24,6 +24,14 @@ type Router struct {
 	requestHandler RequestHandler   // build-accessible, can be changed to define a custom router or proxy, used on RefreshRouter too.
 	mainHandler    http.HandlerFunc // init-accessible
 	wrapperFunc    WrapperFunc
+	// wrappers to be built on BuildRouter state,
+	// first is executed first at this case.
+	// Case:
+	// - SubdomainRedirect on user call, registers a wrapper, on design state
+	// - i18n,if loaded and Subdomain or PathRedirect is true, registers a wrapper too, on build state
+	// the SubdomainRedirect should be the first(subdomainWrap(i18nWrap)) wrapper
+	// to be executed instead of last(i18nWrap(subdomainWrap)).
+	wrapperFuncs []WrapperFunc
 
 	cPool          *context.Pool // used on RefreshRouter
 	routesProvider RoutesProvider
@@ -216,6 +224,14 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 		}
 	}
 
+	for i := len(router.wrapperFuncs) - 1; i >= 0; i-- {
+		w := router.wrapperFuncs[i]
+		if w == nil {
+			continue
+		}
+		router.WrapRouter(w)
+	}
+
 	if router.wrapperFunc != nil { // if wrapper used then attach that as the router service
 		router.mainHandler = newWrapper(router.wrapperFunc, router.mainHandler).ServeHTTP
 	}
@@ -268,7 +284,33 @@ func (router *Router) Downgraded() bool {
 //
 // Before build.
 func (router *Router) WrapRouter(wrapperFunc WrapperFunc) {
+	// logger := context.DefaultLogger("router wrapper")
+	// file, line := context.HandlerFileLineRel(wrapperFunc)
+	// if router.wrapperFunc != nil {
+	// 	wrappedFile, wrappedLine := context.HandlerFileLineRel(router.wrapperFunc)
+	// 	logger.Infof("%s:%d wraps %s:%d", file, line, wrappedFile, wrappedLine)
+	// } else {
+	// 	logger.Infof("%s:%d wraps the main router", file, line)
+	// }
 	router.wrapperFunc = makeWrapperFunc(router.wrapperFunc, wrapperFunc)
+}
+
+// AddRouterWrapper adds a router wrapper.
+// Unlike `WrapRouter` the first registered will be executed first
+// so a wrapper wraps its next not the previous one.
+// it defers the wrapping until the `BuildRouter`.
+// Redirection wrappers should be added using this method
+// e.g. SubdomainRedirect.
+func (router *Router) AddRouterWrapper(wrapperFunc WrapperFunc) {
+	router.wrapperFuncs = append(router.wrapperFuncs, wrapperFunc)
+}
+
+// PrependRouterWrapper like `AddRouterWrapper` but this wrapperFunc
+// will always be executed before the previous `AddRouterWrapper`.
+// Path form (no modification) wrappers should be added using this method
+// e.g. ForceLowercaseRouting.
+func (router *Router) PrependRouterWrapper(wrapperFunc WrapperFunc) {
+	router.wrapperFuncs = append([]WrapperFunc{wrapperFunc}, router.wrapperFuncs...)
 }
 
 // ServeHTTPC serves the raw context, useful if we have already a context, it by-pass the wrapper.

@@ -1,8 +1,10 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/netutil"
@@ -42,7 +44,7 @@ func pathIsWildcard(partyRelPath string) bool {
 //
 // Usage(package-level):
 // sd := NewSubdomainRedirectWrapper(func() string { return "mydomain.com" }, ".", "www.")
-// router.WrapRouter(sd)
+// router.AddRouterWrapper(sd)
 //
 // Usage(high-level using `iris#Application.SubdomainRedirect`)
 // www := app.Subdomain("www")
@@ -56,12 +58,12 @@ func pathIsWildcard(partyRelPath string) bool {
 // One or more subdomain redirect wrappers can be used to the same router instance.
 //
 // NewSubdomainRedirectWrapper may return nil if not allowed input arguments values were received
-// but in that case, the `WrapRouter` will, simply, ignore that wrapper.
+// but in that case, the `AddRouterWrapper` will, simply, ignore that wrapper.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect
 func NewSubdomainRedirectWrapper(rootDomainGetter func() string, from, to string) WrapperFunc {
 	// we can return nil,
-	// because if wrapper is nil then it's not be used on the `router#WrapRouter`.
+	// because if wrapper is nil then it's not be used on the `router#AddRouterWrapper`.
 	if from == to {
 		// cannot redirect to the same location, cycle.
 		return nil
@@ -109,7 +111,6 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 	// because older browsers may not be able to recognise that status code (the RFC 7538, is not so old)
 	// although note that move is not the same thing as redirect: move reminds a specific address or location moved while
 	// redirect is a new location.
-
 	host := context.GetHost(r)
 	root := s.root()
 	if loopback := netutil.GetLoopbackSubdomain(root); loopback != "" {
@@ -117,7 +118,6 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 	}
 
 	hasSubdomain := host != root
-
 	if !hasSubdomain && !s.isFromRoot {
 		// if the current endpoint is not a subdomain
 		// and the redirect is not configured to be used from root domain to a subdomain.
@@ -142,14 +142,25 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 			resturi := r.URL.RequestURI()
 			if s.isToRoot {
 				// from a specific subdomain or any subdomain to the root domain.
-				http.Redirect(w, r, getFullScheme(r)+root+resturi, http.StatusMovedPermanently)
+				redirectAbsolute(w, r, getFullScheme(r)+root+resturi, http.StatusMovedPermanently)
 				return
 			}
 			// from a specific subdomain or any subdomain to a specific subdomain.
-			http.Redirect(w, r, getFullScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
+			redirectAbsolute(w, r, getFullScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
 			return
 		}
 
+		if s.isFromRoot && !s.isFromAny {
+			// Then we must not continue,
+			// the subdomain didn't match the "to" but the from
+			// was the application root itself, which is not a wildcard
+			// so it shouldn't accept any subdomain, we must fire 404 here.
+			// Something like:
+			// http://registered_host_but_not_in_app.your.mydomain.com
+			http.NotFound(w, r)
+			return
+
+		}
 		// the from subdomain is not matched and it's not from root.
 		router(w, r)
 		return
@@ -159,9 +170,30 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 		resturi := r.URL.RequestURI()
 		// we are not inside a subdomain, so we are in the root domain
 		// and the redirect is configured to be used from root domain to a subdomain.
-		http.Redirect(w, r, getFullScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
+		redirectAbsolute(w, r, getFullScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
 		return
 	}
 
 	router(w, r)
+}
+
+func redirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code int) {
+	h := w.Header()
+
+	// RFC 7231 notes that a short HTML body is usually included in
+	// the response because older user agents may not understand 301/307.
+	// Do it only if the request didn't already have a Content-Type header.
+	_, hadCT := h[context.ContentTypeHeaderKey]
+
+	h.Set("Location", url)
+	if !hadCT && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		h.Set(context.ContentTypeHeaderKey, "text/html; charset=utf-8")
+	}
+	w.WriteHeader(code)
+
+	// Shouldn't send the body for POST or HEAD; that leaves GET.
+	if !hadCT && r.Method == "GET" {
+		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
+		fmt.Fprintln(w, body)
+	}
 }

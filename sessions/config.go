@@ -18,7 +18,7 @@ type (
 	// Config is the configuration for sessions. Please read it before using sessions.
 	Config struct {
 		// Logger instance for sessions usage, e.g. { Logger: app.Logger() }.
-		// Defauls to a child of "sessions" of the latest Iris Application's main Logger.
+		// Defaults to a child of "sessions" of the latest Iris Application's main Logger.
 		Logger *golog.Logger
 		// Cookie string, the session's client cookie name, for example: "mysessionid"
 		//

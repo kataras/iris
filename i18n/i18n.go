@@ -406,7 +406,7 @@ func (i *I18n) GetMessage(ctx *context.Context, format string, args ...interface
 }
 
 // Wrapper returns a new router wrapper.
-// The result function can be passed on `Application.WrapRouter`.
+// The result function can be passed on `Application.WrapRouter/AddRouterWrapper`.
 // It compares the path prefix for translated language and
 // local redirects the requested path with the selected (from the path) language to the router.
 //
@@ -417,7 +417,10 @@ func (i *I18n) Wrapper() router.WrapperFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		found := false
-		path := r.URL.Path[1:]
+		path := r.URL.Path
+		if len(path) > 0 && path[0] == '/' {
+			path = path[1:]
+		}
 
 		if idx := strings.IndexByte(path, '/'); idx > 0 {
 			path = path[:idx]
@@ -451,7 +454,6 @@ func (i *I18n) Wrapper() router.WrapperFunc {
 					}
 				}
 			}
-
 		}
 
 		next(w, r)

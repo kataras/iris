@@ -162,9 +162,7 @@ func (app *Application) WWW() router.Party {
 // Example: https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect
 func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 	sd := router.NewSubdomainRedirectWrapper(app.ConfigurationReadOnly().GetVHost, from.GetRelPath(), to.GetRelPath())
-	// TODO: add a debug message here or wait for a response from the issuer
-	// so we can force these to run on build state (last registered, first executed).
-	app.Router.WrapRouter(sd)
+	app.Router.AddRouterWrapper(sd)
 	return to
 }
 
@@ -489,6 +487,7 @@ func (app *Application) Build() error {
 	if app.builded {
 		return nil
 	}
+
 	// start := time.Now()
 	app.builded = true // even if fails.
 
@@ -532,7 +531,7 @@ func (app *Application) Build() error {
 	if app.I18n.Loaded() {
 		// {{ tr "lang" "key" arg1 arg2 }}
 		app.view.AddFunc("tr", app.I18n.Tr)
-		app.Router.WrapRouter(app.I18n.Wrapper())
+		app.Router.AddRouterWrapper(app.I18n.Wrapper())
 	}
 
 	if n := app.view.Len(); n > 0 {
@@ -560,7 +559,10 @@ func (app *Application) Build() error {
 		}
 
 		if app.config.ForceLowercaseRouting {
-			app.Router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+			// This should always be executed first.
+			app.Router.PrependRouterWrapper(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+				r.Host = strings.ToLower(r.Host)
+				r.URL.Host = strings.ToLower(r.URL.Host)
 				r.URL.Path = strings.ToLower(r.URL.Path)
 				next(w, r)
 			})

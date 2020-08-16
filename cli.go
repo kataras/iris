@@ -115,6 +115,6 @@ func injectLiveReload(contextPool *context.Pool, router *router.Router) (bool, e
 		contextPool.Release(ctx)
 	}
 
-	router.WrapRouter(wrapper)
+	router.AddRouterWrapper(wrapper)
 	return true, nil
 }

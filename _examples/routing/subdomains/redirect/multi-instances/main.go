@@ -43,7 +43,7 @@ func createRoot(redirectTo string) *iris.Application {
 			fullScheme = "https://"
 		}
 
-		http.Redirect(w, r, fullScheme+redirectTo, iris.StatusMovedPermanently)
+		http.Redirect(w, r, fullScheme+redirectTo+r.URL.RequestURI(), iris.StatusMovedPermanently)
 	})
 
 	return app

@@ -1,12 +1,14 @@
 package router_test
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/httptest"
 )
 
@@ -70,5 +72,90 @@ func TestLowercaseRouting(t *testing.T) {
 		e.GET(tt).Expect().Status(httptest.StatusOK).Body().Equal(s)
 		e.GET(s).Expect().Status(httptest.StatusOK).Body().Equal(s)
 		e.GET(strings.ToUpper(tt)).Expect().Status(httptest.StatusOK).Body().Equal(s)
+	}
+}
+
+func TestRouterWrapperOrder(t *testing.T) {
+	// last is wrapping the previous.
+
+	// first is executed last.
+	userWrappers := []router.WrapperFunc{
+		func(w http.ResponseWriter, r *http.Request, main http.HandlerFunc) {
+			io.WriteString(w, "6")
+			main(w, r)
+		},
+		func(w http.ResponseWriter, r *http.Request, main http.HandlerFunc) {
+			io.WriteString(w, "5")
+			main(w, r)
+		},
+	}
+	// should be executed before userWrappers.
+	redirectionWrappers := []router.WrapperFunc{
+		func(w http.ResponseWriter, r *http.Request, main http.HandlerFunc) {
+			io.WriteString(w, "3")
+			main(w, r)
+		},
+		func(w http.ResponseWriter, r *http.Request, main http.HandlerFunc) {
+			io.WriteString(w, "4")
+			main(w, r)
+		},
+	}
+	// should be executed before redirectionWrappers.
+	afterRedirectionWrappers := []router.WrapperFunc{
+		func(w http.ResponseWriter, r *http.Request, main http.HandlerFunc) {
+			io.WriteString(w, "2")
+			main(w, r)
+		},
+		func(w http.ResponseWriter, r *http.Request, main http.HandlerFunc) {
+			io.WriteString(w, "1")
+			main(w, r)
+		},
+	}
+
+	testOrder1 := iris.New()
+	for _, w := range userWrappers {
+		testOrder1.WrapRouter(w)
+		// this always wraps the previous one, but it's not accessible after Build state,
+		// the below are simulating the SubdomainRedirect and ForceLowercaseRouting.
+	}
+	for _, w := range redirectionWrappers {
+		testOrder1.AddRouterWrapper(w)
+	}
+	for _, w := range afterRedirectionWrappers {
+		testOrder1.PrependRouterWrapper(w)
+	}
+
+	testOrder2 := iris.New()
+	for _, w := range redirectionWrappers {
+		testOrder2.AddRouterWrapper(w)
+	}
+	for _, w := range userWrappers {
+		testOrder2.WrapRouter(w)
+	}
+	for _, w := range afterRedirectionWrappers {
+		testOrder2.PrependRouterWrapper(w)
+	}
+
+	testOrder3 := iris.New()
+	for _, w := range redirectionWrappers {
+		testOrder3.AddRouterWrapper(w)
+	}
+	for _, w := range afterRedirectionWrappers {
+		testOrder3.PrependRouterWrapper(w)
+	}
+	for _, w := range userWrappers {
+		testOrder3.WrapRouter(w)
+	}
+
+	appTests := []*iris.Application{
+		testOrder1, testOrder2, testOrder3,
+	}
+
+	expectedOrderStr := "123456"
+	for _, app := range appTests {
+		app.Get("/", func(ctx iris.Context) {}) // to not append the not found one.
+
+		e := httptest.New(t, app)
+		e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedOrderStr)
 	}
 }

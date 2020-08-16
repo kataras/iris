@@ -172,6 +172,21 @@ func (l MemoryLocalizer) GetLocale(index int) context.Locale {
 	// 	panic(fmt.Sprintf("locale of index [%d] not found", index))
 	// }
 	// return loc
+	/* Note(@kataras): the following is allowed as a language index can be higher
+	than the length of the locale files.
+	if index >= len(l) || index < 0 {
+		// 1. language exists in the caller but was not found in files.
+		// 2. language exists in both files and caller but the actual
+		// languages are two, while the registered are 4 (when missing files),
+		// that happens when Strict option is false.
+		// force to the default language but what is the default language if the language index is greater than this length?
+	 	// That's why it's allowed.
+		index = 0
+	}*/
+
+	if index < 0 {
+		index = 0
+	}
 
 	return l[index]
 }
