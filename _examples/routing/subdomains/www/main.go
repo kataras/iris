@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/kataras/iris/v12"
-)
+import "github.com/kataras/iris/v12"
 
 func newApp() *iris.Application {
 	app := iris.New()
@@ -44,9 +42,9 @@ func newApp() *iris.Application {
 			ctx.Writef("hi from www.mydomain.com")
 		})
 	}
-	// See also the "subdomains/redirect" to register redirect router wrappers between subdomains,
+	// See "subdomains/redirect" to register redirect router wrappers between subdomains,
 	// i.e mydomain.com to www.mydomain.com (like facebook does for SEO reasons(;)).
-
+	// And ./www-method example.
 	return app
 }
 
@@ -64,9 +62,7 @@ func main() {
 	// http://www.mydomain.com/contact
 	// http://www.mydomain.com/api/users
 	// http://www.mydomain.com/api/users/42
-	if err := app.Listen("mydomain.com:80"); err != nil {
-		panic(err)
-	}
+	app.Listen("mydomain.com:80")
 }
 
 func info(ctx iris.Context) {

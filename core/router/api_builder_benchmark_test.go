@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+
+	"github.com/kataras/golog"
 )
 
 //
@@ -83,7 +85,7 @@ func BenchmarkAPIBuilder(b *testing.B) {
 	// i.e /gzhyweumidvelqewrvoyqmzopvuxli/{name:string}/bibrkratnrrhvsjwsxygfwmqwhcstc/{age:int}/end
 	paths := genPaths(routesLength, 15, 42)
 
-	api := NewAPIBuilder()
+	api := NewAPIBuilder(golog.Default)
 	requestHandler := NewDefaultHandler(nil, nil)
 
 	b.ReportAllocs()

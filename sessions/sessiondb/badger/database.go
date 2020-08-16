@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/sessions"
 
 	"github.com/dgraph-io/badger/v2"
@@ -26,6 +27,7 @@ type Database struct {
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
 	Service *badger.DB
+	logger  *golog.Logger
 
 	closed uint32 // if 1 is closed.
 }
@@ -53,11 +55,12 @@ func New(directoryPath string) (*Database, error) {
 	}
 
 	opts := badger.DefaultOptions(directoryPath)
-	opts.Logger = golog.Default.Child("[sessionsdb.badger]").DisableNewLine()
+	badgerLogger := context.DefaultLogger("sessionsdb.badger").DisableNewLine()
+	opts.Logger = badgerLogger
 
 	service, err := badger.Open(opts)
 	if err != nil {
-		golog.Errorf("unable to initialize the badger-based session database: %v", err)
+		badgerLogger.Errorf("unable to initialize the badger-based session database: %v\n", err)
 		return nil, err
 	}
 
@@ -70,6 +73,12 @@ func NewFromDB(service *badger.DB) *Database {
 
 	runtime.SetFinalizer(db, closeDB)
 	return db
+}
+
+// SetLogger sets the logger once before server ran.
+// By default the Iris one is injected.
+func (db *Database) SetLogger(logger *golog.Logger) {
+	db.logger = logger
 }
 
 // Acquire receives a session's lifetime from the database,
@@ -94,7 +103,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	}
 
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 	}
 
 	return sessions.LifeTime{} // session manager will handle the rest.
@@ -118,10 +127,10 @@ func makeKey(sid, key string) []byte {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, value interface{}, immutable bool) {
+func (db *Database) Set(sid string, lifetime *sessions.LifeTime, key string, value interface{}, immutable bool) {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 		return
 	}
 
@@ -131,7 +140,7 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 	})
 
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 	}
 }
 
@@ -149,7 +158,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 	})
 
 	if err != nil && err != badger.ErrKeyNotFound {
-		golog.Error(err)
+		db.logger.Error(err)
 		return nil
 	}
 
@@ -189,7 +198,7 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 		})
 		if err != nil {
-			golog.Errorf("[sessionsdb.badger.Visit] %v", err)
+			db.logger.Errorf("[sessionsdb.badger.Visit] %v", err)
 			continue
 		}
 
@@ -231,7 +240,7 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 	txn := db.Service.NewTransaction(true)
 	err := txn.Delete(makeKey(sid, key))
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 		return false
 	}
 	return txn.Commit() == nil
@@ -250,7 +259,7 @@ func (db *Database) Clear(sid string) {
 	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
 		key := iter.Item().Key()
 		if err := txn.Delete(key); err != nil {
-			golog.Warnf("Database.Clear: %s: %v", key, err)
+			db.logger.Warnf("Database.Clear: %s: %v", key, err)
 			continue
 		}
 	}
@@ -264,10 +273,10 @@ func (db *Database) Release(sid string) {
 	// and remove the $sid.
 	txn := db.Service.NewTransaction(true)
 	if err := txn.Delete([]byte(sid)); err != nil {
-		golog.Warnf("Database.Release.Delete: %s: %v", sid, err)
+		db.logger.Warnf("Database.Release.Delete: %s: %v", sid, err)
 	}
 	if err := txn.Commit(); err != nil {
-		golog.Debugf("Database.Release.Commit: %s: %v", sid, err)
+		db.logger.Debugf("Database.Release.Commit: %s: %v", sid, err)
 	}
 }
 
@@ -282,7 +291,7 @@ func closeDB(db *Database) error {
 	}
 	err := db.Service.Close()
 	if err != nil {
-		golog.Warnf("closing the badger connection: %v", err)
+		db.logger.Warnf("closing the badger connection: %v", err)
 	} else {
 		atomic.StoreUint32(&db.closed, 1)
 	}

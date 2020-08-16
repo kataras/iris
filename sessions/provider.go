@@ -70,7 +70,7 @@ func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) 
 		lifetime.Begin(expires, onExpire)
 	}
 
-	sess.Lifetime = lifetime
+	sess.Lifetime = &lifetime
 	return sess
 }
 

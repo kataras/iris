@@ -50,6 +50,7 @@ func New(cfg Config) *Sessions {
 // UseDatabase adds a session database to the manager's provider,
 // a session db doesn't have write access
 func (s *Sessions) UseDatabase(db Database) {
+	db.SetLogger(s.config.Logger) // inject the logger.
 	s.provider.RegisterDatabase(db)
 }
 

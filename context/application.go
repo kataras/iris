@@ -4,6 +4,7 @@ import (
 	stdContext "context"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/kataras/golog"
 	"github.com/tdewolff/minify/v2"
@@ -83,4 +84,52 @@ type Application interface {
 	//
 	// Order may change.
 	FindClosestPaths(subdomain, searchPath string, n int) []string
+}
+
+var (
+	registeredApps []Application
+	mu             sync.RWMutex
+)
+
+// RegisterApplication registers an application to the global shared storage.
+func RegisterApplication(app Application) {
+	if app == nil {
+		return
+	}
+
+	mu.Lock()
+	registeredApps = append(registeredApps, app)
+	mu.Unlock()
+}
+
+// LastApplication returns the last registered Application.
+// Handlers has access to the current Application,
+// use `Context.Application()` instead.
+func LastApplication() Application {
+	mu.RLock()
+	if n := len(registeredApps); n > 0 {
+		if app := registeredApps[n-1]; app != nil {
+			mu.RUnlock()
+			return app
+		}
+	}
+	mu.RUnlock()
+	return nil
+}
+
+// DefaultLogger returns a Logger instance for an Iris module.
+// If the program contains at least one registered Iris Application
+// before this call then it will return a child of that Application's Logger
+// otherwise a fresh child of the `golog.Default` will be returned instead.
+//
+// It should be used when a module has no access to the Application or its Logger.
+func DefaultLogger(prefix string) (logger *golog.Logger) {
+	if app := LastApplication(); app != nil {
+		logger = app.Logger()
+	} else {
+		logger = golog.Default
+	}
+
+	logger = logger.Child(prefix)
+	return
 }

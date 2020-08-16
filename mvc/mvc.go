@@ -247,8 +247,8 @@ var _ websocket.ConnHandler = (*Application)(nil)
 // It returns a collection of namespace and events that
 // were registered through `HandleWebsocket` controllers.
 func (app *Application) GetNamespaces() websocket.Namespaces {
-	if golog.Default.Level == golog.DebugLevel {
-		websocket.EnableDebug(golog.Default)
+	if logger := app.Router.Logger(); logger.Level == golog.DebugLevel {
+		websocket.EnableDebug(logger)
 	}
 
 	return websocket.JoinConnHandlers(app.websocketControllers...).GetNamespaces()

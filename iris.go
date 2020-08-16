@@ -99,20 +99,21 @@ type Application struct {
 // New creates and returns a fresh empty iris *Application instance.
 func New() *Application {
 	config := DefaultConfiguration()
-
 	app := &Application{
-		config:     &config,
-		logger:     golog.Default,
-		minifier:   newMinifier(),
-		I18n:       i18n.New(),
-		APIBuilder: router.NewAPIBuilder(),
-		Router:     router.NewRouter(),
+		config:   &config,
+		Router:   router.NewRouter(),
+		I18n:     i18n.New(),
+		minifier: newMinifier(),
 	}
 
+	logger := newLogger(app)
+	app.logger = logger
+	app.APIBuilder = router.NewAPIBuilder(logger)
 	app.ContextPool = context.New(func() interface{} {
 		return context.NewContext(app)
 	})
 
+	context.RegisterApplication(app)
 	return app
 }
 
@@ -161,6 +162,8 @@ func (app *Application) WWW() router.Party {
 // Example: https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect
 func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 	sd := router.NewSubdomainRedirectWrapper(app.ConfigurationReadOnly().GetVHost, from.GetRelPath(), to.GetRelPath())
+	// TODO: add a debug message here or wait for a response from the issuer
+	// so we can force these to run on build state (last registered, first executed).
 	app.Router.WrapRouter(sd)
 	return to
 }
@@ -186,6 +189,22 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 	return app.config
 }
 
+// Maybe, if it's requested:
+// func (app *Application) SetName(appName string) *iris.Application {
+// 	app.config.name = appName
+// 	app.logger.SetChildPrefix(appName)
+// 	return app
+// }
+
+func newLogger(app *Application) *golog.Logger {
+	logger := golog.Default.Child(app)
+	if prefix := os.Getenv("IRIS_APP_NAME"); prefix != "" {
+		logger.SetChildPrefix(prefix)
+	}
+
+	return logger
+}
+
 // Logger returns the golog logger instance(pointer) that is being used inside the "app".
 //
 // Available levels:
@@ -200,7 +219,7 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 // Defaults to "info" level.
 //
 // Callers can use the application's logger which is
-// the same `golog.Default` logger,
+// the same `golog.Default.LastChild()` logger,
 // to print custom logs too.
 // Usage:
 // app.Logger().Error/Errorf("...")
@@ -271,6 +290,25 @@ func newMinifier() *minify.M {
 	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
 	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
 	return m
+}
+
+// Minify is a middleware which minifies the responses
+// based on the response content type.
+// Note that minification might be slower, caching is advised.
+// Customize the minifier through `Application.Minifier()`.
+// Usage:
+// app.Use(iris.Minify)
+func Minify(ctx Context) {
+	w := ctx.Application().Minifier().ResponseWriter(ctx.ResponseWriter().Naive(), ctx.Request())
+	// Note(@kataras):
+	// We don't use defer w.Close()
+	// because this response writer holds a sync.WaitGroup under the hoods
+	// and we MUST be sure that its wg.Wait is called on request cancelation
+	// and not in the end of handlers chain execution
+	// (which if running a time-consuming task it will delay its resource release).
+	ctx.OnCloseErr(w.Close)
+	ctx.ResponseWriter().SetWriter(w)
+	ctx.Next()
 }
 
 // Minifier returns the minifier instance.

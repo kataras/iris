@@ -14,7 +14,7 @@ func newApp() *iris.Application {
 	if err != nil {
 		panic(err)
 	}
-	app.I18n.Subdomain
+	// app.I18n.Subdomain = false to disable resolve lang code from subdomain.
 	// app.I18n.LoadAssets for go-bindata.
 
 	// Default values:

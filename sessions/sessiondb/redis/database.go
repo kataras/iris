@@ -77,7 +77,8 @@ func DefaultConfig() Config {
 
 // Database the redis back-end session database for the sessions.
 type Database struct {
-	c Config
+	c      Config
+	logger *golog.Logger
 }
 
 var _ sessions.Database = (*Database)(nil)
@@ -131,6 +132,12 @@ func (db *Database) Config() *Config {
 	return &db.c // 6 Aug 2019 - keep that for no breaking change.
 }
 
+// SetLogger sets the logger once before server ran.
+// By default the Iris one is injected.
+func (db *Database) SetLogger(logger *golog.Logger) {
+	db.logger = logger
+}
+
 // Acquire receives a session's lifetime from the database,
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
 func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
@@ -140,7 +147,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 		// fmt.Printf("db.Acquire expires: %s. Seconds: %v\n", expires, expires.Seconds())
 		// not found, create an entry with ttl and return an empty lifetime, session manager will do its job.
 		if err := db.c.Driver.Set(key, sid, int64(expires.Seconds())); err != nil {
-			golog.Debug(err)
+			db.logger.Debug(err)
 		}
 
 		return sessions.LifeTime{} // session manager will handle the rest.
@@ -168,17 +175,17 @@ func (db *Database) makeKey(sid, key string) string {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, value interface{}, immutable bool) {
+func (db *Database) Set(sid string, lifetime *sessions.LifeTime, key string, value interface{}, immutable bool) {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 		return
 	}
 
 	// fmt.Println("database.Set")
 	// fmt.Printf("lifetime.DurationUntilExpiration(): %s. Seconds: %v\n", lifetime.DurationUntilExpiration(), lifetime.DurationUntilExpiration().Seconds())
 	if err = db.c.Driver.Set(db.makeKey(sid, key), valueBytes, int64(lifetime.DurationUntilExpiration().Seconds())); err != nil {
-		golog.Debug(err)
+		db.logger.Debug(err)
 	}
 }
 
@@ -196,7 +203,7 @@ func (db *Database) get(key string, outPtr interface{}) error {
 	}
 
 	if err = sessions.DefaultTranscoder.Unmarshal(data.([]byte), outPtr); err != nil {
-		golog.Debugf("unable to unmarshal value of key: '%s': %v", key, err)
+		db.logger.Debugf("unable to unmarshal value of key: '%s': %v", key, err)
 		return err
 	}
 
@@ -206,7 +213,7 @@ func (db *Database) get(key string, outPtr interface{}) error {
 func (db *Database) keys(sid string) []string {
 	keys, err := db.c.Driver.GetKeys(db.makeKey(sid, ""))
 	if err != nil {
-		golog.Debugf("unable to get all redis keys of session '%s': %v", sid, err)
+		db.logger.Debugf("unable to get all redis keys of session '%s': %v", sid, err)
 		return nil
 	}
 
@@ -233,7 +240,7 @@ func (db *Database) Len(sid string) (n int) {
 func (db *Database) Delete(sid string, key string) (deleted bool) {
 	err := db.c.Driver.Delete(db.makeKey(sid, key))
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 	}
 	return err == nil
 }
@@ -243,7 +250,7 @@ func (db *Database) Clear(sid string) {
 	keys := db.keys(sid)
 	for _, key := range keys {
 		if err := db.c.Driver.Delete(key); err != nil {
-			golog.Debugf("unable to delete session '%s' value of key: '%s': %v", sid, key, err)
+			db.logger.Debugf("unable to delete session '%s' value of key: '%s': %v", sid, key, err)
 		}
 	}
 }
@@ -256,7 +263,7 @@ func (db *Database) Release(sid string) {
 	// and remove the $sid.
 	err := db.c.Driver.Delete(db.c.Prefix + sid)
 	if err != nil {
-		golog.Debugf("Database.Release.Driver.Delete: %s: %v", sid, err)
+		db.logger.Debugf("Database.Release.Driver.Delete: %s: %v", sid, err)
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/macro"
+
+	"github.com/kataras/golog"
 )
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -13,6 +15,9 @@ import (
 //
 // Look the `APIBuilder` structure for its implementation.
 type Party interface {
+	// Logger returns the Application Logger.
+	Logger() *golog.Logger
+
 	// IsRoot reports whether this Party is the root Application's one.
 	// It will return false on all children Parties, no exception.
 	IsRoot() bool

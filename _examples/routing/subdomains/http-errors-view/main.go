@@ -17,9 +17,10 @@ func newApp() *iris.Application {
 
 	// Optionally, to minify the HTML5 error response.
 	// Note that minification might be slower, caching is advised.
-	test.UseError(iris.Minify)
+	// test.UseError(iris.Minify)
+	// or pass it to OnErrorCode:
 	// Register error code 404 handler.
-	test.OnErrorCode(iris.StatusNotFound, handleNotFoundTestSubdomain)
+	test.OnErrorCode(iris.StatusNotFound, iris.Minify, handleNotFoundTestSubdomain)
 
 	test.Get("/", testIndex)
 

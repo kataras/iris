@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 
 	"github.com/google/uuid"
+	"github.com/kataras/golog"
 )
 
 const (
@@ -16,6 +17,9 @@ const (
 type (
 	// Config is the configuration for sessions. Please read it before using sessions.
 	Config struct {
+		// Logger instance for sessions usage, e.g. { Logger: app.Logger() }.
+		// Defauls to a child of "sessions" of the latest Iris Application's main Logger.
+		Logger *golog.Logger
 		// Cookie string, the session's client cookie name, for example: "mysessionid"
 		//
 		// Defaults to "irissessionid".
@@ -65,6 +69,10 @@ type (
 
 // Validate corrects missing fields configuration fields and returns the right configuration
 func (c Config) Validate() Config {
+	if c.Logger == nil {
+		c.Logger = context.DefaultLogger("sessions")
+	}
+
 	if c.Cookie == "" {
 		c.Cookie = DefaultCookieName
 	}

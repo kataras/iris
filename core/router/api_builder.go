@@ -15,6 +15,8 @@ import (
 	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/macro"
 	macroHandler "github.com/kataras/iris/v12/macro/handler"
+
+	"github.com/kataras/golog"
 )
 
 // MethodNone is a Virtual method
@@ -153,6 +155,8 @@ func overlapRoute(r *Route, next *Route) {
 // APIBuilder the visible API for constructing the router
 // and child routers.
 type APIBuilder struct {
+	// the application logger.
+	logger *golog.Logger
 	// parent is the creator of this Party.
 	// It is nil on Root.
 	parent *APIBuilder // currently it's used only on UseRouter feature.
@@ -227,8 +231,9 @@ var (
 
 // NewAPIBuilder creates & returns a new builder
 // which is responsible to build the API and the router handler.
-func NewAPIBuilder() *APIBuilder {
+func NewAPIBuilder(logger *golog.Logger) *APIBuilder {
 	return &APIBuilder{
+		logger:        logger,
 		parent:        nil,
 		macros:        macro.Defaults,
 		errors:        errgroup.New("API Builder"),
@@ -238,6 +243,11 @@ func NewAPIBuilder() *APIBuilder {
 		routerFilters: make(map[Party]*Filter),
 		partyMatcher:  defaultPartyMatcher,
 	}
+}
+
+// Logger returns the Application Logger.
+func (api *APIBuilder) Logger() *golog.Logger {
+	return api.logger
 }
 
 // IsRoot reports whether this Party is the root Application's one.

@@ -27,6 +27,7 @@ type Database struct {
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
 	Service *bolt.DB
+	logger  *golog.Logger
 }
 
 var errPathMissing = errors.New("path is required")
@@ -91,7 +92,7 @@ func (db *Database) getBucketForSession(tx *bolt.Tx, sid string) *bolt.Bucket {
 	if b == nil {
 		// session does not exist, it shouldn't happen, session bucket creation happens once at `Acquire`,
 		// no need to accept the `bolt.bucket.CreateBucketIfNotExists`'s performance cost.
-		golog.Debugf("unreachable session access for '%s'", sid)
+		db.logger.Debugf("unreachable session access for '%s'", sid)
 	}
 
 	return b
@@ -122,20 +123,20 @@ func (db *Database) cleanup() error {
 			if bExp := b.Bucket(expirationName); bExp != nil { // has expiration.
 				_, expValue := bExp.Cursor().First() // the expiration bucket contains only one key(we don't care, see `Acquire`) value(time.Time) pair.
 				if expValue == nil {
-					golog.Debugf("cleanup: expiration is there but its value is empty '%s'", v) // should never happen.
+					db.logger.Debugf("cleanup: expiration is there but its value is empty '%s'", v) // should never happen.
 					continue
 				}
 
 				var expirationTime time.Time
 				if err := sessions.DefaultTranscoder.Unmarshal(expValue, &expirationTime); err != nil {
-					golog.Debugf("cleanup: unable to retrieve expiration value for '%s'", v)
+					db.logger.Debugf("cleanup: unable to retrieve expiration value for '%s'", v)
 					continue
 				}
 
 				if expirationTime.Before(time.Now()) {
 					// expired, delete the expiration bucket.
 					if err := b.DeleteBucket(expirationName); err != nil {
-						golog.Debugf("cleanup: unable to destroy a session '%s'", bsid)
+						db.logger.Debugf("cleanup: unable to destroy a session '%s'", bsid)
 						return err
 					}
 
@@ -147,6 +148,12 @@ func (db *Database) cleanup() error {
 
 		return nil
 	})
+}
+
+// SetLogger sets the logger once before server ran.
+// By default the Iris one is injected.
+func (db *Database) SetLogger(logger *golog.Logger) {
+	db.logger = logger
 }
 
 var expirationKey = []byte("exp") // it can be random.
@@ -166,14 +173,14 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 				// don't return a lifetime, let it empty, session manager will do its job.
 				b, err = root.CreateBucket(name)
 				if err != nil {
-					golog.Debugf("unable to create a session bucket for '%s': %v", sid, err)
+					db.logger.Debugf("unable to create a session bucket for '%s': %v", sid, err)
 					return err
 				}
 
 				expirationTime := time.Now().Add(expires)
 				timeBytes, err := sessions.DefaultTranscoder.Marshal(expirationTime)
 				if err != nil {
-					golog.Debugf("unable to set an expiration value on session expiration bucket for '%s': %v", sid, err)
+					db.logger.Debugf("unable to set an expiration value on session expiration bucket for '%s': %v", sid, err)
 					return err
 				}
 
@@ -194,7 +201,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 
 			var expirationTime time.Time
 			if err = sessions.DefaultTranscoder.Unmarshal(expValue, &expirationTime); err != nil {
-				golog.Debugf("acquire: unable to retrieve expiration value for '%s', value was: '%s': %v", sid, expValue, err)
+				db.logger.Debugf("acquire: unable to retrieve expiration value for '%s', value was: '%s': %v", sid, expValue, err)
 				return
 			}
 
@@ -207,7 +214,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 		return
 	})
 	if err != nil {
-		golog.Debugf("unable to acquire session '%s': %v", sid, err)
+		db.logger.Debugf("unable to acquire session '%s': %v", sid, err)
 		return sessions.LifeTime{}
 	}
 
@@ -227,7 +234,7 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 		root := db.getBucket(tx)
 		b := root.Bucket(expirationName)
 		if b == nil {
-			// golog.Debugf("tried to reset the expiration value for '%s' while its configured lifetime is unlimited or the session is already expired and not found now", sid)
+			// db.logger.Debugf("tried to reset the expiration value for '%s' while its configured lifetime is unlimited or the session is already expired and not found now", sid)
 			return sessions.ErrNotFound
 		}
 
@@ -235,7 +242,7 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 	})
 
 	if err != nil {
-		golog.Debugf("unable to reset the expiration value for '%s': %v", sid, err)
+		db.logger.Debugf("unable to reset the expiration value for '%s': %v", sid, err)
 	}
 
 	return err
@@ -247,10 +254,10 @@ func makeKey(key string) []byte {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, value interface{}, immutable bool) {
+func (db *Database) Set(sid string, _ *sessions.LifeTime, key string, value interface{}, immutable bool) {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
-		golog.Debug(err)
+		db.logger.Debug(err)
 		return
 	}
 
@@ -268,7 +275,7 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 	})
 
 	if err != nil {
-		golog.Debug(err)
+		db.logger.Debug(err)
 	}
 }
 
@@ -288,7 +295,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 		return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 	})
 	if err != nil {
-		golog.Debugf("session '%s' key '%s' cannot be retrieved: %v", sid, key, err)
+		db.logger.Debugf("session '%s' key '%s' cannot be retrieved: %v", sid, key, err)
 	}
 
 	return
@@ -305,7 +312,7 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 		return b.ForEach(func(k []byte, v []byte) error {
 			var value interface{}
 			if err := sessions.DefaultTranscoder.Unmarshal(v, &value); err != nil {
-				golog.Debugf("unable to retrieve value of key '%s' of '%s': %v", k, sid, err)
+				db.logger.Debugf("unable to retrieve value of key '%s' of '%s': %v", k, sid, err)
 				return err
 			}
 
@@ -315,7 +322,7 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 	})
 
 	if err != nil {
-		golog.Debugf("Database.Visit: %s: %v", sid, err)
+		db.logger.Debugf("Database.Visit: %s: %v", sid, err)
 	}
 }
 
@@ -332,7 +339,7 @@ func (db *Database) Len(sid string) (n int) {
 	})
 
 	if err != nil {
-		golog.Debugf("Database.Len: %s: %v", sid, err)
+		db.logger.Debugf("Database.Len: %s: %v", sid, err)
 	}
 
 	return
@@ -366,7 +373,7 @@ func (db *Database) Clear(sid string) {
 	})
 
 	if err != nil {
-		golog.Debugf("Database.Clear: %s: %v", sid, err)
+		db.logger.Debugf("Database.Clear: %s: %v", sid, err)
 	}
 }
 
@@ -384,7 +391,7 @@ func (db *Database) Release(sid string) {
 	})
 
 	if err != nil {
-		golog.Debugf("Database.Release: %s: %v", sid, err)
+		db.logger.Debugf("Database.Release: %s: %v", sid, err)
 	}
 }
 
@@ -396,7 +403,7 @@ func (db *Database) Close() error {
 func closeDB(db *Database) error {
 	err := db.Service.Close()
 	if err != nil {
-		golog.Warnf("closing the BoltDB connection: %v", err)
+		db.logger.Warnf("closing the BoltDB connection: %v", err)
 	}
 
 	return err

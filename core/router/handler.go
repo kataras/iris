@@ -246,7 +246,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			// logger.Debugf("API: %d registered %s (", len(registeredRoutes), tr)
 			// with:
 			pio.WriteRich(logger.Printer, debugLevel.Title, debugLevel.ColorCode, debugLevel.Style...)
-			fmt.Fprintf(logger.Printer, " %s API: %d registered %s (", time.Now().Format(logger.TimeFormat), len(registeredRoutes), tr)
+			fmt.Fprintf(logger.Printer, " %s %sAPI: %d registered %s (", time.Now().Format(logger.TimeFormat), logger.Prefix, len(registeredRoutes), tr)
 			//
 			logger.NewLine = bckpNewLine
 
