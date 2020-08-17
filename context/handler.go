@@ -19,7 +19,7 @@ var (
 )
 
 var (
-	handlerNames   = make(map[*nameExpr]string)
+	handlerNames   = make(map[*NameExpr]string)
 	handlerNamesMu sync.RWMutex
 )
 
@@ -44,19 +44,22 @@ func SetHandlerName(original string, replacement string) {
 	// when a handler name is declared as it's and cause regex parsing expression error,
 	// e.g. `iris/cache/client.(*Handler).ServeHTTP-fm`
 	regex, _ := regexp.Compile(original)
-	handlerNames[&nameExpr{
+	handlerNames[&NameExpr{
 		literal: original,
 		regex:   regex,
 	}] = replacement
 	handlerNamesMu.Unlock()
 }
 
-type nameExpr struct {
+// NameExpr regex or literal comparison through `MatchString`.
+type NameExpr struct {
 	regex   *regexp.Regexp
 	literal string
 }
 
-func (expr *nameExpr) MatchString(s string) bool {
+// MatchString reports whether "s" is literal of "literal"
+// or it matches the regex expression at "regex".
+func (expr *NameExpr) MatchString(s string) bool {
 	if expr.literal == s { // if matches as string, as it's.
 		return true
 	}

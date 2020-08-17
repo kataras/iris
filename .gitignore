@@ -1,5 +1,6 @@
 .vscode
 .directory
+coverage.out
 package-lock.json
 go.sum
 node_modules

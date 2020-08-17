@@ -169,27 +169,6 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 	router(w, r)
 }
 
-func redirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code int) {
-	h := w.Header()
-
-	// RFC 7231 notes that a short HTML body is usually included in
-	// the response because older user agents may not understand 301/307.
-	// Do it only if the request didn't already have a Content-Type header.
-	_, hadCT := h[context.ContentTypeHeaderKey]
-
-	h.Set("Location", url)
-	if !hadCT && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
-		h.Set(context.ContentTypeHeaderKey, "text/html; charset=utf-8")
-	}
-	w.WriteHeader(code)
-
-	// Shouldn't send the body for POST or HEAD; that leaves GET.
-	if !hadCT && r.Method == "GET" {
-		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
-		fmt.Fprintln(w, body)
-	}
-}
-
 // NewSubdomainPartyRedirectHandler returns a handler which can be registered
 // through `UseRouter` or `Use` to redirect from the current request's
 // subdomain to the one which the given `to` Party can handle.
@@ -210,9 +189,34 @@ func NewSubdomainRedirectHandler(toSubdomain string) context.Handler {
 		// en-us.test.mydomain.com
 		host := ctx.Host()
 		fullSubdomain := ctx.SubdomainFull()
-		newHost := strings.Replace(host, fullSubdomain, toSubdomain, 1)
-		resturi := ctx.Request().URL.RequestURI()
-		urlToRedirect := ctx.Scheme() + newHost + resturi
-		redirectAbsolute(ctx.ResponseWriter(), ctx.Request(), urlToRedirect, http.StatusMovedPermanently)
+		targetHost := strings.Replace(host, fullSubdomain, toSubdomain, 1)
+		// resturi := ctx.Request().URL.RequestURI()
+		// urlToRedirect := ctx.Scheme() + newHost + resturi
+		r := ctx.Request()
+		r.Host = targetHost
+		r.URL.Host = targetHost
+		urlToRedirect := r.URL.String()
+		redirectAbsolute(ctx.ResponseWriter(), r, urlToRedirect, http.StatusMovedPermanently)
+	}
+}
+
+func redirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code int) {
+	h := w.Header()
+
+	// RFC 7231 notes that a short HTML body is usually included in
+	// the response because older user agents may not understand 301/307.
+	// Do it only if the request didn't already have a Content-Type header.
+	_, hadCT := h[context.ContentTypeHeaderKey]
+
+	h.Set("Location", url)
+	if !hadCT && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		h.Set(context.ContentTypeHeaderKey, "text/html; charset=utf-8")
+	}
+	w.WriteHeader(code)
+
+	// Shouldn't send the body for POST or HEAD; that leaves GET.
+	if !hadCT && r.Method == "GET" {
+		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
+		fmt.Fprintln(w, body)
 	}
 }

@@ -5,6 +5,8 @@ os:
   - linux
   - osx
 go:
+# We support the latest two major Go versions:
+# https://golang.org/doc/devel/release.html
   - 1.14.x
   - 1.15.x
 # - master
@@ -12,6 +14,15 @@ go_import_path: github.com/kataras/iris/v12
 env:
  global:
    - GO111MODULE=on
+addons:
+  hosts:
+    - mydomain.com
+    - www.mydomain.com
+    - myotherdomain.com
+    - mymy.com
+    - testdomain.com
+    - testdomain1.com
+    - testdomain2.com
 install:
   - go get ./...
 script:

@@ -492,6 +492,9 @@ func (su *Supervisor) RegisterOnShutdown(cb func()) {
 // for them to close, if desired.
 func (su *Supervisor) Shutdown(ctx context.Context) error {
 	atomic.StoreUint32(&su.closedManually, 1) // future-use
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	return su.Server.Shutdown(ctx)
 }
 

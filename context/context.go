@@ -135,6 +135,14 @@ func NewContext(app Application) *Context {
 	return &Context{app: app}
 }
 
+/* Not required, unless requested.
+// SetApplication sets an Iris Application on-fly.
+// Do NOT use it after ServeHTTPC is fired.
+func (ctx *Context) SetApplication(app Application) {
+	ctx.app = app
+}
+*/
+
 // Clone returns a copy of the context that
 // can be safely used outside the request's scope.
 // Note that if the request-response lifecycle terminated
@@ -898,8 +906,22 @@ func (ctx *Context) Domain() string {
 	return GetDomain(ctx.Host())
 }
 
-// SubdomainFull returnst he full subdomain level, e.g.
+// GetSubdomainFull returns the full subdomain level, e.g.
 // [test.user.]mydomain.com.
+func GetSubdomainFull(r *http.Request) string {
+	host := GetHost(r)            // host:port
+	rootDomain := GetDomain(host) // mydomain.com
+	rootDomainIdx := strings.Index(host, rootDomain)
+	if rootDomainIdx == -1 {
+		return ""
+	}
+
+	return host[0:rootDomainIdx]
+}
+
+// SubdomainFull returns the full subdomain level, e.g.
+// [test.user.]mydomain.com.
+// Note that HostProxyHeaders are being respected here.
 func (ctx *Context) SubdomainFull() string {
 	host := ctx.Host()            // host:port
 	rootDomain := GetDomain(host) // mydomain.com

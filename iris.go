@@ -82,8 +82,20 @@ type Application struct {
 	// used for build
 	builded     bool
 	defaultMode bool
+	// OnBuild is a single function which
+	// is fired on the first `Build` method call.
+	// If reports an error then the execution
+	// is stopped and the error is logged.
+	// It's nil by default except when `Switch` instead of `New` or `Default`
+	// is used to initialize the Application.
+	// Users can wrap it to accept more events.
+	OnBuild func() error
 
 	mu sync.Mutex
+	// name is the application name and the log prefix for
+	// that Application instance's Logger. See `SetName` and `String`.
+	// Defaults to IRIS_APP_NAME envrinoment variable otherwise empty.
+	name string
 	// Hosts contains a list of all servers (Host Supervisors) that this app is running on.
 	//
 	// Hosts may be empty only if application ran(`app.Run`) with `iris.Raw` option runner,
@@ -129,6 +141,41 @@ func Default() *Application {
 	app.defaultMode = true
 
 	return app
+}
+
+func newLogger(app *Application) *golog.Logger {
+	logger := golog.Default.Child(app)
+	if name := os.Getenv("IRIS_APP_NAME"); name != "" {
+		app.name = name
+		logger.SetChildPrefix(name)
+	}
+
+	return logger
+}
+
+// SetName sets a unique name to this Iris Application.
+// It sets a child prefix for the current Application's Logger.
+// Look `String` method too.
+//
+// It returns this Application.
+func (app *Application) SetName(appName string) *Application {
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
+	if app.name == "" {
+		app.logger.SetChildPrefix(appName)
+	}
+	app.name = appName
+
+	return app
+}
+
+// String completes the fmt.Stringer interface and it returns
+// the application's name.
+// If name was not set by `SetName` or `IRIS_APP_NAME` environment variable
+// then this will return an empty string.
+func (app *Application) String() string {
+	return app.name
 }
 
 // WWW creates and returns a "www." subdomain.
@@ -185,22 +232,6 @@ func (app *Application) Configure(configurators ...Configurator) *Application {
 // ConfigurationReadOnly returns an object which doesn't allow field writing.
 func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 	return app.config
-}
-
-// Maybe, if it's requested:
-// func (app *Application) SetName(appName string) *iris.Application {
-// 	app.config.name = appName
-// 	app.logger.SetChildPrefix(appName)
-// 	return app
-// }
-
-func newLogger(app *Application) *golog.Logger {
-	logger := golog.Default.Child(app)
-	if prefix := os.Getenv("IRIS_APP_NAME"); prefix != "" {
-		logger.SetChildPrefix(prefix)
-	}
-
-	return logger
 }
 
 // Logger returns the golog logger instance(pointer) that is being used inside the "app".
@@ -486,6 +517,12 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 func (app *Application) Build() error {
 	if app.builded {
 		return nil
+	}
+
+	if cb := app.OnBuild; cb != nil {
+		if err := cb(); err != nil {
+			return err
+		}
 	}
 
 	// start := time.Now()

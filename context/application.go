@@ -84,9 +84,30 @@ type Application interface {
 	//
 	// Order may change.
 	FindClosestPaths(subdomain, searchPath string, n int) []string
+
+	// String returns the Application's Name.
+	String() string
 }
 
+// Notes(@kataras):
+// Alternative places...
+// 1. in apps/store, but it would require an empty `import _ "....apps/store"
+//	  from end-developers, to avoid the import cycle and *iris.Application access.
+// 2. in root package level, that could be the best option, it has access to the *iris.Application
+// instead of the context.Application interface, but we try to keep the root package
+// as minimum as possible, however: if in the future, those Application instances
+// can be registered through network instead of same-process then we must think of that choice.
+// 3. this is the best possible place, as the root package and all subpackages
+// have access to this context package without import cycles and they already using it,
+// the only downside is that we don't have access to the *iris.Application instance
+// but this context.Application is designed that way that can execute all important methods
+// as the whole Iris code base is so well written.
+
 var (
+	// registerApps holds all the created iris Applications by this process.
+	// It's slice instead of map because if IRIS_APP_NAME env var exists,
+	// by-default all applications running on the same machine
+	// will have the same name unless `Application.SetName` is called.
 	registeredApps []Application
 	mu             sync.RWMutex
 )
@@ -107,14 +128,42 @@ func RegisterApplication(app Application) {
 // use `Context.Application()` instead.
 func LastApplication() Application {
 	mu.RLock()
-	if n := len(registeredApps); n > 0 {
-		if app := registeredApps[n-1]; app != nil {
+	for i := len(registeredApps) - 1; i >= 0; i-- {
+		if app := registeredApps[i]; app != nil {
 			mu.RUnlock()
 			return app
 		}
 	}
 	mu.RUnlock()
 	return nil
+}
+
+// GetApplication returns a registered Application
+// based on its name. If the "appName" is not unique
+// across Applications, then it will return the newest one.
+func GetApplication(appName string) (Application, bool) {
+	mu.RLock()
+
+	for i := len(registeredApps) - 1; i >= 0; i-- {
+		if app := registeredApps[i]; app != nil && app.String() == appName {
+			mu.RUnlock()
+			return app, true
+		}
+	}
+
+	mu.RUnlock()
+	return nil, false
+}
+
+// MustGetApplication same as `GetApplication` but it
+// panics if "appName" is not a registered Application's name.
+func MustGetApplication(appName string) Application {
+	app, ok := GetApplication(appName)
+	if !ok || app == nil {
+		panic(appName + " is not a registered Application")
+	}
+
+	return app
 }
 
 // DefaultLogger returns a Logger instance for an Iris module.
