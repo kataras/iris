@@ -288,7 +288,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 		for i, m := range methodRoutes {
 			for _, r := range m.routes {
-				r.Trace(logger.Printer)
+				r.Trace(logger.Printer, -1)
 			}
 
 			if i != len(allMethods)-1 {

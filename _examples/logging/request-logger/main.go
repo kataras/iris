@@ -21,7 +21,6 @@ func main() {
 		Query: true,
 		// Shows information about the executed route.
 		TraceRoute: true,
-
 		// Columns: true,
 
 		// if !empty then its contents derives from `ctx.Values().Get("logger_message")
@@ -32,25 +31,18 @@ func main() {
 		MessageHeaderKeys: []string{"User-Agent"},
 	})
 
-	app.Use(customLogger)
+	// Runs first on every request: parties & subdomains, route match or not and all http errors.
+	app.UseRouter(customLogger)
 
-	h := func(ctx iris.Context) {
-		ctx.Writef("Hello from %s", ctx.Path())
-	}
-	app.Get("/", h)
+	// Runs first on each matched route of this Party and its children on every request.
+	app.Use(routesMiddleware)
 
-	app.Get("/1", h)
+	app.Get("/", indexMiddleware, index)
+	app.Get("/list", listMiddleware, list)
 
-	app.Get("/2", h)
+	app.Get("/1", hello)
+	app.Get("/2", hello)
 
-	// http errors have their own handlers, therefore
-	// registering a middleare should be done manually.
-	/*
-	 app.OnErrorCode(404 ,customLogger, func(ctx iris.Context) {
-	 	ctx.Writef("My Custom 404 error page ")
-	 })
-	*/
-	// or catch all http errors:
 	app.OnAnyErrorCode(customLogger, func(ctx iris.Context) {
 		// this should be added to the logs, at the end because of the `logger.Config#MessageContextKey`
 		ctx.Values().Set("logger_message",
@@ -59,9 +51,41 @@ func main() {
 	})
 
 	// http://localhost:8080
+	// http://localhost:8080/list
+	// http://localhost:8080/list?stop=true
 	// http://localhost:8080/1
 	// http://localhost:8080/2
 	// http://lcoalhost:8080/notfoundhere
 	// see the output on the console.
 	app.Listen(":8080")
+}
+
+func routesMiddleware(ctx iris.Context) {
+	ctx.Writef("Executing Route: %s\n", ctx.GetCurrentRoute().MainHandlerName())
+	ctx.Next()
+}
+
+func indexMiddleware(ctx iris.Context) {
+	ctx.WriteString("Index Middleware\n")
+	ctx.Next()
+}
+
+func index(ctx iris.Context) {
+	ctx.WriteString("Index Handler")
+}
+
+func listMiddleware(ctx iris.Context) {
+	ctx.WriteString("List Middleware\n")
+
+	if simulateStop, _ := ctx.URLParamBool("stop"); !simulateStop {
+		ctx.Next()
+	}
+}
+
+func list(ctx iris.Context) {
+	ctx.WriteString("List Handler")
+}
+
+func hello(ctx iris.Context) {
+	ctx.Writef("Hello from %s", ctx.Path())
 }

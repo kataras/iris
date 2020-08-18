@@ -231,22 +231,22 @@ Take for example that you want to fire different HTTP status codes depending on 
 
 ```go
 type response struct {
-	ID      uint64 `json:"id,omitempty"`
-	Message string `json:"message"`
-	Code    int    `json:"code"`
-	Timestamp int64 `json:"timestamp,omitempty"`
+    ID      uint64 `json:"id,omitempty"`
+    Message string `json:"message"`
+    Code    int    `json:"code"`
+    Timestamp int64 `json:"timestamp,omitempty"`
 }
 
 func (r *response) Preflight(ctx iris.Context) error {
-	if r.ID > 0 {
-		r.Timestamp = time.Now().Unix()
-	}
+    if r.ID > 0 {
+        r.Timestamp = time.Now().Unix()
+    }
 
     if r.Code > 0 {
         ctx.StatusCode(r.Code)
     }
 
-	return nil
+    return nil
 }
 ```
 
@@ -362,7 +362,7 @@ Response:
 
 Other Improvements:
 
-- New `TraceRoute bool` on [request logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route, screenshot:
+- New `TraceRoute bool` on [request logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
 
 ![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
 

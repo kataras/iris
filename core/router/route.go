@@ -388,7 +388,7 @@ func traceMethodColor(method string) int {
 //               * @handler_name (@handler_rel_location)
 //               * @second_handler ...
 // If route and handler line:number locations are equal then the second is ignored.
-func (r *Route) Trace(w io.Writer) {
+func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 	method := r.Method
 	if method == "" {
 		method = fmt.Sprintf("%d", r.StatusCode)
@@ -470,6 +470,13 @@ func (r *Route) Trace(w io.Writer) {
 
 		// * @handler_name (@handler_rel_location)
 		fmt.Fprint(w, traceHandlerFile(r.Method, name, file, line))
+		if stoppedIndex != -1 && stoppedIndex <= len(r.Handlers) {
+			if i <= stoppedIndex {
+				pio.WriteRich(w, " ✓", pio.Green)
+			} else {
+				// pio.WriteRich(w, " ✕", pio.Red, pio.Underline)
+			}
+		}
 	}
 
 	fmt.Fprintln(w)
@@ -499,8 +506,8 @@ func (rd routeReadOnlyWrapper) Path() string {
 	return rd.Route.tmpl.Src
 }
 
-func (rd routeReadOnlyWrapper) Trace(w io.Writer) {
-	rd.Route.Trace(w)
+func (rd routeReadOnlyWrapper) Trace(w io.Writer, stoppedIndex int) {
+	rd.Route.Trace(w, stoppedIndex)
 }
 
 func (rd routeReadOnlyWrapper) Tmpl() macro.Template {

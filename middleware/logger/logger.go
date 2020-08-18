@@ -141,7 +141,19 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 	}
 
 	if l.config.TraceRoute && ctx.GetCurrentRoute() != nil /* it is nil on unhandled error codes */ {
-		ctx.GetCurrentRoute().Trace(ctx.Application().Logger().Printer)
+		// Get the total length of handlers and see if all are executed.
+		// Note(@kataras): we get those after handler executed, because
+		// filters (and overlap) feature will set the handlers on router build
+		// state to fullfil their needs. And we need to respect
+		// any dev's custom SetHandlers&Do actions too so we don't give false info.
+		// if n, idx := len(ctx.Handlers()), ctx.HandlerIndex(-1); idx < n-1 {
+		//
+		// }
+		// Let's pass it into the Trace function itself which will "mark"
+		// every handler that is eventually executed.
+		// Note that if StopExecution is called, the index is always -1,
+		// so no "mark" signs will be printed at all <- this can be fixed by introducing a new ctx field.
+		ctx.GetCurrentRoute().Trace(ctx.Application().Logger().Printer, ctx.HandlerIndex(-1))
 	}
 }
 
