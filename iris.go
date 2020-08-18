@@ -134,9 +134,9 @@ func New() *Application {
 // The return instance recovers on panics and logs the incoming http requests too.
 func Default() *Application {
 	app := New()
-	app.Use(recover.New())
-	app.Use(requestLogger.New())
-	app.Use(Compression)
+	app.UseRouter(recover.New())
+	app.UseRouter(requestLogger.New())
+	app.UseRouter(Compression)
 
 	app.defaultMode = true
 

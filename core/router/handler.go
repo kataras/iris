@@ -48,8 +48,9 @@ type routerHandler struct {
 	trees      []*trie
 	errorTrees []*trie
 
-	hosts      bool // true if at least one route contains a Subdomain.
-	errorHosts bool // true if error handlers are registered to at least one Subdomain.
+	hosts                bool             // true if at least one route contains a Subdomain.
+	errorHosts           bool             // true if error handlers are registered to at least one Subdomain.
+	errorDefaultHandlers context.Handlers // the main handler(s) for default error code handlers, when not registered directly by the end-developer.
 }
 
 var _ RequestHandler = (*routerHandler)(nil)
@@ -122,10 +123,26 @@ type RoutesProvider interface { // api builder
 	// Read `UseRouter` for more.
 	// The map can be altered before router built.
 	GetRouterFilters() map[Party]*Filter
+	// GetDefaultErrorMiddleware should return
+	// the default error handler middleares.
+	GetDefaultErrorMiddleware() context.Handlers
+}
+
+func defaultErrorHandler(ctx *context.Context) {
+	if err := ctx.GetErr(); err != nil {
+		ctx.WriteString(err.Error())
+	} else {
+		ctx.WriteString(context.StatusText(ctx.GetStatusCode()))
+	}
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
+
+	// set the default error code handler, will be fired on error codes
+	// that are not handled by a specific handler (On(Any)ErrorCode).
+	h.errorDefaultHandlers = append(provider.GetDefaultErrorMiddleware(), defaultErrorHandler)
+
 	rp := errgroup.New("Routes Builder")
 	registeredRoutes := provider.GetRoutes()
 
@@ -560,11 +577,7 @@ func (h *routerHandler) FireErrorCode(ctx *context.Context) {
 	// not error handler found,
 	// see if failed with a stored error, and if so
 	// then render it, otherwise write a default message.
-	if err := ctx.GetErr(); err != nil {
-		ctx.WriteString(err.Error())
-	} else {
-		ctx.WriteString(context.StatusText(statusCode))
-	}
+	ctx.Do(h.errorDefaultHandlers)
 }
 
 func (h *routerHandler) subdomainAndPathAndMethodExists(ctx *context.Context, t *trie, method, path string) bool {

@@ -359,6 +359,8 @@ Response:
 
 Other Improvements:
 
+- Fix [#1594](https://github.com/kataras/iris/issues/1594) and add a new `PathAfterHandler` which can be set to true to enable the old behavior (not recommended though).
+
 - New [apps](https://github.com/kataras/iris/tree/master/apps) subpackage. [Example of usage](https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect/multi-instances).
 
 ![apps image example](https://user-images.githubusercontent.com/22900943/90459288-8a54f400-e109-11ea-8dea-20631975c9fc.png)
@@ -403,7 +405,7 @@ func main() {
 
 - `Context.OnCloseErr` and `Context.OnConnectionCloseErr` - to call a function of `func() error`  instead of an `iris.Handler` when request is closed or manually canceled.
 
-- `Party.UseError(...Handler)` - to register handlers to run before the `OnErrorCode/OnAnyErrorCode` ones.
+- `Party.UseError(...Handler)` - to register handlers to run before any http errors (e.g. before `OnErrorCode/OnAnyErrorCode` or default error codes when no handler is responsible to handle a specific http status code).
 
 - `Party.UseRouter(...Handler)` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
 

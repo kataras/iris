@@ -952,6 +952,15 @@ func (api *APIBuilder) UseRouter(handlers ...context.Handler) {
 	}
 }
 
+// GetDefaultErrorMiddleware returns the application's error pre handlers
+// registered through `UseError` for the default error handlers.
+// This is used when no matching error handlers registered
+// for a specific status code but `UseError` is called to register a middleware,
+// so the default error handler should make use of those middleware now.
+func (api *APIBuilder) GetDefaultErrorMiddleware() context.Handlers {
+	return api.middlewareErrorCode
+}
+
 // UseError upserts one or more handlers that will be fired,
 // as middleware, before any error handler registered through `On(Any)ErrorCode`.
 // See `OnErrorCode` too.

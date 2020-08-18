@@ -24,6 +24,7 @@ type requestLoggerMiddleware struct {
 // This is for the http requests.
 //
 // Receives an optional configuation.
+// Usage: app.UseRouter(logger.New()).
 func New(cfg ...Config) context.Handler {
 	c := DefaultConfig()
 	if len(cfg) > 0 {
@@ -33,6 +34,13 @@ func New(cfg ...Config) context.Handler {
 	l := &requestLoggerMiddleware{config: c}
 
 	return l.ServeHTTP
+}
+
+func (l *requestLoggerMiddleware) getPath(ctx *context.Context) string {
+	if l.config.Query {
+		return ctx.Request().URL.RequestURI()
+	}
+	return ctx.Path()
 }
 
 // Serve serves the middleware
@@ -51,16 +59,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 	var startTime, endTime time.Time
 	startTime = time.Now()
 
-	ctx.Next()
-
-	// no time.Since in order to format it well after
-	endTime = time.Now()
-	latency = endTime.Sub(startTime)
-
-	if l.config.Status {
-		status = strconv.Itoa(ctx.GetStatusCode())
-	}
-
+	// Before Next.
 	if l.config.IP {
 		ip = ctx.RemoteAddr()
 	}
@@ -70,11 +69,21 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 	}
 
 	if l.config.Path {
-		if l.config.Query {
-			path = ctx.Request().URL.RequestURI()
-		} else {
-			path = ctx.Path()
-		}
+		path = l.getPath(ctx)
+	}
+
+	ctx.Next()
+
+	// no time.Since in order to format it well after
+	endTime = time.Now()
+	latency = endTime.Sub(startTime)
+
+	if l.config.PathAfterHandler /* we don't care if Path is disabled */ {
+		path = l.getPath(ctx)
+	}
+
+	if l.config.Status {
+		status = strconv.Itoa(ctx.GetStatusCode())
 	}
 
 	var message interface{}
@@ -125,12 +134,11 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 		line += fmt.Sprintf(" %v", headerMessage)
 	}
 
-	// if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
-	// 	ctx.Application().Logger().Warn(line)
-	// } else {
-	ctx.Application().Logger().Info(line)
-	// }
-
+	if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
+		ctx.Application().Logger().Warn(line)
+	} else {
+		ctx.Application().Logger().Info(line)
+	}
 }
 
 // Columnize formats the given arguments as columns and returns the formatted output,

@@ -26,9 +26,17 @@ type Config struct {
 	// Defaults to true.
 	Method bool
 	// Path displays the request path (bool).
+	// See `Query` and `PathAfterHandler` too.
 	//
 	// Defaults to true.
 	Path bool
+	// PathAfterHandler displays the request path
+	// which may be set and modified
+	// after the handler chain is executed.
+	// See `Query` too.
+	//
+	// Defaults to false.
+	PathAfterHandler bool
 
 	// Query will append the URL Query to the Path.
 	// Path should be true too.
@@ -86,16 +94,17 @@ type Config struct {
 // LogFunc and Skippers to nil as well.
 func DefaultConfig() Config {
 	return Config{
-		Status:     true,
-		IP:         true,
-		Method:     true,
-		Path:       true,
-		Query:      false,
-		Columns:    false,
-		LogFunc:    nil,
-		LogFuncCtx: nil,
-		Skippers:   nil,
-		skip:       nil,
+		Status:           true,
+		IP:               true,
+		Method:           true,
+		Path:             true,
+		PathAfterHandler: false,
+		Query:            false,
+		Columns:          false,
+		LogFunc:          nil,
+		LogFuncCtx:       nil,
+		Skippers:         nil,
+		skip:             nil,
 	}
 }
 
