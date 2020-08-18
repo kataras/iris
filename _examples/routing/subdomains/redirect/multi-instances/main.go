@@ -1,82 +1,70 @@
 package main
 
 import (
-	"net/http"
+	_ "github.com/kataras/iris/_examples/routing/subdomains/redirect/multi-instances/other"
+	_ "github.com/kataras/iris/_examples/routing/subdomains/redirect/multi-instances/root"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/apps"
 )
 
+// In this example, you wanna use three different applications exposed as one.
+// The first one is the "other" package, the second is the "root",
+// the third is the switcher application which will expose the above.
+// Unlike the previous example, on this one we will NOT redirect,
+// the Hosts switcher will just pass the request to the matched Application to handle.
+// This is NOT an alternative of your favorite load balancer.
+// Read the comments carefully, if you need more information
+// you can head over to the "apps" package's godocs and tests.
 func main() {
-	app := iris.New()
-
-	hosts := map[string]*iris.Application{
-		"mydomain.com":      createRoot("www.mydomain.com"), // redirects to www.
-		"www.mydomain.com":  createWWW(),
-		"test.mydomain.com": createTest(),
-	}
-	for _, r := range hosts {
-		r.Build()
-	}
-
-	app.Downgrade(func(w http.ResponseWriter, r *http.Request) {
-		host := r.Host
-		if host == "" {
-			host = r.URL.Host
-		}
-
-		if router, ok := hosts[host]; ok {
-			router.ServeHTTP(w, r)
-			return
-		}
-
-		http.NotFound(w, r)
+	// The `apps.Hosts` switch provider:
+	// The pattern. A regexp for matching the host part of incoming requests.
+	// The target. An iris.Application instance (created by iris.New())
+	//      OR
+	// You can use the Application's name (app.SetName("myapp")).
+	// Example:
+	// package rootdomain
+	// func init() {
+	//  app := iris.New().SetName("root app")
+	//  ...
+	// }
+	// On the main package add an empty import statement: ` _ import "rootdomain"`
+	// And set the "root app" as the key to reference that application (of the same program).
+	// Thats the target we wanna use now ^ (see ../hosts file).
+	//      OR
+	// An external host or a local running in the same machine but different port or host behind proxy.
+	switcher := apps.Switch(apps.Hosts{
+		{"^(www.)?mydomain.com$", "root app"},
+		{"^otherdomain.com$", "other app"},
 	})
+	// The registration order matters, so we can register a fallback server (when host no match)
+	// using "*". However, you have alternatives by using the Switch Iris Application value
+	// (let's call it "switcher"):
+	// 1. Handle the not founds, e.g. switcher.OnErrorCode(404, ...)
+	// 2. Use the switcher.WrapRouter, e.g. to log the flow of a request of all hosts exposed.
+	// 3. Just register routes to match, e.g. switcher.Get("/", ...)
+	switcher.Get("/", fallback)
+	// OR
+	// Change the response code to 502
+	// instead of 404 and write a message:
+	// switcher.OnErrorCode(iris.StatusNotFound, fallback)
 
-	app.Listen(":80")
+	// The switcher is a common Iris Application, so you have access to the Iris features.
+	// And it should be listening to a host:port in order to match and serve its apps.
+	//
+	// http://mydomain.com (OK)
+	// http://www.mydomain.com (OK)
+	// http://mydomain.com/dsa (404)
+	// http://no.mydomain.com (502 Bad Host)
+	//
+	// http://otherdomain.com (OK)
+	// http://www.otherdomain.com (502 Bad Host)
+	// http://otherdomain.com/dsa (404 JSON)
+	// ...
+	switcher.Listen(":80")
 }
 
-func createRoot(redirectTo string) *iris.Application {
-	app := iris.New()
-	app.Downgrade(func(w http.ResponseWriter, r *http.Request) {
-		fullScheme := "http://"
-		if r.TLS != nil {
-			fullScheme = "https://"
-		}
-
-		http.Redirect(w, r, fullScheme+redirectTo+r.URL.RequestURI(), iris.StatusMovedPermanently)
-	})
-
-	return app
-}
-
-func createWWW() *iris.Application {
-	app := iris.New()
-	app.Get("/", index)
-
-	users := app.Party("/users")
-	users.Get("/", usersIndex)
-	users.Get("/login", getLogin)
-
-	return app
-}
-
-func createTest() *iris.Application {
-	app := iris.New()
-	app.Get("/", func(ctx iris.Context) {
-		ctx.WriteString("Test Index")
-	})
-
-	return app
-}
-
-func index(ctx iris.Context) {
-	ctx.Writef("This is the www.mydomain.com endpoint.")
-}
-
-func usersIndex(ctx iris.Context) {
-	ctx.Writef("This is the www.mydomain.com/users endpoint.")
-}
-
-func getLogin(ctx iris.Context) {
-	ctx.Writef("This is the www.mydomain.com/users/login endpoint.")
+func fallback(ctx iris.Context) {
+	ctx.StatusCode(iris.StatusBadGateway)
+	ctx.Writef("Bad Host %s", ctx.Host())
 }

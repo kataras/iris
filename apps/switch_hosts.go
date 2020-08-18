@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
@@ -51,6 +52,18 @@ func (hosts Hosts) GetSwitchCases() []SwitchCase {
 	}
 
 	return cases
+}
+
+// GetFriendlyName implements the FriendlyNameProvider.
+func (hosts Hosts) GetFriendlyName() string {
+	var patterns []string
+	for _, host := range hosts {
+		if strings.TrimSpace(host.Pattern) != "" {
+			patterns = append(patterns, host.Pattern)
+		}
+	}
+
+	return strings.Join(patterns, ", ")
 }
 
 func hostApp(host Host) *iris.Application {

@@ -1,6 +1,8 @@
 package apps
 
 import (
+	"strings"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -33,10 +35,17 @@ func Switch(providers ...SwitchProvider) *iris.Application {
 		panic("iris: switch: empty providers")
 	}
 
+	var friendlyAddrs []string
 	var cases []SwitchCase
 	for _, p := range providers {
 		for _, c := range p.GetSwitchCases() {
 			cases = append(cases, c)
+		}
+
+		if fp, ok := p.(FriendlyNameProvider); ok {
+			if friendlyName := fp.GetFriendlyName(); friendlyName != "" {
+				friendlyAddrs = append(friendlyAddrs, friendlyName)
+			}
 		}
 	}
 
@@ -61,7 +70,7 @@ func Switch(providers ...SwitchProvider) *iris.Application {
 	app.UseRouter(func(ctx iris.Context) {
 		for _, c := range cases {
 			if c.Filter(ctx) {
-				c.App.ServeHTTP(ctx.ResponseWriter().Naive(), ctx.Request())
+				c.App.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 
 				// if c.App.Downgraded() {
 				// 	c.App.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
@@ -81,6 +90,12 @@ func Switch(providers ...SwitchProvider) *iris.Application {
 		ctx.Next()
 	})
 
+	// Configure the switcher's supervisor.
+	app.ConfigureHost(func(su *iris.Supervisor) {
+		if len(friendlyAddrs) > 0 {
+			su.FriendlyAddr = strings.Join(friendlyAddrs, ", ")
+		}
+	})
 	return app
 }
 
@@ -88,8 +103,8 @@ type (
 	// SwitchCase contains the filter
 	// and the matched Application instance.
 	SwitchCase struct {
-		Filter iris.Filter
-		App    *iris.Application
+		Filter iris.Filter       // Filter runs against the Switcher.
+		App    *iris.Application // App is the main target application responsible to handle the request.
 	}
 
 	// A SwitchProvider should return the switch cases.
@@ -98,6 +113,12 @@ type (
 	// without wrapping.
 	SwitchProvider interface {
 		GetSwitchCases() []SwitchCase
+	}
+
+	// FriendlyNameProvider can be optionally implemented by providers
+	// to customize the Switcher's Supervisor.FriendlyAddr field (Startup log).
+	FriendlyNameProvider interface {
+		GetFriendlyName() string
 	}
 
 	// Join returns a new slice which joins different type of switch cases.
