@@ -123,6 +123,18 @@ func RegisterApplication(app Application) {
 	mu.Unlock()
 }
 
+// GetApplications returns a slice of all the registered Applications.
+func GetApplications() []Application {
+	mu.RLock()
+	// a copy slice but the instances are pointers so be careful what modifications are done
+	// the return value is read-only but it can be casted to *iris.Application.
+	apps := make([]Application, 0, len(registeredApps))
+	copy(apps, registeredApps)
+	mu.RLock()
+
+	return apps
+}
+
 // LastApplication returns the last registered Application.
 // Handlers has access to the current Application,
 // use `Context.Application()` instead.
