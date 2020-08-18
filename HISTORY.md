@@ -359,6 +359,10 @@ Response:
 
 Other Improvements:
 
+- New `TraceRoute bool` on [request logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route, screenshot:
+
+![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
+
 - Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/master/_examples/i18n/main.go#L28-L50).
 
 - Fix [#1594](https://github.com/kataras/iris/issues/1594) and add a new `PathAfterHandler` which can be set to true to enable the old behavior (not recommended though).

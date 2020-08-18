@@ -139,6 +139,10 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 	} else {
 		ctx.Application().Logger().Info(line)
 	}
+
+	if l.config.TraceRoute && ctx.GetCurrentRoute() != nil /* it is nil on unhandled error codes */ {
+		ctx.GetCurrentRoute().Trace(ctx.Application().Logger().Printer)
+	}
 }
 
 // Columnize formats the given arguments as columns and returns the formatted output,

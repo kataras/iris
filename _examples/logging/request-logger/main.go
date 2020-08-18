@@ -19,6 +19,8 @@ func main() {
 		Path: true,
 		// Query appends the url query to the Path.
 		Query: true,
+		// Shows information about the executed route.
+		TraceRoute: true,
 
 		// Columns: true,
 

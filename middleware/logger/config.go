@@ -37,12 +37,16 @@ type Config struct {
 	//
 	// Defaults to false.
 	PathAfterHandler bool
-
 	// Query will append the URL Query to the Path.
 	// Path should be true too.
 	//
 	// Defaults to false.
 	Query bool
+	// TraceRoute displays the debug
+	// information about the current route executed.
+	//
+	// Defaults to false.
+	TraceRoute bool
 
 	// Columns will display the logs as a formatted columns-rows text (bool).
 	// If custom `LogFunc` has been provided then this field is useless and users should
@@ -100,6 +104,7 @@ func DefaultConfig() Config {
 		Path:             true,
 		PathAfterHandler: false,
 		Query:            false,
+		TraceRoute:       false,
 		Columns:          false,
 		LogFunc:          nil,
 		LogFuncCtx:       nil,
