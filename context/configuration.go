@@ -49,6 +49,8 @@ type ConfigurationReadOnly interface {
 	GetLocaleContextKey() string
 	// GetLanguageContextKey returns the LanguageContextKey field.
 	GetLanguageContextKey() string
+	// GetLanguageInputContextKey returns the LanguageInputContextKey field.
+	GetLanguageInputContextKey() string
 	// GetVersionContextKey returns the VersionContextKey field.
 	GetVersionContextKey() string
 

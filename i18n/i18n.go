@@ -29,6 +29,19 @@ type (
 		// It may return the default language if nothing else matches based on custom localizer's criteria.
 		GetLocale(index int) context.Locale
 	}
+
+	// MessageFunc is the function type to modify the behavior when a key or language was not found.
+	// All language inputs fallback to the default locale if not matched.
+	// This is why this signature accepts both input and matched languages, so caller
+	// can provide better messages.
+	//
+	// The first parameter is set to the client real input of the language,
+	// the second one is set to the matched language (default one if input wasn't matched)
+	// and the third and forth are the translation format/key and its optional arguments.
+	//
+	// Note: we don't accept the Context here because Tr method and template func {{ tr }}
+	// have no direct access to it.
+	MessageFunc func(langInput, langMatched, key string, args ...interface{}) string
 )
 
 // I18n is the structure which keeps the i18n configuration and implements localization and internationalization features.
@@ -43,6 +56,15 @@ type I18n struct {
 	// to extract the language tag name.
 	// Defaults to nil.
 	ExtractFunc func(ctx *context.Context) string
+	// DefaultMessageFunc is the field which can be used
+	// to modify the behavior when a key or language was not found.
+	// All language inputs fallback to the default locale if not matched.
+	// This is why this one accepts both input and matched languages,
+	// so the caller can be more expressful knowing those.
+	//
+	// Defaults to nil.
+	DefaultMessageFunc MessageFunc
+
 	// If not empty, it is language identifier by url query.
 	//
 	// Defaults to "lang".
@@ -115,9 +137,10 @@ func (i *I18n) Reset(loader Loader, languages ...string) error {
 
 	i.loader = loader
 	i.matcher = &Matcher{
-		strict:    len(tags) > 0,
-		Languages: tags,
-		matcher:   language.NewMatcher(tags),
+		strict:             len(tags) > 0,
+		Languages:          tags,
+		matcher:            language.NewMatcher(tags),
+		defaultMessageFunc: i.DefaultMessageFunc,
 	}
 
 	return i.reload()
@@ -193,6 +216,8 @@ type Matcher struct {
 	strict    bool
 	Languages []language.Tag
 	matcher   language.Matcher
+	// defaultMessageFunc passed by the i18n structure.
+	defaultMessageFunc MessageFunc
 }
 
 var _ language.Matcher = (*Matcher)(nil)
@@ -295,24 +320,32 @@ func (i *I18n) TryMatchString(s string) (language.Tag, int, bool) {
 // Tr returns a translated message based on the "lang" language code
 // and its key(format) with any optional arguments attached to it.
 //
-// It returns an empty string if "format" not matched.
-func (i *I18n) Tr(lang, format string, args ...interface{}) string {
+// It returns an empty string if "lang" not matched, unless DefaultMessageFunc.
+// It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
+func (i *I18n) Tr(lang, format string, args ...interface{}) (msg string) {
 	_, index, ok := i.TryMatchString(lang)
 	if !ok {
 		index = 0
 	}
 
+	langMatched := ""
+
 	loc := i.localizer.GetLocale(index)
 	if loc != nil {
-		msg := loc.GetMessage(format, args...)
-		if msg == "" && !i.Strict && index > 0 {
+		langMatched = loc.Language()
+
+		msg = loc.GetMessage(format, args...)
+		if msg == "" && i.DefaultMessageFunc == nil && !i.Strict && index > 0 {
 			// it's not the default/fallback language and not message found for that lang:key.
-			return i.localizer.GetLocale(0).GetMessage(format, args...)
+			msg = i.localizer.GetLocale(0).GetMessage(format, args...)
 		}
-		return msg
 	}
 
-	return ""
+	if msg == "" && i.DefaultMessageFunc != nil {
+		msg = i.DefaultMessageFunc(lang, langMatched, format, args)
+	}
+
+	return
 }
 
 const acceptLanguageHeaderKey = "Accept-Language"
@@ -321,12 +354,19 @@ const acceptLanguageHeaderKey = "Accept-Language"
 // It will return the first registered language if nothing else matched.
 func (i *I18n) GetLocale(ctx *context.Context) context.Locale {
 	var (
-		index int
-		ok    bool
+		index         int
+		ok            bool
+		extractedLang string
 	)
+
+	languageInputKey := ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey()
 
 	if contextKey := ctx.Application().ConfigurationReadOnly().GetLanguageContextKey(); contextKey != "" {
 		if v := ctx.Values().GetString(contextKey); v != "" {
+			if languageInputKey != "" {
+				ctx.Values().Set(languageInputKey, v)
+			}
+
 			if v == "default" {
 				index = 0 // no need to call `TryMatchString` and spend time.
 			} else {
@@ -344,30 +384,35 @@ func (i *I18n) GetLocale(ctx *context.Context) context.Locale {
 
 	if !ok && i.ExtractFunc != nil {
 		if v := i.ExtractFunc(ctx); v != "" {
+			extractedLang = v
 			_, index, ok = i.TryMatchString(v)
 		}
 	}
 
 	if !ok && i.URLParameter != "" {
 		if v := ctx.URLParam(i.URLParameter); v != "" {
+			extractedLang = v
 			_, index, ok = i.TryMatchString(v)
 		}
 	}
 
 	if !ok && i.Cookie != "" {
 		if v := ctx.GetCookie(i.Cookie); v != "" {
+			extractedLang = v
 			_, index, ok = i.TryMatchString(v) // url.QueryUnescape(cookie.Value)
 		}
 	}
 
 	if !ok && i.Subdomain {
 		if v := ctx.Subdomain(); v != "" {
+			extractedLang = v
 			_, index, ok = i.TryMatchString(v)
 		}
 	}
 
 	if !ok {
 		if v := ctx.GetHeader(acceptLanguageHeaderKey); v != "" {
+			extractedLang = v // note.
 			desired, _, err := language.ParseAcceptLanguage(v)
 			if err == nil {
 				if _, idx, conf := i.matcher.Match(desired...); conf > language.Low {
@@ -380,8 +425,14 @@ func (i *I18n) GetLocale(ctx *context.Context) context.Locale {
 	// locale := i.localizer.GetLocale(index)
 	// ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetLocaleContextKey(), locale)
 
-	// // if 0 then it defaults to the first language.
-	// return locale
+	if languageInputKey != "" {
+		// Set the user input we wanna use it on DefaultMessageFunc.
+		// Even if matched because it may be en-gb or en but if there is a language registered
+		// as en-us it will be successfully matched ( see TrymatchString and Low conf).
+		ctx.Values().Set(languageInputKey, extractedLang)
+	}
+
+	// if index == 0 then it defaults to the first language.
 	locale := i.localizer.GetLocale(index)
 	if locale == nil {
 		return nil
@@ -391,18 +442,27 @@ func (i *I18n) GetLocale(ctx *context.Context) context.Locale {
 }
 
 // GetMessage returns the localized text message for this "r" request based on the key "format".
-// It returns an empty string if locale or format not found.
-func (i *I18n) GetMessage(ctx *context.Context, format string, args ...interface{}) string {
+// It returns an empty string if context's locale not matched, unless DefaultMessageFunc.
+// It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
+func (i *I18n) GetMessage(ctx *context.Context, format string, args ...interface{}) (msg string) {
 	loc := i.GetLocale(ctx)
+	langMatched := ""
 	if loc != nil {
+		langMatched = loc.Language()
 		// it's not the default/fallback language and not message found for that lang:key.
-		msg := loc.GetMessage(format, args...)
-		if msg == "" && !i.Strict && loc.Index() > 0 {
+		msg = loc.GetMessage(format, args...)
+		if msg == "" && i.DefaultMessageFunc == nil && !i.Strict && loc.Index() > 0 {
 			return i.localizer.GetLocale(0).GetMessage(format, args...)
 		}
 	}
 
-	return ""
+	if msg == "" && i.DefaultMessageFunc != nil {
+		langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
+
+		msg = i.DefaultMessageFunc(langInput, langMatched, format, args...)
+	}
+
+	return
 }
 
 func (i *I18n) setLangWithoutContext(w http.ResponseWriter, r *http.Request, lang string) {

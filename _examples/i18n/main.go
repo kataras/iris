@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -8,12 +10,7 @@ func newApp() *iris.Application {
 	app := iris.New()
 
 	// Configure i18n.
-	// First parameter: Glob filpath patern,
-	// Second variadic parameter: Optional language tags, the first one is the default/fallback one.
-	err := app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR", "zh-CN")
-	if err != nil {
-		panic(err)
-	}
+	//
 	// app.I18n.Subdomain = false to disable resolve lang code from subdomain.
 	// app.I18n.LoadAssets for go-bindata.
 
@@ -27,6 +24,31 @@ func newApp() *iris.Application {
 	//
 	// See `app.I18n.ExtractFunc = func(ctx iris.Context) string` or
 	// `ctx.SetLanguage(langCode string)` to change the extracted language from a request.
+	//
+	// Use DefaultMessageFunc to customize the return value of a not found key or lang.
+	// All language inputs fallback to the default locale if not matched.
+	// This is why this one accepts both input and matched languages,
+	// so the caller can be more expressful knowing those.
+	// Defaults to nil.
+	app.I18n.DefaultMessageFunc = func(langInput, langMatched, key string, args ...interface{}) string {
+		msg := fmt.Sprintf("user language input: %s: matched as: %s: not found key: %s: args: %v", langInput, langMatched, key, args)
+		app.Logger().Warn(msg)
+		return msg
+	}
+	// Load i18n when customizations are set in place.
+	//
+	// First parameter: Glob filpath patern,
+	// Second variadic parameter: Optional language tags, the first one is the default/fallback one.
+	err := app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR", "zh-CN")
+	if err != nil {
+		panic(err)
+	}
+
+	app.Get("/not-matched", func(ctx iris.Context) {
+		text := ctx.Tr("not_found_key", "some", "values", 42)
+		ctx.WriteString(text)
+		// user language input: en-gb: matched as: en-US: not found key: not_found_key: args: [some values 42]
+	})
 
 	app.Get("/", func(ctx iris.Context) {
 		hi := ctx.Tr("hi", "iris")

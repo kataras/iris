@@ -752,6 +752,11 @@ type Configuration struct {
 	// See `i18n.ExtractFunc` for a more organised way of the same feature.
 	// Defaults to "iris.locale.language".
 	LanguageContextKey string `json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
+	// LanguageInputContextKey is the context key of a language that is given by the end-user.
+	// It's the real user input of the language string, matched or not.
+	//
+	// Defaults to "iris.locale.language.input".
+	LanguageInputContextKey string `json:"languageInputContextKey,omitempty" yaml:"LanguageInputContextKey" toml:"LanguageInputContextKey"`
 	// VersionContextKey is the context key which an API Version can be modified
 	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, "1.0, 1.1")`.
 	// Defaults to "iris.api.version".
@@ -952,6 +957,11 @@ func (c Configuration) GetLanguageContextKey() string {
 	return c.LanguageContextKey
 }
 
+// GetLanguageInputContextKey returns the LanguageInputContextKey field.
+func (c Configuration) GetLanguageInputContextKey() string {
+	return c.LanguageInputContextKey
+}
+
 // GetVersionContextKey returns the VersionContextKey field.
 func (c Configuration) GetVersionContextKey() string {
 	return c.VersionContextKey
@@ -1107,6 +1117,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.LanguageContextKey = v
 		}
 
+		if v := c.LanguageInputContextKey; v != "" {
+			main.LanguageInputContextKey = v
+		}
+
 		if v := c.VersionContextKey; v != "" {
 			main.VersionContextKey = v
 		}
@@ -1184,15 +1198,16 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:          32 << 20, // 32MB
-		LocaleContextKey:       "iris.locale",
-		LanguageContextKey:     "iris.locale.language",
-		VersionContextKey:      "iris.api.version",
-		ViewEngineContextKey:   "iris.view.engine",
-		ViewLayoutContextKey:   "iris.view.layout",
-		ViewDataContextKey:     "iris.view.data",
-		RemoteAddrHeaders:      nil,
-		RemoteAddrHeadersForce: false,
+		PostMaxMemory:           32 << 20, // 32MB
+		LocaleContextKey:        "iris.locale",
+		LanguageContextKey:      "iris.locale.language",
+		LanguageInputContextKey: "iris.locale.language.input",
+		VersionContextKey:       "iris.api.version",
+		ViewEngineContextKey:    "iris.view.engine",
+		ViewLayoutContextKey:    "iris.view.layout",
+		ViewDataContextKey:      "iris.view.data",
+		RemoteAddrHeaders:       nil,
+		RemoteAddrHeadersForce:  false,
 		RemoteAddrPrivateSubnets: []netutil.IPRange{
 			{
 				Start: net.ParseIP("10.0.0.0"),

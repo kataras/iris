@@ -1203,6 +1203,7 @@ func (ctx *Context) SetLanguage(langCode string) {
 }
 
 // GetLocale returns the current request's `Locale` found by i18n middleware.
+// It always fallbacks to the default one.
 // See `Tr` too.
 func (ctx *Context) GetLocale() Locale {
 	// Cache the Locale itself for multiple calls of `Tr` method.
@@ -1225,11 +1226,13 @@ func (ctx *Context) GetLocale() Locale {
 // See `GetLocale` too.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/i18n
-func (ctx *Context) Tr(message string, values ...interface{}) string { // other name could be: Localize.
-	if locale := ctx.GetLocale(); locale != nil { // TODO: here... I need to change the logic, if not found then call the i18n's get locale and set the value in order to be fastest on routes that are not using (no need to reigster a middleware.)
-		return locale.GetMessage(message, values...)
+func (ctx *Context) Tr(message string, values ...interface{}) string {
+	if locale := ctx.GetLocale(); locale != nil {
+		return locale.GetMessageContext(ctx, message, values...)
 	}
 
+	// This should never happen as the locale fallbacks to
+	// the default.
 	return message
 }
 

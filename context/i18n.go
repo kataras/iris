@@ -10,8 +10,8 @@ type I18nReadOnly interface {
 	Tr(lang string, format string, args ...interface{}) string
 }
 
-// Locale is the interface which returns from a `Localizer.GetLocale` metod.
-// It serves the transltions based on "key" or format. See `GetMessage`.
+// Locale is the interface which returns from a `Localizer.GetLocale` method.
+// It serves the translations based on "key" or format. See `GetMessage`.
 type Locale interface {
 	// Index returns the current locale index from the languages list.
 	Index() int
@@ -23,6 +23,12 @@ type Locale interface {
 	//
 	// Same as `Tag().String()` but it's static.
 	Language() string
-	// GetMessage should return translated text based n the given "key".
+	// GetMessage should return translated text based on the given "key".
 	GetMessage(key string, args ...interface{}) string
+	// GetMessageContext same as GetMessage
+	// but it accepts the Context as its first input.
+	// If DefaultMessageFunc was not nil then this Context
+	// will provide the real language input instead of the locale's which
+	// may be the default language one.
+	GetMessageContext(ctx *Context, key string, args ...interface{}) string
 }

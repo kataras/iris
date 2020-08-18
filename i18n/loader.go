@@ -149,6 +149,8 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 				templateKeys: templateKeys,
 				lineKeys:     lineKeys,
 				other:        other,
+
+				defaultMessageFunc: m.defaultMessageFunc,
 			}
 		}
 
@@ -217,6 +219,8 @@ type defaultLocale struct {
 	templateKeys map[string]*template.Template
 	lineKeys     map[string]string
 	other        map[string]interface{}
+
+	defaultMessageFunc MessageFunc
 }
 
 func (l *defaultLocale) Index() int {
@@ -232,6 +236,15 @@ func (l *defaultLocale) Language() string {
 }
 
 func (l *defaultLocale) GetMessage(key string, args ...interface{}) string {
+	return l.getMessage(l.id, key, args...)
+}
+
+func (l *defaultLocale) GetMessageContext(ctx *context.Context, key string, args ...interface{}) string {
+	langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
+	return l.getMessage(langInput, key, args...)
+}
+
+func (l *defaultLocale) getMessage(langInput, key string, args ...interface{}) string {
 	n := len(args)
 	if n > 0 {
 		// search on templates.
@@ -252,6 +265,11 @@ func (l *defaultLocale) GetMessage(key string, args ...interface{}) string {
 			return fmt.Sprintf("%v [%v]", v, args)
 		}
 		return fmt.Sprintf("%v", v)
+	}
+
+	if l.defaultMessageFunc != nil {
+		// let langInput to be empty if that's the case.
+		return l.defaultMessageFunc(langInput, l.id, key, args...)
 	}
 
 	return ""

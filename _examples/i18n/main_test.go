@@ -83,4 +83,6 @@ func TestI18n(t *testing.T) {
 	e.GET("/el-templates").Expect().Status(httptest.StatusNotFound)
 
 	e.GET("/el/templates").Expect().Status(httptest.StatusOK).Body().Contains(elGR).Contains(zhCN)
+
+	e.GET("/not-matched").WithQuery("lang", "en-gb").Expect().Status(httptest.StatusOK).Body().Equal("user language input: en-gb: matched as: en-US: not found key: not_found_key: args: [some values 42]")
 }
