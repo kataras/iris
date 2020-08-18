@@ -242,7 +242,10 @@ func (r *response) Preflight(ctx iris.Context) error {
 		r.Timestamp = time.Now().Unix()
 	}
 
-	ctx.StatusCode(r.Code)
+    if r.Code > 0 {
+        ctx.StatusCode(r.Code)
+    }
+
 	return nil
 }
 ```

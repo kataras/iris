@@ -223,7 +223,10 @@ func (r testPreflightResponse) Preflight(ctx iris.Context) error {
 		return fmt.Errorf("custom error")
 	}
 
-	ctx.StatusCode(r.Code)
+	if r.Code > 0 {
+		ctx.StatusCode(r.Code)
+	}
+
 	return nil
 }
 

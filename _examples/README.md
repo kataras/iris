@@ -214,6 +214,10 @@
     * [Login (Repository and Service layers)](mvc/login)
     * [Login (Single Responsibility)](mvc/login-mvc-single-responsibility)
     * [Vue.js Todo App](mvc/vuejs-todo-mvc)
+    * [Error Handler](mvc/error-handler)
+    * [Handle errors using mvc.Result](mvc/error-handler-custom-result)
+    * [Handle errors using PreflightResult](mvc/error-handler-preflight)
+    * [Handle errors by hijacking the result](mvc/error-handler-hijack)
 * [Bootstrapper](bootstrapper)
 * Desktop Applications
     * [The blink package](desktop/blink)

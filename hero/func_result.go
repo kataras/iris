@@ -72,6 +72,9 @@ type Result interface {
 //
 // The caller can manage it at the handler itself. However,
 // to reduce thoese type of duplications it's preferable to use such a standard interface instead.
+//
+// The Preflight method can return `iris.ErrStopExecution` to render
+// and override any interface that the structure value may implement, e.g. mvc.Result.
 type PreflightResult interface {
 	Preflight(*context.Context) error
 }
