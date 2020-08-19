@@ -145,7 +145,7 @@ func (su *Supervisor) newListener() (net.Listener, error) {
 	// restarts we may want for the server.
 	//
 	// User still be able to call .Serve instead.
-	// l, err := netutil.TCPKeepAlive(su.Server.Addr, su.SocketReuse)
+	// l, err := netutil.TCPKeepAlive(su.Server.Addr, su.SocketSharding)
 	l, err := netutil.TCP(su.Server.Addr, su.SocketSharding)
 	if err != nil {
 		return nil, err

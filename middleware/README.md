@@ -3,6 +3,7 @@ Builtin Handlers
 
 | Middleware | Example |
 | -----------|-------------|
+| [rewrite](rewrite) | [iris/_examples/routing/rewrite](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite) |
 | [basic authentication](basicauth) | [iris/_examples/auth/basicauth](https://github.com/kataras/iris/tree/master/_examples/auth/basicauth) |
 | [request logger](logger) | [iris/_examples/logging/request-logger](https://github.com/kataras/iris/tree/master/_examples/logging/request-logger) |
 | [HTTP method override](methodoverride) | [iris/middleware/methodoverride/methodoverride_test.go](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go) |
@@ -29,7 +30,7 @@ Most of the experimental handlers are ported to work with _iris_'s handler form,
 | [new relic](https://github.com/iris-contrib/middleware/tree/master/newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent) | [iris-contrib/middleware/newrelic/_example](https://github.com/iris-contrib/middleware/tree/master/newrelic/_example) |
 | [prometheus](https://github.com/iris-contrib/middleware/tree/master/prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [iris-contrib/middleware/prometheus/_example](https://github.com/iris-contrib/middleware/tree/master/prometheus/_example) |
 | [casbin](https://github.com/iris-contrib/middleware/tree/master/casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [iris-contrib/middleware/casbin/_examples](https://github.com/iris-contrib/middleware/tree/master/casbin/_examples) |
-| [raven](https://github.com/iris-contrib/middleware/tree/master/raven)| Sentry client in Go | [iris-contrib/middleware/raven/_example](https://github.com/iris-contrib/middleware/blob/master/raven/_example/main.go) |
+| [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris)| Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) | <!-- raven was deprecated by its company, the successor is sentry-go, they contain an Iris middleware. -->
 | [csrf](https://github.com/iris-contrib/middleware/tree/master/csrf)| Cross-Site Request Forgery Protection | [iris-contrib/middleware/csrf/_example](https://github.com/iris-contrib/middleware/blob/master/csrf/_example/main.go) |
 | [go-i18n](https://github.com/iris-contrib/middleware/tree/master/go-i18n)| i18n Iris Loader for nicksnyder/go-i18n | [iris-contrib/middleware/go-i18n/_example](https://github.com/iris-contrib/middleware/blob/master/go-i18n/_example/main.go) |
 | [throttler](https://github.com/iris-contrib/middleware/tree/master/throttler)| Rate limiting access to HTTP endpoints | [iris-contrib/middleware/throttler/_example](https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go) |

@@ -132,11 +132,11 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 			resturi := r.URL.RequestURI()
 			if s.isToRoot {
 				// from a specific subdomain or any subdomain to the root domain.
-				redirectAbsolute(w, r, context.GetScheme(r)+root+resturi, http.StatusMovedPermanently)
+				RedirectAbsolute(w, r, context.GetScheme(r)+root+resturi, http.StatusMovedPermanently)
 				return
 			}
 			// from a specific subdomain or any subdomain to a specific subdomain.
-			redirectAbsolute(w, r, context.GetScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
+			RedirectAbsolute(w, r, context.GetScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
 			return
 		}
 
@@ -162,7 +162,7 @@ func (s *subdomainRedirectWrapper) Wrapper(w http.ResponseWriter, r *http.Reques
 		resturi := r.URL.RequestURI()
 		// we are not inside a subdomain, so we are in the root domain
 		// and the redirect is configured to be used from root domain to a subdomain.
-		redirectAbsolute(w, r, context.GetScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
+		RedirectAbsolute(w, r, context.GetScheme(r)+s.to+root+resturi, http.StatusMovedPermanently)
 		return
 	}
 
@@ -196,11 +196,20 @@ func NewSubdomainRedirectHandler(toSubdomain string) context.Handler {
 		r.Host = targetHost
 		r.URL.Host = targetHost
 		urlToRedirect := r.URL.String()
-		redirectAbsolute(ctx.ResponseWriter(), r, urlToRedirect, http.StatusMovedPermanently)
+		RedirectAbsolute(ctx.ResponseWriter(), r, urlToRedirect, http.StatusMovedPermanently)
 	}
 }
 
-func redirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code int) {
+// RedirectAbsolute replies to the request with a redirect to an absolute URL.
+//
+// The provided code should be in the 3xx range and is usually
+// StatusMovedPermanently, StatusFound or StatusSeeOther.
+//
+// If the Content-Type header has not been set, Redirect sets it
+// to "text/html; charset=utf-8" and writes a small HTML body.
+// Setting the Content-Type header to any value, including nil,
+// disables that behavior.
+func RedirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code int) {
 	h := w.Header()
 
 	// RFC 7231 notes that a short HTML body is usually included in

@@ -1,0 +1,8 @@
+# REDIRECT_CODE PATH_PATTERN TARGET_PATH_REPL
+RedirectMatch:
+    # redirects /seo/* to /*
+  - 301 /seo/(.*) /$1
+    # redirects /docs/v12* to /docs
+  - 301 /docs/v12(.*) /docs
+    # redirects /old(.*) to /
+  - 301 /old(.*) /

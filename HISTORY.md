@@ -362,7 +362,20 @@ Response:
 
 Other Improvements:
 
-- New `TraceRoute bool` on [request logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
+- New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/master/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite).
+
+```yml
+# REDIRECT_CODE PATH_PATTERN TARGET_PATH_REPL
+RedirectMatch:
+    # redirects /seo/* to /*
+  - 301 /seo/(.*) /$1
+    # redirects /docs/v12* to /docs
+  - 301 /docs/v12(.*) /docs
+    # redirects /old(.*) to /
+  - 301 /old(.*) /
+```
+
+- New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
 
 ![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
 
