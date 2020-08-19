@@ -119,13 +119,12 @@ func newHostRedirectApp(targetHost string, code int) *iris.Application {
 			// carefully checks if the expression already matched the "redirectTo"
 			// to avoid the redirect loops at all.
 			// iris: switch: hosts redirect: loop detected between expression: "^my.*$" and target host: "mydomain.com"
-			http.Error(w, http.StatusText(iris.StatusLoopDetected), iris.StatusLoopDetected)
+			http.Error(w, iris.StatusText(iris.StatusTooManyRequests), iris.StatusTooManyRequests)
 			return
 		}
 
 		r.Host = targetHost
 		r.URL.Host = targetHost
-
 		// r.URL.User = nil
 		http.Redirect(w, r, r.URL.String(), code)
 	})

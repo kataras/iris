@@ -30,27 +30,29 @@ import (
 // e.g. to inject the 404 on not application found.
 // It can also be wrapped with its `WrapRouter` method,
 // which is really useful for logging and statistics.
-func Switch(providers ...SwitchProvider) *iris.Application {
-	if len(providers) == 0 {
-		panic("iris: switch: empty providers")
+//
+// Wrap with the `Join` slice to pass
+// more than one provider at the same time.
+func Switch(provider SwitchProvider, options ...SwitchOption) *iris.Application {
+	cases := provider.GetSwitchCases()
+	if len(cases) == 0 {
+		panic("iris: switch: empty cases")
 	}
 
 	var friendlyAddrs []string
-	var cases []SwitchCase
-	for _, p := range providers {
-		for _, c := range p.GetSwitchCases() {
-			cases = append(cases, c)
-		}
-
-		if fp, ok := p.(FriendlyNameProvider); ok {
-			if friendlyName := fp.GetFriendlyName(); friendlyName != "" {
-				friendlyAddrs = append(friendlyAddrs, friendlyName)
-			}
+	if fp, ok := provider.(FriendlyNameProvider); ok {
+		if friendlyName := fp.GetFriendlyName(); friendlyName != "" {
+			friendlyAddrs = append(friendlyAddrs, friendlyName)
 		}
 	}
 
-	if len(cases) == 0 {
-		panic("iris: switch: empty cases")
+	opts := DefaultSwitchOptions()
+	for _, opt := range options {
+		if opt == nil {
+			continue
+		}
+
+		opt.Apply(&opts)
 	}
 
 	app := iris.New()
@@ -70,10 +72,17 @@ func Switch(providers ...SwitchProvider) *iris.Application {
 	app.UseRouter(func(ctx iris.Context) {
 		for _, c := range cases {
 			if c.Filter(ctx) {
-				c.App.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
+				w := ctx.ResponseWriter()
+				r := ctx.Request()
+
+				for _, reqMod := range opts.RequestModifiers {
+					reqMod(r)
+				}
+
+				c.App.ServeHTTP(w, r)
 
 				// if c.App.Downgraded() {
-				// 	c.App.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
+				// 	c.App.ServeHTTP(w, r)
 				// } else {
 				// Note(@kataras): don't ever try something like that;
 				// the context pool is the switcher's one.
