@@ -6,3 +6,5 @@ RedirectMatch:
   - 301 /docs/v12(.*) /docs
     # redirects /old(.*) to /
   - 301 /old(.*) /
+# redirects root domain to www.
+PrimarySubdomain: www

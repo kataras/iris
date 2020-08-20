@@ -889,7 +889,8 @@ func GetDomain(hostport string) string {
 	}
 
 	switch host {
-	case "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
+	// We could use the netutil.LoopbackRegex but leave it as it's for now, it's faster.
+	case "localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]", "0:0:0:0:0:0:0:0", "0:0:0:0:0:0:0:1":
 		// loopback.
 		return "localhost"
 	default:

@@ -8,14 +8,13 @@ import (
 )
 
 var (
-	loopbackRegex    *regexp.Regexp
-	loopbackSubRegex *regexp.Regexp
+	// LoopbackRegex the regex if matched a host:port is a loopback.
+	LoopbackRegex    = regexp.MustCompile(`^localhost$|^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
+	loopbackSubRegex = regexp.MustCompile(`^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
 	machineHostname  string
 )
 
 func init() {
-	loopbackRegex, _ = regexp.Compile(`^localhost$|^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
-	loopbackSubRegex, _ = regexp.Compile(`^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
 	machineHostname, _ = os.Hostname()
 }
 
@@ -46,9 +45,9 @@ func GetLoopbackSubdomain(s string) string {
 }
 
 // IsLoopbackHost tries to catch the local addresses when a developer
-// navigates to a subdomain that its hostname differs from Application.Config.Addr.
+// navigates to a subdomain that its hostname differs from Application.Configuration.VHost.
 // Developer may want to override this function to return always false
-// in order to not allow different hostname from Application.Config.Addr in local environment (remote is not reached).
+// in order to not allow different hostname from Application.Configuration.VHost in local environment (remote is not reached).
 var IsLoopbackHost = func(requestHost string) bool {
 	// this func will be called if we have a subdomain actually, not otherwise, so we are
 	// safe to do some hacks.
@@ -60,7 +59,7 @@ var IsLoopbackHost = func(requestHost string) bool {
 
 	// find the first index of [:]8080 or [/]mypath or nothing(root with loopback address like 127.0.0.1)
 	// remember: we are not looking for .com or these things, if is up and running then the developer
-	// would probably not want to reach the server with different Application.Config.Addr than
+	// would probably not want to reach the server with different Application.Configuration.VHost than
 	// he/she declared.
 	portOrPathIdx := strings.LastIndexByte(requestHost, ':')
 
@@ -92,7 +91,7 @@ var IsLoopbackHost = func(requestHost string) bool {
 	// so it shouldn't hurt so much, but we don't care a lot because it's a special case here
 	// because this function will be called only if developer him/herself can reach the server
 	// with a loopback/local address, so we are totally safe.
-	valid := loopbackRegex.MatchString(hostname)
+	valid := LoopbackRegex.MatchString(hostname)
 	if !valid { // if regex failed to match it, then try with the pc's name.
 		valid = hostname == machineHostname
 	}

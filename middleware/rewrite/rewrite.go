@@ -10,30 +10,86 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/router"
 
 	"gopkg.in/yaml.v3"
 )
 
 // Options holds the developer input to customize
 // the redirects for the Rewrite Engine.
-// Look the `New` package-level function.
+// Look the `New` and `Load` package-level functions.
 type Options struct {
 	// RedirectMatch accepts a slice of lines
 	// of form:
 	// REDIRECT_CODE PATH_PATTERN TARGET_PATH
 	// Example: []{"301 /seo/(.*) /$1"}.
 	RedirectMatch []string `json:"redirectMatch" yaml:"RedirectMatch"`
+
+	// Root domain requests redirect automatically to primary subdomain.
+	// Example: "www" to redirect always to www.
+	// Note that you SHOULD NOT create a www subdomain inside the Iris Application.
+	// This field takes care of it for you, the root application instance
+	// will be used to serve the requests.
+	PrimarySubdomain string `json:"primarySubdomain" yaml:"PrimarySubdomain"`
+}
+
+// LoadOptions loads rewrite Options from a system file.
+func LoadOptions(filename string) (opts Options) {
+	ext := ".yml"
+	if index := strings.LastIndexByte(filename, '.'); index > 1 && len(filename)-1 > index {
+		ext = filename[index:]
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		panic("iris: rewrite: " + err.Error())
+	}
+	defer f.Close()
+
+	switch ext {
+	case ".yaml", ".yml":
+		err = yaml.NewDecoder(f).Decode(&opts)
+	case ".json":
+		err = json.NewDecoder(f).Decode(&opts)
+	default:
+		panic("iris: rewrite: unexpected file extension: " + filename)
+	}
+
+	if err != nil {
+		panic("iris: rewrite: decode: " + err.Error())
+	}
+
+	return
 }
 
 // Engine is the rewrite engine master structure.
 // Navigate through _examples/routing/rewrite for more.
 type Engine struct {
 	redirects []*redirectMatch
+	options   Options
+
+	domainValidator func(string) bool
+}
+
+// Load decodes the "filename" options
+// and returns a new Rewrite Engine Router Wrapper.
+// It panics on errors.
+// Usage:
+// redirects := Load("redirects.yml")
+// app.WrapRouter(redirects)
+// See `New` too.
+func Load(filename string) router.WrapperFunc {
+	opts := LoadOptions(filename)
+	engine, err := New(opts)
+	if err != nil {
+		panic(err)
+	}
+	return engine.Rewrite
 }
 
 // New returns a new Rewrite Engine based on "opts".
 // It reports any parser error.
-// See its `Handler` or `Wrapper` methods. Depending
+// See its `Handler` or `Rewrite` methods. Depending
 // on the needs, select one.
 func New(opts Options) (*Engine, error) {
 	redirects := make([]*redirectMatch, 0, len(opts.RedirectMatch))
@@ -46,23 +102,18 @@ func New(opts Options) (*Engine, error) {
 		redirects = append(redirects, r)
 	}
 
+	if opts.PrimarySubdomain != "" && !strings.HasSuffix(opts.PrimarySubdomain, ".") {
+		opts.PrimarySubdomain += "." // www -> www.
+	}
+
 	e := &Engine{
+		options:   opts,
 		redirects: redirects,
+		domainValidator: func(root string) bool {
+			return !strings.HasSuffix(root, localhost)
+		},
 	}
 	return e, nil
-}
-
-// Handler returns a new rewrite Iris Handler.
-// It panics on any error.
-// Same as engine, _ := New(opts); engine.Handler.
-// Usage:
-// app.UseRouter(Handler(opts)).
-func Handler(opts Options) context.Handler {
-	engine, err := New(opts)
-	if err != nil {
-		panic(err)
-	}
-	return engine.Handler
 }
 
 // Handler is an Iris Handler that can be used as a router or party or route middleware.
@@ -71,41 +122,57 @@ func Handler(opts Options) context.Handler {
 // Usage:
 // app.UseRouter(engine.Handler)
 func (e *Engine) Handler(ctx *context.Context) {
-	// We could also do that:
-	// but we don't.
-	// 	e.WrapRouter(ctx.ResponseWriter(), ctx.Request(), func(http.ResponseWriter, *http.Request) {
-	// 		ctx.Next()
-	// 	})
-	for _, rd := range e.redirects {
-		src := ctx.Path()
-		if !rd.isRelativePattern {
-			src = ctx.Request().URL.String()
-		}
-
-		if target, ok := rd.matchAndReplace(src); ok {
-			if target == src {
-				// this should never happen: StatusTooManyRequests.
-				// keep the router flow.
-				ctx.Next()
-				return
-			}
-
-			ctx.Redirect(target, rd.code)
-			return
-		}
-	}
-
-	ctx.Next()
+	e.Rewrite(ctx.ResponseWriter(), ctx.Request(), func(http.ResponseWriter, *http.Request) {
+		ctx.Next()
+	})
 }
 
-// Wrapper wraps the entire Iris Router.
-// Wrapper is a bit faster than Handler because it's executed
+const localhost = "localhost"
+
+// Rewrite is used to wrap the entire Iris Router.
+// Rewrite is a bit faster than Handler because it's executed
 // even before any route matched and it stops on redirect pattern match.
 // Use it to wrap the entire Iris Application, otherwise look `Handler` instead.
 //
 // Usage:
-// app.WrapRouter(engine.Wrapper).
-func (e *Engine) Wrapper(w http.ResponseWriter, r *http.Request, routeHandler http.HandlerFunc) {
+// app.WrapRouter(engine.Rewrite).
+func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler http.HandlerFunc) {
+	if primarySubdomain := e.options.PrimarySubdomain; primarySubdomain != "" {
+		hostport := context.GetHost(r)
+		root := context.GetDomain(hostport)
+		// Note:
+		// localhost and 127.0.0.1 are not supported for subdomain rewrite, by purpose,
+		// use a virtual host instead.
+		// GetDomain will return will return localhost or www.localhost
+		// on expected loopbacks.
+		if e.domainValidator(root) {
+			root += getPort(hostport)
+			subdomain := strings.TrimSuffix(hostport, root)
+
+			if subdomain == "" {
+				// we are in root domain, full redirect to its primary subdomain.
+				r.Host = primarySubdomain + root
+				r.URL.Host = primarySubdomain + root
+				http.Redirect(w, r, r.URL.String(), http.StatusMovedPermanently)
+				return
+			}
+
+			if subdomain == primarySubdomain {
+				// keep root domain as the Host field inside the next handlers,
+				// for consistently use and
+				// to bypass the subdomain router (`routeHandler`)
+				// do not return, redirects should be respected.
+				rootHost := strings.TrimPrefix(hostport, subdomain)
+
+				// modify those for the next redirects or the route handler.
+				r.Host = rootHost
+				r.URL.Host = rootHost
+			}
+
+			// maybe other subdomain or not at all, let's continue.
+		}
+	}
+
 	for _, rd := range e.redirects {
 		src := r.URL.Path
 		if !rd.isRelativePattern {
@@ -189,31 +256,10 @@ func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9'
 }
 
-// LoadOptions loads rewrite Options from a system file.
-func LoadOptions(filename string) (opts Options) {
-	ext := ".yml"
-	if index := strings.LastIndexByte(filename, '.'); index > 1 && len(filename)-1 > index {
-		ext = filename[index:]
+func getPort(hostport string) string { // returns :port, note that this is only called on non-loopbacks.
+	if portIdx := strings.IndexByte(hostport, ':'); portIdx > 0 {
+		return hostport[portIdx:]
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		panic("iris: rewrite: " + err.Error())
-	}
-	defer f.Close()
-
-	switch ext {
-	case ".yaml", ".yml":
-		err = yaml.NewDecoder(f).Decode(&opts)
-	case ".json":
-		err = json.NewDecoder(f).Decode(&opts)
-	default:
-		panic("iris: rewrite: unexpected file extension: " + filename)
-	}
-
-	if err != nil {
-		panic("iris: rewrite: decode: " + err.Error())
-	}
-
-	return
+	return ""
 }
