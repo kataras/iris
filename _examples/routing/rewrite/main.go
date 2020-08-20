@@ -13,17 +13,22 @@ func main() {
 
 	app.Subdomain("test").Get("/", testIndex)
 
+	newtest := app.Subdomain("newtest")
+	newtest.Get("/", newTestIndex)
+	newtest.Get("/", newTestAbout)
+
 	redirects := rewrite.Load("redirects.yml")
 	app.WrapRouter(redirects)
 
-	// http://mydomain.com:8080/seo/about     -> http://www.mydomain.com:8080/about
-	// http://test.mydomain.com:8080
-	// http://localhost:8080/seo              -> http://localhost:8080
+	// http://mydomain.com:8080/seo/about      -> http://www.mydomain.com:8080/about
+	// http://test.mydomain.com:8080           -> http://newtest.mydomain.com:8080
+	// http://test.mydomain.com:8080/seo/about -> http://newtest.mydomain.com:8080/about
+	// http://localhost:8080/seo               -> http://localhost:8080
 	// http://localhost:8080/about
-	// http://localhost:8080/docs/v12/hello   -> http://localhost:8080/docs
-	// http://localhost:8080/docs/v12some     -> http://localhost:8080/docs
-	// http://localhost:8080/oldsome          -> http://localhost:8080
-	// http://localhost:8080/oldindex/random  -> http://localhost:8080
+	// http://localhost:8080/docs/v12/hello    -> http://localhost:8080/docs
+	// http://localhost:8080/docs/v12some      -> http://localhost:8080/docs
+	// http://localhost:8080/oldsome           -> http://localhost:8080
+	// http://localhost:8080/oldindex/random   -> http://localhost:8080
 	app.Listen(":8080")
 }
 
@@ -40,7 +45,15 @@ func docs(ctx iris.Context) {
 }
 
 func testIndex(ctx iris.Context) {
-	ctx.WriteString("Test Subdomain Index")
+	ctx.WriteString("Test Subdomain Index (This should never be executed, redirects to newtest subdomain)")
+}
+
+func newTestIndex(ctx iris.Context) {
+	ctx.WriteString("New Test Subdomain Index")
+}
+
+func newTestAbout(ctx iris.Context) {
+	ctx.WriteString("New Test Subdomain About")
 }
 
 /* More...
@@ -49,6 +62,7 @@ rewriteOptions := rewrite.Options{
 		"301 /seo/(.*) /$1",
 		"301 /docs/v12(.*) /docs",
 		"301 /old(.*) /",
+		"301 ^(http|https)://test.(.*) $1://newtest.$2",
 	},
 	PrimarySubdomain: "www",
 }

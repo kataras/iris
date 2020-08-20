@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
@@ -176,7 +177,8 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 	for _, rd := range e.redirects {
 		src := r.URL.Path
 		if !rd.isRelativePattern {
-			src = r.URL.String()
+			// don't change the request, use a full redirect.
+			src = context.GetScheme(r) + context.GetHost(r) + r.URL.RequestURI()
 		}
 
 		if target, ok := rd.matchAndReplace(src); ok {
@@ -185,7 +187,14 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 				return
 			}
 
-			http.Redirect(w, r, target, rd.code)
+			if !rd.isRelativePattern {
+				// this performs better, no need to check query or host,
+				// the uri already built.
+				redirectAbs(w, r, target, rd.code)
+			} else {
+				http.Redirect(w, r, target, rd.code)
+			}
+
 			return
 		}
 	}
@@ -262,4 +271,23 @@ func getPort(hostport string) string { // returns :port, note that this is only 
 	}
 
 	return ""
+}
+
+func redirectAbs(w http.ResponseWriter, r *http.Request, url string, code int) {
+	// part of net/http std library.
+	h := w.Header()
+
+	_, hadCT := h[context.ContentTypeHeaderKey]
+
+	h.Set("Location", url)
+	if !hadCT && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		h.Set(context.ContentTypeHeaderKey, "text/html; charset=utf-8")
+	}
+	w.WriteHeader(code)
+
+	// Shouldn't send the body for POST or HEAD; that leaves GET.
+	if !hadCT && r.Method == "GET" {
+		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
+		fmt.Fprintln(w, body)
+	}
 }
