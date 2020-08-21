@@ -8,26 +8,27 @@ import (
 
 // Switch returns a new Application
 // with the sole purpose of routing the
-// matched Applications through the provided "cases".
+// matched Applications through the "provided cases".
 //
-// The cases are filtered in order of register.
+// The cases are filtered in order of their registration.
 //
-// Example:
-//  switcher := Switch(Hosts{
-//      "mydomain.com": app,
-//      "test.mydomain.com": testSubdomainApp,
-//      "otherdomain.com": "appName",
-//  })
-//  switcher.Listen(":80")
+// Example Code:
+// 	switcher := Switch(Hosts{
+// 		"mydomain.com": app,
+// 		"test.mydomain.com": testSubdomainApp,
+// 		"otherdomain.com": "appName",
+// 	})
+// 	switcher.Listen(":80")
 //
-// Note that this is NOT a load balancer. The filters
-// are executed by registration order and matched Application
-// handles the request.
+// Note that this is NOT an alternative for a load balancer.
+// The filters are executed by registration order and a matched Application
+// handles the request, that's all it does.
 //
-// The returned Switch Application can register routes that will run
-// if no application is matched against the given filters.
-// The returned Switch Application can also register custom error code handlers,
-// e.g. to inject the 404 on not application found.
+// The returned Switch Iris Application can register routes that will run
+// when neither of the registered Applications is responsible
+// to handle the incoming request against the provided filters.
+// The returned Switch Iris Application can also register custom error code handlers,
+// e.g. to inject the 404 on not responsible Application was found.
 // It can also be wrapped with its `WrapRouter` method,
 // which is really useful for logging and statistics.
 //
