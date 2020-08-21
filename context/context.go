@@ -1906,14 +1906,14 @@ func (ctx *Context) AbsoluteURI(s string) string {
 }
 
 // Redirect sends a redirect response to the client
-// to a specific url or relative path.
-// accepts 2 parameters string and an optional int
-// first parameter is the url to redirect
-// second parameter is the http status should send,
-// default is 302 (StatusFound),
-// you can set it to 301 (Permant redirect)
-// or 303 (StatusSeeOther) if POST method,
-// or StatusTemporaryRedirect(307) if that's nessecery.
+// of an absolute or relative target URL.
+// It accepts 2 input arguments, a string and an optional integer.
+// The first parameter is the target url to redirect.
+// The second one is the HTTP status code should be sent
+// among redirection response,
+// If the second parameter is missing, then it defaults to 302 (StatusFound).
+// It can be set to 301 (Permant redirect), StatusTemporaryRedirect(307)
+// or 303 (StatusSeeOther) if POST method.
 func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 	ctx.StopExecution()
 	// get the previous status code given by the end-developer.

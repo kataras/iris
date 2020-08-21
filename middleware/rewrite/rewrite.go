@@ -187,6 +187,18 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 				return
 			}
 
+			if rd.noRedirect {
+				u, err := r.URL.Parse(target)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusMisdirectedRequest)
+					return
+				}
+
+				r.URL = u
+				routeHandler(w, r)
+				return
+			}
+
 			if !rd.isRelativePattern {
 				// this performs better, no need to check query or host,
 				// the uri already built.
@@ -208,6 +220,7 @@ type redirectMatch struct {
 	target  string
 
 	isRelativePattern bool
+	noRedirect        bool
 }
 
 func (r *redirectMatch) matchAndReplace(src string) (string, bool) {
@@ -241,20 +254,16 @@ func parseRedirectMatchLine(s string) (*redirectMatch, error) {
 		return nil, fmt.Errorf("redirect match: status code digits: %s: %v", codeStr, err)
 	}
 
-	if code <= 0 {
-		code = http.StatusMovedPermanently
-	}
-
 	regex := regexp.MustCompile(pattern)
 	if regex.MatchString(target) {
 		return nil, fmt.Errorf("redirect match: loop detected: pattern: %s vs target: %s", pattern, target)
 	}
 
 	v := &redirectMatch{
-		code:    code,
-		pattern: regex,
-		target:  target,
-
+		code:              code,
+		pattern:           regex,
+		target:            target,
+		noRedirect:        code <= 0,
 		isRelativePattern: pattern[0] == '/', // search by path.
 	}
 

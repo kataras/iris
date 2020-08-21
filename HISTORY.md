@@ -365,14 +365,30 @@ Other Improvements:
 - New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/master/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite).
 
 ```yml
-# REDIRECT_CODE PATH_PATTERN TARGET_PATH_REPL
-RedirectMatch:
-    # redirects /seo/* to /*
+RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
+  # Redirects /seo/* to /*
   - 301 /seo/(.*) /$1
-    # redirects /docs/v12* to /docs
+
+  # Redirects /docs/v12* to /docs
   - 301 /docs/v12(.*) /docs
-    # redirects /old(.*) to /
+
+  # Redirects /old(.*) to /
   - 301 /old(.*) /
+
+  # Redirects http or https://test.* to http or https://newtest.*
+  - 301 ^(http|https)://test.(.*) $1://newtest.$2
+
+  # Handles /*.json or .xml as *?format=json or xml,
+  # without redirect. See /users route.
+  # When Code is 0 then it does not redirect the request,
+  # instead it changes the request URL
+  # and leaves a route handle the request.
+  - 0 /(.*).(json|xml) /$1?format=$2
+
+# Redirects root domain to www.
+# Creation of a www subdomain inside the Application is unnecessary,
+# all requests are handled by the root Application itself.
+PrimarySubdomain: www
 ```
 
 - New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:

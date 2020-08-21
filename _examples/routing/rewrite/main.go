@@ -7,9 +7,11 @@ import (
 
 func main() {
 	app := iris.New()
+
 	app.Get("/", index)
 	app.Get("/about", about)
 	app.Get("/docs", docs)
+	app.Get("/users", listUsers)
 
 	app.Subdomain("test").Get("/", testIndex)
 
@@ -29,6 +31,7 @@ func main() {
 	// http://localhost:8080/docs/v12some      -> http://localhost:8080/docs
 	// http://localhost:8080/oldsome           -> http://localhost:8080
 	// http://localhost:8080/oldindex/random   -> http://localhost:8080
+	// http://localhost:8080/users.json        -> http://localhost:8080/users?format=json
 	app.Listen(":8080")
 }
 
@@ -44,8 +47,24 @@ func docs(ctx iris.Context) {
 	ctx.WriteString("Docs")
 }
 
+func listUsers(ctx iris.Context) {
+	format := ctx.URLParamDefault("format", "text")
+	/*
+		switch format{
+			case "json":
+				ctx.JSON(response)
+			case "xml":
+				ctx.XML(response)
+			// [...]
+		}
+	*/
+	ctx.Writef("Format: %s", format)
+}
+
 func testIndex(ctx iris.Context) {
-	ctx.WriteString("Test Subdomain Index (This should never be executed, redirects to newtest subdomain)")
+	ctx.WriteString(`Test Subdomain Index
+					(This should never be executed,
+					redirects to newtest subdomain)`)
 }
 
 func newTestIndex(ctx iris.Context) {
@@ -63,6 +82,7 @@ rewriteOptions := rewrite.Options{
 		"301 /docs/v12(.*) /docs",
 		"301 /old(.*) /",
 		"301 ^(http|https)://test.(.*) $1://newtest.$2",
+		"0 /(.*).(json|xml) /$1?format=$2",
 	},
 	PrimarySubdomain: "www",
 }
@@ -77,5 +97,6 @@ app.Use(rewriteEngine.Handler)
 //
 // To make the entire application respect the redirect rules
 // you have to wrap the Iris Router and pass the `Rewrite` method instead
-// as we did at this example.
+// as we did at this example:
+// app.WrapRouter(rewriteEngine.Rewrite)
 */
