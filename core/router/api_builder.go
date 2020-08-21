@@ -671,6 +671,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 
 	childAPI := &APIBuilder{
 		// global/api builder
+		logger:              api.logger,
 		macros:              api.macros,
 		routes:              api.routes,
 		beginGlobalHandlers: api.beginGlobalHandlers,

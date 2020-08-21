@@ -20,7 +20,7 @@ func newApp() *iris.Application {
 	/*
 		Or if you need to cache them inside the memory (requires the assets folder
 		to be located near the executable program):
-		app.HandleDir("/static", http.Dir("./assets"), iris.DirOptions{
+		app.HandleDir("/static", iris.Dir("./assets"), iris.DirOptions{
 			IndexName: "index.html",
 			Cache: iris.DirCacheOptions{
 				Enable:          true,
