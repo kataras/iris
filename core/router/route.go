@@ -19,6 +19,7 @@ import (
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
+	Title       string         `json"title"`        // custom name to replace the method on debug logging.
 	Name        string         `json:"name"`        // "userRoute"
 	Description string         `json:"description"` // "lists a user"
 	Method      string         `json:"method"`      // "GET"
@@ -63,6 +64,7 @@ type Route struct {
 
 	// OnBuild runs right before BuildHandlers.
 	OnBuild func(r *Route)
+	NoLog   bool // disables debug logging.
 }
 
 // NewRoute returns a new route based on its method,
@@ -349,14 +351,14 @@ func (r *Route) ResolvePath(args ...string) string {
 	return formattedPath
 }
 
-func traceHandlerFile(method, name, line string, number int) string {
+func traceHandlerFile(title, name, line string, number int) string {
 	file := fmt.Sprintf("(%s:%d)", filepath.ToSlash(line), number)
 
 	if context.IgnoreHandlerName(name) {
 		return ""
 	}
 
-	space := strings.Repeat(" ", len(method)+1)
+	space := strings.Repeat(" ", len(title)+1)
 	return fmt.Sprintf("\n%s • %s %s", space, name, file)
 }
 
@@ -389,18 +391,22 @@ func traceMethodColor(method string) int {
 //               * @second_handler ...
 // If route and handler line:number locations are equal then the second is ignored.
 func (r *Route) Trace(w io.Writer, stoppedIndex int) {
-	method := r.Method
-	if method == "" {
-		method = fmt.Sprintf("%d", r.StatusCode)
+	title := r.Title
+	if title == "" {
+		if r.StatusCode > 0 {
+			title = fmt.Sprintf("%d", r.StatusCode) // if error code then title is the status code, e.g. 400.
+		} else {
+			title = r.Method // else is its method, e.g. GET
+		}
 	}
 
 	// Color the method.
-	color := traceMethodColor(method)
+	color := traceMethodColor(title)
 
 	// @method: @path
 	// space := strings.Repeat(" ", len(http.MethodConnect)-len(method))
-	// s := fmt.Sprintf("%s: %s", pio.Rich(method, color), path)
-	pio.WriteRich(w, method, color)
+	// s := fmt.Sprintf("%s: %s", pio.Rich(title, color), path)
+	pio.WriteRich(w, title, color)
 
 	path := r.Tmpl().Src
 	if path == "" {
@@ -412,7 +418,7 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 	// (@description)
 	description := r.Description
 	if description == "" {
-		if method == MethodNone {
+		if title == MethodNone {
 			description = "offline"
 		}
 
@@ -469,7 +475,7 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 		}
 
 		// * @handler_name (@handler_rel_location)
-		fmt.Fprint(w, traceHandlerFile(r.Method, name, file, line))
+		fmt.Fprint(w, traceHandlerFile(title, name, file, line))
 		if stoppedIndex != -1 && stoppedIndex <= len(r.Handlers) {
 			if i <= stoppedIndex {
 				pio.WriteRich(w, " ✓", pio.Green)

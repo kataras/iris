@@ -88,9 +88,7 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 	newContainer := c.Clone()
 	// Add the controller dependency itself as func dependency but with a known type which should be explicit binding
 	// in order to keep its maximum priority.
-	newContainer.Register(s.Acquire).
-		Explicitly().
-		DestType = typ
+	newContainer.Register(s.Acquire).Explicitly().DestType = typ
 
 	newContainer.GetErrorHandler = func(ctx *context.Context) ErrorHandler {
 		if isErrHandler {

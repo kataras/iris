@@ -155,6 +155,7 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | [time.Time](https://golang.org/pkg/time/#Time) | `time.Now()` |
 | [*golog.Logger](https://pkg.go.dev/github.com/kataras/golog) | Iris Logger |
 | [net.IP](https://golang.org/pkg/net/#IP) | `net.ParseIP(ctx.RemoteAddr())` |
+| [mvc.Code](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Code) | `ctx.GetStatusCode()` |
 | `string`, | |
 | `int, int8, int16, int32, int64`, | |
 | `uint, uint8, uint16, uint32, uint64`, | |
@@ -361,6 +362,10 @@ Response:
 ```
 
 Other Improvements:
+
+- New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/master/_examples/mvc/error-handler-http/main.go).
+
+![MVC: HTTP Error Handler Method](https://user-images.githubusercontent.com/22900943/90948989-e04cd300-e44c-11ea-8c97-54d90fb0cbb6.png)
 
 - New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/master/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite).
 

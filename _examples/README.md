@@ -216,6 +216,7 @@
     * [Login (Repository and Service layers)](mvc/login)
     * [Login (Single Responsibility)](mvc/login-mvc-single-responsibility)
     * [Vue.js Todo App](mvc/vuejs-todo-mvc)
+    * [HTTP Error Handler](mvc/error-handler-http)
     * [Error Handler](mvc/error-handler)
     * [Handle errors using mvc.Result](mvc/error-handler-custom-result)
     * [Handle errors using PreflightResult](mvc/error-handler-preflight)

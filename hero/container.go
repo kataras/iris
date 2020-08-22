@@ -84,6 +84,10 @@ var BuiltinDependencies = []*Dependency{
 	NewDependency(func(ctx *context.Context) net.IP {
 		return net.ParseIP(ctx.RemoteAddr())
 	}).Explicitly(),
+	// Status Code (special type for MVC HTTP Error handler to not conflict with path parameters)
+	NewDependency(func(ctx *context.Context) Code {
+		return Code(ctx.GetStatusCode())
+	}).Explicitly(),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
 

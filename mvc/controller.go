@@ -135,8 +135,14 @@ func newControllerActivator(app *Application, controller interface{}) *Controlle
 	return c
 }
 
+// It's a dynamic method, can be exist or not, it can accept input arguments
+// and can write through output values like any other dev-designed method.
+// See 'parseHTTPErrorMethod'.
+// Example at: _examples/mvc/error-handler-http
+const handleHTTPErrorMethodName = "HandleHTTPError"
+
 func whatReservedMethods(typ reflect.Type) map[string][]*router.Route {
-	methods := []string{"BeforeActivation", "AfterActivation"}
+	methods := []string{"BeforeActivation", "AfterActivation", handleHTTPErrorMethodName}
 	//  BeforeActivatior/AfterActivation are not routes but they are
 	// reserved names*
 	if isBaseController(typ) {
@@ -287,7 +293,14 @@ func (c *ControllerActivator) activate() {
 		return
 	}
 
+	c.parseHTTPErrorHandler()
 	c.parseMethods()
+}
+
+func (c *ControllerActivator) parseHTTPErrorHandler() {
+	if m, ok := c.Type.MethodByName(handleHTTPErrorMethodName); ok {
+		c.handleHTTPError(m.Name)
+	}
 }
 
 // register all available, exported methods to handlers if possible.
@@ -331,6 +344,40 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 		return nil
 	}
 
+	return routes[0]
+}
+
+// handleHTTPError is called when a controller's method
+// with the "HandleHTTPError" is found. That method
+// can accept dependencies like the rest but if it's not called manually
+// then any dynamic dependencies depending on succesful requests
+// may fail - this is end-developer's job;
+// to register the correct dependencies or not do it all on that method.
+//
+// Note that if more than one controller in the same Party
+// tries to register an http error handler then the
+// overlap route rule should be used and a dependency
+// on the controller (or method) level that will select
+// between the two should exist (see mvc/authenticated-controller example).
+func (c *ControllerActivator) handleHTTPError(funcName string) *router.Route {
+	handler := c.handlerOf("/", funcName)
+
+	routes := c.app.Router.OnAnyErrorCode(handler)
+	if len(routes) == 0 {
+		err := fmt.Errorf("MVC: unable to register an HTTP error code handler for '%s.%s'", c.fullName, funcName)
+		c.addErr(err)
+		return nil
+	}
+
+	for _, r := range routes {
+		r.Description = "controller"
+		r.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
+		if m, ok := c.Type.MethodByName(funcName); ok {
+			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func)
+		}
+	}
+
+	c.routes[funcName] = routes
 	return routes[0]
 }
 

@@ -12,6 +12,10 @@ type (
 	Response = hero.Response
 	// View is a type alias for the `hero#View`, useful for output controller's methods.
 	View = hero.View
+	// Code is a type alias for the `hero#Code`, useful for
+	// http error handling in controllers.
+	// This can be one of the input parameters of the `Controller.HandleHTTPError`.
+	Code = hero.Code
 	// DeprecationOptions describes the deprecation headers key-values.
 	// Is a type alias for the `versioning#DeprecationOptions`.
 	//

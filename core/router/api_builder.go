@@ -370,7 +370,7 @@ func (api *APIBuilder) SetRegisterRule(rule RouteRegisterRule) Party {
 	return api
 }
 
-// Handle registers a route to the server's api.
+// Handle registers a route to this Party.
 // if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 //
 // Returns a *Route, app will throw any errors later on.
@@ -378,6 +378,8 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	return api.handle(0, method, relativePath, handlers...)
 }
 
+// handle registers a full route to this Party.
+// Use Handle or Get, Post, Put, Delete and et.c. instead.
 func (api *APIBuilder) handle(errorCode int, method string, relativePath string, handlers ...context.Handler) *Route {
 	routes := api.createRoutes(errorCode, []string{method}, relativePath, handlers...)
 
@@ -1240,6 +1242,14 @@ func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) 
 func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Route) {
 	for _, statusCode := range context.ClientAndServerErrorCodes {
 		routes = append(routes, api.OnErrorCode(statusCode, handlers...)...)
+	}
+
+	if n := len(routes); n > 1 {
+		for _, r := range routes[1:n] {
+			r.NoLog = true
+		}
+
+		routes[0].Title = "ERR"
 	}
 
 	return

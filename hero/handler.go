@@ -18,6 +18,9 @@ type (
 	// ErrorHandlerFunc implements the `ErrorHandler`.
 	// It describes the type defnition for an error function handler.
 	ErrorHandlerFunc func(*context.Context, error)
+
+	// Code is a special type for status code.
+	Code int
 )
 
 // HandleError fires when a non-nil error returns from a request-scoped dependency at serve-time or the handler itself.

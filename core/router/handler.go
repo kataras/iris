@@ -189,7 +189,13 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		return lsub1 > lsub2
 	})
 
+	noLogCount := 0
+
 	for _, r := range registeredRoutes {
+		if r.NoLog {
+			noLogCount++
+		}
+
 		if h.config != nil && h.config.GetForceLowercaseRouting() {
 			// only in that state, keep everything else as end-developer registered.
 			r.Path = strings.ToLower(r.Path)
@@ -225,8 +231,12 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		// the route logs are colorful.
 		// Note: don't use map, we need to keep registered order, use
 		// different slices for each method.
+
 		collect := func(method string) (methodRoutes []*Route) {
 			for _, r := range registeredRoutes {
+				if r.NoLog {
+					continue
+				}
 				if r.Method == method {
 					methodRoutes = append(methodRoutes, r)
 				}
@@ -263,7 +273,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			// logger.Debugf("API: %d registered %s (", len(registeredRoutes), tr)
 			// with:
 			pio.WriteRich(logger.Printer, debugLevel.Title, debugLevel.ColorCode, debugLevel.Style...)
-			fmt.Fprintf(logger.Printer, " %s %sAPI: %d registered %s (", time.Now().Format(logger.TimeFormat), logger.Prefix, len(registeredRoutes), tr)
+			fmt.Fprintf(logger.Printer, " %s %sAPI: %d registered %s (", time.Now().Format(logger.TimeFormat), logger.Prefix, len(registeredRoutes)-noLogCount, tr)
 			//
 			logger.NewLine = bckpNewLine
 
