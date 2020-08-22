@@ -586,6 +586,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
 - `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
 - `Context.SetErr(error)` and `Context.GetErr() error` helpers.
 - `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`.

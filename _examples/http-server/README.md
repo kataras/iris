@@ -11,7 +11,7 @@ we use the `iris.Addr` which is an `iris.Runner` type
 
 ```go
 // Listening on tcp with network address 0.0.0.0:8080
-// app.Listen(":8080") it's a shortcut of:
+// app.Listen(":8080") is just a shortcut of:
 app.Run(iris.Addr(":8080"))
 ```
 

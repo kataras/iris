@@ -80,6 +80,8 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 
 	if l.config.PathAfterHandler /* we don't care if Path is disabled */ {
 		path = l.getPath(ctx)
+		// note: we could just use the r.RequestURI which is the original one,
+		// but some users may need the stripped one (on HandleDir).
 	}
 
 	if l.config.Status {

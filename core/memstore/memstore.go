@@ -26,6 +26,13 @@ type (
 		immutable bool        // if true then it can't change by its caller.
 	}
 
+	// StringEntry is just a key-value wrapped by a struct.
+	// See Context.URLParamsSorted method.
+	StringEntry struct {
+		Key   string `json:"key" msgpack:"key" yaml:"Key" toml:"Value"`
+		Value string `json:"value" msgpack:"value" yaml:"Value" toml:"Value"`
+	}
+
 	// Store is a collection of key-value entries with immutability capabilities.
 	Store []Entry
 )

@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -1504,8 +1505,12 @@ func (ctx *Context) URLParamBool(name string) (bool, error) {
 	return strconv.ParseBool(ctx.URLParam(name))
 }
 
-// URLParams returns a map of GET query parameters separated by comma if more than one
-// it returns an empty map if nothing found.
+// URLParams returns a map of URL Query parameters.
+// If the value of a URL parameter is a slice,
+// then it is joined as one separated by comma.
+// It returns an empty map on empty URL query.
+//
+// See URLParamsSorted too.
 func (ctx *Context) URLParams() map[string]string {
 	q := ctx.request.URL.Query()
 	values := make(map[string]string, len(q))
@@ -1515,6 +1520,34 @@ func (ctx *Context) URLParams() map[string]string {
 	}
 
 	return values
+}
+
+// URLParamsSorted returns a sorted (by key) slice
+// of key-value entries of the URL Query parameters.
+func (ctx *Context) URLParamsSorted() []memstore.StringEntry {
+	q := ctx.request.URL.Query()
+	n := len(q)
+	if n == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, n)
+	for key := range q {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	entries := make([]memstore.StringEntry, 0, n)
+	for _, key := range keys {
+		value := q[key]
+		entries = append(entries, memstore.StringEntry{
+			Key:   key,
+			Value: strings.Join(value, ","),
+		})
+	}
+
+	return entries
 }
 
 // No need anymore, net/http checks for the Form already.

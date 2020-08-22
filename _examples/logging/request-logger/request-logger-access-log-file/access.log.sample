@@ -1,0 +1,6 @@
+2020-08-22 00:44:20|993.3µs|POST|/read_body||200|{"id":10,"name":"Tim","age":22}|{"message":"OK"}|
+2020-08-22 00:44:30|0s|POST|/read_body||400||error(invalid character 'a' looking for beginning of object key string)||
+2020-08-22 03:02:41|1ms|GET|/|a=1 b=2|200||<h1>Hello index</h1>|
+2020-08-22 03:15:29|968.8µs|GET|/public|file=public|404|||
+2020-08-22 03:03:42|0s|GET|/user/kataras|username=kataras|200||Hello, kataras!|
+2020-08-22 03:05:40|0s|GET|/user/kataras|username=kataras a_query_parameter=name|200||Hello, kataras!|

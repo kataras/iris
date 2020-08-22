@@ -17,12 +17,14 @@ import (
 func main() {
 	app := iris.New()
 
+	idleConnsClosed := make(chan struct{})
 	iris.RegisterOnInterrupt(func() {
 		timeout := 10 * time.Second
 		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), timeout)
 		defer cancel()
 		// close all hosts
 		app.Shutdown(ctx)
+		close(idleConnsClosed)
 	})
 
 	app.Get("/", func(ctx iris.Context) {
@@ -30,5 +32,6 @@ func main() {
 	})
 
 	// http://localhost:8080
-	app.Listen(":8080", iris.WithoutInterruptHandler)
+	app.Listen(":8080", iris.WithoutInterruptHandler, iris.WithoutServerError(iris.ErrServerClosed))
+	<-idleConnsClosed
 }

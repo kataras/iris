@@ -16,6 +16,18 @@ type RequestParams struct {
 	memstore.Store
 }
 
+// RequestParamsReadOnly is the read-only access type of RequestParams.
+type RequestParamsReadOnly interface {
+	Get(key string) string
+	GetEntryAt(index int) memstore.Entry
+	Visit(visitor func(key string, value string))
+	GetTrim(key string) string
+	GetEscape(key string) string
+	GetDecoded(key string) string
+} // Note: currently unused.
+
+var _ RequestParamsReadOnly = (*RequestParams)(nil)
+
 // Set inserts a parameter value.
 // See `Get` too.
 func (r *RequestParams) Set(key, value string) {

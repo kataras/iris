@@ -17,6 +17,7 @@ func main() {
 		ctx.HTML("<h1>hi, I just exist in order to see if the server is closed</h1>")
 	})
 
+	idleConnsClosed := make(chan struct{})
 	go func() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch,
@@ -37,10 +38,12 @@ func main() {
 			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), timeout)
 			defer cancel()
 			app.Shutdown(ctx)
+			close(idleConnsClosed)
 		}
 	}()
 
 	// Start the server and disable the default interrupt handler in order to
 	// handle it clear and simple by our own, without any issues.
 	app.Listen(":8080", iris.WithoutInterruptHandler)
+	<-idleConnsClosed
 }
