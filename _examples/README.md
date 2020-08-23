@@ -1,5 +1,6 @@
 # Table of Contents
 
+* [Serverless](https://github.com/iris-contrib/gateway#netlify)
 * [REST API for Apache Kafka](kafka-api)
 * [URL Shortener](url-shortener)
 * [Dropzone.js](dropzonejs)

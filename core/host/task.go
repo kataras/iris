@@ -22,7 +22,7 @@ import (
 // This function should be registered on Serve.
 func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 	return func(h TaskHost) {
-		guessScheme := netutil.ResolveScheme(h.Supervisor.manuallyTLS || h.Supervisor.Fallback != nil)
+		guessScheme := netutil.ResolveScheme(h.Supervisor.autoTLS || h.Supervisor.manuallyTLS || h.Supervisor.Fallback != nil)
 		addr := h.Supervisor.FriendlyAddr
 		if addr == "" {
 			addr = h.Supervisor.Server.Addr

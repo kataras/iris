@@ -37,7 +37,8 @@ type Supervisor struct {
 	closedManually                 uint32 // future use, accessed atomically (non-zero means we've called the Shutdown)
 	closedByInterruptHandler       uint32 // non-zero means that the end-developer interrupted it by-purpose.
 	manuallyTLS                    bool   // we need that in order to determinate what to output on the console before the server begin.
-	shouldWait                     int32  // non-zero means that the host should wait for unblocking
+	autoTLS                        bool
+	shouldWait                     int32 // non-zero means that the host should wait for unblocking
 	unblockChan                    chan struct{}
 
 	mu sync.Mutex
@@ -354,6 +355,8 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 		su.FriendlyAddr = strings.Join(domains, ", ")
 		hostPolicy = autocert.HostWhitelist(domains...)
 	}
+
+	su.autoTLS = true
 
 	autoTLSManager := &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

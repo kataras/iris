@@ -138,6 +138,7 @@ func defaultErrorHandler(ctx *context.Context) {
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
+	h.errorTrees = h.errorTrees[0:0]
 
 	// set the default error code handler, will be fired on error codes
 	// that are not handled by a specific handler (On(Any)ErrorCode).
