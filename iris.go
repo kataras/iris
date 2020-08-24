@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/core/netutil"
 	"github.com/kataras/iris/v12/core/router"
@@ -534,9 +533,6 @@ func (app *Application) Build() error {
 		app.logger.SetLevel(app.config.LogLevel)
 	}
 
-	rp := errgroup.New("Application Builder")
-	rp.Err(app.APIBuilder.GetReporter())
-
 	if app.defaultMode { // the app.I18n and app.View will be not available until Build.
 		if !app.I18n.Loaded() {
 			for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
@@ -585,14 +581,16 @@ func (app *Application) Build() error {
 		app.view.AddFunc("urlpath", rv.Path)
 		// app.view.AddFunc("url", rv.URL)
 		if err := app.view.Load(); err != nil {
-			rp.Group("View Builder").Err(err)
+			app.logger.Errorf("View Builder: %v", err)
+			return err
 		}
 	}
 
 	if !app.Router.Downgraded() {
 		// router
 		if _, err := injectLiveReload(app.ContextPool, app.Router); err != nil {
-			rp.Errf("LiveReload: init: failed: %v", err)
+			app.logger.Errorf("LiveReload: init: failed: %v", err)
+			return err
 		}
 
 		if app.config.ForceLowercaseRouting {
@@ -609,7 +607,8 @@ func (app *Application) Build() error {
 		routerHandler := router.NewDefaultHandler(app.config, app.logger)
 		err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
 		if err != nil {
-			rp.Err(err)
+			app.logger.Error(err)
+			return err
 		}
 		app.HTTPErrorHandler = routerHandler
 		// re-build of the router from outside can be done with
@@ -619,7 +618,7 @@ func (app *Application) Build() error {
 	// if end := time.Since(start); end.Seconds() > 5 {
 	// app.logger.Debugf("Application: build took %s", time.Since(start))
 
-	return errgroup.Check(rp)
+	return nil
 }
 
 // Runner is just an interface which accepts the framework instance

@@ -163,6 +163,11 @@ func (c *ControllerActivator) Name() string {
 	return c.fullName
 }
 
+// RelName returns the path relatively to the main package.
+func (c *ControllerActivator) RelName() string {
+	return strings.TrimPrefix(c.fullName, "main.")
+}
+
 // Router is the standard Iris router's public API.
 // With this you can register middleware, view layouts, subdomains, serve static files
 // and even add custom standard iris handlers as normally.
@@ -243,7 +248,7 @@ func (c *ControllerActivator) DependenciesReadOnly() []*hero.Dependency {
 
 // Dependencies returns a value which can manage the controller's dependencies.
 func (c *ControllerActivator) Dependencies() *hero.Container {
-	return c.app.container
+	return c.app.container // although the controller's one are: c.injector.Container
 }
 
 // checks if a method is already registered.
@@ -293,8 +298,8 @@ func (c *ControllerActivator) activate() {
 		return
 	}
 
-	c.parseHTTPErrorHandler()
 	c.parseMethods()
+	c.parseHTTPErrorHandler()
 }
 
 func (c *ControllerActivator) parseHTTPErrorHandler() {
@@ -316,7 +321,7 @@ func (c *ControllerActivator) parseMethod(m reflect.Method) {
 	httpMethod, httpPath, err := parseMethod(c.app.Router.Macros(), m, c.isReservedMethod)
 	if err != nil {
 		if err != errSkip {
-			c.addErr(fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err))
+			c.logErrorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err)
 		}
 
 		return
@@ -325,8 +330,8 @@ func (c *ControllerActivator) parseMethod(m reflect.Method) {
 	c.Handle(httpMethod, httpPath, m.Name)
 }
 
-func (c *ControllerActivator) addErr(err error) bool {
-	return c.app.Router.GetReporter().Err(err) != nil
+func (c *ControllerActivator) logErrorf(format string, args ...interface{}) {
+	c.Router().Logger().Errorf(format, args...)
 }
 
 // Handle registers a route based on a http method, the route's path
@@ -350,7 +355,7 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 // handleHTTPError is called when a controller's method
 // with the "HandleHTTPError" is found. That method
 // can accept dependencies like the rest but if it's not called manually
-// then any dynamic dependencies depending on succesful requests
+// then any dynamic dependencies depending on successful requests
 // may fail - this is end-developer's job;
 // to register the correct dependencies or not do it all on that method.
 //
@@ -364,20 +369,11 @@ func (c *ControllerActivator) handleHTTPError(funcName string) *router.Route {
 
 	routes := c.app.Router.OnAnyErrorCode(handler)
 	if len(routes) == 0 {
-		err := fmt.Errorf("MVC: unable to register an HTTP error code handler for '%s.%s'", c.fullName, funcName)
-		c.addErr(err)
+		c.logErrorf("MVC: unable to register an HTTP error code handler for '%s.%s'", c.fullName, funcName)
 		return nil
 	}
 
-	for _, r := range routes {
-		r.Description = "controller"
-		r.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
-		if m, ok := c.Type.MethodByName(funcName); ok {
-			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func)
-		}
-	}
-
-	c.routes[funcName] = routes
+	c.saveRoutes(funcName, routes, true)
 	return routes[0]
 }
 
@@ -410,16 +406,19 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 	// register the handler now.
 	routes := c.app.Router.HandleMany(method, path, append(middleware, handler)...)
 	if routes == nil {
-		c.addErr(fmt.Errorf("MVC: unable to register a route for the path for '%s.%s'", c.fullName, funcName))
+		c.logErrorf("MVC: unable to register a route for the path for '%s.%s'", c.fullName, funcName)
 		return nil
 	}
 
+	c.saveRoutes(funcName, routes, override)
+	return routes
+}
+
+func (c *ControllerActivator) saveRoutes(funcName string, routes []*router.Route, override bool) {
+	relName := c.RelName()
 	for _, r := range routes {
-		// change the main handler's name and file:line
-		// in order to respect the controller's and give
-		// a proper debug/log message.
-		r.Description = "controller"
-		r.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
+		r.Description = relName
+		r.MainHandlerName = fmt.Sprintf("%s.%s", relName, funcName)
 		if m, ok := c.Type.MethodByName(funcName); ok {
 			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func)
 		}
@@ -428,15 +427,12 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 	// add this as a reserved method name in order to
 	// be sure that the same route
 	// (method is allowed to be registered more than one on different routes - v11.2).
-
 	existingRoutes, exist := c.routes[funcName]
 	if override || !exist {
 		c.routes[funcName] = routes
 	} else {
 		c.routes[funcName] = append(existingRoutes, routes...)
 	}
-
-	return routes
 }
 
 func (c *ControllerActivator) handlerOf(relPath, methodName string) context.Handler {

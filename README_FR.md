@@ -61,11 +61,11 @@ Pour une documentation encore plus complète vous pouvez visiter notre [godocs](
 
 ### Vous préférez une version PDF?
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12"/> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12"/> </a>
 
 [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 
-Vous pouvez [demander](https://bit.ly/iris-req-book) une version **E-Book** (en Anglais) de la documentation et contribuer au développement d'Iris.
+Vous pouvez [demander](https://www.iris-go.com/#ebookDonateForm) une version **E-Book** (en Anglais) de la documentation et contribuer au développement d'Iris.
 
 ## 🙌 Contribuer
 

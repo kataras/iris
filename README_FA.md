@@ -75,7 +75,7 @@ $ go run example.go
 
 <div dir="ltr" align="left">
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 </div>
 

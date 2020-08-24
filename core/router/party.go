@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/macro"
 
 	"github.com/kataras/golog"
@@ -36,8 +35,6 @@ type Party interface {
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
 	// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
 	GetRelPath() string
-	// GetReporter returns the reporter for adding or receiving any errors caused when building the API.
-	GetReporter() *errgroup.Group
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//

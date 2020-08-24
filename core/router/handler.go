@@ -227,7 +227,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	}
 
 	// TODO: move this and make it easier to read when all cases are, visually, tested.
-	if logger := h.logger; logger != nil && logger.Level == golog.DebugLevel {
+	if logger := h.logger; logger != nil && logger.Level == golog.DebugLevel && noLogCount < len(registeredRoutes) {
 		// group routes by method and print them without the [DBUG] and time info,
 		// the route logs are colorful.
 		// Note: don't use map, we need to keep registered order, use
@@ -291,7 +291,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 					m.method = "ERROR"
 				}
 				fmt.Fprintf(logger.Printer, "%d ", len(m.routes))
-				pio.WriteRich(logger.Printer, m.method, traceMethodColor(m.method))
+				pio.WriteRich(logger.Printer, m.method, TraceTitleColorCode(m.method))
 			}
 
 			fmt.Fprint(logger.Printer, ")\n")

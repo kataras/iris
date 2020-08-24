@@ -12,13 +12,15 @@ import (
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	app.Get("/ping", pong).Describe("healthcheck")
 
 	mvc.Configure(app.Party("/greet"), setup)
 
 	// http://localhost:8080/greet?name=kataras
 	addr := ":" + environment.Getenv("PORT", "8080")
-	app.Listen(addr, iris.WithLogLevel("debug"))
+	app.Listen(addr)
 }
 
 func pong(ctx iris.Context) {

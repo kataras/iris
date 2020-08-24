@@ -31,7 +31,7 @@ func (c *controller) Get() string {
 // You could  register a Context and get its error code through ctx.GetStatusCode().
 //
 // This can accept dependencies and output values like any other Controller Method,
-// however be careful if your registered dependencies depend only on succesful(200...) requests.
+// however be careful if your registered dependencies depend only on successful(200...) requests.
 //
 // Also note that, if you register more than one controller.HandleHTTPError
 // in the same Party, you need to use the RouteOverlap feature as shown

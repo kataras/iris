@@ -82,6 +82,7 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 	numIn := typ.NumIn()
 
 	bindings := getBindingsForFunc(v, c.Dependencies, paramsCount)
+	c.fillReport(context.HandlerName(fn), bindings)
 
 	resultHandler := defaultResultHandler
 	for i, lidx := 0, len(c.resultHandlers)-1; i <= lidx; i++ {

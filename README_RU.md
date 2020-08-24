@@ -54,11 +54,11 @@ $ go run example.go
 
 ### Вы любите читать во время путешествий?
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 <!-- [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos) -->
 
-Вы можете [запросить](https://bit.ly/iris-req-book) PDF версию и онлайн-доступ к **E-Book** сегодня и принять участие в разработке Iris.
+Вы можете [запросить](https://www.iris-go.com/#ebookDonateForm) PDF версию и онлайн-доступ к **E-Book** сегодня и принять участие в разработке Iris.
 
 ## Содействие
 

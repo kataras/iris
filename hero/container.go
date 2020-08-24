@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -15,7 +16,7 @@ import (
 )
 
 // Default is the default container value which can be used for dependencies share.
-var Default = New()
+var Default = New().WithLogger(golog.Default)
 
 // Container contains and delivers the Dependencies that will be binded
 // to the controller(s) or handler(s) that can be created
@@ -28,6 +29,10 @@ var Default = New()
 //
 // For a more high-level structure please take a look at the "mvc.go#Application".
 type Container struct {
+	// Optional Logger to report dependencies and matched bindings
+	// per struct, function and method.
+	// By default it is set by the Party creator of this Container.
+	Logger *golog.Logger
 	// Sorter specifies how the inputs should be sorted before binded.
 	// Defaults to sort by "thinnest" target empty interface.
 	Sorter Sorter
@@ -36,10 +41,81 @@ type Container struct {
 	// GetErrorHandler should return a valid `ErrorHandler` to handle bindings AND handler dispatch errors.
 	// Defaults to a functon which returns the `DefaultErrorHandler`.
 	GetErrorHandler func(*context.Context) ErrorHandler // cannot be nil.
+	// Reports contains an ordered list of information about bindings for further analysys and testing.
+	Reports []*Report
 
 	// resultHandlers is a list of functions that serve the return struct value of a function handler.
 	// Defaults to "defaultResultHandler" but it can be overridden.
 	resultHandlers []func(next ResultHandler) ResultHandler
+}
+
+// A Report holds meta information about dependency sources and target values per package,
+// struct, struct's fields, struct's method, package-level function or closure.
+// E.g. main -> (*UserController) -> HandleHTTPError.
+type Report struct {
+	// The name is the last part of the name of a struct or its methods or a function.
+	// Each name is splited by its package.struct.field or package.funcName or package.func.inlineFunc.
+	Name string
+	// If it's a struct or package or function
+	// then it contains children reports of each one of its methods or input parameters
+	// respectfully.
+	Reports []*Report
+
+	Parent  *Report
+	Entries []ReportEntry
+}
+
+// A ReportEntry holds the information about a binding.
+type ReportEntry struct {
+	InputPosition   int          // struct field position or parameter position.
+	InputFieldName  string       // if it's a struct field, then this is its type name (we can't get param names).
+	InputFieldType  reflect.Type // the input's type.
+	DependencyValue interface{}  // the dependency value binded to that InputPosition of Name.
+	DependencyFile  string       // the file
+	DependencyLine  int          // and line number of the dependency's value.
+}
+
+func (r *Report) fill(bindings []*binding) {
+	for _, b := range bindings {
+		inputFieldName := b.Input.StructFieldName
+		if inputFieldName == "" {
+			// it's not a struct field, then type.
+			inputFieldName = b.Input.Type.String()
+		}
+		// remove only the main one prefix.
+		inputFieldName = strings.TrimPrefix(inputFieldName, "main.")
+
+		fieldName := inputFieldName
+		switch fieldName {
+		case "*context.Context":
+			inputFieldName = strings.Replace(inputFieldName, "*context", "iris", 1)
+		case "hero.Code", "hero.Result", "hero.View", "hero.Response":
+			inputFieldName = strings.Replace(inputFieldName, "hero", "mvc", 1)
+		}
+
+		entry := ReportEntry{
+			InputPosition:  b.Input.Index,
+			InputFieldName: inputFieldName,
+			InputFieldType: b.Input.Type,
+
+			DependencyValue: b.Dependency.OriginalValue,
+			DependencyFile:  b.Dependency.Source.File,
+			DependencyLine:  b.Dependency.Source.Line,
+		}
+
+		r.Entries = append(r.Entries, entry)
+	}
+}
+
+// fillReport adds a report to the Reports field.
+func (c *Container) fillReport(fullName string, bindings []*binding) {
+	// r := c.getReport(fullName)
+
+	r := &Report{
+		Name: fullName,
+	}
+	r.fill(bindings)
+	c.Reports = append(c.Reports, r)
 }
 
 // BuiltinDependencies is a list of builtin dependencies that are added on Container's initilization.
@@ -113,16 +189,24 @@ func New(dependencies ...interface{}) *Container {
 	return c
 }
 
+// WithLogger injects a logger to use to debug dependencies and bindings.
+func (c *Container) WithLogger(logger *golog.Logger) *Container {
+	c.Logger = logger
+	return c
+}
+
 // Clone returns a new cloned container.
 // It copies the ErrorHandler, Dependencies and all Options from "c" receiver.
 func (c *Container) Clone() *Container {
 	cloned := New()
+	cloned.Logger = c.Logger
 	cloned.GetErrorHandler = c.GetErrorHandler
 	cloned.Sorter = c.Sorter
 	clonedDeps := make([]*Dependency, len(c.Dependencies))
 	copy(clonedDeps, c.Dependencies)
 	cloned.Dependencies = clonedDeps
 	cloned.resultHandlers = c.resultHandlers
+	// Reports are not cloned.
 	return cloned
 }
 

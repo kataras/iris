@@ -1,6 +1,7 @@
 package mvc
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/kataras/iris/v12/websocket"
 
 	"github.com/kataras/golog"
+	"github.com/kataras/pio"
 )
 
 // Application is the high-level component of the "mvc" package.
@@ -282,6 +284,10 @@ func (app *Application) handle(controller interface{}, options ...Option) *Contr
 	}
 
 	app.Controllers = append(app.Controllers, c)
+
+	// Note: log on register-time, so they can catch any failures before build.
+	logController(app.Router.Logger(), c)
+
 	return c
 }
 
@@ -312,4 +318,137 @@ func (app *Application) Clone(party router.Party) *Application {
 // The router's root path of this child will be the current mvc Application's root path + "relativePath".
 func (app *Application) Party(relativePath string, middleware ...context.Handler) *Application {
 	return app.Clone(app.Router.Party(relativePath, middleware...))
+}
+
+var childNameReplacer = strings.NewReplacer("*", "", "(", "", ")", "")
+
+// TODO: instead of this I want to get in touch with tools like "graphviz"
+// so we can put all that information (and the API) inside web graphs,
+// it will be easier for developers to see the flow of the whole application,
+// but probalby I will never find time for that as we have higher priorities...just a reminder though.
+func logController(logger *golog.Logger, c *ControllerActivator) {
+	if logger.Level != golog.DebugLevel {
+		return
+	}
+
+	/*
+		[DBUG] controller.GreetController
+		  ╺ Service         → ./service/greet_service.go:16
+		  ╺ Get
+		      GET /greet
+			• iris.Context
+			• service.Other	→ ./service/other_service.go:11
+	*/
+
+	bckpNewLine := logger.NewLine
+	bckpTimeFormat := logger.TimeFormat
+	logger.NewLine = false
+	logger.TimeFormat = ""
+
+	printer := logger.Printer
+
+	reports := c.injector.Container.Reports
+	ctrlName := c.RelName()
+	logger.Debugf("%s\n", ctrlName)
+
+	longestNameLen := 0
+	for _, report := range reports {
+		for _, entry := range report.Entries {
+			if n := len(entry.InputFieldName); n > longestNameLen {
+				if strings.HasSuffix(entry.InputFieldName, ctrlName) {
+					continue
+				}
+				longestNameLen = n
+			}
+		}
+	}
+
+	longestMethodName := 0
+	for methodName := range c.routes {
+		if n := len(methodName); n > longestMethodName {
+			longestMethodName = n
+		}
+	}
+
+	lastColorCode := -1
+
+	for _, report := range reports {
+
+		childName := childNameReplacer.Replace(report.Name)
+		if idx := strings.Index(childName, c.Name()); idx >= 0 {
+			childName = childName[idx+len(c.Name()):] // it's always +1 otherwise should be reported as BUG.
+		}
+
+		if childName != "" && childName[0] == '.' {
+			// It's a struct's method.
+
+			childName = childName[1:]
+
+			for _, route := range c.routes[childName] {
+				if route.NoLog {
+					continue
+				}
+
+				// Let them be logged again with the middlewares, e.g UseRouter or UseGlobal after this MVC app created.
+				// route.NoLog = true
+
+				colorCode := router.TraceTitleColorCode(route.Method)
+
+				// group same methods (or errors).
+				if lastColorCode == -1 {
+					lastColorCode = colorCode
+				} else if lastColorCode != colorCode {
+					lastColorCode = colorCode
+					fmt.Fprintln(printer)
+				}
+
+				fmt.Fprint(printer, "  ╺ ")
+				pio.WriteRich(printer, childName, colorCode)
+
+				entries := report.Entries[1:] // the ctrl value is always the first input argument so 1:..
+				if len(entries) == 0 {
+					fmt.Print("()")
+				}
+				fmt.Fprintln(printer)
+
+				// pio.WriteRich(printer, "      "+route.GetTitle(), colorCode)
+				fmt.Fprintf(printer, "      %s\n", route.String())
+
+				for _, entry := range entries {
+					fileLine := ""
+					if !strings.Contains(entry.DependencyFile, "kataras/iris/") {
+						fileLine = fmt.Sprintf("→ %s:%d", entry.DependencyFile, entry.DependencyLine)
+					}
+
+					fieldName := entry.InputFieldName
+
+					spaceRequired := longestNameLen - len(fieldName)
+					if spaceRequired < 0 {
+						spaceRequired = 0
+					}
+					//    → ⊳ ↔
+					fmt.Fprintf(printer, "    • %s%s %s\n", fieldName, strings.Repeat(" ", spaceRequired), fileLine)
+				}
+			}
+		} else {
+			// It's a struct's field.
+			for _, entry := range report.Entries {
+				fileLine := ""
+				if !strings.Contains(entry.DependencyFile, "kataras/iris/") {
+					fileLine = fmt.Sprintf("→ %s:%d", entry.DependencyFile, entry.DependencyLine)
+				}
+
+				fieldName := entry.InputFieldName
+				spaceRequired := longestNameLen + 2 - len(fieldName) // plus the two spaces because it's not collapsed.
+				if spaceRequired < 0 {
+					spaceRequired = 0
+				}
+				fmt.Fprintf(printer, "  ╺ %s%s %s\n", fieldName, strings.Repeat(" ", spaceRequired), fileLine)
+			}
+		}
+	}
+	// fmt.Fprintln(printer)
+
+	logger.NewLine = bckpNewLine
+	logger.TimeFormat = bckpTimeFormat
 }

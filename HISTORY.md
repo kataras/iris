@@ -363,6 +363,22 @@ Response:
 
 Other Improvements:
 
+- Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Screens:
+
+#### DBUG Routes (1)
+
+![DBUG routes 1](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
+
+#### DBUG Routes (2)
+
+![DBUG routes 2](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
+
+#### DBUG Routes (3)
+
+![DBUG routes with Controllers](https://iris-go.com/images/v12.2.0-dbug3.png?v=0)
+
+- Update the [pprof middleware](https://github.com/kataras/iris/tree/master/middleware/pprof).
+
 - New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/master/_examples/mvc/error-handler-http/main.go).
 
 ![MVC: HTTP Error Handler Method](https://user-images.githubusercontent.com/22900943/90948989-e04cd300-e44c-11ea-8c97-54d90fb0cbb6.png)
@@ -469,16 +485,6 @@ func main() {
 - [gRPC](https://grpc.io/) features:
     - New Router [Wrapper](middleware/grpc).
     - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
-
-- Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Example:
-
-#### DBUG Routes (1)
-
-![DBUG routes](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
-
-#### DBUG Routes (2)
-
-![DBUG routes](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
 
 - Add `Configuration.RemoteAddrHeadersForce bool` to force `Context.RemoteAddr() string` to return the first entry of request headers as a fallback instead of the `Request.RemoteAddr` one, as requested at: [1567#issuecomment-663972620](https://github.com/kataras/iris/issues/1567#issuecomment-663972620).
 
@@ -627,6 +633,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `Party.GetReporter()` **removed**. The `Application.Build` returns the first error now and the API's errors are logged, this allows the server to run even if some of the routes are invalid but not fatal to the entire application (it was a request from a company).
 - `versioning.NewGroup(string)` now accepts a `Party` as its first input argument: `NewGroup(Party, string)`.
 - `versioning.RegisterGroups` is **removed** as it is no longer necessary.
 - `Configuration.RemoteAddrHeaders` from `map[string]bool` to `[]string`. If you used `With(out)RemoteAddrHeader` then you are ready to proceed without any code changes for that one.

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/macro"
 	macroHandler "github.com/kataras/iris/v12/macro/handler"
@@ -169,12 +168,6 @@ type APIBuilder struct {
 	// the api builder global routes repository
 	routes *repository
 
-	// the api builder global errors, can be filled by the Subdomain, WildcardSubdomain, Handle...
-	// the list of possible errors that can be
-	// collected on the build state to log
-	// to the end-user.
-	errors *errgroup.Group
-
 	// the per-party handlers, order
 	// of handlers registration matters.
 	middleware          context.Handlers
@@ -236,10 +229,9 @@ func NewAPIBuilder(logger *golog.Logger) *APIBuilder {
 		logger:        logger,
 		parent:        nil,
 		macros:        macro.Defaults,
-		errors:        errgroup.New("API Builder"),
 		relativePath:  "/",
 		routes:        new(repository),
-		apiBuilderDI:  &APIContainer{Container: hero.New()},
+		apiBuilderDI:  &APIContainer{Container: hero.New().WithLogger(logger)},
 		routerFilters: make(map[Party]*Filter),
 		partyMatcher:  defaultPartyMatcher,
 	}
@@ -294,11 +286,6 @@ func (api *APIBuilder) ConfigureContainer(builder ...func(*APIContainer)) *APICo
 // if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
 func (api *APIBuilder) GetRelPath() string {
 	return api.relativePath
-}
-
-// GetReporter returns the reporter for adding or receiving any errors caused when building the API.
-func (api *APIBuilder) GetReporter() *errgroup.Group {
-	return api.errors
 }
 
 // AllowMethods will re-register the future routes that will be registered
@@ -394,7 +381,7 @@ func (api *APIBuilder) handle(errorCode int, method string, relativePath string,
 
 		route.topLink = api.routes.getRelative(route)
 		if route, err = api.routes.register(route, api.routeRegisterRule); err != nil {
-			api.errors.Add(err)
+			api.logger.Error(err)
 			break
 		}
 	}
@@ -492,7 +479,7 @@ func (api *APIBuilder) HandleDir(requestPath string, fs http.FileSystem, opts ..
 		}
 
 		if _, err := api.routes.register(route, api.routeRegisterRule); err != nil {
-			api.errors.Add(err)
+			api.logger.Error(err)
 			break
 		}
 	}
@@ -533,7 +520,7 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 
 	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
 	if len(handlers) == 0 {
-		api.errors.Addf("missing handlers for route[%s:%d] %s: %s", filename, line, strings.Join(methods, ", "), fullpath)
+		api.logger.Errorf("missing handlers for route[%s:%d] %s: %s", filename, line, strings.Join(methods, ", "), fullpath)
 		return nil
 	}
 
@@ -586,7 +573,7 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 	for i, m := range methods { // single, empty method for error handlers.
 		route, err := NewRoute(errorCode, m, subdomain, path, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
-			api.errors.Addf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
+			api.logger.Errorf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
 			continue
 		}
 
@@ -678,7 +665,6 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		routes:              api.routes,
 		beginGlobalHandlers: api.beginGlobalHandlers,
 		doneGlobalHandlers:  api.doneGlobalHandlers,
-		errors:              api.errors,
 		routerFilters:       api.routerFilters, // shared.
 		partyMatcher:        api.partyMatcher,  // shared.
 		// per-party/children
@@ -730,7 +716,7 @@ func (api *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Pa
 func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler) Party {
 	if api.relativePath == SubdomainWildcardIndicator {
 		// cannot concat wildcard subdomain with something else
-		api.errors.Addf("cannot concat parent wildcard subdomain with anything else ->  %s , %s",
+		api.logger.Errorf("cannot concat parent wildcard subdomain with anything else ->  %s , %s",
 			api.relativePath, subdomain)
 		return api
 	}
@@ -750,7 +736,7 @@ func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler
 func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
 	if hasSubdomain(api.relativePath) {
 		// cannot concat static subdomain with a dynamic one, wildcard should be at the root level
-		api.errors.Addf("cannot concat static subdomain with a dynamic one. Dynamic subdomains should be at the root level -> %s",
+		api.logger.Errorf("cannot concat static subdomain with a dynamic one. Dynamic subdomains should be at the root level -> %s",
 			api.relativePath)
 		return api
 	}
@@ -1184,7 +1170,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 	favPath = Abs(favPath)
 	f, err := os.Open(favPath)
 	if err != nil {
-		api.errors.Addf("favicon: file or directory %s not found: %w", favPath, err)
+		api.logger.Errorf("favicon: file or directory %s not found: %w", favPath, err)
 		return nil
 	}
 
@@ -1201,7 +1187,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		// So we could panic but we don't,
 		// we just interrupt with a message
 		// to the (user-defined) logger.
-		api.errors.Addf("favicon: couldn't read the data bytes for %s: %w", favPath, err)
+		api.logger.Errorf("favicon: couldn't read the data bytes for %s: %w", favPath, err)
 		return nil
 	}
 
@@ -1261,7 +1247,7 @@ func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Ro
 // Read `Configuration.ViewEngineContextKey` documentation for more.
 func (api *APIBuilder) RegisterView(viewEngine context.ViewEngine) {
 	if err := viewEngine.Load(); err != nil {
-		api.errors.Add(err)
+		api.logger.Error(err)
 		return
 	}
 

@@ -19,7 +19,7 @@ import (
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
-	Title       string         `json"title"`        // custom name to replace the method on debug logging.
+	Title       string         `json:"title"`       // custom name to replace the method on debug logging.
 	Name        string         `json:"name"`        // "userRoute"
 	Description string         `json:"description"` // "lists a user"
 	Method      string         `json:"method"`      // "GET"
@@ -202,10 +202,10 @@ func (r *Route) BuildHandlers() {
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
 func (r *Route) String() string {
-	start := r.Method
-	if r.StatusCode > 0 {
-		start = http.StatusText(r.StatusCode)
-	}
+	start := r.GetTitle()
+	// if r.StatusCode > 0 {
+	// 	start = fmt.Sprintf("%d (%s)", r.StatusCode, http.StatusText(r.StatusCode))
+	// }
 
 	return fmt.Sprintf("%s %s%s",
 		start, r.Subdomain, r.Tmpl().Src)
@@ -375,12 +375,27 @@ var methodColors = map[string]int{
 	MethodNone:         203, // orange-red.
 }
 
-func traceMethodColor(method string) int {
+// TraceTitleColorCode returns the color code depending on the method or the status.
+func TraceTitleColorCode(method string) int {
 	if color, ok := methodColors[method]; ok {
 		return color
 	}
 
 	return 131 // for error handlers, of "ERROR [%STATUSCODE]"
+}
+
+// GetTitle returns the custom Title or the method or the error code.
+func (r *Route) GetTitle() string {
+	title := r.Title
+	if title == "" {
+		if r.StatusCode > 0 {
+			title = fmt.Sprintf("%d", r.StatusCode) // if error code then title is the status code, e.g. 400.
+		} else {
+			title = r.Method // else is its method, e.g. GET
+		}
+	}
+
+	return title
 }
 
 // Trace prints some debug info about the Route to the "w".
@@ -391,17 +406,10 @@ func traceMethodColor(method string) int {
 //               * @second_handler ...
 // If route and handler line:number locations are equal then the second is ignored.
 func (r *Route) Trace(w io.Writer, stoppedIndex int) {
-	title := r.Title
-	if title == "" {
-		if r.StatusCode > 0 {
-			title = fmt.Sprintf("%d", r.StatusCode) // if error code then title is the status code, e.g. 400.
-		} else {
-			title = r.Method // else is its method, e.g. GET
-		}
-	}
+	title := r.GetTitle()
 
 	// Color the method.
-	color := traceMethodColor(title)
+	color := TraceTitleColorCode(title)
 
 	// @method: @path
 	// space := strings.Repeat(" ", len(http.MethodConnect)-len(method))

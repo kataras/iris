@@ -189,11 +189,11 @@ Iris 有完整且详尽的 **[使用文档](https://github.com/kataras/iris/wiki
 
 ### 你喜欢在旅行时阅读吗？
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 [![follow Iris web framework on twitter](https://img.shields.io/twitter/follow/iris_framework?color=ee7506&logoColor=ee7506&style=for-the-badge)](https://twitter.com/intent/follow?screen_name=iris_framework)
 
-您可以[获取](https://bit.ly/iris-req-book)PDF版本或在线访问**电子图书**，并参与到Iris的开发中。
+您可以[获取](https://www.iris-go.com/#ebookDonateForm)PDF版本或在线访问**电子图书**，并参与到Iris的开发中。
 
 ## 🙌 贡献
 

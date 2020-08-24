@@ -48,7 +48,7 @@ func newSource(fn reflect.Value) Source {
 	}
 
 	return Source{
-		File:   callerFileName,
+		File:   filepath.ToSlash(callerFileName),
 		Line:   callerLineNumber,
 		Caller: callerName,
 	}
