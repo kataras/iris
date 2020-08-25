@@ -13,6 +13,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 
+	"github.com/kataras/golog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -69,6 +70,7 @@ type Engine struct {
 	redirects []*redirectMatch
 	options   Options
 
+	logger          *golog.Logger
 	domainValidator func(string) bool
 }
 
@@ -117,6 +119,35 @@ func New(opts Options) (*Engine, error) {
 	return e, nil
 }
 
+// SetLogger attachs a logger to the Rewrite Engine,
+// used only for debugging.
+// Defaults to nil.
+func (e *Engine) SetLogger(logger *golog.Logger) *Engine {
+	e.logger = logger.Child(e).SetChildPrefix("rewrite")
+	return e
+}
+
+// init the request logging with [DBUG].
+func (e *Engine) initDebugf(format string, args ...interface{}) {
+	if e.logger == nil {
+		return
+	}
+
+	e.logger.Debugf(format, args...)
+}
+
+var skipDBUGSpace = strings.Repeat(" ", 7)
+
+// continue debugging the same request with new lines and spacing,
+// easier to read.
+func (e *Engine) debugf(format string, args ...interface{}) {
+	if e.logger == nil || e.logger.Level < golog.DebugLevel {
+		return
+	}
+
+	fmt.Fprintf(e.logger.Printer, skipDBUGSpace+format, args...)
+}
+
 // Handler is an Iris Handler that can be used as a router or party or route middleware.
 // For a global alternative, if you want to wrap the entire Iris Application
 // use the `Wrapper` instead.
@@ -141,6 +172,8 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 	if primarySubdomain := e.options.PrimarySubdomain; primarySubdomain != "" {
 		hostport := context.GetHost(r)
 		root := context.GetDomain(hostport)
+
+		e.initDebugf("Begin request: full host: %s and root domain: %s", hostport, root)
 		// Note:
 		// localhost and 127.0.0.1 are not supported for subdomain rewrite, by purpose,
 		// use a virtual host instead.
@@ -150,10 +183,14 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 			root += getPort(hostport)
 			subdomain := strings.TrimSuffix(hostport, root)
 
+			e.debugf("Domain is not a loopback, requested subdomain: %s\n", subdomain)
+
 			if subdomain == "" {
 				// we are in root domain, full redirect to its primary subdomain.
-				r.Host = primarySubdomain + root
-				r.URL.Host = primarySubdomain + root
+				newHost := primarySubdomain + root
+				e.debugf("Redirecting from root domain to: %s\n", newHost)
+				r.Host = newHost
+				r.URL.Host = newHost
 				http.Redirect(w, r, r.URL.String(), http.StatusMovedPermanently)
 				return
 			}
@@ -164,13 +201,15 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 				// to bypass the subdomain router (`routeHandler`)
 				// do not return, redirects should be respected.
 				rootHost := strings.TrimPrefix(hostport, subdomain)
-
+				e.debugf("Request host field was modified to: %s. Proceed without redirection\n", rootHost)
 				// modify those for the next redirects or the route handler.
 				r.Host = rootHost
 				r.URL.Host = rootHost
 			}
 
 			// maybe other subdomain or not at all, let's continue.
+		} else {
+			e.debugf("Primary subdomain is: %s but redirect response was not sent. Domain is a loopback?\n", primarySubdomain)
 		}
 	}
 
@@ -183,6 +222,7 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 
 		if target, ok := rd.matchAndReplace(src); ok {
 			if target == src {
+				e.debugf("WARNING: source and target URLs match: %s\n", src)
 				routeHandler(w, r)
 				return
 			}
@@ -194,6 +234,7 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 					return
 				}
 
+				e.debugf("No redirect: handle request: %s as: %s\n", r.RequestURI, u)
 				r.URL = u
 				routeHandler(w, r)
 				return
@@ -202,8 +243,10 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 			if !rd.isRelativePattern {
 				// this performs better, no need to check query or host,
 				// the uri already built.
+				e.debugf("Full redirect: from: %s to: %s\n", src, target)
 				redirectAbs(w, r, target, rd.code)
 			} else {
+				e.debugf("Path redirect: from: %s to: %s\n", src, target)
 				http.Redirect(w, r, target, rd.code)
 			}
 

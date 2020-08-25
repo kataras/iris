@@ -980,7 +980,7 @@ func (api *APIBuilder) UseOnce(handlers ...context.Handler) {
 
 // UseGlobal registers handlers that should run at the very beginning.
 // It prepends those handler(s) to all routes,
-// including all parties, subdomains.
+// including all parties, subdomains and errors.
 // It doesn't care about call order, it will prepend the handlers to all
 // existing routes and the future routes that may being registered.
 //

@@ -8,6 +8,7 @@ package router_test
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/kataras/iris/v12"
@@ -284,4 +285,73 @@ func TestUseRouterSubdomains(t *testing.T) {
 	// anything to the response writer, so the router has control over it.
 	e.GET("/notfound").WithURL("http://old.example.com").Expect().Status(iris.StatusNotFound).Body().
 		Equal("Not Found")
+}
+
+func TestUseWrapOrder(t *testing.T) {
+	var (
+		expectedBody         = "#1 .WrapRouter\n#2 .UseRouter\n#3 .UseGlobal\n#4 .Use\n#5 Main Handler\n"
+		expectedNotFoundBody = "#3 .UseGlobal\n#1 .UseError\n#2 Main Error Handler\n"
+		makeMiddleware       = func(body string) iris.Handler {
+			return func(ctx iris.Context) {
+				ctx.WriteString(body)
+				ctx.Next()
+			}
+		}
+
+		handler = func(ctx iris.Context) {
+			ctx.WriteString("#5 Main Handler\n")
+		}
+
+		errorHandler = func(ctx iris.Context) {
+			ctx.WriteString("#2 Main Error Handler\n")
+		}
+
+		useHandler = makeMiddleware("#4 .Use\n")
+		useGlobal  = makeMiddleware("#3 .UseGlobal\n")
+		useError   = func(ctx iris.Context) {
+			// UseError has captured the status code, because it runs
+			// after the router itself but only one error handlers.
+			ctx.WriteString("#1 .UseError\n")
+			ctx.Next()
+		}
+		useRouter = func(ctx iris.Context) {
+			if ctx.Path() == "/" {
+				ctx.WriteString("#2 .UseRouter\n")
+			}
+
+			ctx.Next()
+		}
+		wrapRouter = func(w http.ResponseWriter, r *http.Request, router http.HandlerFunc) {
+			if r.URL.Path == "/" {
+				w.Write([]byte("#1 .WrapRouter\n"))
+				// Note for beginners, reading this test:
+				// if we write something here on a not found page,
+				// in the raw net/http wrapper like this one,
+				// then the response writer sends 200 status OK
+				// (on first write) and so any error handler will not be fired as expected,
+				// these are basic things. If you w.WriteHeader you cannot change the status code later on too.
+				// In Iris handlers, if you write before status code set, then it sends 200
+				// and it cannot change too (if you want to change that behavior you use ctx.Record()).
+				// However if you
+				// just call ctx.StatusCode without content written then you are able to change the status code
+				// later on.
+			}
+
+			router(w, r)
+		}
+	)
+
+	app := iris.New()
+	app.Use(useHandler)
+	app.UseGlobal(useGlobal)
+	app.UseError(useError)
+	app.UseRouter(useRouter)
+	app.WrapRouter(wrapRouter)
+
+	app.OnErrorCode(iris.StatusNotFound, errorHandler)
+	app.Get("/", handler)
+
+	e := httptest.New(t, app)
+	e.GET("/NotFound").Expect().Status(iris.StatusNotFound).Body().Equal(expectedNotFoundBody)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }
