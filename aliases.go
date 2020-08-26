@@ -51,7 +51,7 @@ type (
 	// If Handler panics, the server (the caller of Handler) assumes that the effect of the panic was isolated to the active request.
 	// It recovers the panic, logs a stack trace to the server error log, and hangs up the connection.
 	Handler = context.Handler
-	// Filter is just a type of func(Handler) bool which reports whether an action must be performed
+	// Filter is just a type of func(Context) bool which reports whether an action must be performed
 	// based on the incoming request.
 	//
 	// See `NewConditionalHandler` for more.
