@@ -149,14 +149,14 @@ func (router *Router) buildMainHandlerWithFilters(routerFilters map[Party]*Filte
 		ctx := cPool.Acquire(w, r)
 
 		filterExecuted := false
-		for _, f := range sortedFilters {
+		for _, f := range sortedFilters { // from subdomain, largest path to shortest.
 			// fmt.Printf("Sorted filter execution: [%s] [%s]\n", f.Subdomain, f.Path)
 			if f.Matcher.Match(ctx) {
 				// fmt.Printf("Matched [%s] and execute [%d] handlers [%s]\n\n", ctx.Path(), len(f.Handlers), context.HandlersNames(f.Handlers))
 				filterExecuted = true
 				// execute the final handlers chain.
 				ctx.Do(f.Handlers)
-				break
+				break // and break on first found.
 			}
 		}
 

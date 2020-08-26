@@ -198,7 +198,7 @@ func TestUseRouterParentDisallow(t *testing.T) {
 		ctx.WriteString(expectedResponse)
 	})
 
-	app.SetPartyMatcher(func(p iris.Party, ctx iris.Context) bool {
+	app.SetPartyMatcher(func(ctx iris.Context, p iris.Party) bool {
 		// modifies the PartyMatcher to not match any UseRouter,
 		// tests should receive the handlers response alone.
 		return false

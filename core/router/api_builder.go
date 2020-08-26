@@ -158,7 +158,7 @@ type APIBuilder struct {
 	logger *golog.Logger
 	// parent is the creator of this Party.
 	// It is nil on Root.
-	parent *APIBuilder // currently it's used only on UseRouter feature.
+	parent *APIBuilder // currently it's not used anywhere.
 
 	// the per-party APIBuilder with DI.
 	apiBuilderDI *APIContainer
@@ -169,7 +169,8 @@ type APIBuilder struct {
 	routes *repository
 
 	// the per-party handlers, order
-	// of handlers registration matters.
+	// of handlers registration matters,
+	// inherited by children unless Reset is called.
 	middleware          context.Handlers
 	middlewareErrorCode context.Handlers
 	// the global middleware handlers, order of call doesn't matters, order
@@ -197,6 +198,10 @@ type APIBuilder struct {
 	// the per-party (and its children) route registration rule, see `SetRegisterRule`.
 	routeRegisterRule RouteRegisterRule
 
+	// routerFilterHandlers holds a reference
+	// of the handlers used by the current and its parent Party's registered
+	// router filters. Inherited by children unless `Reset` (see `UseRouter`),
+	routerFilterHandlers context.Handlers
 	// routerFilters field is shared across Parties. Each Party registers
 	// one or more middlewares to run before the router itself using the `UseRouter` method.
 	// Each Party calls the shared filter (`partyMatcher`) that decides if its `UseRouter` handlers
@@ -665,13 +670,15 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		routes:              api.routes,
 		beginGlobalHandlers: api.beginGlobalHandlers,
 		doneGlobalHandlers:  api.doneGlobalHandlers,
-		routerFilters:       api.routerFilters, // shared.
-		partyMatcher:        api.partyMatcher,  // shared.
+
 		// per-party/children
 		parent:                api,
 		middleware:            middleware,
 		middlewareErrorCode:   context.JoinHandlers(api.middlewareErrorCode, context.Handlers{}),
 		doneHandlers:          api.doneHandlers[0:],
+		routerFilters:         api.routerFilters,
+		routerFilterHandlers:  api.routerFilterHandlers,
+		partyMatcher:          api.partyMatcher,
 		relativePath:          fullpath,
 		allowMethods:          allowMethods,
 		handlerExecutionRules: api.handlerExecutionRules,
@@ -817,7 +824,7 @@ type (
 	// PartyMatcherFunc used to build a filter which decides
 	// if the given Party is responsible to fire its `UseRouter` handlers or not.
 	// Can be customized through `SetPartyMatcher` method. See `Match` method too.
-	PartyMatcherFunc func(Party, *context.Context) bool
+	PartyMatcherFunc func(*context.Context, Party) bool
 	// PartyMatcher decides if `UseRouter` handlers should be executed or not.
 	// A different interface becauwe we want to separate
 	// the Party's public API from `UseRouter` internals.
@@ -828,8 +835,8 @@ type (
 	// for its Party's fullpath, subdomain the Party's
 	// matcher and the associated handlers to be executed before main router's request handler.
 	Filter struct {
-		Party     Party        // the Party itself
-		Matcher   PartyMatcher // it's a Party, for freedom that can be changed through a custom matcher which accepts the same filter.
+		Matcher   PartyMatcher             // it's a Party, for freedom that can be changed through a custom matcher which accepts the same filter.
+		Skippers  map[*APIBuilder]struct{} // skip execution on these builders ( see `Reset`)
 		Subdomain string
 		Path      string
 		Handlers  context.Handlers
@@ -855,10 +862,10 @@ func (api *APIBuilder) SetPartyMatcher(matcherFunc PartyMatcherFunc) {
 // Calls its parent's Match if possible.
 // Implements the `PartyMatcher` interface.
 func (api *APIBuilder) Match(ctx *context.Context) bool {
-	return api.partyMatcher(api, ctx)
+	return api.partyMatcher(ctx, api)
 }
 
-func defaultPartyMatcher(p Party, ctx *context.Context) bool {
+func defaultPartyMatcher(ctx *context.Context, p Party) bool {
 	subdomain, path := splitSubdomainAndPath(p.GetRelPath())
 	staticPath := staticPath(path)
 	hosts := subdomain != ""
@@ -915,22 +922,15 @@ func (api *APIBuilder) UseRouter(handlers ...context.Handler) {
 	beginHandlers := context.Handlers(handlers)
 	// respect any execution rules (begin).
 	api.handlerExecutionRules.Begin.apply(&beginHandlers)
+	beginHandlers = context.JoinHandlers(api.routerFilterHandlers, beginHandlers)
 
 	if f := api.routerFilters[api]; f != nil && len(f.Handlers) > 0 { // exists.
 		beginHandlers = context.UpsertHandlers(f.Handlers, beginHandlers) // remove dupls.
-	} else {
-		// Note(@kataras): we don't add the parent's filter handlers
-		// on `Party` method because we need to know if a `UseRouter` call exist
-		// before prepending the parent's ones and fill a new Filter on `routerFilters`,
-		// that key should NOT exist on a Party without `UseRouter` handlers (see router.go).
-		// That's the only reason we need the `parent` field.
-		if api.parent != nil {
-			// If it's not root, add the parent's handlers here.
-			if root, ok := api.routerFilters[api.parent]; ok {
-				beginHandlers = context.UpsertHandlers(root.Handlers, beginHandlers)
-			}
-		}
 	}
+
+	// we are not using the parent field here,
+	// we need to have control over those values in order to be able to `Reset`.
+	api.routerFilterHandlers = beginHandlers
 
 	subdomain, path := splitSubdomainAndPath(api.relativePath)
 	api.routerFilters[api] = &Filter{
@@ -1033,10 +1033,40 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 func (api *APIBuilder) Reset() Party {
 	api.middleware = api.middleware[0:0]
 	api.middlewareErrorCode = api.middlewareErrorCode[0:0]
+	api.ResetRouterFilters()
+
 	api.doneHandlers = api.doneHandlers[0:0]
 	api.handlerExecutionRules = ExecutionRules{}
 	api.routeRegisterRule = RouteOverride
+
 	// keep container as it's.
+	return api
+}
+
+// ResetRouterFilters deactivates any pervious registered
+// router filters and the parents ones for this Party.
+//
+// Returns this Party.
+func (api *APIBuilder) ResetRouterFilters() Party {
+	api.routerFilterHandlers = api.routerFilterHandlers[0:0]
+	delete(api.routerFilters, api)
+
+	if api.parent == nil {
+		// it's the root, stop, nothing else to do here.
+		return api
+	}
+
+	// Set a filter with empty handlers, the router will find it, execute nothing
+	// and continue with the request handling. This works on Reset() and no UseRouter
+	// and with Reset().UseRouter.
+	subdomain, path := splitSubdomainAndPath(api.relativePath)
+	api.routerFilters[api] = &Filter{
+		Matcher:   api,
+		Handlers:  nil,
+		Subdomain: subdomain,
+		Path:      path,
+	}
+
 	return api
 }
 

@@ -121,6 +121,11 @@ type Party interface {
 	//
 	// Returns this Party.
 	Reset() Party
+	// ResetRouterFilters deactivates any pervious registered
+	// router filters and the parents ones for this Party.
+	//
+	// Returns this Party.
+	ResetRouterFilters() Party
 
 	// AllowMethods will re-register the future routes that will be registered
 	// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Party and its children "Parties",
