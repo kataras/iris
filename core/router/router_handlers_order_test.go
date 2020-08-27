@@ -339,7 +339,7 @@ func TestUseWrapOrder(t *testing.T) {
 				Iris Handler without any content written then we
 				would able to change the status code later on.
 				When you need to change that behavior you should
-				start the handler with a [ctx.Record()](responses/recorder.md) call.
+				start the handler with a ctx.Record() call.
 				*/
 			}
 

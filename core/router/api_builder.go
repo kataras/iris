@@ -132,10 +132,18 @@ func overlapRoute(r *Route, next *Route) {
 	next.BuildHandlers()
 	nextHandlers := next.Handlers[0:]
 
+	isErrorRoutes := r.StatusCode > 0 && next.StatusCode > 0
+
 	decisionHandler := func(ctx *context.Context) {
 		ctx.Next()
 
-		if !defaultOverlapFilter(ctx) {
+		if isErrorRoutes { // fixes issue #1602.
+			// If it's an error we don't need to reset (see defaultOverlapFilter)
+			// its status code(!) and its body, we just check if it was proceed or not.
+			if !ctx.IsStopped() {
+				return
+			}
+		} else if !defaultOverlapFilter(ctx) {
 			return
 		}
 

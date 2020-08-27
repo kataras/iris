@@ -131,7 +131,11 @@ var BuiltinDependencies = []*Dependency{
 	NewDependency(func(ctx *context.Context) *sessions.Session {
 		session := sessions.Get(ctx)
 		if session == nil {
-			panic("binding: session is nil - app.Use(sess.Handler()) to fix it")
+			ctx.Application().Logger().Debugf("binding: session is nil\nMaybe inside HandleHTTPError? Register it with app.UseRouter(sess.Handler()) to fix it")
+			// let's don't panic here and let the application continue, now we support
+			// not matched routes inside the controller through HandleHTTPError,
+			// so each dependency can check if session was not nil or just use `UseRouter` instead of `Use`
+			// to register the sessions middleware.
 		}
 
 		return session
