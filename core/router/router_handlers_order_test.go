@@ -324,19 +324,26 @@ func TestUseWrapOrder(t *testing.T) {
 		wrapRouter = func(w http.ResponseWriter, r *http.Request, router http.HandlerFunc) {
 			if r.URL.Path == "/" {
 				w.Write([]byte("#1 .WrapRouter\n"))
-				// Note for beginners, reading this test:
-				// if we write something here on a not found page,
-				// in the raw net/http wrapper like this one,
-				// then the response writer sends 200 status OK
-				// (on first write) and so any error handler will not be fired as expected,
-				// these are basic things. If you w.WriteHeader you cannot change the status code later on too.
-				// In Iris handlers, if you write before status code set, then it sends 200
-				// and it cannot change too (if you want to change that behavior you use ctx.Record()).
-				// However if you
-				// just call ctx.StatusCode without content written then you are able to change the status code
-				// later on.
+				/* Note for new Gophers:
+
+				If we write something here, on a not found resource,
+				in the raw `net/http` wrapper like this one, then the
+				response writer will send `200` status OK (on first write).
+				Any error handler will not be fired as expected.
+				Also, when `w.WriteHeader` is called you can NOT
+				change the status code later on.
+
+				In Iris Handlers, if you write before status code set,
+				then it sends 200 status OK and it cannot change as well.
+				However if we just called `ctx.StatusCode` inside an
+				Iris Handler without any content written then we
+				would able to change the status code later on.
+				When you need to change that behavior you should
+				start the handler with a [ctx.Record()](responses/recorder.md) call.
+				*/
 			}
 
+			// Continue by executing the Iris Router and leave it do its job.
 			router(w, r)
 		}
 	)

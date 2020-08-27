@@ -184,6 +184,8 @@ type CompressResponseWriter struct {
 	CompressWriter
 	ResponseWriter
 
+	http.Hijacker
+
 	Disabled bool
 	Encoding string
 	Level    int
@@ -204,6 +206,21 @@ func AcquireCompressResponseWriter(w ResponseWriter, r *http.Request, level int)
 	}
 
 	v := compressWritersPool.Get().(*CompressResponseWriter)
+
+	if h, ok := w.(http.Hijacker); ok {
+		v.Hijacker = h
+	} else {
+		v.Hijacker = nil
+	}
+
+	// The Naive() should be used to check for Pusher,
+	// as examples explicitly says, so don't do it:
+	// if p, ok := w.Naive().(http.Pusher); ok {
+	// 	v.Pusher = p
+	// } else {
+	// 	v.Pusher = nil
+	// }
+
 	v.ResponseWriter = w
 	v.Disabled = false
 	if level == -1 && encoding == BROTLI {
@@ -254,6 +271,13 @@ func (w *CompressResponseWriter) FlushResponse() {
 
 	// write the status, after header set and before any flushed content sent.
 	w.ResponseWriter.FlushResponse()
+
+	if w.IsHijacked() {
+		// net/http docs:
+		// It becomes the caller's responsibility to manage
+		// and close the connection.
+		return
+	}
 
 	w.CompressWriter.Close() // flushes and closes.
 }

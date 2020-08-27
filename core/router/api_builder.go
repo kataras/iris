@@ -1354,7 +1354,7 @@ func getCaller() (string, int) {
 		if relFile, err := filepath.Rel(wd, file); err == nil {
 			if !strings.HasPrefix(relFile, "..") {
 				// Only if it's relative to this path, not parent.
-				file = "./" + relFile
+				file = "./" + filepath.ToSlash(relFile)
 			}
 		}
 

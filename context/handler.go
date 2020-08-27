@@ -259,7 +259,7 @@ func ingoreMainHandlerName(name string) bool {
 	return false
 }
 
-// Filter is just a type of func(Handler) bool which reports whether an action must be performed
+// Filter is just a type of func(Context) bool which reports whether an action must be performed
 // based on the incoming request.
 //
 // See `NewConditionalHandler` for more.
