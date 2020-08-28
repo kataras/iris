@@ -16,6 +16,7 @@ import (
 
 func main() {
 	app := newApp()
+	// app.UseRouter(iris.Compression)
 	app.Logger().SetLevel("debug")
 
 	// Open a client, e.g. Postman and visit the below endpoints.

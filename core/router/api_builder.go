@@ -121,6 +121,7 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 var defaultOverlapFilter = func(ctx *context.Context) bool {
 	if ctx.IsStopped() {
 		// It's stopped and the response can be overridden by a new handler.
+		// An exception of compress writer, which does not implement Reseter (and it shouldn't):
 		rs, ok := ctx.ResponseWriter().(context.ResponseWriterReseter)
 		return ok && rs.Reset()
 	}

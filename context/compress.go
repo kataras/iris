@@ -345,3 +345,15 @@ func (w *CompressResponseWriter) WriteTo(dest io.Writer, p []byte) (int, error) 
 	cw.Close()
 	return n, err
 }
+
+// Reset implements the ResponseWriterReseter interface.
+func (w *CompressResponseWriter) Reset() bool {
+	if w.Disabled {
+		// If it's disabled then the underline one is responsible.
+		rs, ok := w.ResponseWriter.(ResponseWriterReseter)
+		return ok && rs.Reset()
+	}
+
+	w.CompressWriter.Reset(w.ResponseWriter)
+	return true
+}

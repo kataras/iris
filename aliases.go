@@ -238,6 +238,9 @@ func (p *prefixedDir) Open(name string) (http.File, error) {
 var (
 	// Compression is a middleware which enables
 	// writing and reading using the best offered compression.
+	// Usage:
+	// app.Use (for matched routes)
+	// app.UseRouter (for both matched and 404s or other HTTP errors).
 	Compression = func(ctx Context) {
 		ctx.CompressWriter(true)
 		ctx.CompressReader(true)
