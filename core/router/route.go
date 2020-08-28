@@ -68,6 +68,7 @@ type Route struct {
 	overlappedLink *Route
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
+	NoSitemap  bool      // when this route should be hidden from sitemap.
 	LastMod    time.Time `json:"lastMod,omitempty"`
 	ChangeFreq string    `json:"changeFreq,omitempty"`
 	Priority   float32   `json:"priority,omitempty"`
@@ -236,6 +237,16 @@ func (r *Route) Equal(other *Route) bool {
 // and the template source.
 func (r *Route) DeepEqual(other *Route) bool {
 	return r.Equal(other) && r.tmpl.Src == other.tmpl.Src
+}
+
+// ExcludeSitemap excludes this route page from sitemap generator.
+// It sets the NoSitemap field to true.
+//
+// See `SetLastMod`, `SetChangeFreq`, `SetPriority` methods
+// and `iris.WithSitemap`.
+func (r *Route) ExcludeSitemap() *Route {
+	r.NoSitemap = true
+	return r
 }
 
 // SetLastMod sets the date of last modification of the file served by this static GET route.

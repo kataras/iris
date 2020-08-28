@@ -439,6 +439,11 @@ func WithOtherValue(key string, val interface{}) Configurator {
 // WithSitemap enables the sitemap generator.
 // Use the Route's `SetLastMod`, `SetChangeFreq` and `SetPriority` to modify
 // the sitemap's URL child element properties.
+// Excluded routes:
+// - dynamic
+// - subdomain
+// - offline
+// - ExcludeSitemap method called
 //
 // It accepts a "startURL" input argument which
 // is the prefix for the registered routes that will be included in the sitemap.
@@ -462,7 +467,7 @@ func WithSitemap(startURL string) Configurator {
 		}
 
 		for _, r := range app.GetRoutes() {
-			if !r.IsStatic() || r.Subdomain != "" {
+			if !r.IsStatic() || r.Subdomain != "" || !r.IsOnline() || r.NoSitemap {
 				continue
 			}
 

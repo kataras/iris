@@ -32,6 +32,10 @@ func newApp() *iris.Application {
 	app.Get("/this/{myparam}/should/not/be/listed", handler)
 	app.Get("/this-should-not-be-listed-offline", handler).SetStatusOffline()
 
+	// These should be excluded as well
+	app.Get("/about", handler).ExcludeSitemap()
+	app.Get("/offline", handler).SetStatusOffline()
+
 	return app
 }
 

@@ -43,7 +43,7 @@ func getSourceFileLine(ctrlType reflect.Type, m reflect.Method) (string, int) { 
 				// }
 				// but BaseCtrl has not the method, *BaseCtrl does:
 				// (c *BaseCtrl) HandleHTTPError(...)
-				// so we are creating a new temporarly value ptr of that type
+				// so we are creating a new temporary value ptr of that type
 				// and searching inside it for the method instead.
 				typ = reflect.New(typ).Type()
 
