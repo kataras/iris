@@ -178,9 +178,8 @@ func overlapRoute(r *Route, next *Route) {
 		ctx.Do(nextHandlers)
 	}
 
-	// NOTE(@kataras): Any UseGlobal call will prepend to this, if they are
-	// in the same Party then it's expected, otherwise not.
-	r.beginHandlers = append(context.Handlers{decisionHandler}, r.beginHandlers...)
+	r.builtinBeginHandlers = append(context.Handlers{decisionHandler}, r.builtinBeginHandlers...)
+	r.overlappedLink = next
 }
 
 // APIBuilder the visible API for constructing the router
@@ -411,7 +410,7 @@ func (api *APIBuilder) handle(errorCode int, method string, relativePath string,
 	var err error
 	for _, route = range routes {
 		if route == nil {
-			break
+			continue
 		}
 
 		// global

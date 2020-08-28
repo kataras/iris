@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 )
 
@@ -101,7 +100,7 @@ func (b *basicAuthMiddleware) findAuth(headerValue string) (*encodedUser, bool) 
 
 func (b *basicAuthMiddleware) askForCredentials(ctx *context.Context) {
 	ctx.Header("WWW-Authenticate", b.realmHeaderValue)
-	ctx.StatusCode(iris.StatusUnauthorized)
+	ctx.StatusCode(401)
 	if b.askHandlerEnabled {
 		b.config.OnAsk(ctx)
 	}

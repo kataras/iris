@@ -29,7 +29,14 @@ type Route struct {
 	tmpl        macro.Template // Tmpl().Src: "/api/user/{id:uint64}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
+	// They run right after any builtinBeginHandlers.
 	beginHandlers context.Handlers
+	// temp storage, these are always registered first as Handlers on Build.
+	// There are the handlers may be added by the framework and
+	// can NOT be modified by the end-developer (i.e overlapRoute & bindMultiParamTypesHandler),
+	// even if a function like UseGlobal is used.
+	builtinBeginHandlers context.Handlers
+
 	// Handlers are the main route's handlers, executed by order.
 	// Cannot be empty.
 	Handlers         context.Handlers `json:"-"`
@@ -52,7 +59,13 @@ type Route struct {
 	RegisterFileName   string `json:"registerFileName"`
 	RegisterLineNumber int    `json:"registerLineNumber"`
 
+	// see APIBuilder.handle, routerHandler.bindMultiParamTypesHandler and routerHandler.Build,
+	// it's the parent route of the last registered of the same path parameter. Specifically for path parameters.
 	topLink *Route
+	// overlappedLink specifically for overlapRoute feature.
+	// keeps the second route of the same path pattern registered.
+	// It's used ONLY for logging.
+	overlappedLink *Route
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
 	LastMod    time.Time `json:"lastMod,omitempty"`
@@ -189,15 +202,15 @@ func (r *Route) BuildHandlers() {
 		r.OnBuild(r)
 	}
 
-	if len(r.beginHandlers) > 0 {
-		r.Handlers = append(r.beginHandlers, r.Handlers...)
-		r.beginHandlers = r.beginHandlers[0:0]
-	}
-
-	if len(r.doneHandlers) > 0 {
-		r.Handlers = append(r.Handlers, r.doneHandlers...)
-		r.doneHandlers = r.doneHandlers[0:0]
-	} // note: no mutex needed, this should be called in-sync when server is not running of course.
+	// prepend begin handlers.
+	r.Handlers = append(r.builtinBeginHandlers, append(r.beginHandlers, r.Handlers...)...)
+	// append done handlers.
+	r.Handlers = append(r.Handlers, r.doneHandlers...)
+	// reset the temp storage, so a second call of
+	// BuildHandlers will not re-add them (i.e RefreshRouter).
+	r.builtinBeginHandlers = r.builtinBeginHandlers[0:0]
+	r.beginHandlers = r.beginHandlers[0:0]
+	r.doneHandlers = r.doneHandlers[0:0]
 }
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
@@ -494,6 +507,13 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 	}
 
 	fmt.Fprintln(w)
+
+	if r.overlappedLink != nil {
+		bckpDesc := r.overlappedLink.Description
+		r.overlappedLink.Description += " (overlapped)"
+		r.overlappedLink.Trace(w, -1)
+		r.overlappedLink.Description = bckpDesc
+	}
 }
 
 type routeReadOnlyWrapper struct {

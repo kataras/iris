@@ -415,13 +415,19 @@ func (c *ControllerActivator) handleMany(method, path, funcName string, override
 }
 
 func (c *ControllerActivator) saveRoutes(funcName string, routes []*router.Route, override bool) {
+	m, ok := c.Type.MethodByName(funcName)
+	if !ok {
+		return
+	}
+
+	sourceFileName, sourceLineNumber := getSourceFileLine(c.Type, m)
+
 	relName := c.RelName()
 	for _, r := range routes {
 		r.Description = relName
 		r.MainHandlerName = fmt.Sprintf("%s.%s", relName, funcName)
-		if m, ok := c.Type.MethodByName(funcName); ok {
-			r.SourceFileName, r.SourceLineNumber = context.HandlerFileLineRel(m.Func)
-		}
+
+		r.SourceFileName, r.SourceLineNumber = sourceFileName, sourceLineNumber
 	}
 
 	// add this as a reserved method name in order to

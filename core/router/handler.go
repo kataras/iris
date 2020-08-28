@@ -311,10 +311,9 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	return errgroup.Check(rp)
 }
 
-func bindMultiParamTypesHandler(r *Route) {
+func bindMultiParamTypesHandler(r *Route) { // like overlap feature but specifically for path parameters.
 	r.BuildHandlers()
 
-	// println("here for top: " + top.Name + " and current route: " + r.Name)
 	h := r.Handlers[1:] // remove the macro evaluator handler as we manually check below.
 	f := macroHandler.MakeFilter(r.tmpl)
 	if f == nil {
@@ -347,7 +346,7 @@ func bindMultiParamTypesHandler(r *Route) {
 		ctx.Next()
 	}
 
-	r.topLink.beginHandlers = append(context.Handlers{decisionHandler}, r.topLink.beginHandlers...)
+	r.topLink.builtinBeginHandlers = append(context.Handlers{decisionHandler}, r.topLink.builtinBeginHandlers...)
 }
 
 func canHandleSubdomain(ctx *context.Context, subdomain string) bool {
