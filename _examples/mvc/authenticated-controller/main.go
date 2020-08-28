@@ -63,7 +63,17 @@ func authDependency(ctx iris.Context, session *sessions.Session) Authenticated {
 	if userID == 0 {
 		// If execution was stopped
 		// any controller's method will not be executed at all.
-		ctx.StopWithStatus(iris.StatusUnauthorized)
+		//
+		// Note that, the below will not fire the error to the user:
+		// ctx.StopWithStatus(iris.StatusUnauthorized)
+		// because of the imaginary:
+		// UnauthenticatedUserController.Get() (string, int) {
+		// 	return "...", iris.StatusOK
+		// }
+		//
+		// OR
+		// If you don't want to set a status code at all:
+		ctx.StopExecution()
 		return 0
 	}
 

@@ -1474,6 +1474,20 @@ func (ctx *Context) URLParamInt64Default(name string, def int64) int64 {
 	return v
 }
 
+// URLParamUint64 returns the url query parameter as uint64 value from a request.
+// Returns 0 on parse errors or when the URL parameter does not exist in the Query.
+func (ctx *Context) URLParamUint64(name string) uint64 {
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.ParseUint(v, 10, 64)
+		if err != nil {
+			return 0
+		}
+		return n
+	}
+
+	return 0
+}
+
 // URLParamFloat64 returns the url query parameter as float64 value from a request,
 // returns an error and -1 if parse failed.
 func (ctx *Context) URLParamFloat64(name string) (float64, error) {

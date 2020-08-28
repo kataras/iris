@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -143,8 +144,30 @@ func overlapRoute(r *Route, next *Route) {
 			if !ctx.IsStopped() {
 				return
 			}
-		} else if !defaultOverlapFilter(ctx) {
-			return
+		} else {
+			prevStatusCode := ctx.GetStatusCode()
+
+			if !defaultOverlapFilter(ctx) {
+				return
+			}
+			// set the status code that it was stopped with.
+			// useful for dependencies with StopWithStatus(XXX)
+			// instead of raw ctx.StopExecution().
+			// The func_result now also catch the last registered status code
+			// of the chain, unless the controller returns an integer.
+			// See _examples/authenticated-controller.
+			if prevStatusCode > 0 {
+				// An exception when stored error
+				// exists and it's type of ErrNotFound.
+				// Example:
+				// Version was not found:
+				//	 we need to be able to send the status on the last not found version
+				//   but reset the status code if a next available matched version was found.
+				//	 see: versioning.Handler.
+				if !errors.Is(ctx.GetErr(), context.ErrNotFound) {
+					ctx.StatusCode(prevStatusCode)
+				}
+			}
 		}
 
 		ctx.SetErr(nil) // clear any stored error.
@@ -1051,7 +1074,7 @@ func (api *APIBuilder) Reset() Party {
 	return api
 }
 
-// ResetRouterFilters deactivates any pervious registered
+// ResetRouterFilters deactivates any previous registered
 // router filters and the parents ones for this Party.
 //
 // Returns this Party.

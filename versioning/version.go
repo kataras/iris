@@ -1,7 +1,7 @@
 package versioning
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
@@ -34,7 +34,7 @@ const (
 
 // ErrNotFound reports whether a requested version
 // does not match with any of the server's implemented ones.
-var ErrNotFound = errors.New("version not found")
+var ErrNotFound = fmt.Errorf("version %w", context.ErrNotFound)
 
 // NotFoundHandler is the default version not found handler that
 // is executed from `NewMatcher` when no version is registered as available to dispatch a resource.

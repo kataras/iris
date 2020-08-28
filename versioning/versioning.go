@@ -49,9 +49,11 @@ func Match(ctx *context.Context, expectedVersion string) bool {
 func Handler(version string) context.Handler {
 	return func(ctx *context.Context) {
 		if !Match(ctx, version) {
-			// Any overlapped handler
-			// can just clear the status code
-			// and the error to ignore this (see `NewGroup`).
+			// The overlapped handler has an exception
+			// of a type of context.NotFound (which versioning.ErrNotFound wraps)
+			// to clear the status code
+			// and the error to ignore this
+			// when available match version exists (see `NewGroup`).
 			NotFoundHandler(ctx)
 			return
 		}

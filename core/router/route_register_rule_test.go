@@ -1,6 +1,7 @@
 package router_test
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,10 @@ import (
 
 func TestRegisterRule(t *testing.T) {
 	app := iris.New()
+	// collect the error on RouteError rule.
+	buf := new(bytes.Buffer)
+	app.Logger().SetTimeFormat("").DisableNewLine().SetOutput(buf)
+
 	v1 := app.Party("/v1")
 	v1.SetRegisterRule(iris.RouteSkip)
 
@@ -43,9 +48,9 @@ func TestRegisterRule(t *testing.T) {
 	if route := v1.Get("/", getHandler); route != nil {
 		t.Fatalf("expected duplicated route, with RouteError rule, to be nil but got: %#+v", route)
 	}
-	// if expected, got := 1, len(v1.GetReporter().Errors); expected != got {
-	// 	t.Fatalf("expected api builder's errors length to be: %d but got: %d", expected, got)
-	// }
+	if expected, got := "[ERRO] new route: GET /v1 conflicts with an already registered one: GET /v1 route", buf.String(); expected != got {
+		t.Fatalf("expected api builder's error to be:\n'%s'\nbut got:\n'%s'", expected, got)
+	}
 }
 
 func testRegisterRule(e *httptest.Expect, expectedGetBody string) {
@@ -73,6 +78,7 @@ func TestRegisterRuleOverlap(t *testing.T) {
 		ctx.StopWithStatus(iris.StatusUnauthorized)
 	})
 	usersRouter.Get("/", func(ctx iris.Context) {
+		ctx.StatusCode(iris.StatusOK)
 		ctx.WriteString("data")
 	})
 
@@ -99,6 +105,7 @@ func TestRegisterRuleOverlap(t *testing.T) {
 		ctx.StopWithText(iris.StatusUnauthorized, "no access")
 	})
 	usersRouter.Get("/p3", func(ctx iris.Context) {
+		ctx.StatusCode(iris.StatusOK)
 		ctx.WriteString("p3 data")
 	})
 

@@ -660,55 +660,6 @@ func TestApplicationDependency(t *testing.T) {
 	e.GET("/other").Expect().Status(httptest.StatusOK).Body().Equal("app2")
 }
 
-// Authenticated type.
-type Authenticated int64
-
-// BasePrivateController base controller for private controllers.
-type BasePrivateController struct {
-	CurrentUserID Authenticated
-	Ctx           iris.Context // not-used.
-}
-
-type publicController struct {
-	Ctx iris.Context // not-used.
-}
-
-func (c *publicController) Get() iris.Map {
-	return iris.Map{"data": "things"}
-}
-
-type privateController struct{ BasePrivateController }
-
-func (c *privateController) Get() iris.Map {
-	return iris.Map{"id": c.CurrentUserID}
-}
-
-func TestControllerOverlapping(t *testing.T) {
-	app := iris.New()
-
-	m := New(app)
-	m.Router.SetRegisterRule(iris.RouteOverlap)
-
-	m.Register(func(ctx iris.Context) Authenticated {
-		if ctx.URLParam("name") == "kataras" {
-			return 1
-		}
-
-		ctx.StopWithStatus(iris.StatusForbidden)
-		return -1
-	})
-
-	// Order matters.
-	m.Handle(new(privateController))
-	m.Handle(new(publicController))
-
-	e := httptest.New(t, app)
-	e.GET("/").WithQuery("name", "kataras").Expect().Status(httptest.StatusOK).
-		JSON().Equal(iris.Map{"id": 1})
-	e.GET("/").Expect().Status(httptest.StatusOK).
-		JSON().Equal(iris.Map{"data": "things"})
-}
-
 type testControllerMethodHandlerBindStruct struct{}
 
 type bindStructData struct {

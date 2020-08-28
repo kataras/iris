@@ -121,7 +121,7 @@ type Party interface {
 	//
 	// Returns this Party.
 	Reset() Party
-	// ResetRouterFilters deactivates any pervious registered
+	// ResetRouterFilters deactivates any previous registered
 	// router filters and the parents ones for this Party.
 	//
 	// Returns this Party.

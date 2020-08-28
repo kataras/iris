@@ -176,7 +176,7 @@ func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler Re
 		// Except when err != nil then check if status code is < 400 and
 		// if it's set it as DefaultErrStatusCode.
 		// Except when found == false, then the status code is 404.
-		statusCode int
+		statusCode = ctx.GetStatusCode() // Get the current status code given by any previous middleware.
 		// if not empty then use that as content type,
 		// if empty and custom != nil then set it to application/json.
 		contentType string
