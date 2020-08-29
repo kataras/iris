@@ -1689,43 +1689,111 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 	return nil, false
 }
 
-// PostValueDefault returns the parsed form data from POST, PATCH,
+// PostValues returns all the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name" as a string slice.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+//
+// In addition, it reports whether the form was empty
+// or when the "name" does not exist
+// or whether the available values are empty.
+// It strips any empty key-values from the slice before return.
+//
+// Look ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+// See `PostValueMany` method too.
+func (ctx *Context) PostValues(name string) ([]string, error) {
+	_, ok := ctx.form()
+	if !ok {
+		return nil, ErrEmptyForm // empty form.
+	}
+
+	values, ok := ctx.request.PostForm[name]
+	if !ok {
+		return nil, ErrNotFound // field does not exist
+	}
+
+	if len(values) == 0 ||
+		// Fast check for its first empty value (see below).
+		strings.TrimSpace(values[0]) == "" {
+		return nil, fmt.Errorf("%w: %s", ErrEmptyFormField, name)
+	}
+
+	for _, value := range values {
+		if value == "" { // if at least one empty value, then perform the strip from the beginning.
+			result := make([]string, 0, len(values))
+			for _, value := range values {
+				if strings.TrimSpace(value) != "" {
+					result = append(result, value) // we store the value as it is, not space-trimmed.
+				}
+			}
+
+			if len(result) == 0 {
+				return nil, fmt.Errorf("%w: %s", ErrEmptyFormField, name)
+			}
+
+			return result, nil
+		}
+	}
+
+	return values, nil
+}
+
+// PostValueMany is like `PostValues` method, it returns the post data of a given key.
+// In addition to `PostValues` though, the returned value is a single string
+// separated by commas on multiple values.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueMany(name string) (string, error) {
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(values, ","), nil
+}
+
+// PostValueDefault returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name".
 //
 // If not found then "def" is returned instead.
 func (ctx *Context) PostValueDefault(name string, def string) string {
-	ctx.form()
-	if v := ctx.request.PostForm[name]; len(v) > 0 {
-		return v[0]
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return def // it returns "def" even if it's empty here.
 	}
-	return def
+
+	return values[len(values)-1]
 }
 
-// PostValue returns the parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name"
+// PostValue returns the last parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name".
+//
+// See `PostValueMany` too.
 func (ctx *Context) PostValue(name string) string {
 	return ctx.PostValueDefault(name, "")
 }
 
-// PostValueTrim returns the parsed form data from POST, PATCH,
+// PostValueTrim returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name",  without trailing spaces.
 func (ctx *Context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-// PostValueInt returns the parsed form data from POST, PATCH,
+// PostValueInt returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as int.
 //
-// If not found returns -1 and a non-nil error.
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueInt(name string) (int, error) {
-	v := ctx.PostValue(name)
-	if v == "" {
-		return -1, ErrNotFound
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return -1, err
 	}
-	return strconv.Atoi(v)
+
+	return strconv.Atoi(values[len(values)-1])
 }
 
-// PostValueIntDefault returns the parsed form data from POST, PATCH,
+// PostValueIntDefault returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as int.
 //
 // If not found or parse errors returns the "def".
@@ -1737,19 +1805,20 @@ func (ctx *Context) PostValueIntDefault(name string, def int) int {
 	return def
 }
 
-// PostValueInt64 returns the parsed form data from POST, PATCH,
+// PostValueInt64 returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns -1 and a non-nil error.
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueInt64(name string) (int64, error) {
-	v := ctx.PostValue(name)
-	if v == "" {
-		return -1, ErrNotFound
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return -1, err
 	}
-	return strconv.ParseInt(v, 10, 64)
+
+	return strconv.ParseInt(values[len(values)-1], 10, 64)
 }
 
-// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// PostValueInt64Default returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as int64.
 //
 // If not found or parse errors returns the "def".
@@ -1761,19 +1830,20 @@ func (ctx *Context) PostValueInt64Default(name string, def int64) int64 {
 	return def
 }
 
-// PostValueFloat64 returns the parsed form data from POST, PATCH,
+// PostValueFloat64 returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns -1 and a non-nil error.
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueFloat64(name string) (float64, error) {
-	v := ctx.PostValue(name)
-	if v == "" {
-		return -1, ErrNotFound
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return -1, err
 	}
-	return strconv.ParseFloat(v, 64)
+
+	return strconv.ParseFloat(values[len(values)-1], 64)
 }
 
-// PostValueFloat64Default returns the parsed form data from POST, PATCH,
+// PostValueFloat64Default returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
 // If not found or parse errors returns the "def".
@@ -1785,27 +1855,18 @@ func (ctx *Context) PostValueFloat64Default(name string, def float64) float64 {
 	return def
 }
 
-// PostValueBool returns the parsed form data from POST, PATCH,
+// PostValueBool returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as bool.
+// If more than one value was binded to "name", then it returns the last one.
 //
-// If not found or value is false, then it returns false, otherwise true.
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueBool(name string) (bool, error) {
-	v := ctx.PostValue(name)
-	if v == "" {
-		return false, ErrNotFound
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return false, err
 	}
 
-	return strconv.ParseBool(v)
-}
-
-// PostValues returns all the parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name" as a string slice.
-//
-// The default form's memory maximum size is 32MB, it can be changed by the
-// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
-func (ctx *Context) PostValues(name string) []string {
-	ctx.form()
-	return ctx.request.PostForm[name]
+	return strconv.ParseBool(values[len(values)-1]) // values cannot be empty on this state.
 }
 
 // FormFile returns the first uploaded file that received from the client.
@@ -2095,16 +2156,23 @@ func (ctx *Context) ReadYAML(outPtr interface{}) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(yaml.Unmarshal))
 }
 
-// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
-// It reports whether the incoming error
-// can be ignored when server allows unknown post values to be sent by the client.
-//
-// A shortcut for the `schema#IsErrPath`.
-var IsErrPath = schema.IsErrPath
+var (
+	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
+	// It reports whether the incoming error
+	// can be ignored when server allows unknown post values to be sent by the client.
+	//
+	// A shortcut for the `schema#IsErrPath`.
+	IsErrPath = schema.IsErrPath
 
-// ErrEmptyForm is returned by `context#ReadForm` and `context#ReadBody`
-// when it should read data from a request form data but there is none.
-var ErrEmptyForm = errors.New("empty form")
+	// ErrEmptyForm is returned by `context#ReadForm` and `context#ReadBody`
+	// when it should read data from a request form data but there is none.
+	ErrEmptyForm = errors.New("empty form")
+
+	// ErrEmptyFormField reports whether a specific field exists but it's empty.
+	// Usage: errors.Is(err, ErrEmptyFormField)
+	// See postValue method. It's only returned on parsed post value methods.
+	ErrEmptyFormField = errors.New("empty form field")
+)
 
 // ReadForm binds the request body of a form to the "formObject".
 // It supports any kind of type, including custom structs.

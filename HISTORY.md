@@ -363,6 +363,8 @@ Response:
 
 Other Improvements:
 
+- Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
+
 - Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Screens:
 
 #### DBUG Routes (1)
@@ -597,6 +599,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
 - `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
 - `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
 - `Context.SetErr(error)` and `Context.GetErr() error` helpers.
@@ -633,6 +636,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `Context.PostValues(name string) ([]string, error)` now returns a second output argument of `error` type too, which reports `ErrEmptyForm` or `ErrNotFound` or `ErrEmptyFormField`. The single post value getters now returns the **last value** if multiple was given instead of the first one (this allows clients to append values on flow updates).
 - `Party.GetReporter()` **removed**. The `Application.Build` returns the first error now and the API's errors are logged, this allows the server to run even if some of the routes are invalid but not fatal to the entire application (it was a request from a company).
 - `versioning.NewGroup(string)` now accepts a `Party` as its first input argument: `NewGroup(Party, string)`.
 - `versioning.RegisterGroups` is **removed** as it is no longer necessary.
@@ -659,7 +663,7 @@ Breaking Changes:
 - `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
 - **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
 
-There is a breaking change on the type alias of `iris.Context` which now points to the `*context.Context` instead of the `context.Context` interface. The **interface has been removed** and the ability to **override** the Context **is not** available any more. When we added the ability from end-developers to override the Context years ago, we have never imagine that we will ever had such a featured Context with more than 4000 lines of code. As of Iris 2020, it is difficult and un-productive from an end-developer to override the Iris Context, and as far as we know, nobody uses this feature anymore because of that exact reason. Beside the overriding feature support end, if you still use the `context.Context` instead of `iris.Context`, it's the time to do it: please find-and-replace to `iris.Context` as wikis, book and all examples shows for the past 3 years. For the 99.9% of the users there is no a single breaking change, you already using `iris.Context` so you are in the "safe zone".
+There is a change on the type alias of `iris.Context` which now points to the `*context.Context` instead of the `context.Context` interface. The **interface has been removed** and the ability to **override** the Context **is not** available any more. When we added the ability from end-developers to override the Context years ago, we have never imagine that we will ever had such a featured Context with more than 4000 lines of code. As of Iris 2020, it is difficult and un-productive from an end-developer to override the Iris Context, and as far as we know, nobody uses this feature anymore because of that exact reason. Beside the overriding feature support end, if you still use the `context.Context` instead of `iris.Context`, it's the time to do it: please find-and-replace any `context.Context` to `iris.Context` as wikis, book and all examples shows for the past 3 years. For the 99.9% of the users there is no a single breaking change, you already using `iris.Context` so you are in the "safe zone".
 
 # Su, 16 February 2020 | v12.1.8
 

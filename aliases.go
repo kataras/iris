@@ -444,6 +444,13 @@ var (
 	//
 	// A shortcut for the `context#ErrEmptyForm`.
 	ErrEmptyForm = context.ErrEmptyForm
+	// ErrEmptyFormField reports whether if form value is empty.
+	// An alias of `context.ErrEmptyFormField`.
+	ErrEmptyFormField = context.ErrEmptyFormField
+	// ErrNotFound reports whether a key was not found, useful
+	// on post data, versioning feature and others.
+	// An alias of `context.ErrNotFound`.
+	ErrNotFound = context.ErrNotFound
 	// NewProblem returns a new Problem.
 	// Head over to the `Problem` type godoc for more.
 	//
