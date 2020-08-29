@@ -31,7 +31,8 @@ func main() {
 	// http://localhost:8080/docs/v12some      -> http://localhost:8080/docs
 	// http://localhost:8080/oldsome           -> http://localhost:8080
 	// http://localhost:8080/oldindex/random   -> http://localhost:8080
-	// http://localhost:8080/users.json        -> http://localhost:8080/users?format=json
+	// http://localhost:8080/users.json        -> http://localhost:8080/users.json
+	//					 ^ (but with an internal ?format=json, client can't see it)
 	app.Listen(":8080")
 }
 
