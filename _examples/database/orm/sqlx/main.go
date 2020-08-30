@@ -31,9 +31,9 @@ type Person struct {
 const schema = `
 CREATE TABLE IF NOT EXISTS person (
 	person_id INTEGER PRIMARY KEY,
-    first_name text,
-    last_name text,
-    email text
+	first_name text,
+	last_name text,
+	email text
 );`
 
 func main() {
