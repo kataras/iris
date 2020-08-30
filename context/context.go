@@ -2792,7 +2792,7 @@ func (ctx *Context) View(filename string, optionalViewModel ...interface{}) erro
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
 
 	var bindingData interface{}
-	if len(optionalViewModel) > 0 {
+	if len(optionalViewModel) > 0 && optionalViewModel[0] != nil {
 		// a nil can override the existing data or model sent by `ViewData`.
 		bindingData = optionalViewModel[0]
 	} else {
