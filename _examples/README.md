@@ -8,6 +8,7 @@
 * Database
     * [MySQL, Groupcache & Docker](database/mysql)
     * [MongoDB](database/mongodb)
+    * [Sqlx](database/orm/sqlx/main.go)
     * [Xorm](database/orm/xorm/main.go)
     * [Gorm](database/orm/gorm/main.go)
     * [Reform](database/orm/reform/main.go)

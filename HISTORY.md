@@ -621,7 +621,7 @@ New Context Methods:
 - `Context.IsGRPC() bool` reports whether the request came from a gRPC client
 - `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
 - `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
-- `Context.StopWithText(int, string)` stops the handlers chain, writes thre status code and a plain text message
+- `StopWithText(statusCode int, format string, args ...interface{})` stops the handlers chain, writes thre status code and a plain text message
 - `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
 - `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
 - `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
