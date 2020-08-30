@@ -33,6 +33,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/kataras/golog"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"github.com/vmihailenco/msgpack/v5"
@@ -2777,10 +2778,9 @@ func (ctx *Context) GetViewData() map[string]interface{} {
 // i.e: if directory is "./templates" and want to render the "./templates/users/index.html"
 // then you pass the "users/index.html" as the filename argument.
 //
-// The second optional argument can receive a single "view model"
-// that will be binded to the view template if it's not nil,
-// otherwise it will check for previous view data stored by the `ViewData`
-// even if stored at any previous handler(middleware) for the same request.
+// The second optional argument can receive a single "view model".
+// If "optionalViewModel" exists, even if it's nil, overrides any previous `ViewData` calls.
+// If second argument is missing then binds the data through previous `ViewData` calls (e.g. middleware).
 //
 // Look .ViewData and .ViewLayout too.
 //
@@ -2815,7 +2815,12 @@ func (ctx *Context) View(filename string, optionalViewModel ...interface{}) erro
 
 	err := ctx.app.View(ctx, filename, layout, bindingData) // if failed it logs the error.
 	if err != nil {
-		ctx.StopWithStatus(http.StatusInternalServerError)
+		if ctx.app.Logger().Level == golog.DebugLevel {
+			// send the error back to the client, when debug mode.
+			ctx.StopWithError(http.StatusInternalServerError, err)
+		} else {
+			ctx.StopWithStatus(http.StatusInternalServerError)
+		}
 	}
 
 	return err

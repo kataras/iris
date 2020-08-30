@@ -27,24 +27,35 @@ func main() {
 
 	app.Get("/example_map", func(ctx iris.Context) {
 		ctx.View("example.html", iris.Map{
-			"Name":  "Example Name",
-			"Age":   42,
-			"Items": []string{"Example slice entry 1", "entry 2", "entry 3"},
-			"Map":   iris.Map{"map key": "map value", "other key": "other value"},
+			"Name":   "Example Name",
+			"Age":    42,
+			"Items":  []string{"Example slice entry 1", "entry 2", "entry 3"},
+			"Map":    iris.Map{"map key": "map value", "other key": "other value"},
+			"Nested": iris.Map{"Title": "Iris E-Book", "Pages": 620},
 		})
 	})
 
 	app.Get("/example_struct", func(ctx iris.Context) {
+		type book struct {
+			Title string
+			Pages int
+		}
+
 		var examplePage = struct {
-			Name  string
-			Age   int
-			Items []string
-			Map   map[string]interface{}
+			Name   string
+			Age    int
+			Items  []string
+			Map    map[string]interface{}
+			Nested book
 		}{
 			"Example Name",
 			42,
 			[]string{"Example slice entry 1", "entry 2", "entry 3"},
 			iris.Map{"map key": "map value", "other key": "other value"},
+			book{
+				"Iris E-Book",
+				620,
+			},
 		}
 
 		ctx.View("example.html", examplePage)

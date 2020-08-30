@@ -6,17 +6,22 @@
     <title>HTML Template Example</title>
 </head>
 <body>
-    <h2>{{.Name}}</h2>
-    <h3>{{.Age}}</h3>
+    <h2>Name: {{.Name}}</h2>
+    <h3>Age: {{.Age}}</h3>
 
     <h4>Slice</h4>
     {{range $idx, $item := .Items}}
         {{ $idx }} - {{ $item }} <br/>
     {{end}}
+
     <h4>Map</h4>
     {{range $key, $value := .Map}}
         {{ $key }} - {{ $value }} <br/>
     {{end}}
+
+    <h4>Nested</h4>
+
+    <strong>Title:</strong>{{ .Nested.Title}}
 
     <hr/>
 
