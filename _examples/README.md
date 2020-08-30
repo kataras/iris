@@ -120,7 +120,8 @@
     * [Jet Embedded](view/template_jet_1_embedded)
     * [Jet 'urlpath' tmpl func](view/template_jet_2)
     * [Jet Template Funcs from Struct](view/template_jet_3)
-    - [Ace](view/template_ace_0)
+    * [Ace](view/template_ace_0)
+    * [Handlebars](view/template_handlebars_0)
     * Third-Parties
         * [Render `valyala/quicktemplate` templates](view/quicktemplate)
         * [Render `shiyanhui/hero` templates](view/herotemplate)

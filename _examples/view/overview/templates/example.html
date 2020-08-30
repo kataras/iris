@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Template Example</title>
+</head>
+<body>
+    <h2>{{.Name}}</h2>
+    <h3>{{.Age}}</h3>
+
+    <h4>Slice</h4>
+    {{range $idx, $item := .Items}}
+        {{ $idx }} - {{ $item }} <br/>
+    {{end}}
+    <h4>Map</h4>
+    {{range $key, $value := .Map}}
+        {{ $key }} - {{ $value }} <br/>
+    {{end}}
+
+    <hr/>
+
+    <strong>Read more at: <a href="https://golang.org/pkg/html/template" target="_new">
+        https://golang.org/pkg/html/template</a>
+    </strong>
+</body>
+</html>

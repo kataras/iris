@@ -1,0 +1,27 @@
+<div class="post">
+    <h1>By {{fullName author}}</h1>
+    <div class="body">{{body}}</div>
+
+    <h1>Comments</h1>
+
+    {{#each comments}}
+    <h2>By {{fullName author}}</h2>
+    <div class="body">{{body}}</div>
+    {{/each}}
+
+
+    <!-- <h1>Struct example</h1>
+    {{#with myStruct}}
+    {{ this }}
+    OR
+    {{ FieldMame }}
+    {{/with}} -->
+
+    <hr />
+
+    <strong>Read more at: <a href="https://github.com/aymerick/raymond" target="_new">
+            https://github.com/aymerick/raymond</a> and <a href="https://handlebarsjs.com/guide" target="_new">
+            https://handlebarsjs.com/guide
+        </a>
+    </strong>
+</div>
