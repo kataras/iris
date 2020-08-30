@@ -124,8 +124,7 @@ See https://github.com/markbates/goth/examples/main.go to see this in action.
 func BeginAuthHandler(ctx iris.Context) {
 	url, err := GetAuthURL(ctx)
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.Writef("%v", err)
+		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
 	}
 
@@ -353,6 +352,7 @@ func main() {
 	// set sessions
 	// and setup the router for the showcase
 	app := iris.New()
+	app.Logger().SetLevel("debug")
 
 	// attach and build our templates
 	app.RegisterView(iris.HTML("./templates", ".html"))
@@ -362,14 +362,23 @@ func main() {
 	app.Get("/auth/{provider}/callback", func(ctx iris.Context) {
 		user, err := CompleteUserAuth(ctx)
 		if err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.Writef("%v", err)
+			ctx.StopWithError(iris.StatusInternalServerError, err)
 			return
 		}
-		ctx.ViewData("", user)
-		if err := ctx.View("user.html"); err != nil {
-			ctx.Writef("%v", err)
-		}
+
+		// Between handlers (user as root .):
+		// ctx.ViewData("", user)
+		//
+		// Between handlers (user as .user variable):
+		// ctx.ViewData("user", user)
+		// ----
+		// Directly (user as root):
+		// ctx.View("user.html", user)
+		//
+		// Directly (user as .user variable):
+		ctx.View("user.html", iris.Map{
+			"user": user,
+		})
 	})
 
 	app.Get("/logout/{provider}", func(ctx iris.Context) {
@@ -379,22 +388,17 @@ func main() {
 
 	app.Get("/auth/{provider}", func(ctx iris.Context) {
 		// try to get the user without re-authenticating
-		if gothUser, err := CompleteUserAuth(ctx); err == nil {
-			ctx.ViewData("", gothUser)
-			if err := ctx.View("user.html"); err != nil {
-				ctx.Writef("%v", err)
-			}
-		} else {
+		gothUser, err := CompleteUserAuth(ctx)
+		if err != nil {
 			BeginAuthHandler(ctx)
+			return
 		}
+
+		ctx.View("user.html", gothUser)
 	})
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.ViewData("", providerIndex)
-
-		if err := ctx.View("index.html"); err != nil {
-			ctx.Writef("%v", err)
-		}
+		ctx.View("index.html", providerIndex)
 	})
 
 	// http://localhost:3000
