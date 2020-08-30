@@ -7,13 +7,13 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"github.com/go-xorm/xorm"
 	_ "github.com/mattn/go-sqlite3"
+	"xorm.io/xorm"
 )
 
 /*
 	go get -u github.com/mattn/go-sqlite3
-	go get -u github.com/go-xorm/xorm
+	go get -u xorm.io/xorm
 
 	If you're on win64 and you can't install go-sqlite3:
 		1. Download: https://sourceforge.net/projects/mingw-w64/files/latest/download
@@ -21,7 +21,7 @@ import (
 		3. Add C:\Program Files\mingw-w64\x86_64-7.1.0-posix-seh-rt_v5-rev1\mingw64\bin
 		to your PATH env variable.
 
-	Docs: http://xorm.io/docs/
+	Docs: https://gitea.com/xorm/xorm
 */
 
 // User is our user table structure.
@@ -43,14 +43,11 @@ func main() {
 	if err != nil {
 		app.Logger().Fatalf("orm failed to initialized: %v", err)
 	}
-
 	iris.RegisterOnInterrupt(func() {
 		orm.Close()
 	})
 
-	err = orm.Sync2(new(User))
-
-	if err != nil {
+	if err = orm.Sync2(new(User)); err != nil {
 		app.Logger().Fatalf("orm failed to initialized User table: %v", err)
 	}
 
@@ -63,9 +60,18 @@ func main() {
 
 	app.Get("/get", func(ctx iris.Context) {
 		user := User{ID: 1}
-		if ok, _ := orm.Get(&user); ok {
-			ctx.Writef("user found: %#v", user)
+		found, err := orm.Get(&user) // fetch user with ID.
+		if err != nil {
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+			return
 		}
+
+		if !found {
+			ctx.StopWithText(iris.StatusNotFound, "User with ID: %d not found", user.ID)
+			return
+		}
+
+		ctx.Writef("User Found: %#v", user)
 	})
 
 	// http://localhost:8080/insert

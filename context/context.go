@@ -683,13 +683,13 @@ func (ctx *Context) StopWithStatus(statusCode int) {
 }
 
 // StopWithText stops the handlers chain and writes the "statusCode"
-// among with a message "plainText".
+// among with a fmt-style text of "format" and optional arguments.
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
-func (ctx *Context) StopWithText(statusCode int, plainText string) {
+func (ctx *Context) StopWithText(statusCode int, format string, args ...interface{}) {
 	ctx.StopWithStatus(statusCode)
-	ctx.WriteString(plainText)
+	ctx.WriteString(fmt.Sprintf(format, args...))
 }
 
 // StopWithError stops the handlers chain and writes the "statusCode"
