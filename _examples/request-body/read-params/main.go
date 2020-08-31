@@ -1,5 +1,5 @@
-// package main contains an example on how to use the ReadQuery,
-// same way you can do the ReadJSON & ReadProtobuf and e.t.c.
+// package main contains an example on how to use the ReadParams,
+// same way you can do the ReadQuery, ReadJSON, ReadProtobuf and e.t.c.
 package main
 
 import (
@@ -16,7 +16,7 @@ func main() {
 	app := newApp()
 
 	// http://localhost:8080/kataras/27/iris/web/framework
-	// MyType: main.MyType{Name:"kataras", Age:27, Tail:[]string{"iris", "web", "framework"}}
+	// myParams: main.myParams{Name:"kataras", Age:27, Tail:[]string{"iris", "web", "framework"}}
 	app.Listen(":8080")
 }
 
