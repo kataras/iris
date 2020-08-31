@@ -155,7 +155,8 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | [time.Time](https://golang.org/pkg/time/#Time) | `time.Now()` |
 | [*golog.Logger](https://pkg.go.dev/github.com/kataras/golog) | Iris Logger |
 | [net.IP](https://golang.org/pkg/net/#IP) | `net.ParseIP(ctx.RemoteAddr())` |
-| [mvc.Code](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Code) | `ctx.GetStatusCode()` |
+| [mvc.Code](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Code) | `ctx.GetStatusCode() int` |
+| [mvc.Err](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Err) | `ctx.GetErr() error` |
 | `string`, | |
 | `int, int8, int16, int32, int64`, | |
 | `uint, uint8, uint16, uint32, uint64`, | |
