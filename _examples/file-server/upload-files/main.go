@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -66,7 +64,7 @@ func newApp() *iris.Application {
 		files := form.File["files[]"]
 		failures := 0
 		for _, file := range files {
-			_, err = saveUploadedFile(file, "./uploads")
+			_, err = ctx.SaveFormFile(file, "./uploads/"+file.Filename)
 			if err != nil {
 				failures++
 				ctx.Writef("failed to upload: %s\n", file.Filename)
@@ -78,24 +76,7 @@ func newApp() *iris.Application {
 	return app
 }
 
-func saveUploadedFile(fh *multipart.FileHeader, destDirectory string) (int64, error) {
-	src, err := fh.Open()
-	if err != nil {
-		return 0, err
-	}
-	defer src.Close()
-
-	out, err := os.OpenFile(filepath.Join(destDirectory, fh.Filename),
-		os.O_WRONLY|os.O_CREATE, os.FileMode(0666))
-	if err != nil {
-		return 0, err
-	}
-	defer out.Close()
-
-	return io.Copy(out, src)
-}
-
-func beforeSave(ctx iris.Context, file *multipart.FileHeader) {
+func beforeSave(ctx iris.Context, file *multipart.FileHeader) bool {
 	ip := ctx.RemoteAddr()
 	// make sure you format the ip in a way
 	// that can be used for a file name (simple case):
@@ -109,8 +90,9 @@ func beforeSave(ctx iris.Context, file *multipart.FileHeader) {
 	// no need for more actions, internal uploader will use this
 	// name to save the file into the "./uploads" folder.
 	if ip == "" {
-		return
+		return true // don't change the file but continue saving it.
 	}
 
 	file.Filename = ip + "-" + file.Filename
+	return true
 }

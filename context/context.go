@@ -1925,7 +1925,7 @@ func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 // to the system physical location "destDirectory".
 //
 // The second optional argument "before" gives caller the chance to
-// modify the *miltipart.FileHeader before saving to the disk,
+// modify or cancel the *miltipart.FileHeader before saving to the disk,
 // it can be used to change a file's name based on the current request,
 // all FileHeader's options can be changed. You can ignore it if
 // you don't need to use this capability before saving a file to the disk.
@@ -1938,52 +1938,60 @@ func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 // http.ErrMissingFile if no file received.
 //
 // If you want to receive & accept files and manage them manually you can use the `context#FormFile`
-// instead and create a copy function that suits your needs, the below is for generic usage.
+// instead and create a copy function that suits your needs or use the `SaveFormFile` method,
+// the below is for generic usage.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the
-//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+// The default form's memory maximum size is 32MB, it can be changed by
+// the `WithPostMaxMemory` configurator or by `SetMaxRequestBodySize` or
+// by the `LimitRequestBodySize` middleware (depends the use case).
 //
-// See `FormFile` to a more controlled to receive a file.
+// See `FormFile` to a more controlled way to receive a file.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-files
-func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader)) (n int64, err error) {
+func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error) {
 	err = ctx.request.ParseMultipartForm(ctx.app.ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 
 	if ctx.request.MultipartForm != nil {
 		if fhs := ctx.request.MultipartForm.File; fhs != nil {
 			for _, files := range fhs {
+			innerLoop:
 				for _, file := range files {
 
 					for _, b := range before {
-						b(ctx, file)
+						if !b(ctx, file) {
+							continue innerLoop
+						}
 					}
 
-					n0, err0 := uploadTo(file, destDirectory)
+					n0, err0 := ctx.SaveFormFile(file, filepath.Join(destDirectory, file.Filename))
 					if err0 != nil {
-						return 0, err0
+						return nil, 0, err0
 					}
 					n += n0
+
+					uploaded = append(uploaded, file)
 				}
 			}
-			return n, nil
+			return uploaded, n, nil
 		}
 	}
 
-	return 0, http.ErrMissingFile
+	return nil, 0, http.ErrMissingFile
 }
 
-func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
+// SaveFormFile saves a result of `FormFile` to the "dest" disk full path (directory + filename).
+// See `FormFile` and `UploadFormFiles` too.
+func (ctx *Context) SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error) {
 	src, err := fh.Open()
 	if err != nil {
 		return 0, err
 	}
 	defer src.Close()
 
-	out, err := os.OpenFile(filepath.Join(destDirectory, fh.Filename),
-		os.O_WRONLY|os.O_CREATE, os.FileMode(0666))
+	out, err := os.Create(dest)
 	if err != nil {
 		return 0, err
 	}
@@ -2204,6 +2212,35 @@ var (
 	// Usage: errors.Is(err, ErrEmptyFormField)
 	// See postValue method. It's only returned on parsed post value methods.
 	ErrEmptyFormField = errors.New("empty form field")
+
+	// ConnectionCloseErrorSubstr if at least one of the given
+	// substrings are found in a net.OpError:os.SyscallError error type
+	// on `IsErrConnectionReset` then the function will report true.
+	ConnectionCloseErrorSubstr = []string{
+		"broken pipe",
+		"connection reset by peer",
+	}
+
+	// IsErrConnectionClosed reports whether the given "err"
+	// is caused because of a broken connection.
+	IsErrConnectionClosed = func(err error) bool {
+		if err == nil {
+			return false
+		}
+
+		if opErr, ok := err.(*net.OpError); ok {
+			if syscallErr, ok := opErr.Err.(*os.SyscallError); ok {
+				errStr := strings.ToLower(syscallErr.Error())
+				for _, s := range ConnectionCloseErrorSubstr {
+					if strings.Contains(errStr, s) {
+						return true
+					}
+				}
+			}
+		}
+
+		return false
+	}
 )
 
 // ReadForm binds the request body of a form to the "formObject".

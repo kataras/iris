@@ -3,8 +3,8 @@ package recover
 
 import (
 	"fmt"
+	"net/http/httputil"
 	"runtime"
-	"strconv"
 
 	"github.com/kataras/iris/v12/context"
 )
@@ -14,13 +14,8 @@ func init() {
 }
 
 func getRequestLogs(ctx *context.Context) string {
-	var status, ip, method, path string
-	status = strconv.Itoa(ctx.GetStatusCode())
-	path = ctx.Path()
-	method = ctx.Method()
-	ip = ctx.RemoteAddr()
-	// the date should be logged by iris' Logger, so we skip them
-	return fmt.Sprintf("%v %s %s %s", status, path, method, ip)
+	rawReq, _ := httputil.DumpRequest(ctx.Request(), false)
+	return string(rawReq)
 }
 
 // New returns a new recover middleware,
@@ -30,7 +25,7 @@ func New() context.Handler {
 	return func(ctx *context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				if ctx.IsStopped() {
+				if ctx.IsStopped() { // handled by other middleware.
 					return
 				}
 

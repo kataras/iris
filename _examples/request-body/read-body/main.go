@@ -30,7 +30,7 @@ func readBody(ctx iris.Context) {
 	var p payload
 
 	// Bind request body to "p" depending on the content-type that client sends the data,
-	// e.g. JSON, XML, YAML, MessagePack, Form, URL Query.
+	// e.g. JSON, XML, YAML, MessagePack, Protobuf, Form and URL Query.
 	err := ctx.ReadBody(&p)
 	if err != nil {
 		ctx.StopWithProblem(iris.StatusBadRequest,

@@ -599,6 +599,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
 - `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas.
 - `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
 - `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
@@ -637,6 +638,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- `ContextUploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error)` now returns the total files uploaded too (as its first parameter) and the "before" variadic option should return a boolean, if false then the specific file is skipped.
 - `Context.PostValues(name string) ([]string, error)` now returns a second output argument of `error` type too, which reports `ErrEmptyForm` or `ErrNotFound` or `ErrEmptyFormField`. The single post value getters now returns the **last value** if multiple was given instead of the first one (this allows clients to append values on flow updates).
 - `Party.GetReporter()` **removed**. The `Application.Build` returns the first error now and the API's errors are logged, this allows the server to run even if some of the routes are invalid but not fatal to the entire application (it was a request from a company).
 - `versioning.NewGroup(string)` now accepts a `Party` as its first input argument: `NewGroup(Party, string)`.
