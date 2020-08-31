@@ -990,6 +990,7 @@ func (api *APIBuilder) UseError(handlers ...context.Handler) {
 
 // Use appends Handler(s) to the current Party's routes and child routes.
 // If the current Party is the root, then it registers the middleware to all child Parties' routes too.
+// The given "handlers" will be executed only on matched routes.
 //
 // Call order matters, it should be called right before the routes that they care about these handlers.
 //
@@ -1015,6 +1016,9 @@ func (api *APIBuilder) UseOnce(handlers ...context.Handler) {
 // It doesn't care about call order, it will prepend the handlers to all
 // existing routes and the future routes that may being registered.
 //
+// The given "handlers" will be executed only on matched routes and registered errors.
+// See `UseRouter` if you want to register middleware that will always run, even on 404 not founds.
+//
 // The difference from `.DoneGlobal` is that this/or these Handler(s) are being always running first.
 // Use of `ctx.Next()` of those handler(s) is necessary to call the main handler or the next middleware.
 // It's always a good practise to call it right before the `Application#Run` function.
@@ -1031,6 +1035,7 @@ func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 }
 
 // Done appends to the very end, Handler(s) to the current Party's routes and child routes.
+// The given "handlers" will be executed only on matched routes.
 //
 // Call order matters, it should be called right before the routes that they care about these handlers.
 //
@@ -1044,6 +1049,8 @@ func (api *APIBuilder) Done(handlers ...context.Handler) {
 // including all parties, subdomains.
 // It doesn't care about call order, it will append the handlers to all
 // existing routes and the future routes that may being registered.
+//
+// The given "handlers" will be executed only on matched and registered error routes.
 //
 // The difference from `.UseGlobal` is that this/or these Handler(s) are being always running last.
 // Use of `ctx.Next()` at the previous handler is necessary.

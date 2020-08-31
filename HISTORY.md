@@ -599,6 +599,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas.
 - `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
 - `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
 - `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).

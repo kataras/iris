@@ -117,7 +117,7 @@ type Context struct {
 	// the local key-value storage
 	params RequestParams  // url named parameters.
 	values memstore.Store // generic storage, middleware communication.
-
+	query  url.Values     // GET url query temp cache, useful on many URLParamXXX calls.
 	// the underline application app.
 	app Application
 	// the route's handlers
@@ -158,10 +158,16 @@ func (ctx *Context) Clone() *Context {
 	paramsCopy := make(memstore.Store, len(ctx.params.Store))
 	copy(paramsCopy, ctx.params.Store)
 
+	queryCopy := make(url.Values, len(ctx.query))
+	for k, v := range ctx.query {
+		queryCopy[k] = v
+	}
+
 	return &Context{
 		app:                 ctx.app,
 		values:              valuesCopy,
 		params:              RequestParams{Store: paramsCopy},
+		query:               queryCopy,
 		writer:              ctx.writer.Clone(),
 		request:             ctx.request,
 		currentHandlerIndex: stopExecutionIndex,
@@ -185,6 +191,7 @@ func (ctx *Context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.handlers = nil           // will be filled by router.Serve/HTTP
 	ctx.values = ctx.values[0:0] // >>      >>     by context.Values().Set
 	ctx.params.Store = ctx.params.Store[0:0]
+	ctx.query = nil
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
 	ctx.proceeded = 0
@@ -1363,19 +1370,23 @@ func (ctx *Context) GetStatusCode() int {
 //  | Various Request and Post Data                              |
 //  +------------------------------------------------------------+
 
-// URLParamExists returns true if the url parameter exists, otherwise false.
-func (ctx *Context) URLParamExists(name string) bool {
-	if q := ctx.request.URL.Query(); q != nil {
-		_, exists := q[name]
-		return exists
+func (ctx *Context) getQuery() url.Values {
+	if ctx.query == nil {
+		ctx.query = ctx.request.URL.Query()
 	}
 
-	return false
+	return ctx.query
+}
+
+// URLParamExists returns true if the url parameter exists, otherwise false.
+func (ctx *Context) URLParamExists(name string) bool {
+	_, exists := ctx.getQuery()[name]
+	return exists
 }
 
 // URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
 func (ctx *Context) URLParamDefault(name string, def string) string {
-	if v := ctx.request.URL.Query().Get(name); v != "" {
+	if v := ctx.getQuery().Get(name); v != "" {
 		return v
 	}
 
@@ -1385,6 +1396,16 @@ func (ctx *Context) URLParamDefault(name string, def string) string {
 // URLParam returns the get parameter from a request, if any.
 func (ctx *Context) URLParam(name string) string {
 	return ctx.URLParamDefault(name, "")
+}
+
+// URLParamSlice a shortcut of ctx.Request().URL.Query()[name].
+// Like `URLParam` but it returns all values instead of a single string separated by commas.
+// Returns the values of a url query of the given "name" as string slice, e.g.
+// ?name=john&name=doe&name=kataras will return [ john doe kataras].
+//
+// See `URLParamsSorted` for sorted values.
+func (ctx *Context) URLParamSlice(name string) []string {
+	return ctx.getQuery()[name]
 }
 
 // URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
@@ -1527,7 +1548,7 @@ func (ctx *Context) URLParamBool(name string) (bool, error) {
 //
 // See URLParamsSorted too.
 func (ctx *Context) URLParams() map[string]string {
-	q := ctx.request.URL.Query()
+	q := ctx.getQuery()
 	values := make(map[string]string, len(q))
 
 	for k, v := range q {
@@ -1540,7 +1561,7 @@ func (ctx *Context) URLParams() map[string]string {
 // URLParamsSorted returns a sorted (by key) slice
 // of key-value entries of the URL Query parameters.
 func (ctx *Context) URLParamsSorted() []memstore.StringEntry {
-	q := ctx.request.URL.Query()
+	q := ctx.getQuery()
 	n := len(q)
 	if n == 0 {
 		return nil
@@ -1563,6 +1584,12 @@ func (ctx *Context) URLParamsSorted() []memstore.StringEntry {
 	}
 
 	return entries
+}
+
+// ResetQuery resets the GET URL Query cache.
+// New URLParamXXX methods will receive the new parsed values.
+func (ctx *Context) ResetQuery() {
+	ctx.query = nil
 }
 
 // No need anymore, net/http checks for the Form already.
@@ -1706,6 +1733,10 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 func (ctx *Context) PostValues(name string) ([]string, error) {
 	_, ok := ctx.form()
 	if !ok {
+		if !ctx.app.ConfigurationReadOnly().GetFireEmptyFormError() {
+			return nil, nil
+		}
+
 		return nil, ErrEmptyForm // empty form.
 	}
 
@@ -2208,7 +2239,7 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 func (ctx *Context) ReadQuery(ptr interface{}) error {
-	values := ctx.request.URL.Query()
+	values := ctx.getQuery()
 	if len(values) == 0 {
 		return nil
 	}
