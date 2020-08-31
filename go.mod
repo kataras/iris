@@ -17,7 +17,7 @@ require (
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/pongo2 v0.0.1
-	github.com/iris-contrib/schema v0.0.3
+	github.com/iris-contrib/schema v0.0.5
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.2
 	github.com/kataras/golog v0.1.2
@@ -38,7 +38,7 @@ require (
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
-	golang.org/x/sys v0.0.0-20200828194041-157a740278f4
+	golang.org/x/sys v0.0.0-20200831180312-196b9ba8737a
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.25.0

@@ -2289,6 +2289,18 @@ func (ctx *Context) ReadQuery(ptr interface{}) error {
 	return ctx.app.Validate(ptr)
 }
 
+// ReadHeaders binds request headers to "ptr". The struct field tag is "header".
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go
+func (ctx *Context) ReadHeaders(ptr interface{}) error {
+	err := schema.DecodeHeaders(ctx.request.Header, ptr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.app.Validate(ptr)
+}
+
 // ReadParams binds URI Dynamic Path Parameters to "ptr". The struct field tag is "param".
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go
