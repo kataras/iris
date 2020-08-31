@@ -16,6 +16,11 @@ type (
 	// http error handling in controllers.
 	// This can be one of the input parameters of the `Controller.HandleHTTPError`.
 	Code = hero.Code
+	// Err is a type alias for the `hero#Err`.
+	// It is a special type for error stored in mvc responses or context.
+	// It's used for a builtin dependency to map the error given by a previous
+	// method or middleware.
+	Err = hero.Err
 	// DeprecationOptions describes the deprecation headers key-values.
 	// Is a type alias for the `versioning#DeprecationOptions`.
 	//

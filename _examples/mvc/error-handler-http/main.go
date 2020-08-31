@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 )
@@ -27,6 +29,14 @@ func (c *controller) Get() string {
 	return "Hello!"
 }
 
+func (c *controller) GetError() mvc.Result {
+	return mvc.View{
+		// Map to mvc.Code and mvc.Err respectfully on HandleHTTPError method.
+		Code: iris.StatusBadRequest,
+		Err:  fmt.Errorf("custom error"),
+	}
+}
+
 // The input parameter of mvc.Code is optional but a good practise to follow.
 // You could  register a Context and get its error code through ctx.GetStatusCode().
 //
@@ -39,7 +49,12 @@ func (c *controller) Get() string {
 // a controller's field (or method's input argument) is required
 // to select which, between those two controllers, is responsible
 // to handle http errors.
-func (c *controller) HandleHTTPError(statusCode mvc.Code) mvc.View {
+func (c *controller) HandleHTTPError(statusCode mvc.Code, err mvc.Err) mvc.View {
+	if err != nil {
+		// Do something with that error,
+		// e.g. view.Data = MyPageData{Message: err.Error()}
+	}
+
 	code := int(statusCode) // cast it to int.
 
 	view := mvc.View{

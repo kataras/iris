@@ -168,6 +168,9 @@ var BuiltinDependencies = []*Dependency{
 	NewDependency(func(ctx *context.Context) Code {
 		return Code(ctx.GetStatusCode())
 	}).Explicitly(),
+	NewDependency(func(ctx *context.Context) Err {
+		return Err(ctx.GetErr())
+	}).Explicitly(),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
 

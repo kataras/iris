@@ -20,7 +20,20 @@ type (
 	ErrorHandlerFunc func(*context.Context, error)
 
 	// Code is a special type for status code.
+	// It's used for a builtin dependency to map the status code given by a previous
+	// method or middleware.
+	// Use a type like that in order to not conflict with any developer-registered
+	// dependencies.
+	// Alternatively: ctx.GetStatusCode().
 	Code int
+
+	// Err is a special type for error stored in mvc responses or context.
+	// It's used for a builtin dependency to map the error given by a previous
+	// method or middleware.
+	// Use a type like that in order to not conflict with any developer-registered
+	// dependencies.
+	// Alternatively: ctx.GetErr().
+	Err error
 )
 
 // HandleError fires when a non-nil error returns from a request-scoped dependency at serve-time or the handler itself.
