@@ -27,7 +27,7 @@ func main() {
 
 	app.Get("/simple", func(ctx iris.Context) {
 		names := ctx.URLParamSlice("name")
-		ctx.Writef("names: %v", ids)
+		ctx.Writef("names: %v", names)
 	})
 
 	// http://localhost:8080?name=iris&age=3
