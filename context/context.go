@@ -2272,7 +2272,7 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	return ctx.app.Validate(formObject)
 }
 
-// ReadQuery binds url query to "ptr". The struct field tag is "url".
+// ReadQuery binds URL Query to "ptr". The struct field tag is "url".
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
 func (ctx *Context) ReadQuery(ptr interface{}) error {
@@ -2282,6 +2282,31 @@ func (ctx *Context) ReadQuery(ptr interface{}) error {
 	}
 
 	err := schema.DecodeQuery(values, ptr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.app.Validate(ptr)
+}
+
+// ReadParams binds URI Dynamic Path Parameters to "ptr". The struct field tag is "param".
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go
+func (ctx *Context) ReadParams(ptr interface{}) error {
+	n := ctx.params.Len()
+	if n == 0 {
+		return nil
+	}
+
+	values := make(map[string][]string, n)
+	ctx.params.Visit(func(key string, value string) {
+		// []string on path parameter, e.g.
+		// /.../{tail:path}
+		// Tail []string `param:"tail"`
+		values[key] = strings.Split(value, "/")
+	})
+
+	err := schema.DecodeParams(values, ptr)
 	if err != nil {
 		return err
 	}

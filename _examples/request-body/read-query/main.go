@@ -7,7 +7,7 @@ import (
 )
 
 type MyType struct {
-	Name string `url:"name"`
+	Name string `url:"name,required"`
 	Age  int    `url:"age"`
 }
 
