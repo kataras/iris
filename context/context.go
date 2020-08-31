@@ -1586,8 +1586,8 @@ func (ctx *Context) URLParamsSorted() []memstore.StringEntry {
 	return entries
 }
 
-// ResetQuery resets the GET URL Query cache.
-// New URLParamXXX methods will receive the new parsed values.
+// ResetQuery clears the GET URL Query request, temporary, cache.
+// Any new URLParamXXX calls will receive the new parsed values.
 func (ctx *Context) ResetQuery() {
 	ctx.query = nil
 }
