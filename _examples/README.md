@@ -137,6 +137,7 @@
     * [Bind MsgPack](request-body/read-msgpack/main.go)
     * [Bind YAML](request-body/read-yaml/main.go)
     * [Bind Form](request-body/read-form/main.go)
+        * [Checkboxes](request-body/read-form/checkboxes/main.go)
     * [Bind Query](request-body/read-query/main.go)
     * [Bind Headers](request-body/read-headers/main.go)
     * [Bind Params](request-body/read-params/main.go)
