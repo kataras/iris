@@ -51,6 +51,8 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 ```sh
 # https://github.com/kataras/iris/wiki/Installation
 $ go get github.com/kataras/iris/v12@master
+$ go get github.com/iris-contrib/middleware@master
+$ go get github.com/iris-contrib/swagger@master
 # assume the following code in main.go file
 $ cat main.go
 ```
@@ -218,7 +220,7 @@ For a more detailed technical documentation you can head over to our [godocs](ht
 
 [![follow Iris web framework on facebook](https://img.shields.io/badge/Follow%20%40Iris.framework-453-2D88FF.svg?style=for-the-badge&logo=facebook)](https://www.facebook.com/iris.framework)
 
-You can [request](https://www.iris-go.com/#ebookDonateForm) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
+You can [request](https://www.iris-go.com/#ebookDonateForm) a PDF and online access of the **Iris E-Book** (New Edition, **future v12.2.0+**) today and be participated in the development of Iris.
 
 ## 🙌 Contributing
 

@@ -190,7 +190,7 @@ CompleteUserAuth does what it says on the tin. It completes the authentication
 process and fetches all of the basic information about the user from the provider.
 
 It expects to be able to get the name of the provider from the query parameters
-as either "provider" or ":provider".
+as either "provider" or "{provider}" path parameter.
 
 See https://github.com/markbates/goth/examples/main.go to see this in action.
 */
