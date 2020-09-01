@@ -403,7 +403,7 @@ var (
 	// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
 	//
 	// A shortcut for the `context#CookieSameSite`.
-	CookieSameSite = context.CookieHTTPOnly
+	CookieSameSite = context.CookieSameSite
 	// CookieSecure sets the cookie's Secure option if the current request's
 	// connection is using TLS. See `CookieHTTPOnly` too.
 	//
