@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
 )
 
 // User example struct for json and msgpack.
@@ -53,6 +52,42 @@ func main() {
 		ctx.JSON(u)
 	})
 
+	// Use Secure field to prevent json hijacking.
+	// It prepends `"while(1),"` to the body when the data is array.
+	app.Get("/json_secure", func(ctx iris.Context) {
+		response := []string{"val1", "val2", "val3"}
+		options := iris.JSON{Indent: "", Secure: true}
+		ctx.JSON(response, options)
+
+		// Will output: while(1);["val1","val2","val3"]
+	})
+
+	// Use ASCII field to generate ASCII-only JSON
+	// with escaped non-ASCII characters.
+	app.Get("/json_ascii", func(ctx iris.Context) {
+		response := iris.Map{"lang": "GO-虹膜", "tag": "<br>"}
+		options := iris.JSON{Indent: "    ", ASCII: true}
+		ctx.JSON(response, options)
+
+		/* Will output:
+		   {
+		       "lang": "GO-\u8679\u819c",
+		       "tag": "\u003cbr\u003e"
+		   }
+		*/
+	})
+
+	// Do not replace special HTML characters with their unicode entities
+	// using the UnescapeHTML field.
+	app.Get("/json_raw", func(ctx iris.Context) {
+		options := iris.JSON{UnescapeHTML: true}
+		ctx.JSON(iris.Map{
+			"html": "<b>Hello, world!</b>",
+		}, options)
+
+		// Will output: {"html":"<b>Hello, world!</b>"}
+	})
+
 	// Other content types,
 
 	app.Get("/binary", func(ctx iris.Context) {
@@ -69,7 +104,7 @@ func main() {
 	})
 
 	app.Get("/jsonp", func(ctx iris.Context) {
-		ctx.JSONP(map[string]string{"hello": "jsonp"}, context.JSONP{Callback: "callbackName"})
+		ctx.JSONP(map[string]string{"hello": "jsonp"}, iris.JSONP{Callback: "callbackName"})
 	})
 
 	app.Get("/xml", func(ctx iris.Context) {
@@ -105,6 +140,8 @@ func main() {
 
 	// http://localhost:8080/decode
 	// http://localhost:8080/encode
+	// http://localhost:8080/json_secure
+	// http://localhost:8080/json_ascii
 	//
 	// http://localhost:8080/binary
 	// http://localhost:8080/text

@@ -3097,16 +3097,27 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 		return 0, err
 	}
 
+	prependSecure := false
+	if options.Secure {
+		if bytes.HasPrefix(result, jsonArrayPrefix) {
+			if options.Indent == "" {
+				prependSecure = bytes.HasSuffix(result, jsonArraySuffix)
+			} else {
+				prependSecure = bytes.HasSuffix(bytes.TrimRightFunc(result, func(r rune) bool {
+					return r == '\n' || r == '\r'
+				}), jsonArraySuffix)
+			}
+		}
+	}
+
 	if options.UnescapeHTML {
 		result = bytes.Replace(result, ltHex, lt, -1)
 		result = bytes.Replace(result, gtHex, gt, -1)
 		result = bytes.Replace(result, andHex, and, -1)
 	}
 
-	if options.Secure {
-		if bytes.HasPrefix(result, jsonArrayPrefix) && bytes.HasSuffix(result, jsonArraySuffix) {
-			result = append(secureJSONPrefix, result...)
-		}
+	if prependSecure {
+		result = append(secureJSONPrefix, result...)
 	}
 
 	if options.ASCII {

@@ -76,6 +76,10 @@ type (
 	//
 	// It is an alias of the `context#JSON` type.
 	JSON = context.JSON
+	// JSONP the optional settings for JSONP renderer.
+	//
+	// It is an alias of the `context#JSONP` type.
+	JSONP = context.JSONP
 	// ProtoMarshalOptions is a type alias for protojson.MarshalOptions.
 	ProtoMarshalOptions = context.ProtoMarshalOptions
 	// ProtoUnmarshalOptions is a type alias for protojson.UnmarshalOptions.
