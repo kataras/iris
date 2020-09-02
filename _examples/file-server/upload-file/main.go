@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
-	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -99,28 +99,20 @@ func main() {
 	// Handle the post request from the upload_form.html to the server
 	app.Post("/upload", iris.LimitRequestBodySize(maxSize+1<<20), func(ctx iris.Context) {
 		// Get the file from the request.
-		file, info, err := ctx.FormFile("uploadfile")
+		f, fh, err := ctx.FormFile("uploadfile")
 		if err != nil {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			ctx.HTML("Error while uploading: <b>" + err.Error() + "</b>")
 			return
 		}
+		defer f.Close()
 
-		defer file.Close()
-		fname := info.Filename
-
-		// Create a file with the same name
-		// assuming that you have a folder named 'uploads'
-		out, err := os.OpenFile("./uploads/"+fname,
-			os.O_WRONLY|os.O_CREATE, 0666)
+		_, err = ctx.SaveFormFile(fh, filepath.Join("./uploads", fh.Filename))
 		if err != nil {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			ctx.HTML("Error while uploading: <b>" + err.Error() + "</b>")
 			return
 		}
-		defer out.Close()
-
-		io.Copy(out, file)
 	})
 
 	// start the server at http://localhost:8080 with post limit at 5 MB.
