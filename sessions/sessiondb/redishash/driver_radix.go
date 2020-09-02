@@ -1,4 +1,4 @@
-package redis_hash
+package redishash
 
 import (
 	"errors"

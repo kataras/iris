@@ -1,4 +1,4 @@
-package redis_hash
+package redishash
 
 // Driver is the interface which each supported redis client
 // should support in order to be used in the redis session database.
