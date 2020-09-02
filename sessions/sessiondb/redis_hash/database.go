@@ -128,7 +128,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 		// not found, create an entry with ttl and return an empty lifetime, session manager will do its job.
 		valueBytes, _ := sessions.DefaultTranscoder.Marshal(sid)
 		if err := db.c.Driver.Set(sid, sid, valueBytes, int64(expires.Seconds())); err != nil {
-			golog.Debug(err)
+			db.logger.Debug(err)
 		}
 
 		return sessions.LifeTime{} // session manager will handle the rest.
@@ -151,14 +151,14 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 func (db *Database) Set(sid string, lifetime *sessions.LifeTime, key string, value interface{}, immutable bool) {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 		return
 	}
 
 	//fmt.Println("database.Set ", sid, "--", key, "---", int64(lifetime.DurationUntilExpiration().Seconds()))
 	// fmt.Printf("lifetime.DurationUntilExpiration(): %s. Seconds: %v\n", lifetime.DurationUntilExpiration(), lifetime.DurationUntilExpiration().Seconds())
 	if err = db.c.Driver.Set(sid, key, valueBytes, int64(lifetime.DurationUntilExpiration().Seconds())); err != nil {
-		golog.Debug(err)
+		db.logger.Debug(err)
 	}
 }
 
