@@ -1,26 +1,20 @@
-package redishash
+package redis
 
 import (
-	"errors"
 	"fmt"
 	"github.com/mediocregopher/radix/v3"
 )
 
 // RadixDriver the Redis service based on the radix go client,
 // contains the config and the redis cluster.
-type RadixDriver struct {
+type RadixDriverHashed struct {
 	Connected bool   //Connected is true when the Service has already connected
 	Config    Config //Config the read-only redis database config.
 	pool      radixPool
 }
 
-type radixPool interface {
-	Do(a radix.Action) error
-	Close() error
-}
-
 // Connect connects to the redis, called only once
-func (r *RadixDriver) Connect(c Config) error {
+func (r *RadixDriverHashed) Connect(c Config) error {
 	if c.Timeout < 0 {
 		c.Timeout = DefaultRedisTimeout
 	}
@@ -40,6 +34,9 @@ func (r *RadixDriver) Connect(c Config) error {
 	}
 	if c.Timeout > 0 {
 		options = append(options, radix.DialTimeout(c.Timeout))
+	}
+	if c.TLSConfig != nil {
+		options = append(options, radix.DialUseTLS(c.TLSConfig))
 	}
 
 	var pool radixPool
@@ -71,7 +68,7 @@ func (r *RadixDriver) Connect(c Config) error {
 }
 
 // PingPong sends a ping and receives a pong, if no pong received then returns false and filled error
-func (r *RadixDriver) PingPong() (bool, error) {
+func (r *RadixDriverHashed) PingPong() (bool, error) {
 	var msg string
 	err := r.pool.Do(radix.Cmd(&msg, "PING"))
 	if err != nil {
@@ -82,17 +79,17 @@ func (r *RadixDriver) PingPong() (bool, error) {
 }
 
 // CloseConnection closes the redis connection.
-func (r *RadixDriver) CloseConnection() error {
+func (r *RadixDriverHashed) CloseConnection() error {
 	if r.pool != nil {
 		return r.pool.Close()
 	}
 
-	return errors.New("redis: already closed")
+	return ErrRedisClosed
 }
 
 // Using the "HSET key field value" command.
 // The expiration is setted by the secondsLifetime.
-func (r *RadixDriver) Set(key, field string, value interface{}, secondsLifetime int64) error {
+func (r *RadixDriverHashed) Set(key, field string, value interface{}, secondsLifetime int64) error {
 	var cmd radix.CmdAction
 
 	cmd = radix.FlatCmd(nil, "HMSET", r.Config.Prefix+key, field, value)
@@ -110,7 +107,7 @@ func (r *RadixDriver) Set(key, field string, value interface{}, secondsLifetime 
 
 // Using the "HGET key field" command.
 // returns nil and a filled error if something bad happened.
-func (r *RadixDriver) Get(key, field string) (interface{}, error) {
+func (r *RadixDriverHashed) Get(key, field string) (interface{}, error) {
 	var redisVal interface{}
 	mn := radix.MaybeNil{Rcv: &redisVal}
 
@@ -119,7 +116,7 @@ func (r *RadixDriver) Get(key, field string) (interface{}, error) {
 		return nil, err
 	}
 	if mn.Nil {
-		return nil, fmt.Errorf("%s %s: %w", r.Config.Prefix+key, field, errors.New("key not found"))
+		return nil, fmt.Errorf("%s %s: %w", r.Config.Prefix+key, field, ErrKeyNotFound)
 	}
 
 	return redisVal, nil
@@ -127,7 +124,7 @@ func (r *RadixDriver) Get(key, field string) (interface{}, error) {
 
 // TTL returns the seconds to expire, if the key has expiration and error if action failed.
 // Read more at: https://redis.io/commands/ttl
-func (r *RadixDriver) TTL(key string) (seconds int64, hasExpiration bool, found bool) {
+func (r *RadixDriverHashed) TTL(key string) (seconds int64, hasExpiration bool, found bool) {
 	var redisVal interface{}
 	err := r.pool.Do(radix.Cmd(&redisVal, "TTL", r.Config.Prefix+key))
 	if err != nil {
@@ -141,7 +138,7 @@ func (r *RadixDriver) TTL(key string) (seconds int64, hasExpiration bool, found 
 	return
 }
 
-func (r *RadixDriver) updateTTLConn(key string, newSecondsLifeTime int64) error {
+func (r *RadixDriverHashed) updateTTLConn(key string, newSecondsLifeTime int64) error {
 	var reply int
 	err := r.pool.Do(radix.FlatCmd(&reply, "EXPIRE", r.Config.Prefix+key, newSecondsLifeTime))
 	if err != nil {
@@ -160,7 +157,7 @@ func (r *RadixDriver) updateTTLConn(key string, newSecondsLifeTime int64) error 
 }
 
 // Using the "HKEYS key" command.
-func (r *RadixDriver) getKeys(key string) ([]string, error) {
+func (r *RadixDriverHashed) getKeys(key string) ([]string, error) {
 	var res []string
 	err := r.pool.Do(radix.FlatCmd(&res, "HKEYS", r.Config.Prefix+key))
 	if err != nil {
@@ -171,38 +168,50 @@ func (r *RadixDriver) getKeys(key string) ([]string, error) {
 }
 
 // Using the "EXPIRE" command.
-func (r *RadixDriver) UpdateTTL(key string, newSecondsLifeTime int64) error {
+func (r *RadixDriverHashed) UpdateTTL(key string, newSecondsLifeTime int64) error {
 	return r.updateTTLConn(key, newSecondsLifeTime)
 }
 
 // UpdateTTLMany like `UpdateTTL` all keys.
 // look the `sessions/Database#OnUpdateExpiration` for example.
-func (r *RadixDriver) UpdateTTLMany(key string, newSecondsLifeTime int64) error {
+func (r *RadixDriverHashed) UpdateTTLMany(key string, newSecondsLifeTime int64) error {
 	return r.updateTTLConn(key, newSecondsLifeTime)
 }
 
 // GetKeys returns all redis hash keys using the "HKEYS key" with MATCH command.
-func (r *RadixDriver) GetKeys(key string) ([]string, error) {
+func (r *RadixDriverHashed) GetKeys(key string) ([]string, error) {
 	return r.getKeys(key)
 }
 
 // Using the "HDEL key field1" command.
 // Delete removes redis entry by specific key
-func (r *RadixDriver) Delete(key, field string) error {
+func (r *RadixDriverHashed) Delete(key, field string) error {
 	return r.pool.Do(radix.Cmd(nil, "HDEL", r.Config.Prefix+key, field))
 }
 
 // Using the "DEL key" command.
-func (r *RadixDriver) Clear(key string) error {
+func (r *RadixDriverHashed) Clear(key string) error {
 	return r.pool.Do(radix.Cmd(nil, "DEL", r.Config.Prefix+key))
 }
 
 // Using the "HLEN key" command.
-func (r *RadixDriver) Len(key string) (int, error) {
+func (r *RadixDriverHashed) Len(key string) (int, error) {
 	var length int
 	err := r.pool.Do(radix.FlatCmd(&length, "HLEN", r.Config.Prefix+key))
 	if err != nil {
 		return 0, err
 	}
 	return length, nil
+}
+
+func (r *RadixDriverHashed) DeleteByKey(key string) error {
+	return nil
+}
+
+func (r *RadixDriverHashed) GetAll() (interface{}, error) {
+	return nil, nil
+}
+
+func (r *RadixDriverHashed) GetByKey(key string) (interface{}, error) {
+	return nil, nil
 }

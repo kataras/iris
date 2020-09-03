@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/kataras/golog"
 	"strconv"
 
 	"github.com/mediocregopher/radix/v3"
@@ -97,7 +98,7 @@ func (r *RadixDriver) Connect(c Config) error {
 	} else {
 	*/
 	connFunc = func(network, addr string) (radix.Conn, error) {
-		return radix.Dial(c.Network, c.Addr, options...)
+		return radix.Dial(network, addr, options...)
 	}
 
 	var pool radixPool
@@ -148,7 +149,8 @@ func (r *RadixDriver) CloseConnection() error {
 
 // Set sets a key-value to the redis store.
 // The expiration is setted by the secondsLifetime.
-func (r *RadixDriver) Set(key string, value interface{}, secondsLifetime int64) error {
+func (r *RadixDriver) Set(sid, field string, value interface{}, secondsLifetime int64) error {
+	key := MakeKey(sid, field, r.Config.Prefix, r.Config.Delim)
 	var cmd radix.CmdAction
 	// if has expiration, then use the "EX" to delete the key automatically.
 	if secondsLifetime > 0 {
@@ -162,7 +164,12 @@ func (r *RadixDriver) Set(key string, value interface{}, secondsLifetime int64) 
 
 // Get returns value, err by its key
 // returns nil and a filled error if something bad happened.
-func (r *RadixDriver) Get(key string /* full key */) (interface{}, error) {
+func (r *RadixDriver) Get(sid, field string /* full key */) (interface{}, error) {
+	key := MakeKey(sid, field, r.Config.Prefix, r.Config.Delim)
+	return r.GetByKey(key)
+}
+
+func (r *RadixDriver) GetByKey(key string) (interface{}, error) {
 	var redisVal interface{}
 	mn := radix.MaybeNil{Rcv: &redisVal}
 
@@ -315,7 +322,33 @@ func (r *RadixDriver) GetKeys(prefix string) ([]string, error) {
 }
 
 // Delete removes redis entry by specific key
-func (r *RadixDriver) Delete(key string) error {
+func (r *RadixDriver) DeleteByKey(key string) error {
 	err := r.pool.Do(radix.Cmd(nil, "DEL", key))
 	return err
+}
+
+func (r *RadixDriver) Delete(sid, field string) error {
+	key := MakeKey(sid, field, r.Config.Prefix, r.Config.Delim)
+	return r.DeleteByKey(key)
+}
+
+func (r *RadixDriver) Clear(sid string) error {
+	keys, err := r.GetKeys(MakeKey(sid, "", r.Config.Prefix, r.Config.Delim))
+	if err != nil {
+		return err
+	}
+	for _, key := range keys {
+		if err := r.DeleteByKey(key); err != nil {
+			golog.Debugf("unable to delete session '%s' value of key: '%s': %v", sid, key, err)
+		}
+	}
+	return nil
+}
+
+func (r *RadixDriver) Len(sid string) (int, error) {
+	keys, err := r.GetKeys(MakeKey(sid, "", r.Config.Prefix, r.Config.Delim))
+	if err != nil {
+		return 0, err
+	}
+	return len(keys), nil
 }

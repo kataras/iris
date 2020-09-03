@@ -2,6 +2,7 @@ package redis
 
 import (
 	"fmt"
+	"github.com/kataras/golog"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -52,7 +53,8 @@ func (r *RedigoDriver) CloseConnection() error {
 
 // Set sets a key-value to the redis store.
 // The expiration is setted by the secondsLifetime.
-func (r *RedigoDriver) Set(key string, value interface{}, secondsLifetime int64) (err error) {
+func (r *RedigoDriver) Set(sid, field string, value interface{}, secondsLifetime int64) (err error) {
+	key := MakeKey(sid, field, r.Config.Prefix, r.Config.Delim)
 	c := r.pool.Get()
 	defer c.Close()
 	if c.Err() != nil {
@@ -71,7 +73,12 @@ func (r *RedigoDriver) Set(key string, value interface{}, secondsLifetime int64)
 
 // Get returns value, err by its key
 // returns nil and a filled error if something bad happened.
-func (r *RedigoDriver) Get(key string) (interface{}, error) {
+func (r *RedigoDriver) Get(sid, field string) (interface{}, error) {
+	key := MakeKey(sid, field, r.Config.Prefix, r.Config.Delim)
+	return r.GetByKey(key)
+}
+
+func (r *RedigoDriver) GetByKey(key string) (interface{}, error) {
 	c := r.pool.Get()
 	defer c.Close()
 	if err := c.Err(); err != nil {
@@ -277,7 +284,7 @@ func (r *RedigoDriver) GetBytes(key string) ([]byte, error) {
 }
 
 // Delete removes redis entry by specific key
-func (r *RedigoDriver) Delete(key string) error {
+func (r *RedigoDriver) DeleteByKey(key string) error {
 	c := r.pool.Get()
 	defer c.Close()
 
@@ -344,4 +351,30 @@ func (r *RedigoDriver) Connect(c Config) error {
 	r.pool = pool
 	r.Config = c
 	return nil
+}
+
+func (r *RedigoDriver) Delete(sid, field string) error {
+	key := MakeKey(sid, field, r.Config.Prefix, r.Config.Delim)
+	return r.DeleteByKey(key)
+}
+
+func (r *RedigoDriver) Clear(sid string) error {
+	keys, err := r.GetKeys(MakeKey(sid, "", r.Config.Prefix, r.Config.Delim))
+	if err != nil {
+		return err
+	}
+	for _, key := range keys {
+		if err := r.DeleteByKey(key); err != nil {
+			golog.Debugf("unable to delete session '%s' value of key: '%s': %v", sid, key, err)
+		}
+	}
+	return nil
+}
+
+func (r *RedigoDriver) Len(sid string) (int, error) {
+	keys, err := r.GetKeys(MakeKey(sid, "", r.Config.Prefix, r.Config.Delim))
+	if err != nil {
+		return 0, err
+	}
+	return len(keys), nil
 }
