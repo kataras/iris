@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 
 	"github.com/kataras/iris/v12"
 )
@@ -78,6 +79,9 @@ func newApp() *iris.Application {
 	app.Get("/templates", func(ctx iris.Context) {
 		ctx.View("index.html", iris.Map{
 			"tr": ctx.Tr, // word, arguments... {call .tr "hi" "iris"}}
+			"trUnsafe": func(message string, args ...interface{}) template.HTML {
+				return template.HTML(ctx.Tr(message, args...))
+			},
 		})
 
 		// Note that,
