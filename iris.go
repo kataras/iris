@@ -22,6 +22,7 @@ import (
 	requestLogger "github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
 	"github.com/kataras/iris/view"
+	"github.com/kataras/pio"
 
 	"github.com/kataras/golog"
 	"github.com/kataras/tunnel"
@@ -31,18 +32,38 @@ import (
 const Version = "stale"
 
 func init() {
-	golog.Fatal(`You have installed an invalid version. Install with:
-go get -u github.com/kataras/iris/v12@latest
+	fmt.Println(`You have installed an invalid version. Install with:
+	go get -u github.com/kataras/iris/v12@latest
 
-If your Open Source project depends on that pre-go1.9 version please open an issue
-at https://github.com/kataras/iris/issues/new and share your repository with us,
-we will upgrade your project's code base to the latest version for free.
+	If your Open Source project depends on that pre-go1.9 version please open an issue
+	at https://github.com/kataras/iris/issues/new and share your repository with us,
+	we will upgrade your project's code base to the latest version for free.
 
-If you have a commercial project that you cannot share publically, please contact with
-@kataras at https://chat.iris-go.com. Assistance will be provided to you and your colleagues
-for free.
-`)
+	If you have a commercial project that you cannot share publically, please contact with
+	@kataras at https://chat.iris-go.com. Assistance will be provided to you and your colleagues
+	for free.
+	`)
 
+	fmt.Print("Run ")
+	pio.WriteRich(os.Stdout, "autofix", pio.Green, pio.Underline)
+	fmt.Print("? (Y/n): ")
+	var input string
+	_, err := fmt.Scanln(&input)
+	if err != nil {
+		golog.Fatalf("can not take input from user: %v", err)
+	}
+	input = strings.ToLower(input)
+	if input == "" || input == "y" {
+		err := tryFix()
+		if err != nil {
+			golog.Fatalf("autofix: %v", err)
+		}
+
+		golog.Infof("OK. Restart the application manually now.")
+		os.Exit(0)
+	} else {
+		os.Exit(-1)
+	}
 }
 
 // Byte unit helpers.
