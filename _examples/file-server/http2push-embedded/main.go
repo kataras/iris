@@ -7,7 +7,9 @@ import (
 )
 
 // How to run:
-// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// $ go get -u github.com/go-bindata/go-bindata
+// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// # to save it to your go.mod file
 // $ go-bindata -nomemcopy -fs -prefix "../http2push/assets" ../http2push/assets/...
 // # OR if the ./assets directory was inside this example foder:
 // # go-bindata -nomemcopy -refix "assets" ./assets/...

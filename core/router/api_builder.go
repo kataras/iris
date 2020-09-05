@@ -475,11 +475,26 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 //
 // Returns all the registered routes, including GET index and path patterm and HEAD.
 //
-// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-func (api *APIBuilder) HandleDir(requestPath string, fs http.FileSystem, opts ...DirOptions) (routes []*Route) {
+// Usage:
+// HandleDir("/public", "./assets", DirOptions{...}) or
+// HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
+//
+// Examples:
+// https://github.com/kataras/iris/tree/master/_examples/file-server
+func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts ...DirOptions) (routes []*Route) {
 	options := DefaultDirOptions
 	if len(opts) > 0 {
 		options = opts[0]
+	}
+
+	var fs http.FileSystem
+	switch v := fsOrDir.(type) {
+	case string:
+		fs = http.Dir(v)
+	case http.FileSystem:
+		fs = v
+	default:
+		panic(fmt.Errorf(`unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
 	}
 
 	h := FileServer(fs, options)

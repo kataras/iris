@@ -4,8 +4,10 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-// $ go-bindata -nomemcopy -fs ./public/...
+// $ go get -u github.com/go-bindata/go-bindata
+// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// # to save it to your go.mod file
+// $ go-bindata -fs -prefix "public" ./public/...
 // $ go run .
 
 var page = struct {
@@ -14,19 +16,15 @@ var page = struct {
 
 func newApp() *iris.Application {
 	app := iris.New()
-	app.RegisterView(iris.HTML("./public", ".html").Binary(Asset, AssetNames))
+
+	app.RegisterView(iris.HTML(AssetFile(), ".html"))
+
+	app.HandleDir("/", AssetFile())
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("Page", page)
 		ctx.View("index.html")
 	})
-
-	// We didn't add a `-prefix "public"` argument on go-bindata command
-	// because the view's `Assset` and `AssetNames` require fullpath.
-	// Make use of the `PrefixDir` to serve assets on cases like that;
-	// when bindata.go file contains files that are
-	// not necessary public assets to be served.
-	app.HandleDir("/", iris.PrefixDir("public", AssetFile()))
 
 	return app
 }

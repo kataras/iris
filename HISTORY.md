@@ -364,6 +364,8 @@ Response:
 
 Other Improvements:
 
+- Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Amber`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
+
 - Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
 
 - Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Screens:
@@ -641,6 +643,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string. All examples updated.
 - `ContextUploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error)` now returns the total files uploaded too (as its first parameter) and the "before" variadic option should return a boolean, if false then the specific file is skipped.
 - `Context.PostValues(name string) ([]string, error)` now returns a second output argument of `error` type too, which reports `ErrEmptyForm` or `ErrNotFound` or `ErrEmptyFormField`. The single post value getters now returns the **last value** if multiple was given instead of the first one (this allows clients to append values on flow updates).
 - `Party.GetReporter()` **removed**. The `Application.Build` returns the first error now and the API's errors are logged, this allows the server to run even if some of the routes are invalid but not fatal to the entire application (it was a request from a company).
@@ -652,7 +655,7 @@ Breaking Changes:
 - `iris.Gzip` and `iris.GzipReader` replaced with `iris.Compression` (middleware).
 - `ctx.ClientSupportsGzip() bool` replaced with `ctx.ClientSupportsEncoding("gzip", "br" ...) bool`.
 - `ctx.GzipResponseWriter()` is **removed**.
-- `Party.HandleDir/iris.FileServer` now accepts a `http.FileSystem` instead of a string and returns a list of `[]*Route` (GET and HEAD) instead of GET only. Write: `app.HandleDir("/", iris.Dir("./assets"))` instead of `app.HandleDir("/", "./assets")` and `DirOptions.Asset, AssetNames, AssetInfo` removed, use `go-bindata -fs [..]` and `app.HandleDir("/", AssetFile())` instead.
+- `Party.HandleDir/iris.FileServer` now accepts both `http.FileSystem` and `string` and returns a list of `[]*Route` (GET and HEAD) instead of GET only. You can write: both `app.HandleDir("/", iris.Dir("./assets"))` and `app.HandleDir("/", "./assets")` and `DirOptions.Asset, AssetNames, AssetInfo` removed, use `go-bindata -fs [..]` and `app.HandleDir("/", AssetFile())` instead.
 - `Context.OnClose` and `Context.OnCloseConnection` now both accept an `iris.Handler` instead of a simple `func()` as their callback.
 - `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
 - Fixed handler's error response not be respected when response recorder was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder).

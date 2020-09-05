@@ -3,4 +3,5 @@ html
   head
     title Main Page
   body
+    h1 Layout
     {{ yield }}

@@ -2,15 +2,21 @@ package main
 
 import "github.com/kataras/iris/v12"
 
-// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-// $ go-bindata -prefix "../template_blocks_0" ../template_blocks_0/views/...
+// $ go get -u github.com/go-bindata/go-bindata
+// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// # to save it to your go.mod file
+//
+// $ go-bindata -fs -prefix "../template_blocks_0/views" ../template_blocks_0/views/...
 // $ go run .
-// # OR go-bindata -prefix "../template_blocks_0/views" ../template_blocks_0/views/... with iris.Blocks("").Binary(...)
+//
+// # OR: go-bindata -fs -prefix "views" ./views/... if the views dir is rel to the executable.
+// # OR: go-bindata -fs -prefix "../template_blocks_0" ../template_blocks_0/views/...
+// # with iris.Blocks(AssetFile()).RootDir("/views")
+//
 // System files are not used, you can optionally delete the folder and run the example now.
-
 func main() {
 	app := iris.New()
-	app.RegisterView(iris.Blocks("./views", ".html").Binary(Asset, AssetNames))
+	app.RegisterView(iris.Blocks(AssetFile(), ".html"))
 
 	app.Get("/", index)
 	app.Get("/500", internalServerError)

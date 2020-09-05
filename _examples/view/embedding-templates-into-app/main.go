@@ -1,23 +1,21 @@
 package main
 
-import (
-	"github.com/kataras/iris/v12"
-)
+import "github.com/kataras/iris/v12"
 
 func main() {
 	app := iris.New()
 
-	tmpl := iris.HTML("./templates", ".html")
+	// $ go get -u github.com/go-bindata/go-bindata
+	// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+	// # to save it to your go.mod file
+	// $ go-bindata -fs -prefix "templates" ./templates/...
+	// $ go run .
+	// html files are not used, you can delete the folder and run the example.
+	tmpl := iris.HTML(AssetFile(), ".html")
 	tmpl.Layout("layouts/layout.html")
 	tmpl.AddFunc("greet", func(s string) string {
 		return "Greetings " + s + "!"
 	})
-
-	// $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-	// $ go-bindata ./templates/...
-	// $ go run .
-	// html files are not used, you can delete the folder and run the example.
-	tmpl.Binary(Asset, AssetNames) // <-- IMPORTANT
 
 	app.RegisterView(tmpl)
 
@@ -54,8 +52,3 @@ func main() {
 	// http://localhost:8080/my/other
 	app.Listen(":8080")
 }
-
-// Note for new Gophers:
-// `go build` is used instead of `go run main.go` as the example comments says
-// otherwise you will get compile errors, this is a Go thing;
-// because you have multiple files in the `package main`.

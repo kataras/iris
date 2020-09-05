@@ -1,8 +1,6 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/macro"
 
@@ -201,8 +199,13 @@ type Party interface {
 	//
 	// Returns all the registered routes, including GET index and path patterm and HEAD.
 	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-	HandleDir(requestPath string, fs http.FileSystem, opts ...DirOptions) []*Route
+	// Usage:
+	// HandleDir("/public", "./assets", DirOptions{...}) or
+	// HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
+	//
+	// Examples:
+	// https://github.com/kataras/iris/tree/master/_examples/file-server
+	HandleDir(requestPath string, fileSystem interface{}, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and

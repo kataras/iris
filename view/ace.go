@@ -1,7 +1,6 @@
 package view
 
 import (
-	"path"
 	"sync"
 
 	"github.com/yosssi/ace"
@@ -13,8 +12,13 @@ import (
 // The given "extension" MUST begin with a dot.
 //
 // Read more about the Ace Go Parser: https://github.com/yosssi/ace
-func Ace(directory, extension string) *HTMLEngine {
-	s := HTML(directory, extension)
+//
+// Usage:
+// Ace("./views", ".ace") or
+// Ace(iris.Dir("./views"), ".ace") or
+// Ace(AssetFile(), ".ace") for embedded data.
+func Ace(fs interface{}, extension string) *HTMLEngine {
+	s := HTML(fs, extension)
 
 	funcs := make(map[string]interface{}, 0)
 
@@ -30,7 +34,7 @@ func Ace(directory, extension string) *HTMLEngine {
 			}
 		})
 
-		name = path.Join(path.Clean(directory), name)
+		//	name = path.Join(path.Clean(directory), name)
 
 		src := ace.NewSource(
 			ace.NewFile(name, text),

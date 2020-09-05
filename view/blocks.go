@@ -39,8 +39,28 @@ func WrapBlocks(v *blocks.Blocks) *BlocksEngine {
 // The given "extension" MUST begin with a dot.
 //
 // See `WrapBlocks` package-level function too.
-func Blocks(directory, extension string) *BlocksEngine {
-	return WrapBlocks(blocks.New(directory).Extension(extension))
+//
+// Usage:
+// Blocks("./views", ".html") or
+// Blocks(iris.Dir("./views"), ".html") or
+// Blocks(AssetFile(), ".html") for embedded data.
+func Blocks(fs interface{}, extension string) *BlocksEngine {
+	return WrapBlocks(blocks.New(fs).Extension(extension))
+}
+
+// RootDir sets the directory to use as the root one inside the provided File System.
+func (s *BlocksEngine) RootDir(root string) *BlocksEngine {
+	s.Engine.RootDir(root)
+	return s
+}
+
+// LayoutDir sets a custom layouts directory,
+// always relative to the "rootDir" one.
+// Layouts are recognised by their prefix names.
+// Defaults to "layouts".
+func (s *BlocksEngine) LayoutDir(relToDirLayoutDir string) *BlocksEngine {
+	s.Engine.LayoutDir(relToDirLayoutDir)
+	return s
 }
 
 // Ext returns empty ext as this template engine
@@ -63,18 +83,6 @@ func (s *BlocksEngine) AddFunc(funcName string, funcBody interface{}) {
 // AddLayoutFunc adds a template function for templates that are marked as layouts.
 func (s *BlocksEngine) AddLayoutFunc(funcName string, funcBody interface{}) *BlocksEngine {
 	s.Engine.LayoutFuncs(template.FuncMap{funcName: funcBody})
-	return s
-}
-
-// Binary sets the function which reads contents based on a filename
-// and a function that returns all the filenames.
-// These functions are used to parse the corresponding files into templates.
-// You do not need to set them when the given "rootDir" was a system directory.
-// It's mostly useful when the application contains embedded template files,
-// e.g. pass go-bindata's `Asset` and `AssetNames` functions
-// to load templates from go-bindata generated content.
-func (s *BlocksEngine) Binary(asset blocks.AssetFunc, assetNames blocks.AssetNamesFunc) *BlocksEngine {
-	s.Engine.Assets(asset, assetNames)
 	return s
 }
 

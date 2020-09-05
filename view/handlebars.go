@@ -3,7 +3,7 @@ package view
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,15 +14,16 @@ import (
 
 // HandlebarsEngine contains the handlebars view engine structure.
 type HandlebarsEngine struct {
+	fs http.FileSystem
 	// files configuration
-	directory string
+	rootDir   string
 	extension string
 	assetFn   func(name string) ([]byte, error) // for embedded, in combination with directory & extension
 	namesFn   func() []string                   // for embedded, in combination with directory & extension
 	reload    bool                              // if true, each time the ExecuteWriter is called the templates will be reloaded.
 	// parser configuration
 	layout        string
-	rmu           sync.RWMutex // locks for helpers and `ExecuteWiter` when `reload` is true.
+	rmu           sync.RWMutex
 	helpers       map[string]interface{}
 	templateCache map[string]*raymond.Template
 }
@@ -34,9 +35,15 @@ var (
 
 // Handlebars creates and returns a new handlebars view engine.
 // The given "extension" MUST begin with a dot.
-func Handlebars(directory, extension string) *HandlebarsEngine {
+//
+// Usage:
+// Handlebars("./views", ".html") or
+// Handlebars(iris.Dir("./views"), ".html") or
+// Handlebars(AssetFile(), ".html") for embedded data.
+func Handlebars(fs interface{}, extension string) *HandlebarsEngine {
 	s := &HandlebarsEngine{
-		directory:     directory,
+		fs:            getFS(fs),
+		rootDir:       "/",
 		extension:     extension,
 		templateCache: make(map[string]*raymond.Template),
 		helpers:       make(map[string]interface{}),
@@ -54,18 +61,16 @@ func Handlebars(directory, extension string) *HandlebarsEngine {
 	return s
 }
 
+// RootDir sets the directory to be used as a starting point
+// to load templates from the provided file system.
+func (s *HandlebarsEngine) RootDir(root string) *HandlebarsEngine {
+	s.rootDir = filepath.ToSlash(root)
+	return s
+}
+
 // Ext returns the file extension which this view engine is responsible to render.
 func (s *HandlebarsEngine) Ext() string {
 	return s.extension
-}
-
-// Binary optionally, use it when template files are distributed
-// inside the app executable (.go generated files).
-//
-// The assetFn and namesFn can come from the go-bindata library.
-func (s *HandlebarsEngine) Binary(assetFn func(name string) ([]byte, error), namesFn func() []string) *HandlebarsEngine {
-	s.assetFn, s.namesFn = assetFn, namesFn
-	return s
 }
 
 // Reload if set to true the templates are reloading on each render,
@@ -105,135 +110,52 @@ func (s *HandlebarsEngine) AddFunc(funcName string, funcBody interface{}) {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HandlebarsEngine) Load() error {
-	if s.assetFn != nil && s.namesFn != nil {
-		// embedded
-		return s.loadAssets()
-	}
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
 
-	// load from directory, make the dir absolute here too.
-	dir, err := filepath.Abs(s.directory)
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return err
-	}
-
-	// change the directory field configuration, load happens after directory has been set, so we will not have any problems here.
-	s.directory = dir
-	return s.loadDirectory()
-}
-
-// loadDirectory builds the handlebars templates from directory.
-func (s *HandlebarsEngine) loadDirectory() error {
 	// register the global helpers on the first load
 	if len(s.templateCache) == 0 && s.helpers != nil {
 		raymond.RegisterHelpers(s.helpers)
 	}
 
-	dir, extension := s.directory, s.extension
-
-	// the render works like {{ render "myfile.html" theContext.PartialContext}}
-	// instead of the html/template engine which works like {{ render "myfile.html"}} and accepts the parent binding, with handlebars we can't do that because of lack of runtime helpers (dublicate error)
-
-	var templateErr error
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
+	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, _ error) error {
 		if info == nil || info.IsDir() {
 			return nil
 		}
 
-		rel, err := filepath.Rel(dir, path)
+		if s.extension != "" {
+			if !strings.HasSuffix(path, s.extension) {
+				return nil
+			}
+		}
+
+		buf, err := asset(s.fs, path)
 		if err != nil {
 			return err
 		}
 
-		ext := filepath.Ext(rel)
-		if ext == extension {
-			buf, err := ioutil.ReadFile(path)
-			contents := string(buf)
-
-			if err != nil {
-				templateErr = err
-				return err
-			}
-
-			name := filepath.ToSlash(rel)
-
-			tmpl, err := raymond.Parse(contents)
-			if err != nil {
-				templateErr = err
-				return err
-			}
-			s.templateCache[name] = tmpl
+		name := strings.TrimPrefix(path, "/")
+		tmpl, err := raymond.Parse(string(buf))
+		if err != nil {
+			return err
 		}
+		s.templateCache[name] = tmpl
+
 		return nil
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return templateErr
-}
-
-// loadAssets loads the templates by binary, embedded.
-func (s *HandlebarsEngine) loadAssets() error {
-	// register the global helpers
-	if len(s.templateCache) == 0 && s.helpers != nil {
-		raymond.RegisterHelpers(s.helpers)
-	}
-
-	virtualDirectory, virtualExtension := s.directory, s.extension
-	assetFn, namesFn := s.assetFn, s.namesFn
-
-	if len(virtualDirectory) > 0 {
-		if virtualDirectory[0] == '.' { // first check for .wrong
-			virtualDirectory = virtualDirectory[1:]
-		}
-		if virtualDirectory[0] == '/' || virtualDirectory[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
-			virtualDirectory = virtualDirectory[1:]
-		}
-	}
-
-	names := namesFn()
-	for _, path := range names {
-		if !strings.HasPrefix(path, virtualDirectory) {
-			continue
-		}
-		ext := filepath.Ext(path)
-		if ext == virtualExtension {
-
-			rel, err := filepath.Rel(virtualDirectory, path)
-			if err != nil {
-				return err
-			}
-
-			buf, err := assetFn(path)
-			if err != nil {
-				return err
-			}
-
-			contents := string(buf)
-			name := filepath.ToSlash(rel)
-
-			tmpl, err := raymond.Parse(contents)
-			if err != nil {
-				return err
-			}
-			s.templateCache[name] = tmpl
-
-		}
-	}
-
-	return nil
 }
 
 func (s *HandlebarsEngine) fromCache(relativeName string) *raymond.Template {
-	tmpl, ok := s.templateCache[relativeName]
-	if !ok {
-		return nil
+	if s.reload {
+		s.rmu.RLock()
+		defer s.rmu.RUnlock()
 	}
-	return tmpl
+
+	if tmpl, ok := s.templateCache[relativeName]; ok {
+		return tmpl
+	}
+
+	return nil
 }
 
 func (s *HandlebarsEngine) executeTemplateBuf(name string, binding interface{}) (string, error) {
@@ -247,10 +169,6 @@ func (s *HandlebarsEngine) executeTemplateBuf(name string, binding interface{}) 
 func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
-		// locks to fix #872, it's the simplest solution and the most correct,
-		// to execute writers with "wait list", one at a time.
-		s.rmu.Lock()
-		defer s.rmu.Unlock()
 		if err := s.Load(); err != nil {
 			return err
 		}
@@ -295,5 +213,5 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		return err
 	}
 
-	return fmt.Errorf("template with name: %s[original name = %s] does not exist in the dir: %s", renderFilename, filename, s.directory)
+	return ErrNotExist{fmt.Sprintf("%s (file: %s)", renderFilename, filename), false}
 }

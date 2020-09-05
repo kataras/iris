@@ -115,11 +115,19 @@ func hi(ctx iris.Context) {
 
 ## Embedded
 
-View engine supports bundled(https://github.com/go-bindata/go-bindata) template files too.
-`go-bindata` gives you two functions, `Assset` and `AssetNames`,
-these can be set to each of the template engines using the `.Binary` function.
+View engine supports bundled(https://github.com/go-bindata/go-bindata) template files too. Latest
+`go-bindata` release gives you a compatible `http.FileSystem` that can be provided as the first argument of a view engine's initialization, e.g. `HTML(AssetFile(), ".html")`.
 
-Example code:
+
+```sh
+$ go get -u github.com/go-bindata/go-bindata
+# OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+# to save it to your go.mod file
+$ go-bindata -fs -prefix "templates" ./templates/...
+$ go run .
+```
+
+Example Code:
 
 ```go
 package main
@@ -128,12 +136,7 @@ import "github.com/kataras/iris/v12"
 
 func main() {
     app := iris.New()
-    // $ go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-    // $ go-bindata ./templates/...
-    // $ go build
-    // $ ./embedding-templates-into-app
-    // html files are not used, you can delete the folder and run the example
-    app.RegisterView(iris.HTML("./templates", ".html").Binary(Asset, AssetNames))
+    app.RegisterView(iris.HTML(AssetFile(), ".html"))
     app.Get("/", hi)
 
     // http://localhost:8080

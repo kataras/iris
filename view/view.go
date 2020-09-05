@@ -19,6 +19,21 @@ type (
 	EngineFuncer = context.ViewEngineFuncer
 )
 
+// ErrNotExist reports whether a template was not found in the parsed templates tree.
+type ErrNotExist struct {
+	Name     string
+	IsLayout bool
+}
+
+// Error implements the `error` interface.
+func (e ErrNotExist) Error() string {
+	title := "template"
+	if e.IsLayout {
+		title = "layout"
+	}
+	return fmt.Sprintf("%s '%s' does not exist", title, e.Name)
+}
+
 // View is responsible to
 // load the correct templates
 // for each of the registered view engines.
