@@ -6,7 +6,7 @@ import (
 
 // How to run:
 //
-// $ go get -u github.com/go-bindata/go-bindata
+// $ go get -u github.com/go-bindata/go-bindata/...
 // # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
 // # to save it to your go.mod file
 // $ go-bindata -prefix "../embedding-files-into-app/assets/" -fs ../embedding-files-into-app/assets/...
