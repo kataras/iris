@@ -34,10 +34,7 @@ Revision ID: ab226d925aa394ccecf01e515ea8479367e0961c
                      d25082d2d2                                                    
  closestmatch        1fbe626be92eb4c     https://github.com/schollz/closestmatch  
                      347d182cae9f8f0                                              
-                     0a046bf2f4                                                   
- columnize           9e6335e58db3b4c     https://github.com/ryanuber/columnize    
-                     fe3c3c5c881f51f                                              
-                     fbc1091b34                                                   
+                     0a046bf2f4                                                                                                      
  compress            4a2d40e4b07e5b3     https://github.com/klauspost/compress    
                      d333bc0569facd0                                              
                      f2dbf4ef39                                                   

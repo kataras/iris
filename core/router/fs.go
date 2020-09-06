@@ -64,9 +64,9 @@ type DirCacheOptions struct {
 // See `DefaultDirOptions`.
 type DirOptions struct {
 	// Defaults to "/index.html", if request path is ending with **/*/$IndexName
-	// then it redirects to **/*(/) which another handler is handling it,
-	// that another handler, called index handler, is auto-registered by the framework
-	// if end developer does not managed to handle it by hand.
+	// then it redirects to **/*(/).
+	// That index handler is registered automatically
+	// by the framework unless but it can be overridden.
 	IndexName string
 	// PushTargets filenames (map's value) to
 	// be served without additional client's requests (HTTP/2 Push)
@@ -94,10 +94,12 @@ type DirOptions struct {
 	// When files should served under compression.
 	Compress bool
 
-	// List the files inside the current requested directory if `IndexName` not found.
+	// List the files inside the current requested
+	// directory if `IndexName` not found.
 	ShowList bool
 	// If `ShowList` is true then this function will be used instead
-	// of the default one to show the list of files of a current requested directory(dir).
+	// of the default one to show the list of files
+	// of a current requested directory(dir).
 	// See `DirListRich` package-level function too.
 	DirList DirListFunc
 

@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
-
-	"github.com/ryanuber/columnize"
 )
 
 func init() {
@@ -120,12 +118,6 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 		return
 	}
 
-	if l.config.Columns {
-		endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
-		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message, headerMessage)
-		_, _ = ctx.Application().Logger().Printer.Write([]byte(output))
-		return
-	}
 	// no new line, the framework's logger is responsible how to render each log.
 	line := fmt.Sprintf("%v %4v %s %s %s", status, latency, ip, method, path)
 	if message != nil {
@@ -157,27 +149,4 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 		// so no "mark" signs will be printed at all <- this can be fixed by introducing a new ctx field.
 		ctx.GetCurrentRoute().Trace(ctx.Application().Logger().Printer, ctx.HandlerIndex(-1))
 	}
-}
-
-// Columnize formats the given arguments as columns and returns the formatted output,
-// note that it appends a new line to the end.
-func Columnize(nowFormatted string, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{}) string {
-	titles := "Time | Status | Latency | IP | Method | Path"
-	line := fmt.Sprintf("%s | %v | %4v | %s | %s | %s", nowFormatted, status, latency, ip, method, path)
-	if message != nil {
-		titles += " | Message"
-		line += fmt.Sprintf(" | %v", message)
-	}
-
-	if headerMessage != nil {
-		titles += " | HeaderMessage"
-		line += fmt.Sprintf(" | %v", headerMessage)
-	}
-
-	outputC := []string{
-		titles,
-		line,
-	}
-	output := columnize.SimpleFormat(outputC) + "\n"
-	return output
 }

@@ -602,6 +602,8 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.RecordBody()` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
+- `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
 - `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go).
 - `Context.ReadParams(ptr interface{}) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go).
 - `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
@@ -643,6 +645,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- Request Logger's `Columns bool` field has been removed. Use the new [accesslog](https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog/main.go) middleware instead.
 - The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string. All examples updated.
 - `ContextUploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error)` now returns the total files uploaded too (as its first parameter) and the "before" variadic option should return a boolean, if false then the specific file is skipped.
 - `Context.PostValues(name string) ([]string, error)` now returns a second output argument of `error` type too, which reports `ErrEmptyForm` or `ErrNotFound` or `ErrEmptyFormField`. The single post value getters now returns the **last value** if multiple was given instead of the first one (this allows clients to append values on flow updates).

@@ -2096,15 +2096,6 @@ func (ctx *Context) SetMaxRequestBodySize(limitOverBytes int64) {
 }
 
 // GetBody reads and returns the request body.
-// The default behavior for the http request reader is to consume the data readen
-// but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` iris option.
-//
-// However, whenever you can use the `ctx.Request().Body` instead.
-func (ctx *Context) GetBody() ([]byte, error) {
-	return GetBody(ctx.request, ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
-}
-
-// GetBody reads and returns the request body.
 func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -2118,6 +2109,31 @@ func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+const disableRequestBodyConsumptionContextKey = "iris.request.body.record"
+
+// RecordBody same as the Application's DisableBodyConsumptionOnUnmarshal configuration field
+// but acts for the current request.
+// It makes the request body readable more than once.
+func (ctx *Context) RecordBody() {
+	ctx.Values().Set(disableRequestBodyConsumptionContextKey, true)
+}
+
+// IsRecordingBody reports whether the request body can be readen multiple times.
+func (ctx *Context) IsRecordingBody() bool {
+	return ctx.Values().GetBoolDefault(disableRequestBodyConsumptionContextKey,
+		ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+}
+
+// GetBody reads and returns the request body.
+// The default behavior for the http request reader is to consume the data readen
+// but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` Iris option
+// or by calling the `RecordBody` method.
+//
+// However, whenever you can use the `ctx.Request().Body` instead.
+func (ctx *Context) GetBody() ([]byte, error) {
+	return GetBody(ctx.request, ctx.IsRecordingBody())
 }
 
 // Validator is the validator for request body on Context methods such as
@@ -2395,6 +2411,7 @@ func (ctx *Context) ReadBody(ptr interface{}) error {
 	switch ctx.GetContentTypeRequested() {
 	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
 		return ctx.ReadXML(ptr)
+		// "%v reflect.Indirect(reflect.ValueOf(ptr)).Interface())
 	case ContentYAMLHeaderValue:
 		return ctx.ReadYAML(ptr)
 	case ContentFormHeaderValue, ContentFormMultipartHeaderValue:

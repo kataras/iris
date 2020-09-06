@@ -29,7 +29,6 @@ require (
 	github.com/mediocregopher/radix/v3 v3.5.2
 	github.com/microcosm-cc/bluemonday v1.0.4
 	github.com/russross/blackfriday/v2 v2.0.1
-	github.com/ryanuber/columnize v2.1.2+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693
 	github.com/tdewolff/minify/v2 v2.9.2

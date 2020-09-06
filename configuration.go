@@ -715,6 +715,8 @@ type Configuration struct {
 	// if this field set to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+	//
+	// See `Context.RecordBody` method for the same feature, per-request.
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
 	// will return an `iris.ErrEmptyForm` on empty request form data.

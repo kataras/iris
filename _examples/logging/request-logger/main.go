@@ -21,7 +21,6 @@ func main() {
 		Query: true,
 		// Shows information about the executed route.
 		TraceRoute: true,
-		// Columns: true,
 
 		// if !empty then its contents derives from `ctx.Values().Get("logger_message")
 		// will be added to the logs.
