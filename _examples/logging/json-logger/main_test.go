@@ -30,7 +30,7 @@ func TestJSONLogger(t *testing.T) {
 
 	app.Get("/ping", ping)
 
-	const expectedLogStr = `{"level":"debug","message":"Request path: /ping","fields":{"request_id":null},"stacktrace":[{"function":"json-logger/ping","source":"C:/mygopath/src/github.com/kataras/iris/_examples/logging/json-logger/main.go:85"}]}`
+	const expectedLogStr = `{"level":"debug","message":"Request path: /ping","fields":{"request_id":null},"stacktrace":[{"function":"json-logger/ping","source":"C:/mygopath/src/github.com/kataras/iris/_examples/logging/json-logger/main.go:76"}]}`
 	e := httptest.New(t, app, httptest.LogLevel("debug"))
 	wg := new(sync.WaitGroup)
 	wg.Add(iters)
