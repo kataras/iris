@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/requestid"
 
@@ -12,7 +10,10 @@ import (
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
-	app.Logger().Handle(jsonOutput)
+	app.Logger().Handle(golog.JSON("    ")) /* see below to manually create a handler */
+
+	// Also, see app.Logger().SetLevelOutput(level string, w io.Writer)
+	// to set a custom writer for a specific level.
 
 	app.Use(requestid.New())
 
@@ -54,13 +55,6 @@ func main() {
 	app.Listen(":8080" /*, iris.WithoutBanner*/)
 }
 
-func jsonOutput(l *golog.Log) bool {
-	enc := json.NewEncoder(l.Logger.Printer) // you can change the output to a file as well.
-	enc.SetIndent("", "    ")
-	err := enc.Encode(l)
-	return err == nil
-}
-
 func ping(ctx iris.Context) {
 	/* Example Output:
 	{
@@ -85,3 +79,15 @@ func ping(ctx iris.Context) {
 
 	ctx.WriteString("pong")
 }
+
+/* Manually. Use it for any custom format:
+func jsonOutput(l *golog.Log) bool {
+    // you can change the output to a file as well.
+	enc := json.NewEncoder(l.Logger.GetLevelOutput(l.Level.String()))
+	enc.SetIndent("", "    ")
+	err := enc.Encode(l)
+	return err == nil
+}
+
+app.Logger().Handle(jsonOutput)
+*/
