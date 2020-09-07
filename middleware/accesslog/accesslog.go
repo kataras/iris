@@ -15,6 +15,28 @@ import (
 // If key or value is empty then this field is not printed.
 type FieldExtractor func(*context.Context) (string, interface{})
 
+type (
+	// Clock is an interface which contains a single `Now` method.
+	// It can be used to set a static timer on end to end testing.
+	// See `AccessLog.Clock` field.
+	Clock     interface{ Now() time.Time }
+	clockFunc func() time.Time
+)
+
+// Now completes the `Clock` interface.
+func (c clockFunc) Now() time.Time {
+	return c()
+}
+
+var (
+	// UTC returns time with UTC based location.
+	UTC = clockFunc(func() time.Time { return time.Now().UTC() })
+	// TClock accepts a static time.Time to use as
+	// accesslog's Now method on current log fired timestamp.
+	// Useful for testing.
+	TClock = func(t time.Time) clockFunc { return func() time.Time { return t } }
+)
+
 // AccessLog is a middleware which prints information
 // incoming HTTP requests.
 //
@@ -30,8 +52,29 @@ type AccessLog struct {
 	// If multiple output required, then define an `io.MultiWriter`.
 	// See `SetOutput` and `AddOutput` methods too.
 	Writer io.Writer
+	// If enabled, it locks the underline Writer.
+	// It should be turned off if the given `Writer` is already protected with a locker.
+	// It should be enabled when you don't know if the writer locks itself
+	// or when the writer is os.Stdout/os.Stderr and e.t.c.
+	//
+	// Defaults to false,
+	// as the default Iris Application's Logger is protected with mutex.
+	LockWriter bool
+
 	// If not empty then each one of them is called on `Close` method.
 	Closers []io.Closer
+
+	// If not empty then overrides the time.Now to this custom clocker's `Now` method,
+	// useful for testing (see `TClock`) and
+	// on platforms that its internal clock is not compatible by default (advanced case) and
+	// to change the time location (e.g. `UTC`).
+	//
+	// This field is used to set the time the log fired.
+	// By default the middleware is using the local time, however
+	// can be changed to `UTC` too.
+	//
+	// Do NOT touch this field if you don't know what you're doing.
+	Clock Clock
 
 	// If true then the middleware will fire the logs in a separate
 	// go routine, making the request to finish first.
@@ -60,7 +103,7 @@ type AccessLog struct {
 }
 
 // New returns a new AccessLog value with the default values.
-// Writes to the Application's logger.
+// Writes to the Application's logger. Output be modified through its `SetOutput` method.
 // Register by its `Handler` method.
 // See `File` package-level function too.
 //
@@ -68,6 +111,7 @@ type AccessLog struct {
 func New() *AccessLog {
 	return &AccessLog{
 		Async:        false,
+		LockWriter:   false,
 		BodyMinify:   true,
 		RequestBody:  true,
 		ResponseBody: true,
@@ -213,15 +257,9 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 
 func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path string) {
 	var (
-		now  = time.Now()
-		code = ctx.GetStatusCode() // response status code
 		// request and response data or error reading them.
 		requestBody  string
 		responseBody string
-
-		// url parameters and path parameters separated by space,
-		// key=value key2=value2.
-		requestValues string
 	)
 
 	// any error handler stored ( ctx.SetErr or StopWith(Plain)Error )
@@ -281,49 +319,91 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		timeFormat = ctx.Application().ConfigurationReadOnly().GetTimeFormat()
 	}
 
+	if err := ac.Print(ctx,
+		// latency between begin and finish of the handlers chain.
+		lat,
+		timeFormat,
+		// response code.
+		ctx.GetStatusCode(),
+		// original request's method and path.
+		method, path,
+		requestBody, responseBody,
+		ctx.Params(), ctx.URLParamsSorted(), fields,
+	); err != nil {
+		ctx.Application().Logger().Errorf("accesslog: %v", err)
+	}
+}
+
+// Print writes a log manually.
+// The `Handler` method calls it.
+func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) error {
+	var now time.Time
+
+	if ac.Clock != nil {
+		now = ac.Clock.Now()
+	} else {
+		now = time.Now()
+	}
+
 	if f := ac.formatter; f != nil {
 		log := &Log{
 			Logger:     ac,
 			Now:        now,
 			TimeFormat: timeFormat,
 			Timestamp:  now.Unix(),
-			Latency:    lat,
+			Latency:    latency,
 			Method:     method,
 			Path:       path,
 			Code:       code,
-			Query:      ctx.URLParamsSorted(),
-			PathParams: ctx.Params().Store,
+			Query:      query,
+			PathParams: params.Store,
 			Fields:     fields,
-			Request:    requestBody,
-			Response:   responseBody,
-			Ctx:        ctx,
+			Request:    reqBody,
+			Response:   respBody,
+			Ctx:        ctx, // ctx should only be used here, it may be nil on testing.
 		}
 
 		if err := f.Format(log); err != nil {
-			ctx.Application().Logger().Errorf("accesslog: %v", err)
+			return err
+		}
+
+		// OK, it's handled, exit now.
+		return nil
+	}
+
+	// url parameters, path parameters and custom fields separated by space,
+	// key=value key2=value2.
+	requestValues := parseRequestValues(code, params, query, fields)
+
+	useLocker := ac.LockWriter
+	w := ac.Writer
+	if w == nil {
+		if ctx != nil {
+			w = ctx.Application().Logger().Printer
 		} else {
-			// OK, it's handled, exit now.
-			return
+			w = os.Stdout
+			useLocker = true // force lock.
 		}
 	}
 
-	requestValues = parseRequestValues(code, ctx.Params(), ctx.URLParamsSorted(), fields)
-
-	w := ac.Writer
-	if w == nil {
-		w = ctx.Application().Logger().Printer
+	if useLocker {
+		ac.mu.Lock()
 	}
-
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
-	fmt.Fprintf(w, "%s|%s|%s|%s|%s|%d|%s|%s|\n",
+	_, err := fmt.Fprintf(w, "%s|%s|%s|%s|%s|%d|%s|%s|\n",
 		now.Format(timeFormat),
-		lat,
+		latency,
 		method,
 		path,
 		requestValues,
 		code,
-		requestBody,
-		responseBody,
+		reqBody,
+		respBody,
 	)
+	if useLocker {
+		ac.mu.Unlock()
+	}
+
+	return err
 }

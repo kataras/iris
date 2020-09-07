@@ -20,6 +20,7 @@ func main() {
 	}
 	ac := accesslog.New()
 	ac.SetOutput(w)
+
 	/*
 		Use a file directly:
 		ac := accesslog.File("./access.log")
@@ -27,11 +28,15 @@ func main() {
 		Log after the response was sent:
 		ac.Async = true
 
+		Protect writer with locks.
+		On this example this is not required but enable it on os.Stdout and e.t.c:
+		ac.LockWriter = true
+
 		Custom Time Format:
 		ac.TimeFormat = ""
 
 		Add second output:
-		ac.AddOutput(os.Stdout)
+		ac.AddOutput(app.Logger().Printer)
 
 		Change format (after output was set):
 		ac.SetFormatter(&accesslog.JSON{Indent: "  "})
