@@ -1,6 +1,7 @@
 package accesslog
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -47,18 +48,17 @@ var (
 // and its `Handler` method to learn more.
 type AccessLog struct {
 	mu sync.Mutex // ensures atomic writes.
-	// If not nil then it overrides the Application's Logger.
-	// Useful to write to a file.
+	// The destination writer.
 	// If multiple output required, then define an `io.MultiWriter`.
 	// See `SetOutput` and `AddOutput` methods too.
 	Writer io.Writer
 	// If enabled, it locks the underline Writer.
 	// It should be turned off if the given `Writer` is already protected with a locker.
-	// It should be enabled when you don't know if the writer locks itself
-	// or when the writer is os.Stdout/os.Stderr and e.t.c.
+	// It is enabled when writer is os.Stdout/os.Stderr.
+	// You should manually set this field to true if you are not sure
+	// whether the underline Writer is protected.
 	//
-	// Defaults to false,
-	// as the default Iris Application's Logger is protected with mutex.
+	// Defaults to true on *os.File and *bytes.Buffer, otherwise false.
 	LockWriter bool
 
 	// If not empty then each one of them is called on `Close` method.
@@ -82,7 +82,8 @@ type AccessLog struct {
 	//
 	// Defaults to false.
 	Async bool
-	// If not empty then it overrides the Application's configuration's TimeFormat field.
+	// The time format for current time on log print.
+	// Defaults to the Iris Application's TimeFormat.
 	TimeFormat string
 	// Force minify request and response contents.
 	BodyMinify bool
@@ -103,20 +104,24 @@ type AccessLog struct {
 }
 
 // New returns a new AccessLog value with the default values.
-// Writes to the Application's logger. Output be modified through its `SetOutput` method.
+// Writes to the "w". Output be further modified through its `Set/AddOutput` methods.
 // Register by its `Handler` method.
 // See `File` package-level function too.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
-func New() *AccessLog {
-	return &AccessLog{
-		Async:        false,
-		LockWriter:   false,
+func New(w io.Writer) *AccessLog {
+	ac := &AccessLog{
 		BodyMinify:   true,
 		RequestBody:  true,
 		ResponseBody: true,
-		TimeFormat:   "2006-01-02 15:04:05",
 	}
+
+	if w == nil {
+		w = os.Stdout
+	}
+	ac.SetOutput(w)
+
+	return ac
 }
 
 // File returns a new AccessLog value with the given "path"
@@ -133,18 +138,20 @@ func File(path string) *AccessLog {
 		panic(err)
 	}
 
-	ac := New()
-	ac.SetOutput(f)
-	return ac
+	return New(f)
 }
 
 // Write writes to the log destination.
 // It completes the io.Writer interface.
 // Safe for concurrent use.
 func (ac *AccessLog) Write(p []byte) (int, error) {
-	ac.mu.Lock()
+	if ac.LockWriter {
+		ac.mu.Lock()
+	}
 	n, err := ac.Writer.Write(p)
-	ac.mu.Unlock()
+	if ac.LockWriter {
+		ac.mu.Unlock()
+	}
 	return n, err
 }
 
@@ -152,17 +159,28 @@ func (ac *AccessLog) Write(p []byte) (int, error) {
 // Also, if a writer is a Closer, then it is automatically appended to the Closers.
 // Call it before `SetFormatter` and `Handler` methods.
 func (ac *AccessLog) SetOutput(writers ...io.Writer) *AccessLog {
+	if len(writers) == 0 {
+		return ac
+	}
+
+	lockWriter := false
 	for _, w := range writers {
 		if closer, ok := w.(io.Closer); ok {
 			ac.Closers = append(ac.Closers, closer)
 		}
-	}
 
-	switch len(writers) {
-	case 0:
-	case 1:
+		if !lockWriter {
+			switch w.(type) {
+			case *os.File, *bytes.Buffer: // force lock writer.
+				lockWriter = true
+			}
+		}
+	}
+	ac.LockWriter = lockWriter
+
+	if len(writers) == 1 {
 		ac.Writer = writers[0]
-	default:
+	} else {
 		ac.Writer = io.MultiWriter(writers...)
 	}
 
@@ -187,6 +205,10 @@ func (ac *AccessLog) AddOutput(writers ...io.Writer) *AccessLog {
 // Usage:
 // ac.SetFormatter(&accesslog.JSON{Indent: "  "})
 func (ac *AccessLog) SetFormatter(f Formatter) *AccessLog {
+	if ac.Writer == nil {
+		panic("accesslog: SetFormatter called with nil Writer")
+	}
+
 	f.SetOutput(ac.Writer) // inject the writer here.
 	ac.formatter = f
 	return ac
@@ -220,7 +242,7 @@ func (ac *AccessLog) Close() (err error) {
 // It is the main method of the AccessLog middleware.
 //
 // Usage:
-// ac := New() or File("access.log")
+// ac := New(io.Writer) or File("access.log")
 // defer ac.Close()
 // app.UseRouter(ac.Handler)
 func (ac *AccessLog) Handler(ctx *context.Context) {
@@ -375,23 +397,9 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 	// key=value key2=value2.
 	requestValues := parseRequestValues(code, params, query, fields)
 
-	useLocker := ac.LockWriter
-	w := ac.Writer
-	if w == nil {
-		if ctx != nil {
-			w = ctx.Application().Logger().Printer
-		} else {
-			w = os.Stdout
-			useLocker = true // force lock.
-		}
-	}
-
-	if useLocker {
-		ac.mu.Lock()
-	}
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
-	_, err := fmt.Fprintf(w, "%s|%s|%s|%s|%s|%d|%s|%s|\n",
+	_, err := fmt.Fprintf(ac, "%s|%s|%s|%s|%s|%d|%s|%s|\n",
 		now.Format(timeFormat),
 		latency,
 		method,
@@ -401,9 +409,6 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		reqBody,
 		respBody,
 	)
-	if useLocker {
-		ac.mu.Unlock()
-	}
 
 	return err
 }

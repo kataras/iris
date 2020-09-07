@@ -15,10 +15,13 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 	const goroutinesN = 42
 
 	w := new(bytes.Buffer)
-	ac := New()
-	ac.Writer = w
-	ac.LockWriter = true
+	ac := New(w)
+	ac.TimeFormat = "2006-01-02 15:04:05"
 	ac.Clock = TClock(time.Time{})
+
+	if !ac.LockWriter { // should be true because we register a *bytes.Buffer.
+		t.Fatalf("expected LockRriter to be true")
+	}
 
 	var (
 		expected string

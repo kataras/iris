@@ -100,7 +100,9 @@ type Formatter interface {
 	// otherwise the log will be printed using the default formatter
 	// and the error will be printed to the Iris Application's error log level.
 	Format(log *Log) error
-	// SetWriter should inject the accesslog's output.
+	// SetWriter should inject the accesslog's direct output,
+	// if this "dest" is used then the Formatter
+	// should manually control its concurrent use.
 	SetOutput(dest io.Writer)
 }
 
@@ -133,15 +135,10 @@ func (f *JSON) SetOutput(dest io.Writer) {
 }
 
 // Format prints the logs in JSON format.
+// Writes to the destination directly,
+// locks on each Format call.
 func (f *JSON) Format(log *Log) error {
 	f.mu.Lock()
-	if f.enc == nil {
-		// If no custom writer is given then f.enc is nil,
-		// this code block should only be executed once.
-		// Also, the app's logger's writer cannot change during serve-time,
-		// so all logs share the same instance output.
-		f.SetOutput(log.Ctx.Application().Logger().Printer)
-	}
 	err := f.enc.Encode(log)
 	f.mu.Unlock()
 
@@ -162,7 +159,8 @@ type Template struct {
 	// is response to hold the log result.
 	TmplName string
 
-	mu sync.Mutex
+	dest io.Writer
+	mu   sync.Mutex
 }
 
 // SetOutput creates the default template if missing
@@ -176,24 +174,23 @@ func (f *Template) SetOutput(dest io.Writer) {
 
 		f.Tmpl = template.Must(template.New("").Parse(text))
 	}
+
+	f.dest = dest
 }
 
 const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.Request}}|{{.Response}}|\n"
 
 // Format prints the logs in text/template format.
 func (f *Template) Format(log *Log) error {
-	var (
-		w   = log.Logger.Writer
-		err error
-	)
+	var err error
 
 	// A template may be executed safely in parallel, although if parallel
 	// executions share a Writer the output may be interleaved.
 	f.mu.Lock()
 	if f.TmplName != "" {
-		err = f.Tmpl.ExecuteTemplate(w, f.TmplName, log)
+		err = f.Tmpl.ExecuteTemplate(f.dest, f.TmplName, log)
 	} else {
-		err = f.Tmpl.Execute(w, log)
+		err = f.Tmpl.Execute(f.dest, log)
 	}
 	f.mu.Unlock()
 

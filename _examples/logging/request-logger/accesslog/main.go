@@ -18,8 +18,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ac := accesslog.New()
-	ac.SetOutput(w)
+	ac := accesslog.New(w)
+	ac.TimeFormat = "2006-01-02 15:04:05"
 
 	/*
 		Use a file directly:
@@ -28,12 +28,9 @@ func main() {
 		Log after the response was sent:
 		ac.Async = true
 
-		Protect writer with locks.
-		On this example this is not required but enable it on os.Stdout and e.t.c:
-		ac.LockWriter = true
-
-		Custom Time Format:
-		ac.TimeFormat = ""
+		Force-protect writer with locks.
+		On this example this is not required:
+		ac.LockWriter = true"
 
 		Add second output:
 		ac.AddOutput(app.Logger().Printer)
