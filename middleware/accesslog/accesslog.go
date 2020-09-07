@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/memstore"
 )
+
+// FieldExtractor extracts a log's entry key with its corresponding value.
+// If key or value is empty then this field is not printed.
+type FieldExtractor func(*context.Context) (string, interface{})
 
 // AccessLog is a middleware which prints information
 // incoming HTTP requests.
@@ -46,6 +50,12 @@ type AccessLog struct {
 	// Note that, if this is true then it uses a response recorder.
 	ResponseBody bool
 
+	// Map log fields with custom request values.
+	// See `Log.Fields`.
+	Fields []FieldExtractor
+	// Note: We could use a map but that way we lose the
+	// order of registration so use a slice and
+	// take the field key from the extractor itself.
 	formatter Formatter
 }
 
@@ -128,6 +138,13 @@ func (ac *AccessLog) AddOutput(writers ...io.Writer) *AccessLog {
 func (ac *AccessLog) SetFormatter(f Formatter) *AccessLog {
 	f.SetOutput(ac.Writer) // inject the writer here.
 	ac.formatter = f
+	return ac
+}
+
+// AddField maps a log entry with a value extracted by the Request Context.
+// Not safe for concurrent use. Call it before `Handler` method.
+func (ac *AccessLog) AddField(extractors ...FieldExtractor) *AccessLog {
+	ac.Fields = append(ac.Fields, extractors...)
 	return ac
 }
 
@@ -236,54 +253,54 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		}
 	}
 
-	if f := ac.formatter; f != nil {
-		log := &Log{
-			Logger:     ac,
-			Now:        now,
-			Timestamp:  now.Unix(),
-			Latency:    lat,
-			Method:     method,
-			Path:       path,
-			Query:      ctx.URLParamsSorted(),
-			PathParams: ctx.Params().Store,
-			// TODO: Fields:
-			Request:  requestBody,
-			Response: responseBody,
-			Ctx:      ctx,
+	// Grab any custom fields.
+	var fields []memstore.Entry
+
+	if n := len(ac.Fields); n > 0 {
+		fields = make([]memstore.Entry, n)
+
+		for _, extract := range ac.Fields {
+			key, value := extract(ctx)
+			if key == "" || value == nil {
+				continue
+			}
+
+			fields = append(fields, memstore.Entry{Key: key, ValueRaw: value})
 		}
-
-		if f.Format(log) { // OK, it's handled, exit now.
-			return
-		}
-	}
-
-	var buf strings.Builder
-
-	if !context.StatusCodeNotSuccessful(code) {
-		// collect path parameters on a successful request-response only.
-		ctx.Params().Visit(func(key, value string) {
-			buf.WriteString(key)
-			buf.WriteByte('=')
-			buf.WriteString(value)
-			buf.WriteByte(' ')
-		})
-	}
-
-	for _, entry := range ctx.URLParamsSorted() {
-		buf.WriteString(entry.Key)
-		buf.WriteByte('=')
-		buf.WriteString(entry.Value)
-		buf.WriteByte(' ')
-	}
-
-	if n := buf.Len(); n > 1 {
-		requestValues = buf.String()[0 : n-1] // remove last space.
 	}
 
 	timeFormat := ac.TimeFormat
 	if timeFormat == "" {
 		timeFormat = ctx.Application().ConfigurationReadOnly().GetTimeFormat()
 	}
+
+	if f := ac.formatter; f != nil {
+		log := &Log{
+			Logger:     ac,
+			Now:        now,
+			TimeFormat: timeFormat,
+			Timestamp:  now.Unix(),
+			Latency:    lat,
+			Method:     method,
+			Path:       path,
+			Code:       code,
+			Query:      ctx.URLParamsSorted(),
+			PathParams: ctx.Params().Store,
+			Fields:     fields,
+			Request:    requestBody,
+			Response:   responseBody,
+			Ctx:        ctx,
+		}
+
+		if err := f.Format(log); err != nil {
+			ctx.Application().Logger().Errorf("accesslog: %v", err)
+		} else {
+			// OK, it's handled, exit now.
+			return
+		}
+	}
+
+	requestValues = parseRequestValues(code, ctx.Params(), ctx.URLParamsSorted(), fields)
 
 	w := ac.Writer
 	if w == nil {

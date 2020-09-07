@@ -35,6 +35,12 @@ func main() {
 
 		Change format (after output was set):
 		ac.SetFormatter(&accesslog.JSON{Indent: "  "})
+
+		Change the format and customize the order
+		with the Template format:
+		ac.SetFormatter(&accesslog.Template{
+		    Text: "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.Request}}|{{.Response}}|\n",
+		})
 	*/
 
 	defer ac.Close()
