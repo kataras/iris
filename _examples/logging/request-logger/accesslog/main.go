@@ -41,6 +41,16 @@ func main() {
 		ac.SetFormatter(&accesslog.Template{
 		    Text: "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.Request}}|{{.Response}}|\n",
 		})
+
+		Set custom request fields:
+		ac.AddField(func(ctx iris.Context) (string, interface{}) {
+		    v := ctx.RemoteAddr()
+		    if v == "" {
+		        return "", nil
+		    }
+		    // the log entry name and its value.
+		    return "IP", v
+		})
 	*/
 
 	defer ac.Close()

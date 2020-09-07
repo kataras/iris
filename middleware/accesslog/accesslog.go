@@ -257,7 +257,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	var fields []memstore.Entry
 
 	if n := len(ac.Fields); n > 0 {
-		fields = make([]memstore.Entry, n)
+		fields = make([]memstore.Entry, 0, n)
 
 		for _, extract := range ac.Fields {
 			key, value := extract(ctx)

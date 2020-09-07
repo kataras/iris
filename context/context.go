@@ -1129,6 +1129,8 @@ type (
 	// The structure contains struct tags for JSON, form, XML, YAML and TOML.
 	// Look the `GetReferrer() Referrer` and `goreferrer` external package.
 	Referrer struct {
+		// The raw refer(r)er URL.
+		Raw        string                   `json:"raw" form:"raw" xml:"Raw" yaml:"Raw" toml:"Raw"`
 		Type       ReferrerType             `json:"type" form:"referrer_type" xml:"Type" yaml:"Type" toml:"Type"`
 		Label      string                   `json:"label" form:"referrer_form" xml:"Label" yaml:"Label" toml:"Label"`
 		URL        string                   `json:"url" form:"referrer_url" xml:"URL" yaml:"URL" toml:"URL"`
@@ -1146,6 +1148,11 @@ type (
 	// ReferrerGoogleSearchType is the goreferrer enum for a google search type (organic, adwords).
 	ReferrerGoogleSearchType = goreferrer.GoogleSearchType
 )
+
+// String returns the raw ref url.
+func (ref Referrer) String() string {
+	return ref.Raw
+}
 
 // Contains the available values of the goreferrer enums.
 const (
@@ -1187,6 +1194,7 @@ func (ctx *Context) GetReferrer() Referrer {
 
 	if ref := goreferrer.DefaultRules.Parse(refURL); ref.Type > goreferrer.Invalid {
 		return Referrer{
+			Raw:        refURL,
 			Type:       ReferrerType(ref.Type),
 			Label:      ref.Label,
 			URL:        ref.URL,
