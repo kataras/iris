@@ -215,12 +215,6 @@ func (s *HTMLEngine) Funcs(funcMap template.FuncMap) *HTMLEngine {
 //
 // Returns an error if something bad happens, caller is responsible to handle that.
 func (s *HTMLEngine) Load() error {
-	s.rmu.Lock()
-	defer s.rmu.Unlock()
-
-	s.Templates = template.New(s.rootDir)
-	s.Templates.Delims(s.left, s.right)
-
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 			return nil
@@ -236,28 +230,49 @@ func (s *HTMLEngine) Load() error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", path, err)
 		}
-		contents := string(buf)
 
-		name := strings.TrimPrefix(path, "/")
-		tmpl := s.Templates.New(name)
-		tmpl.Option(s.options...)
-
-		if s.middleware != nil {
-			contents, err = s.middleware(name, buf)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Add our funcmaps.
-		_, err = tmpl.
-			Funcs(emptyFuncs).
-			//	Funcs(s.makeDefaultLayoutFuncs(name)).
-			//	Funcs(s.layoutFuncs).
-			Funcs(s.funcs).
-			Parse(contents)
-		return err
+		return s.ParseTemplate(path, buf, nil)
 	})
+}
+
+func (s *HTMLEngine) initRootTmpl() { // protected by the caller.
+	if s.Templates == nil {
+		// the root template should be the same,
+		// no matter how many reloads as the
+		// following unexported fields cannot be modified.
+		s.Templates = template.New(s.rootDir)
+		s.Templates.Delims(s.left, s.right)
+	}
+}
+
+// ParseTemplate adds a custom template to the root template.
+func (s *HTMLEngine) ParseTemplate(name string, contents []byte, funcMap template.FuncMap) (err error) {
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
+
+	s.initRootTmpl()
+
+	name = strings.TrimPrefix(name, "/")
+	tmpl := s.Templates.New(name)
+	tmpl.Option(s.options...)
+
+	var text string
+
+	if s.middleware != nil {
+		text, err = s.middleware(name, contents)
+		if err != nil {
+			return
+		}
+	} else {
+		text = string(contents)
+	}
+
+	tmpl.Funcs(emptyFuncs).Funcs(s.funcs)
+	if len(funcMap) > 0 {
+		tmpl.Funcs(funcMap) // custom for this template.
+	}
+	_, err = tmpl.Parse(text)
+	return
 }
 
 func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {

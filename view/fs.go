@@ -49,6 +49,10 @@ func assetNames(fs http.FileSystem, name string) ([]string, error) {
 		return nil, err
 	}
 
+	if f == nil {
+		return nil, nil
+	}
+
 	infos, err := f.Readdir(-1)
 	f.Close()
 	if err != nil {
@@ -82,9 +86,17 @@ func asset(fs http.FileSystem, name string) ([]byte, error) {
 }
 
 func getFS(fsOrDir interface{}) (fs http.FileSystem) {
+	if fsOrDir == nil {
+		return noOpFS{}
+	}
+
 	switch v := fsOrDir.(type) {
 	case string:
-		fs = httpDirWrapper{http.Dir(v)}
+		if v == "" {
+			fs = noOpFS{}
+		} else {
+			fs = httpDirWrapper{http.Dir(v)}
+		}
 	case http.FileSystem:
 		fs = v
 	default:
@@ -94,6 +106,10 @@ func getFS(fsOrDir interface{}) (fs http.FileSystem) {
 	return
 }
 
+type noOpFS struct{}
+
+func (fs noOpFS) Open(name string) (http.File, error) { return nil, nil }
+
 // fixes: "invalid character in file path"
 // on amber engine (it uses the virtual fs directly
 // and it uses filepath instead of the path package...).
@@ -101,6 +117,6 @@ type httpDirWrapper struct {
 	http.Dir
 }
 
-func (d httpDirWrapper) Open(name string) (http.File, error) {
-	return d.Dir.Open(filepath.ToSlash(name))
+func (fs httpDirWrapper) Open(name string) (http.File, error) {
+	return fs.Dir.Open(filepath.ToSlash(name))
 }

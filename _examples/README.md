@@ -110,6 +110,7 @@
     * [Inject Engine Between Handlers](view/context-view-engine/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
     * [Write to a custom `io.Writer`](view/write-to)
+    * [Parse a Template manually](view/parse-template/main.go)
     * [Blocks](view/template_blocks_0)
     * [Blocks Embedded](view/template_blocks_1_embedded)
     * [Pug: `Actions`](view/template_pug_0)
