@@ -163,13 +163,14 @@ func (ctx *Context) Clone() *Context {
 		queryCopy[k] = v
 	}
 
+	req := ctx.request.Clone(ctx.request.Context())
 	return &Context{
 		app:                 ctx.app,
 		values:              valuesCopy,
 		params:              RequestParams{Store: paramsCopy},
 		query:               queryCopy,
 		writer:              ctx.writer.Clone(),
-		request:             ctx.request,
+		request:             req,
 		currentHandlerIndex: stopExecutionIndex,
 		proceeded:           atomic.LoadUint32(&ctx.proceeded),
 		currentRoute:        ctx.currentRoute,

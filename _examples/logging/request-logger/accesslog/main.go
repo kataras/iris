@@ -1,18 +1,48 @@
 package main // See https://github.com/kataras/iris/issues/1601
 
 import (
+	"time"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/accesslog"
+
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 )
 
 func main() {
-	app := iris.New()
-	ac := accesslog.File("./access.log")
+	pathToAccessLog := "./access_log.%Y%m%d%H%M"
+	w, err := rotatelogs.New(
+		pathToAccessLog,
+		rotatelogs.WithMaxAge(24*time.Hour),
+		rotatelogs.WithRotationTime(time.Hour))
+	if err != nil {
+		panic(err)
+	}
+	ac := accesslog.New()
+	ac.SetOutput(w)
+	/*
+		Use a file directly:
+		ac := accesslog.File("./access.log")
+
+		Log after the response was sent:
+		ac.Async = true
+
+		Custom Time Format:
+		ac.TimeFormat = ""
+
+		Add second output:
+		ac.AddOutput(os.Stdout)
+
+		Change format (after output was set):
+		ac.SetFormatter(&accesslog.JSON{Indent: "  "})
+	*/
+
 	defer ac.Close()
 	iris.RegisterOnInterrupt(func() {
 		ac.Close()
 	})
 
+	app := iris.New()
 	// Register the middleware (UseRouter to catch http errors too).
 	app.UseRouter(ac.Handler)
 	//

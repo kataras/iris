@@ -29,6 +29,12 @@ type AccessLog struct {
 	// If not empty then each one of them is called on `Close` method.
 	Closers []io.Closer
 
+	// If true then the middleware will fire the logs in a separate
+	// go routine, making the request to finish first.
+	// The log will be printed based on a copy of the Request's Context instead.
+	//
+	// Defaults to false.
+	Async bool
 	// If not empty then it overrides the Application's configuration's TimeFormat field.
 	TimeFormat string
 	// Force minify request and response contents.
@@ -39,14 +45,19 @@ type AccessLog struct {
 	// Enable response body logging.
 	// Note that, if this is true then it uses a response recorder.
 	ResponseBody bool
+
+	formatter Formatter
 }
 
 // New returns a new AccessLog value with the default values.
 // Writes to the Application's logger.
 // Register by its `Handler` method.
 // See `File` package-level function too.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
 func New() *AccessLog {
 	return &AccessLog{
+		Async:        false,
 		BodyMinify:   true,
 		RequestBody:  true,
 		ResponseBody: true,
@@ -85,6 +96,7 @@ func (ac *AccessLog) Write(p []byte) (int, error) {
 
 // SetOutput sets the log's output destination. Accepts one or more io.Writer values.
 // Also, if a writer is a Closer, then it is automatically appended to the Closers.
+// Call it before `SetFormatter` and `Handler` methods.
 func (ac *AccessLog) SetOutput(writers ...io.Writer) *AccessLog {
 	for _, w := range writers {
 		if closer, ok := w.(io.Closer); ok {
@@ -97,12 +109,26 @@ func (ac *AccessLog) SetOutput(writers ...io.Writer) *AccessLog {
 }
 
 // AddOutput appends an io.Writer value to the existing writer.
+// Call it before `SetFormatter` and `Handler` methods.
 func (ac *AccessLog) AddOutput(writers ...io.Writer) *AccessLog {
 	if ac.Writer != nil { // prepend if one exists.
 		writers = append([]io.Writer{ac.Writer}, writers...)
 	}
 
 	return ac.SetOutput(writers...)
+}
+
+// SetFormatter sets a custom formatter to print the logs.
+// Any custom output writers should be
+// already registered before calling this method.
+// Returns this AccessLog instance.
+//
+// Usage:
+// ac.SetFormatter(&accesslog.JSON{Indent: "  "})
+func (ac *AccessLog) SetFormatter(f Formatter) *AccessLog {
+	f.SetOutput(ac.Writer) // inject the writer here.
+	ac.formatter = f
+	return ac
 }
 
 // Close calls each registered Closer's Close method.
@@ -152,11 +178,18 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	ctx.Next()
 
 	latency := time.Since(startTime)
-	ac.after(ctx, latency, method, path)
+	if ac.Async {
+		ctxCopy := ctx.Clone()
+		go ac.after(ctxCopy, latency, method, path)
+	} else {
+		// wait to finish before proceed with response end.
+		ac.after(ctx, latency, method, path)
+	}
 }
 
 func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path string) {
 	var (
+		now  = time.Now()
 		code = ctx.GetStatusCode() // response status code
 		// request and response data or error reading them.
 		requestBody  string
@@ -203,6 +236,27 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		}
 	}
 
+	if f := ac.formatter; f != nil {
+		log := &Log{
+			Logger:     ac,
+			Now:        now,
+			Timestamp:  now.Unix(),
+			Latency:    lat,
+			Method:     method,
+			Path:       path,
+			Query:      ctx.URLParamsSorted(),
+			PathParams: ctx.Params().Store,
+			// TODO: Fields:
+			Request:  requestBody,
+			Response: responseBody,
+			Ctx:      ctx,
+		}
+
+		if f.Format(log) { // OK, it's handled, exit now.
+			return
+		}
+	}
+
 	var buf strings.Builder
 
 	if !context.StatusCodeNotSuccessful(code) {
@@ -239,7 +293,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
 	fmt.Fprintf(w, "%s|%s|%s|%s|%s|%d|%s|%s|\n",
-		time.Now().Format(timeFormat),
+		now.Format(timeFormat),
 		lat,
 		method,
 		path,
