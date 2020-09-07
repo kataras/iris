@@ -2717,6 +2717,11 @@ func (ctx *Context) CompressWriter(enable bool) error {
 		w.Disabled = true
 	case *ResponseRecorder:
 		if enable {
+			// If it's a recorder which already wraps the compress, exit.
+			if _, ok := w.ResponseWriter.(*CompressResponseWriter); ok {
+				return nil
+			}
+
 			// Keep the Recorder as ctx.writer.
 			// Wrap the existing net/http response writer
 			// with the compressed writer and

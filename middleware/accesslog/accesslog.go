@@ -114,7 +114,14 @@ func (ac *AccessLog) SetOutput(writers ...io.Writer) *AccessLog {
 		}
 	}
 
-	ac.Writer = io.MultiWriter(writers...)
+	switch len(writers) {
+	case 0:
+	case 1:
+		ac.Writer = writers[0]
+	default:
+		ac.Writer = io.MultiWriter(writers...)
+	}
+
 	return ac
 }
 
