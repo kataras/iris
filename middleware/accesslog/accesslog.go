@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http/httputil"
 	"os"
 	"sync"
 	"time"
@@ -85,6 +86,15 @@ type AccessLog struct {
 	// The time format for current time on log print.
 	// Defaults to the Iris Application's TimeFormat.
 	TimeFormat string
+
+	// The actual number of bytes received and sent on the network (headers + body).
+	// It is kind of "slow" operation as it uses the httputil to dumb request
+	// and response to get the total amount of bytes (headers + body).
+	BytesReceived bool
+	BytesSent     bool
+	// Note: We could calculate only the bodies, which is a fast operation if we already
+	// have RequestBody and ResponseBody set to true but this is not an accurate measurement.
+
 	// Force minify request and response contents.
 	BodyMinify bool
 	// Enable request body logging.
@@ -111,9 +121,11 @@ type AccessLog struct {
 // Example: https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
-		BodyMinify:   true,
-		RequestBody:  true,
-		ResponseBody: true,
+		BytesReceived: true,
+		BytesSent:     true,
+		BodyMinify:    true,
+		RequestBody:   true,
+		ResponseBody:  true,
 	}
 
 	if w == nil {
@@ -238,6 +250,15 @@ func (ac *AccessLog) Close() (err error) {
 	return
 }
 
+func (ac *AccessLog) shouldReadRequestBody() bool {
+	return ac.RequestBody || ac.BytesReceived
+
+}
+
+func (ac *AccessLog) shouldReadResponseBody() bool {
+	return ac.ResponseBody || ac.BytesSent
+}
+
 // Handler prints request information to the output destination.
 // It is the main method of the AccessLog middleware.
 //
@@ -255,12 +276,12 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	)
 
 	// Enable response recording.
-	if ac.ResponseBody {
+	if ac.shouldReadResponseBody() {
 		ctx.Record()
 	}
 	// Enable reading the request body
 	// multiple times (route handler and this middleware).
-	if ac.RequestBody {
+	if ac.shouldReadRequestBody() {
 		ctx.RecordBody()
 	}
 
@@ -280,43 +301,74 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path string) {
 	var (
 		// request and response data or error reading them.
-		requestBody  string
-		responseBody string
+		requestBody   string
+		responseBody  string
+		bytesReceived int
+		bytesSent     int
 	)
 
-	// any error handler stored ( ctx.SetErr or StopWith(Plain)Error )
-	if ctxErr := ctx.GetErr(); ctxErr != nil {
-		requestBody = fmt.Sprintf("error(%s)", ctxErr.Error())
-	} else if ac.RequestBody {
-		requestData, err := ctx.GetBody()
-		if err != nil {
+	if ac.shouldReadRequestBody() {
+		//	any error handler stored ( ctx.SetErr or StopWith(Plain)Error )
+		if ctxErr := ctx.GetErr(); ctxErr != nil {
+			// If there is an error here
+			// we may need to NOT read the body for security reasons, e.g.
+			// unauthorized user tries to send a malicious body.
 			requestBody = fmt.Sprintf("error(%s)", ctxErr.Error())
 		} else {
-			if ac.BodyMinify {
-				if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentTypeRequested(), requestData); err == nil {
-					requestBody = string(minified)
+			requestData, err := ctx.GetBody()
+			requestBodyLength := len(requestData)
+			if err != nil && ac.RequestBody {
+				requestBody = fmt.Sprintf("error(%s)", err)
+			} else if requestBodyLength > 0 {
+				if ac.RequestBody {
+					if ac.BodyMinify {
+						if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentTypeRequested(), requestData); err == nil {
+							requestBody = string(minified)
+						}
+					}
+					/* Some content types, like the text/plain,
+					   no need minifier. Should be printed with spaces and \n. */
+					if requestBody == "" {
+						requestBody = string(requestData)
+					}
 				}
 			}
-			/* Some content types, like the text/plain,
-			   no need minifier. Should be printed with spaces and \n. */
-			if requestBody == "" {
-				requestBody = string(requestData)
+
+			if ac.BytesReceived {
+				// Unfortunally the DumpRequest cannot read the body
+				// length as expected (see postman's i/o values)
+				// so we had to read the data length manually even if RequestBody/ResponseBody
+				// are false, extra operation if they are enabled is to minify their log entry representation.
+
+				b, _ := httputil.DumpRequest(ctx.Request(), false)
+				bytesReceived = len(b) + requestBodyLength
 			}
 		}
 	}
 
-	if ac.RequestBody {
-		if responseData := ctx.Recorder().Body(); len(responseData) > 0 {
+	if ac.shouldReadResponseBody() {
+		responseData := ctx.Recorder().Body()
+		responseBodyLength := len(responseData)
+		if ac.ResponseBody && responseBodyLength > 0 {
 			if ac.BodyMinify {
-				if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentType(), ctx.Recorder().Body()); err == nil {
+				if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentType(), responseData); err == nil {
 					responseBody = string(minified)
 				}
-
 			}
 
 			if responseBody == "" {
 				responseBody = string(responseData)
 			}
+		}
+
+		if ac.BytesSent {
+			resp := ctx.Recorder().Result()
+			b, _ := httputil.DumpResponse(resp, false)
+			dateLengthProx := 38 /* it's actually ~37 */
+			if resp.Header.Get("Date") != "" {
+				dateLengthProx = 0 // dump response calculated it.
+			}
+			bytesSent = len(b) + responseBodyLength + dateLengthProx
 		}
 	}
 
@@ -350,6 +402,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		// original request's method and path.
 		method, path,
 		requestBody, responseBody,
+		bytesReceived, bytesSent,
 		ctx.Params(), ctx.URLParamsSorted(), fields,
 	); err != nil {
 		ctx.Application().Logger().Errorf("accesslog: %v", err)
@@ -358,7 +411,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 
 // Print writes a log manually.
 // The `Handler` method calls it.
-func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) error {
+func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) error {
 	var now time.Time
 
 	if ac.Clock != nil {
@@ -369,20 +422,22 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 
 	if f := ac.formatter; f != nil {
 		log := &Log{
-			Logger:     ac,
-			Now:        now,
-			TimeFormat: timeFormat,
-			Timestamp:  now.Unix(),
-			Latency:    latency,
-			Method:     method,
-			Path:       path,
-			Code:       code,
-			Query:      query,
-			PathParams: params.Store,
-			Fields:     fields,
-			Request:    reqBody,
-			Response:   respBody,
-			Ctx:        ctx, // ctx should only be used here, it may be nil on testing.
+			Logger:        ac,
+			Now:           now,
+			TimeFormat:    timeFormat,
+			Timestamp:     now.Unix(),
+			Latency:       latency,
+			Method:        method,
+			Path:          path,
+			Code:          code,
+			Query:         query,
+			PathParams:    params.Store,
+			Fields:        fields,
+			BytesReceived: bytesReceived,
+			BytesSent:     bytesSent,
+			Request:       reqBody,
+			Response:      respBody,
+			Ctx:           ctx, // ctx should only be used here, it may be nil on testing.
 		}
 
 		if err := f.Format(log); err != nil {
@@ -399,13 +454,15 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
-	_, err := fmt.Fprintf(ac, "%s|%s|%s|%s|%s|%d|%s|%s|\n",
+	_, err := fmt.Fprintf(ac, "%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|\n",
 		now.Format(timeFormat),
 		latency,
 		method,
 		path,
 		requestValues,
 		code,
+		formatBytes(bytesReceived),
+		formatBytes(bytesSent),
 		reqBody,
 		respBody,
 	)

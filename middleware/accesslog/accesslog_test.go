@@ -30,7 +30,7 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 
 	for i := 0; i < goroutinesN; i++ {
 		wg.Add(1)
-		expected += "0001-01-01 00:00:00|1s|GET|/path_value?url_query=url_query_value|path_param=path_param_value url_query=url_query_value custom=custom_value|200|Incoming|Outcoming|\n"
+		expected += "0001-01-01 00:00:00|1s|GET|/path_value?url_query=url_query_value|path_param=path_param_value url_query=url_query_value custom=custom_value|200|||Incoming|Outcoming|\n"
 
 		go func() {
 			defer wg.Done()
@@ -44,6 +44,8 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 				"/path_value?url_query=url_query_value",
 				"Incoming",
 				"Outcoming",
+				0,
+				0,
 				&context.RequestParams{
 					Store: []memstore.Entry{
 						{Key: "path_param", ValueRaw: "path_param_value"},

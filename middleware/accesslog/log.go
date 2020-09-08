@@ -40,6 +40,10 @@ type Log struct {
 	// Fields any data information useful to represent this Log.
 	Fields []memstore.Entry `json:"fields,omitempty"`
 
+	//  The actual number of bytes received and sent on the network (headers + body).
+	BytesReceived int `json:"bytes_received"`
+	BytesSent     int `json:"bytes_sent"`
+
 	// The Request and Response raw bodies.
 	// If they are escaped (e.g. JSON),
 	// A third-party software can read it through:
@@ -57,6 +61,34 @@ type Log struct {
 // combines the path parameters, query and custom fields.
 func (l *Log) RequestValuesLine() string {
 	return parseRequestValues(l.Code, l.Ctx.Params(), l.Ctx.URLParamsSorted(), l.Fields)
+}
+
+// BytesReceivedLine returns the formatted bytes received length.
+func (l *Log) BytesReceivedLine() string {
+	return formatBytes(l.BytesReceived)
+}
+
+// BytesSentLine returns the formatted bytes sent length.
+func (l *Log) BytesSentLine() string {
+	return formatBytes(l.BytesSent)
+}
+
+func formatBytes(b int) string {
+	if b <= 0 {
+		return ""
+	}
+
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 func parseRequestValues(code int, pathParams *context.RequestParams, query []memstore.StringEntry, fields memstore.Store) (requestValues string) {
@@ -178,7 +210,7 @@ func (f *Template) SetOutput(dest io.Writer) {
 	f.dest = dest
 }
 
-const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.Request}}|{{.Response}}|\n"
+const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
 
 // Format prints the logs in text/template format.
 func (f *Template) Format(log *Log) error {

@@ -1,6 +1,6 @@
-2020-08-22 00:44:20|993.3µs|POST|/read_body||200|{"id":10,"name":"Tim","age":22}|{"message":"OK"}|
-2020-08-22 00:44:30|0s|POST|/read_body||400||error(invalid character 'a' looking for beginning of object key string)||
-2020-08-22 03:02:41|1ms|GET|/|a=1 b=2|200||<h1>Hello index</h1>|
-2020-08-22 03:15:29|968.8µs|GET|/public|file=public|404|||
-2020-08-22 03:03:42|0s|GET|/user/kataras|username=kataras|200||Hello, kataras!|
-2020-08-22 03:05:40|0s|GET|/user/kataras|username=kataras a_query_parameter=name|200||Hello, kataras!|
+2020-09-08 13:34:42|0s|POST|/read_body||200|324 B|217 B|{"name":"John","email":"example@example.com"}|{"data":{"email":"example@example.com","name":"John"},"message":"OK"}|
+2020-09-08 13:40:28|0s|POST|/read_body||400||85 B|error(invalid character '\r' in string literal)||
+2020-09-08 13:41:05|1.0024ms|GET|/|a=1 b=2|200|767 B|251 B||<h1>Hello index</h1>|
+2020-09-08 13:41:26|0s|GET|/public||404|765 B|83 B|||
+2020-09-08 13:41:36|0s|GET|/user/kataras|username=kataras|200|771 B|91 B||Hello, kataras!|
+2020-09-08 13:41:47|0s|GET|/user/kataras|username=kataras a_query_parameter=name|200|774 B|91 B||Hello, kataras!|

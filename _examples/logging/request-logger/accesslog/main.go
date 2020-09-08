@@ -25,12 +25,19 @@ func main() {
 		Use a file directly:
 		ac := accesslog.File("./access.log")
 
-		Log after the response was sent:
+		Log after the response was sent (defaults to false):
 		ac.Async = true
 
 		Force-protect writer with locks.
 		On this example this is not required:
 		ac.LockWriter = true"
+
+		// To disable request and response calculations
+		// (enabled by default but slows down the whole operation if Async is false):
+		ac.RequestBody = false
+		ac.ResponseBody = false
+		ac.BytesReceived = false
+		ac.BytesSent = false
 
 		Add second output:
 		ac.AddOutput(app.Logger().Printer)
@@ -38,10 +45,11 @@ func main() {
 		Change format (after output was set):
 		ac.SetFormatter(&accesslog.JSON{Indent: "  "})
 
-		Change the format and customize the order
-		with the Template format:
+		Modify the output format and customize the order
+		with the Template formatter:
 		ac.SetFormatter(&accesslog.Template{
-		    Text: "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.Request}}|{{.Response}}|\n",
+		    Text: "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n",
+		    // Default ^
 		})
 
 		Set custom request fields:
