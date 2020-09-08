@@ -235,18 +235,8 @@ func (s *HTMLEngine) Load() error {
 	})
 }
 
-func (s *HTMLEngine) initRootTmpl() { // protected by the caller.
-	if s.Templates == nil {
-		// the root template should be the same,
-		// no matter how many reloads as the
-		// following unexported fields cannot be modified.
-		s.Templates = template.New(s.rootDir)
-		s.Templates.Delims(s.left, s.right)
-	}
-}
-
 // ParseTemplate adds a custom template to the root template.
-func (s *HTMLEngine) ParseTemplate(name string, contents []byte, funcMap template.FuncMap) (err error) {
+func (s *HTMLEngine) ParseTemplate(name string, contents []byte, funcs template.FuncMap) (err error) {
 	s.rmu.Lock()
 	defer s.rmu.Unlock()
 
@@ -268,11 +258,21 @@ func (s *HTMLEngine) ParseTemplate(name string, contents []byte, funcMap templat
 	}
 
 	tmpl.Funcs(emptyFuncs).Funcs(s.funcs)
-	if len(funcMap) > 0 {
-		tmpl.Funcs(funcMap) // custom for this template.
+	if len(funcs) > 0 {
+		tmpl.Funcs(funcs) // custom for this template.
 	}
 	_, err = tmpl.Parse(text)
 	return
+}
+
+func (s *HTMLEngine) initRootTmpl() { // protected by the caller.
+	if s.Templates == nil {
+		// the root template should be the same,
+		// no matter how many reloads as the
+		// following unexported fields cannot be modified.
+		s.Templates = template.New(s.rootDir)
+		s.Templates.Delims(s.left, s.right)
+	}
 }
 
 func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {

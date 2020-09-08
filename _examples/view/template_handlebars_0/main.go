@@ -10,13 +10,13 @@ func main() {
 	app.Logger().SetLevel("debug")
 
 	// Init the handlebars engine
-	engine := iris.Handlebars("./templates", ".html").Reload(true)
+	e := iris.Handlebars("./templates", ".html").Reload(true)
 	// Register a helper.
-	engine.AddFunc("fullName", func(person map[string]string) string {
+	e.AddFunc("fullName", func(person map[string]string) string {
 		return person["firstName"] + " " + person["lastName"]
 	})
 
-	app.RegisterView(engine)
+	app.RegisterView(e)
 
 	app.Get("/", func(ctx iris.Context) {
 		viewData := iris.Map{

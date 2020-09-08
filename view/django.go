@@ -100,6 +100,7 @@ type DjangoEngine struct {
 	filters map[string]FilterFunction
 	// globals share context fields between templates.
 	globals       map[string]interface{}
+	Set           *pongo2.TemplateSet
 	templateCache map[string]*pongo2.Template
 }
 
@@ -204,12 +205,6 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {
-	set := pongo2.NewSet("", &tDjangoAssetLoader{fs: s.fs, rootDir: s.rootDir})
-	set.Globals = getPongoContext(s.globals)
-
-	s.rmu.Lock()
-	defer s.rmu.Unlock()
-
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 			return nil
@@ -221,15 +216,37 @@ func (s *DjangoEngine) Load() error {
 			}
 		}
 
-		buf, err := asset(s.fs, path)
+		contents, err := asset(s.fs, path)
 		if err != nil {
 			return err
 		}
 
-		name := strings.TrimPrefix(path, "/")
-		s.templateCache[name], err = set.FromBytes(buf)
-		return err
+		return s.ParseTemplate(path, contents)
 	})
+}
+
+// ParseTemplate adds a custom template from text.
+// This parser does not support funcs per template. Use the `AddFunc` instead.
+func (s *DjangoEngine) ParseTemplate(name string, contents []byte) error {
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
+
+	s.initSet()
+
+	name = strings.TrimPrefix(name, "/")
+	tmpl, err := s.Set.FromBytes(contents)
+	if err == nil {
+		s.templateCache[name] = tmpl
+	}
+
+	return err
+}
+
+func (s *DjangoEngine) initSet() { // protected by the caller.
+	if s.Set == nil {
+		s.Set = pongo2.NewSet("", &tDjangoAssetLoader{fs: s.fs, rootDir: s.rootDir})
+		s.Set.Globals = getPongoContext(s.globals)
+	}
 }
 
 // getPongoContext returns the pongo2.Context from map[string]interface{} or from pongo2.Context, used internaly

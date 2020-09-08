@@ -22,8 +22,9 @@ type AmberEngine struct {
 	reload    bool
 	//
 	rmu           sync.RWMutex // locks for `ExecuteWiter` when `reload` is true.
-	funcs         map[string]interface{}
 	templateCache map[string]*template.Template
+
+	Options amber.Options
 }
 
 var (
@@ -39,12 +40,17 @@ var (
 // Amber(iris.Dir("./views"), ".amber") or
 // Amber(AssetFile(), ".amber") for embedded data.
 func Amber(fs interface{}, extension string) *AmberEngine {
+	fileSystem := getFS(fs)
 	s := &AmberEngine{
-		fs:            getFS(fs),
+		fs:            fileSystem,
 		rootDir:       "/",
 		extension:     extension,
 		templateCache: make(map[string]*template.Template),
-		funcs:         make(map[string]interface{}),
+		Options: amber.Options{
+			PrettyPrint:       false,
+			LineNumbers:       false,
+			VirtualFilesystem: fileSystem,
+		},
 	}
 
 	return s
@@ -79,9 +85,16 @@ func (s *AmberEngine) Reload(developmentMode bool) *AmberEngine {
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (template.HTML, error).
+//
+// Note that, Amber does not support functions per template,
+// instead it's using the "call" directive so any template-specific
+// functions should be passed using `Context.View/ViewData` binding data.
+// This method will modify the global amber's FuncMap which considers
+// as the "builtin" as this is the only way to actually add a function.
+// Note that, if you use more than one amber engine, the functions are shared.
 func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 	s.rmu.Lock()
-	s.funcs[funcName] = funcBody
+	amber.FuncMap[funcName] = funcBody
 	s.rmu.Unlock()
 }
 
@@ -90,28 +103,6 @@ func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *AmberEngine) Load() error {
-	s.rmu.Lock()
-	defer s.rmu.Unlock()
-
-	// prepare the global amber funcs
-	funcs := template.FuncMap{}
-
-	for k, v := range amber.FuncMap { // add the amber's default funcs
-		funcs[k] = v
-	}
-
-	for k, v := range s.funcs {
-		funcs[k] = v
-	}
-
-	amber.FuncMap = funcs // set the funcs
-
-	opts := amber.Options{
-		PrettyPrint:       false,
-		LineNumbers:       false,
-		VirtualFilesystem: s.fs,
-	}
-
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 			return nil
@@ -123,22 +114,64 @@ func (s *AmberEngine) Load() error {
 			}
 		}
 
-		buf, err := asset(s.fs, path)
+		contents, err := asset(s.fs, path)
 		if err != nil {
 			return fmt.Errorf("%s: %w", path, err)
 		}
 
-		name := strings.TrimPrefix(path, "/")
-
-		tmpl, err := amber.CompileData(buf, name, opts)
+		err = s.ParseTemplate(path, contents)
 		if err != nil {
-			return fmt.Errorf("%s: %w", path, err)
+			return fmt.Errorf("%s: %v", path, err)
 		}
-
-		s.templateCache[name] = tmpl
-
 		return nil
 	})
+}
+
+// ParseTemplate adds a custom template from text.
+// This template parser does not support funcs per template directly.
+// Two ways to add a function:
+// Globally: Use `AddFunc` or pass them on `View` instead.
+// Per Template: Use `Context.ViewData/View`.
+func (s *AmberEngine) ParseTemplate(name string, contents []byte) error {
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
+
+	comp := amber.New()
+	comp.Options = s.Options
+
+	err := comp.ParseData(contents, name)
+	if err != nil {
+		return err
+	}
+
+	data, err := comp.CompileString()
+	if err != nil {
+		return err
+	}
+
+	name = strings.TrimPrefix(name, "/")
+
+	/* Sadly, this does not work, only builtin amber.FuncMap
+	can be executed as function, the rest are compiled as data (prepends a "call"),
+	relative code:
+	https://github.com/eknkc/amber/blob/cdade1c073850f4ffc70a829e31235ea6892853b/compiler.go#L771-L794
+
+	tmpl := template.New(name).Funcs(amber.FuncMap).Funcs(s.funcs)
+	if len(funcs) > 0 {
+		tmpl.Funcs(funcs)
+	}
+
+	We can't add them as binding data of map type
+	because those data can be a struct by the caller and we don't want to messup.
+	*/
+
+	tmpl := template.New(name).Funcs(amber.FuncMap)
+	_, err = tmpl.Parse(data)
+	if err == nil {
+		s.templateCache[name] = tmpl
+	}
+
+	return err
 }
 
 func (s *AmberEngine) fromCache(relativeName string) *template.Template {

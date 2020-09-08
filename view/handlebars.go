@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"os"
@@ -24,7 +25,7 @@ type HandlebarsEngine struct {
 	// parser configuration
 	layout        string
 	rmu           sync.RWMutex
-	helpers       map[string]interface{}
+	funcs         template.FuncMap
 	templateCache map[string]*raymond.Template
 }
 
@@ -46,7 +47,7 @@ func Handlebars(fs interface{}, extension string) *HandlebarsEngine {
 		rootDir:       "/",
 		extension:     extension,
 		templateCache: make(map[string]*raymond.Template),
-		helpers:       make(map[string]interface{}),
+		funcs:         make(template.FuncMap), // global
 	}
 
 	// register the render helper here
@@ -94,14 +95,21 @@ func (s *HandlebarsEngine) Layout(layoutFile string) *HandlebarsEngine {
 	return s
 }
 
-// AddFunc adds the function to the template's function map.
+// AddFunc adds a function to the templates.
 // It is legal to overwrite elements of the default actions:
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (raymond.HTML, error).
 func (s *HandlebarsEngine) AddFunc(funcName string, funcBody interface{}) {
 	s.rmu.Lock()
-	s.helpers[funcName] = funcBody
+	s.funcs[funcName] = funcBody
+	s.rmu.Unlock()
+}
+
+// AddGlobalFunc registers a global template function for all Handlebars view engines.
+func (s *HandlebarsEngine) AddGlobalFunc(funcName string, funcBody interface{}) {
+	s.rmu.Lock()
+	raymond.RegisterHelper(funcName, funcBody)
 	s.rmu.Unlock()
 }
 
@@ -110,14 +118,6 @@ func (s *HandlebarsEngine) AddFunc(funcName string, funcBody interface{}) {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HandlebarsEngine) Load() error {
-	s.rmu.Lock()
-	defer s.rmu.Unlock()
-
-	// register the global helpers on the first load
-	if len(s.templateCache) == 0 && s.helpers != nil {
-		raymond.RegisterHelpers(s.helpers)
-	}
-
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, _ error) error {
 		if info == nil || info.IsDir() {
 			return nil
@@ -129,20 +129,35 @@ func (s *HandlebarsEngine) Load() error {
 			}
 		}
 
-		buf, err := asset(s.fs, path)
+		contents, err := asset(s.fs, path)
 		if err != nil {
 			return err
 		}
-
-		name := strings.TrimPrefix(path, "/")
-		tmpl, err := raymond.Parse(string(buf))
-		if err != nil {
-			return err
-		}
-		s.templateCache[name] = tmpl
-
-		return nil
+		return s.ParseTemplate(path, string(contents), nil)
 	})
+}
+
+// ParseTemplate adds a custom template from text.
+func (s *HandlebarsEngine) ParseTemplate(name string, contents string, funcs template.FuncMap) error {
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
+
+	name = strings.TrimPrefix(name, "/")
+	tmpl, err := raymond.Parse(contents)
+	if err == nil {
+		// Add functions for this template.
+		for k, v := range s.funcs {
+			tmpl.RegisterHelper(k, v)
+		}
+
+		for k, v := range funcs {
+			tmpl.RegisterHelper(k, v)
+		}
+
+		s.templateCache[name] = tmpl
+	}
+
+	return err
 }
 
 func (s *HandlebarsEngine) fromCache(relativeName string) *raymond.Template {
@@ -201,7 +216,7 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 				context = make(map[string]interface{}, 1)
 			}
 			// I'm implemented the {{ yield }} as with the rest of template engines, so this is not inneed for iris, but the user can do that manually if want
-			// there is no performanrce different: raymond.RegisterPartialTemplate(name, tmpl)
+			// there is no performance cost: raymond.RegisterPartialTemplate(name, tmpl)
 			context["yield"] = raymond.SafeString(contents)
 		}
 

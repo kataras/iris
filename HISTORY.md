@@ -364,6 +364,7 @@ Response:
 
 Other Improvements:
 
+- Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/master/_examples/view/parse-template).
 - Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Amber`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
 
 - Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.

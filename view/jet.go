@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/kataras/iris/v12/context"
 
@@ -28,6 +29,7 @@ type JetEngine struct {
 	// The Set is the `*jet.Set`, exported to offer any custom capabilities that jet users may want.
 	// Available after `Load`.
 	Set *jet.Set
+	mu  sync.Mutex
 
 	// Note that global vars and functions are set in a single spot on the jet parser.
 	// If AddFunc or AddVar called before `Load` then these will be set here to be used via `Load` and clear.
@@ -212,20 +214,37 @@ func (l *jetLoader) Exists(name string) (string, bool) {
 
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 func (s *JetEngine) Load() error {
-	s.Set = jet.NewHTMLSetLoader(s.loader)
-	s.Set.SetDevelopmentMode(s.developmentMode)
-
-	if s.vars != nil {
-		for key, value := range s.vars {
-			s.Set.AddGlobal(key, value)
-		}
-	}
+	s.initSet()
 
 	// Note that, unlike the rest of template engines implementations,
 	// we don't call the Set.GetTemplate to parse the templates,
 	// we let it to the jet template parser itself which does that at serve-time and caches each template by itself.
 
 	return nil
+}
+
+// ParseTemplate accepts a name and contnets to parse and cache a template.
+// This parser does not support funcs per template. Use the `AddFunc` instead.
+func (s *JetEngine) ParseTemplate(name string, contents string) error {
+	s.initSet()
+
+	_, err := s.Set.LoadTemplate(name, contents)
+	return err
+}
+
+func (s *JetEngine) initSet() {
+	s.mu.Lock()
+	if s.Set == nil {
+		s.Set = jet.NewHTMLSetLoader(s.loader)
+		s.Set.SetDevelopmentMode(s.developmentMode)
+
+		if s.vars != nil {
+			for key, value := range s.vars {
+				s.Set.AddGlobal(key, value)
+			}
+		}
+	}
+	s.mu.Unlock()
 }
 
 type (
