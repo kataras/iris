@@ -9,13 +9,39 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/memstore"
 )
 
-// FieldExtractor extracts a log's entry key with its corresponding value.
-// If key or value is empty then this field is not printed.
-type FieldExtractor func(*context.Context) (string, interface{})
+func init() {
+	context.SetHandlerName("iris/middleware/accesslog.*", "iris.accesslog")
+}
+
+const accessLogFieldsContextKey = "iris.accesslog.request.fields"
+
+// GetFields returns the accesslog fields for this request.
+// Returns a store which the caller can use to
+// set/get/remove custom log fields. Use its `Set` method.
+func GetFields(ctx iris.Context) (fields *Fields) {
+	if v := ctx.Values().Get(accessLogFieldsContextKey); v != nil {
+		fields = v.(*Fields)
+	} else {
+		fields = new(Fields)
+		ctx.Values().Set(accessLogFieldsContextKey, fields)
+	}
+
+	return
+}
+
+type (
+
+	// Fields is a type alias for memstore.Store, used to set
+	// more than one field at serve-time. Same as FieldExtractor.
+	Fields = memstore.Store
+	// FieldSetter sets one or more fields at once.
+	FieldSetter func(*context.Context, *Fields)
+)
 
 type (
 	// Clock is an interface which contains a single `Now` method.
@@ -105,8 +131,8 @@ type AccessLog struct {
 	ResponseBody bool
 
 	// Map log fields with custom request values.
-	// See `Log.Fields`.
-	Fields []FieldExtractor
+	// See `AddFields` method.
+	FieldSetters []FieldSetter
 	// Note: We could use a map but that way we lose the
 	// order of registration so use a slice and
 	// take the field key from the extractor itself.
@@ -226,10 +252,11 @@ func (ac *AccessLog) SetFormatter(f Formatter) *AccessLog {
 	return ac
 }
 
-// AddField maps a log entry with a value extracted by the Request Context.
-// Not safe for concurrent use. Call it before `Handler` method.
-func (ac *AccessLog) AddField(extractors ...FieldExtractor) *AccessLog {
-	ac.Fields = append(ac.Fields, extractors...)
+// AddFields maps one or more log entries with values extracted by the Request Context.
+// You can also add fields per request handler, look the `GetFields` package-level function.
+// Note that this method can override a key stored by a handler's fields.
+func (ac *AccessLog) AddFields(setters ...FieldSetter) *AccessLog {
+	ac.FieldSetters = append(ac.FieldSetters, setters...)
 	return ac
 }
 
@@ -284,6 +311,12 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	if ac.shouldReadRequestBody() {
 		ctx.RecordBody()
 	}
+
+	// Set the fields context value so they can be modified
+	// on the following handlers chain. Same as `AddFields` but per-request.
+	// ctx.Values().Set(accessLogFieldsContextKey, new(Fields))
+	// No need ^ The GetFields will set it if it's missing.
+	// So we initialize them whenever, and if, asked.
 
 	// Proceed to the handlers chain.
 	ctx.Next()
@@ -373,19 +406,10 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	}
 
 	// Grab any custom fields.
-	var fields []memstore.Entry
+	fields := GetFields(ctx)
 
-	if n := len(ac.Fields); n > 0 {
-		fields = make([]memstore.Entry, 0, n)
-
-		for _, extract := range ac.Fields {
-			key, value := extract(ctx)
-			if key == "" || value == nil {
-				continue
-			}
-
-			fields = append(fields, memstore.Entry{Key: key, ValueRaw: value})
-		}
+	for _, setter := range ac.FieldSetters {
+		setter(ctx, fields)
 	}
 
 	timeFormat := ac.TimeFormat
@@ -403,7 +427,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		method, path,
 		requestBody, responseBody,
 		bytesReceived, bytesSent,
-		ctx.Params(), ctx.URLParamsSorted(), fields,
+		ctx.Params(), ctx.URLParamsSorted(), *fields,
 	); err != nil {
 		ctx.Application().Logger().Errorf("accesslog: %v", err)
 	}

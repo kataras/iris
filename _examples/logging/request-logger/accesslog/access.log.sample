@@ -4,3 +4,6 @@
 2020-09-08 13:41:26|0s|GET|/public||404|765 B|83 B|||
 2020-09-08 13:41:36|0s|GET|/user/kataras|username=kataras|200|771 B|91 B||Hello, kataras!|
 2020-09-08 13:41:47|0s|GET|/user/kataras|username=kataras a_query_parameter=name|200|774 B|91 B||Hello, kataras!|
+2020-09-08 20:37:33|0s|GET|/admin|auth=admin:admin|200|608 B|164 B||<h2>Username: admin</h2><h3>Password: admin</h3>|
+2020-09-09 07:56:00|738.1µs|GET|/session|session_id=23fe763f-c9d5-4d65-9e1a-2cc8d23d1aa3 session_test_key=session_test_value|200|818 B|302 B||OK|
+2020-09-09 08:19:13|2.0053069s|GET|/fields|fieldsHandler_latency=2s|200|570 B|130 B||OK|
