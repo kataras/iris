@@ -110,6 +110,11 @@ type noOpFS struct{}
 
 func (fs noOpFS) Open(name string) (http.File, error) { return nil, nil }
 
+func isNoOpFS(fs http.FileSystem) bool {
+	_, ok := fs.(noOpFS)
+	return ok
+}
+
 // fixes: "invalid character in file path"
 // on amber engine (it uses the virtual fs directly
 // and it uses filepath instead of the path package...).

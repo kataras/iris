@@ -34,9 +34,9 @@ type Log struct {
 	// The response status code.
 	Code int `json:"code"`
 	// Sorted URL Query arguments.
-	Query []memstore.StringEntry `json:"query"`
+	Query []memstore.StringEntry `json:"query,omitempty"`
 	// Dynamic path parameters.
-	PathParams []memstore.Entry `json:"params"`
+	PathParams []memstore.Entry `json:"params,omitempty"`
 	// Fields any data information useful to represent this Log.
 	Fields []memstore.Entry `json:"fields,omitempty"`
 
@@ -127,15 +127,17 @@ func parseRequestValues(code int, pathParams *context.RequestParams, query []mem
 
 // Formatter is responsible to print a Log to the accesslog's writer.
 type Formatter interface {
+	// SetOutput should inject the accesslog's direct output,
+	// if this "dest" is used then the Formatter
+	// should manually control its concurrent use.
+	SetOutput(dest io.Writer)
 	// Format should print the Log.
 	// Returns nil error on handle successfully,
 	// otherwise the log will be printed using the default formatter
 	// and the error will be printed to the Iris Application's error log level.
-	Format(log *Log) error
-	// SetWriter should inject the accesslog's direct output,
-	// if this "dest" is used then the Formatter
-	// should manually control its concurrent use.
-	SetOutput(dest io.Writer)
+	// Should return true if this handled the logging, otherwise false to
+	// continue with the default print format.
+	Format(log *Log) (bool, error)
 }
 
 var (
@@ -169,12 +171,12 @@ func (f *JSON) SetOutput(dest io.Writer) {
 // Format prints the logs in JSON format.
 // Writes to the destination directly,
 // locks on each Format call.
-func (f *JSON) Format(log *Log) error {
+func (f *JSON) Format(log *Log) (bool, error) {
 	f.mu.Lock()
 	err := f.enc.Encode(log)
 	f.mu.Unlock()
 
-	return err
+	return true, err
 }
 
 // Template is a Formatter.
@@ -213,7 +215,7 @@ func (f *Template) SetOutput(dest io.Writer) {
 const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
 
 // Format prints the logs in text/template format.
-func (f *Template) Format(log *Log) error {
+func (f *Template) Format(log *Log) (bool, error) {
 	var err error
 
 	// A template may be executed safely in parallel, although if parallel
@@ -226,5 +228,5 @@ func (f *Template) Format(log *Log) error {
 	}
 	f.mu.Unlock()
 
-	return err
+	return true, err
 }

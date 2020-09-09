@@ -72,7 +72,8 @@
     * [Sitemap](routing/sitemap/main.go)
 * Logging
     * [Request Logger](logging/request-logger/main.go)
-        * [Log requests and responses to access.log](logging/request-logger/accesslog)
+        * [AccessLog: log request & response and more](logging/request-logger/accesslog)
+        * [AccessLog: listen to logs and render them](logging/request-logger/accesslog-broker/main.go)
         * [Log Requests to a JSON File](logging/request-logger/request-logger-file-json/main.go) 
     * [Application File Logger](logging/file-logger/main.go)
     * [Application JSON Logger](logging/json-logger/main.go)

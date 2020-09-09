@@ -59,7 +59,7 @@ func (w *ResponseRecorder) Naive() http.ResponseWriter {
 // prepares itself, the response recorder, to record and send response to the client.
 func (w *ResponseRecorder) BeginRecord(underline ResponseWriter) {
 	w.ResponseWriter = underline
-	w.headers = underline.Header()
+	w.headers = underline.Header().Clone()
 	w.result = nil
 	w.ResetBody()
 }
@@ -67,8 +67,8 @@ func (w *ResponseRecorder) BeginRecord(underline ResponseWriter) {
 // EndResponse is auto-called when the whole client's request is done,
 // releases the response recorder and its underline ResponseWriter.
 func (w *ResponseRecorder) EndResponse() {
-	releaseResponseRecorder(w)
 	w.ResponseWriter.EndResponse()
+	releaseResponseRecorder(w)
 }
 
 // Write Adds the contents to the body reply, it writes the contents temporarily
@@ -99,6 +99,12 @@ func (w *ResponseRecorder) Write(contents []byte) (int, error) {
 	return len(contents), nil
 }
 
+// Header returns the temporary header map that, on flush response,
+// will be sent by the underline's ResponseWriter's WriteHeader method.
+func (w *ResponseRecorder) Header() http.Header {
+	return w.headers
+}
+
 // SetBody overrides the body and sets it to a slice of bytes value.
 func (w *ResponseRecorder) SetBody(b []byte) {
 	w.chunks = b
@@ -122,7 +128,7 @@ func (w *ResponseRecorder) ResetBody() {
 
 // ResetHeaders sets the headers to the underline's response writer's headers, may empty.
 func (w *ResponseRecorder) ResetHeaders() {
-	w.headers = w.ResponseWriter.Header()
+	w.headers = w.ResponseWriter.Header().Clone()
 }
 
 // ClearHeaders clears all headers, both temp and underline's response writer.
@@ -130,7 +136,7 @@ func (w *ResponseRecorder) ClearHeaders() {
 	w.headers = http.Header{}
 	h := w.ResponseWriter.Header()
 	for k := range h {
-		h[k] = nil
+		delete(h, k)
 	}
 }
 
@@ -151,12 +157,9 @@ func (w *ResponseRecorder) FlushResponse() {
 	// copy the headers to the underline response writer
 	if w.headers != nil {
 		h := w.ResponseWriter.Header()
-
-		for k, values := range w.headers {
-			h[k] = nil
-			for i := range values {
-				h.Add(k, values[i])
-			}
+		// note: we don't reset the current underline's headers.
+		for k, v := range w.headers {
+			h[k] = v
 		}
 	}
 
@@ -184,8 +187,15 @@ func (w *ResponseRecorder) FlushResponse() {
 // it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseRecorder
 func (w *ResponseRecorder) Clone() ResponseWriter {
 	wc := &ResponseRecorder{}
-	wc.headers = w.headers
-	wc.chunks = w.chunks[0:]
+
+	// copy headers.
+	wc.headers = w.headers.Clone()
+
+	// copy body.
+	chunksCopy := make([]byte, len(w.chunks))
+	copy(chunksCopy, w.chunks)
+	wc.chunks = chunksCopy
+
 	if resW, ok := w.ResponseWriter.(*responseWriter); ok {
 		wc.ResponseWriter = &responseWriter{
 			ResponseWriter: resW.ResponseWriter,
@@ -252,6 +262,23 @@ func (w *ResponseRecorder) CopyTo(res ResponseWriter) {
 
 // Flush sends any buffered data to the client.
 func (w *ResponseRecorder) Flush() {
+	// This fixes response recorder when chunked + Flush is used.
+	if w.headers.Get("Transfer-Encoding") == "chunked" {
+		if w.Written() == NoWritten {
+			if len(w.headers) > 0 {
+				h := w.ResponseWriter.Header()
+				// note: we don't reset the current underline's headers.
+				for k, v := range w.headers {
+					h[k] = v
+				}
+			}
+		}
+
+		if len(w.chunks) > 0 {
+			w.ResponseWriter.Write(w.chunks)
+		}
+	}
+
 	w.ResponseWriter.Flush()
 	w.ResetBody()
 }
@@ -308,9 +335,9 @@ func (w *ResponseRecorder) Result() *http.Response { // a modified copy of net/h
 
 	headers := w.headers.Clone()
 
-	for k, v := range w.ResponseWriter.Header() {
-		headers[k] = v
-	}
+	// for k, v := range w.ResponseWriter.Header() {
+	// 	headers[k] = v
+	// }
 	/*
 		dateFound := false
 		for k := range headers {

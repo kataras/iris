@@ -11,6 +11,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	e.Reload(true)
 
 	app := iris.New()
 	app.RegisterView(e)

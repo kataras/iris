@@ -19,6 +19,7 @@ func main() {
 			return "Hello, " + name + "!"
 		},
 	})
+	e.Reload(true)
 
 	app := iris.New()
 	app.RegisterView(e)

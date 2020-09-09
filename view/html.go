@@ -32,9 +32,16 @@ type HTMLEngine struct {
 	funcs       template.FuncMap
 
 	//
-	middleware func(name string, contents []byte) (string, error)
-	Templates  *template.Template
+	middleware  func(name string, contents []byte) (string, error)
+	Templates   *template.Template
+	customCache []customTmp // required to load them again if reload is true.
 	//
+}
+
+type customTmp struct {
+	name     string
+	contents []byte
+	funcs    template.FuncMap
 }
 
 var (
@@ -215,6 +222,17 @@ func (s *HTMLEngine) Funcs(funcMap template.FuncMap) *HTMLEngine {
 //
 // Returns an error if something bad happens, caller is responsible to handle that.
 func (s *HTMLEngine) Load() error {
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
+
+	return s.load()
+}
+
+func (s *HTMLEngine) load() error {
+	if err := s.reloadCustomTemplates(); err != nil {
+		return err
+	}
+
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 			return nil
@@ -231,8 +249,18 @@ func (s *HTMLEngine) Load() error {
 			return fmt.Errorf("%s: %w", path, err)
 		}
 
-		return s.ParseTemplate(path, buf, nil)
+		return s.parseTemplate(path, buf, nil)
 	})
+}
+
+func (s *HTMLEngine) reloadCustomTemplates() error {
+	for _, tmpl := range s.customCache {
+		if err := s.parseTemplate(tmpl.name, tmpl.contents, tmpl.funcs); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ParseTemplate adds a custom template to the root template.
@@ -240,6 +268,16 @@ func (s *HTMLEngine) ParseTemplate(name string, contents []byte, funcs template.
 	s.rmu.Lock()
 	defer s.rmu.Unlock()
 
+	s.customCache = append(s.customCache, customTmp{
+		name:     name,
+		contents: contents,
+		funcs:    funcs,
+	})
+
+	return s.parseTemplate(name, contents, funcs)
+}
+
+func (s *HTMLEngine) parseTemplate(name string, contents []byte, funcs template.FuncMap) (err error) {
 	s.initRootTmpl()
 
 	name = strings.TrimPrefix(name, "/")
@@ -270,6 +308,7 @@ func (s *HTMLEngine) initRootTmpl() { // protected by the caller.
 		// the root template should be the same,
 		// no matter how many reloads as the
 		// following unexported fields cannot be modified.
+		// However, on reload they should be cleared otherwise we get an error.
 		s.Templates = template.New(s.rootDir)
 		s.Templates.Delims(s.left, s.right)
 	}
@@ -349,7 +388,14 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bindingData interface{}) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
-		if err := s.Load(); err != nil {
+		s.rmu.Lock()
+		defer s.rmu.Unlock()
+
+		s.Templates = nil
+		// we lose the templates parsed manually, so store them when it's called
+		// in order for load to take care of them too.
+
+		if err := s.load(); err != nil {
 			return err
 		}
 	}

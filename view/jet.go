@@ -178,9 +178,6 @@ func (s *JetEngine) AddVar(key string, value interface{}) {
 // not safe concurrent access across clients, use it only on development state.
 func (s *JetEngine) Reload(developmentMode bool) *JetEngine {
 	s.developmentMode = developmentMode
-	if s.Set != nil {
-		s.Set.SetDevelopmentMode(developmentMode)
-	}
 	return s
 }
 
@@ -215,7 +212,6 @@ func (l *jetLoader) Exists(name string) (string, bool) {
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 func (s *JetEngine) Load() error {
 	s.initSet()
-
 	// Note that, unlike the rest of template engines implementations,
 	// we don't call the Set.GetTemplate to parse the templates,
 	// we let it to the jet template parser itself which does that at serve-time and caches each template by itself.
@@ -236,7 +232,12 @@ func (s *JetEngine) initSet() {
 	s.mu.Lock()
 	if s.Set == nil {
 		s.Set = jet.NewHTMLSetLoader(s.loader)
-		s.Set.SetDevelopmentMode(s.developmentMode)
+		if s.developmentMode && !isNoOpFS(s.fs) {
+			// this check is made to avoid jet's fs lookup on noOp fs (nil passed by the developer).
+			// This can be produced when nil fs passed
+			// and only `ParseTemplate` is used.
+			s.Set.SetDevelopmentMode(true)
+		}
 
 		if s.vars != nil {
 			for key, value := range s.vars {

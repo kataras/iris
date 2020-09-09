@@ -364,6 +364,10 @@ Response:
 
 Other Improvements:
 
+- Add a `Response() *http.Response` to the Response Recorder.
+- Fix Response Recorder `Flush` when transfer-encoding is `chunked`.
+- Fix Response Recorder `Clone` concurrent access afterwards.
+
 - Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/master/_examples/view/parse-template).
 - Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Amber`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
 
@@ -614,7 +618,7 @@ New Context Methods:
 - `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
 - `Context.SetErr(error)` and `Context.GetErr() error` helpers.
 - `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`.
-- `Context.Clone() Context` returns a copy of the Context.
+- `Context.Clone() Context` returns a copy of the Context safe for concurrent access.
 - `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
 - `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).

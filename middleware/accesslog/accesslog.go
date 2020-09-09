@@ -18,20 +18,33 @@ func init() {
 	context.SetHandlerName("iris/middleware/accesslog.*", "iris.accesslog")
 }
 
-const accessLogFieldsContextKey = "iris.accesslog.request.fields"
+const (
+	fieldsContextKey  = "iris.accesslog.request.fields"
+	skipLogContextKey = "iris.accesslog.request.skip"
+)
 
 // GetFields returns the accesslog fields for this request.
 // Returns a store which the caller can use to
 // set/get/remove custom log fields. Use its `Set` method.
 func GetFields(ctx iris.Context) (fields *Fields) {
-	if v := ctx.Values().Get(accessLogFieldsContextKey); v != nil {
+	if v := ctx.Values().Get(fieldsContextKey); v != nil {
 		fields = v.(*Fields)
 	} else {
 		fields = new(Fields)
-		ctx.Values().Set(accessLogFieldsContextKey, fields)
+		ctx.Values().Set(fieldsContextKey, fields)
 	}
 
 	return
+}
+
+// Skip called when a specific route should be skipped from the logging process.
+// It's an easy to use alternative for iris.NewConditionalHandler.
+func Skip(ctx iris.Context) {
+	ctx.Values().Set(skipLogContextKey, struct{}{})
+}
+
+func shouldSkip(ctx iris.Context) bool {
+	return ctx.Values().Get(skipLogContextKey) != nil
 }
 
 type (
@@ -137,6 +150,7 @@ type AccessLog struct {
 	// order of registration so use a slice and
 	// take the field key from the extractor itself.
 	formatter Formatter
+	broker    *Broker
 }
 
 // New returns a new AccessLog value with the default values.
@@ -178,6 +192,28 @@ func File(path string) *AccessLog {
 
 	return New(f)
 }
+
+// Broker creates or returns the broker.
+// Use its `NewListener` and `CloseListener`
+// to listen and unlisten for incoming logs.
+//
+// Should be called before serve-time.
+func (ac *AccessLog) Broker() *Broker {
+	ac.mu.Lock()
+	if ac.broker == nil {
+		ac.broker = newBroker()
+		// atomic.StoreUint32(&ac.brokerActive, 1)
+	}
+	ac.mu.Unlock()
+	return ac.broker
+}
+
+// func (ac *AccessLog) isBrokerActive() bool { // see `Print` method.
+// 	return atomic.LoadUint32(&ac.brokerActive) > 0
+// }
+// ^ No need, we declare that the Broker should be called
+// before serve-time. Let's respect our comment
+// and don't try to make it safe for write and read concurrent access.
 
 // Write writes to the log destination.
 // It completes the io.Writer interface.
@@ -294,6 +330,11 @@ func (ac *AccessLog) shouldReadResponseBody() bool {
 // defer ac.Close()
 // app.UseRouter(ac.Handler)
 func (ac *AccessLog) Handler(ctx *context.Context) {
+	if shouldSkip(ctx) { // usage: another middleware before that one disables logging.
+		ctx.Next()
+		return
+	}
+
 	var (
 		startTime = time.Now()
 		// Store some values, as future handler chain
@@ -314,12 +355,16 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 
 	// Set the fields context value so they can be modified
 	// on the following handlers chain. Same as `AddFields` but per-request.
-	// ctx.Values().Set(accessLogFieldsContextKey, new(Fields))
+	// ctx.Values().Set(fieldsContextKey, new(Fields))
 	// No need ^ The GetFields will set it if it's missing.
 	// So we initialize them whenever, and if, asked.
 
 	// Proceed to the handlers chain.
 	ctx.Next()
+
+	if shouldSkip(ctx) { // normal flow, we can get the context by executing the handler first.
+		return
+	}
 
 	latency := time.Since(startTime)
 	if ac.Async {
@@ -435,7 +480,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 
 // Print writes a log manually.
 // The `Handler` method calls it.
-func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) error {
+func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
 	var now time.Time
 
 	if ac.Clock != nil {
@@ -444,7 +489,7 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		now = time.Now()
 	}
 
-	if f := ac.formatter; f != nil {
+	if hasFormatter, hasBroker := ac.formatter != nil, ac.broker != nil; hasFormatter || hasBroker {
 		log := &Log{
 			Logger:        ac,
 			Now:           now,
@@ -464,12 +509,21 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 			Ctx:           ctx, // ctx should only be used here, it may be nil on testing.
 		}
 
-		if err := f.Format(log); err != nil {
-			return err
+		var handled bool
+		if hasFormatter {
+			handled, err = ac.formatter.Format(log)
+			if err != nil {
+				return
+			}
 		}
 
-		// OK, it's handled, exit now.
-		return nil
+		if hasBroker { // after Format, it may want to customize the log's fields.
+			ac.broker.notify(log)
+		}
+
+		if handled {
+			return // OK, it's handled, exit now.
+		}
 	}
 
 	// url parameters, path parameters and custom fields separated by space,
@@ -478,7 +532,7 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
-	_, err := fmt.Fprintf(ac, "%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|\n",
+	_, err = fmt.Fprintf(ac, "%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|\n",
 		now.Format(timeFormat),
 		latency,
 		method,
@@ -491,5 +545,5 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		respBody,
 	)
 
-	return err
+	return
 }
