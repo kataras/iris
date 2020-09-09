@@ -156,12 +156,12 @@ func sessionHandler(ctx iris.Context) {
 }
 
 func fieldsHandler(ctx iris.Context) {
-	// simulate a heavy job...
 	start := time.Now()
+	// simulate a heavy job...
 	time.Sleep(2 * time.Second)
 	end := time.Since(start)
-	// Get the current fields instance and use
-	// them to it custom log values.
+	// Get the current fields instance
+	// and use it to set custom log values.
 	logFields := accesslog.GetFields(ctx)
 	logFields.Set("job_latency", end.Round(time.Second))
 
