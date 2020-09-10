@@ -14,6 +14,8 @@ func TestI18nLoaderFuncMap(t *testing.T) {
 		Body().Equal("Hi 2 dogs")
 	e.GET("/singular").Expect().Status(httptest.StatusOK).
 		Body().Equal("Hi 1 dog")
+	e.GET("/members").Expect().Status(httptest.StatusOK).
+		Body().Equal("There are 42 members registered")
 	e.GET("/").WithHeader("Accept-Language", "el").Expect().Status(httptest.StatusOK).
 		Body().Equal("Γειά 2 σκυλί")
 }

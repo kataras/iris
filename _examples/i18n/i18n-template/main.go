@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"text/template"
 
 	"github.com/kataras/iris/v12"
@@ -36,22 +37,35 @@ func newApp() *iris.Application {
 				// pluralize words based on the given language.
 				return pluralize.Pluralize(word, count, true)
 			},
+			"uppercase": func(word string) string {
+				return strings.ToUpper(word)
+			},
+			"concat": func(words ...string) string {
+				return strings.Join(words, " ")
+			},
 		}
 	}
 
-	app.I18n.Load("./locales/*/*.yml", "en-US", "el-GR")
+	app.I18n.Load("./locales/*/*", "en-US", "el-GR")
 
 	app.Get("/", func(ctx iris.Context) {
 		text := ctx.Tr("HiDogs", iris.Map{
 			"count": 2,
-		}) // prints "Hi 2 dogs".
+		}) // en-US: prints "Hi 2 dogs".
 		ctx.WriteString(text)
 	})
 
 	app.Get("/singular", func(ctx iris.Context) {
 		text := ctx.Tr("HiDogs", iris.Map{
 			"count": 1,
-		}) // prints "Hi 1 dog".
+		}) // en-US: prints "Hi 1 dog".
+		ctx.WriteString(text)
+	})
+
+	app.Get("/members", func(ctx iris.Context) {
+		text := ctx.Tr("forms.registered_members", iris.Map{
+			"count": 42,
+		}) // en-US: prints "There are 42 members registered".
 		ctx.WriteString(text)
 	})
 
