@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/accesslog"
+	"github.com/kataras/iris/v12/middleware/recover"
 )
 
 func main() {
@@ -16,13 +17,18 @@ func main() {
 
 	ac := accesslog.File("./access.log")
 	ac.TimeFormat = "2006-01-02 15:04:05"
+	// ac.KeepMultiLineError = false // set to false to print errors as one line.
 	// Optionally run logging after response has sent:
 	// ac.Async = true
 	broker := ac.Broker() // <- IMPORTANT
 
 	app := iris.New()
 	app.UseRouter(ac.Handler)
+	app.UseRouter(recover.New())
 
+	app.OnErrorCode(iris.StatusNotFound, notFoundHandler)
+
+	app.Get("/panic", testPanic)
 	app.Get("/", indexHandler)
 	app.Get("/profile/{username}", profileHandler)
 	app.Post("/read_body", readBodyHandler)
@@ -34,6 +40,22 @@ func main() {
 
 	// http://localhost:8080/logs to see the logs at real-time.
 	app.Listen(":8080")
+}
+
+func notFoundHandler(ctx iris.Context) {
+	ctx.Application().Logger().Infof("Not Found Handler for: %s", ctx.Path())
+
+	suggestPaths := ctx.FindClosest(3)
+	if len(suggestPaths) == 0 {
+		ctx.WriteString("The page you're looking does not exist.")
+		return
+	}
+
+	ctx.HTML("Did you mean?<ul>")
+	for _, s := range suggestPaths {
+		ctx.HTML(`<li><a href="%s">%s</a></li>`, s, s)
+	}
+	ctx.HTML("</ul>")
 }
 
 func indexHandler(ctx iris.Context) {
@@ -53,6 +75,10 @@ func readBodyHandler(ctx iris.Context) {
 	}
 
 	ctx.JSON(iris.Map{"message": "OK", "data": request})
+}
+
+func testPanic(ctx iris.Context) {
+	panic("PANIC HERE")
 }
 
 func logsHandler(b *accesslog.Broker) iris.Handler {

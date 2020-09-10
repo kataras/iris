@@ -41,12 +41,13 @@ func New() context.Handler {
 
 				// when stack finishes
 				logMessage := fmt.Sprintf("Recovered from a route's Handler('%s')\n", ctx.HandlerName())
-				logMessage += fmt.Sprintf("At Request: %s\n", getRequestLogs(ctx))
-				logMessage += fmt.Sprintf("Trace: %s\n", err)
-				logMessage += fmt.Sprintf("\n%s", stacktrace)
+				logMessage += fmt.Sprint(getRequestLogs(ctx))
+				logMessage += fmt.Sprintf("%s\n", err)
+				logMessage += fmt.Sprintf("%s\n", stacktrace)
 				ctx.Application().Logger().Warn(logMessage)
 
-				ctx.StopWithStatus(500)
+				// see accesslog.isPanic too.
+				ctx.StopWithPlainError(500, context.ErrPanicRecovery{Cause: err, Stacktrace: stacktrace})
 			}
 		}()
 

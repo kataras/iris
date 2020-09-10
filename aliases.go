@@ -162,6 +162,10 @@ type (
 	// Locale describes the i18n locale.
 	// An alias for the `context.Locale`.
 	Locale = context.Locale
+	// ErrPrivate if provided then the error saved in context
+	// should NOT be visible to the client no matter what.
+	// An alias for the `context.ErrPrivate`.
+	ErrPrivate = context.ErrPrivate
 )
 
 // Constants for input argument at `router.RouteRegisterRule`.
@@ -458,6 +462,8 @@ var (
 	// on post data, versioning feature and others.
 	// An alias of `context.ErrNotFound`.
 	ErrNotFound = context.ErrNotFound
+	// IsErrPrivate reports whether the given "err" is a private one.
+	IsErrPrivate = context.IsErrPrivate
 	// NewProblem returns a new Problem.
 	// Head over to the `Problem` type godoc for more.
 	//

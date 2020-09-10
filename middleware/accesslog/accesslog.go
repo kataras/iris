@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http/httputil"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -150,6 +151,10 @@ type AccessLog struct {
 	// Note that, if this is true then it uses a response recorder.
 	ResponseBody bool
 
+	// KeepMultiLineError displays the Context's error as it's.
+	// If set to false then it replaces all line characters with spaces.
+	KeepMultiLineError bool
+
 	// Map log fields with custom request values.
 	// See `AddFields` method.
 	FieldSetters []FieldSetter
@@ -168,11 +173,12 @@ type AccessLog struct {
 // Example: https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
-		BytesReceived: true,
-		BytesSent:     true,
-		BodyMinify:    true,
-		RequestBody:   true,
-		ResponseBody:  true,
+		BytesReceived:      true,
+		BytesSent:          true,
+		BodyMinify:         true,
+		RequestBody:        true,
+		ResponseBody:       true,
+		KeepMultiLineError: true,
 	}
 
 	if w == nil {
@@ -367,7 +373,28 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	// So we initialize them whenever, and if, asked.
 
 	// Proceed to the handlers chain.
+	currentIndex := ctx.HandlerIndex(-1)
 	ctx.Next()
+	if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
+		_, wasRecovered := ctx.IsRecovered()
+		// The ctx.HandlerName is still accesslog because
+		// on end of router filters the router resets
+		// the handler index, same for errors.
+		// So, as a special case, if it's a failure status code
+		// call FireErorrCode manually instead of wait
+		// to be called on EndRequest (which is, correctly, called on end of everything
+		// so we don't have chance to record its body by default).
+		//
+		// Note: this however will call the error handler twice
+		// if the end-developer registered that using `UseError` instead of `UseRouter`,
+		// there is a way to fix that too: by checking the handler index diff:
+		if currentIndex == ctx.HandlerIndex(-1) || wasRecovered {
+			// if handler index before and after ctx.Next
+			// is the same, then it means we are in `UseRouter`
+			// and on error handler.
+			ctx.Application().FireErrorCode(ctx)
+		}
+	}
 
 	if shouldSkip(ctx) { // normal flow, we can get the context by executing the handler first.
 		return
@@ -398,12 +425,12 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 			// If there is an error here
 			// we may need to NOT read the body for security reasons, e.g.
 			// unauthorized user tries to send a malicious body.
-			requestBody = fmt.Sprintf("error(%s)", ctxErr.Error())
+			requestBody = ac.getErrorText(ctxErr)
 		} else {
 			requestData, err := ctx.GetBody()
 			requestBodyLength := len(requestData)
 			if err != nil && ac.RequestBody {
-				requestBody = fmt.Sprintf("error(%s)", err)
+				requestBody = ac.getErrorText(err)
 			} else if requestBodyLength > 0 {
 				if ac.RequestBody {
 					if ac.BodyMinify {
@@ -553,4 +580,16 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 	)
 
 	return
+}
+
+var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")
+
+func (ac *AccessLog) getErrorText(err error) string { // caller checks for nil.
+	text := fmt.Sprintf("error(%s)", err.Error())
+
+	if !ac.KeepMultiLineError {
+		return lineBreaksReplacer.Replace(text)
+	}
+
+	return text
 }

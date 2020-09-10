@@ -706,12 +706,22 @@ func (ctx *Context) StopWithText(statusCode int, format string, args ...interfac
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
+//
+// If the given "err" is private then the
+// status code's text is rendered instead (unless a registered error handler overrides it).
 func (ctx *Context) StopWithError(statusCode int, err error) {
 	if err == nil {
 		return
 	}
 
 	ctx.SetErr(err)
+	if IsErrPrivate(err) {
+		// error is private, we can't render it, instead .
+		// let the error handler render the code text.
+		ctx.StopWithStatus(statusCode)
+		return
+	}
+
 	ctx.StopWithText(statusCode, err.Error())
 }
 
@@ -4782,7 +4792,32 @@ func (ctx *Context) IsRecording() (*ResponseRecorder, bool) {
 
 // ErrPanicRecovery may be returned from `Context` actions of a `Handler`
 // which recovers from a manual panic.
-// var ErrPanicRecovery = errors.New("recovery from panic")
+type ErrPanicRecovery struct {
+	ErrPrivate
+	Cause      interface{}
+	Stacktrace string
+}
+
+// Error implements the Go standard error type.
+func (e ErrPanicRecovery) Error() string {
+	return fmt.Sprintf("%v\n%s", e.Cause, e.Stacktrace)
+}
+
+// ErrPrivate if provided then the error saved in context
+// should NOT be visible to the client no matter what.
+type ErrPrivate interface {
+	IrisPrivateError()
+}
+
+// IsErrPrivate reports whether the given "err" is a private one.
+func IsErrPrivate(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, ok := err.(ErrPrivate)
+	return ok
+}
 
 // ErrTransactionInterrupt can be used to manually force-complete a Context's transaction
 // and log(warn) the wrapped error's message.
@@ -5050,6 +5085,21 @@ func (ctx *Context) GetErr() error {
 	}
 
 	return nil
+}
+
+// IsRecovered reports whether this handler has been recovered
+// by the Iris recover middleware.
+func (ctx *Context) IsRecovered() (ErrPanicRecovery, bool) {
+	if ctx.GetStatusCode() == 500 {
+		// Panic error from recovery middleware is private.
+		if err := ctx.GetErr(); err != nil {
+			if panicErr, ok := err.(ErrPanicRecovery); ok {
+				return panicErr, true
+			}
+		}
+	}
+
+	return ErrPanicRecovery{}, false
 }
 
 const idContextKey = "iris.context.id"
