@@ -43,6 +43,13 @@ func Skip(ctx iris.Context) {
 	ctx.Values().Set(skipLogContextKey, struct{}{})
 }
 
+// SkipHandler same as `Skip` but it can be used
+// as a middleware, it executes ctx.Next().
+func SkipHandler(ctx iris.Context) {
+	Skip(ctx)
+	ctx.Next()
+}
+
 func shouldSkip(ctx iris.Context) bool {
 	return ctx.Values().Get(skipLogContextKey) != nil
 }

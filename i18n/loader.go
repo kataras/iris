@@ -21,20 +21,39 @@ import (
 // some options about how the template loader should act.
 //
 // See `Glob` and `Assets` package-level functions.
-type LoaderConfig struct {
-	// Template delimeters, defaults to {{ }}.
-	Left, Right string
-	// Template functions map, defaults to nil.
-	FuncMap template.FuncMap
-	// If true then it will return error on invalid templates instead of moving them to simple string-line keys.
-	// Also it will report whether the registered languages matched the loaded ones.
-	// Defaults to false.
-	Strict bool
-}
+type (
+	LoaderConfig struct {
+		// Template delimeters, defaults to {{ }}.
+		Left, Right string
+		// Template functions map, defaults to nil.
+		FuncMap template.FuncMap
+		// If true then it will return error on invalid templates instead of moving them to simple string-line keys.
+		// Also it will report whether the registered languages matched the loaded ones.
+		// Defaults to false.
+		Strict bool
+	}
+	// LoaderOption is a type which accepts a pointer to `LoaderConfig`
+	// and can be optionally passed to the second
+	// variadic input argument of the `Glob` and `Assets` functions.
+	LoaderOption interface {
+		Apply(*LoaderConfig)
+	}
+)
 
-// LoaderOption is a type which accepts a pointer to `LoaderConfig`
-// and can be optionally passed to the second variadic input argument of the `Glob` and `Assets` functions.
-type LoaderOption func(*LoaderConfig)
+// Apply implements the `LoaderOption` interface.
+func (c *LoaderConfig) Apply(cfg *LoaderConfig) {
+	for k, v := range c.FuncMap {
+		if cfg.FuncMap == nil {
+			cfg.FuncMap = make(template.FuncMap)
+		}
+
+		cfg.FuncMap[k] = v
+	}
+
+	cfg.Left = c.Left
+	cfg.Right = c.Right
+	cfg.Strict = c.Strict
+}
 
 // Glob accepts a glob pattern (see: https://golang.org/pkg/path/filepath/#Glob)
 // and loads the locale files based on any "options".
@@ -73,10 +92,18 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 		Left:   "{{",
 		Right:  "}}",
 		Strict: false,
+		FuncMap: template.FuncMap{
+			// get returns the value of a translate key, can be used inside other template keys
+			// to translate different words based on the current locale.
+			"tr": func(locale context.Locale, key string, args ...interface{}) string {
+				return locale.GetMessage(key, args...)
+			},
+			// ^ Alternative to {{call .tr "Dog" | plural }}
+		},
 	}
 
 	for _, opt := range options {
-		opt(&c)
+		opt.Apply(&c)
 	}
 
 	return func(m *Matcher) (Localizer, error) {
@@ -250,9 +277,11 @@ func (l *defaultLocale) getMessage(langInput, key string, args ...interface{}) s
 		// search on templates.
 		if tmpl, ok := l.templateKeys[key]; ok {
 			buf := new(bytes.Buffer)
-			if err := tmpl.Execute(buf, args[0]); err == nil {
-				return buf.String()
+			err := tmpl.Execute(buf, args[0])
+			if err != nil {
+				return err.Error()
 			}
+			return buf.String()
 		}
 	}
 

@@ -1,0 +1,2 @@
+Dog: "σκυλί"
+HiDogs: Γειά {{plural (tr .locale "Dog") .count }}

@@ -1,0 +1,2 @@
+Dog: "dog"
+HiDogs: Hi {{plural (tr .locale "Dog") .count }}

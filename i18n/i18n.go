@@ -49,6 +49,7 @@ type I18n struct {
 	localizer Localizer
 	matcher   *Matcher
 
+	Loader *LoaderConfig
 	loader Loader
 	mu     sync.Mutex
 
@@ -106,11 +107,18 @@ func makeTags(languages ...string) (tags []language.Tag) {
 
 // New returns a new `I18n` instance. Use its `Load` or `LoadAssets` to load languages.
 func New() *I18n {
-	return &I18n{
+	i := &I18n{
+		Loader: &LoaderConfig{
+			Left:   "{{",
+			Right:  "}}",
+			Strict: false,
+		},
 		URLParameter: "lang",
 		Subdomain:    true,
 		PathRedirect: true,
 	}
+
+	return i
 }
 
 // Load is a method shortcut to load files using a filepath.Glob pattern.
@@ -118,7 +126,7 @@ func New() *I18n {
 //
 // See `New` and `Glob` package-level functions for more.
 func (i *I18n) Load(globPattern string, languages ...string) error {
-	return i.Reset(Glob(globPattern), languages...)
+	return i.Reset(Glob(globPattern, i.Loader), languages...)
 }
 
 // LoadAssets is a method shortcut to load files using go-bindata.
@@ -126,7 +134,7 @@ func (i *I18n) Load(globPattern string, languages ...string) error {
 //
 // See `New` and `Asset` package-level functions for more.
 func (i *I18n) LoadAssets(assetNames func() []string, asset func(string) ([]byte, error), languages ...string) error {
-	return i.Reset(Assets(assetNames, asset), languages...)
+	return i.Reset(Assets(assetNames, asset, i.Loader), languages...)
 }
 
 // Reset sets the locales loader and languages.

@@ -16,7 +16,8 @@ func main() {
 
 	ac := accesslog.File("./access.log")
 	ac.TimeFormat = "2006-01-02 15:04:05"
-	ac.Async = true
+	// Optionally run logging after response has sent:
+	// ac.Async = true
 	broker := ac.Broker() // <- IMPORTANT
 
 	app := iris.New()
@@ -25,7 +26,11 @@ func main() {
 	app.Get("/", indexHandler)
 	app.Get("/profile/{username}", profileHandler)
 	app.Post("/read_body", readBodyHandler)
-	app.Get("/logs", logsHandler(broker))
+
+	// register the /logs route,
+	// registers a listener and prints the incoming logs.
+	// Optionally, skip logging this handler.
+	app.Get("/logs", accesslog.SkipHandler, logsHandler(broker))
 
 	// http://localhost:8080/logs to see the logs at real-time.
 	app.Listen(":8080")
@@ -52,8 +57,7 @@ func readBodyHandler(ctx iris.Context) {
 
 func logsHandler(b *accesslog.Broker) iris.Handler {
 	return func(ctx iris.Context) {
-		accesslog.Skip(ctx) // skip logging this handler, optionally.
-
+		// accesslog.Skip(ctx) // or inline skip.
 		logs := b.NewListener() // <- IMPORTANT
 
 		ctx.Header("Transfer-Encoding", "chunked")
