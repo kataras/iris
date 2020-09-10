@@ -94,6 +94,9 @@ var (
 //
 // Look `New`, `File` package-level functions
 // and its `Handler` method to learn more.
+//
+// A new AccessLog middleware MUST
+// be created after a `New` function call.
 type AccessLog struct {
 	mu sync.Mutex // ensures atomic writes.
 	// The destination writer.
@@ -163,6 +166,8 @@ type AccessLog struct {
 	// take the field key from the extractor itself.
 	formatter Formatter
 	broker    *Broker
+
+	logsPool *sync.Pool
 }
 
 // New returns a new AccessLog value with the default values.
@@ -173,12 +178,16 @@ type AccessLog struct {
 // Example: https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
+		Clock:              clockFunc(time.Now),
 		BytesReceived:      true,
 		BytesSent:          true,
 		BodyMinify:         true,
 		RequestBody:        true,
 		ResponseBody:       true,
 		KeepMultiLineError: true,
+		logsPool: &sync.Pool{New: func() interface{} {
+			return new(Log)
+		}},
 	}
 
 	if w == nil {
@@ -515,45 +524,41 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 // Print writes a log manually.
 // The `Handler` method calls it.
 func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
-	var now time.Time
-
-	if ac.Clock != nil {
-		now = ac.Clock.Now()
-	} else {
-		now = time.Now()
-	}
+	now := ac.Clock.Now()
 
 	if hasFormatter, hasBroker := ac.formatter != nil, ac.broker != nil; hasFormatter || hasBroker {
-		log := &Log{
-			Logger:        ac,
-			Now:           now,
-			TimeFormat:    timeFormat,
-			Timestamp:     now.Unix(),
-			Latency:       latency,
-			Method:        method,
-			Path:          path,
-			Code:          code,
-			Query:         query,
-			PathParams:    params.Store,
-			Fields:        fields,
-			BytesReceived: bytesReceived,
-			BytesSent:     bytesSent,
-			Request:       reqBody,
-			Response:      respBody,
-			Ctx:           ctx, // ctx should only be used here, it may be nil on testing.
-		}
+		log := ac.logsPool.Get().(*Log)
+		log.Logger = ac
+		log.Now = now
+		log.TimeFormat = timeFormat
+		log.Timestamp = now.Unix()
+		log.Latency = latency
+		log.Method = method
+		log.Path = path
+		log.Code = code
+		log.Query = query
+		log.PathParams = params.Store
+		log.Fields = fields
+		log.BytesReceived = bytesReceived
+		log.BytesSent = bytesSent
+		log.Request = reqBody
+		log.Response = respBody
+		log.Ctx = ctx
 
 		var handled bool
 		if hasFormatter {
-			handled, err = ac.formatter.Format(log)
+			handled, err = ac.formatter.Format(log) // formatter can alter this, we wait until it's finished.
 			if err != nil {
+				ac.logsPool.Put(log)
 				return
 			}
 		}
 
 		if hasBroker { // after Format, it may want to customize the log's fields.
-			ac.broker.notify(log)
+			ac.broker.notify(log.Clone()) // a listener cannot edit the log as we use object pooling.
 		}
+
+		ac.logsPool.Put(log) // we don't need it anymore.
 
 		if handled {
 			return // OK, it's handled, exit now.

@@ -2,7 +2,7 @@ package accesslog
 
 // LogChan describes the log channel.
 // See `Broker` for details.
-type LogChan chan *Log
+type LogChan chan Log
 
 // A Broker holds the active listeners,
 // incoming logs on its Notifier channel
@@ -18,7 +18,7 @@ type Broker struct {
 	newListeners chan LogChan
 
 	// CloseListener action.
-	closingListeners chan chan *Log
+	closingListeners chan LogChan
 
 	// listeners store.
 	listeners map[LogChan]bool
@@ -29,7 +29,7 @@ func newBroker() *Broker {
 	b := &Broker{
 		Notifier:         make(LogChan, 1),
 		newListeners:     make(chan LogChan),
-		closingListeners: make(chan chan *Log),
+		closingListeners: make(chan LogChan),
 		listeners:        make(map[LogChan]bool),
 	}
 
@@ -63,7 +63,7 @@ func (b *Broker) run() {
 }
 
 // notify sends the "log" to all active listeners.
-func (b *Broker) notify(log *Log) {
+func (b *Broker) notify(log Log) {
 	b.Notifier <- log
 }
 

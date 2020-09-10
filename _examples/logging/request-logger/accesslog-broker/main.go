@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/accesslog"
 	"github.com/kataras/iris/v12/middleware/recover"
@@ -16,6 +18,8 @@ func main() {
 	*/
 
 	ac := accesslog.File("./access.log")
+	ac.AddOutput(os.Stdout)
+
 	ac.TimeFormat = "2006-01-02 15:04:05"
 	// ac.KeepMultiLineError = false // set to false to print errors as one line.
 	// Optionally run logging after response has sent:
@@ -43,7 +47,7 @@ func main() {
 }
 
 func notFoundHandler(ctx iris.Context) {
-	ctx.Application().Logger().Infof("Not Found Handler for: %s", ctx.Path())
+	// ctx.Application().Logger().Infof("Not Found Handler for: %s", ctx.Path())
 
 	suggestPaths := ctx.FindClosest(3)
 	if len(suggestPaths) == 0 {

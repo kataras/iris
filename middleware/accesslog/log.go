@@ -57,6 +57,11 @@ type Log struct {
 	Ctx *context.Context `json:"-" yaml:"-" toml:"-"`
 }
 
+// Clone returns a raw copy value of this Log.
+func (l *Log) Clone() Log {
+	return *l
+}
+
 // RequestValuesLine returns a string line which
 // combines the path parameters, query and custom fields.
 func (l *Log) RequestValuesLine() string {
