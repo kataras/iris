@@ -159,6 +159,9 @@ type (
 	//
 	// An alias for the `context.N`.
 	N = context.N
+	// Locale describes the i18n locale.
+	// An alias for the `context.Locale`.
+	Locale = context.Locale
 )
 
 // Constants for input argument at `router.RouteRegisterRule`.

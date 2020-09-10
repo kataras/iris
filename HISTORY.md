@@ -650,6 +650,7 @@ New Context Methods:
 
 Breaking Changes:
 
+- The `i18n#LoaderConfig.FuncMap template.FuncMap` field was replaced with `Funcs func(iris.Locale) template.FuncMap` in order to give current locale access to the template functions. A new `app.I18n.Loader` was introduced too, in order to make it easier for end-developers to customize the translation key values.
 - Request Logger's `Columns bool` field has been removed. Use the new [accesslog](https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog/main.go) middleware instead.
 - The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string. All examples updated.
 - `ContextUploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error)` now returns the total files uploaded too (as its first parameter) and the "before" variadic option should return a boolean, if false then the specific file is skipped.

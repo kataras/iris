@@ -26,8 +26,8 @@ type (
 	LoaderConfig struct {
 		// Template delimeters, defaults to {{ }}.
 		Left, Right string
-		// Template functions map, defaults to nil.
-		FuncMap template.FuncMap
+		// Template functions map per locale, defaults to nil.
+		Funcs func(context.Locale) template.FuncMap
 		// If true then it will return error on invalid templates instead of moving them to simple string-line keys.
 		// Also it will report whether the registered languages matched the loaded ones.
 		// Defaults to false.
@@ -43,17 +43,21 @@ type (
 
 // Apply implements the `LoaderOption` interface.
 func (c *LoaderConfig) Apply(cfg *LoaderConfig) {
-	for k, v := range c.FuncMap {
-		if cfg.FuncMap == nil {
-			cfg.FuncMap = make(template.FuncMap)
-		}
-
-		cfg.FuncMap[k] = v
+	if c.Left != "" {
+		cfg.Left = c.Left
 	}
 
-	cfg.Left = c.Left
-	cfg.Right = c.Right
-	cfg.Strict = c.Strict
+	if c.Right != "" {
+		cfg.Right = c.Right
+	}
+
+	if c.Funcs != nil {
+		cfg.Funcs = c.Funcs
+	}
+
+	if c.Strict {
+		cfg.Strict = true
+	}
 }
 
 // Glob accepts a glob pattern (see: https://golang.org/pkg/path/filepath/#Glob)
@@ -160,14 +164,22 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 						// we assume it's template?
 						// each file:line has its own template funcs so,
 						// just map it.
-						builtinFuncs := template.FuncMap{
+
+						// builtin funcs.
+						funcs := template.FuncMap{
 							"tr": locale.GetMessage,
+						}
+
+						if c.Funcs != nil {
+							// set current locale's template's funcs.
+							for k, v := range c.Funcs(locale) {
+								funcs[k] = v
+							}
 						}
 
 						if t, err := template.New(k).
 							Delims(c.Left, c.Right).
-							Funcs(builtinFuncs).
-							Funcs(c.FuncMap).
+							Funcs(funcs).
 							Parse(value); err == nil {
 							templateKeys[k] = t
 							continue

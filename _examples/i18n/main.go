@@ -7,6 +7,10 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+/*
+	See i18n-template for a more advanced translation key-values.
+*/
+
 func newApp() *iris.Application {
 	app := iris.New()
 
