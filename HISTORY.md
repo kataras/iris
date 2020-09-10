@@ -364,6 +364,8 @@ Response:
 
 Other Improvements:
 
+- Fix [#1621](https://github.com/kataras/iris/issues/1621) and add a new `cache.WithKey` to customize the cached entry key.
+
 - Add a `Response() *http.Response` to the Response Recorder.
 - Fix Response Recorder `Flush` when transfer-encoding is `chunked`.
 - Fix Response Recorder `Clone` concurrent access afterwards.

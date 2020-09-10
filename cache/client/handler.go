@@ -1,6 +1,7 @@
 package client
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -73,6 +74,48 @@ func parseLifeChanger(ctx *context.Context) entry.LifeChanger {
 	}
 }
 
+const entryKeyContextKey = "iris.cache.server.entry.key"
+
+// SetKey sets a custom entry key for cached pages.
+// See root package-level `WithKey` instead.
+func SetKey(ctx *context.Context, key string) {
+	ctx.Values().Set(entryKeyContextKey, key)
+}
+
+// GetKey returns the entry key for the current page.
+func GetKey(ctx *context.Context) string {
+	return ctx.Values().GetString(entryKeyContextKey)
+}
+
+func getOrSetKey(ctx *context.Context) string {
+	if key := GetKey(ctx); key != "" {
+		return key
+	}
+
+	// Note: by-default the rules(ruleset pkg)
+	// explictly ignores the cache handler
+	// execution on authenticated requests
+	// and immediately runs the next handler:
+	// if !h.rule.Claim(ctx) ...see `Handler` method.
+	// So the below two lines are useless,
+	// however we add it for cases
+	// that the end-developer messedup with the rules
+	// and by accident allow authenticated cached results.
+	username, password, _ := ctx.Request().BasicAuth()
+	authPart := username + strings.Repeat("*", len(password))
+
+	key := ctx.Method() + authPart
+
+	u := ctx.Request().URL
+	if !u.IsAbs() {
+		key += ctx.Scheme() + ctx.Host()
+	}
+	key += u.String()
+
+	SetKey(ctx, key)
+	return key
+}
+
 func (h *Handler) ServeHTTP(ctx *context.Context) {
 	// check for pre-cache validators, if at least one of them return false
 	// for this specific request, then skip the whole cache
@@ -90,16 +133,11 @@ func (h *Handler) ServeHTTP(ctx *context.Context) {
 		return
 	}
 
-	scheme := "http"
-	if ctx.Request().TLS != nil {
-		scheme = "https"
-	}
-
 	var (
 		response *entry.Response
 		valid    = false
 		// unique per subdomains and paths with different url query.
-		key = scheme + ctx.Host() + ctx.Request().URL.RequestURI()
+		key = getOrSetKey(ctx)
 	)
 
 	h.mu.RLock()

@@ -34,6 +34,18 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+// WithKey sets a custom entry key for cached pages.
+// Should be prepended to the cache handler.
+//
+// Usage:
+// app.Get("/", cache.WithKey("custom-key"), cache.Handler(time.Minute), mainHandler)
+func WithKey(key string) context.Handler {
+	return func(ctx *context.Context) {
+		client.SetKey(ctx, key)
+		ctx.Next()
+	}
+}
+
 // Cache accepts the cache expiration duration.
 // If the "expiration" input argument is invalid, <=2 seconds,
 // then expiration is taken by the "cache-control's maxage" header.
