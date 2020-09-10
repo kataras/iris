@@ -36,9 +36,9 @@ type Log struct {
 	// Sorted URL Query arguments.
 	Query []memstore.StringEntry `json:"query,omitempty"`
 	// Dynamic path parameters.
-	PathParams []memstore.Entry `json:"params,omitempty"`
+	PathParams memstore.Store `json:"params,omitempty"`
 	// Fields any data information useful to represent this Log.
-	Fields []memstore.Entry `json:"fields,omitempty"`
+	Fields memstore.Store `json:"fields,omitempty"`
 
 	//  The actual number of bytes received and sent on the network (headers + body).
 	BytesReceived int `json:"bytes_received"`

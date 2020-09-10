@@ -73,6 +73,7 @@
 * Logging
     * [Request Logger](logging/request-logger/main.go)
         * [AccessLog: log request & response and more](logging/request-logger/accesslog)
+        * [AccessLog: custom fields and template](logging/request-logger/accesslog-template/main.go)
         * [AccessLog: listen to logs and render them](logging/request-logger/accesslog-broker/main.go)
         * [Log Requests to a JSON File](logging/request-logger/request-logger-file-json/main.go) 
     * [Application File Logger](logging/file-logger/main.go)

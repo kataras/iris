@@ -816,6 +816,15 @@ func (r *Store) GetDefault(key string, def interface{}) interface{} {
 	return vv
 }
 
+// Exists is a small helper which reports whether a key exists.
+// It's not recommended to be used outside of templates.
+// Use Get or GetEntry instead which will give you back the entry value too,
+// so you don't have to loop again the key-value storage to get its value.
+func (r *Store) Exists(key string) bool {
+	_, ok := r.GetEntry(key)
+	return ok
+}
+
 // Get returns the entry's value based on its key.
 // If not found returns nil.
 func (r *Store) Get(key string) interface{} {
