@@ -1,2 +1,2 @@
 Dog: "σκυλί"
-HiDogs: Γειά {{plural (tr .locale "Dog") .count }}
+HiDogs: Γειά {{plural (tr "Dog") .count }}

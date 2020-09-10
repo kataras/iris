@@ -32,8 +32,7 @@ func newApp() *iris.Application {
 
 	app.Get("/", func(ctx iris.Context) {
 		text := ctx.Tr("HiDogs", iris.Map{
-			"locale": ctx.GetLocale(),
-			"count":  2,
+			"count": 2,
 		}) // prints "Hi 2 dogs".
 		ctx.WriteString(text)
 	})

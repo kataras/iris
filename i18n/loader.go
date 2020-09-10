@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/kataras/iris/v12/context"
@@ -92,14 +93,6 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 		Left:   "{{",
 		Right:  "}}",
 		Strict: false,
-		FuncMap: template.FuncMap{
-			// get returns the value of a translate key, can be used inside other template keys
-			// to translate different words based on the current locale.
-			"tr": func(locale context.Locale, key string, args ...interface{}) string {
-				return locale.GetMessage(key, args...)
-			},
-			// ^ Alternative to {{call .tr "Dog" | plural }}
-		},
 	}
 
 	for _, opt := range options {
@@ -146,6 +139,18 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 				other        = make(map[string]interface{})
 			)
 
+			t := m.Languages[langIndex]
+			locale := &defaultLocale{
+				index:        langIndex,
+				id:           t.String(),
+				tag:          &t,
+				templateKeys: templateKeys,
+				lineKeys:     lineKeys,
+				other:        other,
+
+				defaultMessageFunc: m.defaultMessageFunc,
+			}
+
 			for k, v := range keyValues {
 				// fmt.Printf("[%d] %s = %v of type: [%T]\n", langIndex, k, v, v)
 
@@ -153,7 +158,17 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 				case string:
 					if leftIdx, rightIdx := strings.Index(value, c.Left), strings.Index(value, c.Right); leftIdx != -1 && rightIdx > leftIdx {
 						// we assume it's template?
-						if t, err := template.New(k).Delims(c.Left, c.Right).Funcs(c.FuncMap).Parse(value); err == nil {
+						// each file:line has its own template funcs so,
+						// just map it.
+						builtinFuncs := template.FuncMap{
+							"tr": locale.GetMessage,
+						}
+
+						if t, err := template.New(k).
+							Delims(c.Left, c.Right).
+							Funcs(builtinFuncs).
+							Funcs(c.FuncMap).
+							Parse(value); err == nil {
 							templateKeys[k] = t
 							continue
 						} else if c.Strict {
@@ -166,18 +181,7 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 					other[k] = v
 				}
 
-			}
-
-			t := m.Languages[langIndex]
-			locales[langIndex] = &defaultLocale{
-				index:        langIndex,
-				id:           t.String(),
-				tag:          &t,
-				templateKeys: templateKeys,
-				lineKeys:     lineKeys,
-				other:        other,
-
-				defaultMessageFunc: m.defaultMessageFunc,
+				locales[langIndex] = locale
 			}
 		}
 
@@ -250,6 +254,11 @@ type defaultLocale struct {
 	defaultMessageFunc MessageFunc
 }
 
+type templateKey struct {
+	Template *template.Template
+	once     *sync.Once
+}
+
 func (l *defaultLocale) Index() int {
 	return l.index
 }
@@ -272,22 +281,23 @@ func (l *defaultLocale) GetMessageContext(ctx *context.Context, key string, args
 }
 
 func (l *defaultLocale) getMessage(langInput, key string, args ...interface{}) string {
-	n := len(args)
-	if n > 0 {
-		// search on templates.
-		if tmpl, ok := l.templateKeys[key]; ok {
-			buf := new(bytes.Buffer)
-			err := tmpl.Execute(buf, args[0])
-			if err != nil {
-				return err.Error()
-			}
-			return buf.String()
+
+	// search on templates.
+	if tmpl, ok := l.templateKeys[key]; ok {
+		buf := new(bytes.Buffer)
+		err := tmpl.Execute(buf, args[0])
+		if err != nil {
+			return err.Error()
 		}
+
+		return buf.String()
 	}
 
 	if text, ok := l.lineKeys[key]; ok {
 		return fmt.Sprintf(text, args...)
 	}
+
+	n := len(args)
 
 	if v, ok := l.other[key]; ok {
 		if n > 0 {
