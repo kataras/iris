@@ -5054,6 +5054,12 @@ func (ctx *Context) Application() Application {
 	return ctx.app
 }
 
+// IsDebug reports whether the application runs with debug log level.
+// It is a shortcut of Application.IsDebug().
+func (ctx *Context) IsDebug() bool {
+	return ctx.app.IsDebug()
+}
+
 const errorContextKey = "iris.context.error"
 
 // SetErr is just a helper that sets an error value

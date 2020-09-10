@@ -93,7 +93,7 @@ func getOrSetKey(ctx *context.Context) string {
 	}
 
 	// Note: by-default the rules(ruleset pkg)
-	// explictly ignores the cache handler
+	// explicitly ignores the cache handler
 	// execution on authenticated requests
 	// and immediately runs the next handler:
 	// if !h.rule.Claim(ctx) ...see `Handler` method.

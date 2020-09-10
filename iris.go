@@ -276,6 +276,14 @@ func (app *Application) Logger() *golog.Logger {
 	return app.logger
 }
 
+// IsDebug reports whether the application is running
+// under debug/development mode.
+// It's just a shortcut of Logger().Level >= golog.DebugLevel.
+// The same method existss as Context.IsDebug() too.
+func (app *Application) IsDebug() bool {
+	return app.logger.Level >= golog.DebugLevel
+}
+
 // I18nReadOnly returns the i18n's read-only features.
 // See `I18n` method for more.
 func (app *Application) I18nReadOnly() context.I18nReadOnly {

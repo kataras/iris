@@ -19,6 +19,11 @@ type Application interface {
 
 	// Logger returns the golog logger instance(pointer) that is being used inside the "app".
 	Logger() *golog.Logger
+	// IsDebug reports whether the application is running
+	// under debug/development mode.
+	// It's just a shortcut of Logger().Level >= golog.DebugLevel.
+	// The same method existss as Context.IsDebug() too.
+	IsDebug() bool
 
 	// I18nReadOnly returns the i18n's read-only features.
 	I18nReadOnly() I18nReadOnly
