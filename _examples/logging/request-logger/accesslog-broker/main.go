@@ -21,7 +21,12 @@ func main() {
 	ac.AddOutput(os.Stdout)
 
 	ac.TimeFormat = "2006-01-02 15:04:05"
-	// ac.KeepMultiLineError = false // set to false to print errors as one line.
+
+	// Set to false to print errors as one line:
+	// ac.KeepMultiLineError = false
+	// Set the "depth" of a panic trace:
+	ac.PanicLog = accesslog.LogHandler // or LogCallers or LogStack
+
 	// Optionally run logging after response has sent:
 	// ac.Async = true
 	broker := ac.Broker() // <- IMPORTANT

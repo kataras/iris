@@ -156,7 +156,17 @@ type AccessLog struct {
 
 	// KeepMultiLineError displays the Context's error as it's.
 	// If set to false then it replaces all line characters with spaces.
+	//
+	// See `PanicLog` to customize recovered-from-panic errors even further.
 	KeepMultiLineError bool
+
+	// What the logger should write to the output destination
+	// when recovered from a panic.
+	// Available options:
+	// * LogHandler (default, logs the handler's file:line only)
+	// * LogCallers (logs callers separated by line breaker)
+	// * LogStack   (logs the debug stack)
+	PanicLog PanicLog
 
 	// Map log fields with custom request values.
 	// See `AddFields` method.
@@ -169,6 +179,18 @@ type AccessLog struct {
 
 	logsPool *sync.Pool
 }
+
+// PanicLog holds the type for the available panic log levels.
+type PanicLog uint8
+
+const (
+	// LogHandler logs the handler's file:line that recovered from.
+	LogHandler PanicLog = iota
+	// LogCallers logs all callers separated by new lines.
+	LogCallers
+	// LogStack logs the whole debug stack.
+	LogStack
+)
 
 // New returns a new AccessLog value with the default values.
 // Writes to the "w". Output be further modified through its `Set/AddOutput` methods.
@@ -589,8 +611,21 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 
 var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")
 
-func (ac *AccessLog) getErrorText(err error) string { // caller checks for nil.
-	text := fmt.Sprintf("error(%s)", err.Error())
+func (ac *AccessLog) getErrorText(err error) (text string) { // caller checks for nil.
+	if errPanic, ok := context.IsErrPanicRecovery(err); ok {
+		switch ac.PanicLog {
+		case LogHandler:
+			text = errPanic.CurrentHandler
+		case LogCallers:
+			text = strings.Join(errPanic.Callers, "\n")
+		case LogStack:
+			text = string(errPanic.Stack)
+		}
+
+		text = fmt.Sprintf("error(%v %s)", errPanic.Cause, text)
+	} else {
+		text = fmt.Sprintf("error(%s)", err.Error())
+	}
 
 	if !ac.KeepMultiLineError {
 		return lineBreaksReplacer.Replace(text)

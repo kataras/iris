@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http/httputil"
 	"runtime"
+	"runtime/debug"
+	"strings"
 
 	"github.com/kataras/iris/v12/context"
 )
@@ -29,25 +31,46 @@ func New() context.Handler {
 					return
 				}
 
-				var stacktrace string
+				var callers []string
 				for i := 1; ; i++ {
-					_, f, l, got := runtime.Caller(i)
+					_, file, line, got := runtime.Caller(i)
 					if !got {
 						break
 					}
 
-					stacktrace += fmt.Sprintf("%s:%d\n", f, l)
+					callers = append(callers, fmt.Sprintf("%s:%d", file, line))
 				}
 
 				// when stack finishes
 				logMessage := fmt.Sprintf("Recovered from a route's Handler('%s')\n", ctx.HandlerName())
 				logMessage += fmt.Sprint(getRequestLogs(ctx))
 				logMessage += fmt.Sprintf("%s\n", err)
-				logMessage += fmt.Sprintf("%s\n", stacktrace)
+				logMessage += fmt.Sprintf("%s\n", strings.Join(callers, "\n"))
 				ctx.Application().Logger().Warn(logMessage)
 
-				// see accesslog.isPanic too.
-				ctx.StopWithPlainError(500, context.ErrPanicRecovery{Cause: err, Stacktrace: stacktrace})
+				// get the list of registered handlers and the
+				// handler which panic derived from.
+				handlers := ctx.Handlers()
+				handlersFileLines := make([]string, 0, len(handlers))
+				currentHandlerIndex := ctx.HandlerIndex(-1)
+				currentHandlerFileLine := "???"
+				for i, h := range ctx.Handlers() {
+					file, line := context.HandlerFileLine(h)
+					fileline := fmt.Sprintf("%s:%d", file, line)
+					handlersFileLines = append(handlersFileLines, fileline)
+					if i == currentHandlerIndex {
+						currentHandlerFileLine = fileline
+					}
+				}
+
+				// see accesslog.wasRecovered too.
+				ctx.StopWithPlainError(500, &context.ErrPanicRecovery{
+					Cause:              err,
+					Callers:            callers,
+					Stack:              debug.Stack(),
+					RegisteredHandlers: handlersFileLines,
+					CurrentHandler:     currentHandlerFileLine,
+				})
 			}
 		}()
 

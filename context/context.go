@@ -4790,35 +4790,6 @@ func (ctx *Context) IsRecording() (*ResponseRecorder, bool) {
 	return rr, ok
 }
 
-// ErrPanicRecovery may be returned from `Context` actions of a `Handler`
-// which recovers from a manual panic.
-type ErrPanicRecovery struct {
-	ErrPrivate
-	Cause      interface{}
-	Stacktrace string
-}
-
-// Error implements the Go standard error type.
-func (e ErrPanicRecovery) Error() string {
-	return fmt.Sprintf("%v\n%s", e.Cause, e.Stacktrace)
-}
-
-// ErrPrivate if provided then the error saved in context
-// should NOT be visible to the client no matter what.
-type ErrPrivate interface {
-	IrisPrivateError()
-}
-
-// IsErrPrivate reports whether the given "err" is a private one.
-func IsErrPrivate(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, ok := err.(ErrPrivate)
-	return ok
-}
-
 // ErrTransactionInterrupt can be used to manually force-complete a Context's transaction
 // and log(warn) the wrapped error's message.
 // Usage: `... return fmt.Errorf("my custom error message: %w", context.ErrTransactionInterrupt)`.
@@ -5093,19 +5064,68 @@ func (ctx *Context) GetErr() error {
 	return nil
 }
 
-// IsRecovered reports whether this handler has been recovered
-// by the Iris recover middleware.
-func (ctx *Context) IsRecovered() (ErrPanicRecovery, bool) {
-	if ctx.GetStatusCode() == 500 {
-		// Panic error from recovery middleware is private.
-		if err := ctx.GetErr(); err != nil {
-			if panicErr, ok := err.(ErrPanicRecovery); ok {
-				return panicErr, true
-			}
+// ErrPanicRecovery may be returned from `Context` actions of a `Handler`
+// which recovers from a manual panic.
+type ErrPanicRecovery struct {
+	ErrPrivate
+	Cause              interface{}
+	Callers            []string // file:line callers.
+	Stack              []byte   // the full debug stack.
+	RegisteredHandlers []string // file:line of all registered handlers.
+	CurrentHandler     string   // the handler panic came from.
+}
+
+// Error implements the Go standard error type.
+func (e *ErrPanicRecovery) Error() string {
+	if e.Cause != nil {
+		if err, ok := e.Cause.(error); ok {
+			return err.Error()
 		}
 	}
 
-	return ErrPanicRecovery{}, false
+	return fmt.Sprintf("%v\n%s", e.Cause, strings.Join(e.Callers, "\n"))
+}
+
+// Is completes the internal errors.Is interface.
+func (e *ErrPanicRecovery) Is(err error) bool {
+	_, ok := IsErrPanicRecovery(err)
+	return ok
+}
+
+// IsErrPanicRecovery reports whether the given "err" is a type of ErrPanicRecovery.
+func IsErrPanicRecovery(err error) (*ErrPanicRecovery, bool) {
+	if err == nil {
+		return nil, false
+	}
+	v, ok := err.(*ErrPanicRecovery)
+	return v, ok
+}
+
+// ErrPrivate if provided then the error saved in context
+// should NOT be visible to the client no matter what.
+type ErrPrivate interface {
+	IrisPrivateError()
+}
+
+// IsErrPrivate reports whether the given "err" is a private one.
+func IsErrPrivate(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, ok := err.(ErrPrivate)
+	return ok
+}
+
+// IsRecovered reports whether this handler has been recovered
+// by the Iris recover middleware.
+func (ctx *Context) IsRecovered() (*ErrPanicRecovery, bool) {
+	if ctx.GetStatusCode() == 500 {
+		// Panic error from recovery middleware is private.
+		return IsErrPanicRecovery(ctx.GetErr())
+	}
+
+	return nil, false
 }
 
 const idContextKey = "iris.context.id"
