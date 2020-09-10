@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"sync"
 	"text/template"
 
 	"github.com/kataras/iris/v12/context"
@@ -264,11 +263,6 @@ type defaultLocale struct {
 	other        map[string]interface{}
 
 	defaultMessageFunc MessageFunc
-}
-
-type templateKey struct {
-	Template *template.Template
-	once     *sync.Once
 }
 
 func (l *defaultLocale) Index() int {

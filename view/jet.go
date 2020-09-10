@@ -11,7 +11,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/CloudyKit/jet/v4"
+	"github.com/CloudyKit/jet/v5"
 )
 
 const jetEngineName = "jet"

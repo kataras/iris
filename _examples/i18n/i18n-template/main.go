@@ -10,7 +10,7 @@ import (
 
 /*
  Iris I18n supports text/template inside the translation values.
- Follow this tutorial to learn how to use that feature.
+ Follow this example to learn how to use that feature.
 */
 
 func main() {
@@ -31,8 +31,8 @@ func newApp() *iris.Application {
 				// like we do here.
 				//
 				// Note that this is only for english,
-				// but you can accept the language code
-				// and use a map with dictionaries to
+				// but you can use the "current" locale
+				// and make a map with dictionaries to
 				// pluralize words based on the given language.
 				return pluralize.Pluralize(word, count, true)
 			},
@@ -45,6 +45,13 @@ func newApp() *iris.Application {
 		text := ctx.Tr("HiDogs", iris.Map{
 			"count": 2,
 		}) // prints "Hi 2 dogs".
+		ctx.WriteString(text)
+	})
+
+	app.Get("/singular", func(ctx iris.Context) {
+		text := ctx.Tr("HiDogs", iris.Map{
+			"count": 1,
+		}) // prints "Hi 1 dog".
 		ctx.WriteString(text)
 	})
 
