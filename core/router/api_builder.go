@@ -961,7 +961,7 @@ func (api *APIBuilder) GetRouterFilters() map[Party]*Filter {
 // The context SHOULD call its `Next` method in order to proceed to
 // the next handler in the chain or the main request handler one.
 func (api *APIBuilder) UseRouter(handlers ...context.Handler) {
-	if len(handlers) == 0 {
+	if len(handlers) == 0 || handlers[0] == nil {
 		return
 	}
 

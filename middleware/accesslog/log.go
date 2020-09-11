@@ -28,11 +28,13 @@ type Log struct {
 
 	// Request-Response latency.
 	Latency time.Duration `json:"latency"`
+	// The response status code.
+	Code int `json:"code"`
 	// Init request's Method and Path.
 	Method string `json:"method"`
 	Path   string `json:"path"`
-	// The response status code.
-	Code int `json:"code"`
+	// The Remote Address.
+	IP string `json:"ip,omitempty"`
 	// Sorted URL Query arguments.
 	Query []memstore.StringEntry `json:"query,omitempty"`
 	// Dynamic path parameters.
@@ -223,7 +225,7 @@ func (f *Template) SetOutput(dest io.Writer) {
 	f.dest = dest
 }
 
-const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
+const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Code}}|{{.Method}}|{{.Path}}|{{.IP}}|{{.RequestValuesLine}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
 
 // Format prints the logs in text/template format.
 func (f *Template) Format(log *Log) (bool, error) {

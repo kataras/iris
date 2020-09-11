@@ -4,6 +4,6 @@ coverage.out
 package-lock.json
 go.sum
 node_modules
-/_examples/issue-*/
+issue-*/
 /_examples/feature-*/
 _examples/**/uploads/*

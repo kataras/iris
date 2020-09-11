@@ -26,7 +26,8 @@ func makeAccessLog() *accesslog.AccessLog {
 	// Initialize a new access log middleware.
 	// Accepts an `io.Writer`.
 	ac := accesslog.New(w)
-	ac.TimeFormat = "2006-01-02 15:04:05"
+	defer ac.Close()
+	// ac.TimeFormat = "2006-01-02 15:04:05" // default
 
 	// Example of adding more than one field to the logger.
 	// Here we logging all the session values this request has.
@@ -81,7 +82,7 @@ func makeAccessLog() *accesslog.AccessLog {
 		Modify the output format and customize the order
 		with the Template formatter:
 		ac.SetFormatter(&accesslog.Template{
-		    Text: "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Method}}|{{.Path}}|{{.RequestValuesLine}}|{{.Code}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n",
+		    Text: "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Code}}|{{.Method}}|{{.Path}}|{{.IP}}|{{.RequestValuesLine}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n",
 		    // Default ^
 		})
 	*/

@@ -18,9 +18,9 @@ func main() {
 	*/
 
 	ac := accesslog.File("./access.log")
-	ac.AddOutput(os.Stdout)
+	defer ac.Close()
 
-	ac.TimeFormat = "2006-01-02 15:04:05"
+	ac.AddOutput(os.Stdout)
 
 	// Set to false to print errors as one line:
 	// ac.KeepMultiLineError = false

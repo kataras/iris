@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/memstore"
 )
@@ -27,7 +26,7 @@ const (
 // GetFields returns the accesslog fields for this request.
 // Returns a store which the caller can use to
 // set/get/remove custom log fields. Use its `Set` method.
-func GetFields(ctx iris.Context) (fields *Fields) {
+func GetFields(ctx *context.Context) (fields *Fields) {
 	if v := ctx.Values().Get(fieldsContextKey); v != nil {
 		fields = v.(*Fields)
 	} else {
@@ -40,18 +39,18 @@ func GetFields(ctx iris.Context) (fields *Fields) {
 
 // Skip called when a specific route should be skipped from the logging process.
 // It's an easy to use alternative for iris.NewConditionalHandler.
-func Skip(ctx iris.Context) {
+func Skip(ctx *context.Context) {
 	ctx.Values().Set(skipLogContextKey, struct{}{})
 }
 
 // SkipHandler same as `Skip` but it can be used
 // as a middleware, it executes ctx.Next().
-func SkipHandler(ctx iris.Context) {
+func SkipHandler(ctx *context.Context) {
 	Skip(ctx)
 	ctx.Next()
 }
 
-func shouldSkip(ctx iris.Context) bool {
+func shouldSkip(ctx *context.Context) bool {
 	return ctx.Values().Get(skipLogContextKey) != nil
 }
 
@@ -134,9 +133,11 @@ type AccessLog struct {
 	// Defaults to false.
 	Async bool
 	// The time format for current time on log print.
-	// Defaults to the Iris Application's TimeFormat.
+	// Defaults to ""2006-01-02 15:04:05" on `New` function.
+	// Set it to empty to inherit the Iris Application's TimeFormat.
 	TimeFormat string
-
+	// IP displays the remote address.
+	IP bool
 	// The actual number of bytes received and sent on the network (headers + body).
 	// It is kind of "slow" operation as it uses the httputil to dumb request
 	// and response to get the total amount of bytes (headers + body).
@@ -197,10 +198,15 @@ const (
 // Register by its `Handler` method.
 // See `File` package-level function too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
+// Examples:
+// https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
+// https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog-template
+// https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog-broker
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
 		Clock:              clockFunc(time.Now),
+		TimeFormat:         "2006-01-02 15:04:05",
+		IP:                 true,
 		BytesReceived:      true,
 		BytesSent:          true,
 		BodyMinify:         true,
@@ -527,6 +533,11 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		timeFormat = ctx.Application().ConfigurationReadOnly().GetTimeFormat()
 	}
 
+	ip := ""
+	if ac.IP {
+		ip = ctx.RemoteAddr()
+	}
+
 	if err := ac.Print(ctx,
 		// latency between begin and finish of the handlers chain.
 		lat,
@@ -535,6 +546,8 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		ctx.GetStatusCode(),
 		// original request's method and path.
 		method, path,
+		// remote ip.
+		ip,
 		requestBody, responseBody,
 		bytesReceived, bytesSent,
 		ctx.Params(), ctx.URLParamsSorted(), *fields,
@@ -545,7 +558,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 
 // Print writes a log manually.
 // The `Handler` method calls it.
-func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
+func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, ip, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
 	now := ac.Clock.Now()
 
 	if hasFormatter, hasBroker := ac.formatter != nil, ac.broker != nil; hasFormatter || hasBroker {
@@ -555,9 +568,10 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		log.TimeFormat = timeFormat
 		log.Timestamp = now.UnixNano() / 1000000
 		log.Latency = latency
+		log.Code = code
 		log.Method = method
 		log.Path = path
-		log.Code = code
+		log.IP = ip
 		log.Query = query
 		log.PathParams = params.Store
 		log.Fields = fields
@@ -593,13 +607,14 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
-	_, err = fmt.Fprintf(ac, "%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|\n",
+	_, err = fmt.Fprintf(ac, "%s|%s|%d|%s|%s|%s|%s|%s|%s|%s|%s|\n",
 		now.Format(timeFormat),
 		latency,
+		code,
 		method,
 		path,
+		ip,
 		requestValues,
-		code,
 		formatBytes(bytesReceived),
 		formatBytes(bytesSent),
 		reqBody,

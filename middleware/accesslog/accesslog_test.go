@@ -35,7 +35,7 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 
 	for i := 0; i < goroutinesN; i++ {
 		wg.Add(1)
-		expected += "0001-01-01 00:00:00|1s|GET|/path_value?url_query=url_query_value|path_param=path_param_value url_query=url_query_value custom=custom_value|200|||Incoming|Outcoming|\n"
+		expected += "0001-01-01 00:00:00|1s|200|GET|/path_value?url_query=url_query_value|::1|path_param=path_param_value url_query=url_query_value custom=custom_value|||Incoming|Outcoming|\n"
 
 		go func() {
 			defer wg.Done()
@@ -47,6 +47,7 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 				200,
 				"GET",
 				"/path_value?url_query=url_query_value",
+				"::1",
 				"Incoming",
 				"Outcoming",
 				0,
@@ -73,7 +74,6 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 func TestAccessLogBroker(t *testing.T) {
 	w := new(bytes.Buffer)
 	ac := New(w)
-	ac.TimeFormat = "2006-01-02 15:04:05"
 	ac.Clock = TClock(time.Time{})
 	broker := ac.Broker()
 
@@ -123,6 +123,7 @@ func TestAccessLogBroker(t *testing.T) {
 			"",
 			"",
 			"",
+			"",
 			0,
 			0,
 			&context.RequestParams{},
@@ -161,7 +162,6 @@ func (*noOpFormatter) Format(*Log) (bool, error) {
 func BenchmarkAccessLogAfter(b *testing.B) {
 	ac := New(ioutil.Discard)
 	ac.Clock = TClock(time.Time{})
-	ac.TimeFormat = "2006-01-02 15:04:05"
 	ac.BytesReceived = false
 	ac.BytesSent = false
 	ac.BodyMinify = false
@@ -169,6 +169,7 @@ func BenchmarkAccessLogAfter(b *testing.B) {
 	ac.ResponseBody = false
 	ac.KeepMultiLineError = true
 	ac.Async = false
+	ac.IP = false
 	ac.SetFormatter(new(noOpFormatter)) // just to create the log structure.)
 
 	ctx := new(context.Context)

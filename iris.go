@@ -19,8 +19,9 @@ import (
 	"github.com/kataras/iris/v12/core/netutil"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/i18n"
-	requestLogger "github.com/kataras/iris/v12/middleware/logger"
+	"github.com/kataras/iris/v12/middleware/accesslog"
 	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/kataras/iris/v12/middleware/requestid"
 	"github.com/kataras/iris/v12/view"
 
 	"github.com/kataras/golog"
@@ -128,14 +129,40 @@ func New() *Application {
 	return app
 }
 
-// Default returns a new Application instance which on build state registers
-// html view engine on "./views" and load locales from "./locales/*/*".
-// The return instance recovers on panics and logs the incoming http requests too.
+// Default returns a new Application.
+// Default with "debug" Logger Level.
+// Localization enabled on "./locales" directory
+// and HTML templates on "./views" or "./templates" directory.
+// It runs with the AccessLog on "./access.log",
+// Recovery and Request ID middleware already attached.
 func Default() *Application {
 	app := New()
+	// Set default log level.
+	app.logger.SetLevel("debug")
+	app.logger.Debugf(`Log level set to "debug"`)
+
+	// Register the accesslog middleware.
+	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		// Close the file on shutdown.
+		app.ConfigureHost(func(su *Supervisor) {
+			su.RegisterOnShutdown(func() {
+				logFile.Close()
+			})
+		})
+
+		app.UseRouter(accesslog.New(logFile).Handler)
+		app.logger.Debugf("Using <%s> to log requests", logFile.Name())
+	}
+
+	// Register the requestid middleware
+	// before recover so current Context.GetID() contains the info on panic logs.
+	app.UseRouter(requestid.New())
+	app.logger.Debugf("Using <UUID4> to identify requests")
+
+	// Register the recovery, after accesslog and recover,
+	// before end-developer's middleware.
 	app.UseRouter(recover.New())
-	app.UseRouter(requestLogger.New())
-	app.UseRouter(Compression)
 
 	app.defaultMode = true
 
@@ -544,7 +571,7 @@ func (app *Application) Build() error {
 	if app.defaultMode { // the app.I18n and app.View will be not available until Build.
 		if !app.I18n.Loaded() {
 			for _, s := range []string{"./locales/*/*", "./locales/*", "./translations"} {
-				if _, err := os.Stat(s); os.IsNotExist(err) {
+				if _, err := os.Stat(s); err != nil {
 					continue
 				}
 
@@ -559,7 +586,7 @@ func (app *Application) Build() error {
 
 		if app.view.Len() == 0 {
 			for _, s := range []string{"./views", "./templates", "./web/views"} {
-				if _, err := os.Stat(s); os.IsNotExist(err) {
+				if _, err := os.Stat(s); err != nil {
 					continue
 				}
 

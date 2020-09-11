@@ -1,9 +1,9 @@
-2020-09-08 13:34:42|0s|POST|/read_body||200|324 B|217 B|{"name":"John","email":"example@example.com"}|{"data":{"email":"example@example.com","name":"John"},"message":"OK"}|
-2020-09-08 13:40:28|0s|POST|/read_body||400||85 B|error(invalid character '\r' in string literal)||
-2020-09-08 13:41:05|1.0024ms|GET|/|a=1 b=2|200|767 B|251 B||<h1>Hello index</h1>|
-2020-09-08 13:41:26|0s|GET|/public||404|765 B|83 B|||
-2020-09-08 13:41:36|0s|GET|/user/kataras|username=kataras|200|771 B|91 B||Hello, kataras!|
-2020-09-08 13:41:47|0s|GET|/user/kataras|username=kataras a_query_parameter=name|200|774 B|91 B||Hello, kataras!|
-2020-09-08 20:37:33|0s|GET|/admin|auth=admin:admin|200|608 B|164 B||<h2>Username: admin</h2><h3>Password: admin</h3>|
-2020-09-09 07:56:00|738.1µs|GET|/session|session_id=23fe763f-c9d5-4d65-9e1a-2cc8d23d1aa3 session_test_key=session_test_value|200|818 B|302 B||OK|
-2020-09-09 08:36:47|2.0095505s|GET|/fields|job_latency=2s|200|544 B|130 B||OK|
+2020-09-08 13:34:42|0s|200|POST|/read_body|::1||324 B|217 B|{"name":"John","email":"example@example.com"}|{"data":{"email":"example@example.com","name":"John"},"message":"OK"}|
+2020-09-08 13:40:28|0s|400|POST|/read_body|::1|||85 B|error(invalid character '\r' in string literal)||
+2020-09-08 13:41:05|1.0024ms|200|GET|/|a=1 b=2|767 B|251 B||<h1>Hello index</h1>|
+2020-09-08 13:41:26|0s|404|GET|/public|::1||765 B|83 B|||
+2020-09-08 13:41:36|0s|200|GET|/user/kataras|::1|username=kataras|771 B|91 B||Hello, kataras!|
+2020-09-08 13:41:47|0s|200|GET|/user/kataras|::1|username=kataras a_query_parameter=name|774 B|91 B||Hello, kataras!|
+2020-09-08 20:37:33|0s|200|GET|/admin|::1|auth=admin:admin|608 B|164 B||<h2>Username: admin</h2><h3>Password: admin</h3>|
+2020-09-09 07:56:00|738.1µs|200|GET|/session|::1|session_id=23fe763f-c9d5-4d65-9e1a-2cc8d23d1aa3 session_test_key=session_test_value|818 B|302 B||OK|
+2020-09-09 08:36:47|2.0095505s|200|GET|/fields|::1|job_latency=2s|544 B|130 B||OK|
