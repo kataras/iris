@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http/httputil"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -132,6 +133,12 @@ type AccessLog struct {
 	//
 	// Defaults to false.
 	Async bool
+
+	// The delimeter between fields when logging with the default format.
+	// See `SetFormatter` to customize the log even further.
+	//
+	// Defaults to '|'.
+	Delim rune
 	// The time format for current time on log print.
 	// Defaults to ""2006-01-02 15:04:05" on `New` function.
 	// Set it to empty to inherit the Iris Application's TimeFormat.
@@ -179,6 +186,7 @@ type AccessLog struct {
 	broker    *Broker
 
 	logsPool *sync.Pool
+	bufPool  *sync.Pool
 }
 
 // PanicLog holds the type for the available panic log levels.
@@ -207,6 +215,7 @@ const defaultTimeFormat = "2006-01-02 15:04:05"
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
 		Clock:              clockFunc(time.Now),
+		Delim:              defaultDelim,
 		TimeFormat:         defaultTimeFormat,
 		IP:                 true,
 		BytesReceived:      true,
@@ -217,6 +226,9 @@ func New(w io.Writer) *AccessLog {
 		KeepMultiLineError: true,
 		logsPool: &sync.Pool{New: func() interface{} {
 			return new(Log)
+		}},
+		bufPool: &sync.Pool{New: func() interface{} {
+			return new(bytes.Buffer)
 		}},
 	}
 
@@ -558,6 +570,8 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	}
 }
 
+const defaultDelim = '|'
+
 // Print writes a log manually.
 // The `Handler` method calls it.
 func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, ip, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
@@ -609,19 +623,45 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
-	_, err = fmt.Fprintf(ac, "%s|%s|%d|%s|%s|%s|%s|%s|%s|%s|%s|\n",
-		now.Format(timeFormat),
-		latency,
-		code,
-		method,
-		path,
-		ip,
-		requestValues,
-		formatBytes(bytesReceived),
-		formatBytes(bytesSent),
-		reqBody,
-		respBody,
-	)
+	builder := ac.bufPool.Get().(*bytes.Buffer)
+	builder.WriteString(now.Format(timeFormat))
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(latency.String())
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(strconv.Itoa(code))
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(method)
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(path)
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(ip)
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(requestValues)
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(formatBytes(bytesReceived))
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(formatBytes(bytesSent))
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(reqBody)
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteString(respBody)
+	builder.WriteRune(ac.Delim)
+
+	builder.WriteRune('\n')
+
+	ac.Write(builder.Bytes())
+	builder.Reset()
+	ac.bufPool.Put(builder)
 
 	return
 }

@@ -12,6 +12,10 @@ import (
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 )
 
+// Default line format:
+// Time|Latency|Code|Method|Path|IP|Path Params Query Fields|Bytes Received|Bytes Sent|Request|Response|
+//
+// Read the example and its comments carefully.
 func makeAccessLog() *accesslog.AccessLog {
 	// Optionally, let's Go with log rotation.
 	pathToAccessLog := "./access_log.%Y%m%d%H%M"

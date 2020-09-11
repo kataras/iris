@@ -160,6 +160,14 @@ func (*noOpFormatter) Format(*Log) (bool, error) {
 
 // go test -run=^$ -bench=BenchmarkAccessLogAfter -benchmem
 func BenchmarkAccessLogAfter(b *testing.B) {
+	benchmarkAccessLogAfter(b, true, false)
+}
+
+func BenchmarkAccessLogAfterPrint(b *testing.B) {
+	benchmarkAccessLogAfter(b, false, false)
+}
+
+func benchmarkAccessLogAfter(b *testing.B, withLogStruct, async bool) {
 	ac := New(ioutil.Discard)
 	ac.Clock = TClock(time.Time{})
 	ac.BytesReceived = false
@@ -170,7 +178,10 @@ func BenchmarkAccessLogAfter(b *testing.B) {
 	ac.KeepMultiLineError = true
 	ac.Async = false
 	ac.IP = false
-	ac.SetFormatter(new(noOpFormatter)) // just to create the log structure.)
+	ac.LockWriter = async
+	if withLogStruct {
+		ac.SetFormatter(new(noOpFormatter)) // just to create the log structure, here we test the log creation time only.
+	}
 
 	ctx := new(context.Context)
 	req, err := http.NewRequest("GET", "/", nil)
@@ -183,9 +194,25 @@ func BenchmarkAccessLogAfter(b *testing.B) {
 	w.BeginResponse(recorder)
 	ctx.ResetResponseWriter(w)
 
+	wg := new(sync.WaitGroup)
+	if async {
+		wg.Add(b.N)
+	}
+
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		ac.after(ctx, time.Millisecond, "GET", "/")
+		if async {
+			go func() {
+				ac.after(ctx, time.Millisecond, "GET", "/")
+				wg.Done()
+			}()
+		} else {
+			ac.after(ctx, time.Millisecond, "GET", "/")
+		}
+	}
+	b.StopTimer()
+	if async {
+		wg.Wait()
 	}
 	w.EndResponse()
 }
