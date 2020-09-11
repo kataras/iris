@@ -20,17 +20,14 @@ func main() {
 	ac.AddFields(func(ctx iris.Context, fields *accesslog.Fields) {
 		fields.Set("IP", ctx.RemoteAddr())
 	})
+
 	// 2. Use Template formatter's `Text` value
-	// to customize the look & feel of a log.
-	// You could also use its `Tmpl` field to
-	// set a *template.Template instance.
+	// to define a log line format.
 	ac.SetFormatter(&accesslog.Template{
 		Text: `{{.Now.Format .TimeFormat}} {{.Path}} {{.Code}} {{.Fields.Get "IP" }}
-`,
+`, /*             2020-09-10 21:38:13 / 200 ::1 */
 	})
-	// Example Output:
-	// 2020-09-10 21:38:13 / 200 ::1
-
+	// 3. Register the middleware. That's all.
 	app.UseRouter(ac.Handler)
 
 	app.Get("/", index)
@@ -41,3 +38,26 @@ func main() {
 func index(ctx iris.Context) {
 	ctx.WriteString("Index")
 }
+
+/* Use a custom *template.Template:
+
+// 2.1 The log line format:
+text := `{{.Now.Format .TimeFormat}} {{.Path}} {{.Code}} {{.Fields.Get "IP" }}
+`
+//
+// 2.2 Parse the template, optionally using custom Template Functions.
+tmpl := template.Must(template.New("").Funcs(template.FuncMap{
+	// Custom functions you may want to use inside "text",
+	// e.g. prefixFields .Fields "my_prefix"
+	// to get a slice of fields starts with "my_prefix"
+	// and later, in the template, loop through them and render their values.
+	// "key": func(input) string { return ... }
+}).Parse(text))
+//
+// 3. Use Template formatter's `Text` value
+// or the `Tmpl` field to customize the look & feel of a log.
+ac.SetFormatter(&accesslog.Template{
+	Tmpl: tmpl,
+})
+
+*/

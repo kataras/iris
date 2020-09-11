@@ -23,7 +23,7 @@ type Log struct {
 	// TimeFormat selected to print the Time as string,
 	// useful on Template Formatter.
 	TimeFormat string `json:"-" yaml:"-" toml:"-"`
-	// Timestamp the Now's unix timestamp (seconds).
+	// Timestamp the Now's unix timestamp (milliseconds).
 	Timestamp int64 `json:"timestamp"`
 
 	// Request-Response latency.
@@ -192,10 +192,12 @@ type Template struct {
 	// Custom template source.
 	// Use this or `Tmpl/TmplName` fields.
 	Text string
-	// Custom template to use, overrides the `Text` field if not nil.
+	// Custom template funcs to used when `Text` is not empty.
+	Funcs template.FuncMap
+
+	// Custom template to use, overrides the `Text` and `Funcs` fields.
 	Tmpl *template.Template
-	// If not empty then this named template/block
-	// is response to hold the log result.
+	// If not empty then this named template/block renders the log line.
 	TmplName string
 
 	dest io.Writer
@@ -206,12 +208,16 @@ type Template struct {
 // when this formatter is registered.
 func (f *Template) SetOutput(dest io.Writer) {
 	if f.Tmpl == nil {
+		tmpl := template.New("")
+
 		text := f.Text
-		if f.Text == "" {
+		if text != "" {
+			tmpl.Funcs(f.Funcs)
+		} else {
 			text = defaultTmplText
 		}
 
-		f.Tmpl = template.Must(template.New("").Parse(text))
+		f.Tmpl = template.Must(tmpl.Parse(text))
 	}
 
 	f.dest = dest

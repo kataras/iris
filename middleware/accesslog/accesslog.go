@@ -553,7 +553,7 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		log.Logger = ac
 		log.Now = now
 		log.TimeFormat = timeFormat
-		log.Timestamp = now.Unix()
+		log.Timestamp = now.UnixNano() / 1000000
 		log.Latency = latency
 		log.Method = method
 		log.Path = path
