@@ -193,6 +193,8 @@ const (
 	LogStack
 )
 
+const defaultTimeFormat = "2006-01-02 15:04:05"
+
 // New returns a new AccessLog value with the default values.
 // Writes to the "w". Output be further modified through its `Set/AddOutput` methods.
 // Register by its `Handler` method.
@@ -205,7 +207,7 @@ const (
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
 		Clock:              clockFunc(time.Now),
-		TimeFormat:         "2006-01-02 15:04:05",
+		TimeFormat:         defaultTimeFormat,
 		IP:                 true,
 		BytesReceived:      true,
 		BytesSent:          true,
