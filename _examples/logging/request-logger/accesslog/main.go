@@ -30,7 +30,6 @@ func makeAccessLog() *accesslog.AccessLog {
 	// Initialize a new access log middleware.
 	// Accepts an `io.Writer`.
 	ac := accesslog.New(w)
-	defer ac.Close()
 	// ac.TimeFormat = "2006-01-02 15:04:05" // default
 
 	// Example of adding more than one field to the logger.
@@ -94,11 +93,7 @@ func makeAccessLog() *accesslog.AccessLog {
 
 func main() {
 	ac := makeAccessLog()
-
 	defer ac.Close()
-	iris.RegisterOnInterrupt(func() {
-		ac.Close()
-	})
 
 	app := iris.New()
 	// Register the middleware (UseRouter to catch http errors too).

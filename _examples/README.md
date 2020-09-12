@@ -72,6 +72,7 @@
     * [Sitemap](routing/sitemap/main.go)
 * Logging
     * [Request Logger](logging/request-logger/main.go)
+        * [AccessLog: simple example](logging/request-logger/accesslog-simple/main.go)
         * [AccessLog: log request & response and more](logging/request-logger/accesslog)
         * [AccessLog: custom fields and template](logging/request-logger/accesslog-template/main.go)
         * [AccessLog: CSV Format](logging/request-logger/accesslog-csv/main.go)

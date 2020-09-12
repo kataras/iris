@@ -15,6 +15,7 @@ func main() {
 
 	app := iris.New()
 	ac := accesslog.File("./access.log").AddOutput(app.Logger().Printer)
+	defer ac.Close()
 
 	// 1. Register a field.
 	ac.AddFields(func(ctx iris.Context, fields *accesslog.Fields) {
