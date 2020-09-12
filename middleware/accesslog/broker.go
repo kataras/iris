@@ -22,6 +22,9 @@ type Broker struct {
 
 	// listeners store.
 	listeners map[LogChan]bool
+
+	// force-terminate all listeners.
+	close chan struct{}
 }
 
 // newBroker returns a new broker factory.
@@ -31,6 +34,7 @@ func newBroker() *Broker {
 		newListeners:     make(chan LogChan),
 		closingListeners: make(chan LogChan),
 		listeners:        make(map[LogChan]bool),
+		close:            make(chan struct{}),
 	}
 
 	// Listens and Broadcasts events.
@@ -57,6 +61,12 @@ func (b *Broker) run() {
 			// Send it to all active listeners.
 			for clientMessageChan := range b.listeners {
 				clientMessageChan <- log
+			}
+
+		case <-b.close:
+			for clientMessageChan := range b.listeners {
+				delete(b.listeners, clientMessageChan)
+				close(clientMessageChan)
 			}
 		}
 	}

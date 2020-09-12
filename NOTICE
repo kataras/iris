@@ -41,6 +41,9 @@ Revision ID: ab226d925aa394ccecf01e515ea8479367e0961c
  crypto              4b2356b1ed79e6b     https://go.googlesource.com/crypto       
                      e3deca3737a3db3                                              
                      d132d2847a                                                                                                   
+ easyjson            8ab5ff9cd8e4e43     https://github.com/mailru/easyjson
+                     2e8b79f6c47d324
+                     a31dd803cf
  go-version          2b13044f5cdd383     https://github.com/hashicorp/go-version  
                      3370d41ce57d8bf                                              
                      3cec5e62b8                                                                                                    

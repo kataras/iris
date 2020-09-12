@@ -19,9 +19,9 @@ func main() {
 
 	ac := accesslog.File("./access.log")
 	defer ac.Close()
-
 	ac.AddOutput(os.Stdout)
 
+	ac.RequestBody = true
 	// Set to false to print errors as one line:
 	// ac.KeepMultiLineError = false
 	// Set the "depth" of a panic trace:

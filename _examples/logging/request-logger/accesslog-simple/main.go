@@ -13,21 +13,32 @@ func makeAccessLog() *accesslog.AccessLog {
 	// Initialize a new access log middleware.
 	ac := accesslog.File("./access.log")
 
-	// Defaults to true. Change to false for better performance.
-	ac.RequestBody = false
-	ac.ResponseBody = false
+	// The default configuration:
+	ac.Delim = '|'
+	ac.TimeFormat = "2006-01-02 15:04:05"
+	ac.Async = false
+	ac.IP = true
+	ac.BytesReceivedBody = true
+	ac.BytesSentBody = true
 	ac.BytesReceived = false
 	ac.BytesSent = false
+	ac.BodyMinify = true
+	ac.RequestBody = true
+	ac.ResponseBody = false
+	ac.KeepMultiLineError = true
+	ac.PanicLog = accesslog.LogHandler
 
-	// Defaults to false.
-	ac.Async = false
+	// Set Custom Formatter:
+	ac.SetFormatter(&accesslog.JSON{})
+	// ac.SetFormatter(&accesslog.CSV{})
+	// ac.SetFormatter(&accesslog.Template{Text: "{{.Code}}"})
 
 	return ac
 }
 
 func main() {
 	ac := makeAccessLog()
-	defer ac.Close()
+	defer ac.Close() // Close the underline file.
 
 	app := iris.New()
 	// Register the middleware (UseRouter to catch http errors too).

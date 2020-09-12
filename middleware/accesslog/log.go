@@ -11,6 +11,7 @@ import (
 )
 
 // Log represents the log data specifically for the accesslog middleware.
+//easyjson:json
 type Log struct {
 	// The AccessLog instance this Log was created of.
 	Logger *AccessLog `json:"-" yaml:"-" toml:"-"`
@@ -21,35 +22,33 @@ type Log struct {
 	// useful on Template Formatter.
 	TimeFormat string `json:"-" yaml:"-" toml:"-"`
 	// Timestamp the Now's unix timestamp (milliseconds).
-	Timestamp int64 `json:"timestamp"`
+	Timestamp int64 `json:"timestamp" csv:"timestamp"`
 
 	// Request-Response latency.
-	Latency time.Duration `json:"latency"`
+	Latency time.Duration `json:"latency" csv:"latency"`
 	// The response status code.
-	Code int `json:"code"`
+	Code int `json:"code" csv:"code"`
 	// Init request's Method and Path.
-	Method string `json:"method"`
-	Path   string `json:"path"`
+	Method string `json:"method" csv:"method"`
+	Path   string `json:"path" csv:"path"`
 	// The Remote Address.
-	IP string `json:"ip,omitempty"`
+	IP string `json:"ip,omitempty" csv:"ip,omitempty"`
 	// Sorted URL Query arguments.
-	Query []memstore.StringEntry `json:"query,omitempty"`
+	Query []memstore.StringEntry `json:"query,omitempty" csv:"query,omitempty"`
 	// Dynamic path parameters.
-	PathParams memstore.Store `json:"params,omitempty"`
+	PathParams memstore.Store `json:"params,omitempty" csv:"params,omitempty"`
 	// Fields any data information useful to represent this Log.
-	Fields memstore.Store `json:"fields,omitempty"`
-
-	//  The actual number of bytes received and sent on the network (headers + body).
-	BytesReceived int `json:"bytes_received"`
-	BytesSent     int `json:"bytes_sent"`
-
+	Fields memstore.Store `json:"fields,omitempty" csv:"fields,omitempty"`
 	// The Request and Response raw bodies.
 	// If they are escaped (e.g. JSON),
 	// A third-party software can read it through:
 	// data, _ := strconv.Unquote(log.Request)
 	// err := json.Unmarshal([]byte(data), &customStruct)
-	Request  string `json:"request"`
-	Response string `json:"response"`
+	Request  string `json:"request,omitempty" csv:"request,omitempty"`
+	Response string `json:"response,omitempty" csv:"response,omitempty"`
+	//  The actual number of bytes received and sent on the network (headers + body or body only).
+	BytesReceived int `json:"bytes_received,omitempty" csv:"bytes_received,omitempty"`
+	BytesSent     int `json:"bytes_sent,omitempty" csv:"bytes_sent,omitempty"`
 
 	// A copy of the Request's Context when Async is true (safe to use concurrently),
 	// otherwise it's the current Context (not safe for concurrent access).
@@ -69,17 +68,23 @@ func (l *Log) RequestValuesLine() string {
 
 // BytesReceivedLine returns the formatted bytes received length.
 func (l *Log) BytesReceivedLine() string {
+	if !l.Logger.BytesReceived && !l.Logger.BytesReceivedBody {
+		return ""
+	}
 	return formatBytes(l.BytesReceived)
 }
 
 // BytesSentLine returns the formatted bytes sent length.
 func (l *Log) BytesSentLine() string {
+	if !l.Logger.BytesSent && !l.Logger.BytesSentBody {
+		return ""
+	}
 	return formatBytes(l.BytesSent)
 }
 
 func formatBytes(b int) string {
 	if b <= 0 {
-		return ""
+		return "0 B"
 	}
 
 	const unit = 1024
@@ -155,5 +160,4 @@ var (
 	_ Formatter = (*JSON)(nil)
 	_ Formatter = (*Template)(nil)
 	_ Formatter = (*CSV)(nil)
-	_ Flusher   = (*CSV)(nil)
 )

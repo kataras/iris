@@ -26,6 +26,7 @@ require (
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.1
 	github.com/klauspost/compress v1.11.0
+	github.com/mailru/easyjson v0.7.6
 	github.com/mediocregopher/radix/v3 v3.5.2
 	github.com/microcosm-cc/bluemonday v1.0.4
 	github.com/russross/blackfriday/v2 v2.0.1

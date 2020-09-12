@@ -1,6 +1,7 @@
 package main // See https://github.com/kataras/iris/issues/1601
 
 import (
+	"bufio"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -29,7 +30,7 @@ func makeAccessLog() *accesslog.AccessLog {
 
 	// Initialize a new access log middleware.
 	// Accepts an `io.Writer`.
-	ac := accesslog.New(w)
+	ac := accesslog.New(bufio.NewWriter(w))
 	// ac.TimeFormat = "2006-01-02 15:04:05" // default
 
 	// Example of adding more than one field to the logger.
@@ -73,6 +74,8 @@ func makeAccessLog() *accesslog.AccessLog {
 		ac.ResponseBody = false
 		ac.BytesReceived = false
 		ac.BytesSent = false
+		ac.BytesReceivedBody = false
+		ac.BytesSentBody = false
 
 		Add second output:
 		ac.AddOutput(app.Logger().Printer)

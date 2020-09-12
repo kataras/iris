@@ -1,7 +1,9 @@
 package accesslog
 
 import (
+	"bufio"
 	"bytes"
+	stdContext "context"
 	"fmt"
 	"io"
 	"net/http/httputil"
@@ -9,9 +11,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/core/memstore"
 )
 
@@ -89,11 +93,13 @@ var (
 // AccessLog is a middleware which prints information
 // incoming HTTP requests.
 //
-// Sample access log line:
-// 2020-08-22 00:44:20|1ms|POST|/read_body||200|{"id":10,"name":"Tim","age":22}|{"message":"OK"}|
+// Default log format:
+// Time|Latency|Code|Method|Path|IP|Path Params Query Fields|Bytes Received|Bytes Sent|Request|Response|
 //
 // Look `New`, `File` package-level functions
 // and its `Handler` method to learn more.
+// If the given writer is a buffered one,
+// its contents are flushed automatically on Close call.
 //
 // A new AccessLog middleware MUST
 // be created after a `New` function call.
@@ -103,17 +109,11 @@ type AccessLog struct {
 	// If multiple output required, then define an `io.MultiWriter`.
 	// See `SetOutput` and `AddOutput` methods too.
 	Writer io.Writer
-	// If enabled, it locks the underline Writer.
-	// It should be turned off if the given `Writer` is already protected with a locker.
-	// It is enabled when writer is os.Stdout/os.Stderr.
-	// You should manually set this field to true if you are not sure
-	// whether the underline Writer is protected.
-	//
-	// Defaults to true on *os.File and *bytes.Buffer, otherwise false.
-	LockWriter bool
 
 	// If not empty then each one of them is called on `Close` method.
-	Closers []io.Closer
+	// File type destinations are automatically added.
+	Flushers []Flusher
+	Closers  []io.Closer
 
 	// If not empty then overrides the time.Now to this custom clocker's `Now` method,
 	// useful for testing (see `TClock`) and
@@ -133,41 +133,70 @@ type AccessLog struct {
 	//
 	// Defaults to false.
 	Async bool
-
 	// The delimeter between fields when logging with the default format.
 	// See `SetFormatter` to customize the log even further.
 	//
 	// Defaults to '|'.
 	Delim rune
 	// The time format for current time on log print.
-	// Defaults to "2006-01-02 15:04:05" on `New` function.
 	// Set it to empty to inherit the Iris Application's TimeFormat.
+	//
+	// Defaults to "2006-01-02 15:04:05"
 	TimeFormat string
+	// Round the latency based on the given duration, e.g. time.Second.
+	//
+	// Defaults to 0.
+	LatencyRound time.Duration
 	// IP displays the remote address.
+	//
+	// Defaults to true.
 	IP bool
+
+	// The number of bytes for the request body only.
+	// Applied when BytesReceived is false.
+	//
+	// Defaults to true.
+	BytesReceivedBody bool
+	// The number of bytes for the response body only.
+	// Applied when BytesSent is false.
+	//
+	// Defaults to true.
+	BytesSentBody bool
 	// The actual number of bytes received and sent on the network (headers + body).
 	// It is kind of "slow" operation as it uses the httputil to dumb request
 	// and response to get the total amount of bytes (headers + body).
+	//
+	// They override the BytesReceivedBody and BytesSentBody fields.
+	// These two fields provide a more a acquirate measurement
+	// than BytesReceivedBody and BytesSentBody however,
+	// they are expensive operations, expect a slower execution.
+	//
+	// They both default to false.
 	BytesReceived bool
 	BytesSent     bool
-	// Note: We could calculate only the bodies, which is a fast operation if we already
-	// have RequestBody and ResponseBody set to true but this is not an accurate measurement.
 
-	// Force minify request and response contents.
-	BodyMinify bool
 	// Enable request body logging.
 	// Note that, if this is true then it modifies the underline request's body type.
+	//
+	// Defaults to true.
 	RequestBody bool
 	// Enable response body logging.
 	// Note that, if this is true then it uses a response recorder.
+	//
+	// Defaults to false.
 	ResponseBody bool
+	// Force minify request and response contents.
+	//
+	// Defaults to true.
+	BodyMinify bool
 
 	// KeepMultiLineError displays the Context's error as it's.
 	// If set to false then it replaces all line characters with spaces.
 	//
 	// See `PanicLog` to customize recovered-from-panic errors even further.
+	//
+	// Defaults to true.
 	KeepMultiLineError bool
-
 	// What the logger should write to the output destination
 	// when recovered from a panic.
 	// Available options:
@@ -185,8 +214,14 @@ type AccessLog struct {
 	formatter Formatter
 	broker    *Broker
 
+	// the log instance for custom formatters.
 	logsPool *sync.Pool
-	bufPool  *sync.Pool
+	// the builder for the default format.
+	bufPool *sync.Pool
+	// remaining logs when Close is called, we wait for timeout (see CloseContext).
+	remaining uint32
+	// reports whether the logger is already closed, see `Close` & `CloseContext` methods.
+	isClosed bool
 }
 
 // PanicLog holds the type for the available panic log levels.
@@ -204,7 +239,8 @@ const (
 const defaultTimeFormat = "2006-01-02 15:04:05"
 
 // New returns a new AccessLog value with the default values.
-// Writes to the "w". Output be further modified through its `Set/AddOutput` methods.
+// Writes to the "w". Output can be further modified through its `Set/AddOutput` methods.
+//
 // Register by its `Handler` method.
 // See `File` package-level function too.
 //
@@ -217,13 +253,18 @@ func New(w io.Writer) *AccessLog {
 		Clock:              clockFunc(time.Now),
 		Delim:              defaultDelim,
 		TimeFormat:         defaultTimeFormat,
+		LatencyRound:       0,
+		Async:              false,
 		IP:                 true,
-		BytesReceived:      true,
-		BytesSent:          true,
-		BodyMinify:         true,
+		BytesReceived:      false,
+		BytesSent:          false,
+		BytesReceivedBody:  true,
+		BytesSentBody:      true,
 		RequestBody:        true,
-		ResponseBody:       true,
+		ResponseBody:       false,
+		BodyMinify:         true,
 		KeepMultiLineError: true,
+		PanicLog:           LogHandler,
 		logsPool: &sync.Pool{New: func() interface{} {
 			return new(Log)
 		}},
@@ -237,11 +278,27 @@ func New(w io.Writer) *AccessLog {
 	}
 	ac.SetOutput(w)
 
+	// workers := 20
+	// listener := ac.Broker().NewListener()
+	// for i := 0; i < workers; i++ {
+	// 	go func() {
+	// 		for log := range listener {
+	// 			atomic.AddUint32(&ac.remaining, 1)
+	// 			ac.handleLog(log)
+	// 			atomic.AddUint32(&ac.remaining, ^uint32(0))
+	// 		}
+	// 	}()
+	// }
+
+	host.RegisterOnInterrupt(func() {
+		ac.Close()
+	})
 	return ac
 }
 
 // File returns a new AccessLog value with the given "path"
 // as the log's output file destination.
+// The Writer is now a buffered file writer.
 // Register by its `Handler` method.
 //
 // A call of its `Close` method to unlock the underline
@@ -256,7 +313,7 @@ func File(path string) *AccessLog {
 		panic(err)
 	}
 
-	return New(f)
+	return New(bufio.NewWriter(f))
 }
 
 // Broker creates or returns the broker.
@@ -268,62 +325,37 @@ func (ac *AccessLog) Broker() *Broker {
 	ac.mu.Lock()
 	if ac.broker == nil {
 		ac.broker = newBroker()
-		// atomic.StoreUint32(&ac.brokerActive, 1)
 	}
 	ac.mu.Unlock()
 	return ac.broker
-}
-
-// func (ac *AccessLog) isBrokerActive() bool { // see `Print` method.
-// 	return atomic.LoadUint32(&ac.brokerActive) > 0
-// }
-// ^ No need, we declare that the Broker should be called
-// before serve-time. Let's respect our comment
-// and don't try to make it safe for write and read concurrent access.
-
-// Write writes to the log destination.
-// It completes the io.Writer interface.
-// Safe for concurrent use.
-func (ac *AccessLog) Write(p []byte) (int, error) {
-	if ac.LockWriter {
-		ac.mu.Lock()
-	}
-	n, err := ac.Writer.Write(p)
-	if ac.LockWriter {
-		ac.mu.Unlock()
-	}
-	return n, err
 }
 
 // SetOutput sets the log's output destination. Accepts one or more io.Writer values.
 // Also, if a writer is a Closer, then it is automatically appended to the Closers.
 // Call it before `SetFormatter` and `Handler` methods.
 func (ac *AccessLog) SetOutput(writers ...io.Writer) *AccessLog {
-	if len(writers) == 0 {
+	switch len(writers) {
+	case 0:
 		return ac
-	}
-
-	lockWriter := false
-	for _, w := range writers {
-		if closer, ok := w.(io.Closer); ok {
-			ac.Closers = append(ac.Closers, closer)
-		}
-
-		if !lockWriter {
-			switch w.(type) {
-			case *os.File, *bytes.Buffer: // force lock writer.
-				lockWriter = true
-			}
-		}
-	}
-	ac.LockWriter = lockWriter
-
-	if len(writers) == 1 {
+	case 1:
 		ac.Writer = writers[0]
-	} else {
+	default:
 		ac.Writer = io.MultiWriter(writers...)
 	}
 
+	for _, w := range writers {
+		if flusher, ok := w.(Flusher); ok {
+			ac.Flushers = append(ac.Flushers, flusher)
+		}
+
+		if closer, ok := w.(io.Closer); ok {
+			ac.Closers = append(ac.Closers, closer)
+		}
+	}
+
+	// ac.bufWriter = bufio.NewWriterSize(ac.Writer, 4096)
+	// No ^ let the caller decide that, we just helping on automatic flushing
+	// through the `Flushers` field called when necessary.
 	return ac
 }
 
@@ -337,23 +369,64 @@ func (ac *AccessLog) AddOutput(writers ...io.Writer) *AccessLog {
 	return ac.SetOutput(writers...)
 }
 
+// func (ac *AccessLog) isBrokerActive() bool { // see `Print` method.
+// 	return atomic.LoadUint32(&ac.brokerActive) > 0
+// }
+// ^ No need, we declare that the Broker should be called
+// before serve-time. Let's respect our comment
+// and don't try to make it safe for write and read concurrent access.
+
+// Write writes to the log destination.
+// It completes the io.Writer interface.
+// Safe for concurrent use.
+func (ac *AccessLog) Write(p []byte) (int, error) {
+	ac.mu.Lock()
+	n, err := ac.Writer.Write(p)
+	ac.mu.Unlock()
+	return n, err
+}
+
+// Flush writes any buffered data to the underlying Fluser Writer.
+// Flush is called automatically on Close.
+func (ac *AccessLog) Flush() (err error) {
+	ac.mu.Lock()
+	for _, f := range ac.Flushers {
+		fErr := f.Flush()
+		if fErr != nil {
+			if err == nil {
+				err = fErr
+			} else {
+				err = fmt.Errorf("%v, %v", err, fErr)
+			}
+		}
+	}
+	ac.mu.Unlock()
+	return
+}
+
 // SetFormatter sets a custom formatter to print the logs.
 // Any custom output writers should be
 // already registered before calling this method.
 // Returns this AccessLog instance.
 //
 // Usage:
-// ac.SetFormatter(&accesslog.JSON{Indent: "  "})
+// ac.SetFormatter(&accesslog.JSON{Indent: "    "})
 func (ac *AccessLog) SetFormatter(f Formatter) *AccessLog {
 	if ac.Writer == nil {
 		panic("accesslog: SetFormatter called with nil Writer")
 	}
 
+	if f == nil {
+		return ac
+	}
+
+	if flusher, ok := ac.formatter.(Flusher); ok {
+		// PREPEND formatter flushes, they should run before destination's ones.
+		ac.Flushers = append([]Flusher{flusher}, ac.Flushers...)
+	}
+
 	// Inject the writer (AccessLog) here, the writer
-	// It is a protected with mutex writer to the final output
-	// when LockWriter field was set to true
-	// or when the given destination was os.File or bytes.Buffer
-	// (otherwise we assume it's locked by the end-developer).
+	// is protected with mutex.
 	f.SetOutput(ac)
 
 	ac.formatter = f
@@ -368,10 +441,46 @@ func (ac *AccessLog) AddFields(setters ...FieldSetter) *AccessLog {
 	return ac
 }
 
-// Close calls each registered Closer's Close method.
-// Exits when all close methods have been executed.
+// Close terminates any broker listeners,
+// waits for any remaining logs up to 10 seconds
+// (see `CloseContext` to set custom deadline),
+// flushes any formatter and any buffered data to the underline writer
+// and finally closes any registered closers (files are automatically added as Closer).
+//
+// After Close is called the AccessLog is not accessible.
 func (ac *AccessLog) Close() (err error) {
-	ac.flushFormatter()
+	if ac.isClosed {
+		return nil
+	}
+
+	ctx, cancelFunc := stdContext.WithTimeout(stdContext.Background(), 10*time.Second)
+	defer cancelFunc()
+
+	return ac.CloseContext(ctx)
+}
+
+// CloseContext same as `Close` but waits until given "ctx" is done.
+func (ac *AccessLog) CloseContext(ctx stdContext.Context) (err error) {
+	if ac.isClosed {
+		return nil
+	}
+	ac.isClosed = true
+
+	if ac.broker != nil {
+		ac.broker.close <- struct{}{}
+	}
+
+	if ac.Async {
+		ac.waitRemaining(ctx)
+	}
+
+	if fErr := ac.Flush(); fErr != nil {
+		if err == nil {
+			err = fErr
+		} else {
+			err = fmt.Errorf("%v, %v", err, fErr)
+		}
+	}
 
 	for _, closer := range ac.Closers {
 		cErr := closer.Close()
@@ -387,21 +496,32 @@ func (ac *AccessLog) Close() (err error) {
 	return
 }
 
-func (ac *AccessLog) flushFormatter() {
-	if ac.formatter != nil {
-		if flusher, ok := ac.formatter.(Flusher); ok {
-			flusher.Flush()
+func (ac *AccessLog) waitRemaining(ctx stdContext.Context) {
+	if n := atomic.LoadUint32(&ac.remaining); n == 0 {
+		return
+	}
+
+	t := time.NewTicker(2 * time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if atomic.LoadUint32(&ac.remaining) == 0 {
+				return
+			}
 		}
 	}
 }
 
 func (ac *AccessLog) shouldReadRequestBody() bool {
-	return ac.RequestBody || ac.BytesReceived
+	return ac.RequestBody || ac.BytesReceived || ac.BytesReceivedBody
 
 }
 
 func (ac *AccessLog) shouldReadResponseBody() bool {
-	return ac.ResponseBody || ac.BytesSent
+	return ac.ResponseBody || ac.BytesSent /* || ac.BytesSentBody this can be measured by the default writer's Written() */
 }
 
 // Handler prints request information to the output destination.
@@ -469,7 +589,8 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 		return
 	}
 
-	latency := time.Since(startTime)
+	latency := time.Since(startTime).Round(ac.LatencyRound)
+
 	if ac.Async {
 		ctxCopy := ctx.Clone()
 		go ac.after(ctxCopy, latency, method, path)
@@ -484,7 +605,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		// request and response data or error reading them.
 		requestBody   string
 		responseBody  string
-		bytesReceived int
+		bytesReceived int // total or body, depends on the configuration.
 		bytesSent     int
 	)
 
@@ -498,6 +619,9 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		} else {
 			requestData, err := ctx.GetBody()
 			requestBodyLength := len(requestData)
+			if ac.BytesReceivedBody {
+				bytesReceived = requestBodyLength // store it, if the total is enabled then this will be overriden.
+			}
 			if err != nil && ac.RequestBody {
 				requestBody = ac.getErrorText(err)
 			} else if requestBodyLength > 0 {
@@ -530,6 +654,9 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	if ac.shouldReadResponseBody() {
 		responseData := ctx.Recorder().Body()
 		responseBodyLength := len(responseData)
+		if ac.BytesSentBody {
+			bytesSent = responseBodyLength
+		}
 		if ac.ResponseBody && responseBodyLength > 0 {
 			if ac.BodyMinify {
 				if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentType(), responseData); err == nil {
@@ -551,6 +678,8 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 			}
 			bytesSent = len(b) + responseBodyLength + dateLengthProx
 		}
+	} else if ac.BytesSentBody {
+		bytesSent = ctx.ResponseWriter().Written()
 	}
 
 	// Grab any custom fields.
@@ -589,10 +718,33 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 }
 
 const defaultDelim = '|'
+const newLine = '\n'
 
 // Print writes a log manually.
 // The `Handler` method calls it.
-func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, ip, reqBody, respBody string, bytesReceived, bytesSent int, params memstore.Store, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
+func (ac *AccessLog) Print(ctx *context.Context,
+	latency time.Duration,
+	timeFormat string,
+	code int,
+	method, path, ip, reqBody, respBody string,
+	bytesReceived, bytesSent int,
+	params memstore.Store, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
+
+	if ac.Async {
+		// atomic.AddUint32(&ac.remaining, 1)
+		// This could work ^
+		// but to make sure we have the correct number of increments.
+		// CAS loop:
+		for {
+			cur := atomic.LoadUint32(&ac.remaining)
+			if atomic.CompareAndSwapUint32(&ac.remaining, cur, cur+1) {
+				break
+			}
+		}
+
+		defer atomic.AddUint32(&ac.remaining, ^uint32(0))
+	}
+
 	now := ac.Clock.Now()
 
 	if hasFormatter, hasBroker := ac.formatter != nil, ac.broker != nil; hasFormatter || hasBroker {
@@ -609,10 +761,10 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		log.Query = query
 		log.PathParams = params
 		log.Fields = fields
-		log.BytesReceived = bytesReceived
-		log.BytesSent = bytesSent
 		log.Request = reqBody
 		log.Response = respBody
+		log.BytesReceived = bytesReceived
+		log.BytesSent = bytesSent
 		log.Ctx = ctx
 
 		var handled bool
@@ -629,7 +781,6 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		}
 
 		ac.logsPool.Put(log) // we don't need it anymore.
-
 		if handled {
 			return // OK, it's handled, exit now.
 		}
@@ -639,7 +790,7 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 	// key=value key2=value2.
 	requestValues := parseRequestValues(code, params, query, fields)
 
-	// the number of separators are the same, in order to be easier
+	// the number of separators is the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
 	builder := ac.bufPool.Get().(*bytes.Buffer)
 
@@ -658,25 +809,35 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 	builder.WriteString(path)
 	builder.WriteRune(ac.Delim)
 
-	builder.WriteString(ip)
-	builder.WriteRune(ac.Delim)
+	if ac.IP {
+		builder.WriteString(ip)
+		builder.WriteRune(ac.Delim)
+	}
 
 	builder.WriteString(requestValues)
 	builder.WriteRune(ac.Delim)
 
-	builder.WriteString(formatBytes(bytesReceived))
-	builder.WriteRune(ac.Delim)
+	if ac.BytesReceived || ac.BytesReceivedBody {
+		builder.WriteString(formatBytes(bytesReceived))
+		builder.WriteRune(ac.Delim)
+	}
 
-	builder.WriteString(formatBytes(bytesSent))
-	builder.WriteRune(ac.Delim)
+	if ac.BytesSent || ac.BytesSentBody {
+		builder.WriteString(formatBytes(bytesSent))
+		builder.WriteRune(ac.Delim)
+	}
 
-	builder.WriteString(reqBody)
-	builder.WriteRune(ac.Delim)
+	if ac.RequestBody {
+		builder.WriteString(reqBody)
+		builder.WriteRune(ac.Delim)
+	}
 
-	builder.WriteString(respBody)
-	builder.WriteRune(ac.Delim)
+	if ac.ResponseBody {
+		builder.WriteString(respBody)
+		builder.WriteRune(ac.Delim)
+	}
 
-	builder.WriteRune('\n')
+	builder.WriteRune(newLine)
 
 	ac.Write(builder.Bytes())
 	builder.Reset()
@@ -689,7 +850,7 @@ var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")
 
 func (ac *AccessLog) getErrorText(err error) (text string) { // caller checks for nil.
 	if errPanic, ok := context.IsErrPanicRecovery(err); ok {
-		ac.flushFormatter() // flush any buffered formatter's contents to be written to the output.
+		ac.Flush() // flush any buffered contents to be written to the output.
 
 		switch ac.PanicLog {
 		case LogHandler:

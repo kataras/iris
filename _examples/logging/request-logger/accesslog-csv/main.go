@@ -10,11 +10,10 @@ import (
 func main() {
 	app := iris.New()
 	ac := accesslog.File("access_log.csv")
+	ac.ResponseBody = true
 	ac.SetFormatter(&accesslog.CSV{
-		AutoFlush: true,
-		Header:    true,
+		Header: true,
 		// DateScript:   "FROM_UNIX",
-		LatencyRound: time.Second,
 	})
 
 	app.UseRouter(ac.Handler)

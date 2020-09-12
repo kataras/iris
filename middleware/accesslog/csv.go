@@ -4,13 +4,15 @@ import (
 	"encoding/csv"
 	"io"
 	"strconv"
-	"time"
+	"sync"
 )
 
 // CSV is a Formatter type for csv encoded logs.
-type CSV struct {
+type CSV struct { // TODO: change it to use csvutil.
 	writer *csv.Writer
-	ac     *AccessLog
+
+	writerPool *sync.Pool
+	ac         *AccessLog
 
 	// Add header fields to the first line if it's not exist.
 	// Note that the destination should be a compatible io.Reader
@@ -23,10 +25,6 @@ type CSV struct {
 	// 	return new Date(epoch_in_millis);
 	// }
 	DateScript string
-	// Latency Round base, e.g. time.Second.
-	LatencyRound time.Duration
-	// Writes immediately every record.
-	AutoFlush bool
 
 	// TODO: Fields []string // field name, position?
 }
@@ -36,14 +34,12 @@ type CSV struct {
 // write the first csv record which
 // contains the names of the future log values.
 func (f *CSV) SetOutput(dest io.Writer) {
-	ac, ok := dest.(*AccessLog)
-	if !ok {
-		panic("SetOutput with invalid type. Report it as bug.")
+	f.ac, _ = dest.(*AccessLog)
+	f.writerPool = &sync.Pool{
+		New: func() interface{} {
+			return csv.NewWriter(dest)
+		},
 	}
-
-	w := csv.NewWriter(dest)
-	f.writer = w
-	f.ac = ac
 
 	if !f.Header {
 		return
@@ -53,7 +49,7 @@ func (f *CSV) SetOutput(dest io.Writer) {
 		// If the destination is not a reader
 		// we can't detect if the header already inserted
 		// so we exit, we dont want to malform the contents.
-		destReader, ok := ac.Writer.(io.Reader)
+		destReader, ok := f.ac.Writer.(io.Reader)
 		if !ok {
 			return
 		}
@@ -66,35 +62,30 @@ func (f *CSV) SetOutput(dest io.Writer) {
 	}
 
 	// Write the header.
+	w := csv.NewWriter(dest)
 
 	keys := []string{"Timestamp", "Latency", "Code", "Method", "Path"}
 
-	if ac.IP {
+	if f.ac.IP {
 		keys = append(keys, "IP")
 	}
 
 	// keys = append(keys, []string{"Params", "Query"}...)
 	keys = append(keys, "Req Values")
 
-	/*
-		if len(ac.FieldSetters) > 0 {
-			keys = append(keys, "Fields")
-		} // Make fields their own headers?
-	*/
-
-	if ac.BytesReceived {
+	if f.ac.BytesReceived || f.ac.BytesReceivedBody {
 		keys = append(keys, "In")
 	}
 
-	if ac.BytesSent {
+	if f.ac.BytesSent || f.ac.BytesSentBody {
 		keys = append(keys, "Out")
 	}
 
-	if ac.RequestBody {
+	if f.ac.RequestBody {
 		keys = append(keys, "Request")
 	}
 
-	if ac.ResponseBody {
+	if f.ac.ResponseBody {
 		keys = append(keys, "Response")
 	}
 
@@ -113,16 +104,9 @@ func (f *CSV) Format(log *Log) (bool, error) {
 		timestamp = "=" + f.DateScript + "(" + timestamp + ")"
 	}
 
-	lat := ""
-	if f.LatencyRound > 0 {
-		lat = log.Latency.Round(f.LatencyRound).String()
-	} else {
-		lat = log.Latency.String()
-	}
-
 	values := []string{
 		timestamp,
-		lat,
+		log.Latency.String(),
 		strconv.Itoa(log.Code),
 		log.Method,
 		log.Path,
@@ -132,36 +116,30 @@ func (f *CSV) Format(log *Log) (bool, error) {
 		values = append(values, log.IP)
 	}
 
-	parseRequestValues(log.Code, log.PathParams, log.Query, log.Fields)
-	values = append(values, log.RequestValuesLine())
+	if s := log.RequestValuesLine(); s != "" || f.Header {
+		// even if it's empty, if Header was set, then add it.
+		values = append(values, s)
+	}
 
-	if f.ac.BytesReceived {
+	if f.ac.BytesReceived || f.ac.BytesReceivedBody {
 		values = append(values, strconv.Itoa(log.BytesReceived))
 	}
 
-	if f.ac.BytesSent {
+	if f.ac.BytesSent || f.ac.BytesSentBody {
 		values = append(values, strconv.Itoa(log.BytesSent))
 	}
 
-	if f.ac.RequestBody {
+	if f.ac.RequestBody && (log.Request != "" || f.Header) {
 		values = append(values, log.Request)
 	}
 
-	if f.ac.ResponseBody {
+	if f.ac.ResponseBody && (log.Response != "" || f.Header) {
 		values = append(values, log.Response)
 	}
 
-	f.writer.Write(values)
-
-	if f.AutoFlush {
-		return true, f.Flush()
-	}
-	return true, nil
-}
-
-// Flush implements the Fluster interface.
-// Flushes any buffered csv records to the destination.
-func (f *CSV) Flush() error {
-	f.writer.Flush()
-	return f.writer.Error()
+	w := f.writerPool.Get().(*csv.Writer)
+	err := w.Write(values)
+	w.Flush() // it works as "reset" too.
+	f.writerPool.Put(w)
+	return true, err
 }

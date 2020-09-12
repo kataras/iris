@@ -11,12 +11,11 @@ import (
 func TestCSV(t *testing.T) {
 	buf := new(bytes.Buffer)
 	ac := New(buf)
+	ac.RequestBody = false
 	staticNow, _ := time.Parse(defaultTimeFormat, "1993-01-01 05:00:00")
 	ac.Clock = TClock(staticNow)
 	ac.SetFormatter(&CSV{
-		Header:       true,
-		LatencyRound: time.Second,
-		AutoFlush:    true,
+		Header: true,
 	})
 
 	lat, _ := time.ParseDuration("1s")
@@ -43,11 +42,12 @@ func TestCSV(t *testing.T) {
 	print()
 	print()
 
-	expected := `Timestamp,Latency,Code,Method,Path,IP,Req Values,In,Out,Request,Response
-725864400000,1s,200,GET,/,::1,sleep=1s,573,81,,Index
-725864400000,1s,200,GET,/,::1,sleep=1s,573,81,,Index
+	expected := `Timestamp,Latency,Code,Method,Path,IP,Req Values,In,Out
+725864400000,1s,200,GET,/,::1,sleep=1s,573,81
+725864400000,1s,200,GET,/,::1,sleep=1s,573,81
 `
 
+	ac.Close()
 	if got := buf.String(); expected != got {
 		t.Fatalf("expected:\n%s\n\nbut got:\n%s", expected, got)
 	}

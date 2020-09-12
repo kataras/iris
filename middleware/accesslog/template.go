@@ -1,8 +1,8 @@
 package accesslog
 
 import (
+	"bytes"
 	"io"
-	"sync"
 	"text/template"
 )
 
@@ -10,6 +10,11 @@ import (
 // It's used to print the Log in a text/template way.
 // The caller has full control over the printable result;
 // certain fields can be ignored, change the display order and e.t.c.
+//
+// For faster execution you can create a custom Formatter
+// and compile your own quicktemplate: https://github.com/valyala/quicktemplate
+//
+// This one uses the standard text/template syntax.
 type Template struct {
 	// Custom template source.
 	// Use this or `Tmpl/TmplName` fields.
@@ -22,13 +27,14 @@ type Template struct {
 	// If not empty then this named template/block renders the log line.
 	TmplName string
 
-	dest io.Writer
-	mu   sync.Mutex
+	ac *AccessLog
 }
 
 // SetOutput creates the default template if missing
 // when this formatter is registered.
 func (f *Template) SetOutput(dest io.Writer) {
+	f.ac, _ = dest.(*AccessLog)
+
 	if f.Tmpl == nil {
 		tmpl := template.New("")
 
@@ -41,8 +47,6 @@ func (f *Template) SetOutput(dest io.Writer) {
 
 		f.Tmpl = template.Must(tmpl.Parse(text))
 	}
-
-	f.dest = dest
 }
 
 const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Code}}|{{.Method}}|{{.Path}}|{{.IP}}|{{.RequestValuesLine}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
@@ -53,13 +57,22 @@ func (f *Template) Format(log *Log) (bool, error) {
 
 	// A template may be executed safely in parallel, although if parallel
 	// executions share a Writer the output may be interleaved.
-	f.mu.Lock()
-	if f.TmplName != "" {
-		err = f.Tmpl.ExecuteTemplate(f.dest, f.TmplName, log)
-	} else {
-		err = f.Tmpl.Execute(f.dest, log)
-	}
-	f.mu.Unlock()
+	// We solve that using a buffer pool, no locks when template is executing (x2 performance boost).
+	temp := f.ac.bufPool.Get().(*bytes.Buffer)
 
-	return true, err
+	if f.TmplName != "" {
+		err = f.Tmpl.ExecuteTemplate(temp, f.TmplName, log)
+	} else {
+		err = f.Tmpl.Execute(temp, log)
+	}
+
+	if err != nil {
+		f.ac.bufPool.Put(temp)
+		return true, err
+	}
+
+	f.ac.Write(temp.Bytes())
+	temp.Reset()
+	f.ac.bufPool.Put(temp)
+	return true, nil
 }

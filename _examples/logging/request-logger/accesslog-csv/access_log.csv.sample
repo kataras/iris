@@ -1,5 +1,7 @@
 Timestamp,Latency,Code,Method,Path,IP,Req Values,In,Out,Request,Response
-1599900695933,0s,200,GET,/,::1,sleep=35ms,575,81,,Index
-1599900696207,0s,404,GET,/notfound,::1,,572,92,,Not Found
-1599900696693,0s,200,GET,/,::1,,564,81,,Index
-1599900697988,1s,200,GET,/,::1,sleep=1s,573,81,,Index
+1599952696740,0s,200,GET,/,::1,,0,5,,Index
+1599952696774,0s,404,GET,/favicon.ico,::1,,0,9,,Not Found
+1599952697996,0s,200,GET,/,::1,,0,5,,Index
+1599952698130,0s,200,GET,/,::1,,0,5,,Index
+1599952698261,0s,200,GET,/,::1,,0,5,,Index
+1599952741189,1.01113s,200,GET,/,::1,sleep=1s,0,5,,Index

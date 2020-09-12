@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,30 +18,20 @@ import (
 )
 
 func TestAccessLogPrint_Simple(t *testing.T) {
-	t.Parallel()
-	const goroutinesN = 42
+	const goroutinesN = 420
 
 	w := new(bytes.Buffer)
 	ac := New(w)
-	ac.TimeFormat = "2006-01-02 15:04:05"
+	ac.Async = true
+	ac.ResponseBody = true
 	ac.Clock = TClock(time.Time{})
 
-	if !ac.LockWriter { // should be true because we register a *bytes.Buffer.
-		t.Fatalf("expected LockRriter to be true")
-	}
-
-	var (
-		expected string
-		wg       = new(sync.WaitGroup)
-	)
-
+	var expected string
+	var expectedLines int
+	var mu sync.Mutex
 	for i := 0; i < goroutinesN; i++ {
-		wg.Add(1)
-		expected += "0001-01-01 00:00:00|1s|200|GET|/path_value?url_query=url_query_value|::1|path_param=path_param_value url_query=url_query_value custom=custom_value|||Incoming|Outcoming|\n"
 
 		go func() {
-			defer wg.Done()
-
 			ac.Print(
 				nil,
 				1*time.Second,
@@ -62,22 +54,35 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 					{Key: "custom", ValueRaw: "custom_value"},
 				})
 		}()
+
+		mu.Lock()
+		expected += "0001-01-01 00:00:00|1s|200|GET|/path_value?url_query=url_query_value|::1|path_param=path_param_value url_query=url_query_value custom=custom_value|0 B|0 B|Incoming|Outcoming|\n"
+		expectedLines++
+		mu.Unlock()
 	}
 
-	wg.Wait()
+	//	time.Sleep(1 * time.Second)
+	// just to fire at least some routines (CI: travis).
+	ac.Close()
+
+	if got := atomic.LoadUint32(&ac.remaining); got > 0 { // test wait.
+		t.Fatalf("expected remaining: %d but got: %d", 0, got)
+	}
 
 	if got := w.String(); expected != got {
-		t.Fatalf("expected printed result to be:\n'%s'\n\nbut got:\n'%s'", expected, got)
+		gotLines := strings.Count(got, "\n")
+		t.Logf("expected printed result to be[%d]:\n'%s'\n\nbut got[%d]:\n'%s'", expectedLines, expected, gotLines, got)
+		t.Fatalf("expected[%d]: %d but got: %d lines", goroutinesN, expectedLines, gotLines)
 	}
 }
 
 func TestAccessLogBroker(t *testing.T) {
 	w := new(bytes.Buffer)
 	ac := New(w)
+
 	ac.Clock = TClock(time.Time{})
 	broker := ac.Broker()
 
-	closed := make(chan struct{})
 	wg := new(sync.WaitGroup)
 	n := 4
 	wg.Add(4)
@@ -88,11 +93,11 @@ func TestAccessLogBroker(t *testing.T) {
 		ln := broker.NewListener()
 		for {
 			select {
-			case <-closed:
-				broker.CloseListener(ln)
-				t.Log("Log Listener Closed")
-				return
-			case log := <-ln:
+			case log, ok := <-ln:
+				if !ok {
+					t.Log("Log Listener Closed")
+					return
+				}
 				lat := log.Latency
 				t.Log(lat.String())
 				wg.Done()
@@ -145,7 +150,7 @@ func TestAccessLogBroker(t *testing.T) {
 
 	// wait for close messages.
 	wg.Add(1)
-	close(closed)
+	ac.Close()
 	wg.Wait()
 }
 
@@ -171,14 +176,14 @@ func benchmarkAccessLogAfter(b *testing.B, withLogStruct, async bool) {
 	ac := New(ioutil.Discard)
 	ac.Clock = TClock(time.Time{})
 	ac.BytesReceived = false
+	ac.BytesReceivedBody = false
 	ac.BytesSent = false
+	ac.BytesSentBody = false
 	ac.BodyMinify = false
 	ac.RequestBody = false
 	ac.ResponseBody = false
-	ac.KeepMultiLineError = true
 	ac.Async = false
 	ac.IP = false
-	ac.LockWriter = async
 	if withLogStruct {
 		ac.SetFormatter(new(noOpFormatter)) // just to create the log structure, here we test the log creation time only.
 	}
