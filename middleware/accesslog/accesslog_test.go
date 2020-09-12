@@ -52,13 +52,13 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 				"Outcoming",
 				0,
 				0,
-				&context.RequestParams{
-					Store: []memstore.Entry{
-						{Key: "path_param", ValueRaw: "path_param_value"},
-					},
-				}, []memstore.StringEntry{
+				memstore.Store{
+					{Key: "path_param", ValueRaw: "path_param_value"},
+				},
+				[]memstore.StringEntry{
 					{Key: "url_query", Value: "url_query_value"},
-				}, []memstore.Entry{
+				},
+				[]memstore.Entry{
 					{Key: "custom", ValueRaw: "custom_value"},
 				})
 		}()
@@ -126,7 +126,7 @@ func TestAccessLogBroker(t *testing.T) {
 			"",
 			0,
 			0,
-			&context.RequestParams{},
+			nil,
 			nil,
 			nil,
 		)

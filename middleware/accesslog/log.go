@@ -1,12 +1,9 @@
 package accesslog
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
-	"sync"
-	"text/template"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -67,7 +64,7 @@ func (l *Log) Clone() Log {
 // RequestValuesLine returns a string line which
 // combines the path parameters, query and custom fields.
 func (l *Log) RequestValuesLine() string {
-	return parseRequestValues(l.Code, l.Ctx.Params(), l.Ctx.URLParamsSorted(), l.Fields)
+	return parseRequestValues(l.Code, l.PathParams, l.Query, l.Fields)
 }
 
 // BytesReceivedLine returns the formatted bytes received length.
@@ -98,17 +95,17 @@ func formatBytes(b int) string {
 		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func parseRequestValues(code int, pathParams *context.RequestParams, query []memstore.StringEntry, fields memstore.Store) (requestValues string) {
+func parseRequestValues(code int, pathParams memstore.Store, query []memstore.StringEntry, fields memstore.Store) (requestValues string) {
 	var buf strings.Builder
 
 	if !context.StatusCodeNotSuccessful(code) {
 		// collect path parameters on a successful request-response only.
-		pathParams.Visit(func(key, value string) {
-			buf.WriteString(key)
+		for _, entry := range pathParams {
+			buf.WriteString(entry.Key)
 			buf.WriteByte('=')
-			buf.WriteString(value)
+			buf.WriteString(fmt.Sprintf("%v", entry.ValueRaw))
 			buf.WriteByte(' ')
-		})
+		}
 	}
 
 	for _, entry := range query {
@@ -132,114 +129,31 @@ func parseRequestValues(code int, pathParams *context.RequestParams, query []mem
 	return
 }
 
-// Formatter is responsible to print a Log to the accesslog's writer.
-type Formatter interface {
-	// SetOutput should inject the accesslog's direct output,
-	// if this "dest" is used then the Formatter
-	// should manually control its concurrent use.
-	SetOutput(dest io.Writer)
-	// Format should print the Log.
-	// Returns nil error on handle successfully,
-	// otherwise the log will be printed using the default formatter
-	// and the error will be printed to the Iris Application's error log level.
-	// Should return true if this handled the logging, otherwise false to
-	// continue with the default print format.
-	Format(log *Log) (bool, error)
-}
+type (
+	// Formatter is responsible to print a Log to the accesslog's writer.
+	Formatter interface {
+		// SetOutput should inject the accesslog's direct output,
+		// if this "dest" is used then the Formatter
+		// should manually control its concurrent use.
+		SetOutput(dest io.Writer)
+		// Format should print the Log.
+		// Returns nil error on handle successfully,
+		// otherwise the log will be printed using the default formatter
+		// and the error will be printed to the Iris Application's error log level.
+		// Should return true if this handled the logging, otherwise false to
+		// continue with the default print format.
+		Format(log *Log) (bool, error)
+	}
+
+	// Flusher can be implemented by a Formatter
+	// to call its Flush method on AccessLog.Close
+	// and on panic errors.
+	Flusher interface{ Flush() error }
+)
 
 var (
 	_ Formatter = (*JSON)(nil)
 	_ Formatter = (*Template)(nil)
+	_ Formatter = (*CSV)(nil)
+	_ Flusher   = (*CSV)(nil)
 )
-
-// JSON is a Formatter type for JSON logs.
-type JSON struct {
-	Prefix, Indent string
-	EscapeHTML     bool
-
-	enc *json.Encoder
-	mu  sync.Mutex
-}
-
-// SetOutput creates the json encoder writes to the "dest".
-// It's called automatically by the middleware when this Formatter is used.
-func (f *JSON) SetOutput(dest io.Writer) {
-	if dest == nil {
-		return
-	}
-
-	// All logs share the same accesslog's writer and it cannot change during serve-time.
-	enc := json.NewEncoder(dest)
-	enc.SetEscapeHTML(f.EscapeHTML)
-	enc.SetIndent(f.Prefix, f.Indent)
-	f.enc = enc
-}
-
-// Format prints the logs in JSON format.
-// Writes to the destination directly,
-// locks on each Format call.
-func (f *JSON) Format(log *Log) (bool, error) {
-	f.mu.Lock()
-	err := f.enc.Encode(log)
-	f.mu.Unlock()
-
-	return true, err
-}
-
-// Template is a Formatter.
-// It's used to print the Log in a text/template way.
-// The caller has full control over the printable result;
-// certain fields can be ignored, change the display order and e.t.c.
-type Template struct {
-	// Custom template source.
-	// Use this or `Tmpl/TmplName` fields.
-	Text string
-	// Custom template funcs to used when `Text` is not empty.
-	Funcs template.FuncMap
-
-	// Custom template to use, overrides the `Text` and `Funcs` fields.
-	Tmpl *template.Template
-	// If not empty then this named template/block renders the log line.
-	TmplName string
-
-	dest io.Writer
-	mu   sync.Mutex
-}
-
-// SetOutput creates the default template if missing
-// when this formatter is registered.
-func (f *Template) SetOutput(dest io.Writer) {
-	if f.Tmpl == nil {
-		tmpl := template.New("")
-
-		text := f.Text
-		if text != "" {
-			tmpl.Funcs(f.Funcs)
-		} else {
-			text = defaultTmplText
-		}
-
-		f.Tmpl = template.Must(tmpl.Parse(text))
-	}
-
-	f.dest = dest
-}
-
-const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Code}}|{{.Method}}|{{.Path}}|{{.IP}}|{{.RequestValuesLine}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
-
-// Format prints the logs in text/template format.
-func (f *Template) Format(log *Log) (bool, error) {
-	var err error
-
-	// A template may be executed safely in parallel, although if parallel
-	// executions share a Writer the output may be interleaved.
-	f.mu.Lock()
-	if f.TmplName != "" {
-		err = f.Tmpl.ExecuteTemplate(f.dest, f.TmplName, log)
-	} else {
-		err = f.Tmpl.Execute(f.dest, log)
-	}
-	f.mu.Unlock()
-
-	return true, err
-}

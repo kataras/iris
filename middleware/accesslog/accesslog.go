@@ -140,7 +140,7 @@ type AccessLog struct {
 	// Defaults to '|'.
 	Delim rune
 	// The time format for current time on log print.
-	// Defaults to ""2006-01-02 15:04:05" on `New` function.
+	// Defaults to "2006-01-02 15:04:05" on `New` function.
 	// Set it to empty to inherit the Iris Application's TimeFormat.
 	TimeFormat string
 	// IP displays the remote address.
@@ -249,7 +249,9 @@ func New(w io.Writer) *AccessLog {
 //
 // It panics on error.
 func File(path string) *AccessLog {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	// Note: we add os.RDWR in order to be able to read from it,
+	// some formatters (e.g. CSV) needs that.
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -347,7 +349,13 @@ func (ac *AccessLog) SetFormatter(f Formatter) *AccessLog {
 		panic("accesslog: SetFormatter called with nil Writer")
 	}
 
-	f.SetOutput(ac.Writer) // inject the writer here.
+	// Inject the writer (AccessLog) here, the writer
+	// It is a protected with mutex writer to the final output
+	// when LockWriter field was set to true
+	// or when the given destination was os.File or bytes.Buffer
+	// (otherwise we assume it's locked by the end-developer).
+	f.SetOutput(ac)
+
 	ac.formatter = f
 	return ac
 }
@@ -363,6 +371,8 @@ func (ac *AccessLog) AddFields(setters ...FieldSetter) *AccessLog {
 // Close calls each registered Closer's Close method.
 // Exits when all close methods have been executed.
 func (ac *AccessLog) Close() (err error) {
+	ac.flushFormatter()
+
 	for _, closer := range ac.Closers {
 		cErr := closer.Close()
 		if cErr != nil {
@@ -375,6 +385,14 @@ func (ac *AccessLog) Close() (err error) {
 	}
 
 	return
+}
+
+func (ac *AccessLog) flushFormatter() {
+	if ac.formatter != nil {
+		if flusher, ok := ac.formatter.(Flusher); ok {
+			flusher.Flush()
+		}
+	}
 }
 
 func (ac *AccessLog) shouldReadRequestBody() bool {
@@ -564,7 +582,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		ip,
 		requestBody, responseBody,
 		bytesReceived, bytesSent,
-		ctx.Params(), ctx.URLParamsSorted(), *fields,
+		ctx.Params().Store, ctx.URLParamsSorted(), *fields,
 	); err != nil {
 		ctx.Application().Logger().Errorf("accesslog: %v", err)
 	}
@@ -574,7 +592,7 @@ const defaultDelim = '|'
 
 // Print writes a log manually.
 // The `Handler` method calls it.
-func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, ip, reqBody, respBody string, bytesReceived, bytesSent int, params *context.RequestParams, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
+func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeFormat string, code int, method, path, ip, reqBody, respBody string, bytesReceived, bytesSent int, params memstore.Store, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
 	now := ac.Clock.Now()
 
 	if hasFormatter, hasBroker := ac.formatter != nil, ac.broker != nil; hasFormatter || hasBroker {
@@ -589,7 +607,7 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 		log.Path = path
 		log.IP = ip
 		log.Query = query
-		log.PathParams = params.Store
+		log.PathParams = params
 		log.Fields = fields
 		log.BytesReceived = bytesReceived
 		log.BytesSent = bytesSent
@@ -624,6 +642,7 @@ func (ac *AccessLog) Print(ctx *context.Context, latency time.Duration, timeForm
 	// the number of separators are the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
 	builder := ac.bufPool.Get().(*bytes.Buffer)
+
 	builder.WriteString(now.Format(timeFormat))
 	builder.WriteRune(ac.Delim)
 
@@ -670,6 +689,8 @@ var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")
 
 func (ac *AccessLog) getErrorText(err error) (text string) { // caller checks for nil.
 	if errPanic, ok := context.IsErrPanicRecovery(err); ok {
+		ac.flushFormatter() // flush any buffered formatter's contents to be written to the output.
+
 		switch ac.PanicLog {
 		case LogHandler:
 			text = errPanic.CurrentHandler
