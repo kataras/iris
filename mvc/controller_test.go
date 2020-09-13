@@ -2,6 +2,7 @@
 package mvc_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/kataras/iris/v12"
@@ -706,4 +707,37 @@ func TestControllerMethodHandlerBindStruct(t *testing.T) {
 	e.POST("/data/42/slicetype").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
 	e.POST("/data/42/slicetypeptr").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
 	// more tests inside the hero package itself.
+}
+
+func TestErrorHandlerContinue(t *testing.T) {
+	app := iris.New()
+	m := New(app)
+	m.Handle(new(testControllerErrorHandlerContinue))
+
+	e := httptest.New(t, app)
+
+	e.POST("/test").WithMultipart().
+		WithFormField("username", "makis").
+		WithFormField("age", "27").
+		WithFormField("unknown", "continue").
+		Expect().Status(httptest.StatusOK).Body().Equal("makis is 27 years old\n")
+}
+
+type testControllerErrorHandlerContinue struct{}
+
+type registerForm struct {
+	Username string `form:"username"`
+	Age      int    `form:"age"`
+}
+
+func (c *testControllerErrorHandlerContinue) HandleError(ctx iris.Context, err error) {
+	if iris.IsErrPath(err) {
+		return // continue.
+	}
+
+	ctx.StopWithError(iris.StatusBadRequest, err)
+}
+
+func (c *testControllerErrorHandlerContinue) PostTest(form registerForm) string {
+	return fmt.Sprintf("%s is %d years old\n", form.Username, form.Age)
 }

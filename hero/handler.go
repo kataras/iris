@@ -118,7 +118,12 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 				// }
 
 				c.GetErrorHandler(ctx).HandleError(ctx, err)
-				return
+				// return [13 Sep 2020, commented that in order to be able to
+				// give end-developer the option not only to handle the error
+				// but to skip it if necessary, example:
+				// read form, unknown field, continue without StopWith,
+				// the binder should bind the method's input argument and continue
+				// without errors. See `mvc.TestErrorHandlerContinue` test.]
 			}
 
 			// If ~an error status code is set or~ execution has stopped

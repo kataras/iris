@@ -137,6 +137,16 @@ func TestPayloadBinding(t *testing.T) {
 		return input.Username
 	})
 
+	h.GetErrorHandler = func(iris.Context) ErrorHandler {
+		return ErrorHandlerFunc(func(ctx iris.Context, err error) {
+			if iris.IsErrPath(err) {
+				return // continue.
+			}
+
+			ctx.StopWithError(iris.StatusBadRequest, err)
+		})
+	}
+
 	app := iris.New()
 	app.Get("/", ptrHandler)
 	app.Post("/", ptrHandler)
@@ -152,6 +162,9 @@ func TestPayloadBinding(t *testing.T) {
 	e.POST("/").WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
 	// FORM (multipart)
 	e.POST("/").WithMultipart().WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	// FORM: test ErrorHandler skip the ErrPath.
+	e.POST("/").WithMultipart().WithFormField("username", "makis").WithFormField("unknown", "continue").
+		Expect().Status(httptest.StatusOK).Body().Equal("makis")
 
 	// POST URL query.
 	e.POST("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
