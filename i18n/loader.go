@@ -23,7 +23,7 @@ import (
 // See `Glob` and `Assets` package-level functions.
 type (
 	LoaderConfig struct {
-		// Template delimeters, defaults to {{ }}.
+		// Template delimiters, defaults to {{ }}.
 		Left, Right string
 		// Template functions map per locale, defaults to nil.
 		Funcs func(context.Locale) template.FuncMap

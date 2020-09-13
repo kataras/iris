@@ -1,9 +1,10 @@
-2020-09-08 13:34:42|0s|200|POST|/read_body|::1||324 B|217 B|{"name":"John","email":"example@example.com"}|{"data":{"email":"example@example.com","name":"John"},"message":"OK"}|
-2020-09-08 13:40:28|0s|400|POST|/read_body|::1|||85 B|error(invalid character '\r' in string literal)||
-2020-09-08 13:41:05|1.0024ms|200|GET|/|a=1 b=2|767 B|251 B||<h1>Hello index</h1>|
-2020-09-08 13:41:26|0s|404|GET|/public|::1||765 B|83 B|||
-2020-09-08 13:41:36|0s|200|GET|/user/kataras|::1|username=kataras|771 B|91 B||Hello, kataras!|
-2020-09-08 13:41:47|0s|200|GET|/user/kataras|::1|username=kataras a_query_parameter=name|774 B|91 B||Hello, kataras!|
-2020-09-08 20:37:33|0s|200|GET|/admin|::1|auth=admin:admin|608 B|164 B||<h2>Username: admin</h2><h3>Password: admin</h3>|
-2020-09-09 07:56:00|738.1µs|200|GET|/session|::1|session_id=23fe763f-c9d5-4d65-9e1a-2cc8d23d1aa3 session_test_key=session_test_value|818 B|302 B||OK|
-2020-09-09 08:36:47|2.0095505s|200|GET|/fields|::1|job_latency=2s|544 B|130 B||OK|
+2020-09-13 13:37:42 2.0057ms 200 POST /read_body ::1 61 B 94 B {"name":"John","email":"example@example.com"} 
+2020-09-13 13:37:50 0s 400 POST /read_body ::1 0 B 0 B error(invalid character '\r' in string literal)
+2020-09-13 13:38:03 0s 404 GET /favicon.ico ::1 0 B 9 B
+2020-09-13 13:38:07 0s 404 GET /public ::1 0 B 9 B
+2020-09-13 13:38:09 1.0021ms 200 GET /user/kataras ::1 username=kataras 0 B 15 B
+2020-09-13 13:38:14 0s 200 GET /user/kataras ::1 username=kataras a_query_parameter=name 0 B 15 B
+2020-09-13 13:38:18 0s 401 GET /admin ::1 0 B 0 B
+2020-09-13 13:38:19 0s 200 GET /admin ::1 auth=admin:admin 0 B 48 B
+2020-09-13 13:38:22 0s 200 GET /session ::1 session_id=23fe763f-c9d5-4d65-9e1a-2cc8d23d1aa3 session_test_key=session_test_value auth=admin:admin 0 B 2 B
+2020-09-13 13:38:25 2.0001204s 200 GET /fields ::1 job_latency=2s auth=admin:admin 0 B 2 B

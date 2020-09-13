@@ -11,6 +11,7 @@ func main() {
 	app := iris.New()
 	ac := accesslog.File("access_log.csv")
 	ac.ResponseBody = true
+	ac.LatencyRound = time.Second
 	ac.SetFormatter(&accesslog.CSV{
 		Header: true,
 		// DateScript:   "FROM_UNIX",

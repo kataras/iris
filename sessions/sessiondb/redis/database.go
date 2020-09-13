@@ -44,7 +44,7 @@ type Config struct {
 	Timeout time.Duration
 	// Prefix "myprefix-for-this-website". Defaults to "".
 	Prefix string
-	// Delim the delimeter for the keys on the sessiondb. Defaults to "-".
+	// Delim the delimiter for the keys on the sessiondb. Defaults to "-".
 	Delim string
 
 	// TLSConfig will cause Dial to perform a TLS handshake using the provided

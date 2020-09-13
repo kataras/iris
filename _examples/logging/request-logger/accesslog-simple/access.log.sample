@@ -1,0 +1,2 @@
+{"timestamp":1599993744664,"latency":0,"code":404,"method":"GET","path":"/favicon.ico","ip":"::1","request":"","bytes_sent":9}
+{"timestamp":1599993774018,"latency":0,"code":200,"method":"GET","path":"/","ip":"::1","query":[{"key":"a","value":"1"},{"key":"b","value":"2"}],"request":"","bytes_sent":2}

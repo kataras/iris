@@ -31,6 +31,7 @@ func makeAccessLog() *accesslog.AccessLog {
 	// Initialize a new access log middleware.
 	// Accepts an `io.Writer`.
 	ac := accesslog.New(bufio.NewWriter(w))
+	ac.Delim = ' ' // change the separator from '|' to space.
 	// ac.TimeFormat = "2006-01-02 15:04:05" // default
 
 	// Example of adding more than one field to the logger.

@@ -18,8 +18,7 @@ import (
 )
 
 func TestAccessLogPrint_Simple(t *testing.T) {
-	t.Parallel()
-	const goroutinesN = 420
+	const goroutinesN = 42
 
 	w := new(bytes.Buffer)
 	ac := New(w)
@@ -31,14 +30,12 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 		expected      string
 		expectedLines int
 		mu            sync.Mutex
-		wg            sync.WaitGroup
 	)
-	wg.Add(goroutinesN)
 
+	now := time.Now()
 	for i := 0; i < goroutinesN; i++ {
 		go func() {
-			defer wg.Done()
-			ac.Print(
+			err := ac.Print(
 				nil,
 				1*time.Second,
 				ac.TimeFormat,
@@ -59,25 +56,38 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 				[]memstore.Entry{
 					{Key: "custom", ValueRaw: "custom_value"},
 				})
+
+			if err == nil {
+				mu.Lock()
+				expected += "0001-01-01 00:00:00|1s|200|GET|/path_value?url_query=url_query_value|::1|path_param=path_param_value url_query=url_query_value custom=custom_value|0 B|0 B|Incoming|Outcoming|\n"
+				expectedLines++
+				mu.Unlock()
+			}
 		}()
 
-		mu.Lock()
-		expected += "0001-01-01 00:00:00|1s|200|GET|/path_value?url_query=url_query_value|::1|path_param=path_param_value url_query=url_query_value custom=custom_value|0 B|0 B|Incoming|Outcoming|\n"
-		expectedLines++
-		mu.Unlock()
 	}
 
-	wg.Wait()
-	ac.Close() // TODO: Close waits for current messages but does allow future writes, I should change that.
+	// give some time to write at least some messages or all
+	// (depends on the machine the test is running).
+	time.Sleep(42 * time.Millisecond)
+	ac.Close()
+	end := time.Since(now)
 
 	if got := atomic.LoadUint32(&ac.remaining); got > 0 { // test wait.
 		t.Fatalf("expected remaining: %d but got: %d", 0, got)
 	}
 
-	if got := w.String(); expected != got {
+	mu.Lock()
+	expectedSoFoar := expected
+	expectedLinesSoFar := expectedLines
+	mu.Unlock()
+
+	if got := w.String(); expectedSoFoar != got {
 		gotLines := strings.Count(got, "\n")
-		t.Logf("expected printed result to be[%d]:\n'%s'\n\nbut got[%d]:\n'%s'", expectedLines, expected, gotLines, got)
-		t.Fatalf("expected[%d]: %d but got: %d lines", goroutinesN, expectedLines, gotLines)
+		t.Logf("expected printed result to be[%d]:\n'%s'\n\nbut got[%d]:\n'%s'", expectedLinesSoFar, expectedSoFoar, gotLines, got)
+		t.Fatalf("expected: %d | got: %d lines", expectedLinesSoFar, gotLines)
+	} else {
+		t.Logf("We've got [%d/%d] lines of logs in %s", expectedLinesSoFar, goroutinesN, end.String())
 	}
 }
 
@@ -92,31 +102,34 @@ func TestAccessLogBroker(t *testing.T) {
 	n := 4
 	wg.Add(4)
 	go func() {
-		defer wg.Done()
-
 		i := 0
 		ln := broker.NewListener()
 		for {
 			select {
 			case log, ok := <-ln:
 				if !ok {
-					t.Log("Log Listener Closed")
+					if i != n {
+						for i < n {
+							wg.Done()
+							i++
+						}
+					}
+
+					t.Log("Log Listener Closed: interrupted")
 					return
 				}
+
 				lat := log.Latency
 				t.Log(lat.String())
 				wg.Done()
 				if expected := time.Duration(i) * time.Second; expected != lat {
 					panic(fmt.Sprintf("expected latency: %s but got: %s", expected, lat))
 				}
-				i++
 				time.Sleep(1350 * time.Millisecond)
-				if i == 2 {
-					time.Sleep(2 * time.Second) // "random" sleep even more.
-				}
 				if log.Latency != lat {
 					panic("expected logger to wait for notifier before release the log")
 				}
+				i++
 			}
 		}
 	}()
@@ -153,10 +166,7 @@ func TestAccessLogBroker(t *testing.T) {
 	// wait for all listeners to finish.
 	wg.Wait()
 
-	// wait for close messages.
-	wg.Add(1)
 	ac.Close()
-	wg.Wait()
 }
 
 type noOpFormatter struct{}

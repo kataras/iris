@@ -63,7 +63,18 @@ func (l *Log) Clone() Log {
 // RequestValuesLine returns a string line which
 // combines the path parameters, query and custom fields.
 func (l *Log) RequestValuesLine() string {
-	return parseRequestValues(l.Code, l.PathParams, l.Query, l.Fields)
+	buf := new(strings.Builder)
+	_, n := parseRequestValues(buf, l.Code, l.PathParams, l.Query, l.Fields)
+	if n == 0 {
+		return ""
+	}
+
+	requestValues := buf.String()
+	if n > 1 {
+		return requestValues[0 : n-1] // remove last space.
+	}
+
+	return requestValues
 }
 
 // BytesReceivedLine returns the formatted bytes received length.
@@ -100,38 +111,46 @@ func formatBytes(b int) string {
 		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func parseRequestValues(code int, pathParams memstore.Store, query []memstore.StringEntry, fields memstore.Store) (requestValues string) {
-	var buf strings.Builder
+const (
+	eq    = '='
+	space = ' '
+)
 
+// parses the request values (params, query and fields).
+// returns the length of written bytes for parsing request values
+// and the total.
+func parseRequestValues(buf interface {
+	io.StringWriter
+	io.ByteWriter
+	Len() int
+}, code int, pathParams memstore.Store, query []memstore.StringEntry, fields memstore.Store) (int, int) {
+	n := buf.Len()
 	if !context.StatusCodeNotSuccessful(code) {
 		// collect path parameters on a successful request-response only.
 		for _, entry := range pathParams {
 			buf.WriteString(entry.Key)
-			buf.WriteByte('=')
+			buf.WriteByte(eq)
 			buf.WriteString(fmt.Sprintf("%v", entry.ValueRaw))
-			buf.WriteByte(' ')
+			buf.WriteByte(space)
 		}
 	}
 
 	for _, entry := range query {
 		buf.WriteString(entry.Key)
-		buf.WriteByte('=')
+		buf.WriteByte(eq)
 		buf.WriteString(entry.Value)
-		buf.WriteByte(' ')
+		buf.WriteByte(space)
 	}
 
 	for _, entry := range fields {
 		buf.WriteString(entry.Key)
-		buf.WriteByte('=')
+		buf.WriteByte(eq)
 		buf.WriteString(fmt.Sprintf("%v", entry.ValueRaw))
-		buf.WriteByte(' ')
+		buf.WriteByte(space)
 	}
 
-	if n := buf.Len(); n > 1 {
-		requestValues = buf.String()[0 : n-1] // remove last space.
-	}
-
-	return
+	total := buf.Len()
+	return total - n, total
 }
 
 type (

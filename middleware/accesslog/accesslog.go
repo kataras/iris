@@ -133,11 +133,11 @@ type AccessLog struct {
 	//
 	// Defaults to false.
 	Async bool
-	// The delimeter between fields when logging with the default format.
+	// The delimiter between fields when logging with the default format.
 	// See `SetFormatter` to customize the log even further.
 	//
 	// Defaults to '|'.
-	Delim rune
+	Delim byte
 	// The time format for current time on log print.
 	// Set it to empty to inherit the Iris Application's TimeFormat.
 	//
@@ -221,7 +221,7 @@ type AccessLog struct {
 	// remaining logs when Close is called, we wait for timeout (see CloseContext).
 	remaining uint32
 	// reports whether the logger is already closed, see `Close` & `CloseContext` methods.
-	isClosed bool
+	isClosed uint32
 }
 
 // PanicLog holds the type for the available panic log levels.
@@ -236,7 +236,11 @@ const (
 	LogStack
 )
 
-const defaultTimeFormat = "2006-01-02 15:04:05"
+const (
+	defaultDelim      = '|'
+	defaultTimeFormat = "2006-01-02 15:04:05"
+	newLine           = '\n'
+)
 
 // New returns a new AccessLog value with the default values.
 // Writes to the "w". Output can be further modified through its `Set/AddOutput` methods.
@@ -298,7 +302,7 @@ func New(w io.Writer) *AccessLog {
 
 // File returns a new AccessLog value with the given "path"
 // as the log's output file destination.
-// The Writer is now a buffered file writer.
+// The Writer is now a buffered file writer & reader.
 // Register by its `Handler` method.
 //
 // A call of its `Close` method to unlock the underline
@@ -313,7 +317,7 @@ func File(path string) *AccessLog {
 		panic(err)
 	}
 
-	return New(bufio.NewWriter(f))
+	return New(bufio.NewReadWriter(bufio.NewReader(f), bufio.NewWriter(f)))
 }
 
 // Broker creates or returns the broker.
@@ -379,11 +383,17 @@ func (ac *AccessLog) AddOutput(writers ...io.Writer) *AccessLog {
 // Write writes to the log destination.
 // It completes the io.Writer interface.
 // Safe for concurrent use.
-func (ac *AccessLog) Write(p []byte) (int, error) {
+func (ac *AccessLog) Write(p []byte) (n int, err error) {
+	if ac.Async {
+		if atomic.LoadUint32(&ac.isClosed) > 0 {
+			return 0, io.ErrClosedPipe
+		}
+	}
+
 	ac.mu.Lock()
-	n, err := ac.Writer.Write(p)
+	n, err = ac.Writer.Write(p)
 	ac.mu.Unlock()
-	return n, err
+	return
 }
 
 // Flush writes any buffered data to the underlying Fluser Writer.
@@ -449,10 +459,6 @@ func (ac *AccessLog) AddFields(setters ...FieldSetter) *AccessLog {
 //
 // After Close is called the AccessLog is not accessible.
 func (ac *AccessLog) Close() (err error) {
-	if ac.isClosed {
-		return nil
-	}
-
 	ctx, cancelFunc := stdContext.WithTimeout(stdContext.Background(), 10*time.Second)
 	defer cancelFunc()
 
@@ -461,10 +467,9 @@ func (ac *AccessLog) Close() (err error) {
 
 // CloseContext same as `Close` but waits until given "ctx" is done.
 func (ac *AccessLog) CloseContext(ctx stdContext.Context) (err error) {
-	if ac.isClosed {
-		return nil
+	if !atomic.CompareAndSwapUint32(&ac.isClosed, 0, 1) {
+		return
 	}
-	ac.isClosed = true
 
 	if ac.broker != nil {
 		ac.broker.close <- struct{}{}
@@ -717,9 +722,6 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	}
 }
 
-const defaultDelim = '|'
-const newLine = '\n'
-
 // Print writes a log manually.
 // The `Handler` method calls it.
 func (ac *AccessLog) Print(ctx *context.Context,
@@ -786,60 +788,60 @@ func (ac *AccessLog) Print(ctx *context.Context,
 		}
 	}
 
-	// url parameters, path parameters and custom fields separated by space,
-	// key=value key2=value2.
-	requestValues := parseRequestValues(code, params, query, fields)
-
 	// the number of separators is the same, in order to be easier
 	// for 3rd-party programs to read the result log file.
 	builder := ac.bufPool.Get().(*bytes.Buffer)
 
 	builder.WriteString(now.Format(timeFormat))
-	builder.WriteRune(ac.Delim)
+	builder.WriteByte(ac.Delim)
 
 	builder.WriteString(latency.String())
-	builder.WriteRune(ac.Delim)
+	builder.WriteByte(ac.Delim)
 
 	builder.WriteString(strconv.Itoa(code))
-	builder.WriteRune(ac.Delim)
+	builder.WriteByte(ac.Delim)
 
 	builder.WriteString(method)
-	builder.WriteRune(ac.Delim)
+	builder.WriteByte(ac.Delim)
 
 	builder.WriteString(path)
-	builder.WriteRune(ac.Delim)
+	builder.WriteByte(ac.Delim)
 
 	if ac.IP {
 		builder.WriteString(ip)
-		builder.WriteRune(ac.Delim)
+		builder.WriteByte(ac.Delim)
 	}
 
-	builder.WriteString(requestValues)
-	builder.WriteRune(ac.Delim)
+	// url parameters, path parameters and custom fields separated by space,
+	// key=value key2=value2.
+	if n, all := parseRequestValues(builder, code, params, query, fields); n > 0 {
+		builder.Truncate(all - 1) // remove the last space.
+		builder.WriteByte(ac.Delim)
+	}
 
 	if ac.BytesReceived || ac.BytesReceivedBody {
 		builder.WriteString(formatBytes(bytesReceived))
-		builder.WriteRune(ac.Delim)
+		builder.WriteByte(ac.Delim)
 	}
 
 	if ac.BytesSent || ac.BytesSentBody {
 		builder.WriteString(formatBytes(bytesSent))
-		builder.WriteRune(ac.Delim)
+		builder.WriteByte(ac.Delim)
 	}
 
 	if ac.RequestBody {
 		builder.WriteString(reqBody)
-		builder.WriteRune(ac.Delim)
+		builder.WriteByte(ac.Delim)
 	}
 
 	if ac.ResponseBody {
 		builder.WriteString(respBody)
-		builder.WriteRune(ac.Delim)
+		builder.WriteByte(ac.Delim)
 	}
 
-	builder.WriteRune(newLine)
+	builder.WriteByte(newLine)
 
-	ac.Write(builder.Bytes())
+	_, err = ac.Write(builder.Bytes())
 	builder.Reset()
 	ac.bufPool.Put(builder)
 
