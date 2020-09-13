@@ -713,14 +713,16 @@ func TestErrorHandlerContinue(t *testing.T) {
 	app := iris.New()
 	m := New(app)
 	m.Handle(new(testControllerErrorHandlerContinue))
-
+	m.Handle(new(testControllerFieldErrorHandlerContinue))
 	e := httptest.New(t, app)
 
-	e.POST("/test").WithMultipart().
-		WithFormField("username", "makis").
-		WithFormField("age", "27").
-		WithFormField("unknown", "continue").
-		Expect().Status(httptest.StatusOK).Body().Equal("makis is 27 years old\n")
+	for _, path := range []string{"/test", "/test/field"} {
+		e.POST(path).WithMultipart().
+			WithFormField("username", "makis").
+			WithFormField("age", "27").
+			WithFormField("unknown", "continue").
+			Expect().Status(httptest.StatusOK).Body().Equal("makis is 27 years old\n")
+	}
 }
 
 type testControllerErrorHandlerContinue struct{}
@@ -740,4 +742,20 @@ func (c *testControllerErrorHandlerContinue) HandleError(ctx iris.Context, err e
 
 func (c *testControllerErrorHandlerContinue) PostTest(form registerForm) string {
 	return fmt.Sprintf("%s is %d years old\n", form.Username, form.Age)
+}
+
+type testControllerFieldErrorHandlerContinue struct {
+	Form *registerForm
+}
+
+func (c *testControllerFieldErrorHandlerContinue) HandleError(ctx iris.Context, err error) {
+	if iris.IsErrPath(err) {
+		return // continue.
+	}
+
+	ctx.StopWithError(iris.StatusBadRequest, err)
+}
+
+func (c *testControllerFieldErrorHandlerContinue) PostTestField() string {
+	return fmt.Sprintf("%s is %d years old\n", c.Form.Username, c.Form.Age)
 }

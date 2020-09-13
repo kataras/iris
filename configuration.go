@@ -805,9 +805,9 @@ type Configuration struct {
 	//
 	// Defaults to an empty slice but an example usage is:
 	// RemoteAddrHeaders {
-	//	"X-Real-Ip",
-	//  "X-Forwarded-For",
-	// 	"CF-Connecting-IP",
+	//    "X-Real-Ip",
+	//    "X-Forwarded-For",
+	//    "CF-Connecting-IP",
 	//	}
 	//
 	// Look `context.RemoteAddr()` for more.

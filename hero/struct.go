@@ -125,9 +125,14 @@ func (s *Struct) Acquire(ctx *context.Context) (reflect.Value, error) {
 					continue
 				}
 
-				// return emptyValue, err
-				return ctrl, err
+				s.Container.GetErrorHandler(ctx).HandleError(ctx, err)
+
+				if ctx.IsStopped() {
+					// return emptyValue, err
+					return ctrl, err
+				} // #1629
 			}
+
 			elem.FieldByIndex(b.Input.StructFieldIndex).Set(input)
 		}
 	}
