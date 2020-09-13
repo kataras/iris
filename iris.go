@@ -36,8 +36,8 @@ import (
 	"github.com/tdewolff/minify/v2/xml"
 )
 
-// Version is the current version number of the Iris Web Framework.
-const Version = "12.2.0"
+// Version is the current version of the Iris Web Framework.
+const Version = "12.2.0-alpha"
 
 // Byte unit helpers.
 const (
