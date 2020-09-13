@@ -169,6 +169,40 @@ func TestAccessLogBroker(t *testing.T) {
 	ac.Close()
 }
 
+func TestAccessLogBlank(t *testing.T) {
+	w := new(bytes.Buffer)
+	ac := New(w)
+	clockTime, _ := time.Parse(defaultTimeFormat, "1993-01-01 05:00:00")
+	ac.Clock = TClock(clockTime)
+	ac.Blank = []byte("<no value>")
+
+	ac.Print(
+		nil,
+		time.Second,
+		defaultTimeFormat,
+		200,
+		"GET",
+		"/",
+		"127.0.0.1",
+		"",
+		"",
+		0,
+		0,
+		nil,
+		nil,
+		nil,
+	)
+
+	ac.Close()
+	// the request and bodies length are enabled by-default, zero bytes length
+	// are written with 0 B and this cannot changed, so the request field
+	// should be written as "<no value>".
+	expected := "1993-01-01 05:00:00|1s|200|GET|/|127.0.0.1|0 B|0 B|<no value>|\n"
+	if got := w.String(); expected != got {
+		t.Fatalf("expected:\n'%s'\n\nbut got:\n'%s'", expected, got)
+	}
+}
+
 type noOpFormatter struct{}
 
 func (*noOpFormatter) SetOutput(io.Writer) {}

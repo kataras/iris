@@ -143,15 +143,21 @@ type AccessLog struct {
 	//
 	// Defaults to "2006-01-02 15:04:05"
 	TimeFormat string
+	// A text that will appear in a blank value.
+	// Applies to the default formatter on
+	// IP, RequestBody and ResponseBody fields, if enabled, so far.
+	//
+	// Defaults to nil.
+	Blank []byte
 	// Round the latency based on the given duration, e.g. time.Second.
 	//
 	// Defaults to 0.
 	LatencyRound time.Duration
+
 	// IP displays the remote address.
 	//
 	// Defaults to true.
 	IP bool
-
 	// The number of bytes for the request body only.
 	// Applied when BytesReceived is false.
 	//
@@ -174,7 +180,6 @@ type AccessLog struct {
 	// They both default to false.
 	BytesReceived bool
 	BytesSent     bool
-
 	// Enable request body logging.
 	// Note that, if this is true then it modifies the underline request's body type.
 	//
@@ -257,6 +262,7 @@ func New(w io.Writer) *AccessLog {
 		Clock:              clockFunc(time.Now),
 		Delim:              defaultDelim,
 		TimeFormat:         defaultTimeFormat,
+		Blank:              nil,
 		LatencyRound:       0,
 		Async:              false,
 		IP:                 true,
@@ -808,7 +814,7 @@ func (ac *AccessLog) Print(ctx *context.Context,
 	builder.WriteByte(ac.Delim)
 
 	if ac.IP {
-		builder.WriteString(ip)
+		ac.writeText(builder, ip)
 		builder.WriteByte(ac.Delim)
 	}
 
@@ -830,12 +836,12 @@ func (ac *AccessLog) Print(ctx *context.Context,
 	}
 
 	if ac.RequestBody {
-		builder.WriteString(reqBody)
+		ac.writeText(builder, reqBody)
 		builder.WriteByte(ac.Delim)
 	}
 
 	if ac.ResponseBody {
-		builder.WriteString(respBody)
+		ac.writeText(builder, respBody)
 		builder.WriteByte(ac.Delim)
 	}
 
@@ -846,6 +852,20 @@ func (ac *AccessLog) Print(ctx *context.Context,
 	ac.bufPool.Put(builder)
 
 	return
+}
+
+// We could have a map of blanks per field,
+// but let's don't coplicate things so much
+// as the end-developer can use a custom template.
+func (ac *AccessLog) writeText(buf *bytes.Buffer, s string) {
+	if len(s) == 0 {
+		if len(ac.Blank) == 0 {
+			return
+		}
+		buf.Write(ac.Blank)
+	} else {
+		buf.WriteString(s)
+	}
 }
 
 var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")
