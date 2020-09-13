@@ -631,7 +631,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 			requestData, err := ctx.GetBody()
 			requestBodyLength := len(requestData)
 			if ac.BytesReceivedBody {
-				bytesReceived = requestBodyLength // store it, if the total is enabled then this will be overriden.
+				bytesReceived = requestBodyLength // store it, if the total is enabled then this will be overridden.
 			}
 			if err != nil && ac.RequestBody {
 				requestBody = ac.getErrorText(err)

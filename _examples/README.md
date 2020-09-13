@@ -71,16 +71,17 @@
     * [API Versioning](routing/versioning/main.go)
     * [Sitemap](routing/sitemap/main.go)
 * Logging
-    * [Request Logger](logging/request-logger/main.go)
-        * [AccessLog: simple example](logging/request-logger/accesslog-simple/main.go)
-        * [AccessLog: log request & response and more](logging/request-logger/accesslog)
-        * [AccessLog: custom fields and template](logging/request-logger/accesslog-template/main.go)
-        * [AccessLog: CSV Format](logging/request-logger/accesslog-csv/main.go)
-        * [AccessLog: listen to logs and render them](logging/request-logger/accesslog-broker/main.go)
-        * [Log Requests to a JSON File](logging/request-logger/request-logger-file-json/main.go) 
     * [Application File Logger](logging/file-logger/main.go)
     * [Application JSON Logger](logging/json-logger/main.go)
     * [Rollbar](logging/rollbar/main.go)
+    * AccessLog
+        * [Log Requests to a JSON File](logging/request-logger/accesslog-simple/main.go)
+        * [Using Log Rotation and more](logging/request-logger/accesslog)
+        * [Custom Fields and Template](logging/request-logger/accesslog-template/main.go)
+        * [Listen and render Logs to a Client](logging/request-logger/accesslog-broker/main.go)
+        * [The CSV Formatter](logging/request-logger/accesslog-csv/main.go)
+        * [Create your own Formatter](logging/request-logger/accesslog-formatter/main.go)
+        <!-- * [Log Requests to a JSON File](logging/request-logger/request-logger-file-json/main.go)  -->
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)
     * [Swagger](https://github.com/iris-contrib/swagger/tree/master/example)
