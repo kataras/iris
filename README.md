@@ -54,12 +54,10 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 ## 📖 Learning Iris
 
 ```sh
-$ go get github.com/kataras/iris/v12@master
-$ go get github.com/iris-contrib/middleware@master
-$ go get github.com/iris-contrib/swagger@master
+$ go get github.com/kataras/iris/v12@v12.2.0-alpha
 ```
 
-Iris contains extensive and thorough **[documentation](https://iris-go.com/docs)** making it easy to get started with the framework.
+Iris contains extensive and thorough **[documentation](https://www.iris-go.com/docs)** making it easy to get started with the framework.
 
 <!-- Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wiki)** making it easy to get started with the framework. -->
 
