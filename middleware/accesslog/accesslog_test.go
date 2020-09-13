@@ -18,6 +18,7 @@ import (
 )
 
 func TestAccessLogPrint_Simple(t *testing.T) {
+	t.Parallel()
 	const goroutinesN = 420
 
 	w := new(bytes.Buffer)
@@ -26,12 +27,17 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 	ac.ResponseBody = true
 	ac.Clock = TClock(time.Time{})
 
-	var expected string
-	var expectedLines int
-	var mu sync.Mutex
-	for i := 0; i < goroutinesN; i++ {
+	var (
+		expected      string
+		expectedLines int
+		mu            sync.Mutex
+		wg            sync.WaitGroup
+	)
+	wg.Add(goroutinesN)
 
+	for i := 0; i < goroutinesN; i++ {
 		go func() {
+			defer wg.Done()
 			ac.Print(
 				nil,
 				1*time.Second,
@@ -61,9 +67,8 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 		mu.Unlock()
 	}
 
-	//	time.Sleep(1 * time.Second)
-	// just to fire at least some routines (CI: travis).
-	ac.Close()
+	wg.Wait()
+	ac.Close() // TODO: Close waits for current messages but does allow future writes, I should change that.
 
 	if got := atomic.LoadUint32(&ac.remaining); got > 0 { // test wait.
 		t.Fatalf("expected remaining: %d but got: %d", 0, got)
