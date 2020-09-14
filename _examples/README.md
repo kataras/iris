@@ -100,7 +100,7 @@
     * [Send Files (rate limiter included)](file-server/send-files/main.go)
     * Single Page Applications
         * [Basic SPA](file-server/single-page-application/basic/main.go)
-        * [Embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
+        * [Embedded Single Page Application and `iris.PrefixDir`](file-server/single-page-application/embedded-single-page-application/main.go)
         * [Embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
     * [Upload File](file-server/upload-file/main.go)
     * [Upload Multiple Files](file-server/upload-files/main.go)

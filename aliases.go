@@ -232,6 +232,14 @@ var (
 
 // PrefixDir returns a new FileSystem that opens files
 // by adding the given "prefix" to the directory tree of "fs".
+//
+// Useful when having templates and static files in the same
+// bindata AssetFile method. This way you can select
+// which one to serve as static files and what for templates.
+// All view engines have a `RootDir` method for that reason too
+// but alternatively, you can wrap the given file system with this `PrefixDir`.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/file-server/single-page-application/embedded-single-page-application/main.go
 func PrefixDir(prefix string, fs http.FileSystem) http.FileSystem {
 	return &prefixedDir{prefix, fs}
 }
