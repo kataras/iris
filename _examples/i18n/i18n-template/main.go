@@ -46,7 +46,10 @@ func newApp() *iris.Application {
 		}
 	}
 
-	app.I18n.Load("./locales/*/*", "en-US", "el-GR")
+	err := app.I18n.Load("./locales/*/*", "en-US", "el-GR")
+	if err != nil {
+		panic(err)
+	}
 
 	app.Get("/", func(ctx iris.Context) {
 		text := ctx.Tr("HiDogs", iris.Map{
@@ -67,6 +70,12 @@ func newApp() *iris.Application {
 			"count": 42,
 		}) // en-US: prints "There are 42 members registered".
 		ctx.WriteString(text)
+	})
+
+	// showcases the other.ini translation file.
+	app.Get("/other", func(ctx iris.Context) {
+		ctx.Writef(`AccessLogClear: %s
+Title: %s`, ctx.Tr("debug.AccessLogClear"), ctx.Tr("user.connections.Title"))
 	})
 
 	return app

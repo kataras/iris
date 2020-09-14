@@ -287,11 +287,15 @@ func (l *defaultLocale) GetMessageContext(ctx *context.Context, key string, args
 }
 
 func (l *defaultLocale) getMessage(langInput, key string, args ...interface{}) string {
-
 	// search on templates.
 	if tmpl, ok := l.templateKeys[key]; ok {
+		var data interface{}
+		if len(args) > 0 {
+			data = args[0]
+		}
+
 		buf := new(bytes.Buffer)
-		err := tmpl.Execute(buf, args[0])
+		err := tmpl.Execute(buf, data)
 		if err != nil {
 			return err.Error()
 		}
