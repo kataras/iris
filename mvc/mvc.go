@@ -33,6 +33,10 @@ type Application struct {
 	Router               router.Party
 	Controllers          []*ControllerActivator
 	websocketControllers []websocket.ConnHandler
+
+	// Disables verbose logging for controllers under this and its children mvc apps.
+	// Defaults to false.
+	controllersNoLog bool
 }
 
 func newApp(subRouter router.Party, container *hero.Container) *Application {
@@ -112,6 +116,18 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // It returns this Application.
 func (app *Application) SetName(appName string) *Application {
 	app.Name = appName
+	return app
+}
+
+// SetControllersNoLog disables verbose logging for next registered controllers
+// under this App and its children of `Application.Party` or `Application.Clone`.
+//
+// To disable logging for routes under a Party,
+// see `Party.SetRoutesNoLog` instead.
+//
+// Defaults to false when log level is "debug".
+func (app *Application) SetControllersNoLog(disable bool) *Application {
+	app.controllersNoLog = disable
 	return app
 }
 
@@ -286,7 +302,9 @@ func (app *Application) handle(controller interface{}, options ...Option) *Contr
 	app.Controllers = append(app.Controllers, c)
 
 	// Note: log on register-time, so they can catch any failures before build.
-	logController(app.Router.Logger(), c)
+	if !app.controllersNoLog {
+		logController(app.Router.Logger(), c)
+	}
 
 	return c
 }
@@ -308,6 +326,7 @@ func (app *Application) HandleError(handler func(ctx *context.Context, err error
 // Example: `.Clone(app.Party("/path")).Handle(new(TodoSubController))`.
 func (app *Application) Clone(party router.Party) *Application {
 	cloned := newApp(party, app.container.Clone())
+	cloned.controllersNoLog = app.controllersNoLog
 	return cloned
 }
 

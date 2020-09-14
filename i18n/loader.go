@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/kataras/iris/v12/context"
@@ -144,16 +145,15 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 
 			t := m.Languages[langIndex]
 			locale := &defaultLocale{
-				index:        langIndex,
-				id:           t.String(),
-				tag:          &t,
-				templateKeys: templateKeys,
-				lineKeys:     lineKeys,
-				other:        other,
-
+				index:              langIndex,
+				id:                 t.String(),
+				tag:                &t,
+				templateKeys:       templateKeys,
+				lineKeys:           lineKeys,
+				other:              other,
 				defaultMessageFunc: m.defaultMessageFunc,
 			}
-
+			var longestValueLength int
 			for k, v := range keyValues {
 				// fmt.Printf("[%d] %s = %v of type: [%T]\n", langIndex, k, v, v)
 
@@ -176,14 +176,15 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 							}
 						}
 
-						if t, err := template.New(k).
-							Delims(c.Left, c.Right).
-							Funcs(funcs).
-							Parse(value); err == nil {
+						t, err := template.New(k).Delims(c.Left, c.Right).Funcs(funcs).Parse(value)
+						if err == nil {
 							templateKeys[k] = t
-							continue
 						} else if c.Strict {
 							return nil, err
+						}
+
+						if valueLength := len(value); valueLength > longestValueLength {
+							longestValueLength = valueLength
 						}
 					}
 
@@ -191,9 +192,18 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 				default:
 					other[k] = v
 				}
-
-				locales[langIndex] = locale
 			}
+
+			// pre-allocate the initial internal buffer.
+			// Note that Reset should be called immediately.
+			initBuf := []byte(strings.Repeat("x", longestValueLength))
+			locale.tmplBufPool = &sync.Pool{
+				New: func() interface{} {
+					// try to eliminate the internal "grow" method as much as possible.
+					return bytes.NewBuffer(initBuf)
+				},
+			}
+			locales[langIndex] = locale
 		}
 
 		if n := len(locales); n == 0 {
@@ -263,6 +273,8 @@ type defaultLocale struct {
 	other        map[string]interface{}
 
 	defaultMessageFunc MessageFunc
+
+	tmplBufPool *sync.Pool
 }
 
 func (l *defaultLocale) Index() int {
@@ -289,18 +301,26 @@ func (l *defaultLocale) GetMessageContext(ctx *context.Context, key string, args
 func (l *defaultLocale) getMessage(langInput, key string, args ...interface{}) string {
 	// search on templates.
 	if tmpl, ok := l.templateKeys[key]; ok {
-		var data interface{}
+		var (
+			data interface{}
+			text string
+		)
 		if len(args) > 0 {
 			data = args[0]
 		}
 
-		buf := new(bytes.Buffer)
+		buf := l.tmplBufPool.Get().(*bytes.Buffer)
+		buf.Reset()
+
 		err := tmpl.Execute(buf, data)
 		if err != nil {
-			return err.Error()
+			text = err.Error()
+		} else {
+			text = buf.String()
 		}
 
-		return buf.String()
+		l.tmplBufPool.Put(buf)
+		return text
 	}
 
 	if text, ok := l.lineKeys[key]; ok {

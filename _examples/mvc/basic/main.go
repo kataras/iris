@@ -14,12 +14,17 @@ func main() {
 	app := iris.New()
 	app.Use(recover.New())
 	app.Logger().SetLevel("debug")
+	// Disable verbose logging of routes for this and its children parties
+	// when the log level is "debug": app.SetRoutesNoLog(true)
 	mvc.Configure(app.Party("/basic"), basicMVC)
 
 	app.Listen(":8080")
 }
 
 func basicMVC(app *mvc.Application) {
+	// Disable verbose logging of controllers for this and its children mvc apps
+	// when the log level is "debug": app.SetControllersNoLog(true)
+
 	// You can use normal middlewares at MVC apps of course.
 	app.Router.Use(func(ctx iris.Context) {
 		ctx.Application().Logger().Infof("Path: %s", ctx.Path())

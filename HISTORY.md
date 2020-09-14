@@ -364,6 +364,9 @@ Response:
 
 Other Improvements:
 
+- Add `Party.SetRoutesNoLog(disable bool) Party` to disable (the new) verbose logging of next routes.
+- Add `mvc.Application.SetControllersNoLog(disable bool) *mvc.Application` to disable (the new) verbose logging of next controllers. As requested at [#1630](https://github.com/kataras/iris/issues/1630).
+
 - Fix [#1621](https://github.com/kataras/iris/issues/1621) and add a new `cache.WithKey` to customize the cached entry key.
 
 - Add a `Response() *http.Response` to the Response Recorder.

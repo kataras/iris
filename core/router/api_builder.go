@@ -198,6 +198,8 @@ type APIBuilder struct {
 	macros *macro.Macros
 	// the api builder global routes repository
 	routes *repository
+	// disables the debug logging of routes under a per-party and its children.
+	routesNoLog bool
 
 	// the per-party handlers, order
 	// of handlers registration matters,
@@ -643,6 +645,7 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 		// route.Use(api.beginGlobalHandlers...)
 		// route.Done(api.doneGlobalHandlers...)
 
+		route.NoLog = api.routesNoLog
 		routes[i] = route
 	}
 
@@ -714,6 +717,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		logger:              api.logger,
 		macros:              api.macros,
 		routes:              api.routes,
+		routesNoLog:         api.routesNoLog,
 		beginGlobalHandlers: api.beginGlobalHandlers,
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 
@@ -864,6 +868,18 @@ func (api *APIBuilder) GetRouteReadOnlyByPath(tmplPath string) context.RouteRead
 	}
 
 	return r.ReadOnly
+}
+
+// SetRoutesNoLog disables (true) the verbose logging for the next registered
+// routes under this Party and its children.
+//
+// To disable logging for controllers under MVC Application,
+// see `mvc/Application.SetControllersNoLog` instead.
+//
+// Defaults to false when log level is "debug".
+func (api *APIBuilder) SetRoutesNoLog(disable bool) Party {
+	api.routesNoLog = disable
+	return api
 }
 
 type (

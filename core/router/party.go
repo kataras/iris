@@ -39,6 +39,15 @@ type Party interface {
 	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
+	// SetRoutesNoLog disables (true) the verbose logging for the next registered
+	// routes under this Party and its children.
+	//
+	// To disable logging for controllers under MVC Application,
+	// see `mvc/Application.SetControllersNoLog` instead.
+	//
+	// Defaults to false when log level is "debug".
+	SetRoutesNoLog(disable bool) Party
+
 	// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 	// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 	// Look `UseError` and `OnAnyErrorCode` too.
