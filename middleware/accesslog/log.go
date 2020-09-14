@@ -169,10 +169,16 @@ type (
 		Format(log *Log) (bool, error)
 	}
 
-	// Flusher can be implemented by a Formatter
+	// Flusher can be implemented by a Writer or Formatter
 	// to call its Flush method on AccessLog.Close
 	// and on panic errors.
 	Flusher interface{ Flush() error }
+	// BufferTruncater can be implemented by writers
+	// that support buffering.
+	BufferTruncater interface{ Truncate(n int) }
+	// FileTruncater can be implemented by files
+	// that can support runtime size change.
+	FileTruncater interface{ Truncate(size int64) error }
 )
 
 var (

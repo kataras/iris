@@ -114,6 +114,9 @@ type AccessLog struct {
 	// File type destinations are automatically added.
 	Flushers []Flusher
 	Closers  []io.Closer
+	// Outputs that support the Truncate method.
+	BufferTruncaters []BufferTruncater
+	FileTruncaters   []FileTruncater
 
 	// If not empty then overrides the time.Now to this custom clocker's `Now` method,
 	// useful for testing (see `TClock`) and
@@ -361,6 +364,14 @@ func (ac *AccessLog) SetOutput(writers ...io.Writer) *AccessLog {
 		if closer, ok := w.(io.Closer); ok {
 			ac.Closers = append(ac.Closers, closer)
 		}
+
+		if truncater, ok := w.(BufferTruncater); ok {
+			ac.BufferTruncaters = append(ac.BufferTruncaters, truncater)
+		}
+
+		if truncater, ok := w.(FileTruncater); ok {
+			ac.FileTruncaters = append(ac.FileTruncaters, truncater)
+		}
 	}
 
 	// ac.bufWriter = bufio.NewWriterSize(ac.Writer, 4096)
@@ -417,6 +428,39 @@ func (ac *AccessLog) Flush() (err error) {
 		}
 	}
 	ac.mu.Unlock()
+	return
+}
+
+// Truncate if the output is a buffer, then
+// it discards all but the first n unread bytes.
+// See `TruncateFile` for a file size.
+//
+// It panics if n is negative or greater than the length of the buffer.
+func (ac *AccessLog) Truncate(n int) {
+	ac.mu.Lock() // Lock as we do with all write operations.
+	for _, truncater := range ac.BufferTruncaters {
+		truncater.Truncate(n)
+	}
+	ac.mu.Unlock()
+}
+
+// TruncateFile changes the size of the internal file, directly.
+// It does not change the I/O offset.
+// If there is an error, it will be of type *PathError.
+func (ac *AccessLog) TruncateFile(size int64) (err error) {
+	ac.mu.Lock()
+	for _, truncater := range ac.FileTruncaters {
+		tErr := truncater.Truncate(size)
+		if tErr != nil {
+			if err == nil {
+				err = tErr
+			} else {
+				err = fmt.Errorf("%v, %v", err, tErr)
+			}
+		}
+	}
+	ac.mu.Unlock()
+
 	return
 }
 

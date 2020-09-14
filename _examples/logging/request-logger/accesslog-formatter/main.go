@@ -1,4 +1,4 @@
-// Package main shows to create a quite fast custom Log Formatter.
+// Package main shows how to create a quite fast custom Log Formatter.
 // Note that, this example requires a little more knowledge about Go.
 package main
 
