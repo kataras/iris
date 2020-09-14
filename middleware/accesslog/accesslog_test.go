@@ -100,7 +100,7 @@ func TestAccessLogBroker(t *testing.T) {
 
 	wg := new(sync.WaitGroup)
 	n := 4
-	wg.Add(4)
+	wg.Add(n)
 	go func() {
 		i := 0
 		ln := broker.NewListener()
@@ -200,6 +200,116 @@ func TestAccessLogBlank(t *testing.T) {
 	expected := "1993-01-01 05:00:00|1s|200|GET|/|127.0.0.1|0 B|0 B|<no value>|\n"
 	if got := w.String(); expected != got {
 		t.Fatalf("expected:\n'%s'\n\nbut got:\n'%s'", expected, got)
+	}
+}
+
+type slowClose struct{ *bytes.Buffer }
+
+func (c *slowClose) Close() error {
+	time.Sleep(1 * time.Second)
+	return nil
+}
+
+func TestAccessLogSetOutput(t *testing.T) {
+	var (
+		w1 = &bytes.Buffer{}
+		w2 = &bytes.Buffer{}
+		w3 = &slowClose{&bytes.Buffer{}}
+		w4 = &bytes.Buffer{}
+	)
+
+	ac := New(w1)
+	ac.Clock = TClock(time.Time{})
+
+	n := 40
+	expected := strings.Repeat("0001-01-01 00:00:00|1s|200|GET|/|127.0.0.1|0 B|0 B||\n", n)
+
+	printLog := func() {
+		err := ac.Print(
+			nil,
+			time.Second,
+			defaultTimeFormat,
+			200,
+			"GET",
+			"/",
+			"127.0.0.1",
+			"",
+			"",
+			0,
+			0,
+			nil,
+			nil,
+			nil,
+		)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	testSetOutput := func(name string, w io.Writer, withSlowClose bool) {
+		wg := new(sync.WaitGroup)
+		wg.Add(n / 4)
+		for i := 0; i < n/4; i++ {
+			go func(i int) {
+				defer wg.Done()
+
+				if i%2 == 0 {
+					time.Sleep(10 * time.Millisecond)
+				}
+
+				switch i {
+				case 5:
+					if w == nil {
+						break
+					}
+
+					now := time.Now()
+					ac.SetOutput(w)
+					if withSlowClose {
+						end := time.Since(now)
+						if end < time.Second {
+							panic(fmt.Sprintf("[%s] [%d]: SetOutput should wait for previous Close. Expected to return a bit after %s but %s", name, i, time.Second, end))
+						}
+					}
+				}
+
+				printLog()
+			}(i)
+		}
+
+		// wait to finish.
+		wg.Wait()
+	}
+
+	go testSetOutput("w1", nil, false) // write at least one line and then
+	time.Sleep(100 * time.Millisecond) // concurrently
+	testSetOutput("w2", w2, false)     // change the writer
+	testSetOutput("w3", w3, false)
+	testSetOutput("w4", w4, true)
+
+	gotAll := w1.String() + w2.String() + w3.String() + w4.String()
+
+	// test if all content written and we have no loses.
+	if expected != gotAll {
+		t.Fatalf("expected total written result to be:\n'%s'\n\nbut got:\n'%s'", expected, gotAll)
+	}
+
+	// now, check if all have contents, they should because we wait between them,
+	// contents spread.
+	checkLines := func(name, s string, minimumLines int) {
+		if got := strings.Count(s, "\n"); got < minimumLines {
+			t.Logf("[%s] expected minimum lines of: %d but got %d", name, minimumLines, got)
+		}
+	}
+
+	checkLines("w1", w1.String(), 1)
+	checkLines("w2", w2.String(), 5)
+	checkLines("w3", w3.String(), 5)
+	checkLines("w4", w4.String(), 5)
+
+	if err := ac.Close(); err != nil {
+		t.Fatalf("On close: %v", err)
 	}
 }
 
