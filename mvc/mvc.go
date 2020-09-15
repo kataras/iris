@@ -233,7 +233,13 @@ func (opt OptionFunc) Apply(c *ControllerActivator) {
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
 func (app *Application) Handle(controller interface{}, options ...Option) *Application {
-	app.handle(controller, options...)
+	c := app.handle(controller, options...)
+	// Note: log on register-time, so they can catch any failures before build.
+	if !app.controllersNoLog {
+		// log only http (and versioned) or grpc controllers,
+		// websocket is already logging itself.
+		logController(app.Router.Logger(), c)
+	}
 	return app
 }
 
@@ -265,7 +271,7 @@ var _ websocket.ConnHandler = (*Application)(nil)
 // It returns a collection of namespace and events that
 // were registered through `HandleWebsocket` controllers.
 func (app *Application) GetNamespaces() websocket.Namespaces {
-	if logger := app.Router.Logger(); logger.Level == golog.DebugLevel {
+	if logger := app.Router.Logger(); logger.Level == golog.DebugLevel && !app.controllersNoLog {
 		websocket.EnableDebug(logger)
 	}
 
@@ -300,12 +306,6 @@ func (app *Application) handle(controller interface{}, options ...Option) *Contr
 	}
 
 	app.Controllers = append(app.Controllers, c)
-
-	// Note: log on register-time, so they can catch any failures before build.
-	if !app.controllersNoLog {
-		logController(app.Router.Logger(), c)
-	}
-
 	return c
 }
 

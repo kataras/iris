@@ -24,7 +24,7 @@ require (
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
-	github.com/kataras/tunnel v0.0.1
+	github.com/kataras/tunnel v0.0.2
 	github.com/klauspost/compress v1.11.0
 	github.com/mailru/easyjson v0.7.6
 	github.com/mediocregopher/radix/v3 v3.5.2

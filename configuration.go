@@ -599,7 +599,7 @@ type Configuration struct {
 	// * "warn"
 	// * "info"
 	// * "debug"
-	LogLevel string `json:"logLevel" yaml:"LogLevel" toml:"LogLevel" env:"LOG_LEVEL"`
+	LogLevel string `ini:"log_level" json:"logLevel" yaml:"LogLevel" toml:"LogLevel" env:"LOG_LEVEL"`
 
 	// SocketSharding enables SO_REUSEPORT (or SO_REUSEADDR for windows)
 	// on all registered Hosts.
@@ -613,10 +613,10 @@ type Configuration struct {
 	//	  Page 37, To Shard or Not to Shard?
 	//
 	// Defaults to false.
-	SocketSharding bool `json:"socketSharding" yaml:"SocketSharding" toml:"SocketSharding" env:"SOCKET_SHARDING"`
+	SocketSharding bool `ini:"socket_sharding" json:"socketSharding" yaml:"SocketSharding" toml:"SocketSharding" env:"SOCKET_SHARDING"`
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
-	Tunneling TunnelingConfiguration `json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
+	Tunneling TunnelingConfiguration `ini:"tunneling" json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
 	// IgnoreServerErrors will cause to ignore the matched "errors"
 	// from the main application's `Run` function.
 	// This is a slice of string, not a slice of error
@@ -628,18 +628,18 @@ type Configuration struct {
 	// Example: https://github.com/kataras/iris/tree/master/_examples/http-server/listen-addr/omit-server-errors
 	//
 	// Defaults to an empty slice.
-	IgnoreServerErrors []string `json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
+	IgnoreServerErrors []string `ini:"ignore_server_errors" json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
 
 	// DisableStartupLog if set to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
-	DisableStartupLog bool `json:"disableStartupLog,omitempty" yaml:"DisableStartupLog" toml:"DisableStartupLog"`
+	DisableStartupLog bool `ini:"disable_startup_log" json:"disableStartupLog,omitempty" yaml:"DisableStartupLog" toml:"DisableStartupLog"`
 	// DisableInterruptHandler if set to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
 	//
 	// Defaults to false.
-	DisableInterruptHandler bool `json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
+	DisableInterruptHandler bool `ini:"disable_interrupt_handler" json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
 
 	// DisablePathCorrection disables the correcting
 	// and redirecting or executing directly the handler of
@@ -651,13 +651,13 @@ type Configuration struct {
 	// See `DisablePathCorrectionRedirection` to enable direct handler execution instead of redirection.
 	//
 	// Defaults to false.
-	DisablePathCorrection bool `json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
+	DisablePathCorrection bool `ini:"disable_path_correction" json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
 	// DisablePathCorrectionRedirection works whenever configuration.DisablePathCorrection is set to false
 	// and if DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
 	// the trailing slash ("/") instead of send a redirection status.
 	//
 	// Defaults to false.
-	DisablePathCorrectionRedirection bool `json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
+	DisablePathCorrectionRedirection bool `ini:"disable_path_correction_redirection" json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
 	// EnablePathIntelligence if set to true,
 	// the router will redirect HTTP "GET" not found pages to the most closest one path(if any). For example
 	// you register a route at "/contact" path -
@@ -666,7 +666,7 @@ type Configuration struct {
 	// instead of getting a 404 not found response back.
 	//
 	// Defaults to false.
-	EnablePathIntelligence bool `json:"enablePathIntelligence,omitempty" yaml:"EnablePathIntelligence" toml:"EnablePathIntelligence"`
+	EnablePathIntelligence bool `ini:"enable_path_intelligence" json:"enablePathIntelligence,omitempty" yaml:"EnablePathIntelligence" toml:"EnablePathIntelligence"`
 	// EnablePathEscape when is true then its escapes the path and the named parameters (if any).
 	// When do you need to Disable(false) it:
 	// accepts parameters with slash '/'
@@ -676,22 +676,22 @@ type Configuration struct {
 	// projectName, _ := url.QueryUnescape(c.Param("project").
 	//
 	// Defaults to false.
-	EnablePathEscape bool `json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
+	EnablePathEscape bool `ini:"enable_path_escape" json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
 	// ForceLowercaseRouting if enabled, converts all registered routes paths to lowercase
 	// and it does lowercase the request path too for matching.
 	//
 	// Defaults to false.
-	ForceLowercaseRouting bool `json:"forceLowercaseRouting,omitempty" yaml:"ForceLowercaseRouting" toml:"ForceLowercaseRouting"`
+	ForceLowercaseRouting bool `ini:"force_lowercase_routing" json:"forceLowercaseRouting,omitempty" yaml:"ForceLowercaseRouting" toml:"ForceLowercaseRouting"`
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
-	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
+	FireMethodNotAllowed bool `ini:"fire_method_not_allowed" json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
 	// DisableAutoFireStatusCode if true then it turns off the http error status code
 	// handler automatic execution on error code from a `Context.StatusCode` call.
 	// By-default a custom http error handler will be fired when "Context.StatusCode(errorCode)" called.
 	//
 	// Defaults to false.
-	DisableAutoFireStatusCode bool `json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
+	DisableAutoFireStatusCode bool `ini:"disable_auto_fire_status_code" json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
 	// ResetOnFireErrorCode if true then any previously response body or headers through
 	// response recorder will be ignored and the router
 	// will fire the registered (or default) HTTP error handler instead.
@@ -700,13 +700,13 @@ type Configuration struct {
 	// Read more at: https://github.com/kataras/iris/issues/1531
 	//
 	// Defaults to false.
-	ResetOnFireErrorCode bool `json:"resetOnFireErrorCode,omitempty" yaml:"ResetOnFireErrorCode" toml:"ResetOnFireErrorCode"`
+	ResetOnFireErrorCode bool `ini:"reset_on_fire_error_code" json:"resetOnFireErrorCode,omitempty" yaml:"ResetOnFireErrorCode" toml:"ResetOnFireErrorCode"`
 
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
 	//
 	// Defaults to false.
-	EnableOptimizations bool `json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
+	EnableOptimizations bool `ini:"enable_optimizations" json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If set to true then it
 	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
@@ -717,19 +717,19 @@ type Configuration struct {
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	//
 	// See `Context.RecordBody` method for the same feature, per-request.
-	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
+	DisableBodyConsumptionOnUnmarshal bool `ini:"disable_body_consumption" json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
 	// will return an `iris.ErrEmptyForm` on empty request form data.
-	FireEmptyFormError bool `json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" toml:"FireEmptyFormError"`
+	FireEmptyFormError bool `ini:"fire_empty_form_error" json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" toml:"FireEmptyFormError"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	TimeFormat string `json:"timeFormat,omitempty" yaml:"TimeFormat" toml:"TimeFormat"`
+	TimeFormat string `ini:"time_format" json:"timeFormat,omitempty" yaml:"TimeFormat" toml:"TimeFormat"`
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
 	// Defaults to "utf-8".
-	Charset string `json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
+	Charset string `ini:"charset" json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
 
 	// PostMaxMemory sets the maximum post data size
 	// that a client can send to the server, this differs
@@ -737,7 +737,7 @@ type Configuration struct {
 	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 	//
 	// Defaults to 32MB or 32 << 20 if you prefer.
-	PostMaxMemory int64 `json:"postMaxMemory" yaml:"PostMaxMemory" toml:"PostMaxMemory"`
+	PostMaxMemory int64 `ini:"post_max_memory" json:"postMaxMemory" yaml:"PostMaxMemory" toml:"PostMaxMemory"`
 	//  +----------------------------------------------------+
 	//  | Context's keys for values used on various featuers |
 	//  +----------------------------------------------------+
@@ -747,7 +747,7 @@ type Configuration struct {
 	// LocaleContextKey is used by i18n to get the current request's locale, which contains a translate function too.
 	//
 	// Defaults to "iris.locale".
-	LocaleContextKey string `json:"localeContextKey,omitempty" yaml:"LocaleContextKey" toml:"LocaleContextKey"`
+	LocaleContextKey string `ini:"locale_context_key" json:"localeContextKey,omitempty" yaml:"LocaleContextKey" toml:"LocaleContextKey"`
 	// LanguageContextKey is the context key which a language can be modified by a middleware.
 	// It has the highest priority over the rest and if it is empty then it is ignored,
 	// if it set to a static string of "default" or to the default language's code
@@ -758,16 +758,16 @@ type Configuration struct {
 	//
 	// See `i18n.ExtractFunc` for a more organised way of the same feature.
 	// Defaults to "iris.locale.language".
-	LanguageContextKey string `json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
+	LanguageContextKey string `ini:"language_context_key" json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
 	// LanguageInputContextKey is the context key of a language that is given by the end-user.
 	// It's the real user input of the language string, matched or not.
 	//
 	// Defaults to "iris.locale.language.input".
-	LanguageInputContextKey string `json:"languageInputContextKey,omitempty" yaml:"LanguageInputContextKey" toml:"LanguageInputContextKey"`
+	LanguageInputContextKey string `ini:"language_input_context_key" json:"languageInputContextKey,omitempty" yaml:"LanguageInputContextKey" toml:"LanguageInputContextKey"`
 	// VersionContextKey is the context key which an API Version can be modified
 	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, "1.0, 1.1")`.
 	// Defaults to "iris.api.version".
-	VersionContextKey string `json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
+	VersionContextKey string `ini:"version_context_key" json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
 	// ViewEngineContextKey is the context's values key
 	// responsible to store and retrieve(view.Engine) the current view engine.
 	// A middleware or a Party can modify its associated value to change
@@ -778,21 +778,21 @@ type Configuration struct {
 	// See `Party.RegisterView` and `Context.ViewEngine` methods as well.
 	//
 	// Defaults to "iris.view.engine".
-	ViewEngineContextKey string `json:"viewEngineContextKey,omitempty" yaml:"ViewEngineContextKey" toml:"ViewEngineContextKey"`
+	ViewEngineContextKey string `ini:"view_engine_context_key" json:"viewEngineContextKey,omitempty" yaml:"ViewEngineContextKey" toml:"ViewEngineContextKey"`
 	// ViewLayoutContextKey is the context's values key
 	// responsible to store and retrieve(string) the current view layout.
 	// A middleware can modify its associated value to change
 	// the layout that `ctx.View` will use to render a template.
 	//
 	// Defaults to "iris.view.layout".
-	ViewLayoutContextKey string `json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
+	ViewLayoutContextKey string `ini:"view_layout_context_key" json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
 	// ViewDataContextKey is the context's values key
 	// responsible to store and retrieve(interface{}) the current view binding data.
 	// A middleware can modify its associated value to change
 	// the template's data on-fly.
 	//
 	// Defaults to "iris.view.data".
-	ViewDataContextKey string `json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
+	ViewDataContextKey string `ini:"view_data_context_key" json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
 	// RemoteAddrHeaders are the allowed request headers names
 	// that can be valid to parse the client's IP based on.
 	// By-default no "X-" header is consired safe to be used for retrieving the
@@ -808,16 +808,17 @@ type Configuration struct {
 	//    "X-Real-Ip",
 	//    "X-Forwarded-For",
 	//    "CF-Connecting-IP",
+	//    "True-Client-Ip",
 	//	}
 	//
 	// Look `context.RemoteAddr()` for more.
-	RemoteAddrHeaders []string `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
+	RemoteAddrHeaders []string `ini:"remote_addr_headers" json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 	// RemoteAddrHeadersForce forces the `Context.RemoteAddr()` method
 	// to return the first entry of a request header as a fallback,
 	// even if that IP is a part of the `RemoteAddrPrivateSubnets` list.
 	// The default behavior, if a remote address is part of the `RemoteAddrPrivateSubnets`,
 	// is to retrieve the IP from the `Request.RemoteAddr` field instead.
-	RemoteAddrHeadersForce bool `json:"remoteAddrHeadersForce,omitempty" yaml:"RemoteAddrHeadersForce" toml:"RemoteAddrHeadersForce"`
+	RemoteAddrHeadersForce bool `ini:"remote_addr_headers_force" json:"remoteAddrHeadersForce,omitempty" yaml:"RemoteAddrHeadersForce" toml:"RemoteAddrHeadersForce"`
 	// RemoteAddrPrivateSubnets defines the private sub-networks.
 	// They are used to be compared against
 	// IP Addresses fetched through `RemoteAddrHeaders` or `Context.Request.RemoteAddr`.
@@ -849,22 +850,22 @@ type Configuration struct {
 	// }
 	//
 	// Look `Context.RemoteAddr()` for more.
-	RemoteAddrPrivateSubnets []netutil.IPRange `json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
+	RemoteAddrPrivateSubnets []netutil.IPRange `ini:"remote_addr_private_subnets" json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
 	// SSLProxyHeaders defines the set of header key values
 	// that would indicate a valid https Request (look `Context.IsSSL()`).
 	// Example: `map[string]string{"X-Forwarded-Proto": "https"}`.
 	//
 	// Defaults to empty map.
-	SSLProxyHeaders map[string]string `json:"sslProxyHeaders" yaml:"SSLProxyHeaders" toml:"SSLProxyHeaders"`
+	SSLProxyHeaders map[string]string `ini:"ssl_proxy_headers" json:"sslProxyHeaders" yaml:"SSLProxyHeaders" toml:"SSLProxyHeaders"`
 	// HostProxyHeaders defines the set of headers that may hold a proxied hostname value for the clients.
 	// Look `Context.Host()` for more.
 	// Defaults to empty map.
-	HostProxyHeaders map[string]bool `json:"hostProxyHeaders" yaml:"HostProxyHeaders" toml:"HostProxyHeaders"`
+	HostProxyHeaders map[string]bool `ini:"host_proxy_headers" json:"hostProxyHeaders" yaml:"HostProxyHeaders" toml:"HostProxyHeaders"`
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want.
 	//
 	// Defaults to empty map.
-	Other map[string]interface{} `json:"other,omitempty" yaml:"Other" toml:"Other"`
+	Other map[string]interface{} `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
 
 var _ context.ConfigurationReadOnly = &Configuration{}
