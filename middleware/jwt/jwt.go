@@ -476,6 +476,12 @@ func (j *JWT) VerifyToken(ctx *context.Context, claimsPtr interface{}) error {
 		}
 	}
 
+	return j.VerifyTokenString(ctx, token, claimsPtr)
+}
+
+// VerifyTokenString verifies and unmarshals an extracted token to "claimsPtr" destination.
+// The Context is required when the claims validator needs it, otherwise can be nil.
+func (j *JWT) VerifyTokenString(ctx *context.Context, token string, claimsPtr interface{}) error {
 	if token == "" {
 		return ErrMissing
 	}
