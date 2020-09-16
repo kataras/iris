@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 	"strings"
+	"unsafe"
 )
 
 /* Based on:
@@ -13,13 +14,18 @@ https://github.com/kataras/iris/issues/1453
 
 // IPRange is a structure that holds the start and end of a range of IP Addresses.
 type IPRange struct {
-	Start net.IP `ini:"start" json:"start" yaml:"Start" toml:"Start"`
-	End   net.IP `ini:"end" json:"end" yaml:"End" toml:"End"`
+	Start string `ini:"start" json:"start" yaml:"Start" toml:"Start"`
+	End   string `ini:"end" json:"end" yaml:"End" toml:"End"`
+}
+
+func unsafeCompare(a []byte, b string) int {
+	bb := *(*[]byte)(unsafe.Pointer(&b))
+	return bytes.Compare(a, bb)
 }
 
 // IPInRange reports whether a given IP Address is within a range given.
 func IPInRange(r IPRange, ipAddress net.IP) bool {
-	return bytes.Compare(ipAddress, r.Start) >= 0 && bytes.Compare(ipAddress, r.End) < 0
+	return unsafeCompare(ipAddress, r.Start) >= 0 && unsafeCompare(ipAddress, r.End) < 0
 }
 
 // IPIsPrivateSubnet reports whether this "ipAddress" is in a private subnet.

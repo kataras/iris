@@ -31,6 +31,7 @@
 * Configuration
     * [Functional](configuration/functional/main.go)
     * [Configuration Struct](configuration/from-configuration-structure/main.go)
+    * [Using Viper](configuration/viper)
     * [Import from YAML](configuration/from-yaml-file/main.go)
         * [Share Configuration across instances](configuration/from-yaml-file/shared-configuration/main.go)
     * [Import from TOML](configuration/from-toml-file/main.go)

@@ -612,6 +612,7 @@ New Package-level Variables:
 
 New Context Methods:
 
+- `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
 - `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
 - `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `iris.IsErrPrivate` function and `iris.ErrPrivate` interface have been introduced. 
 - `Context.RecordBody()` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
@@ -657,6 +658,8 @@ New Context Methods:
 
 Breaking Changes:
 
+- The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
+- The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.
 - The `i18n#LoaderConfig.FuncMap template.FuncMap` field was replaced with `Funcs func(iris.Locale) template.FuncMap` in order to give current locale access to the template functions. A new `app.I18n.Loader` was introduced too, in order to make it easier for end-developers to customize the translation key values.
 - Request Logger's `Columns bool` field has been removed. Use the new [accesslog](https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog/main.go) middleware instead.
 - The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string. All examples updated.

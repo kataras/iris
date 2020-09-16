@@ -3,7 +3,6 @@ package iris
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -391,8 +390,8 @@ func WithoutRemoteAddrHeader(headerName string) Configurator {
 func WithRemoteAddrPrivateSubnet(startIP, endIP string) Configurator {
 	return func(app *Application) {
 		app.config.RemoteAddrPrivateSubnets = append(app.config.RemoteAddrPrivateSubnets, netutil.IPRange{
-			Start: net.ParseIP(startIP),
-			End:   net.ParseIP(endIP),
+			Start: startIP,
+			End:   endIP,
 		})
 	}
 }
@@ -825,28 +824,28 @@ type Configuration struct {
 	// For details please navigate through: https://github.com/kataras/iris/issues/1453
 	// Defaults to:
 	// {
-	// 	Start: net.ParseIP("10.0.0.0"),
-	// 	End:   net.ParseIP("10.255.255.255"),
+	// 	Start: "10.0.0.0",
+	// 	End:   "10.255.255.255",
 	// },
 	// {
-	// 	Start: net.ParseIP("100.64.0.0"),
-	// 	End:   net.ParseIP("100.127.255.255"),
+	// 	Start: "100.64.0.0",
+	// 	End:   "100.127.255.255",
 	// },
 	// {
-	// 	Start: net.ParseIP("172.16.0.0"),
-	// 	End:   net.ParseIP("172.31.255.255"),
+	// 	Start: "172.16.0.0",
+	// 	End:   "172.31.255.255",
 	// },
 	// {
-	// 	Start: net.ParseIP("192.0.0.0"),
-	// 	End:   net.ParseIP("192.0.0.255"),
+	// 	Start: "192.0.0.0",
+	// 	End:   "192.0.0.255",
 	// },
 	// {
-	// 	Start: net.ParseIP("192.168.0.0"),
-	// 	End:   net.ParseIP("192.168.255.255"),
+	// 	Start: "192.168.0.0",
+	// 	End:   "192.168.255.255",
 	// },
 	// {
-	// 	Start: net.ParseIP("198.18.0.0"),
-	// 	End:   net.ParseIP("198.19.255.255"),
+	// 	Start: "198.18.0.0",
+	// 	End:   "198.19.255.255",
 	// }
 	//
 	// Look `Context.RemoteAddr()` for more.
@@ -1218,28 +1217,28 @@ func DefaultConfiguration() Configuration {
 		RemoteAddrHeadersForce:  false,
 		RemoteAddrPrivateSubnets: []netutil.IPRange{
 			{
-				Start: net.ParseIP("10.0.0.0"),
-				End:   net.ParseIP("10.255.255.255"),
+				Start: "10.0.0.0",
+				End:   "10.255.255.255",
 			},
 			{
-				Start: net.ParseIP("100.64.0.0"),
-				End:   net.ParseIP("100.127.255.255"),
+				Start: "100.64.0.0",
+				End:   "100.127.255.255",
 			},
 			{
-				Start: net.ParseIP("172.16.0.0"),
-				End:   net.ParseIP("172.31.255.255"),
+				Start: "172.16.0.0",
+				End:   "172.31.255.255",
 			},
 			{
-				Start: net.ParseIP("192.0.0.0"),
-				End:   net.ParseIP("192.0.0.255"),
+				Start: "192.0.0.0",
+				End:   "192.0.0.255",
 			},
 			{
-				Start: net.ParseIP("192.168.0.0"),
-				End:   net.ParseIP("192.168.255.255"),
+				Start: "192.168.0.0",
+				End:   "192.168.255.255",
 			},
 			{
-				Start: net.ParseIP("198.18.0.0"),
-				End:   net.ParseIP("198.19.255.255"),
+				Start: "198.18.0.0",
+				End:   "198.19.255.255",
 			},
 		},
 		SSLProxyHeaders:     make(map[string]string),

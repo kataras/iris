@@ -1,0 +1,50 @@
+Addr:
+  Internal:
+    IP: 127.0.0.1
+    Plain: 8080
+    Secure: 443
+Locale:
+  Pattern: "./locales/*/*.ini"
+  Default: "en-US"
+  Supported:
+  - "en-US"
+  - "el-GR"
+Iris:
+  LogLevel: debug
+  SocketSharding: true
+  EnableOptimizations: true
+  DisableStartupLog: false
+  FireMethodNotAllowed: true
+  ForceLowercaseRouting: true
+  EnablePathIntelligence: true
+  Charset: "utf-8"
+  TimeFormat: "2006-01-02 15:04:05"
+  DisableBodyConsumptionOnUnmarshal: true
+  FireEmptyFormError: true
+  PostMaxMemory: 67108864
+  RemoteAddrHeaders:
+    - "X-Real-Ip"
+    - "X-Forwarded-For"
+    - "CF-Connecting-IP"
+    - "True-Client-Ip"
+  IgnoreServerErrors:
+    - "http: Server closed"
+  # Tunneling:
+  #   WebInterface: "http://127.0.0.1:4040"
+  #   AuthToken: "<secret>"
+  #   Tunnels:
+  #     - Name: "My awesome App"
+  #       Addr: "localhost:8080"
+  #     - Name:  "My Second awesome App"
+  #       Addr: "localhost:9090"
+  RemoteAddrPrivateSubnets:
+    - Start: "192.168.0.0"
+      End: "192.168.255.255"
+    - Start: "198.18.0.0"
+      End: "198.19.255.255"
+  SSLProxyHeaders:
+    X-Forwarded-Proto: "https"
+  HostProxyHeaders:
+    X-Host: true
+  Other:
+    ServerName: "My awesome Iris web server"

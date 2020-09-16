@@ -1,8 +1,8 @@
-module myapp
+module app
 
 go 1.15
 
 require (
-	github.com/Shopify/sarama v1.26.4
 	github.com/kataras/iris/v12 master
+	github.com/spf13/viper v1.3.2
 )

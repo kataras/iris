@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -1323,14 +1322,15 @@ func (ctx *Context) ContentType(cType string) {
 	}
 
 	// 1. if it's path or a filename or an extension,
-	// then take the content type from that
-	if strings.Contains(cType, ".") {
-		ext := filepath.Ext(cType)
-		cType = mime.TypeByExtension(ext)
-	}
+	// then take the content type from that,
+	// ^ No, it's not always a file,e .g. vnd.$type
+	// if strings.Contains(cType, ".") {
+	// 	ext := filepath.Ext(cType)
+	// 	cType = mime.TypeByExtension(ext)
+	// }
 	// if doesn't contain a charset already then append it
-	if !strings.Contains(cType, "charset") {
-		if shouldAppendCharset(cType) {
+	if shouldAppendCharset(cType) {
+		if !strings.Contains(cType, "charset") {
 			cType += "; charset=" + ctx.app.ConfigurationReadOnly().GetCharset()
 		}
 	}
@@ -2431,7 +2431,7 @@ func (ctx *Context) ReadBody(ptr interface{}) error {
 	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
 		return ctx.ReadXML(ptr)
 		// "%v reflect.Indirect(reflect.ValueOf(ptr)).Interface())
-	case ContentYAMLHeaderValue:
+	case ContentYAMLHeaderValue, ContentYAMLTextHeaderValue:
 		return ctx.ReadYAML(ptr)
 	case ContentFormHeaderValue, ContentFormMultipartHeaderValue:
 		return ctx.ReadForm(ptr)
@@ -3009,6 +3009,8 @@ const (
 	ContentMarkdownHeaderValue = "text/markdown"
 	// ContentYAMLHeaderValue header value for YAML data.
 	ContentYAMLHeaderValue = "application/x-yaml"
+	// ContentYAMLTextHeaderValue header value for YAML plain text.
+	ContentYAMLTextHeaderValue = "text/yaml"
 	// ContentProtobufHeaderValue header value for Protobuf messages data.
 	ContentProtobufHeaderValue = "application/x-protobuf"
 	// ContentMsgPackHeaderValue header value for MsgPack data.
@@ -3484,7 +3486,8 @@ func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 	return n, err
 }
 
-// YAML marshals the "v" using the yaml marshaler and renders its result to the client.
+// YAML marshals the "v" using the yaml marshaler
+// and sends the result to the client.
 func (ctx *Context) YAML(v interface{}) (int, error) {
 	out, err := yaml.Marshal(v)
 	if err != nil {
@@ -3495,6 +3498,13 @@ func (ctx *Context) YAML(v interface{}) (int, error) {
 
 	ctx.ContentType(ContentYAMLHeaderValue)
 	return ctx.Write(out)
+}
+
+// TextYAML marshals the "v" using the yaml marshaler
+// and renders to the client.
+func (ctx *Context) TextYAML(v interface{}) (int, error) {
+	ctx.contentTypeOnce(ContentYAMLTextHeaderValue, "")
+	return ctx.YAML(v)
 }
 
 // Protobuf parses the "v" of proto Message and renders its result to the client.
@@ -3735,6 +3745,8 @@ func (ctx *Context) Negotiate(v interface{}) (int, error) {
 		return ctx.XML(v)
 	case ContentYAMLHeaderValue:
 		return ctx.YAML(v)
+	case ContentYAMLTextHeaderValue:
+		return ctx.TextYAML(v)
 	case ContentProtobufHeaderValue:
 		msg, ok := v.(proto.Message)
 		if !ok {
@@ -3916,6 +3928,19 @@ func (n *NegotiationBuilder) YAML(v ...interface{}) *NegotiationBuilder {
 		content = v[0]
 	}
 	return n.MIME(ContentYAMLHeaderValue, content)
+}
+
+// TextYAML registers the "text/yaml" content type and, optionally,
+// a value that `Context.Negotiate` will render
+// when a client accepts the "application/x-yaml" content type.
+//
+// Returns itself for recursive calls.
+func (n *NegotiationBuilder) TextYAML(v ...interface{}) *NegotiationBuilder {
+	var content interface{}
+	if len(v) > 0 {
+		content = v[0]
+	}
+	return n.MIME(ContentYAMLTextHeaderValue, content)
 }
 
 // Protobuf registers the "application/x-protobuf" content type and, optionally,
@@ -4129,6 +4154,12 @@ func (n *NegotiationAcceptBuilder) XML() *NegotiationAcceptBuilder {
 // Returns itself.
 func (n *NegotiationAcceptBuilder) YAML() *NegotiationAcceptBuilder {
 	return n.MIME(ContentYAMLHeaderValue)
+}
+
+// TextYAML adds the "text/yaml" as accepted client content type.
+// Returns itself.
+func (n *NegotiationAcceptBuilder) TextYAML() *NegotiationAcceptBuilder {
+	return n.MIME(ContentYAMLTextHeaderValue)
 }
 
 // Protobuf adds the "application/x-protobuf" as accepted client content type.
