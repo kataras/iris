@@ -1,35 +1,34 @@
 package netutil
 
 import (
-	"net"
 	"testing"
 )
 
 func TestIP(t *testing.T) {
 	privateRanges := []IPRange{
 		{
-			Start: net.ParseIP("10.0.0.0"),
-			End:   net.ParseIP("10.255.255.255"),
+			Start: "10.0.0.0",
+			End:   "10.255.255.255",
 		},
 		{
-			Start: net.ParseIP("100.64.0.0"),
-			End:   net.ParseIP("100.127.255.255"),
+			Start: "100.64.0.0",
+			End:   "100.127.255.255",
 		},
 		{
-			Start: net.ParseIP("172.16.0.0"),
-			End:   net.ParseIP("172.31.255.255"),
+			Start: "172.16.0.0",
+			End:   "172.31.255.255",
 		},
 		{
-			Start: net.ParseIP("192.0.0.0"),
-			End:   net.ParseIP("192.0.0.255"),
+			Start: "192.0.0.0",
+			End:   "192.0.0.255",
 		},
 		{
-			Start: net.ParseIP("192.168.0.0"),
-			End:   net.ParseIP("192.168.255.255"),
+			Start: "192.168.0.0",
+			End:   "192.168.255.255",
 		},
 		{
-			Start: net.ParseIP("198.18.0.0"),
-			End:   net.ParseIP("198.19.255.255"),
+			Start: "198.18.0.0",
+			End:   "198.19.255.255",
 		},
 	}
 

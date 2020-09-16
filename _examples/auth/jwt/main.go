@@ -20,6 +20,10 @@ func main() {
 	//
 	// Use the `jwt.New` instead for more flexibility, if necessary.
 	j := jwt.HMAC(15*time.Minute, "secret", "itsa16bytesecret")
+	// By default it extracts the token from url parameter "token={token}"
+	// and the Authorization Bearer {token} header.
+	// You can also take token from JSON body:
+	// j.Extractors = append(j.Extractors, jwt.FromJSON)
 
 	app := iris.New()
 	app.Logger().SetLevel("debug")
@@ -59,7 +63,7 @@ func main() {
 				return
 			}
 
-			ctx.Writef("Claims: %#+v\n", claims)
+			ctx.Writef("Username: %s\nExpires at: %s\n", claims.Username, claims.Expiry.Time())
 		})
 	}
 
