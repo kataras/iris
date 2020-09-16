@@ -27,6 +27,7 @@ Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[
 ## 👑 <a href="https://iris-go.com/donate">Supporters</a>
 
 <p>
+  <a href="https://github.com/tuhao1020"><img src="https://avatars1.githubusercontent.com/u/26807520?v=4" alt ="Hao Tu" title="tuhao1020" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/CetinBasoz"><img src="https://avatars1.githubusercontent.com/u/3152637?v=4" alt ="Cetin Basoz" title="CetinBasoz" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/hazmi-e205"><img src="https://avatars1.githubusercontent.com/u/12555465?v=4" alt ="Hazmi Amalul" title="hazmi-e205" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/remyDeme"><img src="https://avatars1.githubusercontent.com/u/22757039?v=4" alt ="Rémy Deme" title="remyDeme" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
