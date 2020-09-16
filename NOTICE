@@ -77,9 +77,9 @@ Revision ID: ab226d925aa394ccecf01e515ea8479367e0961c
  pio                 2e3d576cc65913a     https://github.com/kataras/pio           
                      dd6106f1ce02837                                              
                      2c7e6d943c                                                   
- pongo2              5abacdfa4915f8a     https://github.com/flosch/pongo2   
-                     fb6de6231455488                                              
-                     066273bea6                                                 
+ pongo2              f946812ec8d53b7     https://github.com/flosch/pongo2   
+                     24e4daeb888c95a                                              
+                     b63c98b3c0                               
  protobuf            6c66de79d66478d     https://github.com/golang/protobuf       
                      166c7ea05f5d2cc                                              
                      af016fbd6b                                                   
