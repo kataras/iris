@@ -31,6 +31,9 @@ const (
 // GetFields returns the accesslog fields for this request.
 // Returns a store which the caller can use to
 // set/get/remove custom log fields. Use its `Set` method.
+//
+// To use with MVC: Register(accesslog.GetFields).
+// DI Handlers: ConfigureContainer().RegisterDependency(accesslog.GetFields).
 func GetFields(ctx *context.Context) (fields *Fields) {
 	if v := ctx.Values().Get(fieldsContextKey); v != nil {
 		fields = v.(*Fields)
@@ -60,7 +63,6 @@ func shouldSkip(ctx *context.Context) bool {
 }
 
 type (
-
 	// Fields is a type alias for memstore.Store, used to set
 	// more than one field at serve-time. Same as FieldExtractor.
 	Fields = memstore.Store

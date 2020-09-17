@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/accesslog"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/sessions"
 
@@ -12,24 +13,32 @@ import (
 
 func main() {
 	app := iris.New()
-	app.Use(recover.New())
 	app.Logger().SetLevel("debug")
-	// Disable verbose logging of routes for this and its children parties
-	// when the log level is "debug": app.SetRoutesNoLog(true)
-	mvc.Configure(app.Party("/basic"), basicMVC)
+
+	basic := app.Party("/basic")
+	{
+		// Register middlewares to run under the /basic path prefix.
+		ac := accesslog.File("./basic_access.log")
+		defer ac.Close()
+
+		basic.UseRouter(ac.Handler)
+		basic.UseRouter(recover.New())
+
+		mvc.Configure(basic, basicMVC)
+	}
 
 	app.Listen(":8080")
 }
 
 func basicMVC(app *mvc.Application) {
 	// Disable verbose logging of controllers for this and its children mvc apps
-	// when the log level is "debug": app.SetControllersNoLog(true)
+	// when the log level is "debug":
+	app.SetControllersNoLog(true)
 
-	// You can use normal middlewares at MVC apps of course.
-	app.Router.Use(func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
+	// You can still register middlewares at MVC apps of course.
+	// The app.Router returns the Party that this MVC
+	// was registered on.
+	// app.Router.UseRouter/Use/....
 
 	// Register dependencies which will be binding to the controller(s),
 	// can be either a function which accepts an iris.Context and returns a single value (dynamic binding)
@@ -37,6 +46,7 @@ func basicMVC(app *mvc.Application) {
 	app.Register(
 		sessions.New(sessions.Config{}).Start,
 		&prefixedLogger{prefix: "DEV"},
+		accesslog.GetFields, // Set custom fields through a controller or controller's methods.
 	)
 
 	// GET: http://localhost:8080/basic
@@ -73,9 +83,9 @@ func (s *prefixedLogger) Log(msg string) {
 }
 
 type basicController struct {
-	Logger LoggerService
-
-	Session *sessions.Session
+	Logger    LoggerService     // the static logger service attached to this app.
+	Session   *sessions.Session // current HTTP session.
+	LogFields *accesslog.Fields // accesslog middleware custom fields.
 }
 
 func (c *basicController) BeforeActivation(b mvc.BeforeActivation) {
@@ -90,6 +100,7 @@ func (c *basicController) AfterActivation(a mvc.AfterActivation) {
 
 func (c *basicController) Get() string {
 	count := c.Session.Increment("count", 1)
+	c.LogFields.Set("count", count)
 
 	body := fmt.Sprintf("Hello from basicController\nTotal visits from you: %d", count)
 	c.Logger.Log(body)

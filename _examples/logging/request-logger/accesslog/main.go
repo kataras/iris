@@ -159,6 +159,16 @@ func sessionHandler(ctx iris.Context) {
 	ctx.WriteString("OK")
 }
 
+type user struct {
+	ID       string
+	Username string
+}
+
+// Log custom structs, they can implement the fmt.Stringer interface too.
+func (u user) String() string {
+	return u.ID + ":" + u.Username
+}
+
 func fieldsHandler(ctx iris.Context) {
 	start := time.Now()
 	// simulate a heavy job...
@@ -168,6 +178,14 @@ func fieldsHandler(ctx iris.Context) {
 	// and use it to set custom log values.
 	logFields := accesslog.GetFields(ctx)
 	logFields.Set("job_latency", end.Round(time.Second))
+
+	// Simulate a database fetch or anything
+	// to get a "user" and log it:
+	u := user{
+		ID:       "user-id",
+		Username: "user-name",
+	}
+	logFields.Set("user", u)
 
 	ctx.WriteString("OK")
 }
