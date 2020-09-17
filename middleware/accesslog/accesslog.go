@@ -308,6 +308,7 @@ func New(w io.Writer) *AccessLog {
 	host.RegisterOnInterrupt(func() {
 		ac.Close()
 	})
+
 	return ac
 }
 
@@ -474,18 +475,19 @@ func (ac *AccessLog) setOutput(reset bool, writers ...io.Writer) {
 		}
 	}
 
-	// And finally, wait before exit this method
-	// until previous writer's closers and flush finish.
-	for _, flusher := range flushers {
-		if flusher != nil {
-			flusher.Flush()
+	if reset {
+		// And finally, wait before exit this method
+		// until previous writer's closers and flush finish.
+		for _, flusher := range flushers {
+			if flusher != nil {
+				flusher.Flush()
+			}
 		}
-	}
-	for _, closer := range closers {
-		if closer != nil {
-			closer.Close()
+		for _, closer := range closers {
+			if closer != nil {
+				closer.Close()
+			}
 		}
-
 	}
 }
 

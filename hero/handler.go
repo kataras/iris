@@ -41,6 +41,19 @@ func (fn ErrorHandlerFunc) HandleError(ctx *context.Context, err error) {
 	fn(ctx, err)
 }
 
+// String implements the fmt.Stringer interface.
+// Returns the text corresponding to this status code, e.g. "Not Found".
+// Same as iris.StatusText(int(code)).
+func (code Code) String() string {
+	return context.StatusText(int(code))
+}
+
+// Value returns the underline int value.
+// Same as int(code).
+func (code Code) Value() int {
+	return int(code)
+}
+
 var (
 	// ErrSeeOther may be returned from a dependency handler to skip a specific dependency
 	// based on custom logic.

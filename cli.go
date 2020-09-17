@@ -8,13 +8,11 @@ package iris
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
 	"gopkg.in/yaml.v3"
 )
 
@@ -29,7 +27,7 @@ import (
 // at runtime it will fire 404 instead of redirecting to the correct port (that's a TODO).
 //
 // tryInjectLiveReload runs right before Build -> BuildRouter.
-func injectLiveReload(contextPool *context.Pool, router *router.Router) (bool, error) {
+func injectLiveReload(r Party) (bool, error) {
 	conf := struct {
 		Running    bool `yaml:"Running,omitempty"`
 		LiveReload struct {
@@ -88,11 +86,9 @@ func injectLiveReload(contextPool *context.Pool, router *router.Router) (bool, e
 
 	bodyCloseTag := []byte("</body>")
 
-	wrapper := func(w http.ResponseWriter, r *http.Request, _ http.HandlerFunc) {
-		ctx := contextPool.Acquire(w, r)
-		rec := ctx.Recorder()  // Record everything and write all in once at the Context release.
-		router.ServeHTTPC(ctx) // We directly call request handler with Context.
-
+	r.UseRouter(func(ctx Context) {
+		rec := ctx.Recorder() // Record everything and write all in once at the Context release.
+		ctx.Next()            // call the next, so this is a 'done' handler.
 		if strings.HasPrefix(ctx.GetContentType(), "text/html") {
 			// delete(rec.Header(), context.ContentLengthHeaderKey)
 
@@ -111,10 +107,6 @@ func injectLiveReload(contextPool *context.Pool, router *router.Router) (bool, e
 				rec.Header().Set(context.ContentLengthHeaderKey, fmt.Sprintf("%d", len(rec.Body())))
 			}
 		}
-
-		contextPool.Release(ctx)
-	}
-
-	router.AddRouterWrapper(wrapper)
+	})
 	return true, nil
 }

@@ -623,7 +623,7 @@ func (app *Application) Build() error {
 
 	if !app.Router.Downgraded() {
 		// router
-		if _, err := injectLiveReload(app.ContextPool, app.Router); err != nil {
+		if _, err := injectLiveReload(app); err != nil {
 			app.logger.Errorf("LiveReload: init: failed: %v", err)
 			return err
 		}
