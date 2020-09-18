@@ -10,7 +10,7 @@ services:
     ports:
       - 9092:9092
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 10.122.1.109 # replace that with your own local ipv4 addr.
+      KAFKA_ADVERTISED_HOST_NAME: 10.122.1.142 # replace that with your own local ipv4 addr.
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
   # kafka:
   #   image: confluentinc/cp-kafka:5.5.0

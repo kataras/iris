@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -86,8 +85,8 @@ func main() {
 	app.Logger().Infof("Brokers: %s", strings.Join(brokers, ", "))
 	// GET      : http://localhost:8080
 	// POST, GET: http://localhost:8080/api/v1/topics
-	// POST     : http://localhost:8080/apiv1/topics/{topic}/produce?key=my-key
-	// GET      : http://localhost:8080/apiv1/topics/{topic}/consume?partition=0&offset=0
+	// POST     : http://localhost:8080/api/v1/topics/{topic}/produce?key=my-key
+	// GET      : http://localhost:8080/api/v1/topics/{topic}/consume?partition=0&offset=0
 	app.Listen(":8080")
 }
 
@@ -138,7 +137,7 @@ func docsHandler(ctx iris.Context) {
 
 type httpError struct {
 	Code   int    `json:"code"`
-	Reason string `json:"reason"`
+	Reason string `json:"reason,omitempty"`
 }
 
 func (h httpError) Error() string {
@@ -226,10 +225,8 @@ func postTopicsHandler(ctx iris.Context) {
 		return
 	}
 
-	// unnecessary statement but it's here to show you that topic is created,
-	// depending on your API expectations and how you used to work
-	// you may want to change the status code to something like `iris.StatusCreated`.
-	ctx.StatusCode(iris.StatusOK)
+	ctx.StatusCode(iris.StatusCreated)
+	ctx.Writef("Topic %q created", t.Topic)
 }
 
 func getKafkaTopics() ([]string, error) {
@@ -279,7 +276,7 @@ func postTopicProduceHandler(ctx iris.Context) {
 	key := ctx.URLParamDefault("key", "default")
 
 	// read the request data and store them as they are (not recommended in production ofcourse, do your own checks here).
-	body, err := ioutil.ReadAll(ctx.Request().Body)
+	body, err := ctx.GetBody()
 	if err != nil {
 		fail(ctx, iris.StatusUnprocessableEntity, "unable to read your data: %v", err)
 		return
@@ -347,7 +344,7 @@ func getTopicConsumeSSEHandler(ctx iris.Context) {
 	}
 
 	// `OnClose` fires when the request is finally done (all data read and handler exits) or interrupted by the user.
-	ctx.OnClose(func() {
+	ctx.OnClose(func(_ iris.Context) {
 		ctx.Application().Logger().Warnf("a client left")
 
 		// Close shuts down the consumer. It must be called after all child

@@ -12,6 +12,22 @@ Read the [code](main.go).
 $ docker-compose up
 ```
 
+### Troubleshooting
+
+On windows, if you get an error of `An attempt was made to access a socket in a way forbidden by its access permissions`
+
+Solution:
+
+1. Stop Docker
+2. Open CMD with Administrator privileges and execute the following commands:
+
+```sh
+$ dism.exe /Online /Disable-Feature:Microsoft-Hyper-V
+$ netsh int ipv4 add excludedportrange protocol=tcp startport=2181 numberofports=1
+$ dism.exe /Online /Enable-Feature:Microsoft-Hyper-V /All
+$ docker-compose up --build
+```
+
 ## Manually
 
 Install & run Kafka and Zookeper locally and then:
