@@ -11,12 +11,12 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
+	github.com/flosch/pongo2/v4 v4.0.0
 	github.com/gomodule/redigo v1.8.2
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-version v1.2.1
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
-	github.com/iris-contrib/pongo2 v0.0.1
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.3
@@ -38,7 +38,7 @@ require (
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73
-	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009
+	golang.org/x/sys v0.0.0-20200918174421-af09f7315aff
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.25.0

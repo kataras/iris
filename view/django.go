@@ -12,7 +12,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/iris-contrib/pongo2"
+	"github.com/flosch/pongo2/v4"
 )
 
 type (
