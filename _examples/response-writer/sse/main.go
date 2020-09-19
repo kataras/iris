@@ -76,7 +76,8 @@ func (b *Broker) ServeHTTP(ctx iris.Context) {
 
 	flusher, ok := ctx.ResponseWriter().Flusher()
 	if !ok {
-		ctx.StopWithText(iris.StatusHTTPVersionNotSupported, "Streaming unsupported!")
+		ctx.StatusCode(iris.StatusHTTPVersionNotSupported)
+		ctx.WriteString("Streaming unsupported!")
 		return
 	}
 
@@ -95,7 +96,7 @@ func (b *Broker) ServeHTTP(ctx iris.Context) {
 	b.newClients <- messageChan
 
 	// Listen to connection close and when the entire request handler chain exits(this handler here) and un-register messageChan.
-	ctx.OnClose(func(iris.Context) {
+	ctx.OnClose(func() {
 		// Remove this client from the map of connected clients
 		// when this handler exits.
 		b.closingClients <- messageChan
