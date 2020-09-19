@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	// optionally, register filters like `timesince`.
-	_ "github.com/flosch/pongo2-addons/v4"
+	_ "github.com/iris-contrib/pongo2-addons/v4"
 )
 
 var startTime = time.Now()
