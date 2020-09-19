@@ -5,23 +5,11 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
+	"path"
 	"time"
 
 	"github.com/kataras/iris/v12/core/netutil"
 )
-
-func singleJoiningSlash(a, b string) string {
-	aslash := strings.HasSuffix(a, "/")
-	bslash := strings.HasPrefix(b, "/")
-	switch {
-	case aslash && bslash:
-		return a + b[1:]
-	case !aslash && !bslash:
-		return a + "/" + b
-	}
-	return a + b
-}
 
 // ProxyHandler returns a new ReverseProxy that rewrites
 // URLs to the scheme, host, and base path provided in target. If the
@@ -35,7 +23,9 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.Host = target.Host
-		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
+
+		req.URL.Path = path.Join(target.Path, req.URL.Path)
+
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
 		} else {
@@ -110,7 +100,7 @@ func RedirectHandler(target *url.URL, redirectStatus int) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		redirectTo := singleJoiningSlash(targetURI, r.URL.Path)
+		redirectTo := path.Join(targetURI, r.URL.Path)
 		if len(r.URL.RawQuery) > 0 {
 			redirectTo += "?" + r.URL.RawQuery
 		}

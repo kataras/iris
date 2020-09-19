@@ -82,6 +82,7 @@
         * [Listen and render Logs to a Client](logging/request-logger/accesslog-broker/main.go)
         * [The CSV Formatter](logging/request-logger/accesslog-csv/main.go)
         * [Create your own Formatter](logging/request-logger/accesslog-formatter/main.go)
+        * [Root and Proxy AccessLog instances](logging/request-logger/accesslog-proxy/main.go)
         <!-- * [Log Requests to a JSON File](logging/request-logger/request-logger-file-json/main.go)  -->
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)

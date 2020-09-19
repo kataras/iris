@@ -6,6 +6,7 @@ import (
 	stdContext "context"
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httputil"
 	"os"
 	"strconv"
@@ -788,7 +789,9 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 				bytesReceived = requestBodyLength // store it, if the total is enabled then this will be overridden.
 			}
 			if err != nil && ac.RequestBody {
-				requestBody = ac.getErrorText(err)
+				if err != http.ErrBodyReadAfterClose { // if body was already closed, don't send it as error.
+					requestBody = ac.getErrorText(err)
+				}
 			} else if requestBodyLength > 0 {
 				if ac.RequestBody {
 					if ac.BodyMinify {

@@ -397,8 +397,12 @@ func StripPrefix(prefix string, h context.Handler) context.Handler {
 	canonicalPrefix = toWebPath(canonicalPrefix)
 
 	return func(ctx *context.Context) {
-		if p := strings.TrimPrefix(ctx.Request().URL.Path, canonicalPrefix); len(p) < len(ctx.Request().URL.Path) {
-			ctx.Request().URL.Path = p
+		u := ctx.Request().URL
+		if p := strings.TrimPrefix(u.Path, canonicalPrefix); len(p) < len(u.Path) {
+			if p == "" {
+				p = "/"
+			}
+			u.Path = p
 			h(ctx)
 		} else {
 			ctx.NotFound()
