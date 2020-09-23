@@ -1813,8 +1813,11 @@ func (ctx *Context) PostValueDefault(name string, def string) string {
 	if err != nil {
 		return def // it returns "def" even if it's empty here.
 	}
+	if len(values) > 0 {
+		return values[len(values)-1]
+	}
 
-	return values[len(values)-1]
+	return def
 }
 
 // PostValue returns the last parsed form data from POST, PATCH,
