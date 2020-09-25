@@ -64,7 +64,9 @@ With your help, we can improve Open Source web development for everyone!
 ## 📖 Learning Iris
 
 ```sh
-$ go get github.com/kataras/iris/v12@v12.2.0-alpha
+$ mkdir myapp
+$ go mod init myapp
+$ go get github.com/kataras/iris/v12@master
 ```
 
 Iris contains extensive and thorough **[documentation](https://www.iris-go.com/docs)** making it easy to get started with the framework.
