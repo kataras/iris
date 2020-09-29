@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/jet/v5 v5.0.2
+	github.com/CloudyKit/jet/v5 v5.0.3
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/andybalholm/brotli v1.0.1-0.20200619015827-c3da72aa01ed
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
@@ -19,7 +19,7 @@ require (
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.10
-	github.com/kataras/blocks v0.0.3
+	github.com/kataras/blocks v0.0.4
 	github.com/kataras/golog v0.1.5
 	github.com/kataras/neffos v0.0.16
 	github.com/kataras/pio v0.0.10
@@ -32,13 +32,13 @@ require (
 	github.com/russross/blackfriday/v2 v2.0.1
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693
-	github.com/tdewolff/minify/v2 v2.9.4
+	github.com/tdewolff/minify/v2 v2.9.5
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20200904194848-62affa334b73
-	golang.org/x/sys v0.0.0-20200918174421-af09f7315aff
+	golang.org/x/net v0.0.0-20200927032502-5d4f70055728
+	golang.org/x/sys v0.0.0-20200929083018-4d22bbb62b3c
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.25.0
