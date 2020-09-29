@@ -176,8 +176,9 @@
     * [Client-Side](compression/client/main.go)
     * [Client-Side (using Iris)](compress/client-using-iris/main.go)
 * Localization and Internationalization
-    * [i18n](i18n)
-    * [i18n templates and functions](i18n/i18n-template)
+    * [Basic](i18n/basic)
+    * [Ttemplates and Functions](i18n/template)
+    * [Pluralization and Variables](i18n/plurals)
 * Authentication, Authorization & Bot Detection 
     * [Basic Authentication](auth/basicauth/main.go)
     * [CORS](auth/cors)

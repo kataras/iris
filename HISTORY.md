@@ -23,8 +23,310 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Next
 
-This release introduces new features and some breaking changes inside the `mvc` and `hero` packages.
-The codebase for dependency injection has been simplified a lot (fewer LOCs and easier to read and follow up).
+This release introduces new features and some breaking changes.
+The codebase for Dependency Injection, Internationalization and localization and more have been simplified a lot (fewer LOCs and easier to read and follow up).
+
+## Fixes and Improvements
+
+- Add builtin support for **[i18n pluralization](https://github.com/kataras/iris/tree/master/_examples/i18n/plurals)**. Please check out the [following yaml locale example](https://github.com/kataras/iris/tree/master/_examples/i18n/plurals/locales/en-US/welcome.yml) to see an overview of the supported formats.
+- Fix [#1650](https://github.com/kataras/iris/issues/1650)
+- Fix [#1649](https://github.com/kataras/iris/issues/1649)
+- Fix [#1648](https://github.com/kataras/iris/issues/1648)
+- Fix [#1641](https://github.com/kataras/iris/issues/1641)
+
+- Add `Party.SetRoutesNoLog(disable bool) Party` to disable (the new) verbose logging of next routes.
+- Add `mvc.Application.SetControllersNoLog(disable bool) *mvc.Application` to disable (the new) verbose logging of next controllers. As requested at [#1630](https://github.com/kataras/iris/issues/1630).
+
+- Fix [#1621](https://github.com/kataras/iris/issues/1621) and add a new `cache.WithKey` to customize the cached entry key.
+
+- Add a `Response() *http.Response` to the Response Recorder.
+- Fix Response Recorder `Flush` when transfer-encoding is `chunked`.
+- Fix Response Recorder `Clone` concurrent access afterwards.
+
+- Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/master/_examples/view/parse-template).
+- Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Amber`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
+
+- Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
+
+- Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Screens:
+
+#### DBUG Routes (1)
+
+![DBUG routes 1](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
+
+#### DBUG Routes (2)
+
+![DBUG routes 2](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
+
+#### DBUG Routes (3)
+
+![DBUG routes with Controllers](https://iris-go.com/images/v12.2.0-dbug3.png?v=0)
+
+- Update the [pprof middleware](https://github.com/kataras/iris/tree/master/middleware/pprof).
+
+- New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/master/_examples/mvc/error-handler-http/main.go).
+
+![MVC: HTTP Error Handler Method](https://user-images.githubusercontent.com/22900943/90948989-e04cd300-e44c-11ea-8c97-54d90fb0cbb6.png)
+
+- New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/master/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite).
+
+```yml
+RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
+  # Redirects /seo/* to /*
+  - 301 /seo/(.*) /$1
+
+  # Redirects /docs/v12* to /docs
+  - 301 /docs/v12(.*) /docs
+
+  # Redirects /old(.*) to /
+  - 301 /old(.*) /
+
+  # Redirects http or https://test.* to http or https://newtest.*
+  - 301 ^(http|https)://test.(.*) $1://newtest.$2
+
+  # Handles /*.json or .xml as *?format=json or xml,
+  # without redirect. See /users route.
+  # When Code is 0 then it does not redirect the request,
+  # instead it changes the request URL
+  # and leaves a route handle the request.
+  - 0 /(.*).(json|xml) /$1?format=$2
+
+# Redirects root domain to www.
+# Creation of a www subdomain inside the Application is unnecessary,
+# all requests are handled by the root Application itself.
+PrimarySubdomain: www
+```
+
+- New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
+
+![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
+
+- Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/master/_examples/i18n/basic/main.go#L28-L50).
+
+- Fix [#1594](https://github.com/kataras/iris/issues/1594) and add a new `PathAfterHandler` which can be set to true to enable the old behavior (not recommended though).
+
+- New [apps](https://github.com/kataras/iris/tree/master/apps) subpackage. [Example of usage](https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect/multi-instances).
+
+![apps image example](https://user-images.githubusercontent.com/22900943/90459288-8a54f400-e109-11ea-8dea-20631975c9fc.png)
+
+- Fix `AutoTLS` when used with `iris.TLSNoRedirect` [*](https://github.com/kataras/iris/issues/1577). The `AutoTLS` runner can be customized through the new `iris.AutoTLSNoRedirect` instead, read its go documentation. Example of having both TLS and non-TLS versions of the same application without conflicts with letsencrypt `./well-known` path:
+
+![](https://iris-go.com/images/github/autotls-1.png)
+
+```go
+package main
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/kataras/iris/v12"
+)
+
+func main() {
+	app := iris.New()
+	app.Logger().SetLevel("debug")
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{
+			"time": time.Now().Unix(),
+			"tls":  ctx.Request().TLS != nil,
+		})
+	})
+
+	var fallbackServer = func(acme func(http.Handler) http.Handler) *http.Server {
+		srv := &http.Server{Handler: acme(app)}
+		go srv.ListenAndServe()
+		return srv
+	}
+
+	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com",
+		iris.AutoTLSNoRedirect(fallbackServer)))
+}
+```
+
+- `iris.Minify` middleware to minify responses based on their media/content-type.
+
+- `Context.OnCloseErr` and `Context.OnConnectionCloseErr` - to call a function of `func() error`  instead of an `iris.Handler` when request is closed or manually canceled.
+
+- `Party.UseError(...Handler)` - to register handlers to run before any http errors (e.g. before `OnErrorCode/OnAnyErrorCode` or default error codes when no handler is responsible to handle a specific http status code).
+
+- `Party.UseRouter(...Handler) and Party.ResetRouterFilters()` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
+
+- `*versioning.Group` type is a full `Party` now.
+
+- `Party.UseOnce` - either inserts a middleware, or on the basis of the middleware already existing, replace that existing middleware instead.
+
+- Ability to register a view engine per group of routes or for the current chain of handlers through `Party.RegisterView` and `Context.ViewEngine` respectfully.
+
+- Add [Blocks](_examples/view/template_blocks_0) template engine. <!-- Reminder for @kataras: follow https://github.com/flosch/pongo2/pull/236#issuecomment-668950566 discussion so we can get back on using the original pongo2 repository as they fixed the issue about an incompatible 3rd party package (although they need more fixes, that's why I commented there) -->
+
+- Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements.
+
+- Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
+
+[![](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)
+
+- [gRPC](https://grpc.io/) features:
+    - New Router [Wrapper](middleware/grpc).
+    - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
+
+- Add `Configuration.RemoteAddrHeadersForce bool` to force `Context.RemoteAddr() string` to return the first entry of request headers as a fallback instead of the `Request.RemoteAddr` one, as requested at: [1567#issuecomment-663972620](https://github.com/kataras/iris/issues/1567#issuecomment-663972620).
+
+- Fix [#1569#issuecomment-663739177](https://github.com/kataras/iris/issues/1569#issuecomment-663739177).
+
+- Fix [#1564](https://github.com/kataras/iris/issues/1564).
+
+- Fix [#1553](https://github.com/kataras/iris/issues/1553).
+
+- New `DirOptions.Cache` to cache assets in-memory among with their compressed contents (in order to be ready to served if client ask). Learn more about this feature by reading [all #1556 comments](https://github.com/kataras/iris/issues/1556#issuecomment-661057446). Usage:
+
+```go
+var dirOpts = DirOptions{
+    // [...other options]
+    Cache: DirCacheOptions{
+        Enable: true,
+        // Don't compress files smaller than 300 bytes.
+        CompressMinSize: 300,
+        // Ignore compress already compressed file types
+        // (some images and pdf).
+        CompressIgnore: iris.MatchImagesAssets,
+        // Gzip, deflate, br(brotli), snappy.
+        Encodings: []string{"gzip", "deflate", "br", "snappy"},
+        // Log to the stdout the total reduced file size.
+        Verbose: 1,
+    },
+}
+```
+
+- New `DirOptions.PushTargets` and `PushTargetsRegexp` to push index' assets to the client without additional requests. Inspirated by issue [#1562](https://github.com/kataras/iris/issues/1562). Example matching all `.js, .css and .ico` files (recursively):
+
+```go
+var dirOpts = iris.DirOptions{
+    // [...other options]
+    IndexName: "/index.html",
+    PushTargetsRegexp: map[string]*regexp.Regexp{
+        "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
+        // OR:
+        // "/": iris.MatchCommonAssets,
+    },
+    Compress: true,
+}
+```
+
+- Update jet parser to v5.0.2, closes [#1551](https://github.com/kataras/iris/issues/1551). It contains two breaking changes by its author:
+    - Relative paths on `extends, import, include...` tmpl functions, e.g. `{{extends "../layouts/application.jet"}}` instead of `layouts/application.jet`
+    - the new [jet.Ranger](https://github.com/CloudyKit/jet/pull/165) interface now requires a `ProvidesIndex() bool` method too
+    - Example has been [updated](https://github.com/kataras/iris/tree/master/_examples/view/template_jet_0)
+
+- Fix [#1552](https://github.com/kataras/iris/issues/1552).
+
+- Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
+    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/master/_examples/file-server/file-server).
+
+- Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
+
+- Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/master/_examples/mvc/versioned-controller/main.go).
+
+- Fix [#1539](https://github.com/kataras/iris/issues/1539).
+
+- New [rollbar example](https://github.com/kataras/iris/blob/master/_examples/logging/rollbar/main.go).
+
+- New builtin [requestid](https://github.com/kataras/iris/tree/master/middleware/requestid) middleware.
+
+- New builtin [JWT](https://github.com/kataras/iris/tree/master/middleware/jwt) middleware based on [square/go-jose](https://github.com/square/go-jose) featured with optional encryption to set claims with sensitive data when necessary.
+
+- New `iris.RouteOverlap` route registration rule. `Party.SetRegisterRule(iris.RouteOverlap)` to allow overlapping across multiple routes for the same request subdomain, method, path. See [1536#issuecomment-643719922](https://github.com/kataras/iris/issues/1536#issuecomment-643719922). This allows two or more **MVC Controllers** to listen on the same path based on one or more registered dependencies (see [_examples/mvc/authenticated-controller](https://github.com/kataras/iris/tree/master/_examples/mvc/authenticated-controller)).
+
+- `Context.ReadForm` now can return an `iris.ErrEmptyForm` instead of `nil` when the new `Configuration.FireEmptyFormError` is true  (when `iris.WithEmptyFormError` is set) on missing form body to read from.
+
+- `Configuration.EnablePathIntelligence | iris.WithPathIntelligence` to enable path intelligence automatic path redirection on the most closest path (if any), [example]((https://github.com/kataras/iris/blob/master/_examples/routing/intelligence/main.go)
+
+- Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
+- `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
+
+- `iris.TLS` can now accept certificates in form of raw `[]byte` contents too.
+- `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS`, e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`. There is `iris.AutoTLSNoRedirect` option for `AutoTLS` too.
+
+- Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
+
+- Server will not return neither log the `ErrServerClosed` error if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
+
+- Finally, Log level's and Route debug information colorization is respected across outputs. Previously if the application used more than one output destination (e.g. a file through `app.Logger().AddOutput`) the color support was automatically disabled from all, including the terminal one, this problem is fixed now. Developers can now see colors in their terminals while log files are kept with clear text.
+
+- New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
+
+- New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/request-body/read-json-struct-validation) example was updated.
+
+- A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
+
+- `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"    "` (four spaces) and `"  "` respectfully otherwise it is empty or the provided value.
+
+- Hero Handlers (and `app.ConfigureContainer().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
+
+- Improve Remote Address parsing as requested at: [#1453](https://github.com/kataras/iris/issues/1453). Add `Configuration.RemoteAddrPrivateSubnets` to exclude those addresses when fetched by `Configuration.RemoteAddrHeaders` through `context.RemoteAddr() string`.
+
+- Fix [#1487](https://github.com/kataras/iris/issues/1487).
+
+- Fix [#1473](https://github.com/kataras/iris/issues/1473).
+
+## New Package-level Variables
+
+- `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
+- `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
+- `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/master/_examples/file-server/http2push/main.go).
+- `iris.Compression` middleware to compress responses and decode compressed request data respectfully.
+- `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
+- `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
+- `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
+
+## New Context Methods
+
+- `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
+- `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
+- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `iris.IsErrPrivate` function and `iris.ErrPrivate` interface have been introduced. 
+- `Context.RecordBody()` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
+- `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
+- `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go).
+- `Context.ReadParams(ptr interface{}) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go).
+- `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
+- `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas.
+- `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
+- `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
+- `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
+- `Context.SetErr(error)` and `Context.GetErr() error` helpers.
+- `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`.
+- `Context.Clone() Context` returns a copy of the Context safe for concurrent access.
+- `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
+- `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
+- `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).
+- `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
+- `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
+- `Context.Scheme() string` returns the full scheme of the request URL.
+- `Context.SubdomainFull() string` returns the full subdomain(s) part of the host (`host[0:rootLevelDomain]`).
+- `Context.Domain() string` returns the root level domain.
+- `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
+- `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
+- `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
+- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
+- `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
+- `Context.IsGRPC() bool` reports whether the request came from a gRPC client
+- `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
+- `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
+- `StopWithText(statusCode int, format string, args ...interface{})` stops the handlers chain, writes thre status code and a plain text message
+- `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
+- `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
+- `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
+- `Context.Protobuf(proto.Message)` sends protobuf to the client (note that the `Context.JSON` is able to send protobuf as JSON)
+- `Context.MsgPack(interface{})` sends msgpack format data to the client
+- `Context.ReadProtobuf(ptr)` binds request body to a proto message
+- `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
+- `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
+- `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
+- `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
+- `Context.Controller() reflect.Value` returns the current MVC Controller value.
+
+## MVC & Dependency Injection
 
 The new release contains a fresh new and awesome feature....**a function dependency can accept previous registered dependencies and update or return a new value of any type**.
 
@@ -362,302 +664,9 @@ Response:
 }
 ```
 
-Other Improvements:
+## Breaking Changes
 
-- Add `Party.SetRoutesNoLog(disable bool) Party` to disable (the new) verbose logging of next routes.
-- Add `mvc.Application.SetControllersNoLog(disable bool) *mvc.Application` to disable (the new) verbose logging of next controllers. As requested at [#1630](https://github.com/kataras/iris/issues/1630).
-
-- Fix [#1621](https://github.com/kataras/iris/issues/1621) and add a new `cache.WithKey` to customize the cached entry key.
-
-- Add a `Response() *http.Response` to the Response Recorder.
-- Fix Response Recorder `Flush` when transfer-encoding is `chunked`.
-- Fix Response Recorder `Clone` concurrent access afterwards.
-
-- Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/master/_examples/view/parse-template).
-- Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Amber`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
-
-- Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
-
-- Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Screens:
-
-#### DBUG Routes (1)
-
-![DBUG routes 1](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
-
-#### DBUG Routes (2)
-
-![DBUG routes 2](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
-
-#### DBUG Routes (3)
-
-![DBUG routes with Controllers](https://iris-go.com/images/v12.2.0-dbug3.png?v=0)
-
-- Update the [pprof middleware](https://github.com/kataras/iris/tree/master/middleware/pprof).
-
-- New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/master/_examples/mvc/error-handler-http/main.go).
-
-![MVC: HTTP Error Handler Method](https://user-images.githubusercontent.com/22900943/90948989-e04cd300-e44c-11ea-8c97-54d90fb0cbb6.png)
-
-- New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/master/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite).
-
-```yml
-RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
-  # Redirects /seo/* to /*
-  - 301 /seo/(.*) /$1
-
-  # Redirects /docs/v12* to /docs
-  - 301 /docs/v12(.*) /docs
-
-  # Redirects /old(.*) to /
-  - 301 /old(.*) /
-
-  # Redirects http or https://test.* to http or https://newtest.*
-  - 301 ^(http|https)://test.(.*) $1://newtest.$2
-
-  # Handles /*.json or .xml as *?format=json or xml,
-  # without redirect. See /users route.
-  # When Code is 0 then it does not redirect the request,
-  # instead it changes the request URL
-  # and leaves a route handle the request.
-  - 0 /(.*).(json|xml) /$1?format=$2
-
-# Redirects root domain to www.
-# Creation of a www subdomain inside the Application is unnecessary,
-# all requests are handled by the root Application itself.
-PrimarySubdomain: www
-```
-
-- New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
-
-![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
-
-- Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/master/_examples/i18n/main.go#L28-L50).
-
-- Fix [#1594](https://github.com/kataras/iris/issues/1594) and add a new `PathAfterHandler` which can be set to true to enable the old behavior (not recommended though).
-
-- New [apps](https://github.com/kataras/iris/tree/master/apps) subpackage. [Example of usage](https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect/multi-instances).
-
-![apps image example](https://user-images.githubusercontent.com/22900943/90459288-8a54f400-e109-11ea-8dea-20631975c9fc.png)
-
-- Fix `AutoTLS` when used with `iris.TLSNoRedirect` [*](https://github.com/kataras/iris/issues/1577). The `AutoTLS` runner can be customized through the new `iris.AutoTLSNoRedirect` instead, read its go documentation. Example of having both TLS and non-TLS versions of the same application without conflicts with letsencrypt `./well-known` path:
-
-![](https://iris-go.com/images/github/autotls-1.png)
-
-```go
-package main
-
-import (
-	"net/http"
-	"time"
-
-	"github.com/kataras/iris/v12"
-)
-
-func main() {
-	app := iris.New()
-	app.Logger().SetLevel("debug")
-
-	app.Get("/", func(ctx iris.Context) {
-		ctx.JSON(iris.Map{
-			"time": time.Now().Unix(),
-			"tls":  ctx.Request().TLS != nil,
-		})
-	})
-
-	var fallbackServer = func(acme func(http.Handler) http.Handler) *http.Server {
-		srv := &http.Server{Handler: acme(app)}
-		go srv.ListenAndServe()
-		return srv
-	}
-
-	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com",
-		iris.AutoTLSNoRedirect(fallbackServer)))
-}
-```
-
-- `iris.Minify` middleware to minify responses based on their media/content-type.
-
-- `Context.OnCloseErr` and `Context.OnConnectionCloseErr` - to call a function of `func() error`  instead of an `iris.Handler` when request is closed or manually canceled.
-
-- `Party.UseError(...Handler)` - to register handlers to run before any http errors (e.g. before `OnErrorCode/OnAnyErrorCode` or default error codes when no handler is responsible to handle a specific http status code).
-
-- `Party.UseRouter(...Handler) and Party.ResetRouterFilters()` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
-
-- `*versioning.Group` type is a full `Party` now.
-
-- `Party.UseOnce` - either inserts a middleware, or on the basis of the middleware already existing, replace that existing middleware instead.
-
-- Ability to register a view engine per group of routes or for the current chain of handlers through `Party.RegisterView` and `Context.ViewEngine` respectfully.
-
-- Add [Blocks](_examples/view/template_blocks_0) template engine. <!-- Reminder for @kataras: follow https://github.com/flosch/pongo2/pull/236#issuecomment-668950566 discussion so we can get back on using the original pongo2 repository as they fixed the issue about an incompatible 3rd party package (although they need more fixes, that's why I commented there) -->
-
-- Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements.
-
-- Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
-
-[![](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)
-
-- [gRPC](https://grpc.io/) features:
-    - New Router [Wrapper](middleware/grpc).
-    - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
-
-- Add `Configuration.RemoteAddrHeadersForce bool` to force `Context.RemoteAddr() string` to return the first entry of request headers as a fallback instead of the `Request.RemoteAddr` one, as requested at: [1567#issuecomment-663972620](https://github.com/kataras/iris/issues/1567#issuecomment-663972620).
-
-- Fix [#1569#issuecomment-663739177](https://github.com/kataras/iris/issues/1569#issuecomment-663739177).
-
-- Fix [#1564](https://github.com/kataras/iris/issues/1564).
-
-- Fix [#1553](https://github.com/kataras/iris/issues/1553).
-
-- New `DirOptions.Cache` to cache assets in-memory among with their compressed contents (in order to be ready to served if client ask). Learn more about this feature by reading [all #1556 comments](https://github.com/kataras/iris/issues/1556#issuecomment-661057446). Usage:
-
-```go
-var dirOpts = DirOptions{
-    // [...other options]
-    Cache: DirCacheOptions{
-        Enable: true,
-        // Don't compress files smaller than 300 bytes.
-        CompressMinSize: 300,
-        // Ignore compress already compressed file types
-        // (some images and pdf).
-        CompressIgnore: iris.MatchImagesAssets,
-        // Gzip, deflate, br(brotli), snappy.
-        Encodings: []string{"gzip", "deflate", "br", "snappy"},
-        // Log to the stdout the total reduced file size.
-        Verbose: 1,
-    },
-}
-```
-
-- New `DirOptions.PushTargets` and `PushTargetsRegexp` to push index' assets to the client without additional requests. Inspirated by issue [#1562](https://github.com/kataras/iris/issues/1562). Example matching all `.js, .css and .ico` files (recursively):
-
-```go
-var dirOpts = iris.DirOptions{
-    // [...other options]
-    IndexName: "/index.html",
-    PushTargetsRegexp: map[string]*regexp.Regexp{
-        "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
-        // OR:
-        // "/": iris.MatchCommonAssets,
-    },
-    Compress: true,
-}
-```
-
-- Update jet parser to v5.0.2, closes [#1551](https://github.com/kataras/iris/issues/1551). It contains two breaking changes by its author:
-    - Relative paths on `extends, import, include...` tmpl functions, e.g. `{{extends "../layouts/application.jet"}}` instead of `layouts/application.jet`
-    - the new [jet.Ranger](https://github.com/CloudyKit/jet/pull/165) interface now requires a `ProvidesIndex() bool` method too
-    - Example has been [updated](https://github.com/kataras/iris/tree/master/_examples/view/template_jet_0)
-
-- Fix [#1552](https://github.com/kataras/iris/issues/1552).
-
-- Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
-    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/master/_examples/file-server/file-server).
-
-- Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
-
-- Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/master/_examples/mvc/versioned-controller/main.go).
-
-- Fix [#1539](https://github.com/kataras/iris/issues/1539).
-
-- New [rollbar example](https://github.com/kataras/iris/blob/master/_examples/logging/rollbar/main.go).
-
-- New builtin [requestid](https://github.com/kataras/iris/tree/master/middleware/requestid) middleware.
-
-- New builtin [JWT](https://github.com/kataras/iris/tree/master/middleware/jwt) middleware based on [square/go-jose](https://github.com/square/go-jose) featured with optional encryption to set claims with sensitive data when necessary.
-
-- New `iris.RouteOverlap` route registration rule. `Party.SetRegisterRule(iris.RouteOverlap)` to allow overlapping across multiple routes for the same request subdomain, method, path. See [1536#issuecomment-643719922](https://github.com/kataras/iris/issues/1536#issuecomment-643719922). This allows two or more **MVC Controllers** to listen on the same path based on one or more registered dependencies (see [_examples/mvc/authenticated-controller](https://github.com/kataras/iris/tree/master/_examples/mvc/authenticated-controller)).
-
-- `Context.ReadForm` now can return an `iris.ErrEmptyForm` instead of `nil` when the new `Configuration.FireEmptyFormError` is true  (when `iris.WithEmptyFormError` is set) on missing form body to read from.
-
-- `Configuration.EnablePathIntelligence | iris.WithPathIntelligence` to enable path intelligence automatic path redirection on the most closest path (if any), [example]((https://github.com/kataras/iris/blob/master/_examples/routing/intelligence/main.go)
-
-- Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
-- `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
-
-- `iris.TLS` can now accept certificates in form of raw `[]byte` contents too.
-- `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS`, e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`. There is `iris.AutoTLSNoRedirect` option for `AutoTLS` too.
-
-- Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
-
-- Server will not return neither log the `ErrServerClosed` error if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
-
-- Finally, Log level's and Route debug information colorization is respected across outputs. Previously if the application used more than one output destination (e.g. a file through `app.Logger().AddOutput`) the color support was automatically disabled from all, including the terminal one, this problem is fixed now. Developers can now see colors in their terminals while log files are kept with clear text.
-
-- New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
-
-- New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/request-body/read-json-struct-validation) example was updated.
-
-- A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
-
-- `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"    "` (four spaces) and `"  "` respectfully otherwise it is empty or the provided value.
-
-- Hero Handlers (and `app.ConfigureContainer().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
-
-- Improve Remote Address parsing as requested at: [#1453](https://github.com/kataras/iris/issues/1453). Add `Configuration.RemoteAddrPrivateSubnets` to exclude those addresses when fetched by `Configuration.RemoteAddrHeaders` through `context.RemoteAddr() string`.
-
-- Fix [#1487](https://github.com/kataras/iris/issues/1487).
-
-- Fix [#1473](https://github.com/kataras/iris/issues/1473).
-
-New Package-level Variables:
-
-- `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
-- `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
-- `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/master/_examples/file-server/http2push/main.go).
-- `iris.Compression` middleware to compress responses and decode compressed request data respectfully.
-- `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
-- `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
-- `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
-
-New Context Methods:
-
-- `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
-- `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
-- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `iris.IsErrPrivate` function and `iris.ErrPrivate` interface have been introduced. 
-- `Context.RecordBody()` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
-- `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
-- `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go).
-- `Context.ReadParams(ptr interface{}) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go).
-- `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
-- `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas.
-- `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
-- `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
-- `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
-- `Context.SetErr(error)` and `Context.GetErr() error` helpers.
-- `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`.
-- `Context.Clone() Context` returns a copy of the Context safe for concurrent access.
-- `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
-- `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
-- `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).
-- `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
-- `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
-- `Context.Scheme() string` returns the full scheme of the request URL.
-- `Context.SubdomainFull() string` returns the full subdomain(s) part of the host (`host[0:rootLevelDomain]`).
-- `Context.Domain() string` returns the root level domain.
-- `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
-- `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
-- `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
-- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
-- `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
-- `Context.IsGRPC() bool` reports whether the request came from a gRPC client
-- `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
-- `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
-- `StopWithText(statusCode int, format string, args ...interface{})` stops the handlers chain, writes thre status code and a plain text message
-- `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
-- `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
-- `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
-- `Context.Protobuf(proto.Message)` sends protobuf to the client (note that the `Context.JSON` is able to send protobuf as JSON)
-- `Context.MsgPack(interface{})` sends msgpack format data to the client
-- `Context.ReadProtobuf(ptr)` binds request body to a proto message
-- `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
-- `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
-- `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
-- `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
-- `Context.Controller() reflect.Value` returns the current MVC Controller value.
-
-Breaking Changes:
-
+- Now that `RegisterView` can be used to register different view engines per-Party, there is no need to support registering multiple engines under the same Party. The `app.RegisterView` now upserts the given Engine instead of append. You can now render templates **without file extension**, e.g. `index` instead of `index.ace`, both forms are valid now.
 - The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
 - The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.
 - The `i18n#LoaderConfig.FuncMap template.FuncMap` field was replaced with `Funcs func(iris.Locale) template.FuncMap` in order to give current locale access to the template functions. A new `app.I18n.Loader` was introduced too, in order to make it easier for end-developers to customize the translation key values.
@@ -690,8 +699,6 @@ Breaking Changes:
 - `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
 - `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
 - **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
-
-There is a change on the type alias of `iris.Context` which now points to the `*context.Context` instead of the `context.Context` interface. The **interface has been removed** and the ability to **override** the Context **is not** available any more. When we added the ability from end-developers to override the Context years ago, we have never imagine that we will ever had such a featured Context with more than 4000 lines of code. As of Iris 2020, it is difficult and un-productive from an end-developer to override the Iris Context, and as far as we know, nobody uses this feature anymore because of that exact reason. Beside the overriding feature support end, if you still use the `context.Context` instead of `iris.Context`, it's the time to do it: please find-and-replace any `context.Context` to `iris.Context` as wikis, book and all examples shows for the past 3 years. For the 99.9% of the users there is no a single breaking change, you already using `iris.Context` so you are in the "safe zone".
 
 # Su, 16 February 2020 | v12.1.8
 
@@ -793,7 +800,7 @@ All known issues.
 
 ### Internationalization and localization
 
-Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/wiki/Sitemap) and [views](https://github.com/kataras/iris/blob/master/_examples/i18n/main.go#L50).
+Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/wiki/Sitemap) and [views](https://github.com/kataras/iris/blob/master/_examples/i18n/basic/main.go#L50).
 
 Refer to the wiki section: https://github.com/kataras/iris/wiki/Sitemap for details.
 

@@ -1340,7 +1340,7 @@ func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) (routes []*Ro
 	return
 }
 
-// RegisterView registers and loads a view engine middleware for that group of routes.
+// RegisterView registers and loads a view engine middleware for this group of routes.
 // It overrides any of the application's root registered view engines.
 // To register a view engine per handler chain see the `Context.ViewEngine` instead.
 // Read `Configuration.ViewEngineContextKey` documentation for more.

@@ -12,14 +12,14 @@ func main() {
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.ace", iris.Map{
+		ctx.View("index", iris.Map{
 			"Title": "Title of The Page",
 		})
 	})
 
 	app.Get("/layout", func(ctx iris.Context) {
-		ctx.ViewLayout("layouts/main.ace") // layout for that response.
-		ctx.View("index.ace", iris.Map{
+		ctx.ViewLayout("layouts/main") // layout for that response.
+		ctx.View("index", iris.Map{    // file extension is optional.
 			"Title": "Title of the main Page",
 		})
 	})

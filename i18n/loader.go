@@ -1,64 +1,24 @@
 package i18n
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"sync"
-	"text/template"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/i18n/internal"
 
 	"github.com/BurntSushi/toml"
-	"golang.org/x/text/language"
 	"gopkg.in/ini.v1"
 	"gopkg.in/yaml.v3"
 )
 
-// LoaderConfig is an optional configuration structure which contains
+// LoaderConfig the configuration structure which contains
 // some options about how the template loader should act.
 //
 // See `Glob` and `Assets` package-level functions.
-type (
-	LoaderConfig struct {
-		// Template delimiters, defaults to {{ }}.
-		Left, Right string
-		// Template functions map per locale, defaults to nil.
-		Funcs func(context.Locale) template.FuncMap
-		// If true then it will return error on invalid templates instead of moving them to simple string-line keys.
-		// Also it will report whether the registered languages matched the loaded ones.
-		// Defaults to false.
-		Strict bool
-	}
-	// LoaderOption is a type which accepts a pointer to `LoaderConfig`
-	// and can be optionally passed to the second
-	// variadic input argument of the `Glob` and `Assets` functions.
-	LoaderOption interface {
-		Apply(*LoaderConfig)
-	}
-)
-
-// Apply implements the `LoaderOption` interface.
-func (c *LoaderConfig) Apply(cfg *LoaderConfig) {
-	if c.Left != "" {
-		cfg.Left = c.Left
-	}
-
-	if c.Right != "" {
-		cfg.Right = c.Right
-	}
-
-	if c.Funcs != nil {
-		cfg.Funcs = c.Funcs
-	}
-
-	if c.Strict {
-		cfg.Strict = true
-	}
-}
+type LoaderConfig = internal.Options
 
 // Glob accepts a glob pattern (see: https://golang.org/pkg/path/filepath/#Glob)
 // and loads the locale files based on any "options".
@@ -67,13 +27,13 @@ func (c *LoaderConfig) Apply(cfg *LoaderConfig) {
 // search and load for locale files.
 //
 // See `New` and `LoaderConfig` too.
-func Glob(globPattern string, options ...LoaderOption) Loader {
+func Glob(globPattern string, options LoaderConfig) Loader {
 	assetNames, err := filepath.Glob(globPattern)
 	if err != nil {
 		panic(err)
 	}
 
-	return load(assetNames, ioutil.ReadFile, options...)
+	return load(assetNames, ioutil.ReadFile, options)
 }
 
 // Assets accepts a function that returns a list of filenames (physical or virtual),
@@ -82,8 +42,18 @@ func Glob(globPattern string, options ...LoaderOption) Loader {
 // It returns a valid `Loader` which loads and maps the locale files.
 //
 // See `Glob`, `Assets`, `New` and `LoaderConfig` too.
-func Assets(assetNames func() []string, asset func(string) ([]byte, error), options ...LoaderOption) Loader {
-	return load(assetNames(), asset, options...)
+func Assets(assetNames func() []string, asset func(string) ([]byte, error), options LoaderConfig) Loader {
+	return load(assetNames(), asset, options)
+}
+
+// DefaultLoaderConfig represents the default loader configuration.
+var DefaultLoaderConfig = LoaderConfig{
+	Left:               "{{",
+	Right:              "}}",
+	Strict:             false,
+	DefaultMessageFunc: nil,
+	PluralFormDecoder:  internal.DefaultPluralFormDecoder,
+	Funcs:              nil,
 }
 
 // load accepts a list of filenames (physical or virtual),
@@ -92,24 +62,21 @@ func Assets(assetNames func() []string, asset func(string) ([]byte, error), opti
 // It returns a valid `Loader` which loads and maps the locale files.
 //
 // See `Glob`, `Assets` and `LoaderConfig` too.
-func load(assetNames []string, asset func(string) ([]byte, error), options ...LoaderOption) Loader {
-	var c = LoaderConfig{
-		Left:   "{{",
-		Right:  "}}",
-		Strict: false,
-	}
-
-	for _, opt := range options {
-		opt.Apply(&c)
-	}
-
+func load(assetNames []string, asset func(string) ([]byte, error), options LoaderConfig) Loader {
 	return func(m *Matcher) (Localizer, error) {
 		languageFiles, err := m.ParseLanguageFiles(assetNames)
 		if err != nil {
 			return nil, err
 		}
 
-		locales := make(MemoryLocalizer)
+		if options.DefaultMessageFunc == nil {
+			options.DefaultMessageFunc = m.defaultMessageFunc
+		}
+
+		cat, err := internal.NewCatalog(m.Languages, options)
+		if err != nil {
+			return nil, err
+		}
 
 		for langIndex, langFiles := range languageFiles {
 			keyValues := make(map[string]interface{})
@@ -137,211 +104,20 @@ func load(assetNames []string, asset func(string) ([]byte, error), options ...Lo
 				}
 			}
 
-			var (
-				templateKeys = make(map[string]*template.Template)
-				lineKeys     = make(map[string]string)
-				other        = make(map[string]interface{})
-			)
-
-			t := m.Languages[langIndex]
-			locale := &defaultLocale{
-				index:              langIndex,
-				id:                 t.String(),
-				tag:                &t,
-				templateKeys:       templateKeys,
-				lineKeys:           lineKeys,
-				other:              other,
-				defaultMessageFunc: m.defaultMessageFunc,
+			err = cat.Store(langIndex, keyValues)
+			if err != nil {
+				return nil, err
 			}
-			var longestValueLength int
-			for k, v := range keyValues {
-				// fmt.Printf("[%d] %s = %v of type: [%T]\n", langIndex, k, v, v)
-
-				switch value := v.(type) {
-				case string:
-					if leftIdx, rightIdx := strings.Index(value, c.Left), strings.Index(value, c.Right); leftIdx != -1 && rightIdx > leftIdx {
-						// we assume it's template?
-						// each file:line has its own template funcs so,
-						// just map it.
-
-						// builtin funcs.
-						funcs := template.FuncMap{
-							"tr": locale.GetMessage,
-						}
-
-						if c.Funcs != nil {
-							// set current locale's template's funcs.
-							for k, v := range c.Funcs(locale) {
-								funcs[k] = v
-							}
-						}
-
-						t, err := template.New(k).Delims(c.Left, c.Right).Funcs(funcs).Parse(value)
-						if err == nil {
-							templateKeys[k] = t
-						} else if c.Strict {
-							return nil, err
-						}
-
-						if valueLength := len(value); valueLength > longestValueLength {
-							longestValueLength = valueLength
-						}
-					}
-
-					lineKeys[k] = value
-				default:
-					other[k] = v
-				}
-			}
-
-			// pre-allocate the initial internal buffer.
-			// Note that Reset should be called immediately.
-			initBuf := []byte(strings.Repeat("x", longestValueLength))
-			locale.tmplBufPool = &sync.Pool{
-				New: func() interface{} {
-					// try to eliminate the internal "grow" method as much as possible.
-					return bytes.NewBuffer(initBuf)
-				},
-			}
-			locales[langIndex] = locale
 		}
 
-		if n := len(locales); n == 0 {
+		if n := len(cat.Locales); n == 0 {
 			return nil, fmt.Errorf("locales not found in %s", strings.Join(assetNames, ", "))
-		} else if c.Strict && n < len(m.Languages) {
+		} else if options.Strict && n < len(m.Languages) {
 			return nil, fmt.Errorf("locales expected to be %d but %d parsed", len(m.Languages), n)
 		}
 
-		return locales, nil
+		return cat, nil
 	}
-}
-
-// MemoryLocalizer is a map which implements the `Localizer`.
-type MemoryLocalizer map[int]context.Locale
-
-// GetLocale returns a valid `Locale` based on the "index".
-func (l MemoryLocalizer) GetLocale(index int) context.Locale {
-	// loc, ok := l[index]
-	// if !ok {
-	// 	panic(fmt.Sprintf("locale of index [%d] not found", index))
-	// }
-	// return loc
-	/* Note(@kataras): the following is allowed as a language index can be higher
-	than the length of the locale files.
-	if index >= len(l) || index < 0 {
-		// 1. language exists in the caller but was not found in files.
-		// 2. language exists in both files and caller but the actual
-		// languages are two, while the registered are 4 (when missing files),
-		// that happens when Strict option is false.
-		// force to the default language but what is the default language if the language index is greater than this length?
-	 	// That's why it's allowed.
-		index = 0
-	}*/
-
-	if index < 0 {
-		index = 0
-	}
-
-	if locale, ok := l[index]; ok {
-		return locale
-	}
-
-	return l[0]
-}
-
-// SetDefault changes the default language based on the "index".
-// See `I18n#SetDefault` method for more.
-func (l MemoryLocalizer) SetDefault(index int) bool {
-	// callers should protect with mutex if called at serve-time.
-	if loc, ok := l[index]; ok {
-		f := l[0]
-		l[0] = loc
-		l[index] = f
-		return true
-	}
-
-	return false
-}
-
-type defaultLocale struct {
-	index int
-	id    string
-	tag   *language.Tag
-	// templates *template.Template // we could use the ExecuteTemplate too.
-	templateKeys map[string]*template.Template
-	lineKeys     map[string]string
-	other        map[string]interface{}
-
-	defaultMessageFunc MessageFunc
-
-	tmplBufPool *sync.Pool
-}
-
-func (l *defaultLocale) Index() int {
-	return l.index
-}
-
-func (l *defaultLocale) Tag() *language.Tag {
-	return l.tag
-}
-
-func (l *defaultLocale) Language() string {
-	return l.id
-}
-
-func (l *defaultLocale) GetMessage(key string, args ...interface{}) string {
-	return l.getMessage(l.id, key, args...)
-}
-
-func (l *defaultLocale) GetMessageContext(ctx *context.Context, key string, args ...interface{}) string {
-	langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
-	return l.getMessage(langInput, key, args...)
-}
-
-func (l *defaultLocale) getMessage(langInput, key string, args ...interface{}) string {
-	// search on templates.
-	if tmpl, ok := l.templateKeys[key]; ok {
-		var (
-			data interface{}
-			text string
-		)
-		if len(args) > 0 {
-			data = args[0]
-		}
-
-		buf := l.tmplBufPool.Get().(*bytes.Buffer)
-		buf.Reset()
-
-		err := tmpl.Execute(buf, data)
-		if err != nil {
-			text = err.Error()
-		} else {
-			text = buf.String()
-		}
-
-		l.tmplBufPool.Put(buf)
-		return text
-	}
-
-	if text, ok := l.lineKeys[key]; ok {
-		return fmt.Sprintf(text, args...)
-	}
-
-	n := len(args)
-
-	if v, ok := l.other[key]; ok {
-		if n > 0 {
-			return fmt.Sprintf("%v [%v]", v, args)
-		}
-		return fmt.Sprintf("%v", v)
-	}
-
-	if l.defaultMessageFunc != nil {
-		// let langInput to be empty if that's the case.
-		return l.defaultMessageFunc(langInput, l.id, key, args...)
-	}
-
-	return ""
 }
 
 func unmarshalINI(data []byte, v interface{}) error {

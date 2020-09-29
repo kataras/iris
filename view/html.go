@@ -14,6 +14,7 @@ import (
 
 // HTMLEngine contains the html view engine structure.
 type HTMLEngine struct {
+	name string // the view engine's name, can be HTML, Ace or Pug.
 	// the file system to load from.
 	fs http.FileSystem
 	// files configuration
@@ -81,6 +82,7 @@ var emptyFuncs = template.FuncMap{
 // HTML(AssetFile(), ".html") for embedded data.
 func HTML(fs interface{}, extension string) *HTMLEngine {
 	s := &HTMLEngine{
+		name:        "HTML",
 		fs:          getFS(fs),
 		rootDir:     "/",
 		extension:   extension,
@@ -102,7 +104,13 @@ func (s *HTMLEngine) RootDir(root string) *HTMLEngine {
 	return s
 }
 
+// Name returns the engine's name.
+func (s *HTMLEngine) Name() string {
+	return s.name
+}
+
 // Ext returns the file extension which this view engine is responsible to render.
+// If the filename extension on ExecuteWriter is empty then this is appended.
 func (s *HTMLEngine) Ext() string {
 	return s.extension
 }
@@ -409,7 +417,7 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 	if layout = getLayout(layout, s.layout); layout != "" {
 		lt := s.Templates.Lookup(layout)
 		if lt == nil {
-			return ErrNotExist{name, true}
+			return ErrNotExist{layout, true}
 		}
 
 		s.layoutFuncsFor(lt, name, bindingData)

@@ -1,0 +1,2 @@
+Dog: "dog"
+HiDogs: Hi %d {{plural (tr "Dog") .count }}

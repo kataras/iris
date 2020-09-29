@@ -118,6 +118,8 @@ func structFieldIgnored(f reflect.StructField) bool {
 
 // all except non-zero.
 func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, parentIndex []int) (fields []reflect.StructField, stateless int) {
+	// Note: embedded pointers are not supported.
+	// elem = reflect.Indirect(elem)
 	elemTyp := elem.Type()
 	for i, n := 0, elem.NumField(); i < n; i++ {
 		field := elemTyp.Field(i)

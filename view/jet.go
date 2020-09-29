@@ -93,7 +93,13 @@ func (s *JetEngine) RootDir(root string) *JetEngine {
 	return s
 }
 
+// Name returns the jet engine's name.
+func (s *JetEngine) Name() string {
+	return "Jet"
+}
+
 // Ext should return the final file extension which this view engine is responsible to render.
+// If the filename extension on ExecuteWriter is empty then this is appended.
 func (s *JetEngine) Ext() string {
 	return s.extension
 }

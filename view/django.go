@@ -136,7 +136,13 @@ func (s *DjangoEngine) RootDir(root string) *DjangoEngine {
 	return s
 }
 
+// Name returns the django engine's name.
+func (s *DjangoEngine) Name() string {
+	return "Django"
+}
+
 // Ext returns the file extension which this view engine is responsible to render.
+// If the filename extension on ExecuteWriter is empty then this is appended.
 func (s *DjangoEngine) Ext() string {
 	return s.extension
 }

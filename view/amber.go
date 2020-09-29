@@ -63,7 +63,13 @@ func (s *AmberEngine) RootDir(root string) *AmberEngine {
 	return s
 }
 
+// Name returns the amber engine's name.
+func (s *AmberEngine) Name() string {
+	return "Amber"
+}
+
 // Ext returns the file extension which this view engine is responsible to render.
+// If the filename extension on ExecuteWriter is empty then this is appended.
 func (s *AmberEngine) Ext() string {
 	return s.extension
 }

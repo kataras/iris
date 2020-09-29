@@ -69,7 +69,13 @@ func (s *HandlebarsEngine) RootDir(root string) *HandlebarsEngine {
 	return s
 }
 
+// Name returns the handlebars engine's name.
+func (s *HandlebarsEngine) Name() string {
+	return "Handlebars"
+}
+
 // Ext returns the file extension which this view engine is responsible to render.
+// If the filename extension on ExecuteWriter is empty then this is appended.
 func (s *HandlebarsEngine) Ext() string {
 	return s.extension
 }

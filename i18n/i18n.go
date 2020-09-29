@@ -11,11 +11,25 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/i18n/internal"
 
 	"golang.org/x/text/language"
 )
 
 type (
+	// MessageFunc is the function type to modify the behavior when a key or language was not found.
+	// All language inputs fallback to the default locale if not matched.
+	// This is why this signature accepts both input and matched languages, so caller
+	// can provide better messages.
+	//
+	// The first parameter is set to the client real input of the language,
+	// the second one is set to the matched language (default one if input wasn't matched)
+	// and the third and forth are the translation format/key and its optional arguments.
+	//
+	// Note: we don't accept the Context here because Tr method and template func {{ tr }}
+	// have no direct access to it.
+	MessageFunc = internal.MessageFunc
+
 	// Loader accepts a `Matcher` and should return a `Localizer`.
 	// Functions that implement this type should load locale files.
 	Loader func(m *Matcher) (Localizer, error)
@@ -29,19 +43,6 @@ type (
 		// It may return the default language if nothing else matches based on custom localizer's criteria.
 		GetLocale(index int) context.Locale
 	}
-
-	// MessageFunc is the function type to modify the behavior when a key or language was not found.
-	// All language inputs fallback to the default locale if not matched.
-	// This is why this signature accepts both input and matched languages, so caller
-	// can provide better messages.
-	//
-	// The first parameter is set to the client real input of the language,
-	// the second one is set to the matched language (default one if input wasn't matched)
-	// and the third and forth are the translation format/key and its optional arguments.
-	//
-	// Note: we don't accept the Context here because Tr method and template func {{ tr }}
-	// have no direct access to it.
-	MessageFunc func(langInput, langMatched, key string, args ...interface{}) string
 )
 
 // I18n is the structure which keeps the i18n configuration and implements localization and internationalization features.
@@ -49,7 +50,7 @@ type I18n struct {
 	localizer Localizer
 	matcher   *Matcher
 
-	Loader *LoaderConfig
+	Loader LoaderConfig
 	loader Loader
 	mu     sync.Mutex
 
@@ -106,13 +107,10 @@ func makeTags(languages ...string) (tags []language.Tag) {
 }
 
 // New returns a new `I18n` instance. Use its `Load` or `LoadAssets` to load languages.
+// Examples at: https://github.com/kataras/iris/tree/master/_examples/i18n.
 func New() *I18n {
 	i := &I18n{
-		Loader: &LoaderConfig{
-			Left:   "{{",
-			Right:  "}}",
-			Strict: false,
-		},
+		Loader:       DefaultLoaderConfig,
 		URLParameter: "lang",
 		Subdomain:    true,
 		PathRedirect: true,

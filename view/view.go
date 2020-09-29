@@ -3,10 +3,11 @@ package view
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
+
+	"github.com/kataras/golog"
 )
 
 type (
@@ -34,71 +35,65 @@ func (e ErrNotExist) Error() string {
 	return fmt.Sprintf("%s '%s' does not exist", title, e.Name)
 }
 
-// View is responsible to
-// load the correct templates
-// for each of the registered view engines.
-type View struct {
-	engines []Engine
-}
+// View is just a wrapper on top of the registered template engine.
+type View struct{ Engine }
 
 // Register registers a view engine.
 func (v *View) Register(e Engine) {
-	v.engines = append(v.engines, e)
+	if v.Engine != nil {
+		golog.Warnf("Engine already exists, replacing the old %q with the new one %q", v.Engine.Name(), e.Name())
+	}
+
+	v.Engine = e
 }
 
-// Find receives a filename, gets its extension and returns the view engine responsible for that file extension
-func (v *View) Find(filename string) Engine {
-	// Read-Only no locks needed, at serve/runtime-time the library is not supposed to add new view engines
-	for i, n := 0, len(v.engines); i < n; i++ {
-		e := v.engines[i]
-		if strings.HasSuffix(filename, e.Ext()) {
-			return e
+// Registered reports whether an engine was registered.
+func (v *View) Registered() bool {
+	return v.Engine != nil
+}
+
+func (v *View) ensureTemplateName(s string) string {
+	if s == "" || s == NoLayout {
+		return s
+	}
+
+	s = strings.TrimPrefix(s, "/")
+
+	if ext := v.Engine.Ext(); ext != "" {
+		if !strings.HasSuffix(s, ext) {
+			return s + ext
 		}
 	}
-	return nil
-}
 
-// Len returns the length of view engines registered so far.
-func (v *View) Len() int {
-	return len(v.engines)
+	return s
 }
 
 // ExecuteWriter calls the correct view Engine's ExecuteWriter func
 func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
-	if len(filename) > 2 {
-		if filename[0] == '/' { // omit first slash
-			filename = filename[1:]
-		}
-	}
+	filename = v.ensureTemplateName(filename)
+	layout = v.ensureTemplateName(layout)
 
-	e := v.Find(filename)
-	if e == nil {
-		return fmt.Errorf("no view engine found for '%s'", filepath.Ext(filename))
-	}
-
-	return e.ExecuteWriter(w, filename, layout, bindingData)
+	return v.Engine.ExecuteWriter(w, filename, layout, bindingData)
 }
 
 // AddFunc adds a function to all registered engines.
 // Each template engine that supports functions has its own AddFunc too.
 func (v *View) AddFunc(funcName string, funcBody interface{}) {
-	for i, n := 0, len(v.engines); i < n; i++ {
-		e := v.engines[i]
-		if engineFuncer, ok := e.(EngineFuncer); ok {
-			engineFuncer.AddFunc(funcName, funcBody)
-		}
+	if !v.Registered() {
+		return
+	}
+
+	if e, ok := v.Engine.(EngineFuncer); ok {
+		e.AddFunc(funcName, funcBody)
 	}
 }
 
 // Load compiles all the registered engines.
 func (v *View) Load() error {
-	for i, n := 0, len(v.engines); i < n; i++ {
-		e := v.engines[i]
-		if err := e.Load(); err != nil {
-			return err
-		}
+	if !v.Registered() {
+		return fmt.Errorf("No engine is registered")
 	}
-	return nil
+	return v.Engine.Load()
 }
 
 // NoLayout disables the configuration's layout for a specific execution.

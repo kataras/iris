@@ -151,7 +151,9 @@ func Default() *Application {
 			})
 		})
 
-		app.UseRouter(accesslog.New(logFile).Handler)
+		ac := accesslog.New(logFile)
+		ac.AddOutput(app.logger.Printer)
+		app.UseRouter(ac.Handler)
 		app.logger.Debugf("Using <%s> to log requests", logFile.Name())
 	}
 
@@ -385,8 +387,9 @@ func (app *Application) Minifier() *minify.M {
 	return app.minifier
 }
 
-// RegisterView should be used to register view engines mapping to a root directory
-// and the template file(s) extension.
+// RegisterView registers a view engine for the application.
+// Children can register their own too. If no Party view Engine is registered
+// then this one will be used to render the templates instead.
 func (app *Application) RegisterView(viewEngine view.Engine) {
 	app.view.Register(viewEngine)
 }
@@ -401,7 +404,7 @@ func (app *Application) RegisterView(viewEngine view.Engine) {
 // Use context.View to render templates to the client instead.
 // Returns an error on failure, otherwise nil.
 func (app *Application) View(writer io.Writer, filename string, layout string, bindingData interface{}) error {
-	if app.view.Len() == 0 {
+	if !app.view.Registered() {
 		err := errors.New("view engine is missing, use `RegisterView`")
 		app.logger.Error(err)
 		return err
@@ -584,7 +587,7 @@ func (app *Application) Build() error {
 			}
 		}
 
-		if app.view.Len() == 0 {
+		if !app.view.Registered() {
 			for _, s := range []string{"./views", "./templates", "./web/views"} {
 				if _, err := os.Stat(s); err != nil {
 					continue
@@ -602,13 +605,8 @@ func (app *Application) Build() error {
 		app.Router.PrependRouterWrapper(app.I18n.Wrapper())
 	}
 
-	if n := app.view.Len(); n > 0 {
-		tr := "engines"
-		if n == 1 {
-			tr = tr[0 : len(tr)-1]
-		}
-
-		app.logger.Debugf("Application: %d registered view %s", n, tr)
+	if app.view.Registered() {
+		app.logger.Debugf("Application: view engine %q is registered", app.view.Name())
 		// view engine
 		// here is where we declare the closed-relative framework functions.
 		// Each engine has their defaults, i.e yield,render,render_r,partial, params...

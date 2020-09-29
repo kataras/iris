@@ -88,6 +88,11 @@ type (
 	//
 	// It is an alias of the `context#XML` type.
 	XML = context.XML
+	// Markdown the optional settings for Markdown renderer.
+	// See `Context.Markdown` for more.
+	//
+	// It is an alias of the `context#Markdown` type.
+	Markdown = context.Markdown
 	// Supervisor is a shortcut of the `host#Supervisor`.
 	// Used to add supervisor configurators on common Runners
 	// without the need of importing the `core/host` package.

@@ -9,6 +9,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/i18n"
 
 	"github.com/iris-contrib/httpexpect/v2"
 )
@@ -158,6 +159,7 @@ var (
 // For a more efficient testing please use the `New` function instead.
 func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfigurators ...iris.Configurator) {
 	app := new(iris.Application)
+	app.I18n = i18n.New()
 	app.Configure(iris.WithConfiguration(iris.DefaultConfiguration()), iris.WithLogLevel("disable"))
 	app.Configure(irisConfigurators...)
 

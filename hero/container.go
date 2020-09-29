@@ -73,6 +73,7 @@ type ReportEntry struct {
 	DependencyValue interface{}  // the dependency value binded to that InputPosition of Name.
 	DependencyFile  string       // the file
 	DependencyLine  int          // and line number of the dependency's value.
+	Static          bool
 }
 
 func (r *Report) fill(bindings []*binding) {
@@ -101,6 +102,7 @@ func (r *Report) fill(bindings []*binding) {
 			DependencyValue: b.Dependency.OriginalValue,
 			DependencyFile:  b.Dependency.Source.File,
 			DependencyLine:  b.Dependency.Source.Line,
+			Static:          b.Dependency.Static,
 		}
 
 		r.Entries = append(r.Entries, entry)

@@ -19,6 +19,7 @@ import (
 // Ace(AssetFile(), ".ace") for embedded data.
 func Ace(fs interface{}, extension string) *HTMLEngine {
 	s := HTML(fs, extension)
+	s.name = "Ace"
 
 	funcs := make(map[string]interface{}, 0)
 
@@ -59,5 +60,6 @@ func Ace(fs interface{}, extension string) *HTMLEngine {
 
 		return t.Lookup(name).Tree.Root.String(), nil
 	}
+
 	return s
 }

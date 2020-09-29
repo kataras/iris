@@ -22,6 +22,7 @@ func main() {
 		// the .Name inside the ./templates/hi.html.
 		ctx.ViewData("Name", "iris")
 		// render the template with the file name relative to the './templates'.
+		// file extension is OPTIONAL.
 		ctx.View("hi.html")
 	})
 

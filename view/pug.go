@@ -25,6 +25,7 @@ import (
 // https://github.com/kataras/iris/tree/master/_examples/view/template_pug_3
 func Pug(fs interface{}, extension string) *HTMLEngine {
 	s := HTML(fs, extension)
+	s.name = "Pug"
 
 	s.middleware = func(name string, text []byte) (contents string, err error) {
 		tmpl := jade.New(name)

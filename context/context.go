@@ -2491,6 +2491,12 @@ func (ctx *Context) Write(rawBody []byte) (int, error) {
 //
 // Returns the number of bytes written and any write error encountered.
 func (ctx *Context) Writef(format string, a ...interface{}) (n int, err error) {
+	/* if len(a) == 0 {
+	 	return ctx.WriteString(format)
+	} ^ No, let it complain about arguments, because go test will do even if the app is running.
+	Users should use WriteString instead of (format, args)
+	when format may contain go-sprintf reserved chars (e.g. %).*/
+
 	return fmt.Fprintf(ctx.writer, format, a...)
 }
 

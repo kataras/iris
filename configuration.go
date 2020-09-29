@@ -340,7 +340,7 @@ func WithCharset(charset string) Configurator {
 
 // WithPostMaxMemory sets the maximum post data size
 // that a client can send to the server, this differs
-// from the overral request body size which can be modified
+// from the overall request body size which can be modified
 // by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 //
 // Defaults to 32MB or 32 << 20 or 32*iris.MB if you prefer.
@@ -732,7 +732,7 @@ type Configuration struct {
 
 	// PostMaxMemory sets the maximum post data size
 	// that a client can send to the server, this differs
-	// from the overral request body size which can be modified
+	// from the overall request body size which can be modified
 	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 	//
 	// Defaults to 32MB or 32 << 20 if you prefer.

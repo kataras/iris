@@ -4,11 +4,15 @@ import "io"
 
 // ViewEngine is the interface which all view engines should be implemented in order to be registered inside iris.
 type ViewEngine interface {
-	// Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
+	// Name returns the name of the engine.
+	Name() string
+	// Load should load the templates from the given FileSystem.
 	Load() error
 	// ExecuteWriter should execute a template by its filename with an optional layout and bindingData.
 	ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error
-	// Ext should return the final file extension which this view engine is responsible to render.
+	// Ext should return the final file extension (including the dot)
+	// which this view engine is responsible to render.
+	// If the filename extension on ExecuteWriter is empty then this is appended.
 	Ext() string
 }
 

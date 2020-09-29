@@ -122,7 +122,7 @@ func generateTokenPair(accessJWT, refreshJWT *jwt.JWT) (TokenPair, error) {
 	refreshClaims := refreshJWT.Expiry(jwt.Claims{
 		ID: "refresh_kataras",
 		// For example, the User ID,
-		// this is nessecary to check against the database
+		// this is necessary to check against the database
 		// if the user still exist or has credentials to access our page.
 		Subject: "53afcf05-38a3-43c3-82af-8bbbe0e4a149",
 	})

@@ -48,6 +48,11 @@ func Blocks(fs interface{}, extension string) *BlocksEngine {
 	return WrapBlocks(blocks.New(fs).Extension(extension))
 }
 
+// Name returns the blocks engine's name.
+func (s *BlocksEngine) Name() string {
+	return "Blocks"
+}
+
 // RootDir sets the directory to use as the root one inside the provided File System.
 func (s *BlocksEngine) RootDir(root string) *BlocksEngine {
 	s.Engine.RootDir(root)

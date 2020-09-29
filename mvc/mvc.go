@@ -341,6 +341,22 @@ func (app *Application) Party(relativePath string, middleware ...context.Handler
 
 var childNameReplacer = strings.NewReplacer("*", "", "(", "", ")", "")
 
+func getArrowSymbol(static bool, field bool) string {
+	if field {
+		if static {
+			return "╺"
+		}
+		return "⦿"
+
+	}
+
+	if static {
+		return "•"
+	}
+
+	return "⦿"
+}
+
 // TODO: instead of this I want to get in touch with tools like "graphviz"
 // so we can put all that information (and the API) inside web graphs,
 // it will be easier for developers to see the flow of the whole application,
@@ -368,7 +384,11 @@ func logController(logger *golog.Logger, c *ControllerActivator) {
 
 	reports := c.injector.Container.Reports
 	ctrlName := c.RelName()
-	logger.Debugf("%s\n", ctrlName)
+	ctrlScopeType := ""
+	if !c.injector.Singleton {
+		ctrlScopeType = getArrowSymbol(false, false) + " "
+	}
+	logger.Debugf("%s%s\n", ctrlScopeType, ctrlName)
 
 	longestNameLen := 0
 	for _, report := range reports {
@@ -462,7 +482,9 @@ func logController(logger *golog.Logger, c *ControllerActivator) {
 				if spaceRequired < 0 {
 					spaceRequired = 0
 				}
-				fmt.Fprintf(printer, "  ╺ %s%s %s\n", fieldName, strings.Repeat(" ", spaceRequired), fileLine)
+
+				arrowSymbol := getArrowSymbol(entry.Static, true)
+				fmt.Fprintf(printer, "  %s %s%s %s\n", arrowSymbol, fieldName, strings.Repeat(" ", spaceRequired), fileLine)
 			}
 		}
 	}

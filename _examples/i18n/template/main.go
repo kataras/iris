@@ -5,13 +5,20 @@ import (
 	"text/template"
 
 	"github.com/kataras/iris/v12"
-	// go get -u github.com/gertd/go-pluralize
-	"github.com/gertd/go-pluralize"
+
+	// go get -u golang.org/x/text/message
+
+	"golang.org/x/text/feature/plural"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 /*
  Iris I18n supports text/template inside the translation values.
  Follow this example to learn how to use that feature.
+
+ This is just an example on how to use template functions.
+ See the "plurals" example for a more comprehensive pluralization support instead.
 */
 
 func main() {
@@ -22,7 +29,20 @@ func main() {
 func newApp() *iris.Application {
 	app := iris.New()
 
-	pluralize := pluralize.NewClient()
+	// set the printers after load, so they can be done by loop of available languages.
+	printers := make(map[string]*message.Printer)
+
+	message.Set(language.Greek, "Hello %d dog",
+		plural.Selectf(1, "%d",
+			"one", "Γεια σου σκυλί",
+			"other", "Γεια σας %[1]d σκυλιά",
+		))
+
+	/* by variable, single word:
+	message.Set(language.Greek, "Hi %d dog(s)",
+		catalog.Var("dogs", plural.Selectf(1, "%d", "one", "σκυλί", "other", "σκυλιά")),
+		catalog.String("Γεια %[1]d ${dogs}"))
+	*/
 
 	// Set custom functions per locale!
 	app.I18n.Loader.Funcs = func(current iris.Locale) template.FuncMap {
@@ -30,12 +50,7 @@ func newApp() *iris.Application {
 			"plural": func(word string, count int) string {
 				// Your own implementation or use a 3rd-party package
 				// like we do here.
-				//
-				// Note that this is only for english,
-				// but you can use the "current" locale
-				// and make a map with dictionaries to
-				// pluralize words based on the given language.
-				return pluralize.Pluralize(word, count, true)
+				return printers[current.Language()].Sprintf(word, count)
 			},
 			"uppercase": func(word string) string {
 				return strings.ToUpper(word)
@@ -50,6 +65,12 @@ func newApp() *iris.Application {
 	if err != nil {
 		panic(err)
 	}
+
+	for _, tag := range app.I18n.Tags() {
+		printers[tag.String()] = message.NewPrinter(tag)
+	}
+
+	message.NewPrinter(language.Greek).Printf("Hello %d dog", 2)
 
 	app.Get("/", func(ctx iris.Context) {
 		text := ctx.Tr("HiDogs", iris.Map{
