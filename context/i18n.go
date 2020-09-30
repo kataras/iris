@@ -7,7 +7,8 @@ import "golang.org/x/text/language"
 type I18nReadOnly interface {
 	Tags() []language.Tag
 	GetLocale(ctx *Context) Locale
-	Tr(lang string, format string, args ...interface{}) string
+	Tr(lang string, key string, args ...interface{}) string
+	TrContext(ctx *Context, key string, args ...interface{}) string
 }
 
 // Locale is the interface which returns from a `Localizer.GetLocale` method.
@@ -25,10 +26,4 @@ type Locale interface {
 	Language() string
 	// GetMessage should return translated text based on the given "key".
 	GetMessage(key string, args ...interface{}) string
-	// GetMessageContext same as GetMessage
-	// but it accepts the Context as its first input.
-	// If DefaultMessageFunc was not nil then this Context
-	// will provide the real language input instead of the locale's which
-	// may be the default language one.
-	GetMessageContext(ctx *Context, key string, args ...interface{}) string
 }

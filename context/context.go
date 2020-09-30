@@ -1254,14 +1254,8 @@ func (ctx *Context) GetLocale() Locale {
 // See `GetLocale` too.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/i18n
-func (ctx *Context) Tr(message string, values ...interface{}) string {
-	if locale := ctx.GetLocale(); locale != nil {
-		return locale.GetMessageContext(ctx, message, values...)
-	}
-
-	// This should never happen as the locale fallbacks to
-	// the default.
-	return message
+func (ctx *Context) Tr(key string, args ...interface{}) string {
+	return ctx.app.I18nReadOnly().TrContext(ctx, key, args...)
 }
 
 //  +------------------------------------------------------------+

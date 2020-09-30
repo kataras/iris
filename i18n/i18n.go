@@ -79,8 +79,11 @@ type I18n struct {
 	//
 	// Defaults to true.
 	Subdomain bool
-	// If true then it will return empty string when translation for a a specific language's key was not found.
+	// If a DefaultMessageFunc is NOT set:
+	// If true then it will return empty string when translation for a
+	// specific language's key was not found.
 	// Defaults to false, fallback defaultLang:key will be used.
+	// Otherwise, DefaultMessageFunc is called in either case.
 	Strict bool
 
 	// If true then Iris will wrap its router with the i18n router wrapper on its Build state.
@@ -96,6 +99,8 @@ var _ context.I18nReadOnly = (*I18n)(nil)
 
 // makeTags converts language codes to language Tags.
 func makeTags(languages ...string) (tags []language.Tag) {
+	languages = removeDuplicates(languages)
+
 	for _, lang := range languages {
 		tag, err := language.Parse(lang)
 		if err == nil && tag != language.Und {
@@ -324,31 +329,43 @@ func (i *I18n) TryMatchString(s string) (language.Tag, int, bool) {
 }
 
 // Tr returns a translated message based on the "lang" language code
-// and its key(format) with any optional arguments attached to it.
+// and its key with any optional arguments attached to it.
 //
 // It returns an empty string if "lang" not matched, unless DefaultMessageFunc.
 // It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
-func (i *I18n) Tr(lang, format string, args ...interface{}) (msg string) {
+func (i *I18n) Tr(lang, key string, args ...interface{}) string {
 	_, index, ok := i.TryMatchString(lang)
 	if !ok {
 		index = 0
 	}
+	loc := i.localizer.GetLocale(index)
+	return i.getLocaleMessage(loc, lang, key, args...)
+}
 
+// TrContext returns the localized text message for this Context.
+// It returns an empty string if context's locale not matched, unless DefaultMessageFunc.
+// It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
+func (i *I18n) TrContext(ctx *context.Context, key string, args ...interface{}) string {
+	loc := ctx.GetLocale()
+	langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
+	return i.getLocaleMessage(loc, langInput, key, args...)
+}
+
+func (i *I18n) getLocaleMessage(loc context.Locale, langInput string, key string, args ...interface{}) (msg string) {
 	langMatched := ""
 
-	loc := i.localizer.GetLocale(index)
 	if loc != nil {
 		langMatched = loc.Language()
 
-		msg = loc.GetMessage(format, args...)
-		if msg == "" && i.DefaultMessageFunc == nil && !i.Strict && index > 0 {
+		msg = loc.GetMessage(key, args...)
+		if msg == "" && i.DefaultMessageFunc == nil && !i.Strict && loc.Index() > 0 {
 			// it's not the default/fallback language and not message found for that lang:key.
-			msg = i.localizer.GetLocale(0).GetMessage(format, args...)
+			msg = i.localizer.GetLocale(0).GetMessage(key, args...)
 		}
 	}
 
 	if msg == "" && i.DefaultMessageFunc != nil {
-		msg = i.DefaultMessageFunc(lang, langMatched, format, args)
+		msg = i.DefaultMessageFunc(langInput, langMatched, key, args)
 	}
 
 	return
@@ -447,30 +464,6 @@ func (i *I18n) GetLocale(ctx *context.Context) context.Locale {
 	return locale
 }
 
-// GetMessage returns the localized text message for this "r" request based on the key "format".
-// It returns an empty string if context's locale not matched, unless DefaultMessageFunc.
-// It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
-func (i *I18n) GetMessage(ctx *context.Context, format string, args ...interface{}) (msg string) {
-	loc := i.GetLocale(ctx)
-	langMatched := ""
-	if loc != nil {
-		langMatched = loc.Language()
-		// it's not the default/fallback language and not message found for that lang:key.
-		msg = loc.GetMessage(format, args...)
-		if msg == "" && i.DefaultMessageFunc == nil && !i.Strict && loc.Index() > 0 {
-			return i.localizer.GetLocale(0).GetMessage(format, args...)
-		}
-	}
-
-	if msg == "" && i.DefaultMessageFunc != nil {
-		langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
-
-		msg = i.DefaultMessageFunc(langInput, langMatched, format, args...)
-	}
-
-	return
-}
-
 func (i *I18n) setLangWithoutContext(w http.ResponseWriter, r *http.Request, lang string) {
 	if i.Cookie != "" {
 		http.SetCookie(w, &http.Cookie{
@@ -540,4 +533,18 @@ func (i *I18n) Wrapper() router.WrapperFunc {
 
 		next(w, r)
 	}
+}
+
+func removeDuplicates(elements []string) (result []string) {
+	seen := make(map[string]struct{})
+
+	for v := range elements {
+		val := elements[v]
+		if _, ok := seen[val]; !ok {
+			seen[val] = struct{}{}
+			result = append(result, val)
+		}
+	}
+
+	return result
 }

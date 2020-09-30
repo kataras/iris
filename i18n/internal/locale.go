@@ -163,20 +163,6 @@ func (loc *Locale) Language() string {
 
 // GetMessage should return translated text based on the given "key".
 func (loc *Locale) GetMessage(key string, args ...interface{}) string {
-	return loc.getMessage(loc.ID, key, args...)
-}
-
-// GetMessageContext same as GetMessage
-// but it accepts the Context as its first input.
-// If DefaultMessageFunc was not nil then this Context
-// will provide the real language input instead of the locale's which
-// may be the default language one.
-func (loc *Locale) GetMessageContext(ctx *context.Context, key string, args ...interface{}) string {
-	langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
-	return loc.getMessage(langInput, key, args...)
-}
-
-func (loc *Locale) getMessage(langInput, key string, args ...interface{}) string {
 	if msg, ok := loc.Messages[key]; ok {
 		result, err := msg.Render(args...)
 		if err != nil {
@@ -184,11 +170,6 @@ func (loc *Locale) getMessage(langInput, key string, args ...interface{}) string
 		}
 
 		return result
-	}
-
-	if fn := loc.Options.DefaultMessageFunc; fn != nil {
-		// let langInput to be empty if that's the case.
-		return fn(langInput, loc.ID, key, args...)
 	}
 
 	return ""
