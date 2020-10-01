@@ -18,7 +18,7 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
 
-Learn what [others saying about Iris](https://iris-go.com/testimonials/) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
+Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
 
 [![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
 
@@ -73,6 +73,8 @@ $ mkdir myapp
 $ go mod init myapp
 $ go get github.com/kataras/iris/v12@master
 ```
+
+![](https://www.iris-go.com/images/gifs/install-create-iris.gif)
 
 Iris contains extensive and thorough **[documentation](https://www.iris-go.com/docs)** making it easy to get started with the framework.
 
