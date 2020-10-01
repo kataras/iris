@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/eknkc/amber"
 )
@@ -23,6 +25,7 @@ type AmberEngine struct {
 	//
 	rmu           sync.RWMutex // locks for `ExecuteWiter` when `reload` is true.
 	templateCache map[string]*template.Template
+	bufPool       *sync.Pool
 
 	Options amber.Options
 }
@@ -32,6 +35,8 @@ var (
 	_ EngineFuncer = (*AmberEngine)(nil)
 )
 
+var amberOnce = new(uint32)
+
 // Amber creates and returns a new amber view engine.
 // The given "extension" MUST begin with a dot.
 //
@@ -40,6 +45,12 @@ var (
 // Amber(iris.Dir("./views"), ".amber") or
 // Amber(AssetFile(), ".amber") for embedded data.
 func Amber(fs interface{}, extension string) *AmberEngine {
+	if atomic.LoadUint32(amberOnce) > 0 {
+		panic("Amber: cannot be registered twice as its internal implementation share the same template functions across instances.")
+	} else {
+		atomic.StoreUint32(amberOnce, 1)
+	}
+
 	fileSystem := getFS(fs)
 	s := &AmberEngine{
 		fs:            fileSystem,
@@ -51,6 +62,20 @@ func Amber(fs interface{}, extension string) *AmberEngine {
 			LineNumbers:       false,
 			VirtualFilesystem: fileSystem,
 		},
+		bufPool: &sync.Pool{New: func() interface{} {
+			return new(bytes.Buffer)
+		}},
+	}
+
+	builtinFuncs := template.FuncMap{
+		"render": func(name string, binding interface{}) (template.HTML, error) {
+			result, err := s.executeTemplateBuf(name, binding)
+			return template.HTML(result), err
+		},
+	}
+
+	for k, v := range builtinFuncs {
+		amber.FuncMap[k] = v
 	}
 
 	return s
@@ -83,6 +108,14 @@ func (s *AmberEngine) Ext() string {
 // It's good to be used side by side with the https://github.com/kataras/rizla reloader for go source files.
 func (s *AmberEngine) Reload(developmentMode bool) *AmberEngine {
 	s.reload = developmentMode
+	return s
+}
+
+// SetPrettyPrint if pretty printing is enabled.
+// Pretty printing ensures that the output html is properly indented and in human readable form.
+// Defaults to false, response is minified.
+func (s *AmberEngine) SetPrettyPrint(pretty bool) *AmberEngine {
+	s.Options.PrettyPrint = true
 	return s
 }
 
@@ -157,18 +190,11 @@ func (s *AmberEngine) ParseTemplate(name string, contents []byte) error {
 
 	name = strings.TrimPrefix(name, "/")
 
-	/* Sadly, this does not work, only builtin amber.FuncMap
-	can be executed as function, the rest are compiled as data (prepends a "call"),
-	relative code:
-	https://github.com/eknkc/amber/blob/cdade1c073850f4ffc70a829e31235ea6892853b/compiler.go#L771-L794
-
-	tmpl := template.New(name).Funcs(amber.FuncMap).Funcs(s.funcs)
-	if len(funcs) > 0 {
-		tmpl.Funcs(funcs)
-	}
-
-	We can't add them as binding data of map type
-	because those data can be a struct by the caller and we don't want to messup.
+	/*
+		New(...).Funcs(s.builtinFuncs):
+		This won't work on amber, it loads only amber.FuncMap which is global.
+		Relative code:
+		https://github.com/eknkc/amber/blob/cdade1c073850f4ffc70a829e31235ea6892853b/compiler.go#L771-L794
 	*/
 
 	tmpl := template.New(name).Funcs(amber.FuncMap)
@@ -178,6 +204,22 @@ func (s *AmberEngine) ParseTemplate(name string, contents []byte) error {
 	}
 
 	return err
+}
+
+func (s *AmberEngine) executeTemplateBuf(name string, binding interface{}) (string, error) {
+	buf := s.bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+
+	tmpl := s.fromCache(name)
+	if tmpl == nil {
+		s.bufPool.Put(buf)
+		return "", ErrNotExist{name, false}
+	}
+
+	err := tmpl.ExecuteTemplate(buf, name, binding)
+	result := strings.TrimSuffix(buf.String(), "\n") // on amber it adds a new line.
+	s.bufPool.Put(buf)
+	return result, err
 }
 
 func (s *AmberEngine) fromCache(relativeName string) *template.Template {

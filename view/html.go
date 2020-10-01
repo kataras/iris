@@ -36,6 +36,7 @@ type HTMLEngine struct {
 	middleware  func(name string, contents []byte) (string, error)
 	Templates   *template.Template
 	customCache []customTmp // required to load them again if reload is true.
+	bufPool     *sync.Pool
 	//
 }
 
@@ -92,6 +93,9 @@ func HTML(fs interface{}, extension string) *HTMLEngine {
 		layout:      "",
 		layoutFuncs: make(template.FuncMap),
 		funcs:       make(template.FuncMap),
+		bufPool: &sync.Pool{New: func() interface{} {
+			return new(bytes.Buffer)
+		}},
 	}
 
 	return s
@@ -322,11 +326,14 @@ func (s *HTMLEngine) initRootTmpl() { // protected by the caller.
 	}
 }
 
-func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
-	err := s.Templates.ExecuteTemplate(buf, name, binding)
+func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (string, error) {
+	buf := s.bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
 
-	return buf, err
+	err := s.Templates.ExecuteTemplate(buf, name, binding)
+	result := buf.String()
+	s.bufPool.Put(buf)
+	return result, err
 }
 
 func (s *HTMLEngine) layoutFuncsFor(lt *template.Template, name string, binding interface{}) {
@@ -334,9 +341,9 @@ func (s *HTMLEngine) layoutFuncsFor(lt *template.Template, name string, binding 
 
 	funcs := template.FuncMap{
 		"yield": func() (template.HTML, error) {
-			buf, err := s.executeTemplateBuf(name, binding)
+			result, err := s.executeTemplateBuf(name, binding)
 			// Return safe HTML here since we are rendering our own template.
-			return template.HTML(buf.String()), err
+			return template.HTML(result), err
 		},
 	}
 
@@ -352,11 +359,11 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 		"part": func(partName string) (template.HTML, error) {
 			nameTemp := strings.Replace(name, s.extension, "", -1)
 			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
-			buf, err := s.executeTemplateBuf(fullPartName, binding)
+			result, err := s.executeTemplateBuf(fullPartName, binding)
 			if err != nil {
 				return "", nil
 			}
-			return template.HTML(buf.String()), err
+			return template.HTML(result), err
 		},
 		"current": func() (string, error) {
 			return name, nil
@@ -364,8 +371,8 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 		"partial": func(partialName string) (template.HTML, error) {
 			fullPartialName := fmt.Sprintf("%s-%s", partialName, name)
 			if s.Templates.Lookup(fullPartialName) != nil {
-				buf, err := s.executeTemplateBuf(fullPartialName, binding)
-				return template.HTML(buf.String()), err
+				result, err := s.executeTemplateBuf(fullPartialName, binding)
+				return template.HTML(result), err
 			}
 			return "", nil
 		},
@@ -378,14 +385,14 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 			root := name[:len(name)-len(ext)]
 			fullPartialName := fmt.Sprintf("%s%s%s", root, partialName, ext)
 			if s.Templates.Lookup(fullPartialName) != nil {
-				buf, err := s.executeTemplateBuf(fullPartialName, binding)
-				return template.HTML(buf.String()), err
+				result, err := s.executeTemplateBuf(fullPartialName, binding)
+				return template.HTML(result), err
 			}
 			return "", nil
 		},
 		"render": func(fullPartialName string) (template.HTML, error) {
-			buf, err := s.executeTemplateBuf(fullPartialName, binding)
-			return template.HTML(buf.String()), err
+			result, err := s.executeTemplateBuf(fullPartialName, binding)
+			return template.HTML(result), err
 		},
 	}
 

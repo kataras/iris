@@ -1,0 +1,8 @@
+= doctype html
+html
+  head
+    title {{.Title}}
+  body
+    {{ yield }}
+    footer
+      = include partials/footer.ace .

@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<head>
+    <title>{{.Title}}</title>
+</head>
+<body>
+    {{ yield documentBody() }}
+<footer>{{ include "../partials/footer.jet" . }}</footer>
+</body>
+</html>

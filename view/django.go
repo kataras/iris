@@ -286,7 +286,7 @@ func (s *DjangoEngine) fromCache(relativeName string) *pongo2.Template {
 
 // ExecuteWriter executes a templates and write its results to the w writer
 // layout here is useless.
-func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
+func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, _ string, bindingData interface{}) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
 		if err := s.Load(); err != nil {

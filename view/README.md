@@ -19,6 +19,8 @@ Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, 
 
 [List of Examples](https://github.com/kataras/iris/tree/master/_examples/view).
 
+[Benchmarks](https://github.com/kataras/iris/tree/master/_benchmarks/view).
+
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
 
 ## Overview

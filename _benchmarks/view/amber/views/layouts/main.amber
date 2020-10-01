@@ -1,0 +1,8 @@
+doctype html
+html
+  head
+    title #{Title}
+  body
+    block content
+    footer 
+      #{render("partials/footer.amber", $)}

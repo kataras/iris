@@ -1,0 +1,5 @@
+{{ extends "../layouts/main.jet" }}
+{{ block documentBody() }}
+<h1>Index Body</h1>
+<h3>Message: {{.Message}}</h3>
+{{ end }}

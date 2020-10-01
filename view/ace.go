@@ -6,10 +6,28 @@ import (
 	"github.com/yosssi/ace"
 )
 
-// Ace returns a new ace view engine.
+// AceEngine represents the Ace view engine.
+// See the `Ace` package-level function for more.
+type AceEngine struct {
+	*HTMLEngine
+
+	indent string
+}
+
+// SetIndent string used for indentation.
+// Do NOT use tabs, only spaces characters.
+// Defaults to minified response, no indentation.
+func (s *AceEngine) SetIndent(indent string) *AceEngine {
+	s.indent = indent
+	return s
+}
+
+// Ace returns a new Ace view engine.
 // It shares the same exactly logic with the
 // html view engine, it uses the same exactly configuration.
 // The given "extension" MUST begin with a dot.
+// Ace minifies the response automatically unless
+// SetIndent() method is set.
 //
 // Read more about the Ace Go Parser: https://github.com/yosssi/ace
 //
@@ -17,13 +35,14 @@ import (
 // Ace("./views", ".ace") or
 // Ace(iris.Dir("./views"), ".ace") or
 // Ace(AssetFile(), ".ace") for embedded data.
-func Ace(fs interface{}, extension string) *HTMLEngine {
-	s := HTML(fs, extension)
+func Ace(fs interface{}, extension string) *AceEngine {
+	s := &AceEngine{HTMLEngine: HTML(fs, extension), indent: ""}
 	s.name = "Ace"
 
 	funcs := make(map[string]interface{}, 0)
 
 	once := new(sync.Once)
+
 	s.middleware = func(name string, text []byte) (contents string, err error) {
 		once.Do(func() { // on first template parse, all funcs are given.
 			for k, v := range emptyFuncs {
@@ -43,17 +62,20 @@ func Ace(fs interface{}, extension string) *HTMLEngine {
 			[]*ace.File{},
 		)
 
-		rslt, err := ace.ParseSource(src, nil)
-		if err != nil {
-			return "", err
-		}
-
-		t, err := ace.CompileResult(name, rslt, &ace.Options{
+		opts := &ace.Options{
 			Extension:  extension[1:],
 			FuncMap:    funcs,
 			DelimLeft:  s.left,
 			DelimRight: s.right,
-		})
+			Indent:     s.indent,
+		}
+
+		rslt, err := ace.ParseSource(src, opts)
+		if err != nil {
+			return "", err
+		}
+
+		t, err := ace.CompileResult(name, rslt, opts)
 		if err != nil {
 			return "", err
 		}

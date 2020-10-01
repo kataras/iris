@@ -1,0 +1,27 @@
+- Name: Template Layout, Partial and Data
+  Description: >
+   Fires {{.NumberOfRequests}} requests with {{.NumberOfConnections}} concurrent clients.
+   It receives HTML response.
+   The server handler sets some template **data** and renders a
+   template file which consists of a **layout** and a **partial** footer.
+  NumberOfRequests: 1000000
+  NumberOfConnections: 125
+  Method: GET
+  URL: http://localhost:8080
+  Envs:
+    - Name: Ace
+      Dir: ./ace
+    - Name: Amber
+      Dir: ./amber
+    - Name: Blocks
+      Dir: ./blocks
+    - Name: Django
+      Dir: ./django
+    - Name: Handlebars
+      Dir: ./handlebars
+    - Name: HTML
+      Dir: ./html
+    - Name: Jet
+      Dir: ./jet
+    - Name: Pug
+      Dir: ./pug

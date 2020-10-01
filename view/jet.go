@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -18,9 +19,10 @@ const jetEngineName = "jet"
 
 // JetEngine is the jet template parser's view engine.
 type JetEngine struct {
-	fs        http.FileSystem
-	rootDir   string
-	extension string
+	fs          http.FileSystem
+	rootDir     string
+	extension   string
+	left, right string
 
 	loader jet.Loader
 
@@ -72,6 +74,7 @@ func Jet(fs interface{}, extension string) *JetEngine {
 	}
 
 	s := &JetEngine{
+		fs:                getFS(fs),
 		rootDir:           "/",
 		extension:         extension,
 		loader:            &jetLoader{fs: getFS(fs)},
@@ -109,7 +112,8 @@ func (s *JetEngine) Ext() string {
 // corresponding default: {{ or }}.
 // Should act before `Load` or `iris.Application#RegisterView`.
 func (s *JetEngine) Delims(left, right string) *JetEngine {
-	s.Set.Delims(left, right)
+	s.left = left
+	s.right = right
 	return s
 }
 
@@ -217,12 +221,24 @@ func (l *jetLoader) Exists(name string) (string, bool) {
 
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 func (s *JetEngine) Load() error {
-	s.initSet()
-	// Note that, unlike the rest of template engines implementations,
-	// we don't call the Set.GetTemplate to parse the templates,
-	// we let it to the jet template parser itself which does that at serve-time and caches each template by itself.
+	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+		if info == nil || info.IsDir() {
+			return nil
+		}
 
-	return nil
+		if s.extension != "" {
+			if !strings.HasSuffix(path, s.extension) {
+				return nil
+			}
+		}
+
+		buf, err := asset(s.fs, path)
+		if err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+
+		return s.ParseTemplate(path, string(buf))
+	})
 }
 
 // ParseTemplate accepts a name and contnets to parse and cache a template.
@@ -238,6 +254,7 @@ func (s *JetEngine) initSet() {
 	s.mu.Lock()
 	if s.Set == nil {
 		s.Set = jet.NewHTMLSetLoader(s.loader)
+		s.Set.Delims(s.left, s.right)
 		if s.developmentMode && !isNoOpFS(s.fs) {
 			// this check is made to avoid jet's fs lookup on noOp fs (nil passed by the developer).
 			// This can be produced when nil fs passed
