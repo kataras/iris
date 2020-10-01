@@ -20,7 +20,7 @@ Amber, Ace and Pug parsers minifies the template before render. So, to have a fa
 
 ## Terminology
 
-**Name** is the name of the framework(or router) used under a particular test.
+**Name** is the name of the template engine used under a particular test.
 
 **Reqs/sec** is the avg number of total requests could be processed per second (the higher the better).
 

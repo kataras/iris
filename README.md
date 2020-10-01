@@ -31,7 +31,9 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
-  <a href="https://github.com/CSRaghunandan"><img src="https://avatars1.githubusercontent.com/u/5226809?v=4" alt ="Chakravarthy Raghunandan. Feng" title="CSRaghunandan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/unixedia"><img src="https://avatars1.githubusercontent.com/u/70646128?v=4" alt ="ARAN ROKA" title="unixedia" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/ky2s"><img src="https://avatars1.githubusercontent.com/u/19502125?v=4" alt ="Valentine" title="ky2s" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/CSRaghunandan"><img src="https://avatars1.githubusercontent.com/u/5226809?v=4" alt ="Chakravarthy Raghunandan" title="CSRaghunandan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/maxbertinetti"><img src="https://avatars1.githubusercontent.com/u/26814295?v=4" alt ="Massimiliano Bertinetti" title="maxbertinetti" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/HieuLsw"><img src="https://avatars1.githubusercontent.com/u/1675478?v=4" alt ="Hieu Trinh" title="HieuLsw" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/jingtianfeng"><img src="https://avatars1.githubusercontent.com/u/19503202?v=4" alt ="J.T. Feng" title="jingtianfeng" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
