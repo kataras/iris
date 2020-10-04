@@ -31,6 +31,9 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/nguyentamvinhlong"><img src="https://avatars1.githubusercontent.com/u/1875916?v=4" alt ="Tam Nguyen" title="nguyentamvinhlong" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/vguhesan"><img src="https://avatars1.githubusercontent.com/u/193960?v=4" alt ="
+Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/Cesar"><img src="https://avatars1.githubusercontent.com/u/1581870?v=4" alt ="Anibal C C Budaye" title="Cesar" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/unixedia"><img src="https://avatars1.githubusercontent.com/u/70646128?v=4" alt ="ARAN ROKA" title="unixedia" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/ky2s"><img src="https://avatars1.githubusercontent.com/u/19502125?v=4" alt ="Valentine" title="ky2s" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
