@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/kataras/iris/v12/sessions"
@@ -79,7 +78,7 @@ func NewFromDB(service *bolt.DB, bucketName string) (*Database, error) {
 
 	db := &Database{table: bucket, Service: service}
 
-	runtime.SetFinalizer(db, closeDB)
+	// runtime.SetFinalizer(db, closeDB)
 	return db, db.cleanup()
 }
 
@@ -254,11 +253,11 @@ func makeKey(key string) []byte {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, _ *sessions.LifeTime, key string, value interface{}, immutable bool) {
+func (db *Database) Set(sid string, key string, value interface{}, ttl time.Duration, immutable bool) error {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
 		db.logger.Debug(err)
-		return
+		return err
 	}
 
 	err = db.Service.Update(func(tx *bolt.Tx) error {
@@ -277,10 +276,21 @@ func (db *Database) Set(sid string, _ *sessions.LifeTime, key string, value inte
 	if err != nil {
 		db.logger.Debug(err)
 	}
+
+	return err
 }
 
 // Get retrieves a session value based on the key.
 func (db *Database) Get(sid string, key string) (value interface{}) {
+	if err := db.Decode(sid, key, &value); err == nil {
+		return value
+	}
+
+	return nil
+}
+
+// Decode binds the "outPtr" to the value associated to the provided "key".
+func (db *Database) Decode(sid, key string, outPtr interface{}) error {
 	err := db.Service.View(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
@@ -292,17 +302,17 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 			return nil
 		}
 
-		return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
+		return sessions.DefaultTranscoder.Unmarshal(valueBytes, outPtr)
 	})
 	if err != nil {
 		db.logger.Debugf("session '%s' key '%s' cannot be retrieved: %v", sid, key, err)
 	}
 
-	return
+	return err
 }
 
 // Visit loops through all session keys and values.
-func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
+func (db *Database) Visit(sid string, cb func(key string, value interface{})) error {
 	err := db.Service.View(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
@@ -324,17 +334,19 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 	if err != nil {
 		db.logger.Debugf("Database.Visit: %s: %v", sid, err)
 	}
+
+	return err
 }
 
 // Len returns the length of the session's entries (keys).
-func (db *Database) Len(sid string) (n int) {
+func (db *Database) Len(sid string) (n int64) {
 	err := db.Service.View(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
 		}
 
-		n = b.Stats().KeyN
+		n = int64(b.Stats().KeyN)
 		return nil
 	})
 
@@ -360,7 +372,7 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 }
 
 // Clear removes all session key values but it keeps the session entry.
-func (db *Database) Clear(sid string) {
+func (db *Database) Clear(sid string) error {
 	err := db.Service.Update(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
@@ -375,11 +387,13 @@ func (db *Database) Clear(sid string) {
 	if err != nil {
 		db.logger.Debugf("Database.Clear: %s: %v", sid, err)
 	}
+
+	return err
 }
 
 // Release destroys the session, it clears and removes the session entry,
 // session manager will create a new session ID on the next request after this call.
-func (db *Database) Release(sid string) {
+func (db *Database) Release(sid string) error {
 	err := db.Service.Update(func(tx *bolt.Tx) error {
 		// delete the session bucket.
 		b := db.getBucket(tx)
@@ -393,6 +407,8 @@ func (db *Database) Release(sid string) {
 	if err != nil {
 		db.logger.Debugf("Database.Release: %s: %v", sid, err)
 	}
+
+	return err
 }
 
 // Close shutdowns the BoltDB connection.

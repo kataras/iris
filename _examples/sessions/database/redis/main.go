@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12"
-
 	"github.com/kataras/iris/v12/sessions"
 	"github.com/kataras/iris/v12/sessions/sessiondb/redis"
 
@@ -24,24 +22,18 @@ func main() {
 		Addr:      getenv("REDIS_ADDR", "127.0.0.1:6379"),
 		Timeout:   time.Duration(30) * time.Second,
 		MaxActive: 10,
+		Username:  "",
 		Password:  "",
 		Database:  "",
 		Prefix:    "",
-		Delim:     "-",
-		Driver:    redis.Redigo(), // redis.Radix() can be used instead.
+		Driver:    redis.GoRedis(), // defautls.
 	})
 
 	// Optionally configure the underline driver:
-	// driver := redis.Redigo()
-	// driver.MaxIdle = ...
-	// driver.IdleTimeout = ...
-	// driver.Wait = ...
-	// redis.Config {Driver: driver}
-
-	// Close connection when control+C/cmd+C
-	iris.RegisterOnInterrupt(func() {
-		db.Close()
-	})
+	// driver := redis.GoRedis()
+	// driver.ClientOptions = redis.Options{...}
+	// driver.ClusterOptions = redis.ClusterOptions{...}
+	// redis.New(redis.Config{Driver: driver, ...})
 
 	defer db.Close() // close the database connection if application errored.
 

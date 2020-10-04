@@ -77,6 +77,7 @@ func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) 
 // Init creates the session  and returns it
 func (p *provider) Init(man *Sessions, sid string, expires time.Duration) *Session {
 	newSession := p.newSession(man, sid, expires)
+	newSession.isNew = true
 	p.mu.Lock()
 	p.sessions[sid] = newSession
 	p.mu.Unlock()
@@ -118,13 +119,16 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 // Read returns the store which sid parameter belongs
 func (p *provider) Read(man *Sessions, sid string, expires time.Duration) *Session {
 	p.mu.RLock()
-	if sess, found := p.sessions[sid]; found {
+	sess, found := p.sessions[sid]
+	p.mu.RUnlock()
+	if found {
+		sess.mu.Lock()
+		sess.isNew = false
+		sess.mu.Unlock()
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session
-		p.mu.RUnlock()
 
 		return sess
 	}
-	p.mu.RUnlock()
 
 	return p.Init(man, sid, expires) // if not found create new
 }

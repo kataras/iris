@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"os"
-	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -71,7 +70,7 @@ func New(directoryPath string) (*Database, error) {
 func NewFromDB(service *badger.DB) *Database {
 	db := &Database{Service: service}
 
-	runtime.SetFinalizer(db, closeDB)
+	// runtime.SetFinalizer(db, closeDB)
 	return db
 }
 
@@ -127,25 +126,35 @@ func makeKey(sid, key string) []byte {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, lifetime *sessions.LifeTime, key string, value interface{}, immutable bool) {
+func (db *Database) Set(sid string, key string, value interface{}, ttl time.Duration, immutable bool) error {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
 		db.logger.Error(err)
-		return
+		return err
 	}
 
 	err = db.Service.Update(func(txn *badger.Txn) error {
-		dur := lifetime.DurationUntilExpiration()
-		return txn.SetEntry(badger.NewEntry(makeKey(sid, key), valueBytes).WithTTL(dur))
+		return txn.SetEntry(badger.NewEntry(makeKey(sid, key), valueBytes).WithTTL(ttl))
 	})
 
 	if err != nil {
 		db.logger.Error(err)
 	}
+
+	return err
 }
 
 // Get retrieves a session value based on the key.
 func (db *Database) Get(sid string, key string) (value interface{}) {
+	if err := db.Decode(sid, key, &value); err == nil {
+		return value
+	}
+
+	return nil
+}
+
+// Decode binds the "outPtr" to the value associated to the provided "key".
+func (db *Database) Decode(sid, key string, outPtr interface{}) error {
 	err := db.Service.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(makeKey(sid, key))
 		if err != nil {
@@ -153,16 +162,15 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 		}
 
 		return item.Value(func(valueBytes []byte) error {
-			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
+			return sessions.DefaultTranscoder.Unmarshal(valueBytes, outPtr)
 		})
 	})
 
 	if err != nil && err != badger.ErrKeyNotFound {
 		db.logger.Error(err)
-		return nil
 	}
 
-	return
+	return err
 }
 
 // validSessionItem reports whether the current iterator's item key
@@ -172,7 +180,7 @@ func validSessionItem(key, prefix []byte) bool {
 }
 
 // Visit loops through all session keys and values.
-func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
+func (db *Database) Visit(sid string, cb func(key string, value interface{})) error {
 	prefix := makePrefix(sid)
 
 	txn := db.Service.NewTransaction(false)
@@ -199,11 +207,13 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 		})
 		if err != nil {
 			db.logger.Errorf("[sessionsdb.badger.Visit] %v", err)
-			continue
+			return err
 		}
 
 		cb(string(bytes.TrimPrefix(key, prefix)), value)
 	}
+
+	return nil
 }
 
 var iterOptionsNoValues = badger.IteratorOptions{
@@ -247,7 +257,7 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 }
 
 // Clear removes all session key values but it keeps the session entry.
-func (db *Database) Clear(sid string) {
+func (db *Database) Clear(sid string) error {
 	prefix := makePrefix(sid)
 
 	txn := db.Service.NewTransaction(true)
@@ -260,24 +270,33 @@ func (db *Database) Clear(sid string) {
 		key := iter.Item().Key()
 		if err := txn.Delete(key); err != nil {
 			db.logger.Warnf("Database.Clear: %s: %v", key, err)
-			continue
+			return err
 		}
 	}
+
+	return nil
 }
 
 // Release destroys the session, it clears and removes the session entry,
 // session manager will create a new session ID on the next request after this call.
-func (db *Database) Release(sid string) {
+func (db *Database) Release(sid string) error {
 	// clear all $sid-$key.
-	db.Clear(sid)
+	err := db.Clear(sid)
+	if err != nil {
+		return err
+	}
 	// and remove the $sid.
 	txn := db.Service.NewTransaction(true)
-	if err := txn.Delete([]byte(sid)); err != nil {
+	if err = txn.Delete([]byte(sid)); err != nil {
 		db.logger.Warnf("Database.Release.Delete: %s: %v", sid, err)
+		return err
 	}
-	if err := txn.Commit(); err != nil {
+	if err = txn.Commit(); err != nil {
 		db.logger.Debugf("Database.Release.Commit: %s: %v", sid, err)
+		return err
 	}
+
+	return nil
 }
 
 // Close shutdowns the badger connection.
