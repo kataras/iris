@@ -145,10 +145,12 @@ func (r *Route) UseOnce(handlers ...context.Handler) {
 	r.beginHandlers = context.UpsertHandlers(r.beginHandlers, handlers)
 }
 
-// RemoveMiddleware deletes a begin handler based on its
-// name or the handler pc function.
+// RemoveHandler deletes a handler from begin, main and done handlers
+// based on its name or the handler pc function.
+// Returns the total amount of handlers removed.
+//
 // Should be called before Application Build.
-func (r *Route) RemoveMiddleware(nameOrHandler interface{}) {
+func (r *Route) RemoveHandler(nameOrHandler interface{}) (count int) {
 	handlerName := ""
 	switch h := nameOrHandler.(type) {
 	case string:
@@ -156,19 +158,34 @@ func (r *Route) RemoveMiddleware(nameOrHandler interface{}) {
 	case context.Handler:
 		handlerName = context.HandlerName(h)
 	default:
-		panic(fmt.Sprintf("remove begin handler: unexpected type of %T", h))
+		panic(fmt.Sprintf("remove handler: unexpected type of %T", h))
 	}
 
-	var newHandlers context.Handlers
-	for _, h := range r.beginHandlers {
+	r.beginHandlers = removeHandler(handlerName, r.beginHandlers, &count)
+	r.Handlers = removeHandler(handlerName, r.Handlers, &count)
+	r.doneHandlers = removeHandler(handlerName, r.doneHandlers, &count)
+
+	return
+}
+
+func removeHandler(handlerName string, handlers context.Handlers, counter *int) (newHandlers context.Handlers) {
+	for _, h := range handlers {
+		if h == nil {
+			continue
+		}
+
 		if context.HandlerName(h) == handlerName {
+			if counter != nil {
+				*counter++
+			}
+
 			continue
 		}
 
 		newHandlers = append(newHandlers, h)
 	}
 
-	r.beginHandlers = newHandlers
+	return
 }
 
 // Done adds explicit finish handlers to this route.

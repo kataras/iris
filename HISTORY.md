@@ -28,7 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
-- Add the new `Party.UseOnce` method to the `*Route` too and a new `*Route.RemoveMiddleware(interface{})` method was added in order to remove a specific middleware from a specific Route. Example:
+- Add the new `Party.UseOnce` method to the `*Route`
+- Add a new `*Route.RemoveHandler(interface{}) int`, deletes a handler from begin, main and done handlers based on its name or the handler pc function. Returns the total amount of handlers removed.
 
 ```go
 func middleware(ctx iris.Context) {
@@ -45,7 +46,7 @@ func main() {
     app.Get("/", index)
 
     // Handlers = other
-    app.Get("/other", other).RemoveMiddleware(middleware)
+    app.Get("/other", other).RemoveHandler(middleware)
 }
 ```
 
