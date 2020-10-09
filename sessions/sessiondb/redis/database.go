@@ -163,14 +163,14 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, key string, value interface{}, _ time.Duration, _ bool) error {
+func (db *Database) Set(fullSID string, key string, value interface{}, _ time.Duration, _ bool) error {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
 		db.logger.Error(err)
 		return err
 	}
 
-	if err = db.c.Driver.Set(db.makeSID(sid), key, valueBytes); err != nil {
+	if err = db.c.Driver.Set(fullSID, key, valueBytes); err != nil {
 		db.logger.Debug(err)
 		return err
 	}
@@ -179,8 +179,8 @@ func (db *Database) Set(sid string, key string, value interface{}, _ time.Durati
 }
 
 // Get retrieves a session value based on the key.
-func (db *Database) Get(fullSID string, key string) (value interface{}) {
-	if err := db.Decode(fullSID, key, &value); err == nil {
+func (db *Database) Get(sid string, key string) (value interface{}) {
+	if err := db.Decode(db.makeSID(sid), key, &value); err == nil {
 		return value
 	}
 
@@ -188,15 +188,15 @@ func (db *Database) Get(fullSID string, key string) (value interface{}) {
 }
 
 // Decode binds the "outPtr" to the value associated to the provided "key".
-func (db *Database) Decode(sid, key string, outPtr interface{}) error {
-	data, err := db.c.Driver.Get(sid, key)
+func (db *Database) Decode(fullSid, key string, outPtr interface{}) error {
+	data, err := db.c.Driver.Get(fullSid, key)
 	if err != nil {
 		// not found.
 		return err
 	}
 
 	if err = db.decodeValue(data, outPtr); err != nil {
-		db.logger.Debugf("unable to unmarshal value of key: '%s%s': %v", sid, key, err)
+		db.logger.Debugf("unable to unmarshal value of key: '%s%s': %v", fullSid, key, err)
 		return err
 	}
 
