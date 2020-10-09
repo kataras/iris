@@ -138,6 +138,39 @@ func (r *Route) Use(handlers ...context.Handler) {
 	r.beginHandlers = append(r.beginHandlers, handlers...)
 }
 
+// UseOnce like Use but it replaces any duplicate handlers with
+// the new ones.
+// Should be called before Application Build.
+func (r *Route) UseOnce(handlers ...context.Handler) {
+	r.beginHandlers = context.UpsertHandlers(r.beginHandlers, handlers)
+}
+
+// RemoveMiddleware deletes a begin handler based on its
+// name or the handler pc function.
+// Should be called before Application Build.
+func (r *Route) RemoveMiddleware(nameOrHandler interface{}) {
+	handlerName := ""
+	switch h := nameOrHandler.(type) {
+	case string:
+		handlerName = h
+	case context.Handler:
+		handlerName = context.HandlerName(h)
+	default:
+		panic(fmt.Sprintf("remove begin handler: unexpected type of %T", h))
+	}
+
+	var newHandlers context.Handlers
+	for _, h := range r.beginHandlers {
+		if context.HandlerName(h) == handlerName {
+			continue
+		}
+
+		newHandlers = append(newHandlers, h)
+	}
+
+	r.beginHandlers = newHandlers
+}
+
 // Done adds explicit finish handlers to this route.
 // Alternatively the end-dev can append to the `Handlers` field.
 // Should be used before the `BuildHandlers` which is

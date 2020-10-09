@@ -28,6 +28,27 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add the new `Party.UseOnce` method to the `*Route` too and a new `*Route.RemoveMiddleware(interface{})` method was added in order to remove a specific middleware from a specific Route. Example:
+
+```go
+func middleware(ctx iris.Context) {
+    // [...]
+}
+
+func main() {
+    app := iris.New()
+
+    // Register the middleware to all matched routes.
+    app.Use(middleware)
+
+    // Handlers = middleware, other
+    app.Get("/", index)
+
+    // Handlers = other
+    app.Get("/other", other).RemoveMiddleware(middleware)
+}
+```
+
 - Redis Driver is now based on the [go-redis](https://github.com/go-redis/redis/) module. Radix and redigo removed entirely. Sessions are now stored in hashes which fixes [issue #1610](https://github.com/kataras/iris/issues/1610). The only breaking change on default configuration is that the `redis.Config.Delim` option was removed. The redis sessions database driver is now defaults to the `&redis.GoRedisDriver{}`. End-developers can implement their own implementations too. The `Database#Close` is now automatically called on interrupt signals, no need to register it by yourself.
 
 - Add builtin support for **[i18n pluralization](https://github.com/kataras/iris/tree/master/_examples/i18n/plurals)**. Please check out the [following yaml locale example](https://github.com/kataras/iris/tree/master/_examples/i18n/plurals/locales/en-US/welcome.yml) to see an overview of the supported formats.
