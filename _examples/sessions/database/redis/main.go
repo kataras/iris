@@ -25,7 +25,7 @@ func main() {
 		Username:  "",
 		Password:  "",
 		Database:  "",
-		Prefix:    "",
+		Prefix:    "myapp-",
 		Driver:    redis.GoRedis(), // defautls.
 	})
 

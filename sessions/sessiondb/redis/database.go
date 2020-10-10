@@ -140,7 +140,7 @@ const SessionIDKey = "session_id"
 func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
 	sidKey := db.makeSID(sid)
 	if !db.c.Driver.Exists(sidKey) {
-		if err := db.Set(sidKey, SessionIDKey, sid, 0, false); err != nil {
+		if err := db.Set(sid, SessionIDKey, sid, 0, false); err != nil {
 			db.logger.Debug(err)
 		} else if expires > 0 {
 			if err := db.c.Driver.UpdateTTL(sidKey, expires); err != nil {
@@ -179,8 +179,8 @@ func (db *Database) Set(sid string, key string, value interface{}, _ time.Durati
 }
 
 // Get retrieves a session value based on the key.
-func (db *Database) Get(fullSID string, key string) (value interface{}) {
-	if err := db.Decode(fullSID, key, &value); err == nil {
+func (db *Database) Get(sid string, key string) (value interface{}) {
+	if err := db.Decode(sid, key, &value); err == nil {
 		return value
 	}
 
@@ -189,7 +189,8 @@ func (db *Database) Get(fullSID string, key string) (value interface{}) {
 
 // Decode binds the "outPtr" to the value associated to the provided "key".
 func (db *Database) Decode(sid, key string, outPtr interface{}) error {
-	data, err := db.c.Driver.Get(sid, key)
+	sidKey := db.makeSID(sid)
+	data, err := db.c.Driver.Get(sidKey, key)
 	if err != nil {
 		// not found.
 		return err
