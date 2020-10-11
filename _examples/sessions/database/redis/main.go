@@ -26,7 +26,7 @@ func main() {
 		Password:  "",
 		Database:  "",
 		Prefix:    "myapp-",
-		Driver:    redis.GoRedis(), // defautls.
+		Driver:    redis.GoRedis(), // defaults.
 	})
 
 	// Optionally configure the underline driver:

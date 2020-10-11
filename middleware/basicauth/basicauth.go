@@ -21,15 +21,15 @@ type (
 		HeaderValue string
 		Username    string
 		logged      bool
+		forceLogout bool // in order to be able to invalidate and use a redirect response.
 		expires     time.Time
 		mu          sync.RWMutex
 	}
-	encodedUsers []*encodedUser
 
 	basicAuthMiddleware struct {
-		config Config
+		config *Config
 		// these are filled from the config.Users map at the startup
-		auth             encodedUsers
+		auth             []*encodedUser
 		realmHeaderValue string
 
 		// The below can be removed but they are here because on the future we may add dynamic options for those two fields,
@@ -54,7 +54,7 @@ func New(c Config) context.Handler {
 	config.Expires = c.Expires
 	config.OnAsk = c.OnAsk
 
-	b := &basicAuthMiddleware{config: config}
+	b := &basicAuthMiddleware{config: &config}
 	b.init()
 	return b.Serve
 }
@@ -71,7 +71,7 @@ func Default(users map[string]string) context.Handler {
 
 func (b *basicAuthMiddleware) init() {
 	// pass the encoded users from the user's config's Users value
-	b.auth = make(encodedUsers, 0, len(b.config.Users))
+	b.auth = make([]*encodedUser, 0, len(b.config.Users))
 
 	for k, v := range b.config.Users {
 		fullUser := k + ":" + v
@@ -109,12 +109,19 @@ func (b *basicAuthMiddleware) askForCredentials(ctx *context.Context) {
 // Serve the actual middleware
 func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
-	if !found {
+	if !found || auth.forceLogout {
+		if auth != nil {
+			auth.mu.Lock()
+			auth.forceLogout = false
+			auth.mu.Unlock()
+		}
+
 		b.askForCredentials(ctx)
 		ctx.StopExecution()
 		return
 		// don't continue to the next handler
 	}
+
 	// all ok
 	if b.expireEnabled {
 		if !auth.logged {
@@ -136,5 +143,26 @@ func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 			return
 		}
 	}
+
+	if !b.config.DisableLogoutFunc {
+		ctx.SetLogoutFunc(b.Logout)
+	}
+
 	ctx.Next() // continue
+}
+
+// Logout sends a 401 so the browser/client can invalidate the
+// Basic Authentication and also sets the underline user's logged field to false,
+// so its expiration resets when re-ask for credentials.
+//
+// End-developers should call the `Context.Logout()` method
+// to fire this method as this structure is hidden.
+func (b *basicAuthMiddleware) Logout(ctx *context.Context) {
+	ctx.StatusCode(401)
+	if auth, found := b.findAuth(ctx.GetHeader("Authorization")); found {
+		auth.mu.Lock()
+		auth.logged = false
+		auth.forceLogout = true
+		auth.mu.Unlock()
+	}
 }

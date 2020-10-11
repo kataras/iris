@@ -37,6 +37,8 @@ func newApp() *iris.Application {
 
 		// http://localhost:8080/admin/settings
 		needAuth.Get("/settings", h)
+
+		needAuth.Get("/logout", logout)
 	}
 
 	return app
@@ -54,4 +56,12 @@ func h(ctx iris.Context) {
 	// makes sure for that, otherwise this handler will not be executed.
 
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
+}
+
+func logout(ctx iris.Context) {
+	err := ctx.Logout() // fires 401, invalidates the basic auth.
+	if err != nil {
+		ctx.Application().Logger().Errorf("Logout error: %v", err)
+	}
+	ctx.Redirect("/admin", iris.StatusTemporaryRedirect)
 }

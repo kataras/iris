@@ -42,11 +42,14 @@ type Config struct {
 	//
 	// Defaults to nil.
 	OnAsk context.Handler
+
+	// DisableLogoutFunc disables the registration of the custom basicauth Context.Logout.
+	DisableLogoutFunc bool
 }
 
 // DefaultConfig returns the default configs for the BasicAuth middleware
 func DefaultConfig() Config {
-	return Config{make(map[string]string), DefaultBasicAuthRealm, 0, nil}
+	return Config{make(map[string]string), DefaultBasicAuthRealm, 0, nil, false}
 }
 
 // User returns the user from context key same as  ctx.Request().BasicAuth().

@@ -5162,6 +5162,97 @@ func (ctx *Context) IsRecovered() (*ErrPanicRecovery, bool) {
 	return nil, false
 }
 
+const (
+	funcsContextPrefixKey = "iris.funcs."
+	funcLogoutContextKey  = "auth.logout_func"
+)
+
+// SetFunc registers a custom function to this Request.
+// It's a helper to pass dynamic functions across handlers of the same chain.
+// For a more complete solution please use Dependency Injection instead.
+// This is just an easy to way to pass a function to the
+// next handler like ctx.Values().Set/Get does.
+// Sometimes is faster and easier to pass the object as a request value
+// and cast it when you want to use one of its methods instead of using
+// these `SetFunc` and `CallFunc` methods.
+// This implementation is suitable for functions that may change inside the
+// handler chain and the object holding the method is not predictable.
+//
+// The "name" argument is the custom name of the function,
+// you will use its name to call it later on, e.g. "auth.myfunc".
+//
+// The second, "fn" argument is the raw function/method you want
+// to pass through the next handler(s) of the chain.
+//
+// The last variadic input argument is optionally, if set
+// then its arguments are passing into the function's input arguments,
+// they should be always be the first ones to be accepted by the "fn" inputs,
+// e.g. an object, a receiver or a static service.
+//
+// See its `CallFunc` to call the "fn" on the next handler.
+//
+// Example at:
+// https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs
+func (ctx *Context) SetFunc(name string, fn interface{}, persistenceArgs ...interface{}) {
+	f := newFunc(name, fn, persistenceArgs...)
+	ctx.values.Set(funcsContextPrefixKey+name, f)
+}
+
+// GetFunc returns the context function declaration which holds
+// some information about the function registered under the given "name" by
+// the `SetFunc` method.
+func (ctx *Context) GetFunc(name string) (*Func, bool) {
+	fn := ctx.values.Get(funcsContextPrefixKey + name)
+	if fn == nil {
+		return nil, false
+	}
+
+	return fn.(*Func), true
+}
+
+// CallFunc calls the function registered by the `SetFunc`.
+// The input arguments MUST match the expected ones.
+//
+// If the registered function was just a handler
+// or a handler which returns an error
+// or a simple function
+// or a simple function which returns an error
+// then this operation will perform without any serious cost,
+// otherwise reflection will be used instead, which may slow down the overall performance.
+//
+// Retruns ErrNotFound if the function was not registered.
+//
+// For a more complete solution without limiations navigate through
+// the Iris Dependency Injection feature instead.
+func (ctx *Context) CallFunc(name string, args ...interface{}) ([]reflect.Value, error) {
+	fn, ok := ctx.GetFunc(name)
+	if !ok || fn == nil {
+		return nil, ErrNotFound
+	}
+
+	return fn.call(ctx, args...)
+}
+
+// SetLogoutFunc registers a custom logout function that will be
+// available to use inside the next handler(s). The function
+// may be registered multiple times but the last one is the valid.
+// So a logout function may start with basic authentication
+// and other middleware in the chain may change it to a custom sessions logout one.
+// This method uses the `SetFunc` method under the hoods.
+//
+// See `Logout` method too.
+func (ctx *Context) SetLogoutFunc(fn interface{}, persistenceArgs ...interface{}) {
+	ctx.SetFunc(funcLogoutContextKey, fn, persistenceArgs...)
+}
+
+// Logout calls the registered logout function.
+// Returns ErrNotFound if a logout function was not specified
+// by a prior call of `SetLogoutFunc`.
+func (ctx *Context) Logout(args ...interface{}) error {
+	_, err := ctx.CallFunc(funcLogoutContextKey, args...)
+	return err
+}
+
 const idContextKey = "iris.context.id"
 
 // SetID sets an ID, any value, to the Request Context.

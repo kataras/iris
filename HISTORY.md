@@ -28,6 +28,9 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/main.go) client credentials.
+- Add the ability to [share functions](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
+
 - Add the new `Party.UseOnce` method to the `*Route`
 - Add a new `*Route.RemoveHandler(interface{}) int`, deletes a handler from begin, main and done handlers based on its name or the handler pc function. Returns the total amount of handlers removed.
 
@@ -306,6 +309,8 @@ var dirOpts = iris.DirOptions{
 
 ## New Context Methods
 
+- `Context.SetLogoutFunc(fn interface{}, persistenceArgs ...interface{})` and `Logout(args ...interface{}) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
+- `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) for more.
 - `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
 - `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
 - `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `iris.IsErrPrivate` function and `iris.ErrPrivate` interface have been introduced. 

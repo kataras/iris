@@ -48,6 +48,9 @@
     * Middleware
         * [Per Route](routing/writing-a-middleware/per-route/main.go)
         * [Globally](routing/writing-a-middleware/globally/main.go)
+        * Share Values
+            * [Share Services](routing/writing-a-middleware/share-services/main.go)
+            * [Share Functions](routing/writing-a-middleware/share-funcs/main.go)
         * [Handlers Execution Rule](routing/route-handlers-execution-rules/main.go)
         * [Route Register Rule](routing/route-register-rule/main.go)
         * Convert net/http Handlers
