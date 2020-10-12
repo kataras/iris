@@ -150,20 +150,22 @@ func (r *Route) UseOnce(handlers ...context.Handler) {
 // Returns the total amount of handlers removed.
 //
 // Should be called before Application Build.
-func (r *Route) RemoveHandler(nameOrHandler interface{}) (count int) {
-	handlerName := ""
-	switch h := nameOrHandler.(type) {
-	case string:
-		handlerName = h
-	case context.Handler:
-		handlerName = context.HandlerName(h)
-	default:
-		panic(fmt.Sprintf("remove handler: unexpected type of %T", h))
-	}
+func (r *Route) RemoveHandler(namesOrHandlers ...interface{}) (count int) {
+	for _, nameOrHandler := range namesOrHandlers {
+		handlerName := ""
+		switch h := nameOrHandler.(type) {
+		case string:
+			handlerName = h
+		case context.Handler:
+			handlerName = context.HandlerName(h)
+		default:
+			panic(fmt.Sprintf("remove handler: unexpected type of %T", h))
+		}
 
-	r.beginHandlers = removeHandler(handlerName, r.beginHandlers, &count)
-	r.Handlers = removeHandler(handlerName, r.Handlers, &count)
-	r.doneHandlers = removeHandler(handlerName, r.doneHandlers, &count)
+		r.beginHandlers = removeHandler(handlerName, r.beginHandlers, &count)
+		r.Handlers = removeHandler(handlerName, r.Handlers, &count)
+		r.doneHandlers = removeHandler(handlerName, r.doneHandlers, &count)
+	}
 
 	return
 }

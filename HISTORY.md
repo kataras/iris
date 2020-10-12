@@ -32,7 +32,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 - Add the ability to [share functions](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
 
 - Add the new `Party.UseOnce` method to the `*Route`
-- Add a new `*Route.RemoveHandler(interface{}) int`, deletes a handler from begin, main and done handlers based on its name or the handler pc function. Returns the total amount of handlers removed.
+- Add a new `*Route.RemoveHandler(...interface{}) int` and `Party.RemoveHandler(...interface{}) Party` methods, delete a handler based on its name or the handler pc function.
 
 ```go
 func middleware(ctx iris.Context) {

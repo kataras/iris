@@ -1094,6 +1094,38 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
 }
 
+// RemoveHandler deletes a handler from begin and done handlers
+// based on its name or the handler pc function.
+//
+// As an exception, if one of the arguments is a pointer to an int,
+// then this is used to set the total amount of removed handlers.
+//
+// Returns the Party itself for chain calls.
+//
+// Should be called before children routes regitration.
+func (api *APIBuilder) RemoveHandler(namesOrHandlers ...interface{}) Party {
+	var counter *int
+
+	for _, nameOrHandler := range namesOrHandlers {
+		handlerName := ""
+		switch h := nameOrHandler.(type) {
+		case string:
+			handlerName = h
+		case context.Handler:
+			handlerName = context.HandlerName(h)
+		case *int:
+			counter = h
+		default:
+			panic(fmt.Sprintf("remove handler: unexpected type of %T", h))
+		}
+
+		api.middleware = removeHandler(handlerName, api.middleware, counter)
+		api.doneHandlers = removeHandler(handlerName, api.doneHandlers, counter)
+	}
+
+	return api
+}
+
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 // and the execution rules.
 // Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.

@@ -121,7 +121,16 @@ type Party interface {
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
-
+	// RemoveHandler deletes a handler from begin and done handlers
+	// based on its name or the handler pc function.
+	//
+	// As an exception, if one of the arguments is a pointer to an int,
+	// then this is used to set the total amount of removed handlers.
+	//
+	// Returns the Party itself for chain calls.
+	//
+	// Should be called before children routes regitration.
+	RemoveHandler(namesOrHandlers ...interface{}) Party
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 	// and the execution rules.
 	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
