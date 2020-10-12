@@ -51,11 +51,12 @@ func main() {
 }
 
 func h(ctx iris.Context) {
-	username, password, _ := ctx.Request().BasicAuth()
+	// username, password, _ := ctx.Request().BasicAuth()
 	// third parameter it will be always true because the middleware
 	// makes sure for that, otherwise this handler will not be executed.
-
-	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
+	// OR:
+	user := ctx.User()
+	ctx.Writef("%s %s:%s", ctx.Path(), user.GetUsername(), user.GetPassword())
 }
 
 func logout(ctx iris.Context) {

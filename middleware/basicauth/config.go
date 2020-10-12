@@ -43,8 +43,9 @@ type Config struct {
 	// Defaults to nil.
 	OnAsk context.Handler
 
-	// DisableLogoutFunc disables the registration of the custom basicauth Context.Logout.
-	DisableLogoutFunc bool
+	// DisableContextUser disables the registration of the custom basicauth Context.Logout
+	// and the User.
+	DisableContextUser bool
 }
 
 // DefaultConfig returns the default configs for the BasicAuth middleware

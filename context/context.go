@@ -2133,12 +2133,12 @@ const disableRequestBodyConsumptionContextKey = "iris.request.body.record"
 // but acts for the current request.
 // It makes the request body readable more than once.
 func (ctx *Context) RecordBody() {
-	ctx.Values().Set(disableRequestBodyConsumptionContextKey, true)
+	ctx.values.Set(disableRequestBodyConsumptionContextKey, true)
 }
 
 // IsRecordingBody reports whether the request body can be readen multiple times.
 func (ctx *Context) IsRecordingBody() bool {
-	return ctx.Values().GetBoolDefault(disableRequestBodyConsumptionContextKey,
+	return ctx.values.GetBoolDefault(disableRequestBodyConsumptionContextKey,
 		ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
 }
 
@@ -5251,6 +5251,28 @@ func (ctx *Context) SetLogoutFunc(fn interface{}, persistenceArgs ...interface{}
 func (ctx *Context) Logout(args ...interface{}) error {
 	_, err := ctx.CallFunc(funcLogoutContextKey, args...)
 	return err
+}
+
+const userContextKey = "iris.user"
+
+// SetUser sets a User for this request.
+// It's used by auth middlewares as a common
+// method to provide user information to the
+// next handlers in the chain.
+func (ctx *Context) SetUser(u User) {
+	ctx.values.Set(userContextKey, u)
+}
+
+// User returns the registered User of this request.
+// See `SetUser` too.
+func (ctx *Context) User() User {
+	if v := ctx.values.Get(userContextKey); v != nil {
+		if u, ok := v.(User); ok {
+			return u
+		}
+	}
+
+	return nil
 }
 
 const idContextKey = "iris.context.id"

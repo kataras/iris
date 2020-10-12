@@ -28,6 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- A generic User interface, see the `Context.SetUser/User` methods in the New Context Methods section for more. In-short, the basicauth middleware's stored user can now be retrieved through `Context.User()` which provides more information than the native `ctx.Request().BasicAuth()` method one. Third-party authentication middleware creators can benefit of these two methods, plus the Logout below. 
 - A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/main.go) client credentials.
 - Add the ability to [share functions](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
 
@@ -309,6 +310,7 @@ var dirOpts = iris.DirOptions{
 
 ## New Context Methods
 
+- `Context.SetUser(User)` and `Context.User() User` to store and retrieve an authenticated client. Read more [here](https://github.com/iris-contrib/middleware/issues/63).
 - `Context.SetLogoutFunc(fn interface{}, persistenceArgs ...interface{})` and `Logout(args ...interface{}) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
 - `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) for more.
 - `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 

@@ -1,7 +1,11 @@
 // Package basicauth provides http basic authentication via middleware. See _examples/auth/basicauth
 package basicauth
 
-// test file: ../../_examples/auth/basicauth/main_test.go
+/*
+Test files:
+	- ../../_examples/auth/basicauth/main_test.go
+	- ./basicauth_test.go
+*/
 
 import (
 	"encoding/base64"
@@ -16,14 +20,18 @@ func init() {
 	context.SetHandlerName("iris/middleware/basicauth.*", "iris.basicauth")
 }
 
+const authorizationType = "Basic Authentication"
+
 type (
 	encodedUser struct {
-		HeaderValue string
-		Username    string
-		logged      bool
-		forceLogout bool // in order to be able to invalidate and use a redirect response.
-		expires     time.Time
-		mu          sync.RWMutex
+		HeaderValue  string
+		Username     string
+		Password     string
+		logged       bool
+		forceLogout  bool      // in order to be able to invalidate and use a redirect response.
+		authorizedAt time.Time // when from !logged to logged.
+		expires      time.Time
+		mu           sync.RWMutex
 	}
 
 	basicAuthMiddleware struct {
@@ -45,6 +53,8 @@ type (
 // which will ask the client for basic auth (username, password),
 // validate that and if valid continues to the next handler, otherwise
 // throws a StatusUnauthorized http error code.
+//
+// Use the `Context.User` method to retrieve the stored user.
 func New(c Config) context.Handler {
 	config := DefaultConfig()
 	if c.Realm != "" {
@@ -76,7 +86,13 @@ func (b *basicAuthMiddleware) init() {
 	for k, v := range b.config.Users {
 		fullUser := k + ":" + v
 		header := "Basic " + base64.StdEncoding.EncodeToString([]byte(fullUser))
-		b.auth = append(b.auth, &encodedUser{HeaderValue: header, Username: k, logged: false, expires: DefaultExpireTime})
+		b.auth = append(b.auth, &encodedUser{
+			HeaderValue: header,
+			Username:    k,
+			Password:    v,
+			logged:      false,
+			expires:     DefaultExpireTime,
+		})
 	}
 
 	// set the auth realm header's value
@@ -106,7 +122,8 @@ func (b *basicAuthMiddleware) askForCredentials(ctx *context.Context) {
 	}
 }
 
-// Serve the actual middleware
+// Serve the actual basic authentication middleware.
+// Use the Context.User method to retrieve the stored user.
 func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
 	if !found || auth.forceLogout {
@@ -122,11 +139,20 @@ func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 		// don't continue to the next handler
 	}
 
+	auth.mu.RLock()
+	logged := auth.logged
+	auth.mu.RUnlock()
+	if !logged {
+		auth.mu.Lock()
+		auth.authorizedAt = time.Now()
+		auth.mu.Unlock()
+	}
+
 	// all ok
 	if b.expireEnabled {
-		if !auth.logged {
+		if !logged {
 			auth.mu.Lock()
-			auth.expires = time.Now().Add(b.config.Expires)
+			auth.expires = auth.authorizedAt.Add(b.config.Expires)
 			auth.logged = true
 			auth.mu.Unlock()
 		}
@@ -137,6 +163,7 @@ func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 		if expired {
 			auth.mu.Lock()
 			auth.logged = false
+			auth.forceLogout = false
 			auth.mu.Unlock()
 			b.askForCredentials(ctx) // ask for authentication again
 			ctx.StopExecution()
@@ -144,8 +171,18 @@ func (b *basicAuthMiddleware) Serve(ctx *context.Context) {
 		}
 	}
 
-	if !b.config.DisableLogoutFunc {
+	if !b.config.DisableContextUser {
 		ctx.SetLogoutFunc(b.Logout)
+
+		auth.mu.RLock()
+		user := &context.SimpleUser{
+			Authorization: authorizationType,
+			AuthorizedAt:  auth.authorizedAt,
+			Username:      auth.Username,
+			Password:      auth.Password,
+		}
+		auth.mu.RUnlock()
+		ctx.SetUser(user)
 	}
 
 	ctx.Next() // continue

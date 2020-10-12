@@ -20,6 +20,15 @@ func TestBasicAuthUseRouter(t *testing.T) {
 
 	app.UseRouter(basicauth.Default(users))
 
+	app.Get("/user_json", func(ctx iris.Context) {
+		ctx.JSON(ctx.User())
+	})
+
+	app.Get("/user_string", func(ctx iris.Context) {
+		user := ctx.User()
+		ctx.Writef("%s\n%s\n%s", user.GetAuthorization(), user.GetUsername(), user.GetPassword())
+	})
+
 	app.Get("/", func(ctx iris.Context) {
 		username, _, _ := ctx.Request().BasicAuth()
 		ctx.Writef("Hello, %s!", username)
@@ -55,6 +64,13 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		// Test pass authentication and route found.
 		e.GET("/").WithBasicAuth(username, password).Expect().
 			Status(httptest.StatusOK).Body().Equal(fmt.Sprintf("Hello, %s!", username))
+		e.GET("/user_json").WithBasicAuth(username, password).Expect().
+			Status(httptest.StatusOK).JSON().Object().ContainsMap(iris.Map{
+			"username": username,
+		})
+		e.GET("/user_string").WithBasicAuth(username, password).Expect().
+			Status(httptest.StatusOK).Body().
+			Equal(fmt.Sprintf("%s\n%s\n%s", "Basic Authentication", username, password))
 
 		// Test empty auth.
 		e.GET("/").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
