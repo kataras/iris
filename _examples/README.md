@@ -124,8 +124,10 @@
     * [Basic](view/template_html_0/main.go)
     * [A simple Layout](view/template_html_1/main.go)
     * [Layouts: `yield` and `render` tmpl funcs](view/template_html_2/main.go)
-    * [The `urlpath` tmpl func](view/template_html_3/main.go)
-    * [The `url` tmpl func](view/template_html_4/main.go)
+    * The `urlpath` template func
+        * [HTML](view/template_html_3/main.go)
+        * [Django](view/template_django_1/main.go)
+    * [The `url` template func](view/template_html_4/main.go)
     * [Inject Data Between Handlers](view/context-view-data/main.go)
     * [Inject Engine Between Handlers](view/context-view-engine/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)

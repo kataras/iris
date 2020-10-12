@@ -1,14 +1,10 @@
-// Package main an example on how to naming your routes & use the custom
-// 'url path' HTML Template Engine, same for other template engines.
 package main
 
-import (
-	"github.com/kataras/iris/v12"
-)
+import "github.com/kataras/iris/v12"
 
 func main() {
 	app := iris.New()
-	app.RegisterView(iris.HTML("./templates", ".html").Reload(true))
+	app.RegisterView(iris.Django("./views", ".html").Reload(true))
 
 	mypathRoute := app.Get("/mypath", writePathHandler)
 	mypathRoute.Name = "my-page1"
