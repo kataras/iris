@@ -25,7 +25,13 @@ func (f *JSON) writeEasyJSON(in *Log) error {
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.Timestamp))
+
+		if f.HumanTime {
+			t := in.Now.Format(in.TimeFormat)
+			out.String(t)
+		} else {
+			out.Int64(in.Timestamp)
+		}
 	}
 	{
 		const prefix string = ",\"latency\":"
@@ -40,17 +46,17 @@ func (f *JSON) writeEasyJSON(in *Log) error {
 	{
 		const prefix string = ",\"method\":"
 		out.RawString(prefix)
-		out.String(string(in.Method))
+		out.String(in.Method)
 	}
 	{
 		const prefix string = ",\"path\":"
 		out.RawString(prefix)
-		out.String(string(in.Path))
+		out.String(in.Path)
 	}
 	if in.IP != "" {
 		const prefix string = ",\"ip\":"
 		out.RawString(prefix)
-		out.String(string(in.IP))
+		out.String(in.IP)
 	}
 	if len(in.Query) != 0 {
 		const prefix string = ",\"query\":"
