@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"crypto"
+	"encoding/json"
 	"os"
 	"strings"
 	"time"
@@ -449,6 +450,17 @@ func Get(ctx *context.Context) interface{} {
 		switch v := tok.Value.(type) {
 		case *context.Map:
 			return *v
+		case *json.RawMessage:
+			// This is useful when we can accept more than one
+			// type of JWT token in the same request path,
+			// but we also want to keep type safety.
+			// Usage:
+			// type myClaims struct { Roles []string `json:"roles"`}
+			// v := jwt.Get(ctx)
+			// var claims myClaims
+			// jwt.Unmarshal(v, &claims)
+			// [...claims.Roles]
+			return *v
 		default:
 			return v
 		}
@@ -621,7 +633,19 @@ func (j *JWT) TokenPair(refreshMaxAge time.Duration, refreshClaims interface{}, 
 // - The Context Logout method is set if Blocklist was initialized
 // Any error is captured to the Context,
 // which can be retrieved by a `ctx.GetErr()` call.
+//
+// See `VerifyJSON` too.
 func (j *JWT) Verify(newPtr func() interface{}, expections ...Expectation) context.Handler {
+	if newPtr == nil {
+		newPtr = func() interface{} {
+			// Return a map here as the default type one,
+			// as it does allow .Get callers to access its fields with ease
+			// (although, I always recommend using structs for type-safety and
+			// also they can accept a required tag option too).
+			return &context.Map{}
+		}
+	}
+
 	expections = append(expections, MeetRequirements(newPtr()))
 
 	return func(ctx *context.Context) {
@@ -645,6 +669,39 @@ func (j *JWT) Verify(newPtr func() interface{}, expections ...Expectation) conte
 		ctx.Values().Set(tokenInfoContextKey, tokenInfo)
 		ctx.Next()
 	}
+}
+
+// VerifyJSON works like `Verify` but instead it
+// binds its "newPtr" function to return a raw JSON message.
+// This allows the caller to bind this JSON message to any Go structure (or map).
+// This is useful when we can accept more than one
+// type of JWT token in the same request path,
+// but we also want to keep type safety.
+// Usage:
+// app.Use(jwt.VerifyJSON())
+// Inside a route Handler:
+// claims := struct { Roles []string `json:"roles"`}{}
+// jwt.ReadJSON(ctx, &claims)
+// ...access to claims.Roles as []string
+func (j *JWT) VerifyJSON(expections ...Expectation) context.Handler {
+	return j.Verify(func() interface{} {
+		return new(json.RawMessage)
+	})
+}
+
+// ReadJSON is a helper which binds "claimsPtr" to the
+// raw JSON token claims.
+// Use inside the handlers when `VerifyJSON()` middleware was registered.
+func ReadJSON(ctx *context.Context, claimsPtr interface{}) error {
+	v := Get(ctx)
+	if v == nil {
+		return ErrMissing
+	}
+	data, ok := v.(json.RawMessage)
+	if !ok {
+		return ErrMissing
+	}
+	return Unmarshal(data, claimsPtr)
 }
 
 // NewUser returns a new User based on the given "opts".

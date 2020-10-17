@@ -192,9 +192,7 @@ func TestVerifyMap(t *testing.T) {
 	})
 
 	// Test map + Verify middleware.
-	userAPI.Post("/middleware", j.Verify(func() interface{} {
-		return &iris.Map{} // or &map[string]interface{}{}
-	}), func(ctx iris.Context) {
+	userAPI.Post("/middleware", j.Verify(nil), func(ctx iris.Context) {
 		claims := jwt.Get(ctx)
 		ctx.JSON(claims)
 	})
@@ -263,6 +261,38 @@ func TestVerifyStruct(t *testing.T) {
 	e.POST("/user").Expect().Status(httptest.StatusUnauthorized)
 	time.Sleep(maxAge)
 	e.POST("/user").WithHeader("Authorization", "Bearer "+token).Expect().Status(httptest.StatusUnauthorized)
+}
+
+func TestVerifyJSON(t *testing.T) {
+	j := jwt.HMAC(testMaxAge, "secret", "itsa16bytesecret")
+
+	app := iris.New()
+	app.Get("/user/auth", func(ctx iris.Context) {
+		err := j.WriteToken(ctx, iris.Map{"roles": []string{"admin"}})
+		if err != nil {
+			ctx.StopWithError(iris.StatusUnauthorized, err)
+			return
+		}
+	})
+
+	app.Post("/", j.VerifyJSON(), func(ctx iris.Context) {
+		claims := struct {
+			Roles []string `json:"roles"`
+		}{}
+		jwt.ReadJSON(ctx, &claims)
+		ctx.JSON(claims)
+	})
+
+	e := httptest.New(t, app, httptest.LogLevel("error"))
+	token := e.GET("/user/auth").Expect().Status(httptest.StatusOK).Body().Raw()
+	if token == "" {
+		t.Fatalf("empty token")
+	}
+
+	e.POST("/").WithHeader("Authorization", "Bearer "+token).Expect().
+		Status(httptest.StatusOK).JSON().Equal(iris.Map{"roles": []string{"admin"}})
+
+	e.POST("/").Expect().Status(httptest.StatusUnauthorized)
 }
 
 func TestVerifyUserAndExpected(t *testing.T) { // Tests the jwt.User struct + context validator + expected.
