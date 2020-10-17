@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"github.com/square/go-jose/v3"
+	"github.com/square/go-jose/v3/json"
 	"github.com/square/go-jose/v3/jwt"
 )
 
@@ -14,11 +15,19 @@ type (
 	// epoch, including leap seconds. Non-integer values can be represented
 	// in the serialized format, but we round to the nearest second.
 	NumericDate = jwt.NumericDate
+	// Expected defines values used for protected claims validation.
+	// If field has zero value then validation is skipped.
+	Expected = jwt.Expected
 )
 
 var (
 	// NewNumericDate constructs NumericDate from time.Time value.
 	NewNumericDate = jwt.NewNumericDate
+	// Marshal returns the JSON encoding of v.
+	Marshal = json.Marshal
+	// Unmarshal parses the JSON-encoded data and stores the result
+	// in the value pointed to by v.
+	Unmarshal = json.Unmarshal
 )
 
 type (

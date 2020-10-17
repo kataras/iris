@@ -29,7 +29,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 ## Fixes and Improvements
 
 - A generic User interface, see the `Context.SetUser/User` methods in the New Context Methods section for more. In-short, the basicauth middleware's stored user can now be retrieved through `Context.User()` which provides more information than the native `ctx.Request().BasicAuth()` method one. Third-party authentication middleware creators can benefit of these two methods, plus the Logout below. 
-- A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/main.go) client credentials.
+- A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/main.go) or [jwt](https://github.com/kataras/iris/blob/master/_examples/auth/jwt/main.go) client credentials.
 - Add the ability to [share functions](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
 
 - Add the new `Party.UseOnce` method to the `*Route`
@@ -315,7 +315,7 @@ var dirOpts = iris.DirOptions{
 - `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) for more.
 - `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
 - `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
-- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `iris.IsErrPrivate` function and `iris.ErrPrivate` interface have been introduced. 
+- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `Context.GetErrPublic() (bool, error)`, `Context.SetErrPrivate(err error)` methods and `iris.ErrPrivate` interface have been introduced. 
 - `Context.RecordBody()` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
 - `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
 - `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go).
@@ -490,6 +490,7 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | [net.IP](https://golang.org/pkg/net/#IP) | `net.ParseIP(ctx.RemoteAddr())` |
 | [mvc.Code](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Code) | `ctx.GetStatusCode() int` |
 | [mvc.Err](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Err) | `ctx.GetErr() error` |
+| [iris/context.User](https://pkg.go.dev/github.com/kataras/iris/v12/context?tab=doc#User) | `ctx.User()` |
 | `string`, | |
 | `int, int8, int16, int32, int64`, | |
 | `uint, uint8, uint16, uint32, uint64`, | |

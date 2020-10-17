@@ -59,6 +59,10 @@ type (
 	Filter = context.Filter
 	// A Map is an alias of map[string]interface{}.
 	Map = context.Map
+	// User is a generic view of an authorized client.
+	// See `Context.User` and `SetUser` methods for more.
+	// An alias for the `context/User` type.
+	User = context.User
 	// Problem Details for HTTP APIs.
 	// Pass a Problem value to `context.Problem` to
 	// write an "application/problem+json" response.
@@ -475,8 +479,6 @@ var (
 	// on post data, versioning feature and others.
 	// An alias of `context.ErrNotFound`.
 	ErrNotFound = context.ErrNotFound
-	// IsErrPrivate reports whether the given "err" is a private one.
-	IsErrPrivate = context.IsErrPrivate
 	// NewProblem returns a new Problem.
 	// Head over to the `Problem` type godoc for more.
 	//
@@ -502,6 +504,9 @@ var (
 	//
 	// A shortcut for the `context#ErrPushNotSupported`.
 	ErrPushNotSupported = context.ErrPushNotSupported
+	// PrivateError accepts an error and returns a wrapped private one.
+	// A shortcut for the `context#PrivateError`.
+	PrivateError = context.PrivateError
 )
 
 // HTTP Methods copied from `net/http`.

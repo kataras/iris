@@ -714,9 +714,10 @@ func (ctx *Context) StopWithError(statusCode int, err error) {
 	}
 
 	ctx.SetErr(err)
-	if IsErrPrivate(err) {
-		// error is private, we can't render it, instead .
-		// let the error handler render the code text.
+	if _, ok := err.(ErrPrivate); ok {
+		// error is private, we SHOULD not render it,
+		// leave the error handler alone to
+		// render the code's text instead.
 		ctx.StopWithStatus(statusCode)
 		return
 	}
@@ -5065,8 +5066,6 @@ func (ctx *Context) IsDebug() bool {
 	return ctx.app.IsDebug()
 }
 
-const errorContextKey = "iris.context.error"
-
 // SetErr is just a helper that sets an error value
 // as a context value, it does nothing more.
 // Also, by-default this error's value is written to the client
@@ -5088,14 +5087,71 @@ func (ctx *Context) SetErr(err error) {
 
 // GetErr is a helper which retrieves
 // the error value stored by `SetErr`.
+//
+// Note that, if an error was stored by `SetErrPrivate`
+// then it returns the underline/original error instead
+// of the internal error wrapper.
 func (ctx *Context) GetErr() error {
+	_, err := ctx.GetErrPublic()
+	return err
+}
+
+// ErrPrivate if provided then the error saved in context
+// should NOT be visible to the client no matter what.
+type ErrPrivate interface {
+	error
+	IrisPrivateError()
+}
+
+// An internal wrapper for the `SetErrPrivate` method.
+type privateError struct{ error }
+
+func (e privateError) IrisPrivateError() {}
+
+// PrivateError accepts an error and returns a wrapped private one.
+func PrivateError(err error) ErrPrivate {
+	if err == nil {
+		return nil
+	}
+
+	errPrivate, ok := err.(ErrPrivate)
+	if !ok {
+		errPrivate = privateError{err}
+	}
+
+	return errPrivate
+}
+
+const errorContextKey = "iris.context.error"
+
+// SetErrPrivate sets an error that it's only accessible through `GetErr`
+// and it should never be sent to the client.
+//
+// Same as ctx.SetErr with an error that completes the `ErrPrivate` interface.
+// See `GetErrPublic` too.
+func (ctx *Context) SetErrPrivate(err error) {
+	ctx.SetErr(PrivateError(err))
+}
+
+// GetErrPublic reports whether the stored error
+// can be displayed to the client without risking
+// to expose security server implementation to the client.
+//
+// If the error is not nil, it is always the original one.
+func (ctx *Context) GetErrPublic() (bool, error) {
 	if v := ctx.values.Get(errorContextKey); v != nil {
-		if err, ok := v.(error); ok {
-			return err
+		switch err := v.(type) {
+		case privateError:
+			// If it's an error set by SetErrPrivate then unwrap it.
+			return false, err.error
+		case ErrPrivate:
+			return false, err
+		case error:
+			return true, err
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
 // ErrPanicRecovery may be returned from `Context` actions of a `Handler`
@@ -5133,22 +5189,6 @@ func IsErrPanicRecovery(err error) (*ErrPanicRecovery, bool) {
 	}
 	v, ok := err.(*ErrPanicRecovery)
 	return v, ok
-}
-
-// ErrPrivate if provided then the error saved in context
-// should NOT be visible to the client no matter what.
-type ErrPrivate interface {
-	IrisPrivateError()
-}
-
-// IsErrPrivate reports whether the given "err" is a private one.
-func IsErrPrivate(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, ok := err.(ErrPrivate)
-	return ok
 }
 
 // IsRecovered reports whether this handler has been recovered

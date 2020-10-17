@@ -129,15 +129,14 @@ type RoutesProvider interface { // api builder
 }
 
 func defaultErrorHandler(ctx *context.Context) {
-	if err := ctx.GetErr(); err != nil {
-		if !context.IsErrPrivate(err) {
-			ctx.WriteString(err.Error())
-			return
-		}
+	if ok, err := ctx.GetErrPublic(); ok {
+		// If an error is stored and it's not a private one
+		// write it to the response body.
+		ctx.WriteString(err.Error())
+		return
 	}
-
+	// Otherwise, write the code's text instead.
 	ctx.WriteString(context.StatusText(ctx.GetStatusCode()))
-
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {

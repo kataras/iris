@@ -2,8 +2,6 @@ package jwt
 
 import (
 	"crypto"
-	"encoding/json"
-	"errors"
 	"os"
 	"strings"
 	"time"
@@ -85,6 +83,9 @@ func FromJSON(jsonKey string) TokenExtractor {
 //
 // The `RSA(privateFile, publicFile, password)` package-level helper function
 // can be used to decode the SignKey and VerifyKey.
+//
+// For an easy use look the `HMAC` package-level function
+// and the its `NewUser` and `VerifyUser` methods.
 type JWT struct {
 	// MaxAge is the expiration duration of the generated tokens.
 	MaxAge time.Duration
@@ -109,6 +110,17 @@ type JWT struct {
 	Encrypter jose.Encrypter
 	// DecriptionKey is used to decrypt the token (private key)
 	DecriptionKey interface{}
+
+	// Blocklist holds the invalidated-by-server tokens (that are not yet expired).
+	// It is not initialized by default.
+	// Initialization Usage:
+	// j.UseBlocklist()
+	// OR
+	// j.Blocklist = jwt.NewBlocklist(gcEveryDuration)
+	// Usage:
+	// - ctx.Logout()
+	// - j.Invalidate(ctx)
+	Blocklist *Blocklist
 }
 
 type privateKey interface{ Public() crypto.PublicKey }
@@ -284,64 +296,68 @@ func (j *JWT) WithEncryption(contentEncryption ContentEncryption, alg KeyAlgorit
 	return nil
 }
 
-// Expiry returns a new standard Claims with
-// the `Expiry` and `IssuedAt` fields of the "claims" filled
-// based on the given "maxAge" duration.
-//
-// See the `JWT.Expiry` method too.
-func Expiry(maxAge time.Duration, claims Claims) Claims {
-	now := time.Now()
-	claims.Expiry = NewNumericDate(now.Add(maxAge))
-	claims.IssuedAt = NewNumericDate(now)
-	return claims
+// UseBlocklist initializes the Blocklist.
+// Should be called on jwt middleware creation-time,
+// after this, the developer can use the Context.Logout method
+// to invalidate a verified token by the server-side.
+func (j *JWT) UseBlocklist() {
+	gcEvery := 30 * time.Minute
+	if j.MaxAge > 0 {
+		gcEvery = j.MaxAge
+	}
+	j.Blocklist = NewBlocklist(gcEvery)
 }
 
-// Expiry method same as `Expiry` package-level function,
-// it returns a Claims with the expiration fields of the "claims"
-// filled based on the JWT's `MaxAge` field.
-// Only use it when this standard "claims"
-// is embedded on a custom claims structure.
-// Usage:
-// type UserClaims struct {
-// 	jwt.Claims
-// 	Username string
-// }
-// [...]
-// standardClaims := j.Expiry(jwt.Claims{...})
-// customClaims := UserClaims{
-// 	Claims:   standardClaims,
-// 	Username: "kataras",
-// }
-// j.WriteToken(ctx, customClaims)
-func (j *JWT) Expiry(claims Claims) Claims {
-	return Expiry(j.MaxAge, claims)
+// ExpiryMap adds the expiration based on the "maxAge" to the "claims" map.
+// It's called automatically on `Token` method.
+func ExpiryMap(maxAge time.Duration, claims context.Map) {
+	now := time.Now()
+	if claims["exp"] == nil {
+		claims["exp"] = NewNumericDate(now.Add(maxAge))
+	}
+
+	if claims["iat"] == nil {
+		claims["iat"] = NewNumericDate(now)
+	}
 }
 
 // Token generates and returns a new token string.
 // See `VerifyToken` too.
 func (j *JWT) Token(claims interface{}) (string, error) {
-	// switch c := claims.(type) {
-	// case Claims:
-	// 	claims = Expiry(j.MaxAge, c)
-	// case map[string]interface{}: let's not support map.
-	// 	now := time.Now()
-	// 	c["iat"] = now.Unix()
-	// 	c["exp"] = now.Add(j.MaxAge).Unix()
-	// }
-	if c, ok := claims.(Claims); ok {
-		claims = Expiry(j.MaxAge, c)
+	return j.token(j.MaxAge, claims)
+}
+
+func (j *JWT) token(maxAge time.Duration, claims interface{}) (string, error) {
+	if claims == nil {
+		return "", ErrInvalidKey
 	}
+
+	c, nErr := normalize(claims)
+	if nErr != nil {
+		return "", nErr
+	}
+
+	// Set expiration, if missing.
+	ExpiryMap(maxAge, c)
 
 	var (
 		token string
 		err   error
 	)
-
 	// jwt.Builder and jwt.NestedBuilder contain same methods but they are not the same.
+	//
+	// Note that the .Claims method there, converts a Struct to a map under the hoods.
+	// That means that we will not have any performance cost
+	// if we do it by ourselves and pass always a Map there.
+	// That gives us the option to allow user to pass ANY go struct
+	// and we can add the "exp", "nbf", "iat" map values by ourselves
+	// based on the j.MaxAge.
+	// (^ done, see normalize, all methods are
+	// changed to accept totally custom types, no need to embed the standard Claims anymore).
 	if j.DecriptionKey != nil {
-		token, err = jwt.SignedAndEncrypted(j.Signer, j.Encrypter).Claims(claims).CompactSerialize()
+		token, err = jwt.SignedAndEncrypted(j.Signer, j.Encrypter).Claims(c).CompactSerialize()
 	} else {
-		token, err = jwt.Signed(j.Signer).Claims(claims).CompactSerialize()
+		token, err = jwt.Signed(j.Signer).Claims(c).CompactSerialize()
 	}
 
 	if err != nil {
@@ -350,39 +366,6 @@ func (j *JWT) Token(claims interface{}) (string, error) {
 
 	return token, nil
 }
-
-/* Let's no support maps, typed claim is the way to go.
-// validateMapClaims validates claims of map type.
-func validateMapClaims(m map[string]interface{}, e jwt.Expected, leeway time.Duration) error {
-	if !e.Time.IsZero() {
-		if v, ok := m["nbf"]; ok {
-			if notBefore, ok := v.(NumericDate); ok {
-				if e.Time.Add(leeway).Before(notBefore.Time()) {
-					return ErrNotValidYet
-				}
-			}
-		}
-
-		if v, ok := m["exp"]; ok {
-			if exp, ok := v.(int64); ok {
-				if e.Time.Add(-leeway).Before(time.Unix(exp, 0)) {
-					return ErrExpired
-				}
-			}
-		}
-
-		if v, ok := m["iat"]; ok {
-			if issuedAt, ok := v.(int64); ok {
-				if e.Time.Add(leeway).Before(time.Unix(issuedAt, 0)) {
-					return ErrIssuedInTheFuture
-				}
-			}
-		}
-	}
-
-	return nil
-}
-*/
 
 // WriteToken is a helper which just generates(calls the `Token` method) and writes
 // a new token to the client in plain text format.
@@ -399,91 +382,122 @@ func (j *JWT) WriteToken(ctx *context.Context, claims interface{}) error {
 	return err
 }
 
-var (
-	// ErrMissing when token cannot be extracted from the request.
-	ErrMissing = errors.New("token is missing")
-	// ErrExpired indicates that token is used after expiry time indicated in exp claim.
-	ErrExpired = errors.New("token is expired (exp)")
-	// ErrNotValidYet indicates that token is used before time indicated in nbf claim.
-	ErrNotValidYet = errors.New("token not valid yet (nbf)")
-	// ErrIssuedInTheFuture indicates that the iat field is in the future.
-	ErrIssuedInTheFuture = errors.New("token issued in the future (iat)")
-)
-
-type (
-	claimsValidator interface {
-		ValidateWithLeeway(e jwt.Expected, leeway time.Duration) error
-	}
-	claimsAlternativeValidator interface { // to keep iris-contrib/jwt MapClaims compatible.
-		Validate() error
-	}
-	claimsContextValidator interface {
-		Validate(ctx *context.Context) error
-	}
-)
-
-// IsValidated reports whether a token is already validated through
-// `VerifyToken`. It returns true when the claims are compatible
-// validators: a `Claims` value or a value that implements the `Validate() error` method.
-func IsValidated(ctx *context.Context) bool { // see the `ReadClaims`.
-	return ctx.Values().Get(needsValidationContextKey) == nil
-}
-
-func validateClaims(ctx *context.Context, claims interface{}) (err error) {
-	switch c := claims.(type) {
-	case claimsValidator:
-		err = c.ValidateWithLeeway(jwt.Expected{Time: time.Now()}, 0)
-	case claimsAlternativeValidator:
-		err = c.Validate()
-	case claimsContextValidator:
-		err = c.Validate(ctx)
-	case *json.RawMessage:
-		// if the data type is raw message (json []byte)
-		// then it should contain exp (and iat and nbf) keys.
-		// Unmarshal raw message to validate against.
-		v := new(Claims)
-		err = json.Unmarshal(*c, v)
-		if err == nil {
-			return validateClaims(ctx, v)
-		}
-	default:
-		ctx.Values().Set(needsValidationContextKey, struct{}{})
-	}
-
-	if err != nil {
-		switch err {
-		case jwt.ErrExpired:
-			return ErrExpired
-		case jwt.ErrNotValidYet:
-			return ErrNotValidYet
-		case jwt.ErrIssuedInTheFuture:
-			return ErrIssuedInTheFuture
-		}
-	}
-
-	return err
-}
-
 // VerifyToken verifies (and decrypts) the request token,
 // it also validates and binds the parsed token's claims to the "claimsPtr" (destination).
-// It does return a nil error on success.
-func (j *JWT) VerifyToken(ctx *context.Context, claimsPtr interface{}) error {
-	var token string
+//
+// The last, variadic, input argument is optionally, if provided then the
+// parsed claims must match the expectations;
+// e.g. Audience, Issuer, ID, Subject.
+// See `ExpectXXX` package-functions for details.
+func (j *JWT) VerifyToken(ctx *context.Context, claimsPtr interface{}, expectations ...Expectation) (*TokenInfo, error) {
+	token := j.RequestToken(ctx)
+	return j.VerifyTokenString(ctx, token, claimsPtr, expectations...)
+}
 
+// RequestToken extracts the token from the request.
+func (j *JWT) RequestToken(ctx *context.Context) (token string) {
 	for _, extract := range j.Extractors {
 		if token = extract(ctx); token != "" {
 			break // ok we found it.
 		}
 	}
 
-	return j.VerifyTokenString(ctx, token, claimsPtr)
+	return
 }
 
-// VerifyTokenString verifies and unmarshals an extracted token to "claimsPtr" destination.
-// The Context is required when the claims validator needs it, otherwise can be nil.
-func (j *JWT) VerifyTokenString(ctx *context.Context, token string, claimsPtr interface{}) error {
+// TokenSetter is an interface which if implemented
+// the extracted, verified, token is stored to the object.
+type TokenSetter interface {
+	SetToken(token string)
+}
+
+// TokenInfo holds the standard token information may required
+// for further actions.
+// This structure is mostly useful when the developer's go structure
+// does not hold the standard jwt fields (e.g. "exp")
+// but want access to the parsed token which contains those fields.
+// Inside the middleware, it is used to invalidate tokens through server-side, see `Invalidate`.
+type TokenInfo struct {
+	RequestToken string      // The request token.
+	Claims       Claims      // The standard JWT parsed fields from the request Token.
+	Value        interface{} // The pointer to the end-developer's custom claims structure (see `Get`).
+}
+
+const tokenInfoContextKey = "iris.jwt.token"
+
+// Get returns the verified developer token claims.
+//
+//
+// Usage:
+// j := jwt.New(...)
+// app.Use(j.Verify(func() interface{} { return new(CustomClaims) }))
+// app.Post("/restricted", func(ctx iris.Context){
+//  claims := jwt.Get(ctx).(*CustomClaims)
+//  [use claims...]
+// })
+//
+// Note that there is one exception, if the value was a pointer
+// to a map[string]interface{}, it returns the map itself so it can be
+// accessible directly without the requirement of unwrapping it, e.g.
+// j.Verify(func() interface{} {
+// 	return &iris.Map{}
+// }
+// [...]
+// 	claims := jwt.Get(ctx).(iris.Map)
+func Get(ctx *context.Context) interface{} {
+	if tok := GetTokenInfo(ctx); tok != nil {
+		switch v := tok.Value.(type) {
+		case *context.Map:
+			return *v
+		default:
+			return v
+		}
+	}
+
+	return nil
+}
+
+// GetTokenInfo returns the verified token's information.
+func GetTokenInfo(ctx *context.Context) *TokenInfo {
+	if v := ctx.Values().Get(tokenInfoContextKey); v != nil {
+		if t, ok := v.(*TokenInfo); ok {
+			return t
+		}
+	}
+
+	return nil
+}
+
+// Invalidate invalidates a verified JWT token.
+// It adds the request token, retrieved by Verify methods, to the block list.
+// Next request will be blocked, even if the token was not yet expired.
+// This method can be used when the client-side does not clear the token
+// on a user logout operation.
+//
+// Note: the Blocklist should be initialized before serve-time: j.UseBlocklist().
+func (j *JWT) Invalidate(ctx *context.Context) {
+	if j.Blocklist == nil {
+		ctx.Application().Logger().Debug("jwt.Invalidate: Blocklist is nil")
+		return
+	}
+
+	tokenInfo := GetTokenInfo(ctx)
+	if tokenInfo == nil {
+		return
+	}
+
+	j.Blocklist.Set(tokenInfo.RequestToken, tokenInfo.Claims.Expiry.Time())
+}
+
+// VerifyTokenString verifies and unmarshals an extracted request token to "dest" destination.
+// The last variadic input indicates any further validations against the verified token claims.
+// If the given "dest" is a valid context.User then ctx.User() will return it.
+// If the token is missing an `ErrMissing` is returned.
+// If the incoming token was expired an `ErrExpired` is returned.
+// If the incoming token was blocked by the server an `ErrBlocked` is returned.
+func (j *JWT) VerifyTokenString(ctx *context.Context, token string, dest interface{}, expectations ...Expectation) (*TokenInfo, error) {
 	if token == "" {
-		return ErrMissing
+		return nil, ErrMissing
 	}
 
 	var (
@@ -494,7 +508,7 @@ func (j *JWT) VerifyTokenString(ctx *context.Context, token string, claimsPtr in
 	if j.DecriptionKey != nil {
 		t, cerr := jwt.ParseSignedAndEncrypted(token)
 		if cerr != nil {
-			return cerr
+			return nil, cerr
 		}
 
 		parsedToken, err = t.Decrypt(j.DecriptionKey)
@@ -502,112 +516,163 @@ func (j *JWT) VerifyTokenString(ctx *context.Context, token string, claimsPtr in
 		parsedToken, err = jwt.ParseSigned(token)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err = parsedToken.Claims(j.VerificationKey, claimsPtr); err != nil {
-		return err
+	var claims Claims
+	if err = parsedToken.Claims(j.VerificationKey, dest, &claims); err != nil {
+		return nil, err
 	}
 
-	return validateClaims(ctx, claimsPtr)
-}
-
-const (
-	// ClaimsContextKey is the context key which the jwt claims are stored from the `Verify` method.
-	ClaimsContextKey          = "iris.jwt.claims"
-	needsValidationContextKey = "iris.jwt.claims.unvalidated"
-)
-
-// Verify is a middleware. It verifies and optionally decrypts an incoming request token.
-// It does write a 401 unauthorized status code if verification or decryption failed.
-// It calls the `ctx.Next` on verified requests.
-//
-// See `VerifyToken` instead to verify, decrypt, validate and acquire the claims at once.
-//
-// A call of `ReadClaims` is required to validate and acquire the jwt claims
-// on the next request.
-func (j *JWT) Verify(ctx *context.Context) {
-	var raw json.RawMessage
-	if err := j.VerifyToken(ctx, &raw); err != nil {
-		ctx.StopWithStatus(401)
-		return
-	}
-
-	ctx.Values().Set(ClaimsContextKey, raw)
-	ctx.Next()
-}
-
-// ReadClaims binds the "claimsPtr" (destination)
-// to the verified (and decrypted) claims.
-// The `Verify` method should be called  first (registered as middleware).
-func ReadClaims(ctx *context.Context, claimsPtr interface{}) error {
-	v := ctx.Values().Get(ClaimsContextKey)
-	if v == nil {
-		return ErrMissing
-	}
-
-	raw, ok := v.(json.RawMessage)
-	if !ok {
-		return ErrMissing
-	}
-
-	err := json.Unmarshal(raw, claimsPtr)
-	if err != nil {
-		return err
-	}
-
-	if !IsValidated(ctx) {
-		// If already validated on `Verify/VerifyToken`
-		// then no need to perform the check again.
-		ctx.Values().Remove(needsValidationContextKey)
-		return validateClaims(ctx, claimsPtr)
-	}
-
-	return nil
-}
-
-// Get returns and validates (if not already) the claims
-// stored on request context's values storage.
-//
-// Should be used instead of the `ReadClaims` method when
-// a custom verification middleware was registered (see the `Verify` method for an example).
-//
-// Usage:
-// j := jwt.New(...)
-// [...]
-// app.Use(func(ctx iris.Context) {
-//	var claims CustomClaims_or_jwt.Claims
-// 	if err := j.VerifyToken(ctx, &claims); err != nil {
-// 		ctx.StopWithStatus(iris.StatusUnauthorized)
-// 		return
-// 	}
-//
-// 	ctx.Values().Set(jwt.ClaimsContextKey, claims)
-// 	ctx.Next()
-// })
-// [...]
-// app.Post("/restricted", func(ctx iris.Context){
-//	v, err := jwt.Get(ctx)
-//  [handle error...]
-//  claims,ok := v.(CustomClaims_or_jwt.Claims)
-//  if !ok {
-// 	  [do you support more than one type of claims? Handle here]
-// 	}
-//  [use claims...]
-// })
-func Get(ctx *context.Context) (interface{}, error) {
-	claims := ctx.Values().Get(ClaimsContextKey)
-	if claims == nil {
-		return nil, ErrMissing
-	}
-
-	if !IsValidated(ctx) {
-		ctx.Values().Remove(needsValidationContextKey)
-		err := validateClaims(ctx, claims)
-		if err != nil {
-			return nil, err
+	// Build the Expected value.
+	expected := Expected{}
+	for _, e := range expectations {
+		if e != nil {
+			// expection can be used as a field validation too (see MeetRequirements).
+			if err = e(&expected, dest); err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	return claims, nil
+	// For other standard JWT claims fields such as "exp"
+	// The developer can just add a field of Expiry *NumericDate `json:"exp"`
+	// and will be filled by the parsed token automatically.
+	// No need for more interfaces.
+
+	err = validateClaims(ctx, dest, claims, expected)
+	if err != nil {
+		if err == ErrExpired {
+			// If token was expired remove it from the block list.
+			if j.Blocklist != nil {
+				j.Blocklist.Del(token)
+			}
+		}
+
+		return nil, err
+	}
+
+	if j.Blocklist != nil {
+		// If token exists in the block list, then stop here.
+		if j.Blocklist.Has(token) {
+			return nil, ErrBlocked
+		}
+	}
+
+	if ut, ok := dest.(TokenSetter); ok {
+		// The u.Token is empty even if we set it and export it on JSON structure.
+		// Set it manually.
+		ut.SetToken(token)
+	}
+
+	// Set the information.
+	tokenInfo := &TokenInfo{
+		RequestToken: token,
+		Claims:       claims,
+		Value:        dest,
+	}
+
+	return tokenInfo, nil
+}
+
+// TokenPair holds the access token and refresh token response.
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+// TokenPair generates a token pair of access and refresh tokens.
+// The first two arguments required for the refresh token
+// and the last one is the claims for the access token one.
+func (j *JWT) TokenPair(refreshMaxAge time.Duration, refreshClaims interface{}, accessClaims interface{}) (TokenPair, error) {
+	accessToken, err := j.Token(accessClaims)
+	if err != nil {
+		return TokenPair{}, err
+	}
+
+	refreshToken, err := j.token(refreshMaxAge, refreshClaims)
+	if err != nil {
+		return TokenPair{}, nil
+	}
+
+	pair := TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	return pair, nil
+}
+
+// Verify returns a middleware which
+// decrypts an incoming request token to the result of the given "newPtr".
+// It does write a 401 unauthorized status code if verification or decryption failed.
+// It calls the `ctx.Next` on verified requests.
+//
+// Iit unmarshals the token to the specific type returned from the given "newPtr" function.
+// It sets the Context User and User's Token too. So the next handler(s)
+// of the same chain can access the User through a `Context.User()` call.
+//
+// Note unlike `VerifyToken`, this method automatically protects
+// the claims with JSON required tags (see `MeetRequirements` Expection).
+//
+// On verified tokens:
+// - The information can be retrieved through `Get` and `GetTokenInfo` functions.
+// - User is set if the newPtr returns a valid Context User
+// - The Context Logout method is set if Blocklist was initialized
+// Any error is captured to the Context,
+// which can be retrieved by a `ctx.GetErr()` call.
+func (j *JWT) Verify(newPtr func() interface{}, expections ...Expectation) context.Handler {
+	expections = append(expections, MeetRequirements(newPtr()))
+
+	return func(ctx *context.Context) {
+		ptr := newPtr()
+
+		tokenInfo, err := j.VerifyToken(ctx, ptr, expections...)
+		if err != nil {
+			ctx.Application().Logger().Debugf("iris.jwt.Verify: %v", err)
+			ctx.StopWithError(401, context.PrivateError(err))
+			return
+		}
+
+		if u, ok := ptr.(context.User); ok {
+			ctx.SetUser(u)
+		}
+
+		if j.Blocklist != nil {
+			ctx.SetLogoutFunc(j.Invalidate)
+		}
+
+		ctx.Values().Set(tokenInfoContextKey, tokenInfo)
+		ctx.Next()
+	}
+}
+
+// NewUser returns a new User based on the given "opts".
+// The caller can modify the User until its `GetToken` is called.
+func (j *JWT) NewUser(opts ...UserOption) *User {
+	u := &User{
+		j: j,
+		SimpleUser: &context.SimpleUser{
+			Authorization: "IRIS_JWT_USER", // Used to separate a refresh token with a user/access one too.
+			Features: []context.UserFeature{
+				context.TokenFeature,
+			},
+		},
+	}
+
+	for _, opt := range opts {
+		opt(u)
+	}
+
+	return u
+}
+
+// VerifyUser works like the `Verify` method but instead
+// it unmarshals the token to the specific User type.
+// It sets the Context User too. So the next handler(s)
+// of the same chain can access the User through a `Context.User()` call.
+func (j *JWT) VerifyUser() context.Handler {
+	return j.Verify(func() interface{} {
+		return new(User)
+	})
 }

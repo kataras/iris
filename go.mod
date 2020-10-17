@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/jet/v5 v5.0.3
+	github.com/CloudyKit/jet/v5 v5.1.0
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/andybalholm/brotli v1.0.1
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
@@ -12,7 +12,7 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.0
-	github.com/go-redis/redis/v8 v8.2.3
+	github.com/go-redis/redis/v8 v8.3.1
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-version v1.2.1
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
@@ -31,16 +31,16 @@ require (
 	github.com/russross/blackfriday/v2 v2.0.1
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693
-	github.com/tdewolff/minify/v2 v2.9.7
+	github.com/tdewolff/minify/v2 v2.9.9
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.5
-	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
-	golang.org/x/net v0.0.0-20201002202402-0a1ea396d57c
-	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
+	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
+	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0
+	golang.org/x/sys v0.0.0-20201016160150-f659759dc4ca
 	golang.org/x/text v0.3.3
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.25.0
-	gopkg.in/ini.v1 v1.61.0
+	gopkg.in/ini.v1 v1.62.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )

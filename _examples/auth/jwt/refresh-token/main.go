@@ -7,133 +7,122 @@ import (
 	"github.com/kataras/iris/v12/middleware/jwt"
 )
 
-// UserClaims a custom claims structure. You can just use jwt.Claims too.
+// UserClaims a custom access claims structure.
 type UserClaims struct {
-	jwt.Claims
-	Username string
+	// We could that JWT field to separate the access and refresh token:
+	// Issuer string `json:"iss"`
+	// But let's cover the "required" feature too, see below:
+	ID       string `json:"user_id,required"`
+	Username string `json:"username,required"`
 }
 
-// TokenPair holds the access token and refresh token response.
-type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
+// For refresh token, we will just use the jwt.Claims
+// structure which contains the standard JWT fields.
 
 func main() {
 	app := iris.New()
 
-	// Access token, short-live.
-	accessJWT := jwt.HMAC(15*time.Minute, "secret", "itsa16bytesecret")
-	// Refresh token, long-live. Important: Give different secret keys(!)
-	refreshJWT := jwt.HMAC(1*time.Hour, "other secret", "other16bytesecre")
-	// On refresh token, we extract it only from a request body
-	// of JSON, e.g. {"refresh_token": $token }.
-	// You can also do it manually in the handler level though.
-	refreshJWT.Extractors = []jwt.TokenExtractor{
-		jwt.FromJSON("refresh_token"),
+	j := jwt.HMAC(15*time.Minute, "secret", "itsa16bytesecret")
+
+	app.Get("/authenticate", func(ctx iris.Context) {
+		generateTokenPair(ctx, j)
+	})
+
+	app.Get("/refresh_json", func(ctx iris.Context) {
+		refreshTokenFromJSON(ctx, j)
+	})
+
+	protectedAPI := app.Party("/protected")
+	{
+		protectedAPI.Use(j.Verify(func() interface{} {
+			return new(UserClaims)
+		})) // OR j.VerifyToken(ctx, &claims, jwt.MeetRequirements(&UserClaims{}))
+
+		protectedAPI.Get("/", func(ctx iris.Context) {
+			// Get token info, even if our UserClaims does not embed those
+			// through GetTokenInfo:
+			expiresAt := jwt.GetTokenInfo(ctx).Claims.Expiry.Time()
+			// Get your custom JWT claims through Get,
+			// which is a shortcut of GetTokenInfo(ctx).Value:
+			claims := jwt.Get(ctx).(*UserClaims)
+
+			ctx.Writef("Username: %s\nExpires at: %s\n", claims.Username, expiresAt)
+		})
 	}
 
-	// Generate access and refresh tokens and send to the client.
-	app.Get("/authenticate", func(ctx iris.Context) {
-		tokenPair, err := generateTokenPair(accessJWT, refreshJWT)
-		if err != nil {
-			ctx.StopWithStatus(iris.StatusInternalServerError)
-			return
-		}
-
-		ctx.JSON(tokenPair)
-	})
-
-	app.Get("/refresh", func(ctx iris.Context) {
-		// Manual (if jwt.FromJSON missing):
-		// var payload = struct {
-		// 	RefreshToken string `json:"refresh_token"`
-		// }{}
-		//
-		// err := ctx.ReadJSON(&payload)
-		// if err != nil {
-		// 	ctx.StatusCode(iris.StatusBadRequest)
-		// 	return
-		// }
-		//
-		// j.VerifyTokenString(ctx, payload.RefreshToken, &claims)
-
-		var claims jwt.Claims
-		if err := refreshJWT.VerifyToken(ctx, &claims); err != nil {
-			ctx.Application().Logger().Warnf("verify refresh token: %v", err)
-			ctx.StopWithStatus(iris.StatusUnauthorized)
-			return
-		}
-
-		userID := claims.Subject
-		if userID == "" {
-			ctx.StopWithStatus(iris.StatusUnauthorized)
-			return
-		}
-
-		// Simulate a database call against our jwt subject.
-		if userID != "53afcf05-38a3-43c3-82af-8bbbe0e4a149" {
-			ctx.StopWithStatus(iris.StatusUnauthorized)
-			return
-		}
-
-		// All OK, re-generate the new pair and send to client.
-		tokenPair, err := generateTokenPair(accessJWT, refreshJWT)
-		if err != nil {
-			ctx.StopWithStatus(iris.StatusInternalServerError)
-			return
-		}
-
-		ctx.JSON(tokenPair)
-	})
-
-	app.Get("/", func(ctx iris.Context) {
-		var claims UserClaims
-		if err := accessJWT.VerifyToken(ctx, &claims); err != nil {
-			ctx.StopWithStatus(iris.StatusUnauthorized)
-			return
-		}
-
-		ctx.Writef("Username: %s\nExpires at: %s\n", claims.Username, claims.Expiry.Time())
-	})
-
-	// http://localhost:8080 (401)
+	// http://localhost:8080/protected (401)
 	// http://localhost:8080/authenticate (200) (response JSON {access_token, refresh_token})
-	// http://localhost:8080?token={access_token} (200)
-	// http://localhost:8080?token={refresh_token} (401)
-	// http://localhost:8080/refresh (request JSON{refresh_token = {refresh_token}}) (200) (response JSON {access_token, refresh_token})
+	// http://localhost:8080/protected?token={access_token} (200)
+	// http://localhost:8080/protected?token={refresh_token} (401)
+	// http://localhost:8080/refresh_json (request JSON{refresh_token = {refresh_token}}) (200) (response JSON {access_token, refresh_token})
 	app.Listen(":8080")
 }
 
-func generateTokenPair(accessJWT, refreshJWT *jwt.JWT) (TokenPair, error) {
-	standardClaims := jwt.Claims{Issuer: "an-issuer", Audience: jwt.Audience{"an-audience"}}
+func generateTokenPair(ctx iris.Context, j *jwt.JWT) {
+	// Simulate a user...
+	userID := "53afcf05-38a3-43c3-82af-8bbbe0e4a149"
 
-	customClaims := UserClaims{
-		Claims:   accessJWT.Expiry(standardClaims),
+	// Map the current user with the refresh token,
+	// so we make sure, on refresh route, that this refresh token owns
+	// to that user before re-generate.
+	refresh := jwt.Claims{Subject: userID}
+
+	access := UserClaims{
+		ID:       userID,
 		Username: "kataras",
 	}
 
-	accessToken, err := accessJWT.Token(customClaims)
+	// Generates a Token Pair, long-live for refresh tokens, e.g. 1 hour.
+	// Second argument is the refresh claims and,
+	// the last one is the access token's claims.
+	tokenPair, err := j.TokenPair(1*time.Hour, refresh, access)
 	if err != nil {
-		return TokenPair{}, err
+		ctx.Application().Logger().Debugf("token pair: %v", err)
+		ctx.StopWithStatus(iris.StatusInternalServerError)
+		return
 	}
 
-	// At refresh tokens you don't need any custom claims.
-	refreshClaims := refreshJWT.Expiry(jwt.Claims{
-		ID: "refresh_kataras",
-		// For example, the User ID,
-		// this is necessary to check against the database
-		// if the user still exist or has credentials to access our page.
-		Subject: "53afcf05-38a3-43c3-82af-8bbbe0e4a149",
-	})
+	// Send the generated token pair to the client.
+	// The tokenPair looks like: {"access_token": $token, "refresh_token": $token}
+	ctx.JSON(tokenPair)
+}
 
-	refreshToken, err := refreshJWT.Token(refreshClaims)
+func refreshTokenFromJSON(ctx iris.Context, j *jwt.JWT) {
+	var tokenPair jwt.TokenPair
+
+	// Grab the refresh token from a JSON body (you can let it fetch by URL parameter too but
+	// it's common practice that you read it from a json body as
+	// it may contain the access token too (the same response we sent on generateTokenPair)).
+	err := ctx.ReadJSON(&tokenPair)
 	if err != nil {
-		return TokenPair{}, err
+		ctx.StatusCode(iris.StatusBadRequest)
+		return
 	}
 
-	return TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil
+	var refreshClaims jwt.Claims
+	err = j.VerifyTokenString(ctx, tokenPair.RefreshToken, &refreshClaims)
+	if err != nil {
+		ctx.Application().Logger().Debugf("verify refresh token: %v", err)
+		ctx.StatusCode(iris.StatusUnauthorized)
+		return
+	}
+
+	// Assuming you have access to the current user, e.g. sessions.
+	//
+	// Simulate a database call against our jwt subject
+	// to make sure that this refresh token is a pair generated by this user.
+	currentUserID := "53afcf05-38a3-43c3-82af-8bbbe0e4a149"
+
+	userID := refreshClaims.Subject
+	if userID != currentUserID {
+		ctx.StopWithStatus(iris.StatusUnauthorized)
+		return
+	}
+	//
+	// Otherwise, the request must contain the (old) access token too,
+	// even if it's invalid, we can still fetch its fields, such as the user id.
+	// [...leave it for you]
+
+	// All OK, re-generate the new pair and send to client.
+	generateTokenPair(ctx, j)
 }

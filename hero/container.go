@@ -170,9 +170,23 @@ var BuiltinDependencies = []*Dependency{
 	NewDependency(func(ctx *context.Context) Code {
 		return Code(ctx.GetStatusCode())
 	}).Explicitly(),
+	// Context Error. May be nil
 	NewDependency(func(ctx *context.Context) Err {
-		return Err(ctx.GetErr())
+		err := ctx.GetErr()
+		if err == nil {
+			return nil
+		}
+		return err
 	}).Explicitly(),
+	// Context User, e.g. from basic authentication.
+	NewDependency(func(ctx *context.Context) context.User {
+		u := ctx.User()
+		if u == nil {
+			return nil
+		}
+
+		return u
+	}),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
 
