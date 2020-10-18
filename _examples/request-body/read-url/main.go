@@ -1,5 +1,5 @@
-// package main contains an example on how to use the ReadParams,
-// same way you can do the ReadQuery, ReadJSON, ReadProtobuf and e.t.c.
+// package main contains an example on how to use the ReadURL,
+// same way you can do the ReadQuery, ReadParams, ReadJSON, ReadProtobuf and e.t.c.
 package main
 
 import (
