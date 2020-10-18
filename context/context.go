@@ -2363,7 +2363,10 @@ func (ctx *Context) ReadParams(ptr interface{}) error {
 // It binds dynamic path parameters and URL query parameters
 // to the "ptr" pointer struct value.
 // The struct fields may contain "url" or "param" binding tags.
-// If a validator exists then it validates the result too. 
+// If a validator exists then it validates the result too.
+//
+// Note that if the registered route contains a tail path parameter
+// it may override any URL queries.
 func (ctx *Context) ReadURL(ptr interface{}) error {
 	values := make(map[string][]string, ctx.params.Len())
 	ctx.params.Visit(func(key string, value string) {
