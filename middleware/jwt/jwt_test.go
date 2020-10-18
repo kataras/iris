@@ -63,7 +63,7 @@ func TestVerify(t *testing.T) {
 func testWriteVerifyBlockToken(t *testing.T, j *jwt.JWT) {
 	t.Helper()
 
-	j.UseBlocklist()
+	j.InitDefaultBlocklist()
 	j.Extractors = append(j.Extractors, jwt.FromJSON("access_token"))
 
 	customClaims := &userClaims{

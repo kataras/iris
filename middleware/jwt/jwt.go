@@ -116,13 +116,13 @@ type JWT struct {
 	// Blocklist holds the invalidated-by-server tokens (that are not yet expired).
 	// It is not initialized by default.
 	// Initialization Usage:
-	// j.UseBlocklist()
+	// j.InitDefaultBlocklist()
 	// OR
 	// j.Blocklist = jwt.NewBlocklist(gcEveryDuration)
 	// Usage:
 	// - ctx.Logout()
 	// - j.Invalidate(ctx)
-	Blocklist *Blocklist
+	Blocklist Blocklist
 }
 
 type privateKey interface{ Public() crypto.PublicKey }
@@ -301,11 +301,11 @@ func (j *JWT) WithEncryption(contentEncryption ContentEncryption, alg KeyAlgorit
 	return nil
 }
 
-// UseBlocklist initializes the Blocklist.
+// InitDefaultBlocklist initializes the Blocklist field with the default in-memory implementation.
 // Should be called on jwt middleware creation-time,
 // after this, the developer can use the Context.Logout method
 // to invalidate a verified token by the server-side.
-func (j *JWT) UseBlocklist() {
+func (j *JWT) InitDefaultBlocklist() {
 	gcEvery := 30 * time.Minute
 	if j.MaxAge > 0 {
 		gcEvery = j.MaxAge
@@ -515,7 +515,7 @@ func GetTokenInfo(ctx *context.Context) *TokenInfo {
 // This method can be used when the client-side does not clear the token
 // on a user logout operation.
 //
-// Note: the Blocklist should be initialized before serve-time: j.UseBlocklist().
+// Note: the Blocklist should be initialized before serve-time: j.InitDefaultBlocklist().
 func (j *JWT) Invalidate(ctx *context.Context) {
 	if j.Blocklist == nil {
 		ctx.Application().Logger().Debug("jwt.Invalidate: Blocklist is nil")
