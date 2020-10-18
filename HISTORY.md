@@ -310,6 +310,7 @@ var dirOpts = iris.DirOptions{
 
 ## New Context Methods
 
+- `Context.ReadURL(ptr interface{}) error` shortcut of `ReadParams` and `ReadQuery`. Binds URL dynamic path parameters and URL query parameters to the given "ptr" pointer of a struct value.
 - `Context.SetUser(User)` and `Context.User() User` to store and retrieve an authenticated client. Read more [here](https://github.com/iris-contrib/middleware/issues/63).
 - `Context.SetLogoutFunc(fn interface{}, persistenceArgs ...interface{})` and `Logout(args ...interface{}) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
 - `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) for more.

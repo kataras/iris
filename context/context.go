@@ -2359,6 +2359,30 @@ func (ctx *Context) ReadParams(ptr interface{}) error {
 	return ctx.app.Validate(ptr)
 }
 
+// ReadURL is a shortcut of ReadParams and ReadQuery.
+// It binds dynamic path parameters and URL query parameters
+// to the "ptr" pointer struct value.
+// The struct fields may contain "url" or "param" binding tags.
+// If a validator exists then it validates the result too. 
+func (ctx *Context) ReadURL(ptr interface{}) error {
+	values := make(map[string][]string, ctx.params.Len())
+	ctx.params.Visit(func(key string, value string) {
+		values[key] = strings.Split(value, "/")
+	})
+
+	for k, v := range ctx.getQuery() {
+		values[k] = append(values[k], v...)
+	}
+
+	// Decode using all available binding tags (url, header, param).
+	err := schema.Decode(values, ptr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.app.Validate(ptr)
+}
+
 // ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
 // Look `ReadJSONProtobuf` too.
 func (ctx *Context) ReadProtobuf(ptr proto.Message) error {
