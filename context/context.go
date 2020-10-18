@@ -2410,7 +2410,28 @@ func (ctx *Context) ReadMsgPack(ptr interface{}) error {
 // If a GET method request then it reads from a form (or URL Query), otherwise
 // it tries to match (depending on the request content-type) the data format e.g.
 // JSON, Protobuf, MsgPack, XML, YAML, MultipartForm and binds the result to the "ptr".
+// As a special case if the "ptr" was a pointer to string or []byte
+// then it will bind it to the request body as it is.
 func (ctx *Context) ReadBody(ptr interface{}) error {
+
+	// If the ptr is string or byte, read the body as it's.
+	switch v := ptr.(type) {
+	case *string:
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+
+		*v = string(b)
+	case *[]byte:
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+
+		copy(*v, b)
+	}
+
 	if ctx.Method() == http.MethodGet {
 		if ctx.Request().URL.RawQuery != "" {
 			// try read from query.

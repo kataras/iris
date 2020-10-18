@@ -395,6 +395,32 @@ func (j *JWT) VerifyToken(ctx *context.Context, claimsPtr interface{}, expectati
 	return j.VerifyTokenString(ctx, token, claimsPtr, expectations...)
 }
 
+// VerifyRefreshToken like the `VerifyToken` but it verifies a refresh token one instead.
+// If the implementation does not fill the application's requirements,
+// you can ignore this method and still use the `VerifyToken` for refresh tokens too.
+//
+// This method adds the ExpectRefreshToken expectation and it
+// tries to read the refresh token from raw body or,
+// if content type was application/json, then it extracts the token
+// from the JSON request body's {"refresh_token": "$token"} key.
+func (j *JWT) VerifyRefreshToken(ctx *context.Context, claimsPtr interface{}, expectations ...Expectation) (*TokenInfo, error) {
+	token := j.RequestToken(ctx)
+	if token == "" {
+		var tokenPair TokenPair // read "refresh_token" from JSON.
+		if ctx.GetContentTypeRequested() == context.ContentJSONHeaderValue {
+			ctx.ReadJSON(&tokenPair) // ignore error.
+			token = tokenPair.RefreshToken
+			if token == "" {
+				return nil, ErrMissing
+			}
+		} else {
+			ctx.ReadBody(&token)
+		}
+	}
+
+	return j.VerifyTokenString(ctx, token, claimsPtr, append(expectations, ExpectRefreshToken)...)
+}
+
 // RequestToken extracts the token from the request.
 func (j *JWT) RequestToken(ctx *context.Context) (token string) {
 	for _, extract := range j.Extractors {
@@ -536,8 +562,32 @@ func (j *JWT) VerifyTokenString(ctx *context.Context, token string, dest interfa
 		tokenMaxAger tokenWithMaxAge
 	)
 
-	if err = parsedToken.Claims(j.VerificationKey, dest, &claims, &tokenMaxAger); err != nil {
+	var (
+		ignoreDest      = dest == nil
+		ignoreVarClaims bool
+	)
+	if !ignoreDest { // if dest was not nil, check if the dest is already a standard claims pointer.
+		_, ignoreVarClaims = dest.(*Claims)
+	}
+
+	// Ensure read the standard claims one  if dest was Claims or was nil.
+	// (it wont break anything if we unmarshal them twice though, we just do it for performance reasons).
+	var pointers = []interface{}{&tokenMaxAger}
+	if !ignoreDest {
+		pointers = append(pointers, dest)
+	}
+	if !ignoreVarClaims {
+		pointers = append(pointers, &claims)
+	}
+	if err = parsedToken.Claims(j.VerificationKey, pointers...); err != nil {
 		return nil, err
+	}
+
+	// Set the std claims, if missing from receiver so the expectations and validation still work.
+	if ignoreVarClaims {
+		claims = *dest.(*Claims)
+	} else if ignoreDest {
+		dest = &claims
 	}
 
 	expectMaxAge := j.MaxAge
@@ -594,10 +644,12 @@ func (j *JWT) VerifyTokenString(ctx *context.Context, token string, dest interfa
 		}
 	}
 
-	if ut, ok := dest.(TokenSetter); ok {
-		// The u.Token is empty even if we set it and export it on JSON structure.
-		// Set it manually.
-		ut.SetToken(token)
+	if !ignoreDest {
+		if ut, ok := dest.(TokenSetter); ok {
+			// The u.Token is empty even if we set it and export it on JSON structure.
+			// Set it manually.
+			ut.SetToken(token)
+		}
 	}
 
 	// Set the information.
