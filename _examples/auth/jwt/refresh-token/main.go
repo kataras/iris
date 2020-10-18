@@ -9,11 +9,16 @@ import (
 
 // UserClaims a custom access claims structure.
 type UserClaims struct {
-	// We could that JWT field to separate the access and refresh token:
-	// Issuer string `json:"iss"`
-	// But let's cover the "required" feature too, see below:
-	ID       string `json:"user_id,required"`
-	Username string `json:"username,required"`
+	// In order to separate refresh and access tokens on validation level:
+	// - Set a different Issuer, with a field of: Issuer string `json:"iss"`
+	// - Set the Iris JWT's json tag option "required" on an access token field,
+	//   e.g. Username string `json:"username,required"`
+	// - Let the middleware validate the correct one based on the given MaxAge,
+	//   which should be different between refresh and max age (refersh should be bigger)
+	//   by setting the `jwt.ExpectRefreshToken` on Verify/VerifyToken/VerifyTokenString
+	//   (see `refreshToken` function below)
+	ID       string `json:"user_id"`
+	Username string `json:"username"`
 }
 
 // For refresh token, we will just use the jwt.Claims
@@ -28,8 +33,8 @@ func main() {
 		generateTokenPair(ctx, j)
 	})
 
-	app.Get("/refresh_json", func(ctx iris.Context) {
-		refreshTokenFromJSON(ctx, j)
+	app.Get("/refresh", func(ctx iris.Context) {
+		refreshToken(ctx, j)
 	})
 
 	protectedAPI := app.Party("/protected")
@@ -54,7 +59,9 @@ func main() {
 	// http://localhost:8080/authenticate (200) (response JSON {access_token, refresh_token})
 	// http://localhost:8080/protected?token={access_token} (200)
 	// http://localhost:8080/protected?token={refresh_token} (401)
-	// http://localhost:8080/refresh_json (request JSON{refresh_token = {refresh_token}}) (200) (response JSON {access_token, refresh_token})
+	// http://localhost:8080/refresh?token={refresh_token}
+	// OR (request JSON{refresh_token = {refresh_token}}) (200) (response JSON {access_token, refresh_token})
+	// http://localhost:8080/refresh?token={access_token} (401)
 	app.Listen(":8080")
 }
 
@@ -87,20 +94,25 @@ func generateTokenPair(ctx iris.Context, j *jwt.JWT) {
 	ctx.JSON(tokenPair)
 }
 
-func refreshTokenFromJSON(ctx iris.Context, j *jwt.JWT) {
+func refreshToken(ctx iris.Context, j *jwt.JWT) {
 	var tokenPair jwt.TokenPair
 
-	// Grab the refresh token from a JSON body (you can let it fetch by URL parameter too but
-	// it's common practice that you read it from a json body as
-	// it may contain the access token too (the same response we sent on generateTokenPair)).
-	err := ctx.ReadJSON(&tokenPair)
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		return
+	if token := ctx.URLParam("token"); token != "" {
+		// Grab the refresh token from the url argument.
+		tokenPair.RefreshToken = token
+	} else {
+		// Otherwise grab the refresh token from a JSON body (you can let it fetch by URL parameter too but
+		// it's common practice that you read it from a json body as
+		// it may contain the access token too (the same response we sent on generateTokenPair)).
+		err := ctx.ReadJSON(&tokenPair)
+		if err != nil {
+			ctx.StatusCode(iris.StatusBadRequest)
+			return
+		}
 	}
 
 	var refreshClaims jwt.Claims
-	err = j.VerifyTokenString(ctx, tokenPair.RefreshToken, &refreshClaims)
+	_, err := j.VerifyTokenString(ctx, tokenPair.RefreshToken, &refreshClaims, jwt.ExpectRefreshToken)
 	if err != nil {
 		ctx.Application().Logger().Debugf("verify refresh token: %v", err)
 		ctx.StatusCode(iris.StatusUnauthorized)

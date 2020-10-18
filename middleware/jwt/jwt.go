@@ -3,6 +3,7 @@ package jwt
 import (
 	"crypto"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -338,7 +339,6 @@ func (j *JWT) token(maxAge time.Duration, claims interface{}) (string, error) {
 		return "", nErr
 	}
 
-	// Set expiration, if missing.
 	ExpiryMap(maxAge, c)
 
 	var (
@@ -531,10 +531,16 @@ func (j *JWT) VerifyTokenString(ctx *context.Context, token string, dest interfa
 		return nil, err
 	}
 
-	var claims Claims
-	if err = parsedToken.Claims(j.VerificationKey, dest, &claims); err != nil {
+	var (
+		claims       Claims
+		tokenMaxAger tokenWithMaxAge
+	)
+
+	if err = parsedToken.Claims(j.VerificationKey, dest, &claims, &tokenMaxAger); err != nil {
 		return nil, err
 	}
+
+	expectMaxAge := j.MaxAge
 
 	// Build the Expected value.
 	expected := Expected{}
@@ -542,9 +548,26 @@ func (j *JWT) VerifyTokenString(ctx *context.Context, token string, dest interfa
 		if e != nil {
 			// expection can be used as a field validation too (see MeetRequirements).
 			if err = e(&expected, dest); err != nil {
+				if err == ErrExpectRefreshToken {
+					if tokenMaxAger.MaxAge > 0 {
+						// If max age exists, grab it and compare it later.
+						// Otherwise fire the ErrExpectRefreshToken.
+						expectMaxAge = tokenMaxAger.MaxAge
+						continue
+					}
+				}
 				return nil, err
 			}
 		}
+	}
+
+	gotMaxAge := getMaxAge(claims)
+	if !compareMaxAge(expectMaxAge, gotMaxAge) {
+		// Additional check to automatically invalidate
+		// any previous jwt maxAge setting change.
+		// In-short, if the time.Now().Add j.MaxAge
+		// does not match the "iat" (issued at) then we invalidate the token.
+		return nil, ErrInvalidMaxAge
 	}
 
 	// For other standard JWT claims fields such as "exp"
@@ -593,16 +616,37 @@ type TokenPair struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type tokenWithMaxAge struct {
+	// Useful to separate access from refresh tokens.
+	// Can be used to by-pass the internal check of expected
+	// MaxAge setting to match the token's received max age too.
+	MaxAge time.Duration `json:"tokenMaxAge"`
+}
+
 // TokenPair generates a token pair of access and refresh tokens.
 // The first two arguments required for the refresh token
 // and the last one is the claims for the access token one.
 func (j *JWT) TokenPair(refreshMaxAge time.Duration, refreshClaims interface{}, accessClaims interface{}) (TokenPair, error) {
+	if refreshMaxAge <= j.MaxAge {
+		return TokenPair{}, fmt.Errorf("refresh max age should be bigger than access token's one[%d - %d]", refreshMaxAge, j.MaxAge)
+	}
+
 	accessToken, err := j.Token(accessClaims)
 	if err != nil {
 		return TokenPair{}, err
 	}
 
-	refreshToken, err := j.token(refreshMaxAge, refreshClaims)
+	c, err := normalize(refreshClaims)
+	if err != nil {
+		return TokenPair{}, err
+	}
+	if c == nil {
+		c = make(context.Map)
+	}
+	// need to validate against its value instead of the setting's one (see `VerifyTokenString`).
+	c["tokenMaxAge"] = refreshMaxAge
+
+	refreshToken, err := j.token(refreshMaxAge, c)
 	if err != nil {
 		return TokenPair{}, nil
 	}

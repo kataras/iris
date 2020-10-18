@@ -21,9 +21,9 @@ const (
 )
 
 var (
-	// ErrMissing when token cannot be extracted from the request.
+	// ErrMissing when token cannot be extracted from the request (custm error).
 	ErrMissing = errors.New("token is missing")
-	// ErrMissingKey when token does not contain a required JSON field.
+	// ErrMissingKey when token does not contain a required JSON field (custom error).
 	ErrMissingKey = errors.New("token is missing a required field")
 	// ErrExpired indicates that token is used after expiry time indicated in exp claim.
 	ErrExpired = errors.New("token is expired (exp)")
@@ -32,8 +32,14 @@ var (
 	// ErrIssuedInTheFuture indicates that the iat field is in the future.
 	ErrIssuedInTheFuture = errors.New("token issued in the future (iat)")
 	// ErrBlocked indicates that the token was not yet expired
-	// but was blocked by the server's Blocklist.
+	// but was blocked by the server's Blocklist (custom error).
 	ErrBlocked = errors.New("token is blocked")
+	// ErrInvalidMaxAge indicates that the token is using a different
+	// max age than the configurated one ( custom error).
+	ErrInvalidMaxAge = errors.New("token contains invalid max age")
+	// ErrExpectRefreshToken indicates that the retrieved token
+	// was not a refresh token one when `ExpectRefreshToken` is set (custome rror).
+	ErrExpectRefreshToken = errors.New("expect refresh token")
 )
 
 // Expectation option to provide
@@ -80,6 +86,16 @@ func ExpectAudience(audience ...string) Expectation {
 		return nil
 	}
 }
+
+// ExpectRefreshToken SHOULD be passed when a token should be verified
+// based on the expiration set by `TokenPair` method instead of the JWT instance's MaxAge setting.
+// Useful to validate Refresh Tokens and invalidate Access ones when refresh API is fired,
+// if that option is missing then refresh tokens are invalidated when an access token was expected.
+//
+// Usage:
+// var refreshClaims jwt.Claims
+// _, err := j.VerifyTokenString(ctx, tokenPair.RefreshToken, &refreshClaims, jwt.ExpectRefreshToken)
+func ExpectRefreshToken(e *Expected, _ interface{}) error { return ErrExpectRefreshToken }
 
 // MeetRequirements protects the custom fields of JWT claims
 // based on the json:required tag; `json:"name,required"`.
@@ -209,4 +225,34 @@ func getRequiredFieldIndexes(i interface{}) (v []int) {
 	}
 
 	return
+}
+
+// getMaxAge returns the result of expiry-issued at.
+// Note that if in JWT MaxAge's was set to a value like: 3.5 seconds
+// this will return 3 on token retreival. Of course this is not a problem
+// in real world apps as they don't invalidate tokens in seconds
+// based on a division result like 2/7.
+func getMaxAge(claims Claims) time.Duration {
+	if issuedAt := claims.IssuedAt.Time(); !issuedAt.IsZero() {
+		gotMaxAge := claims.Expiry.Time().Sub(issuedAt)
+		return gotMaxAge
+	}
+
+	return 0
+}
+
+func compareMaxAge(expected, got time.Duration) bool {
+	if expected == got {
+		return true
+	}
+
+	// got is int64, maybe rounded, but the max age setting is precise, may be a float result
+	// e.g. the result of a division 2/7=3.5,
+	// try to validate by round of second so similar/or equal max age setting are considered valid.
+	min, max := expected-time.Second, expected+time.Second
+	if got < min || got > max {
+		return false
+	}
+
+	return true
 }
