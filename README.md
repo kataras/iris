@@ -31,6 +31,7 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/KevinZhouRafael"><img src="https://avatars1.githubusercontent.com/u/16298046?v=4" alt ="Kevin Zhou" title="KevinZhouRafael" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/mizzlespot"><img src="https://avatars1.githubusercontent.com/u/2654538?v=4" alt ="Jasper" title="mizzlespot" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/wiener01mu"><img src="https://avatars1.githubusercontent.com/u/41128011?v=4" alt ="Simranjit Singh" title="wiener01mu" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/theantichris"><img src="https://avatars1.githubusercontent.com/u/1486502?v=4" alt ="Christopher Lamm" title="theantichris" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
