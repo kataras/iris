@@ -246,6 +246,9 @@ func getenv(key string, def string) string {
 //
 // It panics on errors.
 // Use the `New` package-level function instead for more options.
+//
+// Example at:
+// https://github.com/kataras/iris/tree/master/_examples/auth/jwt/overview/main.go
 func HMAC(maxAge time.Duration, keys ...string) *JWT {
 	var defaultSignSecret, defaultEncSecret string
 
@@ -767,8 +770,20 @@ func (j *JWT) Verify(newPtr func() interface{}, expections ...Expectation) conte
 	}
 }
 
+// VerifyMap is a shortcut of Verify with a function which will bind
+// the claims to a standard Go map[string]interface{}.
+func (j *JWT) VerifyMap(exceptions ...Expectation) context.Handler {
+	return j.Verify(func() interface{} {
+		return &context.Map{}
+	})
+}
+
 // VerifyJSON works like `Verify` but instead it
 // binds its "newPtr" function to return a raw JSON message.
+// It does NOT read the token from JSON by itself,
+// to do that add the `FromJSON` to the Token Extractors.
+// It's used to bind the claims in any value type on the next handler.
+//
 // This allows the caller to bind this JSON message to any Go structure (or map).
 // This is useful when we can accept more than one
 // type of JWT token in the same request path,
