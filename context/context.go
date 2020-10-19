@@ -2130,11 +2130,11 @@ func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
 
 const disableRequestBodyConsumptionContextKey = "iris.request.body.record"
 
-// RecordBody same as the Application's DisableBodyConsumptionOnUnmarshal configuration field
-// but acts for the current request.
+// RecordRequestBody same as the Application's DisableBodyConsumptionOnUnmarshal
+// configuration field but acts only for the current request.
 // It makes the request body readable more than once.
-func (ctx *Context) RecordBody() {
-	ctx.values.Set(disableRequestBodyConsumptionContextKey, true)
+func (ctx *Context) RecordRequestBody(b bool) {
+	ctx.values.Set(disableRequestBodyConsumptionContextKey, b)
 }
 
 // IsRecordingBody reports whether the request body can be readen multiple times.
@@ -2146,7 +2146,7 @@ func (ctx *Context) IsRecordingBody() bool {
 // GetBody reads and returns the request body.
 // The default behavior for the http request reader is to consume the data readen
 // but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` Iris option
-// or by calling the `RecordBody` method.
+// or by calling the `RecordRequestBody` method.
 //
 // However, whenever you can use the `ctx.Request().Body` instead.
 func (ctx *Context) GetBody() ([]byte, error) {

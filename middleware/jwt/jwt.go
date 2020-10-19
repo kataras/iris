@@ -58,6 +58,8 @@ func FromJSON(jsonKey string) TokenExtractor {
 		}
 
 		var m context.Map
+		ctx.RecordRequestBody(true)
+		defer ctx.RecordRequestBody(false)
 		if err := ctx.ReadJSON(&m); err != nil {
 			return ""
 		}
@@ -362,6 +364,16 @@ func (j *JWT) token(maxAge time.Duration, claims interface{}) (string, error) {
 		token, err = jwt.SignedAndEncrypted(j.Signer, j.Encrypter).Claims(c).CompactSerialize()
 	} else {
 		token, err = jwt.Signed(j.Signer).Claims(c).CompactSerialize()
+		// payload, pErr := Marshal(c)
+		// if pErr != nil {
+		// 	return "", pErr
+		// }
+		// sign, sErr := j.Signer.Sign(payload)
+		// if sErr != nil {
+		// 	return "", sErr
+		// }
+
+		// token, err = sign.CompactSerialize()
 	}
 
 	if err != nil {
@@ -409,6 +421,9 @@ func (j *JWT) VerifyToken(ctx *context.Context, claimsPtr interface{}, expectati
 func (j *JWT) VerifyRefreshToken(ctx *context.Context, claimsPtr interface{}, expectations ...Expectation) (*TokenInfo, error) {
 	token := j.RequestToken(ctx)
 	if token == "" {
+		ctx.RecordRequestBody(true)
+		defer ctx.RecordRequestBody(false)
+
 		var tokenPair TokenPair // read "refresh_token" from JSON.
 		if ctx.GetContentTypeRequested() == context.ContentJSONHeaderValue {
 			ctx.ReadJSON(&tokenPair) // ignore error.
@@ -772,10 +787,10 @@ func (j *JWT) Verify(newPtr func() interface{}, expections ...Expectation) conte
 
 // VerifyMap is a shortcut of Verify with a function which will bind
 // the claims to a standard Go map[string]interface{}.
-func (j *JWT) VerifyMap(exceptions ...Expectation) context.Handler {
+func (j *JWT) VerifyMap(expections ...Expectation) context.Handler {
 	return j.Verify(func() interface{} {
 		return &context.Map{}
-	})
+	}, expections...)
 }
 
 // VerifyJSON works like `Verify` but instead it
@@ -797,7 +812,7 @@ func (j *JWT) VerifyMap(exceptions ...Expectation) context.Handler {
 func (j *JWT) VerifyJSON(expections ...Expectation) context.Handler {
 	return j.Verify(func() interface{} {
 		return new(json.RawMessage)
-	})
+	}, expections...)
 }
 
 // ReadJSON is a helper which binds "claimsPtr" to the
@@ -839,8 +854,8 @@ func (j *JWT) NewUser(opts ...UserOption) *User {
 // it unmarshals the token to the specific User type.
 // It sets the Context User too. So the next handler(s)
 // of the same chain can access the User through a `Context.User()` call.
-func (j *JWT) VerifyUser() context.Handler {
+func (j *JWT) VerifyUser(expectations ...Expectation) context.Handler {
 	return j.Verify(func() interface{} {
 		return new(User)
-	})
+	}, expectations...)
 }

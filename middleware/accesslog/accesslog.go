@@ -718,7 +718,7 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	// Enable reading the request body
 	// multiple times (route handler and this middleware).
 	if ac.shouldReadRequestBody() {
-		ctx.RecordBody()
+		ctx.RecordRequestBody(true)
 	}
 
 	// Set the fields context value so they can be modified
