@@ -101,9 +101,9 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
  toml                3012a1dbe2e4bd1     https://github.com/BurntSushi/toml       
                      391d42b32f0577c                                              
                      b7bbc7f005                                                   
- jose                d84c719419c2a90     https://github.com/square/go-jose       
-                     8d188ea67e09652                                              
-                     f5c1929ae8                                            
+ jwt                 5f34e0a4e28178b     https://github.com/kataras/jwt      
+                     3781df69552bdc5                                              
+                     481a0d4bef                                                                                                      
  uuid                cb32006e483f2a2     https://github.com/google/uuid       
                      3230e24209cf185                                              
                      c65b477dbf

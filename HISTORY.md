@@ -262,7 +262,7 @@ var dirOpts = iris.DirOptions{
 
 - New builtin [requestid](https://github.com/kataras/iris/tree/master/middleware/requestid) middleware.
 
-- New builtin [JWT](https://github.com/kataras/iris/tree/master/middleware/jwt) middleware based on [square/go-jose](https://github.com/square/go-jose) featured with optional encryption to set claims with sensitive data when necessary.
+- New builtin [JWT](https://github.com/kataras/iris/tree/master/middleware/jwt) middleware based on the fastest JWT implementation; [kataras/jwt](https://github.com/kataras/jwt) featured with optional wire encryption to set claims with sensitive data when necessary.
 
 - New `iris.RouteOverlap` route registration rule. `Party.SetRegisterRule(iris.RouteOverlap)` to allow overlapping across multiple routes for the same request subdomain, method, path. See [1536#issuecomment-643719922](https://github.com/kataras/iris/issues/1536#issuecomment-643719922). This allows two or more **MVC Controllers** to listen on the same path based on one or more registered dependencies (see [_examples/mvc/authenticated-controller](https://github.com/kataras/iris/tree/master/_examples/mvc/authenticated-controller)).
 
