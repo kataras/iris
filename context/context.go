@@ -5340,12 +5340,34 @@ func (ctx *Context) Logout(args ...interface{}) error {
 
 const userContextKey = "iris.user"
 
-// SetUser sets a User for this request.
+// SetUser sets a value as a User for this request.
 // It's used by auth middlewares as a common
 // method to provide user information to the
-// next handlers in the chain.
-func (ctx *Context) SetUser(u User) {
+// next handlers in the chain
+// Look the `User` method to retrieve it.
+func (ctx *Context) SetUser(i interface{}) error {
+	if i == nil {
+		ctx.values.Remove(userContextKey)
+		return nil
+	}
+
+	u, ok := i.(User)
+	if !ok {
+		if m, ok := i.(Map); ok { // it's a map, convert it to a User.
+			u = UserMap(m)
+		} else {
+			// It's a structure, wrap it and let
+			// runtime decide the features.
+			p := newUserPartial(i)
+			if p == nil {
+				return ErrNotSupported
+			}
+			u = p
+		}
+	}
+
 	ctx.values.Set(userContextKey, u)
+	return nil
 }
 
 // User returns the registered User of this request.

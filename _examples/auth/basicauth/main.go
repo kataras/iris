@@ -56,7 +56,9 @@ func h(ctx iris.Context) {
 	// makes sure for that, otherwise this handler will not be executed.
 	// OR:
 	user := ctx.User()
-	ctx.Writef("%s %s:%s", ctx.Path(), user.GetUsername(), user.GetPassword())
+	username, _ := user.GetUsername()
+	password, _ := user.GetPassword
+	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
 }
 
 func logout(ctx iris.Context) {

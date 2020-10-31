@@ -49,6 +49,8 @@ type Verifier struct {
 	Validators []TokenValidator
 
 	ErrorHandler func(ctx *context.Context, err error)
+	// DisableContextUser disables the registration of the claims as context User.
+	DisableContextUser bool
 }
 
 // NewVerifier accepts the algorithm for the token's signature among with its (private) key
@@ -67,8 +69,8 @@ func NewVerifier(signatureAlg Alg, signatureKey interface{}, validators ...Token
 	}
 }
 
-// WithGCM enables AES-GCM payload encryption.
-func (v *Verifier) WithGCM(key, additionalData []byte) *Verifier {
+// WithDecryption enables AES-GCM payload encryption.
+func (v *Verifier) WithDecryption(key, additionalData []byte) *Verifier {
 	_, decrypt, err := jwt.GCM(key, additionalData)
 	if err != nil {
 		panic(err) // important error before serve, stop everything.
@@ -176,8 +178,8 @@ func (v *Verifier) Verify(claimsType func() interface{}, validators ...TokenVali
 				}
 			}
 
-			if u, ok := dest.(context.User); ok {
-				ctx.SetUser(u)
+			if !v.DisableContextUser {
+				ctx.SetUser(dest)
 			}
 
 			ctx.Values().Set(claimsContextKey, dest)

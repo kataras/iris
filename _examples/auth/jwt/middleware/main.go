@@ -26,14 +26,14 @@ func main() {
 
 	signer := jwt.NewSigner(jwt.HS256, sigKey, 10*time.Minute)
 	// Enable payload encryption with:
-	// signer.WithGCM(encKey, nil)
+	// signer.WithEncryption(encKey, nil)
 	app.Get("/", generateToken(signer))
 
 	verifier := jwt.NewVerifier(jwt.HS256, sigKey)
 	// Enable server-side token block feature (even before its expiration time):
 	verifier.WithDefaultBlocklist()
 	// Enable payload decryption with:
-	// verifier.WithGCM(encKey, nil)
+	// verifier.WithDecryption(encKey, nil)
 	verifyMiddleware := verifier.Verify(func() interface{} {
 		return new(fooClaims)
 	})

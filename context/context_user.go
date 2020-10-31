@@ -1,6 +1,7 @@
 package context
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -27,30 +28,33 @@ var ErrNotSupported = errors.New("not supported")
 // To make optional some of the fields you can just embed the User interface
 // and implement whatever methods you want to support.
 //
-// There are two builtin implementations of the User interface:
-// - SimpleUser (type-safe)
-// - UserMap (wraps a map[string]interface{})
+// There are three builtin implementations of the User interface:
+// - SimpleUser
+// - UserMap (a wrapper by SetUser)
+// - UserPartial (a wrapper by SetUser)
 type User interface {
 	// GetAuthorization should return the authorization method,
 	// e.g. Basic Authentication.
-	GetAuthorization() string
+	GetAuthorization() (string, error)
 	// GetAuthorizedAt should return the exact time the
 	// client has been authorized for the "first" time.
-	GetAuthorizedAt() time.Time
+	GetAuthorizedAt() (time.Time, error)
+	// GetID should return the ID of the User.
+	GetID() (string, error)
 	// GetUsername should return the name of the User.
-	GetUsername() string
+	GetUsername() (string, error)
 	// GetPassword should return the encoded or raw password
 	// (depends on the implementation) of the User.
-	GetPassword() string
+	GetPassword() (string, error)
 	// GetEmail should return the e-mail of the User.
-	GetEmail() string
+	GetEmail() (string, error)
 	// GetRoles should optionally return the specific user's roles.
 	// Returns `ErrNotSupported` if this method is not
 	// implemented by the User implementation.
 	GetRoles() ([]string, error)
 	// GetToken should optionally return a token used
 	// to authorize this User.
-	GetToken() (string, error)
+	GetToken() ([]byte, error)
 	// GetField should optionally return a dynamic field
 	// based on its key. Useful for custom user fields.
 	// Keep in mind that these fields are encoded as a separate JSON key.
@@ -63,6 +67,7 @@ add a Raw() interface{} to return the underline User implementation too.
 The advandages of the above idea is that we don't have to add new methods
 for each of the builtin features and we can keep the (assumed) struct small.
 But we dont as it has many disadvantages, unless is requested.
+^ UPDATE: this is done through UserPartial.
 
 The disadvantage of the current implementation is that the developer MUST
 complete the whole interface in order to be a valid User and if we add
@@ -72,88 +77,51 @@ We kind of by-pass this disadvantage by providing a SimpleUser which can be embe
 to the end-developer's custom implementations.
 */
 
-// FeaturedUser optional interface that a User can implement.
-type FeaturedUser interface {
-	User
-	// GetFeatures should optionally return a list of features
-	// the User implementation offers.
-	GetFeatures() []UserFeature
-}
-
-// UserFeature a type which represents a user's optional feature.
-// See `HasUserFeature` function for more.
-type UserFeature uint32
-
-// The list of standard UserFeatures.
-const (
-	AuthorizedAtFeature UserFeature = iota
-	UsernameFeature
-	PasswordFeature
-	EmailFeature
-	RolesFeature
-	TokenFeature
-	FieldsFeature
-)
-
-// HasUserFeature reports whether the "u" User
-// implements a specific "feature" User Feature.
-//
-// It returns ErrNotSupported if a user does not implement
-// the FeaturedUser interface.
-func HasUserFeature(user User, feature UserFeature) (bool, error) {
-	if u, ok := user.(FeaturedUser); ok {
-		for _, f := range u.GetFeatures() {
-			if f == feature {
-				return true, nil
-			}
-		}
-
-		return false, nil
-	}
-
-	return false, ErrNotSupported
-}
-
 // SimpleUser is a simple implementation of the User interface.
 type SimpleUser struct {
-	Authorization string        `json:"authorization"`
-	AuthorizedAt  time.Time     `json:"authorized_at"`
-	Username      string        `json:"username,omitempty"`
-	Password      string        `json:"-"`
-	Email         string        `json:"email,omitempty"`
-	Roles         []string      `json:"roles,omitempty"`
-	Features      []UserFeature `json:"features,omitempty"`
-	Token         string        `json:"token,omitempty"`
-	Fields        Map           `json:"fields,omitempty"`
+	Authorization string          `json:"authorization,omitempty"`
+	AuthorizedAt  time.Time       `json:"authorized_at,omitempty"`
+	ID            string          `json:"id,omitempty"`
+	Username      string          `json:"username,omitempty"`
+	Password      string          `json:"-"`
+	Email         string          `json:"email,omitempty"`
+	Roles         []string        `json:"roles,omitempty"`
+	Token         json.RawMessage `json:"token,omitempty"`
+	Fields        Map             `json:"fields,omitempty"`
 }
 
-var _ FeaturedUser = (*SimpleUser)(nil)
+var _ User = (*SimpleUser)(nil)
 
 // GetAuthorization returns the authorization method,
 // e.g. Basic Authentication.
-func (u *SimpleUser) GetAuthorization() string {
-	return u.Authorization
+func (u *SimpleUser) GetAuthorization() (string, error) {
+	return u.Authorization, nil
 }
 
 // GetAuthorizedAt returns the exact time the
 // client has been authorized for the "first" time.
-func (u *SimpleUser) GetAuthorizedAt() time.Time {
-	return u.AuthorizedAt
+func (u *SimpleUser) GetAuthorizedAt() (time.Time, error) {
+	return u.AuthorizedAt, nil
+}
+
+// GetID returns the ID of the User.
+func (u *SimpleUser) GetID() (string, error) {
+	return u.ID, nil
 }
 
 // GetUsername returns the name of the User.
-func (u *SimpleUser) GetUsername() string {
-	return u.Username
+func (u *SimpleUser) GetUsername() (string, error) {
+	return u.Username, nil
 }
 
 // GetPassword returns the raw password of the User.
-func (u *SimpleUser) GetPassword() string {
-	return u.Password
+func (u *SimpleUser) GetPassword() (string, error) {
+	return u.Password, nil
 }
 
-// GetEmail returns the e-mail of the User.
-func (u *SimpleUser) GetEmail() string {
-	return u.Email
+// GetEmail returns the e-mail of (string,error) User.
+func (u *SimpleUser) GetEmail() (string, error) {
+	return u.Email, nil
 }
 
 // GetRoles returns the specific user's roles.
@@ -171,9 +139,9 @@ func (u *SimpleUser) GetRoles() ([]string, error) {
 //
 // The implementation can change that behavior.
 // Returns with `ErrNotSupported` if the Token field is empty.
-func (u *SimpleUser) GetToken() (string, error) {
-	if u.Token == "" {
-		return "", ErrNotSupported
+func (u *SimpleUser) GetToken() ([]byte, error) {
+	if len(u.Token) == 0 {
+		return nil, ErrNotSupported
 	}
 
 	return u.Token, nil
@@ -189,145 +157,72 @@ func (u *SimpleUser) GetField(key string) (interface{}, error) {
 	return u.Fields[key], nil
 }
 
-// GetFeatures returns a list of features
-// this User implementation offers.
-func (u *SimpleUser) GetFeatures() []UserFeature {
-	if u.Features != nil {
-		return u.Features
-	}
-
-	var features []UserFeature
-
-	if !u.AuthorizedAt.IsZero() {
-		features = append(features, AuthorizedAtFeature)
-	}
-
-	if u.Username != "" {
-		features = append(features, UsernameFeature)
-	}
-
-	if u.Password != "" {
-		features = append(features, PasswordFeature)
-	}
-
-	if u.Email != "" {
-		features = append(features, EmailFeature)
-	}
-
-	if u.Roles != nil {
-		features = append(features, RolesFeature)
-	}
-
-	if u.Fields != nil {
-		features = append(features, FieldsFeature)
-	}
-
-	return features
-}
-
 // UserMap can be used to convert a common map[string]interface{} to a User.
 // Usage:
 // user := map[string]interface{}{
 //   "username": "kataras",
 //   "age"     : 27,
 // }
-// ctx.SetUser(UserMap(user))
+// ctx.SetUser(user)
 // OR
-// user := UserMap{"key": "value",...}
+// user := UserStruct{....}
 // ctx.SetUser(user)
 // [...]
-// username := ctx.User().GetUsername()
-// age := ctx.User().GetField("age").(int)
+// username, err := ctx.User().GetUsername()
+// field,err := ctx.User().GetField("age")
+// age := field.(int)
 // OR cast it:
 // user := ctx.User().(UserMap)
 // username := user["username"].(string)
 // age := user["age"].(int)
 type UserMap Map
 
-var _ FeaturedUser = UserMap{}
+var _ User = UserMap{}
 
 // GetAuthorization returns the authorization or Authorization value of the map.
-func (u UserMap) GetAuthorization() string {
+func (u UserMap) GetAuthorization() (string, error) {
 	return u.str("authorization")
 }
 
 // GetAuthorizedAt returns the authorized_at or Authorized_At value of the map.
-func (u UserMap) GetAuthorizedAt() time.Time {
+func (u UserMap) GetAuthorizedAt() (time.Time, error) {
 	return u.time("authorized_at")
 }
 
+// GetID returns the id or Id or ID value of the map.
+func (u UserMap) GetID() (string, error) {
+	return u.str("id")
+}
+
 // GetUsername returns the username or Username value of the map.
-func (u UserMap) GetUsername() string {
+func (u UserMap) GetUsername() (string, error) {
 	return u.str("username")
 }
 
 // GetPassword returns the password or Password value of the map.
-func (u UserMap) GetPassword() string {
+func (u UserMap) GetPassword() (string, error) {
 	return u.str("password")
 }
 
 // GetEmail returns the email or Email value of the map.
-func (u UserMap) GetEmail() string {
+func (u UserMap) GetEmail() (string, error) {
 	return u.str("email")
 }
 
 // GetRoles returns the roles or Roles value of the map.
 func (u UserMap) GetRoles() ([]string, error) {
-	if s := u.strSlice("roles"); s != nil {
-		return s, nil
-	}
-
-	return nil, ErrNotSupported
+	return u.strSlice("roles")
 }
 
 // GetToken returns the roles or Roles value of the map.
-func (u UserMap) GetToken() (string, error) {
-	if s := u.str("token"); s != "" {
-		return s, nil
-	}
-
-	return "", ErrNotSupported
+func (u UserMap) GetToken() ([]byte, error) {
+	return u.bytes("token")
 }
 
 // GetField returns the raw map's value based on its "key".
 // It's not kind of useful here as you can just use the map.
 func (u UserMap) GetField(key string) (interface{}, error) {
 	return u[key], nil
-}
-
-// GetFeatures returns a list of features
-// this map offers.
-func (u UserMap) GetFeatures() []UserFeature {
-	if v := u.val("features"); v != nil { // if already contain features.
-		if features, ok := v.([]UserFeature); ok {
-			return features
-		}
-	}
-
-	// else try to resolve from map values.
-	features := []UserFeature{FieldsFeature}
-
-	if !u.GetAuthorizedAt().IsZero() {
-		features = append(features, AuthorizedAtFeature)
-	}
-
-	if u.GetUsername() != "" {
-		features = append(features, UsernameFeature)
-	}
-
-	if u.GetPassword() != "" {
-		features = append(features, PasswordFeature)
-	}
-
-	if u.GetEmail() != "" {
-		features = append(features, EmailFeature)
-	}
-
-	if roles, err := u.GetRoles(); err == nil && roles != nil {
-		features = append(features, RolesFeature)
-	}
-
-	return features
 }
 
 func (u UserMap) val(key string) interface{} {
@@ -339,34 +234,248 @@ func (u UserMap) val(key string) interface{} {
 	return u[key]
 }
 
-func (u UserMap) str(key string) string {
+func (u UserMap) bytes(key string) ([]byte, error) {
+	if v := u.val(key); v != nil {
+		switch s := v.(type) {
+		case []byte:
+			return s, nil
+		case string:
+			return []byte(s), nil
+		}
+	}
+
+	return nil, ErrNotSupported
+}
+
+func (u UserMap) str(key string) (string, error) {
 	if v := u.val(key); v != nil {
 		if s, ok := v.(string); ok {
-			return s
+			return s, nil
 		}
 
 		// exists or not we don't care, if it's invalid type we don't fill it.
 	}
 
-	return ""
+	return "", ErrNotSupported
 }
 
-func (u UserMap) strSlice(key string) []string {
+func (u UserMap) strSlice(key string) ([]string, error) {
 	if v := u.val(key); v != nil {
 		if s, ok := v.([]string); ok {
-			return s
+			return s, nil
 		}
 	}
 
-	return nil
+	return nil, ErrNotSupported
 }
 
-func (u UserMap) time(key string) time.Time {
+func (u UserMap) time(key string) (time.Time, error) {
 	if v := u.val(key); v != nil {
 		if t, ok := v.(time.Time); ok {
-			return t
+			return t, nil
 		}
 	}
 
-	return time.Time{}
+	return time.Time{}, ErrNotSupported
+}
+
+type (
+	userGetAuthorization interface {
+		GetAuthorization() string
+	}
+
+	userGetAuthorizedAt interface {
+		GetAuthorizedAt() time.Time
+	}
+
+	userGetID interface {
+		GetID() string
+	}
+
+	userGetUsername interface {
+		GetUsername() string
+	}
+
+	userGetPassword interface {
+		GetPassword() string
+	}
+
+	userGetEmail interface {
+		GetEmail() string
+	}
+
+	userGetRoles interface {
+		GetRoles() []string
+	}
+
+	userGetToken interface {
+		GetToken() []byte
+	}
+
+	userGetField interface {
+		GetField(string) interface{}
+	}
+
+	// UserPartial is a User.
+	// It's a helper which wraps a struct value that
+	// may or may not complete the whole User interface.
+	UserPartial struct {
+		Raw interface{}
+		userGetAuthorization
+		userGetAuthorizedAt
+		userGetID
+		userGetUsername
+		userGetPassword
+		userGetEmail
+		userGetRoles
+		userGetToken
+		userGetField
+	}
+)
+
+var _ User = (*UserPartial)(nil)
+
+func newUserPartial(i interface{}) *UserPartial {
+	containsAtLeastOneMethod := false
+	p := &UserPartial{Raw: i}
+
+	if u, ok := i.(userGetAuthorization); ok {
+		p.userGetAuthorization = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetAuthorizedAt); ok {
+		p.userGetAuthorizedAt = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetID); ok {
+		p.userGetID = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetUsername); ok {
+		p.userGetUsername = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetPassword); ok {
+		p.userGetPassword = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetEmail); ok {
+		p.userGetEmail = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetRoles); ok {
+		p.userGetRoles = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetToken); ok {
+		p.userGetToken = u
+		containsAtLeastOneMethod = true
+	}
+
+	if u, ok := i.(userGetField); ok {
+		p.userGetField = u
+		containsAtLeastOneMethod = true
+	}
+
+	if !containsAtLeastOneMethod {
+		return nil
+	}
+
+	return p
+}
+
+// GetAuthorization should return the authorization method,
+// e.g. Basic Authentication.
+func (u *UserPartial) GetAuthorization() (string, error) {
+	if v := u.userGetAuthorization; v != nil {
+		return v.GetAuthorization(), nil
+	}
+
+	return "", ErrNotSupported
+}
+
+// GetAuthorizedAt should return the exact time the
+// client has been authorized for the "first" time.
+func (u *UserPartial) GetAuthorizedAt() (time.Time, error) {
+	if v := u.userGetAuthorizedAt; v != nil {
+		return v.GetAuthorizedAt(), nil
+	}
+
+	return time.Time{}, ErrNotSupported
+}
+
+// GetID should return the ID of the User.
+func (u *UserPartial) GetID() (string, error) {
+	if v := u.userGetID; v != nil {
+		return v.GetID(), nil
+	}
+
+	return "", ErrNotSupported
+}
+
+// GetUsername should return the name of the User.
+func (u *UserPartial) GetUsername() (string, error) {
+	if v := u.userGetUsername; v != nil {
+		return v.GetUsername(), nil
+	}
+
+	return "", ErrNotSupported
+}
+
+// GetPassword should return the encoded or raw password
+// (depends on the implementation) of the User.
+func (u *UserPartial) GetPassword() (string, error) {
+	if v := u.userGetPassword; v != nil {
+		return v.GetPassword(), nil
+	}
+
+	return "", ErrNotSupported
+}
+
+// GetEmail should return the e-mail of the User.
+func (u *UserPartial) GetEmail() (string, error) {
+	if v := u.userGetEmail; v != nil {
+		return v.GetEmail(), nil
+	}
+
+	return "", ErrNotSupported
+}
+
+// GetRoles should optionally return the specific user's roles.
+// Returns `ErrNotSupported` if this method is not
+// implemented by the User implementation.
+func (u *UserPartial) GetRoles() ([]string, error) {
+	if v := u.userGetRoles; v != nil {
+		return v.GetRoles(), nil
+	}
+
+	return nil, ErrNotSupported
+}
+
+// GetToken should optionally return a token used
+// to authorize this User.
+func (u *UserPartial) GetToken() ([]byte, error) {
+	if v := u.userGetToken; v != nil {
+		return v.GetToken(), nil
+	}
+
+	return nil, ErrNotSupported
+}
+
+// GetField should optionally return a dynamic field
+// based on its key. Useful for custom user fields.
+// Keep in mind that these fields are encoded as a separate JSON key.
+func (u *UserPartial) GetField(key string) (interface{}, error) {
+	if v := u.userGetField; v != nil {
+		return v.GetField(key), nil
+	}
+
+	return nil, ErrNotSupported
 }
