@@ -31,6 +31,14 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/tuxaanand"><img src="https://avatars1.githubusercontent.com/u/9750371?v=4" alt ="AANAND NATARAJAN" title="tuxaanand" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/edsongley"><img src="https://avatars1.githubusercontent.com/u/35545454?v=4" alt ="Edsongley Almeida" title="edsongley" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/ganben"><img src="https://avatars1.githubusercontent.com/u/10101347?v=4" alt ="ganben" title="ganben" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/tejzpr"><img src="https://avatars1.githubusercontent.com/u/2813811?v=4" alt ="Tejus Pratap" title="tejzpr" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/BlackHole1"><img src="https://avatars1.githubusercontent.com/u/8198408?v=4" alt ="cui hexiang" title="BlackHole1" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/wangbl11"><img src="https://avatars1.githubusercontent.com/u/14358532?v=4" alt ="tinawang" title="wangbl11" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/juanxme"><img src="https://avatars1.githubusercontent.com/u/661043?v=4" alt ="Juan David Parra Pimiento" title="juanxme" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/andychongyz"><img src="https://avatars1.githubusercontent.com/u/12697240?v=4" alt ="Andy Chong Ying Zhi" title="andychongyz" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/KevinZhouRafael"><img src="https://avatars1.githubusercontent.com/u/16298046?v=4" alt ="Kevin Zhou" title="KevinZhouRafael" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/mizzlespot"><img src="https://avatars1.githubusercontent.com/u/2654538?v=4" alt ="Jasper" title="mizzlespot" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/wiener01mu"><img src="https://avatars1.githubusercontent.com/u/41128011?v=4" alt ="Simranjit Singh" title="wiener01mu" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
