@@ -366,6 +366,10 @@ func logController(logger *golog.Logger, c *ControllerActivator) {
 		return
 	}
 
+	if c.injector == nil { // when no actual controller methods are registered.
+		return
+	}
+
 	/*
 		[DBUG] controller.GreetController
 		  ╺ Service         → ./service/greet_service.go:16
@@ -381,7 +385,6 @@ func logController(logger *golog.Logger, c *ControllerActivator) {
 	logger.TimeFormat = ""
 
 	printer := logger.Printer
-
 	reports := c.injector.Container.Reports
 	ctrlName := c.RelName()
 	ctrlScopeType := ""

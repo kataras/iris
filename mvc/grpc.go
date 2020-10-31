@@ -47,24 +47,25 @@ func (g GRPC) Apply(c *ControllerActivator) {
 			return
 		}
 
-		if g.Strict {
-			ctx.NotFound()
-		} else {
-			// Allow common HTTP clients, consumes and produces JSON.
-			ctx.Next()
-		}
+		// If strict was false, allow common HTTP clients, consumes and produces JSON.
+		ctx.Next()
 	}
 
 	for i := 0; i < c.Type.NumMethod(); i++ {
 		m := c.Type.Method(i)
 		path := path.Join(g.ServiceName, m.Name)
-		if route := c.Handle(http.MethodPost, path, m.Name, pre); route != nil {
-			bckp := route.Description
-			route.Description = "gRPC"
-			if g.Strict {
-				route.Description += "-only"
+		if g.Strict {
+			c.app.Router.HandleMany(http.MethodPost, path, pre)
+		} else {
+			if route := c.Handle(http.MethodPost, path, m.Name, pre); route != nil {
+				bckp := route.Description
+				route.Description = "gRPC"
+				if g.Strict {
+					route.Description += "-only"
+				}
+				route.Description += " " + bckp // e.g. "gRPC controller"
 			}
-			route.Description += " " + bckp // e.g. "gRPC controller"
 		}
+
 	}
 }

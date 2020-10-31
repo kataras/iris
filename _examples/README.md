@@ -251,6 +251,7 @@
     * [Websocket Controller](mvc/websocket)
     * [Register Middleware](mvc/middleware)
     * [gRPC](mvc/grpc-compatible)
+    * [gRPC Bidirectional Stream](mvc/grpc-compatible-bidirectional-stream)
     * [Login (Repository and Service layers)](mvc/login)
     * [Login (Single Responsibility)](mvc/login-mvc-single-responsibility)
     * [Vue.js Todo App](mvc/vuejs-todo-mvc)

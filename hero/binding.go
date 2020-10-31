@@ -248,8 +248,29 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramsCoun
 	}
 
 	bindings := getBindingsFor(inputs, dependencies, paramsCount)
-	if expected, got := n, len(bindings); expected > got {
-		panic(fmt.Sprintf("expected [%d] bindings (input parameters) but got [%d]", expected, got))
+	if expected, got := n, len(bindings); expected != got {
+		expectedInputs := ""
+		missingInputs := ""
+		for i, in := range inputs {
+			pos := i + 1
+			typName := in.String()
+			expectedInputs += fmt.Sprintf("\n  - [%d] %s", pos, typName)
+			found := false
+			for _, b := range bindings {
+				if b.Input.Index == i {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				missingInputs += fmt.Sprintf("\n  - [%d] %s", pos, typName)
+			}
+		}
+
+		fnName := context.HandlerName(fn)
+		panic(fmt.Sprintf("expected [%d] bindings (input parameters) but got [%d]\nFunction:\n  - %s\nExpected:%s\nMissing:%s",
+			expected, got, fnName, expectedInputs, missingInputs))
 	}
 
 	return bindings
