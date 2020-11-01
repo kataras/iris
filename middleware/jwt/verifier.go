@@ -38,6 +38,8 @@ func GetVerifiedToken(ctx *context.Context) *VerifiedToken {
 
 // Verifier holds common options to verify an incoming token.
 // Its Verify method can be used as a middleware to allow authorized clients to access an API.
+//
+// It does not support JWE, JWK.
 type Verifier struct {
 	Alg Alg
 	Key interface{}
@@ -53,10 +55,30 @@ type Verifier struct {
 	DisableContextUser bool
 }
 
-// NewVerifier accepts the algorithm for the token's signature among with its (private) key
+// NewVerifier accepts the algorithm for the token's signature among with its (public) key
 // and optionally some token validators for all verify middlewares that may initialized under this Verifier.
-//
 // See its Verify method.
+//
+// Usage:
+//
+//  verifier := NewVerifier(HS256, secret)
+// OR
+//  verifier := NewVerifier(HS256, secret, Expected{Issuer: "my-app"})
+//
+//  claimsGetter := func() interface{} { return new(userClaims) }
+//  middleware := verifier.Verify(claimsGetter)
+// OR
+//  middleware := verifier.Verify(claimsGetter, Expected{Issuer: "my-app"})
+//
+// Register the middleware, e.g.
+//  app.Use(middleware)
+//
+// Get the claims:
+//  claims := jwt.Get(ctx).(*userClaims)
+//  username := claims.Username
+//
+// Get the context user:
+//  username, err := ctx.User().GetUsername()
 func NewVerifier(signatureAlg Alg, signatureKey interface{}, validators ...TokenValidator) *Verifier {
 	return &Verifier{
 		Alg:        signatureAlg,
@@ -69,7 +91,7 @@ func NewVerifier(signatureAlg Alg, signatureKey interface{}, validators ...Token
 	}
 }
 
-// WithDecryption enables AES-GCM payload encryption.
+// WithDecryption enables AES-GCM payload-only encryption.
 func (v *Verifier) WithDecryption(key, additionalData []byte) *Verifier {
 	_, decrypt, err := jwt.GCM(key, additionalData)
 	if err != nil {
@@ -137,7 +159,16 @@ func (v *Verifier) VerifyToken(token []byte, validators ...TokenValidator) (*Ver
 // from unauthorized client requests. After this, the route handlers can access the claims
 // through the jwt.Get package-level function.
 //
-// Example Code:
+// By default it extracts the token from Authorization: Bearer $token header and ?token URL Query parameter,
+// to change that behavior modify its Extractors field.
+//
+// By default a 401 status code with a generic message will be sent to the client on
+// a token verification or claims validation failure, to change that behavior
+// modify its ErrorHandler field or register OnErrorCode(401, errorHandler) and
+// retrieve the error through Context.GetErr method.
+//
+// If the "claimsType" is nil then only the jwt.GetVerifiedToken is available
+// and the handler should unmarshal the payload to extract the claims by itself.
 func (v *Verifier) Verify(claimsType func() interface{}, validators ...TokenValidator) context.Handler {
 	unmarshal := jwt.Unmarshal
 	if claimsType != nil {

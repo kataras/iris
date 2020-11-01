@@ -7,6 +7,11 @@ import (
 	"github.com/kataras/jwt"
 )
 
+// Signer holds common options to sign and generate a token.
+// Its Sign method can be used to generate a token which can be sent to the client.
+// Its NewTokenPair can be used to construct a token pair (access_token, refresh_token).
+//
+// It does not support JWE, JWK.
 type Signer struct {
 	Alg Alg
 	Key interface{}
@@ -16,6 +21,14 @@ type Signer struct {
 	Encrypt func([]byte) ([]byte, error)
 }
 
+// NewSigner accepts the signature algorithm among with its (private or shared) key
+// and the max life time duration of generated tokens and returns a JWT signer.
+// See its Sign method.
+//
+// Usage:
+//
+//  signer := NewSigner(HS256, secret, 15*time.Minute)
+//  token, err := signer.Sign(userClaims{Username: "kataras"})
 func NewSigner(signatureAlg Alg, signatureKey interface{}, maxAge time.Duration) *Signer {
 	return &Signer{
 		Alg:    signatureAlg,
@@ -24,7 +37,7 @@ func NewSigner(signatureAlg Alg, signatureKey interface{}, maxAge time.Duration)
 	}
 }
 
-// WithEncryption enables AES-GCM payload decryption.
+// WithEncryption enables AES-GCM payload-only decryption.
 func (s *Signer) WithEncryption(key, additionalData []byte) *Signer {
 	encrypt, _, err := jwt.GCM(key, additionalData)
 	if err != nil {
