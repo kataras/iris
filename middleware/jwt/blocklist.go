@@ -16,11 +16,16 @@ type Blocklist interface {
 	jwt.TokenValidator
 
 	// InvalidateToken should invalidate a verified JWT token.
-	InvalidateToken(token []byte, expiry int64)
+	InvalidateToken(token []byte, c Claims) error
 	// Del should remove a token from the storage.
-	Del(token []byte)
-	// Count should return the total amount of tokens stored.
-	Count() int
+	Del(key string) error
 	// Has should report whether a specific token exists in the storage.
-	Has(token []byte) bool
+	Has(key string) (bool, error)
+	// Count should return the total amount of tokens stored.
+	Count() (int64, error)
+}
+
+type blocklistConnect interface {
+	Connect() error
+	IsConnected() bool
 }

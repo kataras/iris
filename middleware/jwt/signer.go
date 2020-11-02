@@ -16,6 +16,9 @@ type Signer struct {
 	Alg Alg
 	Key interface{}
 
+	// MaxAge to set "exp" and "iat".
+	// Recommended value for access tokens: 15 minutes.
+	// Defaults to 0, no limit.
 	MaxAge time.Duration
 
 	Encrypt func([]byte) ([]byte, error)

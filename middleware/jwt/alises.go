@@ -1,7 +1,59 @@
 package jwt
 
-import (
-	"github.com/kataras/jwt"
+import "github.com/kataras/jwt"
+
+// Error values.
+var (
+	ErrBlocked           = jwt.ErrBlocked
+	ErrDecrypt           = jwt.ErrDecrypt
+	ErrExpected          = jwt.ErrExpected
+	ErrExpired           = jwt.ErrExpired
+	ErrInvalidKey        = jwt.ErrInvalidKey
+	ErrIssuedInTheFuture = jwt.ErrIssuedInTheFuture
+	ErrMissing           = jwt.ErrMissing
+	ErrMissingKey        = jwt.ErrMissingKey
+	ErrNotValidYet       = jwt.ErrNotValidYet
+	ErrTokenAlg          = jwt.ErrTokenAlg
+	ErrTokenForm         = jwt.ErrTokenForm
+	ErrTokenSignature    = jwt.ErrTokenSignature
+)
+
+// Signature algorithms.
+var (
+	EdDSA = jwt.EdDSA
+	HS256 = jwt.HS256
+	HS384 = jwt.HS384
+	HS512 = jwt.HS512
+	RS256 = jwt.RS256
+	RS384 = jwt.RS384
+	RS512 = jwt.RS512
+	ES256 = jwt.ES256
+	ES384 = jwt.ES384
+	ES512 = jwt.ES512
+	PS256 = jwt.PS256
+	PS384 = jwt.PS384
+	PS512 = jwt.PS512
+)
+
+// Signature algorithm helpers.
+var (
+	MustLoadHMAC         = jwt.MustLoadHMAC
+	LoadHMAC             = jwt.LoadHMAC
+	MustLoadRSA          = jwt.MustLoadRSA
+	LoadPrivateKeyRSA    = jwt.LoadPrivateKeyRSA
+	LoadPublicKeyRSA     = jwt.LoadPublicKeyRSA
+	ParsePrivateKeyRSA   = jwt.ParsePrivateKeyRSA
+	ParsePublicKeyRSA    = jwt.ParsePublicKeyRSA
+	MustLoadECDSA        = jwt.MustLoadECDSA
+	LoadPrivateKeyECDSA  = jwt.LoadPrivateKeyECDSA
+	LoadPublicKeyECDSA   = jwt.LoadPublicKeyECDSA
+	ParsePrivateKeyECDSA = jwt.ParsePrivateKeyECDSA
+	ParsePublicKeyECDSA  = jwt.ParsePublicKeyECDSA
+	MustLoadEdDSA        = jwt.MustLoadEdDSA
+	LoadPrivateKeyEdDSA  = jwt.LoadPrivateKeyEdDSA
+	LoadPublicKeyEdDSA   = jwt.LoadPublicKeyEdDSA
+	ParsePrivateKeyEdDSA = jwt.ParsePrivateKeyEdDSA
+	ParsePublicKeyEdDSA  = jwt.ParsePublicKeyEdDSA
 )
 
 // Type alises for the underline jwt package.
@@ -31,23 +83,6 @@ type (
 	TokenPair = jwt.TokenPair
 )
 
-// Signature algorithms.
-var (
-	EdDSA = jwt.EdDSA
-	HS256 = jwt.HS256
-	HS384 = jwt.HS384
-	HS512 = jwt.HS512
-	RS256 = jwt.RS256
-	RS384 = jwt.RS384
-	RS512 = jwt.RS512
-	ES256 = jwt.ES256
-	ES384 = jwt.ES384
-	ES512 = jwt.ES512
-	PS256 = jwt.PS256
-	PS384 = jwt.PS384
-	PS512 = jwt.PS512
-)
-
 // Encryption algorithms.
 var (
 	GCM = jwt.GCM
@@ -73,6 +108,13 @@ var (
 	// Usage:
 	//  signer.Sign(..., jwt.MaxAge(15*time.Minute))
 	MaxAge = jwt.MaxAge
+
+	// ID is a shurtcut to set jwt ID on Sign.
+	ID = func(id string) jwt.SignOptionFunc {
+		return func(c *Claims) {
+			c.ID = id
+		}
+	}
 )
 
 // Shortcuts for Signing and Verifying.
@@ -81,25 +123,4 @@ var (
 	VerifyEncryptedToken = jwt.VerifyEncrypted
 	Sign                 = jwt.Sign
 	SignEncrypted        = jwt.SignEncrypted
-)
-
-// Signature algorithm helpers.
-var (
-	MustLoadHMAC         = jwt.MustLoadHMAC
-	LoadHMAC             = jwt.LoadHMAC
-	MustLoadRSA          = jwt.MustLoadRSA
-	LoadPrivateKeyRSA    = jwt.LoadPrivateKeyRSA
-	LoadPublicKeyRSA     = jwt.LoadPublicKeyRSA
-	ParsePrivateKeyRSA   = jwt.ParsePrivateKeyRSA
-	ParsePublicKeyRSA    = jwt.ParsePublicKeyRSA
-	MustLoadECDSA        = jwt.MustLoadECDSA
-	LoadPrivateKeyECDSA  = jwt.LoadPrivateKeyECDSA
-	LoadPublicKeyECDSA   = jwt.LoadPublicKeyECDSA
-	ParsePrivateKeyECDSA = jwt.ParsePrivateKeyECDSA
-	ParsePublicKeyECDSA  = jwt.ParsePublicKeyECDSA
-	MustLoadEdDSA        = jwt.MustLoadEdDSA
-	LoadPrivateKeyEdDSA  = jwt.LoadPrivateKeyEdDSA
-	LoadPublicKeyEdDSA   = jwt.LoadPublicKeyEdDSA
-	ParsePrivateKeyEdDSA = jwt.ParsePrivateKeyEdDSA
-	ParsePublicKeyEdDSA  = jwt.ParsePublicKeyEdDSA
 )

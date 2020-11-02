@@ -112,7 +112,7 @@ func (v *Verifier) WithDefaultBlocklist() *Verifier {
 
 func (v *Verifier) invalidate(ctx *context.Context) {
 	if verifiedToken := GetVerifiedToken(ctx); verifiedToken != nil {
-		v.Blocklist.InvalidateToken(verifiedToken.Token, verifiedToken.StandardClaims.Expiry)
+		v.Blocklist.InvalidateToken(verifiedToken.Token, verifiedToken.StandardClaims)
 		ctx.Values().Remove(claimsContextKey)
 		ctx.Values().Remove(verifiedTokenContextKey)
 		ctx.SetUser(nil)
@@ -179,6 +179,19 @@ func (v *Verifier) Verify(claimsType func() interface{}, validators ...TokenVali
 	}
 
 	if v.Blocklist != nil {
+		// If blocklist implements the connect interface,
+		// try to connect if it's not already connected manually by developer,
+		// if errored then just return a handler which will fire this error every single time.
+		if bc, ok := v.Blocklist.(blocklistConnect); ok {
+			if !bc.IsConnected() {
+				if err := bc.Connect(); err != nil {
+					return func(ctx *context.Context) {
+						v.ErrorHandler(ctx, err)
+					}
+				}
+			}
+		}
+
 		validators = append([]TokenValidator{v.Blocklist}, append(v.Validators, validators...)...)
 	}
 
