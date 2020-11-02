@@ -221,6 +221,7 @@
         * [Badger](sessions/database/badger/main.go)
         * [BoltDB](sessions/database/boltdb/main.go)
         * [Redis](sessions/database/redis/main.go)
+    * [View Data](sessions/viewdata)
 * Websocket
     * [Gorilla FileWatch (3rd-party)](websocket/gorilla-filewatch/main.go)
     * [Basic](websocket/basic)

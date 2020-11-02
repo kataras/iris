@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"sync/atomic"
-	"time"
 
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/middleware/jwt"
@@ -30,7 +29,6 @@ type Client interface {
 
 // Blocklist is a jwt.Blocklist backed by Redis.
 type Blocklist struct {
-	Clock func() time.Time // Required. Defaults to time.Now.
 	// GetKey is a function which can be used how to extract
 	// the unique identifier for a token.
 	// Required. By default the token key is extracted through the claims.ID ("jti").
@@ -67,7 +65,6 @@ var _ jwt.Blocklist = (*Blocklist)(nil)
 //  verifier.Blocklist = blocklist
 func NewBlocklist() *Blocklist {
 	return &Blocklist{
-		Clock:  time.Now,
 		GetKey: defaultGetKey,
 		Prefix: "",
 		ClientOptions: Options{

@@ -18,46 +18,40 @@ var (
 	verifier = jwt.NewVerifier(jwt.HS256, signatureSharedKey)
 )
 
-type userClaims struct {
-	Username string `json:"username"`
-}
-
 func main() {
 	app := iris.New()
 
-	// IMPORTANT
-	//
-	// To use the in-memory blocklist just:
-	// verifier.WithDefaultBlocklist()
-	// To use a persistence blocklist, e.g. redis,
-	// start your redis-server and:
 	blocklist := redis.NewBlocklist()
-	// To configure single client or a cluster one:
-	// blocklist.ClientOptions.Addr = "127.0.0.1:6379"
-	// blocklist.ClusterOptions.Addrs = []string{...}
-	// To set a prefix for jwt ids:
-	// blocklist.Prefix = "myapp-"
-	//
-	// To manually connect and check its error before continue:
-	// err := blocklist.Connect()
-	// By default the verifier will try to connect, if failed then it will throw http error.
-	//
-	// And then register it:
 	verifier.Blocklist = blocklist
 	verifyMiddleware := verifier.Verify(func() interface{} {
 		return new(userClaims)
 	})
 
-	app.Get("/", authenticate)
+	app.Get("/", loginView)
+
+	api := app.Party("/api")
+	{
+		api.Post("/login", login)
+		api.Post("/logout", verifyMiddleware, logout)
+
+		todoAPI := api.Party("/todos", verifyMiddleware)
+		{
+			todoAPI.Post("/", createTodo)
+			todoAPI.Get("/", listTodos)
+			todoAPI.Get("/{id:uint64}", getTodo)
+		}
+	}
 
 	protectedAPI := app.Party("/protected", verifyMiddleware)
 	protectedAPI.Get("/", protected)
 	protectedAPI.Get("/logout", logout)
 
-	// http://localhost:8080
-	// http://localhost:8080/protected?token=$token
-	// http://localhost:8080/logout?token=$token
-	// http://localhost:8080/protected?token=$token (401)
+	// GET  http://localhost:8080
+	// POST http://localhost:8080/api/login
+	// POST http://localhost:8080/api/logout
+	// POST http://localhost:8080/api/todos
+	// GET  http://localhost:8080/api/todos
+	// GET  http://localhost:8080/api/todos/{id}
 	app.Listen(":8080")
 }
 
@@ -92,10 +86,4 @@ func protected(ctx iris.Context) {
 	// jwt.GetVerifiedToken(ctx).StandardClaims.ID
 
 	ctx.WriteString(claims.Username)
-}
-
-func logout(ctx iris.Context) {
-	ctx.Logout()
-
-	ctx.Redirect("/", iris.StatusTemporaryRedirect)
 }
