@@ -19,7 +19,8 @@ type Signer struct {
 	// MaxAge to set "exp" and "iat".
 	// Recommended value for access tokens: 15 minutes.
 	// Defaults to 0, no limit.
-	MaxAge time.Duration
+	MaxAge  time.Duration
+	Options []SignOption
 
 	Encrypt func([]byte) ([]byte, error)
 }
@@ -33,11 +34,24 @@ type Signer struct {
 //  signer := NewSigner(HS256, secret, 15*time.Minute)
 //  token, err := signer.Sign(userClaims{Username: "kataras"})
 func NewSigner(signatureAlg Alg, signatureKey interface{}, maxAge time.Duration) *Signer {
-	return &Signer{
+	if signatureAlg == HS256 {
+		// A tiny helper if the end-developer uses string instead of []byte for hmac keys.
+		if k, ok := signatureKey.(string); ok {
+			signatureKey = []byte(k)
+		}
+	}
+
+	s := &Signer{
 		Alg:    signatureAlg,
 		Key:    signatureKey,
 		MaxAge: maxAge,
 	}
+
+	if maxAge > 0 {
+		s.Options = []SignOption{MaxAge(maxAge)}
+	}
+
+	return s
 }
 
 // WithEncryption enables AES-GCM payload-only decryption.
@@ -53,7 +67,13 @@ func (s *Signer) WithEncryption(key, additionalData []byte) *Signer {
 
 // Sign generates a new token based on the given "claims" which is valid up to "s.MaxAge".
 func (s *Signer) Sign(claims interface{}, opts ...SignOption) ([]byte, error) {
-	return SignEncrypted(s.Alg, s.Key, s.Encrypt, claims, append([]SignOption{MaxAge(s.MaxAge)}, opts...)...)
+	if len(opts) > 0 {
+		opts = append(opts, s.Options...)
+	} else {
+		opts = s.Options
+	}
+
+	return SignEncrypted(s.Alg, s.Key, s.Encrypt, claims, opts...)
 }
 
 // NewTokenPair accepts the access and refresh claims plus the life time duration for the refresh token

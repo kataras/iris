@@ -1,89 +1,40 @@
 package main
 
 import (
-	"time"
+	"myapp/api"
+	"myapp/domain/repository"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/jwt"
-	"github.com/kataras/iris/v12/middleware/jwt/blocklist/redis"
-
-	// Optionally to set token identifier.
-	"github.com/google/uuid"
 )
 
 var (
-	signatureSharedKey = []byte("sercrethatmaycontainch@r32length")
-
-	signer   = jwt.NewSigner(jwt.HS256, signatureSharedKey, 15*time.Minute)
-	verifier = jwt.NewVerifier(jwt.HS256, signatureSharedKey)
+	userRepository = repository.NewMemoryUserRepository()
+	todoRepository = repository.NewMemoryTodoRepository()
 )
 
 func main() {
+	if err := repository.GenerateSamples(userRepository, todoRepository); err != nil {
+		panic(err)
+	}
+
 	app := iris.New()
 
-	blocklist := redis.NewBlocklist()
-	verifier.Blocklist = blocklist
-	verifyMiddleware := verifier.Verify(func() interface{} {
-		return new(userClaims)
-	})
+	app.Post("/signin", api.SignIn(userRepository))
 
-	app.Get("/", loginView)
+	verify := api.Verify()
 
-	api := app.Party("/api")
-	{
-		api.Post("/login", login)
-		api.Post("/logout", verifyMiddleware, logout)
+	todosAPI := app.Party("/todos", verify)
+	todosAPI.Post("/", api.CreateTodo(todoRepository))
+	todosAPI.Get("/", api.ListTodos(todoRepository))
+	todosAPI.Get("/{id}", api.GetTodo(todoRepository))
 
-		todoAPI := api.Party("/todos", verifyMiddleware)
-		{
-			todoAPI.Post("/", createTodo)
-			todoAPI.Get("/", listTodos)
-			todoAPI.Get("/{id:uint64}", getTodo)
-		}
-	}
+	adminAPI := app.Party("/admin", verify, api.AllowAdmin)
+	adminAPI.Get("/todos", api.ListAllTodos(todoRepository))
 
-	protectedAPI := app.Party("/protected", verifyMiddleware)
-	protectedAPI.Get("/", protected)
-	protectedAPI.Get("/logout", logout)
-
-	// GET  http://localhost:8080
-	// POST http://localhost:8080/api/login
-	// POST http://localhost:8080/api/logout
-	// POST http://localhost:8080/api/todos
-	// GET  http://localhost:8080/api/todos
-	// GET  http://localhost:8080/api/todos/{id}
+	// POST http://localhost:8080/signin (Form: username, password)
+	// GET  http://localhost:8080/todos
+	// GET  http://localhost:8080/todos/{id}
+	// POST http://localhost:8080/todos (JSON, Form or URL: title, body)
+	// GET  http://localhost:8080/admin/todos
 	app.Listen(":8080")
-}
-
-func authenticate(ctx iris.Context) {
-	claims := userClaims{
-		Username: "kataras",
-	}
-
-	// Generate JWT ID.
-	random, err := uuid.NewRandom()
-	if err != nil {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
-		return
-	}
-	id := random.String()
-
-	// Set the ID with the jwt.ID.
-	token, err := signer.Sign(claims, jwt.ID(id))
-
-	if err != nil {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
-		return
-	}
-
-	ctx.Write(token)
-}
-
-func protected(ctx iris.Context) {
-	claims := jwt.Get(ctx).(*userClaims)
-
-	// To the standard claims, e.g. the generated ID:
-	// jwt.GetVerifiedToken(ctx).StandardClaims.ID
-
-	ctx.WriteString(claims.Username)
 }

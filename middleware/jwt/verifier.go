@@ -80,6 +80,13 @@ type Verifier struct {
 // Get the context user:
 //  username, err := ctx.User().GetUsername()
 func NewVerifier(signatureAlg Alg, signatureKey interface{}, validators ...TokenValidator) *Verifier {
+	if signatureAlg == HS256 {
+		// A tiny helper if the end-developer uses string instead of []byte for hmac keys.
+		if k, ok := signatureKey.(string); ok {
+			signatureKey = []byte(k)
+		}
+	}
+
 	return &Verifier{
 		Alg:        signatureAlg,
 		Key:        signatureKey,
