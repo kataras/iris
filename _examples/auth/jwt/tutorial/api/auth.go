@@ -113,10 +113,8 @@ func SignIn(repo repository.UserRepository) iris.Handler {
 }
 
 // SignOut invalidates a user from server-side using the jwt Blocklist.
-// It's not used as we don't attach a blocklist, the user can be logged out from our client
-// and we don't use access token so we don't actually need this in this example.
 func SignOut(ctx iris.Context) {
-	ctx.Logout()
+	ctx.Logout() // this is automatically binded to a function which invalidates the current request token by the JWT Verifier above.
 }
 
 // GetClaims returns the current authorized client claims.
