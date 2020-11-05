@@ -1,8 +1,14 @@
 # Iris JWT Tutorial
 
+This example show how to use JWT with domain-driven design pattern with Iris. There is also a simple Go client which describes how you can use Go to authorize a user and use the server's API.
+
+## Run the server
+
 ```sh
 $ go run main.go
 ```
+
+## Authenticate, get the token
 
 ```sh
 $ curl --location --request POST 'http://localhost:8080/signin' \
@@ -13,12 +19,16 @@ $ curl --location --request POST 'http://localhost:8080/signin' \
 > $token
 ```
 
+## Get all TODOs for this User
+
 ```sh
 $ curl --location --request GET 'http://localhost:8080/todos' \
 --header 'Authorization: Bearer $token'
 
 > $todos
 ```
+
+## Get a specific User's TODO 
 
 ```sh
 $ curl --location --request GET 'http://localhost:8080/todos/$id' \
@@ -27,12 +37,16 @@ $ curl --location --request GET 'http://localhost:8080/todos/$id' \
 > $todo
 ```
 
+## Get all TODOs for all Users (admin role)
+
 ```sh
 $ curl --location --request GET 'http://localhost:8080/admin/todos' \
 --header 'Authorization: Bearer $token'
 
 > $todos
 ```
+
+## Create a new TODO
 
 ```sh
 $ curl --location --request POST 'http://localhost:8080/todos' \
@@ -46,5 +60,3 @@ $ curl --location --request POST 'http://localhost:8080/todos' \
 > Status Created
 > $todo
 ```
-
-TODO: write the article on https://medium.com/@kataras, https://dev.to/kataras and linkedin first.
