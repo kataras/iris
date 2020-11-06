@@ -18,7 +18,12 @@ type Group struct {
 // NewGroup returns a ptr to Group based on the given "version".
 // It sets the API Version for the "r" Party.
 //
-// See `Handle` and `RegisterGroups` for more.
+// See `Handle` for more.
+//
+// Example: _examples/routing/versioning
+// Usage:
+//  api := versioning.NewGroup(Parent_Party, ">= 1, < 2")
+//  api.Get/Post/Put/Delete...
 func NewGroup(r router.Party, version string) *Group {
 	// Note that this feature alters the RouteRegisterRule to RouteOverlap
 	// the RouteOverlap rule does not contain any performance downside
