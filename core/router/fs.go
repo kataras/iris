@@ -108,6 +108,16 @@ type DirOptions struct {
 
 	// Optional validator that loops through each requested resource.
 	AssetValidator func(ctx *context.Context, name string) bool
+	// If enabled then the router will render the index file on any not-found file
+	// instead of firing the 404 error code handler.
+	// Make sure the `IndexName` field is set.
+	//
+	// Usage:
+	//  app.HandleDir("/", iris.Dir("./public"), iris.DirOptions{
+	// 	 IndexName: "index.html",
+	// 	 SPA:       true,
+	//  })
+	SPA bool
 }
 
 // DefaultDirOptions holds the default settings for `FileServer`.
@@ -137,6 +147,7 @@ var DefaultDirOptions = DirOptions{
 		Burst:  0,
 	},
 	AssetValidator: nil,
+	SPA:            false,
 }
 
 // FileServer returns a Handler which serves files from a specific file system.
@@ -189,11 +200,32 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 		name := prefix(r.URL.Path, "/")
 		r.URL.Path = name
 
+		var (
+			indexFound bool
+			noRedirect bool
+		)
+
 		f, err := open(name, r)
 		if err != nil {
-			plainStatusCode(ctx, http.StatusNotFound)
-			return
+			if options.SPA && name != options.IndexName {
+				oldname := name
+				name = prefix(options.IndexName, "/") // to match push targets.
+				r.URL.Path = name
+				f, err = open(name, r) // try find the main index.
+				if err != nil {
+					r.URL.Path = oldname
+					plainStatusCode(ctx, http.StatusNotFound)
+					return
+				}
+
+				indexFound = true // to support push targets.
+				noRedirect = true // to disable redirecting back to /.
+			} else {
+				plainStatusCode(ctx, http.StatusNotFound)
+				return
+			}
 		}
+
 		defer f.Close()
 
 		info, err := f.Stat()
@@ -201,8 +233,6 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 			plainStatusCode(ctx, http.StatusNotFound)
 			return
 		}
-
-		var indexFound bool
 
 		// use contents of index.html for directory, if present
 		if info.IsDir() && options.IndexName != "" {
@@ -254,7 +284,7 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 
 		// index requested, send a moved permanently status
 		// and navigate back to the route without the index suffix.
-		if strings.HasSuffix(name, options.IndexName) {
+		if !noRedirect && strings.HasSuffix(name, options.IndexName) {
 			localRedirect(ctx, "./")
 			return
 		}
