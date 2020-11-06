@@ -119,7 +119,7 @@ var (
 
 // Shortcuts for Signing and Verifying.
 var (
-	VerifyToken          = jwt.Verify
+	Verify               = jwt.Verify
 	VerifyEncryptedToken = jwt.VerifyEncrypted
 	Sign                 = jwt.Sign
 	SignEncrypted        = jwt.SignEncrypted
