@@ -29,7 +29,10 @@ func makeAccessLog() *accesslog.AccessLog {
 	ac.PanicLog = accesslog.LogHandler
 
 	// Set Custom Formatter:
-	ac.SetFormatter(&accesslog.JSON{})
+	ac.SetFormatter(&accesslog.JSON{
+		Indent:    "  ",
+		HumanTime: true,
+	})
 	// ac.SetFormatter(&accesslog.CSV{})
 	// ac.SetFormatter(&accesslog.Template{Text: "{{.Code}}"})
 

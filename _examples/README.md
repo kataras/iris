@@ -168,8 +168,9 @@
     * [Bind Form](request-body/read-form/main.go)
         * [Checkboxes](request-body/read-form/checkboxes/main.go)
     * [Bind Query](request-body/read-query/main.go)
-    * [Bind Headers](request-body/read-headers/main.go)
     * [Bind Params](request-body/read-params/main.go)
+    * [Bind URL](request-body/read-url/main.go)
+    * [Bind Headers](request-body/read-headers/main.go)
     * [Bind Body](request-body/read-body/main.go)
     * [Bind Custom per type](request-body/read-custom-per-type/main.go)
     * [Bind Custom via Unmarshaler](request-body/read-custom-via-unmarshaler/main.go)
@@ -197,8 +198,12 @@
 * Authentication, Authorization & Bot Detection 
     * [Basic Authentication](auth/basicauth/main.go)
     * [CORS](auth/cors)
-    * [JWT](auth/jwt/main.go)
+    * JSON Web Tokens
+        * [Basic](auth/jwt/basic/main.go)
+        * [Middleware](auth/jwt/midleware/main.go)
+        * [Blocklist](auth/jwt/blocklist/main.go)
         * [Refresh Token](auth/jwt/refresh-token/main.go)
+        * [Tutorial](auth/jwt/tutorial)
     * [JWT (community edition)](https://github.com/iris-contrib/middleware/tree/v12/jwt/_example/main.go)
     * [OAUth2](auth/goth/main.go)
     * [Manage Permissions](auth/permissions/main.go)
@@ -218,6 +223,7 @@
         * [Badger](sessions/database/badger/main.go)
         * [BoltDB](sessions/database/boltdb/main.go)
         * [Redis](sessions/database/redis/main.go)
+    * [View Data](sessions/viewdata)
 * Websocket
     * [Gorilla FileWatch (3rd-party)](websocket/gorilla-filewatch/main.go)
     * [Basic](websocket/basic)

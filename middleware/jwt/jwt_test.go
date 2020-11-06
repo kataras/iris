@@ -1,8 +1,7 @@
-// Package jwt_test contains simple Iris jwt tests. Most of the jwt functionality is already tested inside the jose package itself.
 package jwt_test
 
 import (
-	"os"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,129 +10,56 @@ import (
 	"github.com/kataras/iris/v12/middleware/jwt"
 )
 
-type userClaims struct {
-	jwt.Claims
-	Username string
+var testAlg, testSecret = jwt.HS256, []byte("sercrethatmaycontainch@r$")
+
+type fooClaims struct {
+	Foo string `json:"foo"`
 }
 
-const testMaxAge = 3 * time.Second
-
-// Random RSA verification and encryption.
-func TestRSA(t *testing.T) {
-	j := jwt.RSA(testMaxAge)
-	t.Cleanup(func() {
-		os.Remove(jwt.DefaultSignFilename)
-		os.Remove(jwt.DefaultEncFilename)
-	})
-	testWriteVerifyToken(t, j)
-}
-
-// HMAC verification and encryption.
-func TestHMAC(t *testing.T) {
-	j := jwt.HMAC(testMaxAge, "secret", "itsa16bytesecret")
-	testWriteVerifyToken(t, j)
-}
-
-func TestNew_HMAC(t *testing.T) {
-	j, err := jwt.New(testMaxAge, jwt.HS256, []byte("secret"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = j.WithEncryption(jwt.A128GCM, jwt.DIRECT, []byte("itsa16bytesecret"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testWriteVerifyToken(t, j)
-}
-
-// HMAC verification only (unecrypted).
-func TestVerify(t *testing.T) {
-	j, err := jwt.New(testMaxAge, jwt.HS256, []byte("another secret"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	testWriteVerifyToken(t, j)
-}
-
-func testWriteVerifyToken(t *testing.T, j *jwt.JWT) {
-	t.Helper()
-
-	j.Extractors = append(j.Extractors, jwt.FromJSON("access_token"))
-	standardClaims := jwt.Claims{Issuer: "an-issuer", Audience: jwt.Audience{"an-audience"}}
-	expectedClaims := userClaims{
-		Claims:   j.Expiry(standardClaims),
-		Username: "kataras",
-	}
-
+// The actual tests are inside the kataras/jwt repository.
+// This runs simple checks of just the middleware part.
+func TestJWT(t *testing.T) {
 	app := iris.New()
-	app.Get("/auth", func(ctx iris.Context) {
-		j.WriteToken(ctx, expectedClaims)
-	})
 
-	app.Post("/restricted", func(ctx iris.Context) {
-		var claims userClaims
-		if err := j.VerifyToken(ctx, &claims); err != nil {
-			ctx.StopWithStatus(iris.StatusUnauthorized)
-			return
-		}
-
-		ctx.JSON(claims)
-	})
-
-	app.Post("/restricted_middleware_readclaims", j.Verify, func(ctx iris.Context) {
-		var claims userClaims
-		if err := jwt.ReadClaims(ctx, &claims); err != nil {
-			ctx.StopWithStatus(iris.StatusUnauthorized)
-			return
-		}
-
-		ctx.JSON(claims)
-	})
-
-	app.Post("/restricted_middleware_get", j.Verify, func(ctx iris.Context) {
-		claims, err := jwt.Get(ctx)
+	signer := jwt.NewSigner(testAlg, testSecret, 3*time.Second)
+	app.Get("/", func(ctx iris.Context) {
+		claims := fooClaims{Foo: "bar"}
+		token, err := signer.Sign(claims)
 		if err != nil {
-			ctx.StopWithStatus(iris.StatusUnauthorized)
+			ctx.StopWithError(iris.StatusInternalServerError, err)
 			return
 		}
+		ctx.Write(token)
+	})
 
-		ctx.JSON(claims)
+	verifier := jwt.NewVerifier(testAlg, testSecret)
+	verifier.ErrorHandler = func(ctx iris.Context, err error) { // app.OnErrorCode(401, ...)
+		ctx.StopWithError(iris.StatusUnauthorized, err)
+	}
+	middleware := verifier.Verify(func() interface{} { return new(fooClaims) })
+	app.Get("/protected", middleware, func(ctx iris.Context) {
+		claims := jwt.Get(ctx).(*fooClaims)
+		ctx.WriteString(claims.Foo)
 	})
 
 	e := httptest.New(t, app)
 
-	// Get token.
-	rawToken := e.GET("/auth").Expect().Status(httptest.StatusOK).Body().Raw()
-	if rawToken == "" {
-		t.Fatalf("empty token")
-	}
+	// Get generated token.
+	token := e.GET("/").Expect().Status(iris.StatusOK).Body().Raw()
+	// Test Header.
+	headerValue := fmt.Sprintf("Bearer %s", token)
+	e.GET("/protected").WithHeader("Authorization", headerValue).Expect().
+		Status(iris.StatusOK).Body().Equal("bar")
+	// Test URL query.
+	e.GET("/protected").WithQuery("token", token).Expect().
+		Status(iris.StatusOK).Body().Equal("bar")
 
-	restrictedPaths := [...]string{"/restricted", "/restricted_middleware_readclaims", "/restricted_middleware_get"}
-
-	now := time.Now()
-	for _, path := range restrictedPaths {
-		// Authorization Header.
-		e.POST(path).WithHeader("Authorization", "Bearer "+rawToken).Expect().
-			Status(httptest.StatusOK).JSON().Equal(expectedClaims)
-
-		// URL Query.
-		e.POST(path).WithQuery("token", rawToken).Expect().
-			Status(httptest.StatusOK).JSON().Equal(expectedClaims)
-
-		// JSON Body.
-		e.POST(path).WithJSON(iris.Map{"access_token": rawToken}).Expect().
-			Status(httptest.StatusOK).JSON().Equal(expectedClaims)
-
-		// Missing "Bearer".
-		e.POST(path).WithHeader("Authorization", rawToken).Expect().
-			Status(httptest.StatusUnauthorized)
-	}
-	expireRemDur := testMaxAge - time.Since(now)
-
-	// Expiration.
-	time.Sleep(expireRemDur /* -end */)
-	for _, path := range restrictedPaths {
-		e.POST(path).WithQuery("token", rawToken).Expect().Status(httptest.StatusUnauthorized)
-	}
+	// Test unauthorized.
+	e.GET("/protected").Expect().Status(iris.StatusUnauthorized)
+	e.GET("/protected").WithHeader("Authorization", "missing bearer").Expect().Status(iris.StatusUnauthorized)
+	e.GET("/protected").WithQuery("token", "invalid_token").Expect().Status(iris.StatusUnauthorized)
+	// Test expired (note checks happen based on second round).
+	time.Sleep(5 * time.Second)
+	e.GET("/protected").WithHeader("Authorization", headerValue).Expect().
+		Status(iris.StatusUnauthorized).Body().Equal("token expired")
 }

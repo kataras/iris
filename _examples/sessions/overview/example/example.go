@@ -38,9 +38,9 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 		session := sessions.Get(ctx)
 		isNew := session.IsNew()
 
-		session.Set("name", "iris")
+		session.Set("username", "iris")
 
-		ctx.Writef("All ok session set to: %s [isNew=%t]", session.GetString("name"), isNew)
+		ctx.Writef("All ok session set to: %s [isNew=%t]", session.GetString("username"), isNew)
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
@@ -48,9 +48,9 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 
 		// get a specific value, as string,
 		// if not found then it returns just an empty string.
-		name := session.GetString("name")
+		name := session.GetString("username")
 
-		ctx.Writef("The name on the /set was: %s", name)
+		ctx.Writef("The username on the /set was: %s", name)
 	})
 
 	app.Get("/set-struct", func(ctx iris.Context) {

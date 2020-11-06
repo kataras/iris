@@ -714,9 +714,10 @@ func (ctx *Context) StopWithError(statusCode int, err error) {
 	}
 
 	ctx.SetErr(err)
-	if IsErrPrivate(err) {
-		// error is private, we can't render it, instead .
-		// let the error handler render the code text.
+	if _, ok := err.(ErrPrivate); ok {
+		// error is private, we SHOULD not render it,
+		// leave the error handler alone to
+		// render the code's text instead.
 		ctx.StopWithStatus(statusCode)
 		return
 	}
@@ -2129,11 +2130,11 @@ func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
 
 const disableRequestBodyConsumptionContextKey = "iris.request.body.record"
 
-// RecordBody same as the Application's DisableBodyConsumptionOnUnmarshal configuration field
-// but acts for the current request.
+// RecordRequestBody same as the Application's DisableBodyConsumptionOnUnmarshal
+// configuration field but acts only for the current request.
 // It makes the request body readable more than once.
-func (ctx *Context) RecordBody() {
-	ctx.values.Set(disableRequestBodyConsumptionContextKey, true)
+func (ctx *Context) RecordRequestBody(b bool) {
+	ctx.values.Set(disableRequestBodyConsumptionContextKey, b)
 }
 
 // IsRecordingBody reports whether the request body can be readen multiple times.
@@ -2145,7 +2146,7 @@ func (ctx *Context) IsRecordingBody() bool {
 // GetBody reads and returns the request body.
 // The default behavior for the http request reader is to consume the data readen
 // but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` Iris option
-// or by calling the `RecordBody` method.
+// or by calling the `RecordRequestBody` method.
 //
 // However, whenever you can use the `ctx.Request().Body` instead.
 func (ctx *Context) GetBody() ([]byte, error) {
@@ -2358,6 +2359,30 @@ func (ctx *Context) ReadParams(ptr interface{}) error {
 	return ctx.app.Validate(ptr)
 }
 
+// ReadURL is a shortcut of ReadParams and ReadQuery.
+// It binds dynamic path parameters and URL query parameters
+// to the "ptr" pointer struct value.
+// The struct fields may contain "url" or "param" binding tags.
+// If a validator exists then it validates the result too.
+func (ctx *Context) ReadURL(ptr interface{}) error {
+	values := make(map[string][]string, ctx.params.Len())
+	ctx.params.Visit(func(key string, value string) {
+		values[key] = strings.Split(value, "/")
+	})
+
+	for k, v := range ctx.getQuery() {
+		values[k] = append(values[k], v...)
+	}
+
+	// Decode using all available binding tags (url, header, param).
+	err := schema.Decode(values, ptr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.app.Validate(ptr)
+}
+
 // ReadProtobuf binds the body to the "ptr" of a proto Message and returns any error.
 // Look `ReadJSONProtobuf` too.
 func (ctx *Context) ReadProtobuf(ptr proto.Message) error {
@@ -2409,7 +2434,28 @@ func (ctx *Context) ReadMsgPack(ptr interface{}) error {
 // If a GET method request then it reads from a form (or URL Query), otherwise
 // it tries to match (depending on the request content-type) the data format e.g.
 // JSON, Protobuf, MsgPack, XML, YAML, MultipartForm and binds the result to the "ptr".
+// As a special case if the "ptr" was a pointer to string or []byte
+// then it will bind it to the request body as it is.
 func (ctx *Context) ReadBody(ptr interface{}) error {
+
+	// If the ptr is string or byte, read the body as it's.
+	switch v := ptr.(type) {
+	case *string:
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+
+		*v = string(b)
+	case *[]byte:
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+
+		copy(*v, b)
+	}
+
 	if ctx.Method() == http.MethodGet {
 		if ctx.Request().URL.RawQuery != "" {
 			// try read from query.
@@ -5065,8 +5111,6 @@ func (ctx *Context) IsDebug() bool {
 	return ctx.app.IsDebug()
 }
 
-const errorContextKey = "iris.context.error"
-
 // SetErr is just a helper that sets an error value
 // as a context value, it does nothing more.
 // Also, by-default this error's value is written to the client
@@ -5088,14 +5132,71 @@ func (ctx *Context) SetErr(err error) {
 
 // GetErr is a helper which retrieves
 // the error value stored by `SetErr`.
+//
+// Note that, if an error was stored by `SetErrPrivate`
+// then it returns the underline/original error instead
+// of the internal error wrapper.
 func (ctx *Context) GetErr() error {
+	_, err := ctx.GetErrPublic()
+	return err
+}
+
+// ErrPrivate if provided then the error saved in context
+// should NOT be visible to the client no matter what.
+type ErrPrivate interface {
+	error
+	IrisPrivateError()
+}
+
+// An internal wrapper for the `SetErrPrivate` method.
+type privateError struct{ error }
+
+func (e privateError) IrisPrivateError() {}
+
+// PrivateError accepts an error and returns a wrapped private one.
+func PrivateError(err error) ErrPrivate {
+	if err == nil {
+		return nil
+	}
+
+	errPrivate, ok := err.(ErrPrivate)
+	if !ok {
+		errPrivate = privateError{err}
+	}
+
+	return errPrivate
+}
+
+const errorContextKey = "iris.context.error"
+
+// SetErrPrivate sets an error that it's only accessible through `GetErr`
+// and it should never be sent to the client.
+//
+// Same as ctx.SetErr with an error that completes the `ErrPrivate` interface.
+// See `GetErrPublic` too.
+func (ctx *Context) SetErrPrivate(err error) {
+	ctx.SetErr(PrivateError(err))
+}
+
+// GetErrPublic reports whether the stored error
+// can be displayed to the client without risking
+// to expose security server implementation to the client.
+//
+// If the error is not nil, it is always the original one.
+func (ctx *Context) GetErrPublic() (bool, error) {
 	if v := ctx.values.Get(errorContextKey); v != nil {
-		if err, ok := v.(error); ok {
-			return err
+		switch err := v.(type) {
+		case privateError:
+			// If it's an error set by SetErrPrivate then unwrap it.
+			return false, err.error
+		case ErrPrivate:
+			return false, err
+		case error:
+			return true, err
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
 // ErrPanicRecovery may be returned from `Context` actions of a `Handler`
@@ -5133,22 +5234,6 @@ func IsErrPanicRecovery(err error) (*ErrPanicRecovery, bool) {
 	}
 	v, ok := err.(*ErrPanicRecovery)
 	return v, ok
-}
-
-// ErrPrivate if provided then the error saved in context
-// should NOT be visible to the client no matter what.
-type ErrPrivate interface {
-	IrisPrivateError()
-}
-
-// IsErrPrivate reports whether the given "err" is a private one.
-func IsErrPrivate(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, ok := err.(ErrPrivate)
-	return ok
 }
 
 // IsRecovered reports whether this handler has been recovered
@@ -5255,12 +5340,34 @@ func (ctx *Context) Logout(args ...interface{}) error {
 
 const userContextKey = "iris.user"
 
-// SetUser sets a User for this request.
+// SetUser sets a value as a User for this request.
 // It's used by auth middlewares as a common
 // method to provide user information to the
-// next handlers in the chain.
-func (ctx *Context) SetUser(u User) {
+// next handlers in the chain
+// Look the `User` method to retrieve it.
+func (ctx *Context) SetUser(i interface{}) error {
+	if i == nil {
+		ctx.values.Remove(userContextKey)
+		return nil
+	}
+
+	u, ok := i.(User)
+	if !ok {
+		if m, ok := i.(Map); ok { // it's a map, convert it to a User.
+			u = UserMap(m)
+		} else {
+			// It's a structure, wrap it and let
+			// runtime decide the features.
+			p := newUserPartial(i)
+			if p == nil {
+				return ErrNotSupported
+			}
+			u = p
+		}
+	}
+
 	ctx.values.Set(userContextKey, u)
+	return nil
 }
 
 // User returns the registered User of this request.

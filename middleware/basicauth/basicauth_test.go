@@ -26,7 +26,11 @@ func TestBasicAuthUseRouter(t *testing.T) {
 
 	app.Get("/user_string", func(ctx iris.Context) {
 		user := ctx.User()
-		ctx.Writef("%s\n%s\n%s", user.GetAuthorization(), user.GetUsername(), user.GetPassword())
+
+		authorization, _ := user.GetAuthorization()
+		username, _ := user.GetUsername()
+		password, _ := user.GetPassword()
+		ctx.Writef("%s\n%s\n%s", authorization, username, password)
 	})
 
 	app.Get("/", func(ctx iris.Context) {

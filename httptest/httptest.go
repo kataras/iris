@@ -67,11 +67,11 @@ var (
 		}
 	}
 
-	// LogLevel sets the application's log level "val".
+	// LogLevel sets the application's log level.
 	// Defaults to disabled when testing.
-	LogLevel = func(val string) OptionSet {
+	LogLevel = func(level string) OptionSet {
 		return func(c *Configuration) {
-			c.LogLevel = val
+			c.LogLevel = level
 		}
 	}
 )
