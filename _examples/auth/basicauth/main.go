@@ -57,7 +57,7 @@ func h(ctx iris.Context) {
 	// OR:
 	user := ctx.User()
 	username, _ := user.GetUsername()
-	password, _ := user.GetPassword
+	password, _ := user.GetPassword()
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
 }
 

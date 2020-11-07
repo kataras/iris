@@ -365,7 +365,7 @@ func (i *I18n) getLocaleMessage(loc context.Locale, langInput string, key string
 	}
 
 	if msg == "" && i.DefaultMessageFunc != nil {
-		msg = i.DefaultMessageFunc(langInput, langMatched, key, args)
+		msg = i.DefaultMessageFunc(langInput, langMatched, key, args...)
 	}
 
 	return

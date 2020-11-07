@@ -44,7 +44,7 @@ func newApp() *iris.Application {
 	//
 	// First parameter: Glob filpath patern,
 	// Second variadic parameter: Optional language tags, the first one is the default/fallback one.
-	err := app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR", "zh-CN")
+	err := app.I18n.Load("./locales/*/*", "en-US", "el-GR", "zh-CN")
 	if err != nil {
 		panic(err)
 	}

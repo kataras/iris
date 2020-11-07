@@ -28,6 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `iris.DirOptions.SPA bool` field to allow [Single Page Applications](https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application/basic/main.go) under a file server.
 - A generic User interface, see the `Context.SetUser/User` methods in the New Context Methods section for more. In-short, the basicauth middleware's stored user can now be retrieved through `Context.User()` which provides more information than the native `ctx.Request().BasicAuth()` method one. Third-party authentication middleware creators can benefit of these two methods, plus the Logout below. 
 - A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/main.go) or [jwt](https://github.com/kataras/iris/blob/master/_examples/auth/jwt/blocklist/main.go) client credentials.
 - Add the ability to [share functions](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
