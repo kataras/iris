@@ -14,6 +14,14 @@ import (
 	"github.com/kataras/iris/v12/view"
 )
 
+// SameSite attributes.
+const (
+	SameSiteDefaultMode = http.SameSiteDefaultMode
+	SameSiteLaxMode     = http.SameSiteLaxMode
+	SameSiteStrictMode  = http.SameSiteStrictMode
+	SameSiteNoneMode    = http.SameSiteNoneMode
+)
+
 type (
 	// Context is the middle-man server's "object" for the clients.
 	//
@@ -160,6 +168,9 @@ type (
 	//
 	// An alias for the `context.CookieOption`.
 	CookieOption = context.CookieOption
+	// Cookie is a type alias for the standard net/http Cookie struct type.
+	// See `Context.SetCookie`.
+	Cookie = http.Cookie
 	// N is a struct which can be passed on the `Context.Negotiate` method.
 	// It contains fields which should be filled based on the `Context.Negotiation()`
 	// server side values. If no matched mime then its "Other" field will be sent,

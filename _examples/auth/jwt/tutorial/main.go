@@ -8,28 +8,17 @@ import (
 )
 
 var (
-	userRepository = repository.NewMemoryUserRepository()
-	todoRepository = repository.NewMemoryTodoRepository()
+	userRepo = repository.NewMemoryUserRepository()
+	todoRepo = repository.NewMemoryTodoRepository()
 )
 
 func main() {
-	if err := repository.GenerateSamples(userRepository, todoRepository); err != nil {
+	if err := repository.GenerateSamples(userRepo, todoRepo); err != nil {
 		panic(err)
 	}
 
 	app := iris.New()
-
-	app.Post("/signin", api.SignIn(userRepository))
-
-	verify := api.Verify()
-
-	todosAPI := app.Party("/todos", verify)
-	todosAPI.Post("/", api.CreateTodo(todoRepository))
-	todosAPI.Get("/", api.ListTodos(todoRepository))
-	todosAPI.Get("/{id}", api.GetTodo(todoRepository))
-
-	adminAPI := app.Party("/admin", verify, api.AllowAdmin)
-	adminAPI.Get("/todos", api.ListAllTodos(todoRepository))
+	app.PartyFunc("/", api.NewRouter(userRepo, todoRepo))
 
 	// POST http://localhost:8080/signin (Form: username, password)
 	// GET  http://localhost:8080/todos

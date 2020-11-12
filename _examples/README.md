@@ -171,6 +171,7 @@
     * [Bind URL](request-body/read-url/main.go)
     * [Bind Headers](request-body/read-headers/main.go)
     * [Bind Body](request-body/read-body/main.go)
+    * [Add Converter](request-body/form-query-headers-params-decoder/main.go)
     * [Bind Custom per type](request-body/read-custom-per-type/main.go)
     * [Bind Custom via Unmarshaler](request-body/read-custom-via-unmarshaler/main.go)
     * [Bind Many times](request-body/read-many/main.go)

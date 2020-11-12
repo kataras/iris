@@ -180,6 +180,7 @@ var types = map[string]string{
 	".js":        context.ContentJavascriptHeaderValue,
 	".mjs":       context.ContentJavascriptHeaderValue,
 	".json":      context.ContentJSONHeaderValue,
+	".vue":       context.ContentJavascriptHeaderValue,
 	".jut":       "image/jutvision",
 	".kar":       "audio/midi",
 	".karbon":    "application/vnd.kde.karbon",

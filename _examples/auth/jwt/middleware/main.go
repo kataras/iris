@@ -9,7 +9,7 @@ import (
 
 var (
 	sigKey = []byte("signature_hmac_secret_shared_key")
-	encKey = []byte("GCM_AES_256_secret_shared_key_32")
+	// encKey = []byte("GCM_AES_256_secret_shared_key_32")
 )
 
 type fooClaims struct {
