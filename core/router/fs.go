@@ -284,7 +284,7 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 
 		// index requested, send a moved permanently status
 		// and navigate back to the route without the index suffix.
-		if !noRedirect && strings.HasSuffix(name, options.IndexName) {
+		if !noRedirect && options.IndexName != "" && strings.HasSuffix(name, options.IndexName) {
 			localRedirect(ctx, "./")
 			return
 		}
