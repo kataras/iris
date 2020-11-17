@@ -21,18 +21,18 @@ require (
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.4
 	github.com/kataras/golog v0.1.5
-	github.com/kataras/jwt v0.0.5
-	github.com/kataras/neffos v0.0.17
+	github.com/kataras/jwt v0.0.6
+	github.com/kataras/neffos v0.0.18
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.2
-	github.com/klauspost/compress v1.11.2
+	github.com/klauspost/compress v1.11.3
 	github.com/mailru/easyjson v0.7.6
 	github.com/microcosm-cc/bluemonday v1.0.4
-	github.com/russross/blackfriday/v2 v2.0.1
+	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/tdewolff/minify/v2 v2.9.10
-	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.9
+	github.com/vmihailenco/msgpack/v5 v5.0.0-rc.3
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
