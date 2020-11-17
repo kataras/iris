@@ -22,7 +22,7 @@ require (
 	github.com/kataras/blocks v0.0.4
 	github.com/kataras/golog v0.1.5
 	github.com/kataras/jwt v0.0.5
-	github.com/kataras/neffos v0.0.16
+	github.com/kataras/neffos v0.0.17
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.2
