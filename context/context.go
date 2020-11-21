@@ -4726,7 +4726,7 @@ func (ctx *Context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) b
 // you can change it or simple, use the SetCookie for more control.
 //
 // See `CookieExpires` and `AddCookieOptions` for more.
-var SetCookieKVExpiration = time.Duration(8760) * time.Hour
+var SetCookieKVExpiration = 8760 * time.Hour
 
 // SetCookieKV adds a cookie, requires the name(string) and the value(string).
 //
@@ -5343,7 +5343,15 @@ const userContextKey = "iris.user"
 // SetUser sets a value as a User for this request.
 // It's used by auth middlewares as a common
 // method to provide user information to the
-// next handlers in the chain
+// next handlers in the chain.
+//
+// The "i" input argument can be:
+// - A value which completes the User interface
+// - A map[string]interface{}.
+// - A value which does not complete the whole User interface
+// - A value which does not complete the User interface at all
+//   (only its `User().GetRaw` method is available).
+//
 // Look the `User` method to retrieve it.
 func (ctx *Context) SetUser(i interface{}) error {
 	if i == nil {
@@ -5371,6 +5379,9 @@ func (ctx *Context) SetUser(i interface{}) error {
 }
 
 // User returns the registered User of this request.
+// To get the original value (even if a value set by SetUser does not implement the User interface)
+// use its GetRaw method.
+// /
 // See `SetUser` too.
 func (ctx *Context) User() User {
 	if v := ctx.values.Get(userContextKey); v != nil {

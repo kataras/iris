@@ -17,22 +17,21 @@ func main() {
 
 	newtest := app.Subdomain("newtest")
 	newtest.Get("/", newTestIndex)
-	newtest.Get("/", newTestAbout)
+	newtest.Get("/about", newTestAbout)
 
 	redirects := rewrite.Load("redirects.yml")
 	app.WrapRouter(redirects)
 
-	// http://mydomain.com:8080/seo/about      -> http://www.mydomain.com:8080/about
-	// http://test.mydomain.com:8080           -> http://newtest.mydomain.com:8080
-	// http://test.mydomain.com:8080/seo/about -> http://newtest.mydomain.com:8080/about
-	// http://localhost:8080/seo               -> http://localhost:8080
-	// http://localhost:8080/about
-	// http://localhost:8080/docs/v12/hello    -> http://localhost:8080/docs
-	// http://localhost:8080/docs/v12some      -> http://localhost:8080/docs
-	// http://localhost:8080/oldsome           -> http://localhost:8080
-	// http://localhost:8080/oldindex/random   -> http://localhost:8080
-	// http://localhost:8080/users.json        -> http://localhost:8080/users.json
-	//					 ^ (but with an internal ?format=json, client can't see it)
+	// http://mydomain.com:8080/seo/about       -> http://www.mydomain.com:8080/about
+	// http://test.mydomain.com:8080            -> http://newtest.mydomain.com:8080
+	// http://test.mydomain.com:8080/seo/about  -> http://newtest.mydomain.com:8080/about
+	// http://mydomain.com:8080/seo             -> http://www.mydomain.com:8080
+	// http://mydomain.com:8080/about
+	// http://mydomain.com:8080/docs/v12/hello  -> http://www.mydomain.com:8080/docs
+	// http://mydomain.com:8080/docs/v12some    -> http://www.mydomain.com:8080/docs
+	// http://mydomain.com:8080/oldsome         -> http://www.mydomain.com:8080
+	// http://mydomain.com:8080/oldindex/random -> http://www.mydomain.com:8080
+	// http://mydomain.com:8080/users.json      -> http://www.mydomain.com:8080/users?format=json
 	app.Listen(":8080")
 }
 

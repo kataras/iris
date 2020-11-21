@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/basicauth"
 )
@@ -10,25 +8,40 @@ import (
 func newApp() *iris.Application {
 	app := iris.New()
 
-	authConfig := basicauth.Config{
-		Users:   map[string]string{"myusername": "mypassword", "mySecondusername": "mySecondpassword"},
-		Realm:   "Authorization Required", // defaults to "Authorization Required"
-		Expires: time.Duration(30) * time.Minute,
-	}
+	/*
+		opts := basicauth.Options{
+			Realm:  "Authorization Required",
+			MaxAge: 30 * time.Minute,
+			GC: basicauth.GC{
+				Every: 2 * time.Hour,
+			},
+			Allow: basicauth.AllowUsers(map[string]string{
+				"myusername":       "mypassword",
+				"mySecondusername": "mySecondpassword",
+			}),
+			MaxTries: 2,
+		}
+		auth := basicauth.New(opts)
 
-	authentication := basicauth.New(authConfig)
+		OR simply:
+	*/
 
-	// to global app.Use(authentication) (or app.UseGlobal before the .Run)
+	auth := basicauth.Default(map[string]string{
+		"myusername":       "mypassword",
+		"mySecondusername": "mySecondpassword",
+	})
+
+	// to global app.Use(auth) (or app.UseGlobal before the .Run)
 	// to routes
 	/*
-		app.Get("/mysecret", authentication, h)
+		app.Get("/mysecret", auth, h)
 	*/
 
 	app.Get("/", func(ctx iris.Context) { ctx.Redirect("/admin") })
 
 	// to party
 
-	needAuth := app.Party("/admin", authentication)
+	needAuth := app.Party("/admin", auth)
 	{
 		//http://localhost:8080/admin
 		needAuth.Get("/", h)
