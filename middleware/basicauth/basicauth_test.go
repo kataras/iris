@@ -8,7 +8,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
-	basicauth "github.com/kataras/iris/v12/middleware/basicauth"
+	"github.com/kataras/iris/v12/middleware/basicauth"
 )
 
 func TestBasicAuthUseRouter(t *testing.T) {

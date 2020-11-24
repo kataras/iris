@@ -2,12 +2,15 @@ package basicauth
 
 import (
 	stdContext "context"
+	"log"
+	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/sessions"
 )
 
 func init() {
@@ -15,9 +18,19 @@ func init() {
 }
 
 const (
-	DefaultRealm          = "Authorization Required"
+	// DefaultRealm is the default realm directive value on Default and Load functions.
+	DefaultRealm = "Authorization Required"
+	// DefaultMaxTriesCookie is the default cookie name to store the
+	// current amount of login failures when MaxTries > 0.
 	DefaultMaxTriesCookie = "basicmaxtries"
+	// DefaultCookieMaxAge is the default cookie max age on MaxTries,
+	// when the Options.MaxAge is zero.
+	DefaultCookieMaxAge = time.Hour
 )
+
+// cookieExpireDelete may be set on Cookie.Expire for expiring the given cookie.
+// Note that the MaxAge is set but we set Expires field in order to support very old browsers too.
+var cookieExpireDelete = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 
 const (
 	authorizationType           = "Basic Authentication"
@@ -27,10 +40,26 @@ const (
 	proxyAuthorizationHeaderKey = "Proxy-Authorization"
 )
 
+// AuthFunc accepts the current request and the username and password user inputs
+// and it should optionally return a user value and report whether the login succeed or not.
+// Look the Options.Allow field.
+//
+// Default implementations are:
+// AllowUsers and AllowUsersFile functions.
 type AuthFunc func(ctx *context.Context, username, password string) (interface{}, bool)
 
+// ErrorHandler should handle the given request credentials failure.
+// See Options.ErrorHandler and DefaultErrorHandler for details.
+type ErrorHandler func(ctx *context.Context, err error)
+
+// Options holds the necessary information that the BasicAuth instance needs to perform.
+// The only required value is the Allow field.
+//
+// Usage:
+//  opts := Options { ... }
+//  auth := New(opts)
 type Options struct {
-	// Realm http://tools.ietf.org/html/rfc2617#section-1.2.
+	// Realm directive, read http://tools.ietf.org/html/rfc2617#section-1.2 for details.
 	// E.g. "Authorization Required".
 	Realm string
 	// In the case of proxies, the challenging status code is 407 (Proxy Authentication Required),
@@ -40,44 +69,59 @@ type Options struct {
 	// Proxy should be used to gain access to a resource behind a proxy server.
 	// It authenticates the request to the proxy server, allowing it to transmit the request further.
 	Proxy bool
+	// If set to true then any non-https request will immediately
+	// dropped with a 505 status code (StatusHTTPVersionNotSupported) response.
+	//
+	// Defaults to false.
+	HTTPSOnly bool
+	// Allow is the only one required field for the Options type.
+	// Can be customized to validate a username and password combination
+	// and return a user object, e.g. fetch from database.
+	//
+	// There are two available builtin values, the AllowUsers and AllowUsersFile,
+	// both of them decode a static list of users and compares with the user input (see BCRYPT function too).
 	// Usage:
 	//  - Allow: AllowUsers(iris.Map{"username": "...", "password": "...", "other_field": ...}, [BCRYPT])
 	//  - Allow: AllowUsersFile("users.yml", [BCRYPT])
+	// Look the user.go source file for details.
 	Allow AuthFunc
-	// If greater than zero then the server will send 403 forbidden status code afer MaxTries
-	// of invalid credentials of a specific client consumed (session or cookie based, see MaxTriesCookie).
-	// By default the server will re-ask for credentials on any amount of invalid credentials.
-	MaxTries int
-	// If a session manager is register under the current request,
-	// then this value should be the key of the session storage which
-	// the current tries will be stored. Otherwise
-	// it is the raw cookie name.
-	// The cookie is stored up to the configured MaxAge if greater than zero or for 1 year,
-	// so a forbidden client can request for authentication again after the MaxAge expired.
-	//
-	// Note that, the session way is recommended as the current tries
-	// cannot be modified by the client (unless the client removes the session cookie).
-	// However the raw cookie performs faster. You can always set custom logic
-	// on the Allow field as you have access to the current request Context.
-	// To set custom cookie options use the `Context.AddCookieOptions(options ...iris.CookieOption)`
-	// before the basic auth middleware.
-	//
-	// If MaxTries > 0 then it defaults to "basicmaxtries".
-	// The MaxTries should be set to greater than zero.
-	MaxTriesCookie string
-	// If not nil runs after 401 (or 407 if proxy is enabled) status code.
-	// Can be used to set custom response for unauthenticated clients.
-	OnAsk context.Handler
-	// If not nil runs after the 403 forbidden status code (when Allow returned false and MaxTries consumed).
-	// Can be used to set custom response when client tried to access a resource with invalid credentials.
-	OnForbidden context.Handler
 	// MaxAge sets expiration duration for the in-memory credentials map.
 	// By default an old map entry will be removed when the user visits a page.
 	// In order to remove old entries automatically please take a look at the `GC` option too.
 	//
 	// Usage:
-	//  MaxAge: 30*time.Minute
+	//  MaxAge: 30 * time.Minute
 	MaxAge time.Duration
+	// If greater than zero then the server will send 403 forbidden status code afer
+	// MaxTries amount of sign in failures (see MaxTriesCookie).
+	// Note that the client can modify the cookie and its value,
+	// do NOT depend for any type of custom domain logic based on this field.
+	// By default the server will re-ask for credentials on invalid credentials, each time.
+	MaxTries int
+	// MaxTriesCookie is the cookie name the middleware uses to
+	// store the failures amount on the client side.
+	// The lifetime of the cookie is the same as the configured MaxAge or one hour,
+	// therefore a forbidden client can request for authentication again after expiration.
+	//
+	// You can always set custom logic on the Allow field as you have access to the current request instance.
+	//
+	// Defaults to "basicmaxtries".
+	// The MaxTries should be set to greater than zero.
+	MaxTriesCookie string
+	// ErrorHandler handles the given request credentials failure.
+	// E.g  when the client tried to access a protected resource
+	// with empty or invalid or expired credentials or
+	// when Allow returned false and MaxTries consumed.
+	//
+	// Defaults to the DefaultErrorHandler, do not modify if you don't need to.
+	ErrorHandler ErrorHandler
+	// ErrorLogger if not nil then it logs any credentials failure errors
+	// that are going to be sent to the client. Set it on debug development state.
+	// Usage:
+	//  ErrorLogger = log.New(os.Stderr, "", log.LstdFlags)
+	//
+	// Defaults to nil.
+	ErrorLogger *log.Logger
 	// GC automatically clears old entries every x duration.
 	// Note that, by old entries we mean expired credentials therefore
 	// the `MaxAge` option should be already set,
@@ -85,22 +129,34 @@ type Options struct {
 	// The standard context can be used for the internal ticker cancelation, it can be nil.
 	//
 	// Usage:
-	//  GC: basicauth.GC{Every: 2*time.Hour}
+	//  GC: basicauth.GC{Every: 2 * time.Hour}
 	GC GC
 }
 
+// GC holds the context and the tick duration to clear expired stored credentials.
+// See the Options.GC field.
 type GC struct {
 	Context stdContext.Context
 	Every   time.Duration
 }
 
-// https://tools.ietf.org/html/rfc2617
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
+// BasicAuth implements the basic access authentication.
+// It is a method for an HTTP client (e.g. a web browser)
+// to provide a user name and password when making a request.
+// Basic authentication implementation is the simplest technique
+// for enforcing access controls to web resources because it does not require
+// cookies, session identifiers, or login pages; rather,
+// HTTP Basic authentication uses standard fields in the HTTP header.
 //
-// As the user ID and password are passed over the network as clear text
-// (it is base64 encoded, but base64 is a reversible encoding), the basic authentication scheme is not secure.
-// HTTPS/TLS should be used with basic authentication. Without these additional security enhancements,
-// basic authentication should not be used to protect sensitive or valuable information.
+// As the username and password are passed over the network as clear text
+// the basic authentication scheme is not secure on plain HTTP communication.
+// It is base64 encoded, but base64 is a reversible encoding.
+// HTTPS/TLS should be used with basic authentication.
+// Without these additional security enhancements,
+// basic authentication should NOT be used to protect sensitive or valuable information.
+//
+// Read https://tools.ietf.org/html/rfc2617 and
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication for details.
 type BasicAuth struct {
 	opts Options
 	// built based on proxy field
@@ -110,13 +166,35 @@ type BasicAuth struct {
 	// built based on realm field.
 	authenticateHeaderValue string
 
-	credentials map[string]*time.Time // key = username:password, value = expiration time (if MaxAge > 0).
-	mu          sync.RWMutex          // protects the credentials as they can modified.
+	// credentials stores the user expiration,
+	// key = username:password, value = expiration time (if MaxAge > 0).
+	credentials map[string]*time.Time // TODO: think of just a uint64 here (unix seconds).
+	// protects the credentials concurrent access.
+	mu sync.RWMutex
 }
 
+// New returns a new basic authentication middleware.
+// The result should be used to wrap an existing handler or the HTTP application's root router.
+//
+// Example Code:
+//  opts := basicauth.Options{
+//  	Realm: basicauth.DefaultRealm,
+//      ErrorHandler: basicauth.DefaultErrorHandler,
+//  	MaxAge: 2 * time.Hour,
+//  	GC: basicauth.GC{
+//  		Every: 3 * time.Hour,
+//  	},
+//  	Allow: basicauth.AllowUsers(users),
+//  }
+//  auth := basicauth.New(opts)
+//  app.Use(auth)
+//
+// Access the user in the route handler with: ctx.User().GetRaw().(*myCustomType).
+//
+// Look the BasicAuth type docs for more information.
 func New(opts Options) context.Handler {
 	var (
-		askCode                 = 401
+		askCode                 = http.StatusUnauthorized
 		authorizationHeader     = authorizationHeaderKey
 		authenticateHeader      = authenticateHeaderKey
 		authenticateHeaderValue = "Basic"
@@ -131,13 +209,17 @@ func New(opts Options) context.Handler {
 	}
 
 	if opts.Proxy {
-		askCode = 407
+		askCode = http.StatusProxyAuthRequired
 		authenticateHeader = proxyAuthenticateHeaderKey
 		authorizationHeader = proxyAuthorizationHeaderKey
 	}
 
 	if opts.MaxTries > 0 && opts.MaxTriesCookie == "" {
 		opts.MaxTriesCookie = DefaultMaxTriesCookie
+	}
+
+	if opts.ErrorHandler == nil {
+		opts.ErrorHandler = DefaultErrorHandler
 	}
 
 	b := &BasicAuth{
@@ -156,10 +238,22 @@ func New(opts Options) context.Handler {
 	return b.serveHTTP
 }
 
-// - map[string]string form of: {username:password, ...} form.
-// - map[string]interface{} form of: []{"username": "...", "password": "...", "other_field": ...}, ...}.
-// - []T which T completes the User interface.
-// - []T which T contains at least Username and Password fields.
+// Default returns a new basic authentication middleware
+// based on pre-defined user list.
+// A user can hold any custom fields but the username and password
+// are required as they are compared against the user input
+// when access to protected resource is requested.
+// A user list can defined with one of the following values:
+//  map[string]string form of: {username:password, ...}
+//  map[string]interface{} form of: {"username": {"password": "...", "other_field": ...}, ...}
+//  []T which T completes the User interface, where T is a struct value
+//  []T which T contains at least Username and Password fields.
+//
+// Usage:
+//  auth := Default(map[string]string{
+//    "admin": "admin",
+//    "john": "p@ss",
+//  })
 func Default(users interface{}, userOpts ...UserAuthOption) context.Handler {
 	opts := Options{
 		Realm: DefaultRealm,
@@ -168,6 +262,11 @@ func Default(users interface{}, userOpts ...UserAuthOption) context.Handler {
 	return New(opts)
 }
 
+// Load same as Default but instead of a hard-coded user list it accepts
+// a filename to load the users from.
+//
+// Usage:
+//  auth := Load("users.yml")
 func Load(jsonOrYamlFilename string, userOpts ...UserAuthOption) context.Handler {
 	opts := Options{
 		Realm: DefaultRealm,
@@ -176,71 +275,68 @@ func Load(jsonOrYamlFilename string, userOpts ...UserAuthOption) context.Handler
 	return New(opts)
 }
 
-// askForCredentials sends a response to the client which client should catch
-// and ask for username:password credentials.
-func (b *BasicAuth) askForCredentials(ctx *context.Context) {
-	ctx.Header(b.authenticateHeader, b.authenticateHeaderValue)
-	ctx.StopWithStatus(b.askCode)
-
-	if h := b.opts.OnAsk; h != nil {
-		h(ctx)
-	}
-}
-
-// If a (proxy) server receives valid credentials that are inadequate to access a given resource,
-// the server should respond with the 403 Forbidden status code.
-// Unlike 401 Unauthorized or 407 Proxy Authentication Required, authentication is impossible for this user.
-func (b *BasicAuth) forbidden(ctx *context.Context) {
-	ctx.StopWithStatus(403)
-
-	if h := b.opts.OnForbidden; h != nil {
-		h(ctx)
-	}
-}
-
 func (b *BasicAuth) getCurrentTries(ctx *context.Context) (tries int) {
-	sess := sessions.Get(ctx)
-	if sess != nil {
-		tries = sess.GetIntDefault(b.opts.MaxTriesCookie, 0)
-	} else {
-		if v := ctx.GetCookie(b.opts.MaxTriesCookie); v != "" {
-			tries, _ = strconv.Atoi(v)
-		}
+	cookie := ctx.GetCookie(b.opts.MaxTriesCookie)
+	if cookie != "" {
+		tries, _ = strconv.Atoi(cookie)
 	}
 
 	return
 }
 
 func (b *BasicAuth) setCurrentTries(ctx *context.Context, tries int) {
-	sess := sessions.Get(ctx)
-	if sess != nil {
-		sess.Set(b.opts.MaxTriesCookie, tries)
-	} else {
-		maxAge := b.opts.MaxAge
-		if maxAge == 0 {
-			maxAge = context.SetCookieKVExpiration // 1 year.
-		}
-		ctx.SetCookieKV(b.opts.MaxTriesCookie, strconv.Itoa(tries), context.CookieExpires(maxAge))
+	maxAge := b.opts.MaxAge
+	if maxAge == 0 {
+		maxAge = DefaultCookieMaxAge // 1 hour.
 	}
+
+	c := &http.Cookie{
+		Name:     b.opts.MaxTriesCookie,
+		Path:     "/",
+		Value:    url.QueryEscape(strconv.Itoa(tries)),
+		HttpOnly: true,
+		Expires:  time.Now().Add(maxAge),
+		MaxAge:   int(maxAge.Seconds()),
+	}
+
+	ctx.SetCookie(c)
 }
 
 func (b *BasicAuth) resetCurrentTries(ctx *context.Context) {
-	sess := sessions.Get(ctx)
-	if sess != nil {
-		sess.Delete(b.opts.MaxTriesCookie)
-	} else {
-		ctx.RemoveCookie(b.opts.MaxTriesCookie)
+	ctx.RemoveCookie(b.opts.MaxTriesCookie)
+}
+
+func isHTTPS(r *http.Request) bool {
+	return (strings.EqualFold(r.URL.Scheme, "https") || r.TLS != nil) && r.ProtoMajor == 2
+}
+
+func (b *BasicAuth) handleError(ctx *context.Context, err error) {
+	if b.opts.ErrorLogger != nil {
+		b.opts.ErrorLogger.Println(err)
 	}
+
+	// should not be nil as it's defaulted on New.
+	b.opts.ErrorHandler(ctx, err)
 }
 
 // serveHTTP is the main method of this middleware,
 // checks and verifies the auhorization header for basic authentication,
 // next handlers will only be executed when the client is allowed to continue.
 func (b *BasicAuth) serveHTTP(ctx *context.Context) {
+	if b.opts.HTTPSOnly && !isHTTPS(ctx.Request()) {
+		b.handleError(ctx, ErrHTTPVersion{})
+		return
+	}
+
 	header := ctx.GetHeader(b.authorizationHeader)
 	fullUser, username, password, ok := decodeHeader(header)
-	if !ok { // Header is malformed or missing.
-		b.askForCredentials(ctx)
+	if !ok { // Header is malformed or missing (e.g. browser cancel button on user prompt).
+		b.handleError(ctx, ErrCredentialsMissing{
+			Header:                  header,
+			AuthenticateHeader:      b.authenticateHeader,
+			AuthenticateHeaderValue: b.authenticateHeaderValue,
+			Code:                    b.askCode,
+		})
 		return
 	}
 
@@ -259,12 +355,24 @@ func (b *BasicAuth) serveHTTP(ctx *context.Context) {
 			tries++
 			b.setCurrentTries(ctx, tries)
 			if tries >= maxTries { // e.g. if MaxTries == 1 then it should be allowed only once, so we must send forbidden now.
-				b.forbidden(ctx) // a user was forbidden, to reset its status should clear the Authorization header and cookie and request the resource again.
+				b.handleError(ctx, ErrCredentialsForbidden{
+					Username: username,
+					Password: password,
+					Tries:    tries,
+					Age:      b.opts.MaxAge,
+				})
 				return
 			}
 		}
 
-		b.askForCredentials(ctx)
+		b.handleError(ctx, ErrCredentialsInvalid{
+			Username:                username,
+			Password:                password,
+			CurrentTries:            tries,
+			AuthenticateHeader:      b.authenticateHeader,
+			AuthenticateHeaderValue: b.authenticateHeaderValue,
+			Code:                    b.askCode,
+		})
 		return
 	}
 
@@ -283,8 +391,15 @@ func (b *BasicAuth) serveHTTP(ctx *context.Context) {
 				b.mu.Lock() // Delete the entry.
 				delete(b.credentials, fullUser)
 				b.mu.Unlock()
+
 				// Re-ask for new credentials.
-				b.askForCredentials(ctx)
+				b.handleError(ctx, ErrCredentialsExpired{
+					Username:                username,
+					Password:                password,
+					AuthenticateHeader:      b.authenticateHeader,
+					AuthenticateHeaderValue: b.authenticateHeaderValue,
+					Code:                    b.askCode,
+				})
 				return
 			}
 
@@ -314,6 +429,10 @@ func (b *BasicAuth) serveHTTP(ctx *context.Context) {
 		}
 	}
 
+	// Store user instance and logout function.
+	// Note that the end-developer has always have access
+	// to the Request.BasicAuth, however, we support any user struct,
+	// so we must store it on this request instance so it can be retrieved later on.
 	ctx.SetUser(user)
 	ctx.SetLogoutFunc(b.logout)
 
@@ -336,12 +455,15 @@ func (b *BasicAuth) logout(ctx *context.Context) {
 
 	if !ok {
 		// If the custom user does
-		// not implement those two, then extract from the request header:
+		// not implement the User interface, then extract from the request header (most common scenario):
 		header := ctx.GetHeader(b.authorizationHeader)
 		fullUser, username, password, ok = decodeHeader(header)
 	}
 
 	if ok { // If it's authorized then try to lock and delete.
+		ctx.SetUser(nil)
+		ctx.SetLogoutFunc(nil)
+
 		if b.opts.Proxy {
 			ctx.Request().Header.Del(proxyAuthorizationHeaderKey)
 		}
@@ -374,16 +496,16 @@ func (b *BasicAuth) runGC(ctx stdContext.Context, every time.Duration) {
 	}
 }
 
-// gc removes all entries expired based on the max age or all entries (if max age is missing).
+// gc removes all entries expired based on the max age or all entries (if max age is missing),
+// note that this does not mean that the server will send 401/407 to the next request,
+// when the request header credentials are still valid (Allow passed).
 func (b *BasicAuth) gc() int {
 	now := time.Now()
 	var markedForDeletion []string
 
 	b.mu.RLock()
 	for fullUser, expiresAt := range b.credentials {
-		if expiresAt == nil {
-			markedForDeletion = append(markedForDeletion, fullUser)
-		} else if expiresAt.Before(now) {
+		if expiresAt == nil || expiresAt.Before(now) {
 			markedForDeletion = append(markedForDeletion, fullUser)
 		}
 	}

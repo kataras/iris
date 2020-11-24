@@ -20,7 +20,7 @@ type IUserRepository interface {
 // Test a custom implementation of AuthFunc with a user repository.
 // This is a usage example of custom AuthFunc implementation.
 func UserRepository(repo IUserRepository, newUserPtr func() interface{}) AuthFunc {
-	return func(ctx *context.Context, username, password string) (interface{}, bool) {
+	return func(_ *context.Context, username, password string) (interface{}, bool) {
 		dest := newUserPtr()
 		err := repo.GetByUsernameAndPassword(dest, username, password)
 		if err == nil {
@@ -37,7 +37,7 @@ type testUser struct {
 	email    string // custom field.
 }
 
-// GetUsername & Getpassword complete the User interface (optional but useful on Context.User()).
+// GetUsername & Getpassword complete the User interface.
 func (u *testUser) GetUsername() string {
 	return u.username
 }
@@ -224,6 +224,7 @@ func TestAllowUsersFile(t *testing.T) {
 		if tt.ok {
 			// store the hashed password.
 			tt.password = mustGeneratePassword(t, tt.inputPassword)
+
 			// store and write the username and hashed password.
 			tt.user["username"] = tt.username
 			tt.user["password"] = tt.password

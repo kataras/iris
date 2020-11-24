@@ -89,7 +89,7 @@ MYSQL_HOST=localhost
 MYSQL_DATABASE=myapp
 ```
 
-Download the schema from [migration/myapp.sql](migration/myapp.sql) and execute it against your MySQL server instance.
+Download the schema from [migration/db.sql](migration/db.sql) and execute it against your MySQL server instance.
 
 ```sql
 CREATE DATABASE IF NOT EXISTS myapp DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -139,7 +139,7 @@ Testing is important. The code is written in a way that testing should be trivia
 
 ## Packages
 
-- https://github.com/dgrijalva/jwt-go (JWT parsing)
+- https://github.com/kataras/jwt (JWT parsing)
 - https://github.com/go-sql-driver/mysql (Go Driver for MySQL)
 - https://github.com/DATA-DOG/go-sqlmock (Testing DB see [service/category_service_test.go](service/category_service_test.go))
 - https://github.com/kataras/iris (HTTP)

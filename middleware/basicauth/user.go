@@ -8,17 +8,50 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
+
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
 )
 
+// ReadFile can be used to customize the way the
+// AllowUsersFile function is loading the filename from.
+// Example of usage: embedded users.yml file.
+// Defaults to the `ioutil.ReadFile` which reads the file from the physical disk.
+var ReadFile = ioutil.ReadFile
+
+// User is a partial part of the iris.User interface.
+// It's used to declare a static slice of registered User for authentication.
+type User interface {
+	context.UserGetUsername
+	context.UserGetPassword
+}
+
+// UserAuthOptions holds optional user authentication options
+// that can be given to the builtin Default and Load (and AllowUsers, AllowUsersFile) functions.
 type UserAuthOptions struct {
-	// Defaults to plain check, can be modified for encrypted passwords, see `BCRYPT`.
+	// Defaults to plain check, can be modified for encrypted passwords,
+	// see the BCRYPT optional function.
 	ComparePassword func(stored, userPassword string) bool
 }
 
+// UserAuthOption is the option function type
+// for the Default and Load (and AllowUsers, AllowUsersFile) functions.
+//
+// See BCRYPT for an implementation.
 type UserAuthOption func(*UserAuthOptions)
 
+// BCRYPT it is a UserAuthOption, it compares a bcrypt hashed password with its user input.
+// Reports true on success and false on failure.
+//
+// Useful when the users passwords are encrypted
+// using the Provos and Mazières's bcrypt adaptive hashing algorithm.
+// See https://www.usenix.org/legacy/event/usenix99/provos/provos.pdf.
+//
+// Usage:
+//  Default(..., BCRYPT) OR
+//  Load(..., BCRYPT) OR
+//  Options.Allow = AllowUsers(..., BCRYPT) OR
+//  OPtions.Allow = AllowUsersFile(..., BCRYPT)
 func BCRYPT(opts *UserAuthOptions) {
 	opts.ComparePassword = func(stored, userPassword string) bool {
 		err := bcrypt.CompareHashAndPassword([]byte(stored), []byte(userPassword))
@@ -40,16 +73,15 @@ func toUserAuthOptions(opts []UserAuthOption) (options UserAuthOptions) {
 	return options
 }
 
-type User interface {
-	context.UserGetUsername
-	context.UserGetPassword
-}
-
-// Users
-// - map[string]string form of: {username:password, ...} form.
-// - map[string]interface{} form of: []{"username": "...", "password": "...", "other_field": ...}, ...}.
-// - []T which T completes the User interface.
-// - []T which T contains at least Username and Password fields.
+// AllowUsers is an AuthFunc which authenticates user input based on a (static) user list.
+// The "users" input parameter can be one of the following forms:
+//  map[string]string e.g. {username: password, username: password...}.
+//  []map[string]interface{} e.g. []{"username": "...", "password": "...", "other_field": ...}, ...}.
+//  []T which T completes the User interface.
+//  []T which T contains at least Username and Password fields.
+//
+// Usage:
+// New(Options{Allow: AllowUsers(..., [BCRYPT])})
 func AllowUsers(users interface{}, opts ...UserAuthOption) AuthFunc {
 	// create a local user structure to be used in the map copy,
 	// takes longer to initialize but faster to serve.
@@ -119,12 +151,24 @@ func userMap(usernamePassword map[string]string, opts ...UserAuthOption) AuthFun
 	}
 }
 
+// AllowUsersFile is an AuthFunc which authenticates user input based on a (static) user list
+// loaded from a file on initialization.
+//
+// Example Code:
+//  New(Options{Allow: AllowUsersFile("users.yml", BCRYPT)})
+// The users.yml file looks like the following:
+//  - username: kataras
+//    password: kataras_pass
+//    age: 27
+//    role: admin
+//  - username: makis
+//    password: makis_password
+//    ...
 func AllowUsersFile(jsonOrYamlFilename string, opts ...UserAuthOption) AuthFunc {
 	var (
 		usernamePassword map[string]string
 		// no need to support too much forms, this would be for:
 		// "$username": { "password": "$pass", "other_field": ...}
-		// users            map[string]map[string]interface{}
 		userList []map[string]interface{}
 	)
 
@@ -152,7 +196,7 @@ func AllowUsersFile(jsonOrYamlFilename string, opts ...UserAuthOption) AuthFunc 
 }
 
 func decodeFile(src string, dest ...interface{}) error {
-	data, err := ioutil.ReadFile(src)
+	data, err := ReadFile(src)
 	if err != nil {
 		return err
 	}

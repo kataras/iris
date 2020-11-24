@@ -44,12 +44,12 @@ func newApp() *iris.Application {
 	needAuth := app.Party("/admin", auth)
 	{
 		//http://localhost:8080/admin
-		needAuth.Get("/", h)
+		needAuth.Get("/", handler)
 		// http://localhost:8080/admin/profile
-		needAuth.Get("/profile", h)
+		needAuth.Get("/profile", handler)
 
 		// http://localhost:8080/admin/settings
-		needAuth.Get("/settings", h)
+		needAuth.Get("/settings", handler)
 
 		needAuth.Get("/logout", logout)
 	}
@@ -63,7 +63,7 @@ func main() {
 	app.Listen(":8080")
 }
 
-func h(ctx iris.Context) {
+func handler(ctx iris.Context) {
 	// username, password, _ := ctx.Request().BasicAuth()
 	// third parameter it will be always true because the middleware
 	// makes sure for that, otherwise this handler will not be executed.

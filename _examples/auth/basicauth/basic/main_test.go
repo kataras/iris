@@ -25,5 +25,5 @@ func TestBasicAuth(t *testing.T) {
 
 	// with invalid basic auth
 	e.GET("/admin/settings").WithBasicAuth("invalidusername", "invalidpassword").
-		Expect().Status(httptest.StatusForbidden)
+		Expect().Status(httptest.StatusUnauthorized)
 }

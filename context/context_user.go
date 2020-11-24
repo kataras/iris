@@ -85,7 +85,7 @@ type SimpleUser struct {
 	AuthorizedAt  time.Time       `json:"authorized_at,omitempty"`
 	ID            string          `json:"id,omitempty"`
 	Username      string          `json:"username,omitempty"`
-	Password      string          `json:"-"`
+	Password      string          `json:"password,omitempty"`
 	Email         string          `json:"email,omitempty"`
 	Roles         []string        `json:"roles,omitempty"`
 	Token         json.RawMessage `json:"token,omitempty"`
@@ -339,16 +339,16 @@ type (
 	// may or may not complete the whole User interface.
 	// See Context.SetUser.
 	UserPartial struct {
-		Raw interface{}
-		userGetAuthorization
-		userGetAuthorizedAt
-		userGetID
-		UserGetUsername
-		UserGetPassword
-		userGetEmail
-		userGetRoles
-		userGetToken
-		userGetField
+		Raw                  interface{} `json:"raw"`
+		userGetAuthorization `json:",omitempty"`
+		userGetAuthorizedAt  `json:",omitempty"`
+		userGetID            `json:",omitempty"`
+		UserGetUsername      `json:",omitempty"`
+		UserGetPassword      `json:",omitempty"`
+		userGetEmail         `json:",omitempty"`
+		userGetRoles         `json:",omitempty"`
+		userGetToken         `json:",omitempty"`
+		userGetField         `json:",omitempty"`
 	}
 )
 

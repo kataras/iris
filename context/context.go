@@ -1343,6 +1343,7 @@ func (ctx *Context) GetContentType() string {
 // trim-ed(without the charset and priority values)
 // header value of "Content-Type".
 func (ctx *Context) GetContentTypeRequested() string {
+	// could use mime.ParseMediaType too.
 	return TrimHeaderValue(ctx.GetHeader(ContentTypeHeaderKey))
 }
 

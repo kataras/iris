@@ -196,7 +196,11 @@
     * [Ttemplates and Functions](i18n/template)
     * [Pluralization and Variables](i18n/plurals)
 * Authentication, Authorization & Bot Detection 
-    * [Basic Authentication](auth/basicauth/main.go)
+    * Basic Authentication
+        * [Basic](auth/basicauth/basic)
+        * [Load from a slice of Users](auth/basicauth/users_list)
+        * [Load from a file & encrypted passwords](auth/basicauth/users_file_bcrypt)
+        * [Fetch & validate a User from a Database (MySQL)](auth/basicauth/database)
     * [CORS](auth/cors)
     * JSON Web Tokens
         * [Basic](auth/jwt/basic/main.go)
