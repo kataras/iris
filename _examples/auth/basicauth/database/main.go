@@ -1,4 +1,4 @@
-package main
+package main // Look README.md
 
 import (
 	"context"
@@ -65,7 +65,8 @@ func main() {
 }
 
 func index(ctx iris.Context) {
-	user := ctx.User()
+	user, _ := ctx.User().GetRaw()
+	// user is a type of main.User
 	ctx.JSON(user)
 }
 

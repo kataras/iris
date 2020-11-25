@@ -12,7 +12,7 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.0
-	github.com/go-redis/redis/v8 v8.3.3
+	github.com/go-redis/redis/v8 v8.4.0
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-version v1.2.1
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
@@ -32,12 +32,12 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/tdewolff/minify/v2 v2.9.10
-	github.com/vmihailenco/msgpack/v5 v5.0.0-rc.3
+	github.com/vmihailenco/msgpack/v5 v5.0.0
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.5
-	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
-	golang.org/x/net v0.0.0-20201027133719-8eef5233e2a1
-	golang.org/x/sys v0.0.0-20201028094953-708e7fb298ac
+	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68
 	golang.org/x/text v0.3.4
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.25.0

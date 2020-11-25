@@ -5,19 +5,19 @@
 | Method | Path                | Description            | URL Parameters | Body                       | Auth Required |
 |--------|---------------------|------------------------|--------------- |----------------------------|---------------|
 | ANY    | /token              | Prints a new JWT Token | -              | -                          | -             |
-| GET    | /category           | Lists a set of Categories    | offset, limit, order | -                    | -             |
+| GET    | /category           | Lists a set of Categories    | offset, limit, order | -                    | Token         |
 | POST   | /category           | Creates a Category      | -              | JSON [Full Category](migration/api_category/create_category.json)              | Token      |
 | PUT    | /category           | Fully-Updates a Category | -              | JSON [Full Category](migration/api_category/update_category.json)              | Token      |
 | PATCH  | /category/{id}      | Partially-Updates a Category | -              | JSON [Partial Category](migration/api_category/update_partial_category.json)              | Token      |
-| GET    | /category/{id}      | Prints a Category         | -              | -      | -          |
+| GET    | /category/{id}      | Prints a Category         | -              | -      | Token      |
 | DELETE | /category/{id}      | Deletes a Category      | -              | -      | Token      |
-| GET    | /category/{id}/products | Lists all Products from a Category      | offset, limit, order | -      | -      |
+| GET    | /category/{id}/products | Lists all Products from a Category      | offset, limit, order | -      | Token      |
 | POST   | /category/{id}/products | (Batch) Assigns one or more Products to a Category      | -              | JSON [Products](migration/api_category/insert_products_category.json)      | Token      |
-| GET    | /product           | Lists a set of Products (cache)     | offset, limit, order | -                    | -             |
+| GET    | /product           | Lists a set of Products (cache)     | offset, limit, order | -                    | Token      |
 | POST   | /product           | Creates a Product      | -              | JSON [Full Product](migration/api_product/create_product.json)              | Token      |
 | PUT    | /product           | Fully-Updates a Product | -              | JSON [Full Product](migration/api_product/update_product.json)              | Token      |
 | PATCH  | /product/{id}      | Partially-Updates a Product | -              | JSON [Partial Product](migration/api_product/update_partial_product.json)              | Token      |
-| GET    | /product/{id}      | Prints a Product (cache)         | -              | -      | -          |
+| GET    | /product/{id}      | Prints a Product (cache)         | -              | -      | Token      |
 | DELETE | /product/{id}      | Deletes a Product        | -              | -      | Token      |
 
 
@@ -71,7 +71,7 @@ Download the folder.
 Install [Docker](https://www.docker.com/) and execute the command below
 
 ```sh
-$ docker-compose up
+$ docker-compose up --build
 ```
 
 ### Install (Manually)

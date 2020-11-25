@@ -1,4 +1,4 @@
-package main
+package main // Look README.md
 
 import (
 	"fmt"
@@ -10,8 +10,6 @@ import (
 
 	"github.com/kataras/iris/v12"
 )
-
-// $ go build .
 
 func main() {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci",

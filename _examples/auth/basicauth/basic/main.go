@@ -69,6 +69,7 @@ func handler(ctx iris.Context) {
 	// makes sure for that, otherwise this handler will not be executed.
 	// OR:
 	user := ctx.User()
+	// OR ctx.User().GetRaw() to get the underline value.
 	username, _ := user.GetUsername()
 	password, _ := user.GetPassword()
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)

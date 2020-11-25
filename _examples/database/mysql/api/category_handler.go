@@ -168,6 +168,11 @@ func (h *CategoryHandler) Delete(ctx iris.Context) {
 
 	affected, err := h.service.DeleteByID(ctx.Request().Context(), id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			writeEntityNotFound(ctx)
+			return
+		}
+
 		debugf("CategoryHandler.Delete(DB): %v", err)
 		writeInternalServerError(ctx)
 		return
@@ -201,7 +206,7 @@ func (h *CategoryHandler) ListProducts(ctx iris.Context) {
 
 	var products entity.Products
 	err := h.service.List(ctx.Request().Context(), &products, opts)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		debugf("CategoryHandler.ListProducts(DB) (table=%s where=%s=%v limit=%d offset=%d): %v",
 			opts.Table, opts.WhereColumn, opts.WhereValue, opts.Limit, opts.Offset, err)
 
