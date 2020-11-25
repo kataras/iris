@@ -8,11 +8,11 @@ import (
 func newApp() *iris.Application {
 	app := iris.New()
 
-	authConfig := basicauth.Config{
-		Users: map[string]string{"myusername": "mypassword"},
+	opts := basicauth.Options{
+		Allow: basicauth.AllowUsers(map[string]string{"myusername": "mypassword"}),
 	}
 
-	authentication := basicauth.New(authConfig)
+	authentication := basicauth.New(opts) // or just: basicauth.Default(map...)
 
 	app.Get("/", func(ctx iris.Context) { ctx.Redirect("/admin") })
 
@@ -36,7 +36,9 @@ func h(ctx iris.Context) {
 	username, password, _ := ctx.Request().BasicAuth()
 	// third parameter it will be always true because the middleware
 	// makes sure for that, otherwise this handler will not be executed.
-
+	// OR:
+	// ctx.User().GetUsername()
+	// ctx.User().GetPassword()
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
 }
 

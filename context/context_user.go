@@ -33,6 +33,8 @@ var ErrNotSupported = errors.New("not supported")
 // - UserMap (a wrapper by SetUser)
 // - UserPartial (a wrapper by SetUser)
 type User interface {
+	// GetRaw should return the raw instance of the user, if supported.
+	GetRaw() (interface{}, error)
 	// GetAuthorization should return the authorization method,
 	// e.g. Basic Authentication.
 	GetAuthorization() (string, error)
@@ -83,7 +85,7 @@ type SimpleUser struct {
 	AuthorizedAt  time.Time       `json:"authorized_at,omitempty"`
 	ID            string          `json:"id,omitempty"`
 	Username      string          `json:"username,omitempty"`
-	Password      string          `json:"-"`
+	Password      string          `json:"password,omitempty"`
 	Email         string          `json:"email,omitempty"`
 	Roles         []string        `json:"roles,omitempty"`
 	Token         json.RawMessage `json:"token,omitempty"`
@@ -91,6 +93,11 @@ type SimpleUser struct {
 }
 
 var _ User = (*SimpleUser)(nil)
+
+// GetRaw returns itself.
+func (u *SimpleUser) GetRaw() (interface{}, error) {
+	return u, nil
+}
 
 // GetAuthorization returns the authorization method,
 // e.g. Basic Authentication.
@@ -178,6 +185,11 @@ func (u *SimpleUser) GetField(key string) (interface{}, error) {
 type UserMap Map
 
 var _ User = UserMap{}
+
+// GetRaw returns the underline map.
+func (u UserMap) GetRaw() (interface{}, error) {
+	return Map(u), nil
+}
 
 // GetAuthorization returns the authorization or Authorization value of the map.
 func (u UserMap) GetAuthorization() (string, error) {
@@ -292,11 +304,17 @@ type (
 		GetID() string
 	}
 
-	userGetUsername interface {
+	// UserGetUsername interface which
+	// requires a single method to complete
+	// a User on Context.SetUser.
+	UserGetUsername interface {
 		GetUsername() string
 	}
 
-	userGetPassword interface {
+	// UserGetPassword interface which
+	// requires a single method to complete
+	// a User on Context.SetUser.
+	UserGetPassword interface {
 		GetPassword() string
 	}
 
@@ -319,76 +337,80 @@ type (
 	// UserPartial is a User.
 	// It's a helper which wraps a struct value that
 	// may or may not complete the whole User interface.
+	// See Context.SetUser.
 	UserPartial struct {
-		Raw interface{}
-		userGetAuthorization
-		userGetAuthorizedAt
-		userGetID
-		userGetUsername
-		userGetPassword
-		userGetEmail
-		userGetRoles
-		userGetToken
-		userGetField
+		Raw                  interface{} `json:"raw"`
+		userGetAuthorization `json:",omitempty"`
+		userGetAuthorizedAt  `json:",omitempty"`
+		userGetID            `json:",omitempty"`
+		UserGetUsername      `json:",omitempty"`
+		UserGetPassword      `json:",omitempty"`
+		userGetEmail         `json:",omitempty"`
+		userGetRoles         `json:",omitempty"`
+		userGetToken         `json:",omitempty"`
+		userGetField         `json:",omitempty"`
 	}
 )
 
 var _ User = (*UserPartial)(nil)
 
 func newUserPartial(i interface{}) *UserPartial {
-	containsAtLeastOneMethod := false
+	if i == nil {
+		return nil
+	}
+
 	p := &UserPartial{Raw: i}
 
 	if u, ok := i.(userGetAuthorization); ok {
 		p.userGetAuthorization = u
-		containsAtLeastOneMethod = true
 	}
 
 	if u, ok := i.(userGetAuthorizedAt); ok {
 		p.userGetAuthorizedAt = u
-		containsAtLeastOneMethod = true
 	}
 
 	if u, ok := i.(userGetID); ok {
 		p.userGetID = u
-		containsAtLeastOneMethod = true
 	}
 
-	if u, ok := i.(userGetUsername); ok {
-		p.userGetUsername = u
-		containsAtLeastOneMethod = true
+	if u, ok := i.(UserGetUsername); ok {
+		p.UserGetUsername = u
 	}
 
-	if u, ok := i.(userGetPassword); ok {
-		p.userGetPassword = u
-		containsAtLeastOneMethod = true
+	if u, ok := i.(UserGetPassword); ok {
+		p.UserGetPassword = u
 	}
 
 	if u, ok := i.(userGetEmail); ok {
 		p.userGetEmail = u
-		containsAtLeastOneMethod = true
 	}
 
 	if u, ok := i.(userGetRoles); ok {
 		p.userGetRoles = u
-		containsAtLeastOneMethod = true
 	}
 
 	if u, ok := i.(userGetToken); ok {
 		p.userGetToken = u
-		containsAtLeastOneMethod = true
 	}
 
 	if u, ok := i.(userGetField); ok {
 		p.userGetField = u
-		containsAtLeastOneMethod = true
 	}
 
-	if !containsAtLeastOneMethod {
-		return nil
-	}
+	// if !containsAtLeastOneMethod {
+	// 	return nil
+	// }
 
 	return p
+}
+
+// GetRaw returns the original raw instance of the user.
+func (u *UserPartial) GetRaw() (interface{}, error) {
+	if u == nil {
+		return nil, ErrNotSupported
+	}
+
+	return u.Raw, nil
 }
 
 // GetAuthorization should return the authorization method,
@@ -422,7 +444,7 @@ func (u *UserPartial) GetID() (string, error) {
 
 // GetUsername should return the name of the User.
 func (u *UserPartial) GetUsername() (string, error) {
-	if v := u.userGetUsername; v != nil {
+	if v := u.UserGetUsername; v != nil {
 		return v.GetUsername(), nil
 	}
 
@@ -432,7 +454,7 @@ func (u *UserPartial) GetUsername() (string, error) {
 // GetPassword should return the encoded or raw password
 // (depends on the implementation) of the User.
 func (u *UserPartial) GetPassword() (string, error) {
-	if v := u.userGetPassword; v != nil {
+	if v := u.UserGetPassword; v != nil {
 		return v.GetPassword(), nil
 	}
 

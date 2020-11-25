@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/basicauth"
 )
@@ -10,33 +8,48 @@ import (
 func newApp() *iris.Application {
 	app := iris.New()
 
-	authConfig := basicauth.Config{
-		Users:   map[string]string{"myusername": "mypassword", "mySecondusername": "mySecondpassword"},
-		Realm:   "Authorization Required", // defaults to "Authorization Required"
-		Expires: time.Duration(30) * time.Minute,
-	}
+	/*
+		opts := basicauth.Options{
+			Realm:  "Authorization Required",
+			MaxAge: 30 * time.Minute,
+			GC: basicauth.GC{
+				Every: 2 * time.Hour,
+			},
+			Allow: basicauth.AllowUsers(map[string]string{
+				"myusername":       "mypassword",
+				"mySecondusername": "mySecondpassword",
+			}),
+			MaxTries: 2,
+		}
+		auth := basicauth.New(opts)
 
-	authentication := basicauth.New(authConfig)
+		OR simply:
+	*/
 
-	// to global app.Use(authentication) (or app.UseGlobal before the .Run)
+	auth := basicauth.Default(map[string]string{
+		"myusername":       "mypassword",
+		"mySecondusername": "mySecondpassword",
+	})
+
+	// to global app.Use(auth) (or app.UseGlobal before the .Run)
 	// to routes
 	/*
-		app.Get("/mysecret", authentication, h)
+		app.Get("/mysecret", auth, h)
 	*/
 
 	app.Get("/", func(ctx iris.Context) { ctx.Redirect("/admin") })
 
 	// to party
 
-	needAuth := app.Party("/admin", authentication)
+	needAuth := app.Party("/admin", auth)
 	{
 		//http://localhost:8080/admin
-		needAuth.Get("/", h)
+		needAuth.Get("/", handler)
 		// http://localhost:8080/admin/profile
-		needAuth.Get("/profile", h)
+		needAuth.Get("/profile", handler)
 
 		// http://localhost:8080/admin/settings
-		needAuth.Get("/settings", h)
+		needAuth.Get("/settings", handler)
 
 		needAuth.Get("/logout", logout)
 	}
@@ -50,12 +63,13 @@ func main() {
 	app.Listen(":8080")
 }
 
-func h(ctx iris.Context) {
+func handler(ctx iris.Context) {
 	// username, password, _ := ctx.Request().BasicAuth()
 	// third parameter it will be always true because the middleware
 	// makes sure for that, otherwise this handler will not be executed.
 	// OR:
 	user := ctx.User()
+	// OR ctx.User().GetRaw() to get the underline value.
 	username, _ := user.GetUsername()
 	password, _ := user.GetPassword()
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)

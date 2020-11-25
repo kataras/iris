@@ -15,17 +15,18 @@ import (
 // Router accepts any required dependencies and returns the main server's handler.
 func Router(db sql.Database, secret string) func(iris.Party) {
 	return func(r iris.Party) {
-		j := jwt.HMAC(15*time.Minute, secret)
-
 		r.Use(requestid.New())
-		r.Use(verifyToken(j))
+
+		signer := jwt.NewSigner(jwt.HS256, secret, 15*time.Minute)
+		r.Get("/token", writeToken(signer))
+
+		verify := jwt.NewVerifier(jwt.HS256, secret).Verify(nil)
+		r.Use(verify)
 		// Generate a token for testing by navigating to
 		// http://localhost:8080/token endpoint.
 		// Copy-paste it to a ?token=$token url parameter or
 		// open postman and put an Authentication: Bearer $token to get
 		// access on create, update and delete endpoinds.
-
-		r.Get("/token", writeToken(j))
 
 		var (
 			categoryService = service.NewCategoryService(db)
@@ -73,25 +74,19 @@ func Router(db sql.Database, secret string) func(iris.Party) {
 	}
 }
 
-func writeToken(j *jwt.JWT) iris.Handler {
+func writeToken(signer *jwt.Signer) iris.Handler {
 	return func(ctx iris.Context) {
 		claims := jwt.Claims{
 			Issuer:   "https://iris-go.com",
-			Audience: jwt.Audience{requestid.Get(ctx)},
+			Audience: []string{requestid.Get(ctx)},
 		}
 
-		j.WriteToken(ctx, claims)
-	}
-}
-
-func verifyToken(j *jwt.JWT) iris.Handler {
-	return func(ctx iris.Context) {
-		// Allow all GET.
-		if ctx.Method() == iris.MethodGet {
-			ctx.Next()
+		token, err := signer.Sign(claims)
+		if err != nil {
+			ctx.StopWithStatus(iris.StatusInternalServerError)
 			return
 		}
 
-		j.Verify(ctx)
+		ctx.Write(token)
 	}
 }

@@ -18,7 +18,13 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		"admin": "admin",
 	}
 
-	app.UseRouter(basicauth.Default(users))
+	auth := basicauth.New(basicauth.Options{
+		Allow:    basicauth.AllowUsers(users),
+		Realm:    basicauth.DefaultRealm,
+		MaxTries: 1,
+	})
+
+	app.UseRouter(auth)
 
 	app.Get("/user_json", func(ctx iris.Context) {
 		ctx.JSON(ctx.User())
@@ -80,9 +86,9 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		e.GET("/").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
 		// Test invalid auth.
 		e.GET("/").WithBasicAuth(username, "invalid_password").Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 		e.GET("/").WithBasicAuth("invaid_username", password).Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 
 		// Test different method, it should pass the authentication (no stop on 401)
 		// but it doesn't fire the GET route, instead it gives 405.
@@ -97,9 +103,9 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		e.GET("/notfound").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
 		// Test invalid auth.
 		e.GET("/notfound").WithBasicAuth(username, "invalid_password").Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 		e.GET("/notfound").WithBasicAuth("invaid_username", password).Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 
 		// Test subdomain inherited.
 		sub := e.Builder(func(req *httptest.Request) {
@@ -114,9 +120,9 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		sub.GET("/").Expect().Status(httptest.StatusUnauthorized)
 		// Test invalid auth.
 		sub.GET("/").WithBasicAuth(username, "invalid_password").Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 		sub.GET("/").WithBasicAuth("invaid_username", password).Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 
 		// Test pass the authentication but route not found.
 		sub.GET("/notfound").WithBasicAuth(username, password).Expect().
@@ -126,9 +132,9 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		sub.GET("/notfound").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
 		// Test invalid auth.
 		sub.GET("/notfound").WithBasicAuth(username, "invalid_password").Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 		sub.GET("/notfound").WithBasicAuth("invaid_username", password).Expect().
-			Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+			Status(httptest.StatusForbidden)
 
 		// Test a reset-ed Party with a single one UseRouter
 		// which writes on matched routes and reset and send the error on errors.

@@ -1343,6 +1343,7 @@ func (ctx *Context) GetContentType() string {
 // trim-ed(without the charset and priority values)
 // header value of "Content-Type".
 func (ctx *Context) GetContentTypeRequested() string {
+	// could use mime.ParseMediaType too.
 	return TrimHeaderValue(ctx.GetHeader(ContentTypeHeaderKey))
 }
 
@@ -1792,7 +1793,7 @@ func (ctx *Context) PostValues(name string) ([]string, error) {
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueMany(name string) (string, error) {
 	values, err := ctx.PostValues(name)
-	if err != nil {
+	if err != nil || len(values) == 0 {
 		return "", err
 	}
 
@@ -1805,14 +1806,11 @@ func (ctx *Context) PostValueMany(name string) (string, error) {
 // If not found then "def" is returned instead.
 func (ctx *Context) PostValueDefault(name string, def string) string {
 	values, err := ctx.PostValues(name)
-	if err != nil {
+	if err != nil || len(values) == 0 {
 		return def // it returns "def" even if it's empty here.
 	}
-	if len(values) > 0 {
-		return values[len(values)-1]
-	}
 
-	return def
+	return values[len(values)-1]
 }
 
 // PostValue returns the last parsed form data from POST, PATCH,
@@ -1835,8 +1833,8 @@ func (ctx *Context) PostValueTrim(name string) string {
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueInt(name string) (int, error) {
 	values, err := ctx.PostValues(name)
-	if err != nil {
-		return -1, err
+	if err != nil || len(values) == 0 {
+		return 0, err
 	}
 
 	return strconv.Atoi(values[len(values)-1])
@@ -1860,8 +1858,8 @@ func (ctx *Context) PostValueIntDefault(name string, def int) int {
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueInt64(name string) (int64, error) {
 	values, err := ctx.PostValues(name)
-	if err != nil {
-		return -1, err
+	if err != nil || len(values) == 0 {
+		return 0, err
 	}
 
 	return strconv.ParseInt(values[len(values)-1], 10, 64)
@@ -1885,8 +1883,8 @@ func (ctx *Context) PostValueInt64Default(name string, def int64) int64 {
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueFloat64(name string) (float64, error) {
 	values, err := ctx.PostValues(name)
-	if err != nil {
-		return -1, err
+	if err != nil || len(values) == 0 {
+		return 0, err
 	}
 
 	return strconv.ParseFloat(values[len(values)-1], 64)
@@ -1911,7 +1909,7 @@ func (ctx *Context) PostValueFloat64Default(name string, def float64) float64 {
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueBool(name string) (bool, error) {
 	values, err := ctx.PostValues(name)
-	if err != nil {
+	if err != nil || len(values) == 0 {
 		return false, err
 	}
 
@@ -4726,7 +4724,7 @@ func (ctx *Context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) b
 // you can change it or simple, use the SetCookie for more control.
 //
 // See `CookieExpires` and `AddCookieOptions` for more.
-var SetCookieKVExpiration = time.Duration(8760) * time.Hour
+var SetCookieKVExpiration = 8760 * time.Hour
 
 // SetCookieKV adds a cookie, requires the name(string) and the value(string).
 //
@@ -5343,7 +5341,15 @@ const userContextKey = "iris.user"
 // SetUser sets a value as a User for this request.
 // It's used by auth middlewares as a common
 // method to provide user information to the
-// next handlers in the chain
+// next handlers in the chain.
+//
+// The "i" input argument can be:
+// - A value which completes the User interface
+// - A map[string]interface{}.
+// - A value which does not complete the whole User interface
+// - A value which does not complete the User interface at all
+//   (only its `User().GetRaw` method is available).
+//
 // Look the `User` method to retrieve it.
 func (ctx *Context) SetUser(i interface{}) error {
 	if i == nil {
@@ -5371,6 +5377,9 @@ func (ctx *Context) SetUser(i interface{}) error {
 }
 
 // User returns the registered User of this request.
+// To get the original value (even if a value set by SetUser does not implement the User interface)
+// use its GetRaw method.
+// /
 // See `SetUser` too.
 func (ctx *Context) User() User {
 	if v := ctx.values.Get(userContextKey); v != nil {
