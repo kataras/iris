@@ -74,10 +74,8 @@ func main() {
 			}),
 		})
 
-		auth := basicauth.New(basicauth.Config{
-			Users: map[string]string{
-				"myusername": "mypassword",
-			},
+		auth := basicauth.Default(map[string]string{
+			"myusername": "mypassword",
 		})
 
 		filesRouter.Delete("/{file:path}", auth, deleteFile)
