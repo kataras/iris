@@ -2,7 +2,6 @@ package basicauth
 
 import (
 	stdContext "context"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/sessions"
 )
 
 func init() {
@@ -108,6 +108,11 @@ type Options struct {
 	// Defaults to "basicmaxtries".
 	// The MaxTries should be set to greater than zero.
 	MaxTriesCookie string
+	// If not empty then this session key will be used to store
+	// the current tries of login failures. If not a session manager
+	// was registered then the application will log an error.
+	// Note that this field has a priority over the MaxTriesCookie.
+	MaxTriesSession string
 	// ErrorHandler handles the given request credentials failure.
 	// E.g  when the client tried to access a protected resource
 	// with empty or invalid or expired credentials or
@@ -115,13 +120,6 @@ type Options struct {
 	//
 	// Defaults to the DefaultErrorHandler, do not modify if you don't need to.
 	ErrorHandler ErrorHandler
-	// ErrorLogger if not nil then it logs any credentials failure errors
-	// that are going to be sent to the client. Set it on debug development state.
-	// Usage:
-	//  ErrorLogger = log.New(os.Stderr, "", log.LstdFlags)
-	//
-	// Defaults to nil.
-	ErrorLogger *log.Logger
 	// GC automatically clears old entries every x duration.
 	// Note that, by old entries we mean expired credentials therefore
 	// the `MaxAge` option should be already set,
@@ -276,34 +274,61 @@ func Load(jsonOrYamlFilename string, userOpts ...UserAuthOption) context.Handler
 }
 
 func (b *BasicAuth) getCurrentTries(ctx *context.Context) (tries int) {
-	cookie := ctx.GetCookie(b.opts.MaxTriesCookie)
-	if cookie != "" {
-		tries, _ = strconv.Atoi(cookie)
+	if key := b.opts.MaxTriesSession; key != "" {
+		if sess := sessions.Get(ctx); sess != nil {
+			tries = sess.GetIntDefault(key, 0)
+		} else {
+			ctx.Application().Logger().Error("basicauth: getCurrentTries: session key: %s but no session manager is registered", key)
+			return
+		}
+	} else {
+		cookie := ctx.GetCookie(b.opts.MaxTriesCookie)
+		if cookie != "" {
+			tries, _ = strconv.Atoi(cookie)
+		}
 	}
 
 	return
 }
 
 func (b *BasicAuth) setCurrentTries(ctx *context.Context, tries int) {
-	maxAge := b.opts.MaxAge
-	if maxAge == 0 {
-		maxAge = DefaultCookieMaxAge // 1 hour.
-	}
+	if key := b.opts.MaxTriesSession; key != "" {
+		if sess := sessions.Get(ctx); sess != nil {
+			sess.Set(key, tries)
+		} else {
+			ctx.Application().Logger().Error("basicauth: setCurrentTries: session key: %s but no session manager is registered", key)
+			return
+		}
+	} else {
+		maxAge := b.opts.MaxAge
+		if maxAge == 0 {
+			maxAge = DefaultCookieMaxAge // 1 hour.
+		}
 
-	c := &http.Cookie{
-		Name:     b.opts.MaxTriesCookie,
-		Path:     "/",
-		Value:    url.QueryEscape(strconv.Itoa(tries)),
-		HttpOnly: true,
-		Expires:  time.Now().Add(maxAge),
-		MaxAge:   int(maxAge.Seconds()),
-	}
+		c := &http.Cookie{
+			Name:     b.opts.MaxTriesCookie,
+			Path:     "/",
+			Value:    url.QueryEscape(strconv.Itoa(tries)),
+			HttpOnly: true,
+			Expires:  time.Now().Add(maxAge),
+			MaxAge:   int(maxAge.Seconds()),
+		}
 
-	ctx.SetCookie(c)
+		ctx.SetCookie(c)
+	}
 }
 
 func (b *BasicAuth) resetCurrentTries(ctx *context.Context) {
-	ctx.RemoveCookie(b.opts.MaxTriesCookie)
+	if key := b.opts.MaxTriesSession; key != "" {
+		if sess := sessions.Get(ctx); sess != nil {
+			sess.Delete(key)
+		} else {
+			ctx.Application().Logger().Error("basicauth: resetCurrentTries: session key: %s but no session manager is registered", key)
+			return
+		}
+	} else {
+		ctx.RemoveCookie(b.opts.MaxTriesCookie)
+	}
 }
 
 func isHTTPS(r *http.Request) bool {
@@ -311,9 +336,7 @@ func isHTTPS(r *http.Request) bool {
 }
 
 func (b *BasicAuth) handleError(ctx *context.Context, err error) {
-	if b.opts.ErrorLogger != nil {
-		b.opts.ErrorLogger.Println(err)
-	}
+	ctx.Application().Logger().Debug(err)
 
 	// should not be nil as it's defaulted on New.
 	b.opts.ErrorHandler(ctx, err)
