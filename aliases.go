@@ -71,6 +71,8 @@ type (
 	// See `Context.User` and `SetUser` methods for more.
 	// An alias for the `context/User` type.
 	User = context.User
+	// SimpleUser is a simple implementation of the User interface.
+	SimpleUser = context.SimpleUser
 	// Problem Details for HTTP APIs.
 	// Pass a Problem value to `context.Problem` to
 	// write an "application/problem+json" response.
