@@ -11,7 +11,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
-	github.com/flosch/pongo2/v4 v4.0.0
+	github.com/flosch/pongo2/v4 v4.0.1
 	github.com/go-redis/redis/v8 v8.4.0
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-version v1.2.1
@@ -21,7 +21,7 @@ require (
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.4
 	github.com/kataras/golog v0.1.5
-	github.com/kataras/jwt v0.0.6
+	github.com/kataras/jwt v0.0.7
 	github.com/kataras/neffos v0.0.18
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5

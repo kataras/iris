@@ -101,9 +101,9 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
  toml                3012a1dbe2e4bd1     https://github.com/BurntSushi/toml       
                      391d42b32f0577c                                              
                      b7bbc7f005                                                   
- jwt                 e87a84e0681e206     https://github.com/kataras/jwt      
-                     f3733932450e25d                                              
-                     7747daf215                                                                                                         
+ jwt                 933b4a74659b074     https://github.com/kataras/jwt      
+                     00070920d0700b9                                              
+                     63fa545d6c                                                                                                                            
  uuid                cb32006e483f2a2     https://github.com/google/uuid       
                      3230e24209cf185                                              
                      c65b477dbf

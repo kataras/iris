@@ -12,6 +12,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
+	"github.com/fatih/structs"
 	"github.com/flosch/pongo2/v4"
 )
 
@@ -261,15 +262,19 @@ func getPongoContext(templateData interface{}) pongo2.Context {
 		return nil
 	}
 
-	if contextData, isPongoContext := templateData.(pongo2.Context); isPongoContext {
-		return contextData
-	}
+	switch data := templateData.(type) {
+	case pongo2.Context:
+		return data
+	case context.Map:
+		return pongo2.Context(data)
+	default:
+		// if struct, convert it to map[string]interface{}
+		if structs.IsStruct(data) {
+			return pongo2.Context(structs.Map(data))
+		}
 
-	if contextData, isContextViewData := templateData.(context.Map); isContextViewData {
-		return pongo2.Context(contextData)
+		panic("django: template data: should be a map or struct")
 	}
-
-	return templateData.(map[string]interface{})
 }
 
 func (s *DjangoEngine) fromCache(relativeName string) *pongo2.Template {
