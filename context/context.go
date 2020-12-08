@@ -2407,7 +2407,7 @@ func (ctx *Context) ReadJSONProtobuf(ptr proto.Message, opts ...ProtoUnmarshalOp
 
 	opt := defaultProtobufUnmarshalOptions
 	if len(opts) > 0 {
-		opt = opts[1]
+		opt = opts[0]
 	}
 
 	return opt.Unmarshal(rawData, ptr)
