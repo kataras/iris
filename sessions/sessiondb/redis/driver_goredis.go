@@ -47,7 +47,7 @@ func (r *GoRedisDriver) mergeClientOptions(c Config) *Options {
 	}
 
 	if opts.Password == "" {
-		opts.Username = c.Password
+		opts.Password = c.Password
 	}
 
 	if opts.DB == 0 {
