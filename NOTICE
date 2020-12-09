@@ -47,9 +47,9 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
  go-version          2b13044f5cdd383     https://github.com/hashicorp/go-version  
                      3370d41ce57d8bf                                              
                      3cec5e62b8                                                                                                    
- golog               4038abff49248cc     https://github.com/kataras/golog         
-                     fe2043e2e763923                                              
-                     d612998bea                                                   
+ golog               f7561df84e64ab9     https://github.com/kataras/golog         
+                     212f021923ce4ff                                              
+                     db5df5594d                                                           
  goreferrer          ec9c9a553398739     https://github.com/Shopify/goreferrer    
                      f0dcf817e0ad5e0                                              
                      1c4e7dcd08                                                   

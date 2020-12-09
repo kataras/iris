@@ -20,7 +20,7 @@ require (
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.4
-	github.com/kataras/golog v0.1.5
+	github.com/kataras/golog v0.1.6
 	github.com/kataras/jwt v0.0.7
 	github.com/kataras/neffos v0.0.18
 	github.com/kataras/pio v0.0.10
