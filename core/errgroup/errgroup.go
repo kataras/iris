@@ -210,7 +210,7 @@ func (g *Group) Error() (s string) {
 }
 
 func (g *Group) getAllErrors() []error {
-	list := g.Errors[:]
+	list := g.Errors
 
 	if len(g.children) > 0 {
 		// return with order of definition.
