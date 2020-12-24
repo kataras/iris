@@ -1,10 +1,15 @@
 [![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
 
-<!-- # News -->
+<!-- # News 
 
 > This is the under-**development branch**. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
 > 
 > ![](https://iris-go.com/images/cli.png) Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
+-->
+
+## 🎅
+
+Let me take this opportunity to thank you for all your faith and dedication to the Iris Open Source Project. We have achieved so many things together. Hope your bond lasts forever! **Merry Christmas🌳**
 
 <!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
 
