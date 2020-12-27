@@ -9,7 +9,7 @@
 
 ## 🎅
 
-Let me take this opportunity to thank you for all your faith and dedication to the Iris Open Source Project. We have achieved so many things together. Hope your bond lasts forever! **Merry Christmas🌳**
+Let me take this opportunity to thank you for all your faith and dedication to the Iris Open Source Project. We have achieved so many things together. Hope your bond lasts forever! **Merry Christmas🎄**
 
 <!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
 
