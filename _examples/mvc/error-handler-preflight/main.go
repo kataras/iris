@@ -29,9 +29,9 @@ type response struct {
 	Timestamp int64       `json:"timestamp,omitempty"`
 }
 
-func (r response) Preflight(ctx iris.Context) error {
-	if r.ID > 0 {
-		r.Timestamp = time.Now().Unix()
+func (r *response) Preflight(ctx iris.Context) error {
+	if (*r).ID > 0 {
+		(*r).Timestamp = time.Now().Unix()
 	}
 
 	if code := r.Code; code > 0 {
@@ -46,7 +46,7 @@ func (r response) Preflight(ctx iris.Context) error {
 				Code: code,
 				/* use any r.Data as the template data
 				OR the whole "response" as its data. */
-				Data: r,
+				Data: *r,
 				/* automatically pick the template per error (just for the sake of the example) */
 				Name: fmt.Sprintf("%d", code),
 			}.Dispatch(ctx)
@@ -54,7 +54,7 @@ func (r response) Preflight(ctx iris.Context) error {
 			return iris.ErrStopExecution
 		}
 
-		ctx.StatusCode(r.Code)
+		ctx.StatusCode((*r).Code)
 	}
 
 	return nil
@@ -64,15 +64,15 @@ type user struct {
 	ID uint64 `json:"id"`
 }
 
-func (c *controller) GetBy(userid uint64) response {
+func (c *controller) GetBy(userid uint64) *response {
 	if userid != 1 {
-		return response{
+		return &response{
 			Code:    iris.StatusNotFound,
 			Message: "User Not Found",
 		}
 	}
 
-	return response{
+	return &response{
 		ID:   userid,
 		Data: user{ID: userid},
 	}
