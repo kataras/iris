@@ -323,6 +323,18 @@ func New(w io.Writer) *AccessLog {
 //
 // It panics on error.
 func File(path string) *AccessLog {
+	f := mustOpenFile(path)
+	return New(bufio.NewReadWriter(bufio.NewReader(f), bufio.NewWriter(f)))
+}
+
+// FileUnbuffered same as File but it does not buffers the data,
+// it flushes the loggers contents as soon as possible.
+func FileUnbuffered(path string) *AccessLog {
+	f := mustOpenFile(path)
+	return New(f)
+}
+
+func mustOpenFile(path string) *os.File {
 	// Note: we add os.RDWR in order to be able to read from it,
 	// some formatters (e.g. CSV) needs that.
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -330,7 +342,7 @@ func File(path string) *AccessLog {
 		panic(err)
 	}
 
-	return New(bufio.NewReadWriter(bufio.NewReader(f), bufio.NewWriter(f)))
+	return f
 }
 
 // Broker creates or returns the broker.
