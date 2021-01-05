@@ -67,6 +67,10 @@ func examplePerParty(app *iris.Application) {
 	usersAPIV2.Post("/", func(ctx iris.Context) {
 		ctx.Writef("v2 resource: /api/users post handler")
 	})
+
+	// version 3, pass it as a common iris.Party.
+	usersAPIV3 := versioning.NewGroup(usersAPI, ">= 3, < 4")
+	registerAPIV3(usersAPIV3)
 }
 
 func catsVersionExactly1Handler(ctx iris.Context) {
@@ -75,4 +79,11 @@ func catsVersionExactly1Handler(ctx iris.Context) {
 
 func catsV2Handler(ctx iris.Context) {
 	ctx.Writef("v2 resource: /api/cats handler")
+}
+
+func registerAPIV3(p iris.Party) {
+	p.Get("/", func(ctx iris.Context) {
+		ctx.Writef("v3 resource: /api/users handler")
+	})
+	// [...]
 }

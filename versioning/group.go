@@ -5,10 +5,15 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 )
 
+// API is a type alias of router.Party.
+// This is required in order for a Group instance
+// to implement the Party interface without field conflict.
+type API = router.Party
+
 // Group is a group of version-based routes.
 // One version per one or more routes.
 type Group struct {
-	router.Party
+	API
 
 	// Information not currently in-use.
 	version     string
@@ -32,7 +37,7 @@ func NewGroup(r router.Party, version string) *Group {
 	r.UseOnce(Handler(version)) // this is required in order to not populate this middleware to the next group.
 
 	return &Group{
-		Party:   r,
+		API:     r,
 		version: version,
 	}
 }
@@ -43,7 +48,7 @@ func (g *Group) Deprecated(options DeprecationOptions) *Group {
 	// store it for future use, e.g. collect all deprecated APIs and notify the developer.
 	g.deprecation = options
 
-	g.Party.UseOnce(func(ctx *context.Context) {
+	g.API.UseOnce(func(ctx *context.Context) {
 		WriteDeprecated(ctx, options)
 		ctx.Next()
 	})
