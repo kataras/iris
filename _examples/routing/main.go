@@ -82,11 +82,11 @@ func registerGamesRoutes(app *iris.Application) {
 }
 
 func registerSubdomains(app *iris.Application) {
-	mysubdomain := app.Party("mysubdomain.")
+	mysubdomain := app.Subdomain("mysubdomain")
 	// http://mysubdomain.myhost.com
 	mysubdomain.Get("/", h)
 
-	willdcardSubdomain := app.Party("*.")
+	willdcardSubdomain := app.WildcardSubdomain()
 	willdcardSubdomain.Get("/", h)
 	willdcardSubdomain.Party("/party").Get("/", h)
 }

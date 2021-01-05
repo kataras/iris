@@ -327,7 +327,7 @@ func File(path string) *AccessLog {
 	return New(bufio.NewReadWriter(bufio.NewReader(f), bufio.NewWriter(f)))
 }
 
-// FileUnbuffered same as File but it does not buffers the data,
+// FileUnbuffered same as File but it does not buffer the data,
 // it flushes the loggers contents as soon as possible.
 func FileUnbuffered(path string) *AccessLog {
 	f := mustOpenFile(path)

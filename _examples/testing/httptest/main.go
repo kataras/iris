@@ -37,6 +37,11 @@ func h(ctx iris.Context) {
 	// third parameter it will be always true because the middleware
 	// makes sure for that, otherwise this handler will not be executed.
 	// OR:
+	//
+	// user := ctx.User().(*myUserType)
+	// ctx.Writef("%s %s:%s", ctx.Path(), user.Username, user.Password)
+	// OR if you don't have registered custom User structs:
+	//
 	// ctx.User().GetUsername()
 	// ctx.User().GetPassword()
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)

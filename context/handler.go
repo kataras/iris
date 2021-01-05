@@ -239,6 +239,10 @@ var ignoreMainHandlerNames = [...]string{
 	"iris.reCAPTCHA",
 	"iris.profiling",
 	"iris.recover",
+	"iris.accesslog",
+	"iris.grpc",
+	"iris.requestid",
+	"iris.rewrite",
 }
 
 // ingoreMainHandlerName reports whether a main handler of "name" should

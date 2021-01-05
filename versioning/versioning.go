@@ -14,6 +14,10 @@ func If(v string, is string) bool {
 }
 
 func check(v string, is string) (string, bool) {
+	if v == "" {
+		return "", false
+	}
+
 	ver, err := version.NewVersion(v)
 	if err != nil {
 		return "", false
@@ -31,16 +35,30 @@ func check(v string, is string) (string, bool) {
 // Match acts exactly the same as `If` does but instead it accepts
 // a Context, so it can be called by a handler to determinate the requested version.
 //
-// If matched then it sets the "X-API-Version" response header and
+// If matched then it sets the "X-Api-Version" response header and
 // stores the matched version into Context (see `GetVersion` too).
+//
+// See the `Aliases` function to register version constraint
+// aliases for a versioning Party, extremely useful when a Group is used.
 func Match(ctx *context.Context, expectedVersion string) bool {
-	versionString, matched := check(GetVersion(ctx), expectedVersion)
+	gotVersion := GetVersion(ctx)
+
+	alias, aliasFound := GetVersionAlias(ctx, gotVersion)
+	if aliasFound {
+		SetVersion(ctx, alias) // set the version so next routes have it already.
+		gotVersion = alias
+	}
+
+	versionString, matched := check(gotVersion, expectedVersion)
 	if !matched {
 		return false
 	}
 
-	SetVersion(ctx, versionString)
-	ctx.Header("X-API-Version", versionString)
+	if !aliasFound { // don't lose any time to set if already set.
+		SetVersion(ctx, versionString)
+	}
+
+	ctx.Header(APIVersionResponseHeader, versionString)
 	return true
 }
 
@@ -77,6 +95,7 @@ func NewMatcher(versions Map) context.Handler {
 
 	return func(ctx *context.Context) {
 		versionString := GetVersion(ctx)
+
 		if versionString == "" || versionString == NotFound {
 			notFoundHandler(ctx)
 			return
@@ -90,7 +109,7 @@ func NewMatcher(versions Map) context.Handler {
 
 		for _, ch := range constraintsHandlers {
 			if ch.constraints.Check(ver) {
-				ctx.Header("X-API-Version", ver.String())
+				ctx.Header(APIVersionResponseHeader, ver.String())
 				ch.handler(ctx)
 				return
 			}

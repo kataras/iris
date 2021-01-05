@@ -114,7 +114,7 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 	app.Get("/delete", func(ctx iris.Context) {
 		session := sessions.Get(ctx)
 		// delete a specific key
-		session.Delete("name")
+		session.Delete("username")
 	})
 
 	app.Get("/clear", func(ctx iris.Context) {

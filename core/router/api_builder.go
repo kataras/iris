@@ -196,6 +196,11 @@ type APIBuilder struct {
 
 	// the api builder global macros registry
 	macros *macro.Macros
+	// the per-party (and its children) values map
+	// that may help on building the API
+	// when source code is splitted between projects.
+	// Initialized on Properties method.
+	properties context.Map
 	// the api builder global routes repository
 	routes *repository
 	// disables the debug logging of routes under a per-party and its children.
@@ -624,7 +629,7 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 	routes := make([]*Route, len(methods))
 
 	for i, m := range methods { // single, empty method for error handlers.
-		route, err := NewRoute(errorCode, m, subdomain, path, routeHandlers, *api.macros)
+		route, err := NewRoute(api, errorCode, m, subdomain, path, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
 			api.logger.Errorf("[%s:%d] %v -> %s:%s:%s", filename, line, err, m, subdomain, path)
 			continue
@@ -668,19 +673,21 @@ func removeDuplicates(elements []string) (result []string) {
 
 // Party returns a new child Party which inherites its
 // parent's options and middlewares.
-// If "relativePath" matches the parent's one then it returns the current Party.
 // A Party groups routes which may have the same prefix or subdomain and share same middlewares.
 //
 // To create a group of routes for subdomains
 // use the `Subdomain` or `WildcardSubdomain` methods
-// or pass a "relativePath" as "admin." or "*." respectfully.
+// or pass a "relativePath" of "admin." or "*." respectfully.
 func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
 	// if app.Party("/"), root party or app.Party("/user") == app.Party("/user")
 	// then just add the middlewares and return itself.
-	if relativePath == "" || api.relativePath == relativePath {
-		api.Use(handlers...)
-		return api
-	}
+	// if relativePath == "" || api.relativePath == relativePath {
+	// 	api.Use(handlers...)
+	// 	return api
+	// }
+	// ^ No, this is wrong, let the developer do its job, if she/he wants a copy let have it,
+	// it's a pure check as well, a path can be the same even if it's the same as its parent, i.e.
+	// app.Party("/user").Party("/user") should result in a /user/user, not a /user.
 
 	parentPath := api.relativePath
 	dot := string(SubdomainPrefix[0])
@@ -712,10 +719,17 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	allowMethods := make([]string, len(api.allowMethods))
 	copy(allowMethods, api.allowMethods)
 
+	// make a copy of the parent properties.
+	var properties map[string]interface{}
+	for k, v := range api.properties {
+		properties[k] = v
+	}
+
 	childAPI := &APIBuilder{
 		// global/api builder
 		logger:              api.logger,
 		macros:              api.macros,
+		properties:          properties,
 		routes:              api.routes,
 		routesNoLog:         api.routesNoLog,
 		beginGlobalHandlers: api.beginGlobalHandlers,
@@ -806,6 +820,16 @@ func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
 // Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
 func (api *APIBuilder) Macros() *macro.Macros {
 	return api.macros
+}
+
+// Properties returns the original Party's properties map,
+// it can be modified before server startup but not afterwards.
+func (api *APIBuilder) Properties() context.Map {
+	if api.properties == nil {
+		api.properties = make(context.Map)
+	}
+
+	return api.properties
 }
 
 // GetRoutes returns the routes information,
@@ -1096,6 +1120,8 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 
 // RemoveHandler deletes a handler from begin and done handlers
 // based on its name or the handler pc function.
+// Note that UseGlobal and DoneGlobal handlers cannot be removed
+// through this method as they were registered to the routes already.
 //
 // As an exception, if one of the arguments is a pointer to an int,
 // then this is used to set the total amount of removed handlers.

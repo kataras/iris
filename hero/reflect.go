@@ -18,7 +18,7 @@ func valueOf(v interface{}) reflect.Value {
 
 // indirectType returns the value of a pointer-type "typ".
 // If "typ" is a pointer, array, chan, map or slice it returns its Elem,
-// otherwise returns the typ as it's.
+// otherwise returns the "typ" as it is.
 func indirectType(typ reflect.Type) reflect.Type {
 	switch typ.Kind() {
 	case reflect.Ptr, reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:

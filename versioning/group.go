@@ -5,6 +5,11 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 )
 
+// Property to be defined inside the registered
+// Party on NewGroup, useful for a party to know its (optional) version
+// when the versioning feature is used.
+const Property = "iris.party.version"
+
 // API is a type alias of router.Party.
 // This is required in order for a Group instance
 // to implement the Party interface without field conflict.
@@ -20,16 +25,24 @@ type Group struct {
 	deprecation DeprecationOptions
 }
 
-// NewGroup returns a ptr to Group based on the given "version".
-// It sets the API Version for the "r" Party.
+// NewGroup returns a ptr to Group based on the given "version" constraint.
+// Group completes the Party interface.
+// The returned Group wraps a cloned Party of the given "r" Party therefore,
+// any changes to its parent won't affect this one (e.g. register global middlewares afterwards).
 //
-// See `Handle` for more.
-//
-// Example: _examples/routing/versioning
+// Examples at: _examples/routing/versioning
 // Usage:
-//  api := versioning.NewGroup(Parent_Party, ">= 1, < 2")
-//  api.Get/Post/Put/Delete...
+//  app := iris.New()
+//  api := app.Party("/api")
+//  v1 := versioning.NewGroup(api, ">= 1, < 2")
+//  v1.Get/Post/Put/Delete...
+//
+// See the `GetVersion` function to learn how
+// a version is extracted and matched over this.
 func NewGroup(r router.Party, version string) *Group {
+	r = r.Party("/")
+	r.Properties()[Property] = version
+
 	// Note that this feature alters the RouteRegisterRule to RouteOverlap
 	// the RouteOverlap rule does not contain any performance downside
 	// but it's good to know that if you registered other mode, this wanna change it.
@@ -53,4 +66,22 @@ func (g *Group) Deprecated(options DeprecationOptions) *Group {
 		ctx.Next()
 	})
 	return g
+}
+
+// FromQuery is a simple helper which tries to
+// set the version constraint from a given URL Query Parameter.
+// The X-Api-Version is still valid.
+func FromQuery(urlQueryParameterName string, defaultVersion string) context.Handler {
+	return func(ctx *context.Context) {
+		version := ctx.URLParam(urlQueryParameterName)
+		if version == "" {
+			version = defaultVersion
+		}
+
+		if version != "" {
+			SetVersion(ctx, version)
+		}
+
+		ctx.Next()
+	}
 }

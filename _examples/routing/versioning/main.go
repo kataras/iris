@@ -45,10 +45,12 @@ func examplePerParty(app *iris.Application) {
 	// You can customize the way a version is extracting
 	// via middleware, for example:
 	// version url parameter, and, if it's missing we default it to "1".
-	usersAPI.Use(func(ctx iris.Context) {
-		versioning.SetVersion(ctx, ctx.URLParamDefault("version", "1"))
-		ctx.Next()
-	})
+	// usersAPI.Use(func(ctx iris.Context) {
+	// 	versioning.SetVersion(ctx, ctx.URLParamDefault("version", "1"))
+	// 	ctx.Next()
+	// })
+	// OR:
+	usersAPI.Use(versioning.FromQuery("version", "1"))
 
 	// version 1.
 	usersAPIV1 := versioning.NewGroup(usersAPI, ">= 1, < 2")

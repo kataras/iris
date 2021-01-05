@@ -64,14 +64,11 @@ func main() {
 }
 
 func handler(ctx iris.Context) {
-	// username, password, _ := ctx.Request().BasicAuth()
-	// third parameter it will be always true because the middleware
-	// makes sure for that, otherwise this handler will not be executed.
-	// OR:
-	user := ctx.User()
-	// OR ctx.User().GetRaw() to get the underline value.
-	username, _ := user.GetUsername()
-	password, _ := user.GetPassword()
+	// user := ctx.User().(*myUserType)
+	// or ctx.User().GetRaw().(*myUserType)
+	// ctx.Writef("%s %s:%s", ctx.Path(), user.Username, user.Password)
+	// OR if you don't have registered custom User structs:
+	username, password, _ := ctx.Request().BasicAuth()
 	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
 }
 

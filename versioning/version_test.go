@@ -46,3 +46,53 @@ func TestGetVersion(t *testing.T) {
 
 	e.GET("/manual").Expect().Status(iris.StatusOK).Body().Equal("11.0.5")
 }
+
+func TestVersionAliases(t *testing.T) {
+	app := iris.New()
+
+	api := app.Party("/api")
+	api.Use(versioning.Aliases(map[string]string{
+		versioning.Empty: "1",
+		"stage":          "2",
+	}))
+
+	writeVesion := func(ctx iris.Context) {
+		ctx.WriteString(versioning.GetVersion(ctx))
+	}
+
+	// A group without registration order.
+	v3 := versioning.NewGroup(api, ">= 3, < 4")
+	v3.Get("/", writeVesion)
+
+	v1 := versioning.NewGroup(api, ">= 1, < 2")
+	v1.Get("/", writeVesion)
+
+	v2 := versioning.NewGroup(api, ">= 2, < 3")
+	v2.Get("/", writeVesion)
+
+	api.Get("/manual", func(ctx iris.Context) {
+		versioning.SetVersion(ctx, "12.0.0")
+		ctx.Next()
+	}, writeVesion)
+
+	e := httptest.New(t, app)
+
+	// Make sure the SetVersion still works.
+	e.GET("/api/manual").Expect().Status(iris.StatusOK).Body().Equal("12.0.0")
+
+	// Test Empty default.
+	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "").Expect().
+		Status(iris.StatusOK).Body().Equal("1.0.0")
+	// Test NotFound error, aliases are not responsible for that.
+	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "4").Expect().
+		Status(iris.StatusNotImplemented).Body().Equal("version not found")
+	// Test "stage" alias.
+	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "stage").Expect().
+		Status(iris.StatusOK).Body().Equal("2.0.0")
+	// Test version 2.
+	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "2").Expect().
+		Status(iris.StatusOK).Body().Equal("2.0.0")
+	// Test version 3 (registered first).
+	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "3.1").Expect().
+		Status(iris.StatusOK).Body().Equal("3.1.0")
+}
