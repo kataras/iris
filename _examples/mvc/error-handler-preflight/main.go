@@ -30,8 +30,8 @@ type response struct {
 }
 
 func (r *response) Preflight(ctx iris.Context) error {
-	if (*r).ID > 0 {
-		(*r).Timestamp = time.Now().Unix()
+	if r.ID > 0 {
+		r.Timestamp = time.Now().Unix()
 	}
 
 	if code := r.Code; code > 0 {
@@ -46,7 +46,7 @@ func (r *response) Preflight(ctx iris.Context) error {
 				Code: code,
 				/* use any r.Data as the template data
 				OR the whole "response" as its data. */
-				Data: *r,
+				Data: r,
 				/* automatically pick the template per error (just for the sake of the example) */
 				Name: fmt.Sprintf("%d", code),
 			}.Dispatch(ctx)
@@ -54,7 +54,7 @@ func (r *response) Preflight(ctx iris.Context) error {
 			return iris.ErrStopExecution
 		}
 
-		ctx.StatusCode((*r).Code)
+		ctx.StatusCode(r.Code)
 	}
 
 	return nil
