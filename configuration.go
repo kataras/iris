@@ -764,7 +764,7 @@ type Configuration struct {
 	// Defaults to "iris.locale.language.input".
 	LanguageInputContextKey string `ini:"language_input_context_key" json:"languageInputContextKey,omitempty" yaml:"LanguageInputContextKey" toml:"LanguageInputContextKey"`
 	// VersionContextKey is the context key which an API Version can be modified
-	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, "1.0, 1.1")`.
+	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, ">=1.0.0 <2.0.0")`.
 	// Defaults to "iris.api.version".
 	VersionContextKey string `ini:"version_context_key" json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
 	// VersionAliasesContextKey is the context key which the versioning feature

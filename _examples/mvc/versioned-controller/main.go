@@ -28,10 +28,10 @@ func newApp() *iris.Application {
 	{
 		m := mvc.New(dataRouter)
 
-		m.Handle(new(v1Controller), mvc.Version("1"), mvc.Deprecated(opts)) // 1 or 1.0, 1.0.0 ...
-		m.Handle(new(v2Controller), mvc.Version("2.3"))                     // 2.3 or 2.3.0
-		m.Handle(new(v3Controller), mvc.Version(">=3, <4"))                 // 3, 3.x, 3.x.x ...
-		m.Handle(new(noVersionController))                                  // or if missing it will respond with 501 version not found.
+		m.Handle(new(v1Controller), mvc.Version("1.0.0"), mvc.Deprecated(opts))
+		m.Handle(new(v2Controller), mvc.Version("2.3.0"))
+		m.Handle(new(v3Controller), mvc.Version(">=3.0.0 <4.0.0"))
+		m.Handle(new(noVersionController)) // or if missing it will respond with 501 version not found.
 	}
 
 	return app

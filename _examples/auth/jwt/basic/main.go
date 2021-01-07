@@ -4,16 +4,10 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/jwt"
+	"github.com/kataras/iris/v12/middleware/jwt"
 )
 
 /*
-Learn how to use any JWT 3rd-party package with Iris.
-In this example we use the kataras/jwt one.
-
-Install with:
-    go get -u github.com/kataras/jwt
-
 Documentation:
     https://github.com/kataras/jwt#table-of-contents
 */
@@ -71,6 +65,7 @@ func protected(ctx iris.Context) {
 
 	// Just an example on how you can retrieve all the standard claims (set by jwt.MaxAge, "exp").
 	standardClaims := jwt.GetVerifiedToken(ctx).StandardClaims
+
 	expiresAtString := standardClaims.ExpiresAt().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
 	timeLeft := standardClaims.Timeleft()
 

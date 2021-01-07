@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
+
+	"github.com/blang/semver/v4"
 )
 
 const (
@@ -52,11 +54,89 @@ var NotFoundHandler = func(ctx *context.Context) {
 	ctx.StopWithPlainError(501, ErrNotFound)
 }
 
+// FromQuery is a simple helper which tries to
+// set the version constraint from a given URL Query Parameter.
+// The X-Api-Version is still valid.
+func FromQuery(urlQueryParameterName string, defaultVersion string) context.Handler {
+	return func(ctx *context.Context) {
+		version := ctx.URLParam(urlQueryParameterName)
+		if version == "" {
+			version = defaultVersion
+		}
+
+		if version != "" {
+			SetVersion(ctx, version)
+		}
+
+		ctx.Next()
+	}
+}
+
+// If reports whether the "got" matches the "expected" one.
+// the "expected" can be a constraint like ">=1.0.0 <2.0.0".
+// This function is just a helper, better use the Group instead.
+func If(got string, expected string) bool {
+	v, err := semver.Make(got)
+	if err != nil {
+		return false
+	}
+
+	validate, err := semver.ParseRange(expected)
+	if err != nil {
+		return false
+	}
+
+	return validate(v)
+}
+
+// Match reports whether the request matches the expected version.
+// This function is just a helper, better use the Group instead.
+func Match(ctx *context.Context, expectedVersion string) bool {
+	validate, err := semver.ParseRange(expectedVersion)
+	if err != nil {
+		return false
+	}
+
+	return matchVersionRange(ctx, validate)
+}
+
+func matchVersionRange(ctx *context.Context, validate semver.Range) bool {
+	gotVersion := GetVersion(ctx)
+
+	alias, aliasFound := GetVersionAlias(ctx, gotVersion)
+	if aliasFound {
+		SetVersion(ctx, alias) // set the version so next routes have it already.
+		gotVersion = alias
+	}
+
+	if gotVersion == "" {
+		return false
+	}
+
+	v, err := semver.Make(gotVersion)
+	if err != nil {
+		return false
+	}
+
+	if !validate(v) {
+		return false
+	}
+
+	versionString := v.String()
+
+	if !aliasFound { // don't lose any time to set if already set.
+		SetVersion(ctx, versionString)
+	}
+
+	ctx.Header(APIVersionResponseHeader, versionString)
+	return true
+}
+
 // GetVersion returns the current request version.
 //
 // By default the `GetVersion` will try to read from:
-// - "Accept" header, i.e Accept: "application/json; version=1.0"
-// - "Accept-Version" header, i.e Accept-Version: "1.0"
+// - "Accept" header, i.e Accept: "application/json; version=1.0.0"
+// - "Accept-Version" header, i.e Accept-Version: "1.0.0"
 //
 // However, the end developer can also set a custom version for a handler via a middleware by using the context's store key
 // for versions (see `Key` for further details on that).
@@ -108,7 +188,7 @@ func GetVersion(ctx *context.Context) string {
 // Example of how you can change the default behavior to extract a requested version (which is by headers)
 // from a "version" url parameter instead:
 //  func(ctx iris.Context) { // &version=1
-//   version := ctx.URLParamDefault("version", "1")
+//   version := ctx.URLParamDefault("version", "1.0.0")
 //   versioning.SetVersion(ctx, version)
 // 	 ctx.Next()
 //  }
@@ -129,15 +209,15 @@ type AliasMap = map[string]string
 //
 //  api := app.Party("/api")
 //  api.Use(Aliases(map[string]string{
-//   versioning.Empty: "1", // when no version was provided by the client.
+//   versioning.Empty: "1.0.0", // when no version was provided by the client.
 //   "beta": "4.0.0",
 //   "stage": "5.0.0-alpha"
 //  }))
 //
-//  v1 := NewGroup(api, ">= 1, < 2")
+//  v1 := NewGroup(api, ">=1.0.0 < 2.0.0")
 //  v1.Get/Post...
 //
-//  v4 := NewGroup(api, ">= 4, < 5")
+//  v4 := NewGroup(api, ">=4.0.0 < 5.0.0")
 //  v4.Get/Post...
 //
 //  stage := NewGroup(api, "5.0.0-alpha")
@@ -152,6 +232,23 @@ func Aliases(aliases AliasMap) context.Handler {
 		SetVersionAliases(ctx, cp, true)
 		ctx.Next()
 	}
+}
+
+// Handler returns a handler which is only fired
+// when the "version" is matched with the requested one.
+// It is not meant to be used by end-developers
+// (exported for version controller feature).
+// Use `NewGroup` instead.
+func Handler(version string) context.Handler {
+	validate, err := semver.ParseRange(version)
+	if err != nil {
+		return func(ctx *context.Context) {
+			ctx.StopWithError(500, err)
+			return
+		}
+	}
+
+	return makeHandler(validate)
 }
 
 // GetVersionAlias returns the version alias of the given "gotVersion"
@@ -196,7 +293,7 @@ func GetVersionAlias(ctx *context.Context, gotVersion string) (string, bool) {
 //
 // The last "override" input argument indicates whether any
 // existing aliases, registered by previous handlers in the chain,
-// should be overriden or copied to the previous map one.
+// should be overridden or copied to the previous map one.
 func SetVersionAliases(ctx *context.Context, aliases AliasMap, override bool) {
 	key := ctx.Application().ConfigurationReadOnly().GetVersionAliasesContextKey()
 	if key == "" {

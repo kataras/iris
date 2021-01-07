@@ -28,7 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
-- New `versioning.Aliases` middleware. Example Code:
+- New `versioning.Aliases` middleware and up to 80% faster version resolve. Example Code:
 
 ```go
 app := iris.New()
@@ -40,10 +40,10 @@ api.Use(Aliases(map[string]string{
     "stage": "5.0.0-alpha"
 }))
 
-v1 := NewGroup(api, ">= 1, < 2")
+v1 := NewGroup(api, ">=1.0.0 <2.0.0")
 v1.Get/Post...
 
-v4 := NewGroup(api, ">= 4, < 5")
+v4 := NewGroup(api, ">=4.0.0 <5.0.0")
 v4.Get/Post...
 
 stage := NewGroup(api, "5.0.0-alpha")
@@ -723,6 +723,7 @@ Response:
 
 ## Breaking Changes
 
+- Strict versions format on `versioning.NewGroup` is required. E.g. `"1"` is not valid anymore, you have to specify `"1.0.0"`. Example: `NewGroup(api, ">=1.0.0 <2.0.0")`. The [routing/versioning](_examples/routing/versioning) examples have been updated.
 - Now that `RegisterView` can be used to register different view engines per-Party, there is no need to support registering multiple engines under the same Party. The `app.RegisterView` now upserts the given Engine instead of append. You can now render templates **without file extension**, e.g. `index` instead of `index.ace`, both forms are valid now.
 - The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
 - The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.

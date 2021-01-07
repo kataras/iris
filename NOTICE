@@ -44,9 +44,9 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
  easyjson            8ab5ff9cd8e4e43     https://github.com/mailru/easyjson
                      2e8b79f6c47d324
                      a31dd803cf
- go-version          2b13044f5cdd383     https://github.com/hashicorp/go-version  
-                     3370d41ce57d8bf                                              
-                     3cec5e62b8                                                                                                    
+ semver              4487282d78122a2     https://github.com/blang/semver 
+                     45e413d7515e7c5                                              
+                     16b70c33fd                                                                                                        
  golog               f7561df84e64ab9     https://github.com/kataras/golog         
                      212f021923ce4ff                                              
                      db5df5594d                                                           

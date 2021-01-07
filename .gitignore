@@ -3,6 +3,7 @@
 coverage.out
 package-lock.json
 go.sum
+access.log
 node_modules
 issue-*/
 internalcode-*/

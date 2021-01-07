@@ -164,7 +164,7 @@ func overlapRoute(r *Route, next *Route) {
 				// Version was not found:
 				//	 we need to be able to send the status on the last not found version
 				//   but reset the status code if a next available matched version was found.
-				//	 see: versioning.Handler.
+				//	 see the versioning package.
 				if !errors.Is(ctx.GetErr(), context.ErrNotFound) {
 					ctx.StatusCode(prevStatusCode)
 				}
@@ -720,7 +720,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	copy(allowMethods, api.allowMethods)
 
 	// make a copy of the parent properties.
-	var properties map[string]interface{}
+	var properties context.Map
 	for k, v := range api.properties {
 		properties[k] = v
 	}
