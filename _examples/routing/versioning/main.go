@@ -33,7 +33,7 @@ func main() {
 	   You can customize it by setting a version based on the request context:
 	   api.Use(func(ctx *context.Context) {
 	       if version := ctx.URLParam("version"); version != "" {
-	           SetVersion(ctx, version)
+	           versioning.SetVersion(ctx, version)
 	       }
 
 	       ctx.Next()
@@ -48,6 +48,8 @@ func main() {
 	// Create a new Group, which is a compatible Party,
 	// based on version constraints.
 	v1 := versioning.NewGroup(api, ">=1.0.0 <2.0.0")
+	// To mark an API version as deprecated use the Deprecated method.
+	// v1.Deprecated(versioning.DefaultDeprecationOptions)
 
 	// Optionally, set custom view engine and path
 	// for templates based on the version.

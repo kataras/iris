@@ -723,7 +723,7 @@ Response:
 
 ## Breaking Changes
 
-- Strict versions format on `versioning.NewGroup` is required. E.g. `"1"` is not valid anymore, you have to specify `"1.0.0"`. Example: `NewGroup(api, ">=1.0.0 <2.0.0")`. The [routing/versioning](_examples/routing/versioning) examples have been updated.
+- The `versioning.NewMatcher` has been removed entirely in favor of `NewGroup`. Strict versions format on `versioning.NewGroup` is required. E.g. `"1"` is not valid anymore, you have to specify `"1.0.0"`. Example: `NewGroup(api, ">=1.0.0 <2.0.0")`. The [routing/versioning](_examples/routing/versioning) examples have been updated.
 - Now that `RegisterView` can be used to register different view engines per-Party, there is no need to support registering multiple engines under the same Party. The `app.RegisterView` now upserts the given Engine instead of append. You can now render templates **without file extension**, e.g. `index` instead of `index.ace`, both forms are valid now.
 - The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
 - The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.

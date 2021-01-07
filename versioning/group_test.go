@@ -8,10 +8,6 @@ import (
 	"github.com/kataras/iris/v12/versioning"
 )
 
-func notFoundHandler(ctx iris.Context) {
-	ctx.NotFound()
-}
-
 const (
 	v10Response = "v1.0 handler"
 	v2Response  = "v2.x handler"

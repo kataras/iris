@@ -244,7 +244,6 @@ func Handler(version string) context.Handler {
 	if err != nil {
 		return func(ctx *context.Context) {
 			ctx.StopWithError(500, err)
-			return
 		}
 	}
 
