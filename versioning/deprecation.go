@@ -55,7 +55,8 @@ func WriteDeprecated(ctx *context.Context, options DeprecationOptions) {
 	}
 }
 
-// Deprecated marks a specific handler as a deprecated.
+// Deprecated wraps an existing API handler and
+// marks it as a deprecated one.
 // Deprecated can be used to tell the clients that
 // a newer version of that specific resource is available instead.
 func Deprecated(handler context.Handler, options DeprecationOptions) context.Handler {
