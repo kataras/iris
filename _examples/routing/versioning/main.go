@@ -8,71 +8,95 @@ import (
 func main() {
 	app := iris.New()
 
-	examplePerRoute(app)
-	examplePerParty(app)
+	app.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
+		ctx.WriteString(`Root not found handler.
+        This will be applied everywhere except the /api/* requests.`)
+	})
 
-	// Read the README.md before any action.
+	api := app.Party("/api")
+	// Optional, set version aliases (literal strings).
+	// We use `UseRouter` instead of `Use`
+	// to handle HTTP errors per version, but it's up to you.
+	api.UseRouter(versioning.Aliases(versioning.AliasMap{
+		// If no version provided by the client, default it to the "1.0.0".
+		versioning.Empty: "1.0.0",
+		// If a "latest" version is provided by the client,
+		// set the version to be compared to "3.0.0".
+		"latest": "3.0.0",
+	}))
+
+	/*
+	   A version is extracted through the versioning.GetVersion function,
+	   request headers:
+	   - Accept-Version: 1.0.0
+	   - Accept: application/json; version=1.0.0
+	   You can customize it by setting a version based on the request context:
+	   api.Use(func(ctx *context.Context) {
+	       if version := ctx.URLParam("version"); version != "" {
+	           versioning.SetVersion(ctx, version)
+	       }
+
+	       ctx.Next()
+	   })
+	   OR: api.Use(versioning.FromQuery("version", ""))
+	*/
+
+	// |----------------|
+	// | The fun begins |
+	// |----------------|
+
+	// Create a new Group, which is a compatible Party,
+	// based on version constraints.
+	v1 := versioning.NewGroup(api, ">=1.0.0 <2.0.0")
+	// To mark an API version as deprecated use the Deprecated method.
+	// v1.Deprecated(versioning.DefaultDeprecationOptions)
+
+	// Optionally, set custom view engine and path
+	// for templates based on the version.
+	v1.RegisterView(iris.HTML("./v1", ".html"))
+
+	// Optionally, set custom error handler(s) based on the version.
+	// Keep in mind that if you do this, you will
+	// have to register error handlers
+	// for the rest of the parties as well.
+	v1.OnErrorCode(iris.StatusNotFound, testError("v1"))
+
+	// Register resources based on the version.
+	v1.Get("/", testHandler("v1"))
+	v1.Get("/render", testView)
+
+	// Do the same for version 2 and version 3,
+	// for the sake of the example.
+	v2 := versioning.NewGroup(api, ">=2.0.0 <3.0.0")
+	v2.RegisterView(iris.HTML("./v2", ".html"))
+	v2.OnErrorCode(iris.StatusNotFound, testError("v2"))
+	v2.Get("/", testHandler("v2"))
+	v2.Get("/render", testView)
+
+	v3 := versioning.NewGroup(api, ">=3.0.0 <4.0.0")
+	v3.RegisterView(iris.HTML("./v3", ".html"))
+	v3.OnErrorCode(iris.StatusNotFound, testError("v3"))
+	v3.Get("/", testHandler("v3"))
+	v3.Get("/render", testView)
+
 	app.Listen(":8080")
 }
 
-// How to test:
-// Open Postman
-// GET: localhost:8080/api/cats
-// Headers[1] = Accept-Version: "1" and repeat with
-// Headers[1] = Accept-Version: "2.5"
-// or even "Accept": "application/json; version=2.5"
-func examplePerRoute(app *iris.Application) {
-	app.Get("/api/cats", versioning.NewMatcher(versioning.Map{
-		"1":                 catsVersionExactly1Handler,
-		">= 2, < 3":         catsV2Handler,
-		versioning.NotFound: versioning.NotFoundHandler,
-	}))
+func testHandler(v string) iris.Handler {
+	return func(ctx iris.Context) {
+		ctx.JSON(iris.Map{
+			"version": v,
+			"message": "Hello, world!",
+		})
+	}
 }
 
-// How to test:
-// Open Postman
-// GET: localhost:8080/api/users
-// Headers[1] = Accept-Version: "1.9.9" and repeat with
-// Headers[1] = Accept-Version: "2.5"
-//
-// POST: localhost:8080/api/users/new
-// Headers[1] = Accept-Version: "1.8.3"
-//
-// POST: localhost:8080/api/users
-// Headers[1] = Accept-Version: "2"
-func examplePerParty(app *iris.Application) {
-	usersAPI := app.Party("/api/users")
-	// You can customize the way a version is extracting
-	// via middleware, for example:
-	// version url parameter, and, if it's missing we default it to "1".
-	usersAPI.Use(func(ctx iris.Context) {
-		versioning.SetVersion(ctx, ctx.URLParamDefault("version", "1"))
-		ctx.Next()
-	})
-
-	// version 1.
-	usersAPIV1 := versioning.NewGroup(usersAPI, ">= 1, < 2")
-	usersAPIV1.Get("/", func(ctx iris.Context) {
-		ctx.Writef("v1 resource: /api/users handler")
-	})
-	usersAPIV1.Post("/new", func(ctx iris.Context) {
-		ctx.Writef("v1 resource: /api/users/new post handler")
-	})
-
-	// version 2.
-	usersAPIV2 := versioning.NewGroup(usersAPI, ">= 2, < 3")
-	usersAPIV2.Get("/", func(ctx iris.Context) {
-		ctx.Writef("v2 resource: /api/users handler")
-	})
-	usersAPIV2.Post("/", func(ctx iris.Context) {
-		ctx.Writef("v2 resource: /api/users post handler")
-	})
+func testError(v string) iris.Handler {
+	return func(ctx iris.Context) {
+		ctx.Writef("not found: %s", v)
+	}
 }
 
-func catsVersionExactly1Handler(ctx iris.Context) {
-	ctx.Writef("v1 exactly resource: /api/cats handler")
-}
-
-func catsV2Handler(ctx iris.Context) {
-	ctx.Writef("v2 resource: /api/cats handler")
+func testView(ctx iris.Context) {
+	ctx.View("index.html")
 }

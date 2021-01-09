@@ -116,7 +116,7 @@ func main() {
 	adminRoutes.Get("/settings", info)
 
 	// Wildcard/dynamic subdomain
-	dynamicSubdomainRoutes := app.Party("*.")
+	dynamicSubdomainRoutes := app.WildcardSubdomain()
 
 	// GET: http://any_thing_here.localhost:8080
 	dynamicSubdomainRoutes.Get("/", info)

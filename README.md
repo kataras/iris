@@ -1,10 +1,15 @@
 [![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
 
-<!-- # News -->
+<!-- # News 
 
 > This is the under-**development branch**. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
 > 
 > ![](https://iris-go.com/images/cli.png) Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
+-->
+
+# Happy New Year 🎉
+
+Thank you for being with us every step of the way in 2020. I hope the next years brings you only good luck and great joy.
 
 <!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
 
@@ -31,6 +36,13 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/motogo"><img src="https://avatars1.githubusercontent.com/u/1704958?v=4" alt ="Horst Ender" title="motogo" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/remopavithran"><img src="https://avatars1.githubusercontent.com/u/50388068?v=4" alt ="Pavithran" title="remopavithran" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/mulyawansentosa"><img src="https://avatars1.githubusercontent.com/u/29946673?v=4" alt ="MULYAWAN SENTOSA" title="mulyawansentosa" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/TianJIANG"><img src="https://avatars1.githubusercontent.com/u/158459?v=4" alt ="KIT UNITED" title="TianJIANG" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/rhernandez-itemsoft"><img src="https://avatars1.githubusercontent.com/u/4327356?v=4" alt ="Ricardo Hernandez Lopez" title="rhernandez-itemsoft" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/ChinChuanKuo"><img src="https://avatars1.githubusercontent.com/u/11756978?v=4" alt ="ChinChuanKuo" title="ChinChuanKuo" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/nikharsaxena"><img src="https://avatars1.githubusercontent.com/u/8684362?v=4" alt ="Nikhar Saxena" title="nikharsaxena" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/fenriz07"><img src="https://avatars1.githubusercontent.com/u/9199380?v=4" alt ="Servio Zambrano" title="fenriz07" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/NA"><img src="https://avatars1.githubusercontent.com/u/1600?v=4" alt ="Nate Anderson" title="NA" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/claudemuller"><img src="https://avatars1.githubusercontent.com/u/8104894?v=4" alt ="Claude Muller" title="claudemuller" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>

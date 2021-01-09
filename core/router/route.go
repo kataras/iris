@@ -19,6 +19,8 @@ import (
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
+	// The Party which this Route was created and registered on.
+	Party       Party
 	Title       string         `json:"title"`       // custom name to replace the method on debug logging.
 	Name        string         `json:"name"`        // "userRoute"
 	Description string         `json:"description"` // "lists a user"
@@ -86,7 +88,7 @@ type Route struct {
 // handlers and the macro container which all routes should share.
 // It parses the path based on the "macros",
 // handlers are being changed to validate the macros at serve time, if needed.
-func NewRoute(statusErrorCode int, method, subdomain, unparsedPath string,
+func NewRoute(p Party, statusErrorCode int, method, subdomain, unparsedPath string,
 	handlers context.Handlers, macros macro.Macros) (*Route, error) {
 	tmpl, err := macro.Parse(unparsedPath, macros)
 	if err != nil {
@@ -110,6 +112,7 @@ func NewRoute(statusErrorCode int, method, subdomain, unparsedPath string,
 	formattedPath := formatPath(path)
 
 	route := &Route{
+		Party:         p,
 		StatusCode:    statusErrorCode,
 		Name:          defaultName,
 		Method:        method,
@@ -583,6 +586,8 @@ type routeReadOnlyWrapper struct {
 	*Route
 }
 
+var _ context.RouteReadOnly = routeReadOnlyWrapper{}
+
 func (rd routeReadOnlyWrapper) StatusErrorCode() int {
 	return rd.Route.StatusCode
 }
@@ -617,6 +622,17 @@ func (rd routeReadOnlyWrapper) MainHandlerName() string {
 
 func (rd routeReadOnlyWrapper) MainHandlerIndex() int {
 	return rd.Route.MainHandlerIndex
+}
+
+func (rd routeReadOnlyWrapper) Property(key string) (interface{}, bool) {
+	properties := rd.Route.Party.Properties()
+	if properties != nil {
+		if property, ok := properties[key]; ok {
+			return property, true
+		}
+	}
+
+	return nil, false
 }
 
 func (rd routeReadOnlyWrapper) GetLastMod() time.Time {

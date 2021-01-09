@@ -339,14 +339,14 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) er
 }
 
 // Len returns the length of the session's entries (keys).
-func (db *Database) Len(sid string) (n int64) {
+func (db *Database) Len(sid string) (n int) {
 	err := db.Service.View(func(tx *bolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
 		}
 
-		n = int64(b.Stats().KeyN)
+		n = int(int64(b.Stats().KeyN))
 		return nil
 	})
 

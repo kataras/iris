@@ -33,7 +33,7 @@ func main() {
 	}*/
 
 	// no order, you can register subdomains at the end also.
-	dynamicSubdomains := app.Party("*.")
+	dynamicSubdomains := app.WildcardSubdomain()
 	{
 		dynamicSubdomains.Get("/", dynamicSubdomainHandler)
 

@@ -6,10 +6,17 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
+// The response header keys when a resource is deprecated by the server.
+const (
+	APIWarnHeader            = "X-Api-Warn"
+	APIDeprecationDateHeader = "X-Api-Deprecation-Date"
+	APIDeprecationInfoHeader = "X-Api-Deprecation-Info"
+)
+
 // DeprecationOptions describes the deprecation headers key-values.
-// - "X-API-Warn": options.WarnMessage
-// - "X-API-Deprecation-Date": context.FormatTime(ctx, options.DeprecationDate))
-// - "X-API-Deprecation-Info": options.DeprecationInfo
+// - "X-Api-Warn": options.WarnMessage
+// - "X-Api-Deprecation-Date": context.FormatTime(ctx, options.DeprecationDate))
+// - "X-Api-Deprecation-Info": options.DeprecationInfo
 type DeprecationOptions struct {
 	WarnMessage     string
 	DeprecationDate time.Time
@@ -37,14 +44,14 @@ func WriteDeprecated(ctx *context.Context, options DeprecationOptions) {
 		options.WarnMessage = DefaultDeprecationOptions.WarnMessage
 	}
 
-	ctx.Header("X-API-Warn", options.WarnMessage)
+	ctx.Header(APIWarnHeader, options.WarnMessage)
 
 	if !options.DeprecationDate.IsZero() {
-		ctx.Header("X-API-Deprecation-Date", context.FormatTime(ctx, options.DeprecationDate))
+		ctx.Header(APIDeprecationDateHeader, context.FormatTime(ctx, options.DeprecationDate))
 	}
 
 	if options.DeprecationInfo != "" {
-		ctx.Header("X-API-Deprecation-Info", options.DeprecationInfo)
+		ctx.Header(APIDeprecationInfoHeader, options.DeprecationInfo)
 	}
 }
 

@@ -8,20 +8,20 @@ require (
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/andybalholm/brotli v1.0.1
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
+	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.1
 	github.com/go-redis/redis/v8 v8.4.0
 	github.com/google/uuid v1.1.2
-	github.com/hashicorp/go-version v1.2.1
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.4
 	github.com/kataras/golog v0.1.6
-	github.com/kataras/jwt v0.0.8
+	github.com/kataras/jwt v0.0.9
 	github.com/kataras/neffos v0.0.18
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5

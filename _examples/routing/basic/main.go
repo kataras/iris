@@ -152,7 +152,7 @@ func newApp() *iris.Application {
 	}
 
 	// wildcard subdomains.
-	wildcardSubdomain := app.Party("*.")
+	wildcardSubdomain := app.WildcardSubdomain()
 	{
 		wildcardSubdomain.Get("/", func(ctx iris.Context) {
 			ctx.Writef("Subdomain can be anything, now you're here from: %s", ctx.Subdomain())

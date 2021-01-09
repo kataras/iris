@@ -29,7 +29,7 @@ type response struct {
 	Timestamp int64       `json:"timestamp,omitempty"`
 }
 
-func (r response) Preflight(ctx iris.Context) error {
+func (r *response) Preflight(ctx iris.Context) error {
 	if r.ID > 0 {
 		r.Timestamp = time.Now().Unix()
 	}
@@ -64,15 +64,15 @@ type user struct {
 	ID uint64 `json:"id"`
 }
 
-func (c *controller) GetBy(userid uint64) response {
+func (c *controller) GetBy(userid uint64) *response {
 	if userid != 1 {
-		return response{
+		return &response{
 			Code:    iris.StatusNotFound,
 			Message: "User Not Found",
 		}
 	}
 
-	return response{
+	return &response{
 		ID:   userid,
 		Data: user{ID: userid},
 	}

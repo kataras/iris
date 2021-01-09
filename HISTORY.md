@@ -28,6 +28,29 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `versioning.Aliases` middleware and up to 80% faster version resolve. Example Code:
+
+```go
+app := iris.New()
+
+api := app.Party("/api")
+api.Use(Aliases(map[string]string{
+    versioning.Empty: "1", // when no version was provided by the client.
+    "beta": "4.0.0",
+    "stage": "5.0.0-alpha"
+}))
+
+v1 := NewGroup(api, ">=1.0.0 <2.0.0")
+v1.Get/Post...
+
+v4 := NewGroup(api, ">=4.0.0 <5.0.0")
+v4.Get/Post...
+
+stage := NewGroup(api, "5.0.0-alpha")
+stage.Get/Post...
+```
+
+- New [Basic Authentication](https://github.com/kataras/iris/tree/master/middleware/basicauth) middleware. Its `Default` function has not changed, however, the rest, e.g. `New` contains breaking changes as the new middleware features new functionalities.
 - Add `iris.DirOptions.SPA bool` field to allow [Single Page Applications](https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application/basic/main.go) under a file server.
 - A generic User interface, see the `Context.SetUser/User` methods in the New Context Methods section for more. In-short, the basicauth middleware's stored user can now be retrieved through `Context.User()` which provides more information than the native `ctx.Request().BasicAuth()` method one. Third-party authentication middleware creators can benefit of these two methods, plus the Logout below. 
 - A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/basic/main.go) or [jwt](https://github.com/kataras/iris/blob/master/_examples/auth/jwt/blocklist/main.go) client credentials.
@@ -700,6 +723,7 @@ Response:
 
 ## Breaking Changes
 
+- The `versioning.NewMatcher` has been removed entirely in favor of `NewGroup`. Strict versions format on `versioning.NewGroup` is required. E.g. `"1"` is not valid anymore, you have to specify `"1.0.0"`. Example: `NewGroup(api, ">=1.0.0 <2.0.0")`. The [routing/versioning](_examples/routing/versioning) examples have been updated.
 - Now that `RegisterView` can be used to register different view engines per-Party, there is no need to support registering multiple engines under the same Party. The `app.RegisterView` now upserts the given Engine instead of append. You can now render templates **without file extension**, e.g. `index` instead of `index.ace`, both forms are valid now.
 - The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
 - The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.

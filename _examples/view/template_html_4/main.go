@@ -27,7 +27,7 @@ func main() {
 	// wildcard subdomain, will catch username1.... username2.... username3... username4.... username5...
 	// that our below links are providing via page.html's first argument which is the subdomain.
 
-	subdomain := app.Party("*.")
+	subdomain := app.WildcardSubdomain()
 
 	mypathRoute := subdomain.Get("/mypath", emptyHandler)
 	mypathRoute.Name = "my-page1"

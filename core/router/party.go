@@ -39,6 +39,10 @@ type Party interface {
 	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
+	// Properties returns the original Party's properties map,
+	// it can be modified before server startup but not afterwards.
+	Properties() context.Map
+
 	// SetRoutesNoLog disables (true) the verbose logging for the next registered
 	// routes under this Party and its children.
 	//

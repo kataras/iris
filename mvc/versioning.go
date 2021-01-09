@@ -8,14 +8,14 @@ import (
 
 // Version returns a valid `Option` that can be passed to the `Application.Handle` method.
 // It requires a specific "version" constraint for a Controller,
-// e.g. ">1, <=2" or just "1".
+// e.g. ">1.0.0 <=2.0.0".
 //
 //
 // Usage:
 // 	m := mvc.New(dataRouter)
-// 	m.Handle(new(v1Controller), mvc.Version("1"), mvc.Deprecated(mvc.DeprecationOptions{}))
-// 	m.Handle(new(v2Controller), mvc.Version("2.3"))
-// 	m.Handle(new(v3Controller), mvc.Version(">=3, <4"))
+// 	m.Handle(new(v1Controller), mvc.Version("1.0.0"), mvc.Deprecated(mvc.DeprecationOptions{}))
+// 	m.Handle(new(v2Controller), mvc.Version("2.3.0"))
+// 	m.Handle(new(v3Controller), mvc.Version(">=3.0.0 <4.0.0"))
 // 	m.Handle(new(noVersionController))
 //
 // See the `versioning` package's documentation for more information on

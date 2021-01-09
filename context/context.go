@@ -1974,6 +1974,13 @@ func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Contex
 			for _, files := range fhs {
 			innerLoop:
 				for _, file := range files {
+					// Fix an issue that net/http has,
+					// an attacker can push a filename
+					// which could lead to override existing system files
+					// by ../../$file.
+					// Reported by Frank through security reports.
+					file.Filename = strings.TrimLeft(file.Filename, "../")
+					file.Filename = strings.TrimLeft(file.Filename, "..\\")
 
 					for _, b := range before {
 						if !b(ctx, file) {

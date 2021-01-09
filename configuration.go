@@ -764,9 +764,14 @@ type Configuration struct {
 	// Defaults to "iris.locale.language.input".
 	LanguageInputContextKey string `ini:"language_input_context_key" json:"languageInputContextKey,omitempty" yaml:"LanguageInputContextKey" toml:"LanguageInputContextKey"`
 	// VersionContextKey is the context key which an API Version can be modified
-	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, "1.0, 1.1")`.
+	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, ">=1.0.0 <2.0.0")`.
 	// Defaults to "iris.api.version".
 	VersionContextKey string `ini:"version_context_key" json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
+	// VersionAliasesContextKey is the context key which the versioning feature
+	// can look up for alternative values of a version and fallback to that.
+	// Head over to the versioning package for more.
+	// Defaults to "iris.api.version.aliases"
+	VersionAliasesContextKey string `ini:"version_aliases_context_key" json:"versionAliasesContextKey" yaml:"VersionAliasesContextKey" toml:"VersionAliasesContextKey"`
 	// ViewEngineContextKey is the context's values key
 	// responsible to store and retrieve(view.Engine) the current view engine.
 	// A middleware or a Party can modify its associated value to change
@@ -974,6 +979,11 @@ func (c Configuration) GetVersionContextKey() string {
 	return c.VersionContextKey
 }
 
+// GetVersionAliasesContextKey returns the VersionAliasesContextKey field.
+func (c Configuration) GetVersionAliasesContextKey() string {
+	return c.VersionAliasesContextKey
+}
+
 // GetViewEngineContextKey returns the ViewEngineContextKey field.
 func (c Configuration) GetViewEngineContextKey() string {
 	return c.ViewEngineContextKey
@@ -1132,6 +1142,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.VersionContextKey = v
 		}
 
+		if v := c.VersionAliasesContextKey; v != "" {
+			main.VersionAliasesContextKey = v
+		}
+
 		if v := c.ViewEngineContextKey; v != "" {
 			main.ViewEngineContextKey = v
 		}
@@ -1205,16 +1219,17 @@ func DefaultConfiguration() Configuration {
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:           32 << 20, // 32MB
-		LocaleContextKey:        "iris.locale",
-		LanguageContextKey:      "iris.locale.language",
-		LanguageInputContextKey: "iris.locale.language.input",
-		VersionContextKey:       "iris.api.version",
-		ViewEngineContextKey:    "iris.view.engine",
-		ViewLayoutContextKey:    "iris.view.layout",
-		ViewDataContextKey:      "iris.view.data",
-		RemoteAddrHeaders:       nil,
-		RemoteAddrHeadersForce:  false,
+		PostMaxMemory:            32 << 20, // 32MB
+		LocaleContextKey:         "iris.locale",
+		LanguageContextKey:       "iris.locale.language",
+		LanguageInputContextKey:  "iris.locale.language.input",
+		VersionContextKey:        "iris.api.version",
+		VersionAliasesContextKey: "iris.api.version.aliases",
+		ViewEngineContextKey:     "iris.view.engine",
+		ViewLayoutContextKey:     "iris.view.layout",
+		ViewDataContextKey:       "iris.view.data",
+		RemoteAddrHeaders:        nil,
+		RemoteAddrHeadersForce:   false,
 		RemoteAddrPrivateSubnets: []netutil.IPRange{
 			{
 				Start: "10.0.0.0",

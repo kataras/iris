@@ -81,15 +81,15 @@ to the end-developer's custom implementations.
 
 // SimpleUser is a simple implementation of the User interface.
 type SimpleUser struct {
-	Authorization string          `json:"authorization,omitempty"`
-	AuthorizedAt  time.Time       `json:"authorized_at,omitempty"`
-	ID            string          `json:"id,omitempty"`
-	Username      string          `json:"username,omitempty"`
-	Password      string          `json:"password,omitempty"`
-	Email         string          `json:"email,omitempty"`
-	Roles         []string        `json:"roles,omitempty"`
-	Token         json.RawMessage `json:"token,omitempty"`
-	Fields        Map             `json:"fields,omitempty"`
+	Authorization string          `json:"authorization,omitempty" db:"authorization"`
+	AuthorizedAt  time.Time       `json:"authorized_at,omitempty" db:"authorized_at"`
+	ID            string          `json:"id,omitempty" db:"id"`
+	Username      string          `json:"username,omitempty" db:"username"`
+	Password      string          `json:"password,omitempty" db:"password"`
+	Email         string          `json:"email,omitempty" db:"email"`
+	Roles         []string        `json:"roles,omitempty" db:"roles"`
+	Token         json.RawMessage `json:"token,omitempty" db:"token"`
+	Fields        Map             `json:"fields,omitempty" db:"fields"`
 }
 
 var _ User = (*SimpleUser)(nil)
