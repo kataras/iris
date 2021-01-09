@@ -174,8 +174,7 @@ func getCases(loc *Locale, src map[string]interface{}) []interface{} {
 	cases := make([]interface{}, 0, len(pluralCases)*2)
 	for _, pluralCase := range pluralCases {
 		// fmt.Printf("%s=%v\n", pluralCase.Form, pluralCase.Value)
-		cases = append(cases, pluralCase.Form.String())
-		cases = append(cases, pluralCase.Value)
+		cases = append(cases, pluralCase.Form.String(), pluralCase.Value)
 	}
 
 	return cases
