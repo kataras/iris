@@ -28,10 +28,6 @@ const (
 	DefaultCookieMaxAge = time.Hour
 )
 
-// cookieExpireDelete may be set on Cookie.Expire for expiring the given cookie.
-// Note that the MaxAge is set but we set Expires field in order to support very old browsers too.
-var cookieExpireDelete = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-
 const (
 	authorizationType           = "Basic Authentication"
 	authenticateHeaderKey       = "WWW-Authenticate"
@@ -480,7 +476,7 @@ func (b *BasicAuth) logout(ctx *context.Context) {
 		// If the custom user does
 		// not implement the User interface, then extract from the request header (most common scenario):
 		header := ctx.GetHeader(b.authorizationHeader)
-		fullUser, username, password, ok = decodeHeader(header)
+		fullUser, _, _, ok = decodeHeader(header)
 	}
 
 	if ok { // If it's authorized then try to lock and delete.

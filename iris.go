@@ -142,7 +142,7 @@ func Default() *Application {
 	app.logger.Debugf(`Log level set to "debug"`)
 
 	// Register the accesslog middleware.
-	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err == nil {
 		// Close the file on shutdown.
 		app.ConfigureHost(func(su *Supervisor) {

@@ -80,8 +80,8 @@ func beforeSave(ctx iris.Context, file *multipart.FileHeader) bool {
 	ip := ctx.RemoteAddr()
 	// make sure you format the ip in a way
 	// that can be used for a file name (simple case):
-	ip = strings.Replace(ip, ".", "_", -1)
-	ip = strings.Replace(ip, ":", "_", -1)
+	ip = strings.ReplaceAll(ip, ".", "_")
+	ip = strings.ReplaceAll(ip, ":", "_")
 
 	// you can use the time.Now, to prefix or suffix the files
 	// based on the current time as well, as an exercise.

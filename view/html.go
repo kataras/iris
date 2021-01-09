@@ -246,6 +246,10 @@ func (s *HTMLEngine) load() error {
 	}
 
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
 		if info == nil || info.IsDir() {
 			return nil
 		}
@@ -357,7 +361,7 @@ func (s *HTMLEngine) layoutFuncsFor(lt *template.Template, name string, binding 
 func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding interface{}) {
 	funcs := template.FuncMap{
 		"part": func(partName string) (template.HTML, error) {
-			nameTemp := strings.Replace(name, s.extension, "", -1)
+			nameTemp := strings.ReplaceAll(name, s.extension, "")
 			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
 			result, err := s.executeTemplateBuf(fullPartName, binding)
 			if err != nil {

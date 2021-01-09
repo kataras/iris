@@ -1,7 +1,7 @@
 package requestid
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"net/http/httputil"
 
@@ -102,7 +102,7 @@ func Get(ctx *context.Context) string {
 // Hash returns the sha1 hash of the request.
 // It does not capture error, instead it returns an empty string.
 func Hash(ctx *context.Context, includeBody bool) string {
-	h := sha1.New()
+	h := sha256.New() // sha1 fits here as well.
 	b, err := httputil.DumpRequest(ctx.Request(), includeBody)
 	if err != nil {
 		return ""

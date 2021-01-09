@@ -104,34 +104,29 @@ func TestAccessLogBroker(t *testing.T) {
 	go func() {
 		i := 0
 		ln := broker.NewListener()
-		for {
-			select {
-			case log, ok := <-ln:
-				if !ok {
-					if i != n {
-						for i < n {
-							wg.Done()
-							i++
-						}
-					}
 
-					t.Log("Log Listener Closed: interrupted")
-					return
-				}
+		for log := range ln {
+			lat := log.Latency
+			t.Log(lat.String())
+			wg.Done()
+			if expected := time.Duration(i) * time.Second; expected != lat {
+				panic(fmt.Sprintf("expected latency: %s but got: %s", expected, lat))
+			}
+			time.Sleep(1350 * time.Millisecond)
+			if log.Latency != lat {
+				panic("expected logger to wait for notifier before release the log")
+			}
+			i++
+		}
 
-				lat := log.Latency
-				t.Log(lat.String())
+		if i != n {
+			for i < n {
 				wg.Done()
-				if expected := time.Duration(i) * time.Second; expected != lat {
-					panic(fmt.Sprintf("expected latency: %s but got: %s", expected, lat))
-				}
-				time.Sleep(1350 * time.Millisecond)
-				if log.Latency != lat {
-					panic("expected logger to wait for notifier before release the log")
-				}
 				i++
 			}
 		}
+
+		t.Log("Log Listener Closed: interrupted")
 	}()
 
 	time.Sleep(time.Second)
@@ -258,18 +253,15 @@ func TestAccessLogSetOutput(t *testing.T) {
 					time.Sleep(10 * time.Millisecond)
 				}
 
-				switch i {
-				case 5:
-					if w == nil {
-						break
-					}
-
-					now := time.Now()
-					ac.SetOutput(w)
-					if withSlowClose {
-						end := time.Since(now)
-						if end < time.Second {
-							panic(fmt.Sprintf("[%s] [%d]: SetOutput should wait for previous Close. Expected to return a bit after %s but %s", name, i, time.Second, end))
+				if i == 5 {
+					if w != nil {
+						now := time.Now()
+						ac.SetOutput(w)
+						if withSlowClose {
+							end := time.Since(now)
+							if end < time.Second {
+								panic(fmt.Sprintf("[%s] [%d]: SetOutput should wait for previous Close. Expected to return a bit after %s but %s", name, i, time.Second, end))
+							}
 						}
 					}
 				}

@@ -442,9 +442,9 @@ func StripPrefix(prefix string, h context.Handler) context.Handler {
 
 func toWebPath(systemPath string) string {
 	// winos slash to slash
-	webpath := strings.Replace(systemPath, "\\", "/", -1)
+	webpath := strings.ReplaceAll(systemPath, "\\", "/")
 	// double slashes to single
-	webpath = strings.Replace(webpath, "//", "/", -1)
+	webpath = strings.ReplaceAll(webpath, "//", "/")
 	return webpath
 }
 
@@ -1013,7 +1013,7 @@ func cacheFiles(ctx stdContext.Context, fs http.FileSystem, names []string, comp
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				break
+				break // lint:ignore
 			}
 
 			if alg == "brotli" {
@@ -1218,7 +1218,7 @@ var _ http.File = (*dir)(nil)
 
 // returns unorderded map of directories both reclusive and flat.
 func findDirs(fs http.FileSystem, names []string) (map[string]*dir, error) {
-	dirs := make(map[string]*dir, 0)
+	dirs := make(map[string]*dir)
 
 	for _, name := range names {
 		f, err := fs.Open(name)

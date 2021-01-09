@@ -136,10 +136,7 @@ func (router *Router) buildMainHandlerWithFilters(routerFilters map[Party]*Filte
 		}
 
 		if leftSlashLen == rightSlashLen {
-			if len(left.Path) > len(right.Path) {
-				return true
-			}
-			return false
+			return len(left.Path) > len(right.Path)
 		}
 
 		return len(left.Path) > len(right.Path)

@@ -213,6 +213,10 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {
 	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
 		if info == nil || info.IsDir() {
 			return nil
 		}

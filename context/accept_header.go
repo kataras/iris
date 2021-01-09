@@ -135,7 +135,7 @@ func expectTokenSlash(s string) (token, rest string) {
 
 func expectQuality(s string) (q float64, rest string) {
 	switch {
-	case len(s) == 0:
+	case s == "":
 		return -1, ""
 	case s[0] == '0':
 		q = 0

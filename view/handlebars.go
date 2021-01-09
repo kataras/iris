@@ -19,9 +19,10 @@ type HandlebarsEngine struct {
 	// files configuration
 	rootDir   string
 	extension string
-	assetFn   func(name string) ([]byte, error) // for embedded, in combination with directory & extension
-	namesFn   func() []string                   // for embedded, in combination with directory & extension
-	reload    bool                              // if true, each time the ExecuteWriter is called the templates will be reloaded.
+	// Not used anymore.
+	// assetFn   func(name string) ([]byte, error) // for embedded, in combination with directory & extension
+	// namesFn   func() []string                   // for embedded, in combination with directory & extension
+	reload bool // if true, each time the ExecuteWriter is called the templates will be reloaded.
 	// parser configuration
 	layout        string
 	rmu           sync.RWMutex

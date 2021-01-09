@@ -41,7 +41,7 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 
 	if netutil.IsLoopbackHost(target.Host) {
 		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // lint:ignore
 		}
 		p.Transport = transport
 	}

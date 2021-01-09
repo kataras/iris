@@ -378,7 +378,7 @@ func formatPath(path string) string {
 		var formattedParts []string
 		parts := strings.Split(path, "/")
 		for _, part := range parts {
-			if len(part) == 0 {
+			if part == "" {
 				continue
 			}
 			if part[0] == startRune || part[0] == wildcardStartRune {
@@ -566,7 +566,7 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 		if stoppedIndex != -1 && stoppedIndex <= len(r.Handlers) {
 			if i <= stoppedIndex {
 				pio.WriteRich(w, " ✓", pio.Green)
-			} else {
+				// } else {
 				// pio.WriteRich(w, " ✕", pio.Red, pio.Underline)
 			}
 		}
