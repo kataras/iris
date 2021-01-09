@@ -1,11 +1,8 @@
 package internal
 
 import (
-	"reflect"
 	"regexp"
 	"sort"
-
-	"golang.org/x/text/message/catalog"
 )
 
 // Var represents a message variable.
@@ -84,7 +81,7 @@ func getVars(loc *Locale, key string, src map[string]interface{}) []Var {
 	return vars
 }
 
-var unescapeVariableRegex = regexp.MustCompile("\\$\\{(.*?)}")
+var unescapeVariableRegex = regexp.MustCompile(`\$\{(.*?)}`)
 
 func sortVars(text string, vars []Var) (newVars []Var) {
 	argth := 1
@@ -122,6 +119,7 @@ func removeVarsDuplicates(elements []Var) (result []Var) {
 	return result
 }
 
+/*
 func removeMsgVarsDuplicates(elements []catalog.Message) (result []catalog.Message) {
 	seen := make(map[string]struct{})
 
@@ -141,6 +139,7 @@ func removeMsgVarsDuplicates(elements []catalog.Message) (result []catalog.Messa
 
 	return
 }
+*/
 
 func getCases(loc *Locale, src map[string]interface{}) []interface{} {
 	type PluralCase struct {

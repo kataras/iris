@@ -1979,8 +1979,8 @@ func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Contex
 					// which could lead to override existing system files
 					// by ../../$file.
 					// Reported by Frank through security reports.
-					file.Filename = strings.TrimLeft(file.Filename, "../")
-					file.Filename = strings.TrimLeft(file.Filename, "..\\")
+					file.Filename = strings.ReplaceAll(file.Filename, "../", "")
+					file.Filename = strings.ReplaceAll(file.Filename, "..\\", "")
 
 					for _, b := range before {
 						if !b(ctx, file) {
@@ -2859,10 +2859,8 @@ func (ctx *Context) CompressReader(enable bool) error {
 			return err
 		}
 		ctx.request.Body = r
-	} else {
-		if ok {
-			ctx.request.Body = cr.Src
-		}
+	} else if ok {
+		ctx.request.Body = cr.Src
 	}
 
 	return nil
@@ -3208,9 +3206,9 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 	}
 
 	if options.UnescapeHTML {
-		result = bytes.Replace(result, ltHex, lt, -1)
-		result = bytes.Replace(result, gtHex, gt, -1)
-		result = bytes.Replace(result, andHex, and, -1)
+		result = bytes.ReplaceAll(result, ltHex, lt)
+		result = bytes.ReplaceAll(result, gtHex, gt)
+		result = bytes.ReplaceAll(result, andHex, and)
 	}
 
 	if prependSecure {

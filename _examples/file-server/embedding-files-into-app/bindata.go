@@ -231,7 +231,7 @@ func jsJquery211Js() (*asset, error) {
 // It returns an error if the asset could not be found or
 // could not be loaded.
 func Asset(name string) ([]byte, error) {
-	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	cannonicalName := strings.ReplaceAll(name, "\\", "/")
 	if f, ok := _bindata[cannonicalName]; ok {
 		a, err := f()
 		if err != nil {

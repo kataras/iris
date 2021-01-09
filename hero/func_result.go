@@ -480,8 +480,6 @@ type View struct {
 
 var _ Result = View{}
 
-const dotB = byte('.')
-
 // Dispatch writes the template filename, template layout and (any) data to the  client.
 // Completes the `Result` interface.
 func (r View) Dispatch(ctx *context.Context) { // r as Response view.

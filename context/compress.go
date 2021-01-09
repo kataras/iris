@@ -102,7 +102,7 @@ func NewCompressWriter(w io.Writer, encoding string, level int) (cw CompressWrit
 		}
 		cw = brotli.NewWriterLevel(w, level)
 	case SNAPPY:
-		cw = snappy.NewWriter(w)
+		cw = snappy.NewBufferedWriter(w)
 	case S2:
 		cw = s2.NewWriter(w)
 	default:

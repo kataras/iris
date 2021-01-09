@@ -337,7 +337,7 @@ func FileUnbuffered(path string) *AccessLog {
 func mustOpenFile(path string) *os.File {
 	// Note: we add os.RDWR in order to be able to read from it,
 	// some formatters (e.g. CSV) needs that.
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		panic(err)
 	}
@@ -1027,7 +1027,7 @@ func (ac *AccessLog) Print(ctx *context.Context,
 // but let's don't coplicate things so much
 // as the end-developer can use a custom template.
 func (ac *AccessLog) writeText(buf *bytes.Buffer, s string) {
-	if len(s) == 0 {
+	if s == "" {
 		if len(ac.Blank) == 0 {
 			return
 		}

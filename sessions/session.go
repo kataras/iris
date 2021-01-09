@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"math"
 	"reflect"
 	"strconv"
 	"sync"
@@ -326,9 +325,6 @@ func (s *Session) GetUint64(key string) (uint64, error) {
 			val, err := strconv.ParseUint(vv, 10, 64)
 			if err != nil {
 				return 0, err
-			}
-			if val > math.MaxUint64 {
-				break
 			}
 			return uint64(val), nil
 		case uint8:

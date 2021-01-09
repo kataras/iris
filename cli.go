@@ -47,7 +47,7 @@ func injectLiveReload(r Party) (bool, error) {
 		path = filepath.Join(wd, path)
 
 		if _, err := os.Stat(path); err == nil {
-			inFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
+			inFile, err := os.OpenFile(path, os.O_RDONLY, 0600)
 			if err != nil {
 				return false, err
 			}

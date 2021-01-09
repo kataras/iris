@@ -19,7 +19,7 @@ func Param(name string) string {
 
 // WildcardParam receives a parameter name prefixed with the WildcardParamStart symbol.
 func WildcardParam(name string) string {
-	if len(name) == 0 {
+	if name == "" {
 		return ""
 	}
 	return prefix(name, WildcardParamStart)

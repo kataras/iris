@@ -18,7 +18,7 @@ func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, 
 		return nil, fmt.Errorf("empty parameter types")
 	}
 
-	pathParts := strings.SplitN(fullpath, "/", -1)
+	pathParts := strings.Split(fullpath, "/")
 	p := new(ParamParser)
 	statements := make([]*ast.ParamStatement, 0)
 	for i, s := range pathParts {

@@ -115,12 +115,10 @@ func (loc *Locale) setString(c *Catalog, key string, value string, vars []Var, f
 			if err != nil {
 				return fmt.Errorf("<%s = %s>: %w", key, value, err)
 			}
-		} else {
+		} else if err = c.Set(loc.tag, key, msgs...); err != nil {
 			// let's make normal keys direct fire:
 			// renderer = &simpleRenderer{key, loc.Printer}
-			if err = c.Set(loc.tag, key, msgs...); err != nil {
-				return fmt.Errorf("<%s = %s>: %w", key, value, err)
-			}
+			return fmt.Errorf("<%s = %s>: %w", key, value, err)
 		}
 
 	}

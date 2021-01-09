@@ -56,9 +56,9 @@ func (m myTestTask) OnServe(host TaskHost) {
 		if rans == exitAfterXRestarts {
 			m.logger.Println("exit")
 			ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
-			defer cancel()
 			_ = host.Supervisor.Shutdown(ctx) // total shutdown
 			host.Supervisor.RestoreFlow()     // free to exit (if shutdown)
+			cancel()
 			return
 		}
 

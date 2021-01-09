@@ -125,7 +125,7 @@ func NewInsecure(t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
 		setter.Set(conf)
 	}
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // lint:ignore
 	}
 
 	testConfiguration := httpexpect.Config{

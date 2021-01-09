@@ -20,7 +20,7 @@ func TestCSV(t *testing.T) {
 
 	lat, _ := time.ParseDuration("1s")
 
-	print := func() {
+	printFunc := func() {
 		ac.Print(
 			nil,
 			lat,
@@ -39,8 +39,8 @@ func TestCSV(t *testing.T) {
 	}
 
 	// print twice, the header should only be written once.
-	print()
-	print()
+	printFunc()
+	printFunc()
 
 	expected := `Timestamp,Latency,Code,Method,Path,IP,Req Values,In,Out
 725864400000,1s,200,GET,/,::1,sleep=1s,573,81

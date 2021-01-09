@@ -39,7 +39,7 @@ func Ace(fs interface{}, extension string) *AceEngine {
 	s := &AceEngine{HTMLEngine: HTML(fs, extension), indent: ""}
 	s.name = "Ace"
 
-	funcs := make(map[string]interface{}, 0)
+	funcs := make(map[string]interface{})
 
 	once := new(sync.Once)
 

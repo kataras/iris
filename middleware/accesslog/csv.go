@@ -8,9 +8,7 @@ import (
 )
 
 // CSV is a Formatter type for csv encoded logs.
-type CSV struct { // TODO: change it to use csvutil.
-	writer *csv.Writer
-
+type CSV struct {
 	writerPool *sync.Pool
 	ac         *AccessLog
 
