@@ -36,7 +36,7 @@ func main() {
 			return srv
 		}
 
-		app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com",
+		app.Run(iris.AutoTLS(":443", "example.com myip", "mail@example.com",
 			iris.AutoTLSNoRedirect(fallbackServer)))
 	*/
 }

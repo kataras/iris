@@ -1,15 +1,10 @@
 [![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
 
-<!-- # News 
+# News
 
 > This is the under-**development branch**. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
 > 
 > ![](https://iris-go.com/images/cli.png) Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
--->
-
-# Happy New Year 🎉
-
-Thank you for being with us every step of the way in 2020. I hope the next years brings you only good luck and great joy.
 
 <!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
 
@@ -36,6 +31,8 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/rsousacode"><img src="https://avatars1.githubusercontent.com/u/34067397?v=4" alt ="Rui" title="rsousacode" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/carlos-enginner"><img src="https://avatars1.githubusercontent.com/u/59775876?v=4" alt ="Carlos Augusto" title="carlos-enginner" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/motogo"><img src="https://avatars1.githubusercontent.com/u/1704958?v=4" alt ="Horst Ender" title="motogo" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/remopavithran"><img src="https://avatars1.githubusercontent.com/u/50388068?v=4" alt ="Pavithran" title="remopavithran" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/mulyawansentosa"><img src="https://avatars1.githubusercontent.com/u/29946673?v=4" alt ="MULYAWAN SENTOSA" title="mulyawansentosa" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -112,7 +109,7 @@ Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;hei
 ```sh
 $ mkdir myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master
+$ go get github.com/kataras/iris/v12@master # or @v12.0.0-alpha2
 ```
 
 ![](https://www.iris-go.com/images/gifs/install-create-iris.gif)
