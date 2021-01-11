@@ -12,19 +12,26 @@ import (
 )
 
 // ProxyHandler returns a new ReverseProxy that rewrites
-// URLs to the scheme, host, and base path provided in target. If the
-// target's path is "/base" and the incoming request was for "/dir",
+// URLs to the scheme, host, and base path provided in target. 
+// Case 1: req.Host == target.Host
+// If the target's path is "/base" and the incoming request was for "/dir",
 // the target request will be for /base/dir.
-//
+// Case 2: req.Host != target.Host
+// the target request will be forwarded to the target's url
 // Relative to httputil.NewSingleHostReverseProxy with some additions.
 func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
+
+		if req.Host != target.Host {
+            req.URL.Path = target.Path
+    	} else {
+            req.URL.Path = path.Join(target.Path, req.URL.Path)
+    	}
+
 		req.URL.Host = target.Host
 		req.Host = target.Host
-
-		req.URL.Path = path.Join(target.Path, req.URL.Path)
 
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
