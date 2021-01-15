@@ -31,6 +31,9 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/mmckeen75"><img src="https://avatars1.githubusercontent.com/u/49529489?v=4" alt ="Leighton McKeen" title="mmckeen75" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/lauweliam"><img src="https://avatars1.githubusercontent.com/u/4064517?v=4" alt ="Weliam" title="lauweliam" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/galois-tnp"><img src="https://avatars1.githubusercontent.com/u/41128011?v=4" alt ="simranjit singh" title="galois-tnp" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/rsousacode"><img src="https://avatars1.githubusercontent.com/u/34067397?v=4" alt ="Rui" title="rsousacode" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/carlos-enginner"><img src="https://avatars1.githubusercontent.com/u/59775876?v=4" alt ="Carlos Augusto" title="carlos-enginner" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/motogo"><img src="https://avatars1.githubusercontent.com/u/1704958?v=4" alt ="Horst Ender" title="motogo" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
