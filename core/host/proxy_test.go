@@ -64,6 +64,6 @@ func TestProxy(t *testing.T) {
 
 	e := httptest.NewInsecure(t, httptest.URL("http://"+listener.Addr().String()))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
-	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
-	e.GET("/notfound").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
+	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedAbout)
+	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
 }

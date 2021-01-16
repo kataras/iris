@@ -12,26 +12,19 @@ import (
 )
 
 // ProxyHandler returns a new ReverseProxy that rewrites
-// URLs to the scheme, host, and base path provided in target. 
-// Case 1: req.Host == target.Host
-// If the target's path is "/base" and the incoming request was for "/dir",
+// URLs to the scheme, host, and base path provided in target. If the
+// target's path is "/base" and the incoming request was for "/dir",
 // the target request will be for /base/dir.
-// Case 2: req.Host != target.Host
-// the target request will be forwarded to the target's url
+//
 // Relative to httputil.NewSingleHostReverseProxy with some additions.
 func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
-
-		if req.Host != target.Host {
-            req.URL.Path = target.Path
-    	} else {
-            req.URL.Path = path.Join(target.Path, req.URL.Path)
-    	}
-
 		req.URL.Host = target.Host
 		req.Host = target.Host
+
+		req.URL.Path = path.Join(target.Path, req.URL.Path)
 
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
@@ -56,6 +49,51 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	return p
 }
 
+// ProxyHandlerRemote returns a new ReverseProxy that rewrites
+// URLs to the scheme, host, and path provided in target.
+// Case 1: req.Host == target.Host
+// behavior same as ProxyHandler
+// Case 2: req.Host != target.Host
+// the target request will be forwarded to the target's url
+// insecureSkipVerify indicates enable ssl certificate verification or not
+func ProxyHandlerRemote(target *url.URL, insecureSkipVerify bool) *httputil.ReverseProxy {
+	targetQuery := target.RawQuery
+	director := func(req *http.Request) {
+		req.URL.Scheme = target.Scheme
+
+		if req.Host != target.Host {
+			req.URL.Path = target.Path
+		} else {
+			req.URL.Path = path.Join(target.Path, req.URL.Path)
+		}
+
+		req.URL.Host = target.Host
+		req.Host = target.Host
+
+		if targetQuery == "" || req.URL.RawQuery == "" {
+			req.URL.RawQuery = targetQuery + req.URL.RawQuery
+		} else {
+			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
+		}
+
+		if _, ok := req.Header["User-Agent"]; !ok {
+			// explicitly disable User-Agent so it's not set to default value
+			req.Header.Set("User-Agent", "")
+		}
+	}
+	p := &httputil.ReverseProxy{Director: director}
+
+	if netutil.IsLoopbackHost(target.Host) {
+		insecureSkipVerify = true
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify}, // lint:ignore
+	}
+	p.Transport = transport
+	return p
+}
+
 // NewProxy returns a new host (server supervisor) which
 // proxies all requests to the target.
 // It uses the httputil.NewSingleHostReverseProxy.
@@ -66,6 +104,24 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 // proxy.ListenAndServe() // use of `proxy.Shutdown` to close the proxy server.
 func NewProxy(hostAddr string, target *url.URL) *Supervisor {
 	proxyHandler := ProxyHandler(target)
+	proxy := New(&http.Server{
+		Addr:    hostAddr,
+		Handler: proxyHandler,
+	})
+
+	return proxy
+}
+
+// NewProxyRemote returns a new host (server supervisor) which
+// proxies all requests to the target.
+// It uses the httputil.NewSingleHostReverseProxy.
+//
+// Usage:
+// target, _ := url.Parse("https://anotherdomain.com/abc")
+// proxy := NewProxyRemote("mydomain.com", target, false)
+// proxy.ListenAndServe() // use of `proxy.Shutdown` to close the proxy server.
+func NewProxyRemote(hostAddr string, target *url.URL, insecureSkipVerify bool) *Supervisor {
+	proxyHandler := ProxyHandlerRemote(target, insecureSkipVerify)
 	proxy := New(&http.Server{
 		Addr:    hostAddr,
 		Handler: proxyHandler,
