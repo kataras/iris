@@ -18,6 +18,8 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
 
+![](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)
+
 Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
 
 [![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)

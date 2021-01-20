@@ -323,6 +323,79 @@ func (api *APIBuilder) ConfigureContainer(builder ...func(*APIContainer)) *APICo
 	return api.apiBuilderDI
 }
 
+// HandleFunc registers a route on HTTP verb "method" and relative, to this Party, path.
+// It is like the `Handle` method but it accepts one or more "handlersFn" functions
+// that each one of them can accept any input arguments as the HTTP request and
+// output a result as the HTTP response. Specifically,
+// the input of the "handlersFn" can be any registered dependency
+// (see ConfigureContainer().RegisterDependency)
+// or leave the framework to parse the request and fill the values accordingly.
+// The output of the "handlersFn" can be any output result:
+//  custom structs <T>, string, []byte, int, error,
+//  a combination of the above, hero.Result(hero.View | hero.Response) and more.
+//
+// If more than one handler function is registered
+// then the execution happens without the nessecity of the `Context.Next` method,
+// simply, to stop the execution and not continue to the next "handlersFn" in chain
+// you should return an `iris.ErrStopExecution`.
+//
+// Example Code:
+//
+// The client's request body and server's response body Go types.
+// Could be any data structure.
+//
+// 	type (
+// 		request struct {
+// 			Firstname string `json:"firstname"`
+// 			Lastname string `json:"lastname"`
+// 		}
+//
+// 		response struct {
+// 			ID uint64 `json:"id"`
+// 			Message string `json:"message"`
+// 		}
+// 	)
+//
+// Register the route hander.
+//
+//              HTTP VERB    ROUTE PATH       ROUTE HANDLER
+//  app.HandleFunc("PUT", "/users/{id:uint64}", updateUser)
+//
+// Code the route handler function.
+// Path parameters and request body are binded
+// automatically.
+// The "id" uint64 binds to "{id:uint64}" route path parameter and
+// the "input" binds to client request data such as JSON.
+//
+// 	func updateUser(id uint64, input request) response {
+// 		// [custom logic...]
+//
+// 		return response{
+// 			ID:id,
+// 			Message: "User updated successfully",
+// 		}
+// 	}
+//
+// Simulate a client request which sends data
+// to the server and prints out the response.
+//
+// 	curl --request PUT -d '{"firstname":"John","lastname":"Doe"}' \
+// 	-H "Content-Type: application/json" \
+// 	http://localhost:8080/users/42
+//
+// 	{
+// 		"id": 42,
+// 		"message": "User updated successfully"
+// 	}
+//
+// See the `ConfigureContainer` for more features regrading
+// the dependency injection, mvc and function handlers.
+//
+// This method is just a shortcut for the `ConfigureContainer().Handle` one.
+func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
+	return api.ConfigureContainer().Handle(method, relativePath, handlersFn...)
+}
+
 // GetRelPath returns the current party's relative path.
 // i.e:
 // if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
