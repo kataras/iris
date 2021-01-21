@@ -22,6 +22,7 @@ import (
 func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		modifyProxiedRequest(req, target)
+		req.Host = target.Host
 		req.URL.Path = path.Join(target.Path, req.URL.Path)
 	}
 
@@ -40,7 +41,6 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 func modifyProxiedRequest(req *http.Request, target *url.URL) {
 	req.URL.Scheme = target.Scheme
 	req.URL.Host = target.Host
-	req.Host = target.Host
 
 	if target.RawQuery == "" || req.URL.RawQuery == "" {
 		req.URL.RawQuery = target.RawQuery + req.URL.RawQuery
@@ -72,6 +72,8 @@ func ProxyHandlerRemote(target *url.URL, insecureSkipVerify bool) *httputil.Reve
 		} else {
 			req.URL.Path = path.Join(target.Path, req.URL.Path)
 		}
+
+		req.Host = target.Host
 	}
 	p := &httputil.ReverseProxy{Director: director}
 
