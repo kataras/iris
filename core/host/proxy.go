@@ -17,26 +17,14 @@ import (
 // the target request will be for /base/dir.
 //
 // Relative to httputil.NewSingleHostReverseProxy with some additions.
+//
+// Look `ProxyHandlerRemote` too.
 func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
-	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.Host = target.Host
-
+		modifyProxiedRequest(req, target)
 		req.URL.Path = path.Join(target.Path, req.URL.Path)
-
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
-
-		if _, ok := req.Header["User-Agent"]; !ok {
-			// explicitly disable User-Agent so it's not set to default value
-			req.Header.Set("User-Agent", "")
-		}
 	}
+
 	p := &httputil.ReverseProxy{Director: director}
 
 	if netutil.IsLoopbackHost(target.Host) {
@@ -49,36 +37,40 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	return p
 }
 
+func modifyProxiedRequest(req *http.Request, target *url.URL) {
+	req.URL.Scheme = target.Scheme
+	req.URL.Host = target.Host
+	req.Host = target.Host
+
+	if target.RawQuery == "" || req.URL.RawQuery == "" {
+		req.URL.RawQuery = target.RawQuery + req.URL.RawQuery
+	} else {
+		req.URL.RawQuery = target.RawQuery + "&" + req.URL.RawQuery
+	}
+
+	if _, ok := req.Header["User-Agent"]; !ok {
+		// explicitly disable User-Agent so it's not set to default value
+		req.Header.Set("User-Agent", "")
+	}
+}
+
 // ProxyHandlerRemote returns a new ReverseProxy that rewrites
 // URLs to the scheme, host, and path provided in target.
 // Case 1: req.Host == target.Host
 // behavior same as ProxyHandler
 // Case 2: req.Host != target.Host
 // the target request will be forwarded to the target's url
-// insecureSkipVerify indicates enable ssl certificate verification or not
+// insecureSkipVerify indicates enable ssl certificate verification or not.
+//
+// Look `ProxyHandler` too.
 func ProxyHandlerRemote(target *url.URL, insecureSkipVerify bool) *httputil.ReverseProxy {
-	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
+		modifyProxiedRequest(req, target)
 
 		if req.Host != target.Host {
 			req.URL.Path = target.Path
 		} else {
 			req.URL.Path = path.Join(target.Path, req.URL.Path)
-		}
-
-		req.URL.Host = target.Host
-		req.Host = target.Host
-
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
-
-		if _, ok := req.Header["User-Agent"]; !ok {
-			// explicitly disable User-Agent so it's not set to default value
-			req.Header.Set("User-Agent", "")
 		}
 	}
 	p := &httputil.ReverseProxy{Director: director}

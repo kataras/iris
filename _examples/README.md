@@ -253,6 +253,7 @@
     * [Hello world](mvc/hello-world/main.go)
     * [Basic](mvc/basic/main.go)
         * [Wildcard](mvc/basic/wildcard/main.go)
+    * [Default request values](mvc/request-default-values/main.go)
     * [Singleton](mvc/singleton)
     * [Regexp](mvc/regexp/main.go)
     * [Session Controller](mvc/session-controller/main.go)
