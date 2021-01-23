@@ -18,9 +18,109 @@ Iris is a fast, simple yet fully featured and very efficient web framework for G
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
 
+<details><summary>Simple Handler</summary>
+
+```go
+package main
+
+import "github.com/kataras/iris/v12"
+
+type (
+  request struct {
+    Firstname string `json:"firstname"`
+    Lastname  string `json:"lastname"`
+  }
+
+  response struct {
+    ID      uint64 `json:"id"`
+    Message string `json:"message"`
+  }
+)
+
+func main() {
+  app := iris.New()
+  app.Handle("PUT", "/users/{id:uint64}", updateUser)
+  app.Listen(":8080")
+}
+
+func updateUser(ctx iris.Context) {
+  id, _ := ctx.Params().GetUint64("id")
+
+  var req request
+  if err := ctx.ReadJSON(&req); err != nil {
+    ctx.StopWithError(iris.StatusBadRequest, err)
+    return
+  }
+
+  resp := response{
+    ID:      id,
+    Message: req.Firstname + " updated successfully",
+  }
+  ctx.JSON(resp)
+}
+```
+
+> Read the [routing examples](https://github.com/kataras/iris/blob/master/_examples/routing) for more!
+
+</details>
+
+<details><summary>Handler with custom input and output arguments</summary>
+
 [![https://github.com/kataras/iris/blob/master/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
 
-> Interesting? Run the [example](https://github.com/kataras/iris/blob/master/_examples/dependency-injection/basic/main.go)
+> Interesting? Read the [examples](https://github.com/kataras/iris/blob/master/_examples/dependency-injection).
+
+</details>
+
+
+<details><summary>MVC</summary>
+
+```go
+package main
+
+import (
+  "github.com/kataras/iris/v12"
+  "github.com/kataras/iris/v12/mvc"
+)
+
+type (
+  request struct {
+    Firstname string `json:"firstname"`
+    Lastname  string `json:"lastname"`
+  }
+
+  response struct {
+    ID      uint64 `json:"id"`
+    Message string `json:"message"`
+  }
+)
+
+func main() {
+  app := iris.New()
+  mvc.Configure(app.Party("/users"), configureMVC)
+  app.Listen(":8080")
+}
+
+func configureMVC(app *mvc.Application) {
+  app.Handle(new(userController))
+}
+
+type userController struct {
+  // [...dependencies]
+}
+
+func (c *userController) PutBy(id uint64, req request) response {
+  return response{
+    ID:      id,
+    Message: req.Firstname + " updated successfully",
+  }
+}
+```
+
+Want to see more? Navigate through [mvc examples](_examples/mvc)!
+</details>
+
+
 
 Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
 
