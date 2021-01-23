@@ -197,7 +197,7 @@ Iris 有完整且详尽的 **[使用文档](https://github.com/kataras/iris/wiki
 
 ## 🙌 贡献
 
-我们欢迎您为Iris框架做出贡献！想要知道如何为Iris项目做贡献，请查看[CONTRIBUTING.md]（CONTRIBUTING.md）。
+我们欢迎您为Iris框架做出贡献！想要知道如何为Iris项目做贡献，请查看[CONTRIBUTING.md](CONTRIBUTING.md)。
 
 [贡献者名单](https://github.com/kataras/iris/graphs/contributors)
 
