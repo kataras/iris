@@ -62,6 +62,8 @@ type ConfigurationReadOnly interface {
 	GetViewLayoutContextKey() string
 	// GetViewDataContextKey returns the ViewDataContextKey field.
 	GetViewDataContextKey() string
+	// GetFallbackViewContextKey returns the FallbackViewContextKey field.
+	GetFallbackViewContextKey() string
 
 	// GetRemoteAddrHeaders returns RemoteAddrHeaders field.
 	GetRemoteAddrHeaders() []string

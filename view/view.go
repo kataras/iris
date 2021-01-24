@@ -21,19 +21,7 @@ type (
 )
 
 // ErrNotExist reports whether a template was not found in the parsed templates tree.
-type ErrNotExist struct {
-	Name     string
-	IsLayout bool
-}
-
-// Error implements the `error` interface.
-func (e ErrNotExist) Error() string {
-	title := "template"
-	if e.IsLayout {
-		title = "layout"
-	}
-	return fmt.Sprintf("%s '%s' does not exist", title, e.Name)
-}
+type ErrNotExist = context.ErrViewNotExist
 
 // View is just a wrapper on top of the registered template engine.
 type View struct{ Engine }

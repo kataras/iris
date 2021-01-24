@@ -797,6 +797,11 @@ type Configuration struct {
 	//
 	// Defaults to "iris.view.data".
 	ViewDataContextKey string `ini:"view_data_context_key" json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
+	// FallbackViewContextKey is the context's values key
+	// responsible to store the view fallback information.
+	//
+	// Defaults to "iris.view.fallback".
+	FallbackViewContextKey string `ini:"fallback_view_context_key" json:"fallbackViewContextKey,omitempty" yaml:"FallbackViewContextKey" toml:"FallbackViewContextKey"`
 	// RemoteAddrHeaders are the allowed request headers names
 	// that can be valid to parse the client's IP based on.
 	// By-default no "X-" header is consired safe to be used for retrieving the
@@ -999,6 +1004,11 @@ func (c Configuration) GetViewDataContextKey() string {
 	return c.ViewDataContextKey
 }
 
+// GetFallbackViewContextKey returns the FallbackViewContextKey field.
+func (c Configuration) GetFallbackViewContextKey() string {
+	return c.FallbackViewContextKey
+}
+
 // GetRemoteAddrHeaders returns the RemoteAddrHeaders field.
 func (c Configuration) GetRemoteAddrHeaders() []string {
 	return c.RemoteAddrHeaders
@@ -1155,6 +1165,9 @@ func WithConfiguration(c Configuration) Configurator {
 		if v := c.ViewDataContextKey; v != "" {
 			main.ViewDataContextKey = v
 		}
+		if v := c.FallbackViewContextKey; v != "" {
+			main.FallbackViewContextKey = v
+		}
 
 		if v := c.RemoteAddrHeaders; len(v) > 0 {
 			main.RemoteAddrHeaders = v
@@ -1228,6 +1241,7 @@ func DefaultConfiguration() Configuration {
 		ViewEngineContextKey:     "iris.view.engine",
 		ViewLayoutContextKey:     "iris.view.layout",
 		ViewDataContextKey:       "iris.view.data",
+		FallbackViewContextKey:   "iris.view.fallback",
 		RemoteAddrHeaders:        nil,
 		RemoteAddrHeadersForce:   false,
 		RemoteAddrPrivateSubnets: []netutil.IPRange{

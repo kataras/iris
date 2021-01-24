@@ -410,11 +410,7 @@ func (app *Application) View(writer io.Writer, filename string, layout string, b
 		return err
 	}
 
-	err := app.view.ExecuteWriter(writer, filename, layout, bindingData)
-	if err != nil {
-		app.logger.Error(err)
-	}
-	return err
+	return app.view.ExecuteWriter(writer, filename, layout, bindingData)
 }
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions

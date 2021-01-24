@@ -28,6 +28,18 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `FallbackView` feature, per-party or per handler chain. Example can be found at: [_examples/view/fallback](_examples/view/fallback).
+
+```go
+    app.FallbackView(iris.FallbackViewFunc(func(ctx iris.Context, err iris.ErrViewNotExist) error {
+        // err.Name is the previous template name.
+        // err.IsLayout reports whether the failure came from the layout template.
+        // err.Data is the template data provided to the previous View call.
+        // [...custom logic e.g. ctx.View("fallback.html", err.Data)]
+        return err
+    }))
+```
+
 - New `versioning.Aliases` middleware and up to 80% faster version resolve. Example Code:
 
 ```go

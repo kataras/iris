@@ -252,6 +252,24 @@ var (
 	Ace = view.Ace
 )
 
+type (
+	// ErrViewNotExist reports whether a template was not found in the parsed templates tree.
+	ErrViewNotExist = context.ErrViewNotExist
+	// FallbackViewFunc is a function that can be registered
+	// to handle view fallbacks. It accepts the Context and
+	// a special error which contains information about the previous template error.
+	// It implements the FallbackViewProvider interface.
+	//
+	// See `Context.View` method.
+	FallbackViewFunc = context.FallbackViewFunc
+	// FallbackView is a helper to register a single template filename as a fallback
+	// when the provided tempate filename was not found.
+	FallbackView = context.FallbackView
+	// FallbackViewLayout is a helper to register a single template filename as a fallback
+	// layout when the provided layout filename was not found.
+	FallbackViewLayout = context.FallbackViewLayout
+)
+
 // PrefixDir returns a new FileSystem that opens files
 // by adding the given "prefix" to the directory tree of "fs".
 //

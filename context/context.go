@@ -2971,6 +2971,147 @@ func (ctx *Context) GetViewData() map[string]interface{} {
 	return nil
 }
 
+// FallbackViewProvider is an interface which can be registered to the `Party.FallbackView`
+// or `Context.FallbackView` methods to handle fallback views.
+// See FallbackView, FallbackViewLayout and FallbackViewFunc.
+type FallbackViewProvider interface {
+	FallbackView(ctx *Context, err ErrViewNotExist) error
+} /* Notes(@kataras): If ever requested, this fallback logic (of ctx, error) can go to all necessary methods.
+   I've designed with a bit more complexity here instead of a simple filename fallback in order to give
+   the freedom to the developer to do whatever he/she wants with that template/layout not exists error,
+   e.g. have a list of fallbacks views to loop through until succeed or fire a different error than the default.
+   We also provide some helpers for common fallback actions (FallbackView, FallbackViewLayout).
+   This naming was chosen in order to be easy to follow up with the previous view-relative context features.
+   Also note that here we catch a specific error, we want the developer
+   to be aware of the rest template errors (e.g. when a template having parsing issues).
+*/
+
+// FallbackViewFunc is a function that can be registered
+// to handle view fallbacks. It accepts the Context and
+// a special error which contains information about the previous template error.
+// It implements the FallbackViewProvider interface.
+//
+// See `Context.View` method.
+type FallbackViewFunc func(ctx *Context, err ErrViewNotExist) error
+
+// FallbackView completes the FallbackViewProvider interface.
+func (fn FallbackViewFunc) FallbackView(ctx *Context, err ErrViewNotExist) error {
+	return fn(ctx, err)
+}
+
+var (
+	_ FallbackViewProvider = FallbackView("")
+	_ FallbackViewProvider = FallbackViewLayout("")
+)
+
+// FallbackView is a helper to register a single template filename as a fallback
+// when the provided tempate filename was not found.
+type FallbackView string
+
+// FallbackView completes the FallbackViewProvider interface.
+func (f FallbackView) FallbackView(ctx *Context, err ErrViewNotExist) error {
+	if err.IsLayout { // Not responsible to render layouts.
+		return err
+	}
+
+	// ctx.StatusCode(200) // Let's keep the previous status code here, developer can change it anyways.
+	return ctx.View(string(f), err.Data)
+}
+
+// FallbackViewLayout is a helper to register a single template filename as a fallback
+// layout when the provided layout filename was not found.
+type FallbackViewLayout string
+
+// FallbackView completes the FallbackViewProvider interface.
+func (f FallbackViewLayout) FallbackView(ctx *Context, err ErrViewNotExist) error {
+	if !err.IsLayout {
+		// Responsible to render layouts only.
+		return err
+	}
+
+	ctx.ViewLayout(string(f))
+	return ctx.View(err.Name, err.Data)
+}
+
+const fallbackViewOnce = "iris.fallback.view.once"
+
+func (ctx *Context) fireFallbackViewOnce(err ErrViewNotExist) error {
+	// Note(@kataras): this is our way to keep the same View method for
+	// both fallback and normal views, remember, we export the whole
+	// Context functionality to the end-developer through the fallback view provider.
+	if ctx.values.Get(fallbackViewOnce) != nil {
+		return err
+	}
+
+	v := ctx.values.Get(ctx.app.ConfigurationReadOnly().GetFallbackViewContextKey())
+	if v == nil {
+		return err
+	}
+
+	providers, ok := v.([]FallbackViewProvider)
+	if !ok {
+		return err
+	}
+
+	ctx.values.Set(fallbackViewOnce, struct{}{})
+
+	var pErr error
+	for _, provider := range providers {
+		pErr = provider.FallbackView(ctx, err)
+		if pErr != nil {
+			if vErr, ok := pErr.(ErrViewNotExist); ok {
+				// This fallback view does not exist or it's not responsible to handle,
+				// try the next.
+				pErr = vErr
+				continue
+			}
+		}
+
+		// If OK then we found the correct fallback.
+		// If the error was a parse error and not a template not found
+		// then exit and report the pErr error.
+		break
+	}
+
+	return pErr
+}
+
+// FallbackView registers one or more fallback views for a template or a template layout.
+// When View cannot find the given filename to execute then this "provider"
+// is responsible to handle the error or render a different view.
+//
+// Usage:
+//  FallbackView(iris.FallbackView("fallback.html"))
+//  FallbackView(iris.FallbackViewLayout("layouts/fallback.html"))
+//  OR
+//  FallbackView(iris.FallbackViewFunc(ctx iris.Context, err iris.ErrViewNotExist) error {
+//    err.Name is the previous template name.
+//    err.IsLayout reports whether the failure came from the layout template.
+//    err.Data is the template data provided to the previous View call.
+//    [...custom logic e.g. ctx.View("fallback", err.Data)]
+//  })
+func (ctx *Context) FallbackView(providers ...FallbackViewProvider) {
+	key := ctx.app.ConfigurationReadOnly().GetFallbackViewContextKey()
+	if key == "" {
+		return
+	}
+
+	v := ctx.values.Get(key)
+	if v == nil {
+		ctx.values.Set(key, providers)
+		return
+	}
+
+	// Can register more than one.
+	storedProviders, ok := v.([]FallbackViewProvider)
+	if !ok {
+		return
+	}
+
+	storedProviders = append(storedProviders, providers...)
+	ctx.values.Set(key, storedProviders)
+}
+
 // View renders a template based on the registered view engine(s).
 // First argument accepts the filename, relative to the view engine's Directory and Extension,
 // i.e: if directory is "./templates" and want to render the "./templates/users/index.html"
@@ -2985,8 +3126,26 @@ func (ctx *Context) GetViewData() map[string]interface{} {
 // Examples: https://github.com/kataras/iris/tree/master/_examples/view
 func (ctx *Context) View(filename string, optionalViewModel ...interface{}) error {
 	ctx.ContentType(ContentHTMLHeaderValue)
-	cfg := ctx.app.ConfigurationReadOnly()
 
+	err := ctx.renderView(filename, optionalViewModel...)
+	if errNotExists, ok := err.(ErrViewNotExist); ok {
+		err = ctx.fireFallbackViewOnce(errNotExists)
+	}
+
+	if err != nil {
+		if ctx.app.Logger().Level == golog.DebugLevel {
+			// send the error back to the client, when debug mode.
+			ctx.StopWithError(http.StatusInternalServerError, err)
+		} else {
+			ctx.StopWithStatus(http.StatusInternalServerError)
+		}
+	}
+
+	return err
+}
+
+func (ctx *Context) renderView(filename string, optionalViewModel ...interface{}) error {
+	cfg := ctx.app.ConfigurationReadOnly()
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
 
 	var bindingData interface{}
@@ -3000,28 +3159,12 @@ func (ctx *Context) View(filename string, optionalViewModel ...interface{}) erro
 	if key := cfg.GetViewEngineContextKey(); key != "" {
 		if engineV := ctx.values.Get(key); engineV != nil {
 			if engine, ok := engineV.(ViewEngine); ok {
-				err := engine.ExecuteWriter(ctx, filename, layout, bindingData)
-				if err != nil {
-					ctx.app.Logger().Errorf("View [%v] [%T]: %v", ctx.getLogIdentifier(), engine, err)
-					return err
-				}
-
-				return nil
+				return engine.ExecuteWriter(ctx, filename, layout, bindingData)
 			}
 		}
 	}
 
-	err := ctx.app.View(ctx, filename, layout, bindingData) // if failed it logs the error.
-	if err != nil {
-		if ctx.app.Logger().Level == golog.DebugLevel {
-			// send the error back to the client, when debug mode.
-			ctx.StopWithError(http.StatusInternalServerError, err)
-		} else {
-			ctx.StopWithStatus(http.StatusInternalServerError)
-		}
-	}
-
-	return err
+	return ctx.app.View(ctx, filename, layout, bindingData)
 }
 
 // getLogIdentifier returns the ID, or the client remote IP address,

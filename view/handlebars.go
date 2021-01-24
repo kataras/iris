@@ -235,5 +235,5 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		return err
 	}
 
-	return ErrNotExist{fmt.Sprintf("%s (file: %s)", renderFilename, filename), false}
+	return ErrNotExist{fmt.Sprintf("%s (file: %s)", renderFilename, filename), false, bindingData}
 }

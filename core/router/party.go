@@ -312,6 +312,18 @@ type Party interface {
 	// To register a view engine per handler chain see the `Context.ViewEngine` instead.
 	// Read `Configuration.ViewEngineContextKey` documentation for more.
 	RegisterView(viewEngine context.ViewEngine)
+	// FallbackView registers one or more fallback views for a template or a template layout.
+	// Usage:
+	//  FallbackView(iris.FallbackView("fallback.html"))
+	//  FallbackView(iris.FallbackViewLayout("layouts/fallback.html"))
+	//  OR
+	//  FallbackView(iris.FallbackViewFunc(ctx iris.Context, err iris.ErrViewNotExist) error {
+	//    err.Name is the previous template name.
+	//    err.IsLayout reports whether the failure came from the layout template.
+	//    err.Data is the template data provided to the previous View call.
+	//    [...custom logic e.g. ctx.View("fallback", err.Data)]
+	//  })
+	FallbackView(provider context.FallbackViewProvider)
 	// Layout overrides the parent template layout with a more specific layout for this Party.
 	// It returns the current Party.
 	//
