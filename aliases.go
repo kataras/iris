@@ -90,6 +90,10 @@ type (
 	//
 	// It is an alias of the `context#JSON` type.
 	JSON = context.JSON
+	// JSONReader holds the JSON decode options of the `Context.ReadJSON, ReadBody` methods.
+	//
+	// 	// It is an alias of the `context#JSONReader` type.
+	JSONReader = context.JSONReader
 	// JSONP the optional settings for JSONP renderer.
 	//
 	// It is an alias of the `context#JSONP` type.

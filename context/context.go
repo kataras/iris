@@ -54,7 +54,7 @@ type (
 	//	  return json.Unmarshal(data, u)
 	// }
 	//
-	// the 'context.ReadJSON/ReadXML(&User{})' will call the User's
+	// the 'Context.ReadJSON/ReadXML(&User{})' will call the User's
 	// Decode option to decode the request body
 	//
 	// Note: This is totally optionally, the default decoders
@@ -77,6 +77,13 @@ type (
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc func(data []byte, outPtr interface{}) error
+
+	// DecodeFunc is a generic type of decoder function.
+	// When the returned error is not nil the decode operation
+	// is terminated and the error is received by the ReadJSONStream method,
+	// otherwise it continues to read the next available object.
+	// Look the `Context.ReadJSONStream` method.
+	DecodeFunc func(outPtr interface{}) error
 )
 
 // Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
@@ -2205,19 +2212,156 @@ func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 	return ctx.app.Validate(outPtr)
 }
 
+// internalBodyDecoder is a generic type of decoder, usually used to export stream reading functionality
+// of a JSON request.
+type internalBodyDecoder interface {
+	Decode(outPutr interface{}) error
+}
+
+// Same as UnmarshalBody but it operates on body stream.
+func (ctx *Context) decodeBody(outPtr interface{}, decoder internalBodyDecoder) error {
+	// check if the v contains its own decode
+	// in this case the v should be a pointer also,
+	// but this is up to the user's custom Decode implementation*
+	//
+	// See 'BodyDecoder' for more.
+	if decoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
+		rawData, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+
+		return decoder.Decode(rawData)
+	}
+
+	err := decoder.Decode(outPtr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.app.Validate(outPtr)
+}
+
 func (ctx *Context) shouldOptimize() bool {
 	return ctx.app.ConfigurationReadOnly().GetEnableOptimizations()
+}
+
+// JSONReader holds the JSON decode options of the `Context.ReadJSON, ReadBody` methods.
+type JSONReader struct { // Note(@kataras): struct instead of optional funcs to keep consistently with the encoder options.
+	// DisallowUnknownFields causes the json decoder to return an error when the destination
+	// is a struct and the input contains object keys which do not match any
+	// non-ignored, exported fields in the destination.
+	DisallowUnknownFields bool
+	// If set to true then a bit faster json decoder is used instead,
+	// note that if this is true then it overrides
+	// the Application's EnableOptimizations configuration field.
+	Optimize bool
+	// This field only applies to the ReadJSONStream.
+	// The Optimize field has no effect when this is true.
+	// If set to true the request body stream MUST start with a `[`
+	// and end with `]` literals, example:
+	//  [
+	//   {"username":"john"},
+	//   {"username": "makis"},
+	//   {"username": "george"},
+	//  ]
+	// Defaults to false: decodes a json object one by one, example:
+	//  {"username":"john"}
+	//  {"username": "makis"}
+	//  {"username": "george"}
+	ArrayStream bool
+}
+
+type internalJSONDecoder interface {
+	internalBodyDecoder
+	DisallowUnknownFields()
+	More() bool
+}
+
+func (cfg JSONReader) getDecoder(r io.Reader, globalShouldOptimize bool) (decoder internalJSONDecoder) {
+	if cfg.Optimize || globalShouldOptimize {
+		decoder = jsoniter.NewDecoder(r)
+	} else {
+		decoder = json.NewDecoder(r)
+	}
+
+	if cfg.DisallowUnknownFields {
+		decoder.DisallowUnknownFields()
+	}
+
+	return
 }
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go
-func (ctx *Context) ReadJSON(outPtr interface{}) error {
+func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
+	shouldOptimize := ctx.shouldOptimize()
+
+	if len(opts) > 0 {
+		cfg := opts[0]
+		return ctx.decodeBody(outPtr, cfg.getDecoder(ctx.request.Body, shouldOptimize))
+	}
+
 	unmarshaler := json.Unmarshal
-	if ctx.shouldOptimize() {
+	if shouldOptimize {
 		unmarshaler = jsoniter.Unmarshal
 	}
+
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(unmarshaler))
+}
+
+// ReadJSONStream is an alternative of ReadJSON which can reduce the memory load
+// by reading only one json object every time.
+// It buffers just the content required for a single json object instead of the entire string,
+// and discards that once it reaches an end of value that can be decoded into the provided struct
+// inside the onDecode's DecodeFunc.
+//
+// It accepts a function which accepts the json Decode function and returns an error.
+// The second variadic argument is optional and can be used to customize the decoder even further.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream/main.go
+func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSONReader) error {
+	var cfg JSONReader
+	if len(opts) > 0 {
+		cfg = opts[0]
+	}
+
+	// note that only the standard package supports an object
+	// stream of arrays (when the receiver is not an array).
+	if cfg.ArrayStream || !cfg.Optimize {
+		decoder := json.NewDecoder(ctx.request.Body)
+		if cfg.DisallowUnknownFields {
+			decoder.DisallowUnknownFields()
+		}
+		decodeFunc := decoder.Decode
+
+		_, err := decoder.Token() // read open bracket.
+		if err != nil {
+			return err
+		}
+
+		for decoder.More() { // hile the array contains values.
+			if err = onDecode(decodeFunc); err != nil {
+				return err
+			}
+		}
+
+		_, err = decoder.Token() // read closing bracket.
+		return err
+	}
+
+	dec := cfg.getDecoder(ctx.request.Body, ctx.shouldOptimize())
+	decodeFunc := dec.Decode
+
+	// while the array contains values
+	for dec.More() {
+		if err := onDecode(decodeFunc); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
@@ -3165,16 +3309,6 @@ func (ctx *Context) renderView(filename string, optionalViewModel ...interface{}
 	}
 
 	return ctx.app.View(ctx, filename, layout, bindingData)
-}
-
-// getLogIdentifier returns the ID, or the client remote IP address,
-// useful for internal logging of context's method failure.
-func (ctx *Context) getLogIdentifier() interface{} {
-	if id := ctx.GetID(); id != nil {
-		return id
-	}
-
-	return ctx.RemoteAddr()
 }
 
 const (

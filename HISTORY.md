@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `Context.ReadJSONStream` method and `JSONReader` options for `Context.ReadJSON` and `Context.ReadJSONStream`, see the [example](_examples/request-body/read-json-stream/main.go).
+
 - New `FallbackView` feature, per-party or per handler chain. Example can be found at: [_examples/view/fallback](_examples/view/fallback).
 
 ```go
