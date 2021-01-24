@@ -2263,7 +2263,7 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 	//  [
 	//   {"username":"john"},
 	//   {"username": "makis"},
-	//   {"username": "george"},
+	//   {"username": "george"}
 	//  ]
 	// Defaults to false: decodes a json object one by one, example:
 	//  {"username":"john"}

@@ -1,9 +1,6 @@
 package main
 
-import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-)
+import "github.com/kataras/iris/v12"
 
 func main() {
 	app := iris.New()
@@ -14,21 +11,21 @@ func main() {
 	/*
 		curl -L -X POST "http://localhost:8080/" \
 		-H 'Content-Type: application/json' \
-		--data-raw '{"Username":"john"}'
+		--data-raw '{"username":"john"}'
 
 		curl -L -X POST "http://localhost:8080/stream" \
 		-H 'Content-Type: application/json' \
-		--data-raw '{"Username":"john"}
-		{"Username":"makis"}
-		{"Username":"george"}
-		{"Username":"michael"}
+		--data-raw '{"username":"john"}
+		{"username":"makis"}
+		{"username":"george"}
+		{"username":"michael"}
 		'
 
 		If JSONReader.ArrayStream was true then you must provide an array of objects instead, e.g.
-		[{"Username":"john"},
-		{"Username":"makis"},
-		{"Username":"george"},
-		{"Username":"michael"}]
+		[{"username":"john"},
+		{"username":"makis"},
+		{"username":"george"},
+		{"username":"michael"}]
 
 	*/
 
@@ -44,6 +41,7 @@ func postIndex(ctx iris.Context) {
 	err := ctx.ReadJSON(&u, iris.JSONReader{
 		// To throw an error on unknown request payload json fields.
 		DisallowUnknownFields: true,
+		Optimize:              true,
 	})
 	if err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, err)
@@ -58,7 +56,7 @@ func postIndex(ctx iris.Context) {
 
 func postIndexStream(ctx iris.Context) {
 	var users []User
-	job := func(decode context.DecodeFunc) error {
+	job := func(decode iris.DecodeFunc) error {
 		var u User
 		if err := decode(&u); err != nil {
 			return err
@@ -70,7 +68,7 @@ func postIndexStream(ctx iris.Context) {
 		return nil
 	}
 
-	err := ctx.ReadJSONStream(job, context.JSONReader{
+	err := ctx.ReadJSONStream(job, iris.JSONReader{
 		Optimize:              true,
 		DisallowUnknownFields: true,
 		ArrayStream:           false,
