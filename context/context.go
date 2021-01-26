@@ -2280,7 +2280,7 @@ type internalJSONDecoder interface {
 
 func (cfg JSONReader) getDecoder(r io.Reader, globalShouldOptimize bool) (decoder internalJSONDecoder) {
 	if cfg.Optimize || globalShouldOptimize {
-		decoder = jsoniter.NewDecoder(r)
+		decoder = jsoniter.ConfigCompatibleWithStandardLibrary.NewDecoder(r)
 	} else {
 		decoder = json.NewDecoder(r)
 	}

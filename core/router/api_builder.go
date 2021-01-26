@@ -1210,7 +1210,7 @@ func (api *APIBuilder) RemoveHandler(namesOrHandlers ...interface{}) Party {
 		switch h := nameOrHandler.(type) {
 		case string:
 			handlerName = h
-		case context.Handler:
+		case context.Handler, func(*context.Context):
 			handlerName = context.HandlerName(h)
 		case *int:
 			counter = h

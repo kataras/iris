@@ -16,48 +16,30 @@ import (
 func FromStd(handler interface{}) context.Handler {
 	switch h := handler.(type) {
 	case context.Handler:
-		{
-			//
-			// it's already an Iris Handler
-			//
-			return h
-		}
+		return h
+	case func(*context.Context):
+		return h
 	case http.Handler:
-		{
-			//
-			// handlerFunc.ServeHTTP(w,r)
-			//
-			return func(ctx *context.Context) {
-				h.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
-			}
+		// handlerFunc.ServeHTTP(w,r)
+		return func(ctx *context.Context) {
+			h.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 		}
 	case func(http.ResponseWriter, *http.Request):
-		{
-			//
-			// handlerFunc(w,r)
-			//
-			return FromStd(http.HandlerFunc(h))
-		}
+		// handlerFunc(w,r)
+		return FromStd(http.HandlerFunc(h))
 	case func(http.ResponseWriter, *http.Request, http.HandlerFunc):
-		{
-			//
-			// handlerFunc(w,r, http.HandlerFunc)
-			//
-			return FromStdWithNext(h)
-		}
+		// handlerFunc(w,r, http.HandlerFunc)
+		//
+		return FromStdWithNext(h)
 	default:
-		{
-			//
-			// No valid handler passed
-			//
-			panic(fmt.Errorf(`
+		// No valid handler passed
+		panic(fmt.Errorf(`
 			Passed argument is not a func(iris.Context) neither one of these types:
 			- http.Handler
 			- func(w http.ResponseWriter, r *http.Request)
 			- func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 			---------------------------------------------------------------------
 			It seems to be a %T points to: %v`, handler, handler))
-		}
 	}
 }
 
