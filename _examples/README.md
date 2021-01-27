@@ -184,8 +184,9 @@
     * [HTTP/2 Server Push](response-writer/http2push/main.go)
     * [Stream Writer](response-writer/stream-writer/main.go)
     * [Transactions](response-writer/transactions/main.go)
-    * [SSE](response-writer/sse/main.go)
-    * [SSE (third-party package usage for server sent events)](response-writer/sse-third-party/main.go)
+    * [Server-Sent Events](response-writer/sse/main.go)
+        * [SSE 3rd-party (r3labs/sse)](response-writer/sse-third-party/main.go)
+        * [SSE 3rd-party (alexandrevicenzi/go-sse)](response-writer/sse-third-party-2/main.go)
     * Cache
         * [Simple](response-writer/cache/simple/main.go)
         * [Client-Side (304)](response-writer/cache/client-side/main.go)
