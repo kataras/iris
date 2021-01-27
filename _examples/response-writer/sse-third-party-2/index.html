@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Examples</title>
+</head>
+<body>
+    <strong>Messages</strong>
+    <br>
+    <div id="messages"></div>
+
+    <script type="text/javascript">
+        e1 = new EventSource('/events/channel-1');
+        e1.onmessage = function(event) {
+            document.getElementById('messages').innerHTML += 'Message on channel-1: ' + event.data + '<br>';
+        };
+
+        e2 = new EventSource('/events/channel-2');
+        e2.onmessage = function(event) {
+            document.getElementById('messages').innerHTML += 'Message on channel-2: ' + event.data + '<br>';
+        };
+    </script>
+</body>
+</html>

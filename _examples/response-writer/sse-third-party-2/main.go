@@ -11,8 +11,10 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// Install the sse third-party package
+// Install the sse third-party package.
 // $ go get -u github.com/alexandrevicenzi/go-sse
+//
+// Documentation: https://pkg.go.dev/github.com/alexandrevicenzi/go-sse
 func main() {
 	s := sse.NewServer(&sse.Options{
 		// Increase default retry interval to 10s.
@@ -35,7 +37,7 @@ func main() {
 
 	app := iris.New()
 	app.Get("/", func(ctx iris.Context) {
-		ctx.ServeFile("../static/index.html")
+		ctx.ServeFile("./index.html")
 	})
 	app.Get("/events/{channel}", iris.FromStd(s))
 
