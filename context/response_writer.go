@@ -373,6 +373,9 @@ func (w *responseWriter) Flusher() (http.Flusher, bool) {
 // Flush sends any buffered data to the client.
 func (w *responseWriter) Flush() {
 	if flusher, ok := w.Flusher(); ok {
+		// Flow: WriteHeader -> Flush -> Write -> Write -> Write....
+		w.tryWriteHeader()
+
 		flusher.Flush()
 	}
 }
