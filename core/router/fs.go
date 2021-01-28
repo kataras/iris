@@ -661,6 +661,10 @@ func DirListRich(opts ...DirListRichOptions) DirListFunc {
 		}
 
 		for _, d := range dirs {
+			if !dirOptions.ShowHidden && IsHidden(d) {
+				continue
+			}
+
 			name := toBaseName(d.Name())
 
 			upath := path.Join(ctx.Request().RequestURI, name)
