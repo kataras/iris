@@ -13,8 +13,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -102,6 +105,9 @@ type DirOptions struct {
 	// of a current requested directory(dir).
 	// See `DirListRich` package-level function too.
 	DirList DirListFunc
+
+	// show hidden files or directories or not when `ShowList` is true
+	ShowHidden bool
 
 	// Files downloaded and saved locally.
 	Attachments Attachments
@@ -526,6 +532,22 @@ func toBaseName(s string) string {
 	return s
 }
 
+// IsHidden checks a file is hidden or not
+func IsHidden(file os.FileInfo) bool {
+	isHidden := false
+	if runtime.GOOS == "windows" {
+		fa := reflect.ValueOf(file.Sys()).Elem().FieldByName("FileAttributes").Uint()
+		bytefa := []byte(strconv.FormatUint(fa, 2))
+		if bytefa[len(bytefa)-2] == '1' {
+			isHidden = true
+		}
+	} else {
+		isHidden = file.Name()[0] == '.'
+	}
+
+	return isHidden
+}
+
 // DirList is a `DirListFunc` which renders directories and files in html, but plain, mode.
 // See `DirListRich` for more.
 func DirList(ctx *context.Context, dirOptions DirOptions, dirName string, dir http.File) error {
@@ -537,12 +559,33 @@ func DirList(ctx *context.Context, dirOptions DirOptions, dirName string, dir ht
 	sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
 
 	ctx.ContentType(context.ContentHTMLHeaderValue)
-	_, err = ctx.WriteString("<pre>\n")
+	_, err = ctx.WriteString("<div>\n")
+	if err != nil {
+		return err
+	}
+
+	// show current directory
+	_, err = ctx.Writef("<h2>Current Directory: %s</h2>", ctx.Request().RequestURI)
+	if err != nil {
+		return err
+	}
+
+	_, err = ctx.WriteString("<ul style=\"list-style: none; padding-left: 20px\">")
+	if err != nil {
+		return err
+	}
+
+	// link to parent directory
+	_, err = ctx.WriteString("<li><span style=\"width: 150px; float: left; display: inline-block;\">drwxrwxrwx</span><a href=\"./\">../</a><li>")
 	if err != nil {
 		return err
 	}
 
 	for _, d := range dirs {
+		if !dirOptions.ShowHidden && IsHidden(d) {
+			continue
+		}
+
 		name := toBaseName(d.Name())
 
 		upath := path.Join(ctx.Request().RequestURI, name)
@@ -561,12 +604,16 @@ func DirList(ctx *context.Context, dirOptions DirOptions, dirName string, dir ht
 		// name may contain '?' or '#', which must be escaped to remain
 		// part of the URL path, and not indicate the start of a query
 		// string or fragment.
-		_, err = ctx.Writef("<a href=\"%s\"%s>%s</a>\n", url.String(), downloadAttr, html.EscapeString(viewName))
+		_, err = ctx.Writef("<li>"+
+			"<span style=\"width: 150px; float: left; display: inline-block;\">%s</span>"+
+			"<a href=\"%s\"%s>%s</a>"+
+			"</li>",
+			d.Mode().String(), url.String(), downloadAttr, html.EscapeString(viewName))
 		if err != nil {
 			return err
 		}
 	}
-	_, err = ctx.WriteString("</pre>\n")
+	_, err = ctx.WriteString("</ul></div>\n")
 	return err
 }
 
