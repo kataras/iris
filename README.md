@@ -218,7 +218,7 @@ Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;hei
 ## 📖 Learning Iris
 
 ```sh
-$ mkdir myapp
+$ mkdir myapp && cd myapp
 $ go mod init myapp
 $ go get github.com/kataras/iris/v12@master # or @v12.2.0-alpha2
 ```
