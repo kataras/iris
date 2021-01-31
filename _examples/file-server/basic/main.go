@@ -26,6 +26,8 @@ func newApp() *iris.Application {
 		Compress: false,
 		// List the files inside the current requested directory if `IndexName` not found.
 		ShowList: false,
+		// When ShowList is true you can configure if you want to show or hide hidden files.
+		ShowHidden: false,
 		Cache: iris.DirCacheOptions{
 			// enable in-memory cache and pre-compress the files.
 			Enable: true,

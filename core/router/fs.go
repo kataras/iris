@@ -106,7 +106,7 @@ type DirOptions struct {
 	// See `DirListRich` package-level function too.
 	DirList DirListFunc
 
-	// show hidden files or directories or not when `ShowList` is true
+	// Show hidden files or directories or not when `ShowList` is true.
 	ShowHidden bool
 
 	// Files downloaded and saved locally.

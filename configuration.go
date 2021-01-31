@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12/context"
@@ -198,6 +199,13 @@ func WithSocketSharding(app *Application) {
 	// Note(@kataras): It could be a host Configurator but it's an application setting in order
 	// to configure it through yaml/toml files as well.
 	app.config.SocketSharding = true
+}
+
+// WithKeepAlive sets the `Configuration.KeepAlive` field to the given duration.
+func WithKeepAlive(keepAliveDur time.Duration) Configurator {
+	return func(app *Application) {
+		app.config.KeepAlive = keepAliveDur
+	}
 }
 
 // WithoutServerError will cause to ignore the matched "errors"
@@ -613,6 +621,12 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	SocketSharding bool `ini:"socket_sharding" json:"socketSharding" yaml:"SocketSharding" toml:"SocketSharding" env:"SOCKET_SHARDING"`
+	// KeepAlive sets the TCP connection's keep-alive duration.
+	// If set to greater than zero then a tcp listener featured keep alive
+	// will be used instead of the simple tcp one.
+	//
+	// Defaults to 0.
+	KeepAlive time.Duration `ini:"keepalive" json:"keepAlive" yaml:"KeepAlive" toml:"KeepAlive" env:"KEEP_ALIVE"`
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
 	Tunneling TunnelingConfiguration `ini:"tunneling" json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
@@ -894,6 +908,11 @@ func (c Configuration) GetSocketSharding() bool {
 	return c.SocketSharding
 }
 
+// GetKeepAlive returns the KeepAlive field.
+func (c Configuration) GetKeepAlive() time.Duration {
+	return c.KeepAlive
+}
+
 // GetDisablePathCorrection returns the DisablePathCorrection field.
 func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
@@ -1064,6 +1083,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.SocketSharding = v
 		}
 
+		if v := c.KeepAlive; v > 0 {
+			main.KeepAlive = v
+		}
+
 		if len(c.Tunneling.Tunnels) > 0 {
 			main.Tunneling = c.Tunneling
 		}
@@ -1215,6 +1238,7 @@ func DefaultConfiguration() Configuration {
 	return Configuration{
 		LogLevel:                          "info",
 		SocketSharding:                    false,
+		KeepAlive:                         0,
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,

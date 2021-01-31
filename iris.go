@@ -893,6 +893,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 
 	app.ConfigureHost(func(host *Supervisor) {
 		host.SocketSharding = app.config.SocketSharding
+		host.KeepAlive = app.config.KeepAlive
 	})
 
 	app.tryStartTunneling()

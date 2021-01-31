@@ -21,6 +21,7 @@ import (
 // A raw copy of standar library.
 type tcpKeepAliveListener struct {
 	*net.TCPListener
+	keepAliveDur time.Duration
 }
 
 // Accept accepts tcp connections aka clients.
@@ -32,7 +33,7 @@ func (l tcpKeepAliveListener) Accept() (net.Conn, error) {
 	if err = tc.SetKeepAlive(true); err != nil {
 		return tc, err
 	}
-	if err = tc.SetKeepAlivePeriod(3 * time.Minute); err != nil {
+	if err = tc.SetKeepAlivePeriod(l.keepAliveDur); err != nil {
 		return tc, err
 	}
 	return tc, nil
@@ -49,7 +50,7 @@ func TCP(addr string, reuse bool) (net.Listener, error) {
 }
 
 // TCPKeepAlive returns a new tcp keep alive Listener and an error on failure.
-func TCPKeepAlive(addr string, reuse bool) (ln net.Listener, err error) {
+func TCPKeepAlive(addr string, reuse bool, keepAliveDur time.Duration) (ln net.Listener, err error) {
 	// if strings.HasPrefix(addr, "127.0.0.1") {
 	// 	// it's ipv4, use ipv4 tcp listener instead of the default ipv6. Don't.
 	// 	ln, err = net.Listen("tcp4", addr)
@@ -61,7 +62,7 @@ func TCPKeepAlive(addr string, reuse bool) (ln net.Listener, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return tcpKeepAliveListener{ln.(*net.TCPListener)}, nil
+	return tcpKeepAliveListener{ln.(*net.TCPListener), keepAliveDur}, nil
 }
 
 // UNIX returns a new unix(file) Listener.

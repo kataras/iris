@@ -1,6 +1,10 @@
 package context
 
-import "github.com/kataras/iris/v12/core/netutil"
+import (
+	"time"
+
+	"github.com/kataras/iris/v12/core/netutil"
+)
 
 // ConfigurationReadOnly can be implemented
 // by Configuration, it's being used inside the Context.
@@ -14,6 +18,8 @@ type ConfigurationReadOnly interface {
 	GetLogLevel() string
 	// GetSocketSharding returns the SocketSharding field.
 	GetSocketSharding() bool
+	// GetKeepAlive returns the KeepAlive field.
+	GetKeepAlive() time.Duration
 	// GetDisablePathCorrection returns the DisablePathCorrection field
 	GetDisablePathCorrection() bool
 	// GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.

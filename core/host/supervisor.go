@@ -70,6 +70,9 @@ type Supervisor struct {
 
 	// See `iris.Configuration.SocketSharding`.
 	SocketSharding bool
+	// If more than zero then tcp keep alive listener is attached instead of the simple TCP listener.
+	// See `iris.Configuration.KeepAlive`
+	KeepAlive time.Duration
 }
 
 // New returns a new host supervisor
@@ -141,13 +144,17 @@ func (su *Supervisor) isWaiting() bool {
 }
 
 func (su *Supervisor) newListener() (net.Listener, error) {
-	// this will not work on "unix" as network
-	// because UNIX doesn't supports the kind of
-	// restarts we may want for the server.
-	//
-	// User still be able to call .Serve instead.
-	// l, err := netutil.TCPKeepAlive(su.Server.Addr, su.SocketSharding)
-	l, err := netutil.TCP(su.Server.Addr, su.SocketSharding)
+	var (
+		l   net.Listener
+		err error
+	)
+
+	if su.KeepAlive > 0 {
+		l, err = netutil.TCPKeepAlive(su.Server.Addr, su.SocketSharding, su.KeepAlive)
+	} else {
+		l, err = netutil.TCP(su.Server.Addr, su.SocketSharding)
+	}
+
 	if err != nil {
 		return nil, err
 	}
