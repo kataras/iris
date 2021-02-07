@@ -89,7 +89,7 @@
         * [Root and Proxy AccessLog instances](logging/request-logger/accesslog-proxy/main.go)
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)
-    * [Swagger](https://github.com/iris-contrib/swagger/tree/master/example)
+    * [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)
 * [Testing](testing/httptest/main_test.go)
 * [Recovery](recover/main.go)
 * [Profiling](pprof/main.go)

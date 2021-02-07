@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	tmpl := iris.Jet("./views", ".jet")
 	tmpl.Reload(true)
 

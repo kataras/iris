@@ -12,7 +12,7 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/CloudyKit/jet/v5"
+	"github.com/CloudyKit/jet/v6"
 )
 
 const jetEngineName = "jet"
@@ -209,14 +209,10 @@ func (l *jetLoader) Open(name string) (io.ReadCloser, error) {
 	return l.fs.Open(name)
 }
 
-// Exists checks if the template name exists by walking the list of template paths
-// returns string with the full path of the template and bool true if the template file was found
-func (l *jetLoader) Exists(name string) (string, bool) {
-	if _, err := l.fs.Open(name); err == nil {
-		return name, true
-	}
-
-	return "", false
+// Exists checks if the template name exists by walking the list of template paths.
+func (l *jetLoader) Exists(name string) bool {
+	_, err := l.fs.Open(name)
+	return err == nil
 }
 
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
@@ -250,22 +246,24 @@ func (s *JetEngine) Load() error {
 func (s *JetEngine) ParseTemplate(name string, contents string) error {
 	s.initSet()
 
-	_, err := s.Set.LoadTemplate(name, contents)
+	_, err := s.Set.Parse(name, contents)
 	return err
 }
 
 func (s *JetEngine) initSet() {
 	s.mu.Lock()
 	if s.Set == nil {
-		s.Set = jet.NewHTMLSetLoader(s.loader)
-		s.Set.Delims(s.left, s.right)
+		var opts = []jet.Option{
+			jet.WithDelims(s.left, s.right),
+		}
 		if s.developmentMode && !isNoOpFS(s.fs) {
 			// this check is made to avoid jet's fs lookup on noOp fs (nil passed by the developer).
 			// This can be produced when nil fs passed
 			// and only `ParseTemplate` is used.
-			s.Set.SetDevelopmentMode(true)
+			opts = append(opts, jet.InDevelopmentMode())
 		}
 
+		s.Set = jet.NewSet(s.loader, opts...)
 		if s.vars != nil {
 			for key, value := range s.vars {
 				s.Set.AddGlobal(key, value)

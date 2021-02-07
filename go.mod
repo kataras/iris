@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/jet/v5 v5.1.1
+	github.com/CloudyKit/jet/v6 v6.0.2
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
 	github.com/andybalholm/brotli v1.0.1
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
