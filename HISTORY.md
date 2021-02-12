@@ -28,6 +28,22 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `uuid` builtin path parameter type. Example:
+
+```go
+// +------------------------+
+// | {param:uuid}           |
+// +------------------------+
+// UUIDv4 (and v1) path parameter validation.
+
+// http://localhost:8080/user/bb4f33e4-dc08-40d8-9f2b-e8b2bb615c0e -> OK
+// http://localhost:8080/user/dsadsa-invalid-uuid                  -> NOT FOUND
+app.Get("/user/{id:uuid}", func(ctx iris.Context) {
+    id := ctx.Params().Get("id")
+    ctx.WriteString(id)
+})
+```
+
 - New `Configuration.KeepAlive` and `iris.WithKeepAlive(time.Duration) Configurator` added as helpers to start the server using a tcp listener featured with keep-alive.
 
 - New `DirOptions.ShowHidden bool` is added by [@tuhao1020](https://github.com/tuhao1020) at [PR #1717](https://github.com/kataras/iris/pull/1717) to show or hide the hidden files when `ShowList` is set to true.

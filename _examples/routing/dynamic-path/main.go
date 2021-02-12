@@ -147,6 +147,17 @@ func main() {
 	// app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
 	// 	return func(paramValue string) bool { return argument == paramValue }
 	// })
+	// +------------------------+
+	// | {param:uuid}           |
+	// +------------------------+
+	// UUIDv4 (and v1) path parameter validation.
+
+	// http://localhost:8080/user/bb4f33e4-dc08-40d8-9f2b-e8b2bb615c0e -> OK
+	// http://localhost:8080/user/dsadsa-invalid-uuid                  -> NOT FOUND
+	app.Get("/user/{id:uuid}", func(ctx iris.Context) {
+		id := ctx.Params().Get("id")
+		ctx.WriteString(id)
+	})
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.
 	app.Get("/username/{name}", func(ctx iris.Context) {

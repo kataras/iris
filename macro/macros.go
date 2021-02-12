@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/macro/interpreter/ast"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -402,6 +404,16 @@ var (
 	// Should be living in the latest path segment of a route path.
 	Path = NewMacro("path", "", false, true, nil)
 
+	// UUID string type for validating a uuidv4 (and v1) path parameter
+	// Read more at: https://tools.ietf.org/html/rfc4122
+	UUID = NewMacro("uuid", "uuidv4", false, false, func(paramValue string) (interface{}, bool) {
+		_, err := uuid.Parse(paramValue) // this is x10+ times faster than regexp.
+		if err != nil {
+			return nil, false
+		}
+
+		return paramValue, true
+	})
 	// Defaults contains the defaults macro and parameters types for the router.
 	//
 	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
@@ -421,6 +433,7 @@ var (
 		Alphabetical,
 		File,
 		Path,
+		UUID,
 	}
 )
 
