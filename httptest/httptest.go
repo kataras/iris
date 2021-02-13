@@ -40,6 +40,11 @@ type Configuration struct {
 	// LogLevel sets the application's log level.
 	// Defaults to "disable" when testing.
 	LogLevel string
+
+	// If true then the underline httpexpect report will be acquired by the NewRequireReporter
+	// call instead of the default NewAssertReporter.
+	// Defaults to false.
+	Strict bool // Note: if more reports are available in the future then add a Reporter interface as a field.
 }
 
 // Set implements the OptionSetter for the Configuration itself
@@ -49,6 +54,7 @@ func (c Configuration) Set(main *Configuration) {
 	if c.LogLevel != "" {
 		main.LogLevel = c.LogLevel
 	}
+	main.Strict = c.Strict
 }
 
 var (
@@ -74,6 +80,15 @@ var (
 			c.LogLevel = level
 		}
 	}
+
+	// Strict sets the Strict configuration field to "val".
+	// Applies the NewRequireReporter instead of the default one.
+	// Use this if you want the test to fail on first error, before all checks have been done.
+	Strict = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.Strict = val
+		}
+	}
 )
 
 // DefaultConfiguration returns the default configuration for the httptest.
@@ -82,7 +97,12 @@ func DefaultConfiguration() *Configuration {
 }
 
 // New Prepares and returns a new test framework based on the "app".
-// You can find example on the https://github.com/kataras/iris/tree/master/_examples/testing/httptest
+// Usage:
+//  httptest.New(t, app)
+// With options:
+//  httptest.New(t, app, httptest.URL(...), httptest.Debug(true), httptest.LogLevel("debug"), httptest.Strict(true))
+//
+// Example at: https://github.com/kataras/iris/tree/master/_examples/testing/httptest.
 func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
@@ -99,13 +119,21 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 		}
 	}
 
+	var reporter httpexpect.Reporter
+
+	if conf.Strict {
+		reporter = httpexpect.NewRequireReporter(t)
+	} else {
+		reporter = httpexpect.NewAssertReporter(t)
+	}
+
 	testConfiguration := httpexpect.Config{
 		BaseURL: conf.URL,
 		Client: &http.Client{
 			Transport: httpexpect.NewBinder(app),
 			Jar:       httpexpect.NewJar(),
 		},
-		Reporter: httpexpect.NewAssertReporter(t),
+		Reporter: reporter,
 	}
 
 	if conf.Debug {

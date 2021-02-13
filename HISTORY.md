@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `httptest.Strict` option setter to enable the `httpexpect.RequireReporter` instead of the default `httpexpect.AssetReporter. Use that to enable complete test failure on the first error. As requested at: [#1722](https://github.com/kataras/iris/issues/1722).
+
 - New `uuid` builtin path parameter type. Example:
 
 ```go

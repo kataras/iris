@@ -10,7 +10,7 @@ import (
 // $ go test -v
 func TestNewApp(t *testing.T) {
 	app := newApp()
-	e := httptest.New(t, app)
+	e := httptest.New(t, app, httptest.Strict(true))
 
 	// redirects to /admin without basic auth
 	e.GET("/").Expect().Status(httptest.StatusUnauthorized)

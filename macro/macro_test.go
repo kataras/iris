@@ -426,11 +426,11 @@ func TestUUIDEvaluatorRaw(t *testing.T) {
 	}{
 		{true, "978ad967-5fad-4c82-af99-580097ace662"}, // v4
 		{true, "c7067f9c-6d43-11eb-9439-0242ac130002"}, // v1
-		{false, "astring"},                         // 0
-		{false, "astringwith_numb3rS_and_symbol$"}, // 1
-		{false, "32321"},                           // 2
-		{false, "main.css"},                        // 3
-		{false, "/assets/main.css"},                // 4
+		{false, "astring"},                         // 2
+		{false, "astringwith_numb3rS_and_symbol$"}, // 3
+		{false, "32321"},                           // 4
+		{false, "main.css"},                        // 5
+		{false, "/assets/main.css"},                // 6
 	}
 	for i, tt := range tests {
 		testEvaluatorRaw(t, UUID, tt.input, reflect.String, tt.pass, i)
