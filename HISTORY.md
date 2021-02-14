@@ -28,6 +28,22 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- **New feature:** add the ability to set custom error handlers on path type parameters errors (existing or custom ones). Example Code:
+
+```go
+app.Macros().Get("uuid").HandleError(func(ctx iris.Context, err error) {
+    ctx.StatusCode(iris.StatusBadRequest)
+    ctx.JSON(iris.Map{
+        "error":   err.Error(),
+        "message": "invalid path parameter",
+    })
+})
+
+app.Get("/users/{id:uuid}", getUser)
+```
+
+- Improve the performance and fix `:int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64` path type parameters couldn't accept a positive number written with the plus symbol or with a leading zeroes, e.g. `+42` and `021`.
+
 - The `iris.WithEmptyFormError` option is respected on `context.ReadQuery` method too, as requested at [#1727](https://github.com/kataras/iris/issues/1727). [Example comments](https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go) were updated.
 
 - New `httptest.Strict` option setter to enable the `httpexpect.RequireReporter` instead of the default `httpexpect.AssetReporter. Use that to enable complete test failure on the first error. As requested at: [#1722](https://github.com/kataras/iris/issues/1722).

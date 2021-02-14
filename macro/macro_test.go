@@ -66,6 +66,8 @@ func TestGoodParamFuncName(t *testing.T) {
 }
 
 func testEvaluatorRaw(t *testing.T, macroEvaluator *Macro, input string, expectedType reflect.Kind, pass bool, i int) {
+	t.Helper()
+
 	if macroEvaluator.Evaluator == nil && pass {
 		return // if not evaluator defined then it should allow everything.
 	}
@@ -120,13 +122,22 @@ func TestIntEvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 5
 		{false, "42 18446744073709551615"},                 // 6
 		{false, "--42"},                                    // 7
-		{false, "+42"},                                     // 8
+		{true, "+42"},                                      // 8
 		{false, "main.css"},                                // 9
 		{false, "/assets/main.css"},                        // 10
 	}
 
 	for i, tt := range tests {
 		testEvaluatorRaw(t, Int, tt.input, reflect.Int, tt.pass, i)
+	}
+}
+
+func BenchmarkIntEvaluatorRaw(b *testing.B) {
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		Int.Evaluator("1234568320")
+		Int.Evaluator("-12345678999321")
 	}
 }
 
@@ -145,7 +156,7 @@ func TestInt8EvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 7
 		{false, "42 18446744073709551615"},                 // 8
 		{false, "--42"},                                    // 9
-		{false, "+42"},                                     // 10
+		{true, "+42"},                                      // 10
 		{false, "main.css"},                                // 11
 		{false, "/assets/main.css"},                        // 12
 	}
@@ -170,7 +181,7 @@ func TestInt16EvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 7
 		{false, "42 18446744073709551615"},                 // 8
 		{false, "--42"},                                    // 9
-		{false, "+42"},                                     // 10
+		{true, "+42"},                                      // 10
 		{false, "main.css"},                                // 11
 		{false, "/assets/main.css"},                        // 12
 	}
@@ -197,7 +208,7 @@ func TestInt32EvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 9
 		{false, "42 18446744073709551615"},                 // 10
 		{false, "--42"},                                    // 11
-		{false, "+42"},                                     // 12
+		{true, "+42"},                                      // 12
 		{false, "main.css"},                                // 13
 		{false, "/assets/main.css"},                        // 14
 	}
@@ -278,7 +289,7 @@ func TestUint8EvaluatorRaw(t *testing.T) {
 		{false, "+1"},                                      // 9
 		{false, "18446744073709551615"},                    // 10
 		{false, "9223372036854775807"},                     // 11
-		{false, "021"},                                     // 12 - no leading zeroes are allowed.
+		{true, "021"},                                      // 12 - leading zeroes are allowed.
 		{false, "300"},                                     // 13
 		{true, "0"},                                        // 14
 		{true, "255"},                                      // 15

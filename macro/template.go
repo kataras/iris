@@ -30,10 +30,13 @@ type TemplateParam struct {
 	Src string `json:"src"` // the unparsed param'false source
 	// Type is not useful anywhere here but maybe
 	// it's useful on host to decide how to convert the path template to specific router's syntax
-	Type          ast.ParamType   `json:"type"`
-	Name          string          `json:"name"`
-	Index         int             `json:"index"`
-	ErrCode       int             `json:"errCode"`
+	Type    ast.ParamType `json:"type"`
+	Name    string        `json:"name"`
+	Index   int           `json:"index"`
+	ErrCode int           `json:"errCode"`
+	// Note that, the value MUST BE a type of `func(iris.Context, err error)`.
+	HandleError interface{} `json:"-"` /* It's not an typed value because of import-cycle,
+	// neither a special struct required, see `handler.MakeFilter`. */
 	TypeEvaluator ParamEvaluator  `json:"-"`
 	Funcs         []reflect.Value `json:"-"`
 
@@ -53,7 +56,7 @@ func (p TemplateParam) preComputed() TemplateParam {
 	// i.e {myparam} or {myparam:string} or {myparam:path} ->
 	// their type evaluator is nil because they don't do any checks and they don't change
 	// the default parameter value's type (string) so no need for any work).
-	p.canEval = p.TypeEvaluator != nil || len(p.Funcs) > 0 || p.ErrCode != parser.DefaultParamErrorCode
+	p.canEval = p.TypeEvaluator != nil || len(p.Funcs) > 0 || p.ErrCode != parser.DefaultParamErrorCode || p.HandleError != nil
 
 	return p
 }
@@ -64,6 +67,10 @@ func (p *TemplateParam) CanEval() bool {
 	return p.canEval
 }
 
+type errorInterface interface {
+	Error() string
+}
+
 // Eval is the most critical part of the TemplateParam.
 // It is responsible to return the type-based value if passed otherwise nil.
 // If the "paramValue" is the correct type of the registered parameter type
@@ -71,21 +78,27 @@ func (p *TemplateParam) CanEval() bool {
 //
 // It is called from the converted macro handler (middleware)
 // from the higher-level component of "kataras/iris/macro/handler#MakeHandler".
-func (p *TemplateParam) Eval(paramValue string) interface{} {
+func (p *TemplateParam) Eval(paramValue string) (interface{}, bool) {
 	if p.TypeEvaluator == nil {
 		for _, fn := range p.stringInFuncs {
 			if !fn(paramValue) {
-				return nil
+				return nil, false
 			}
 		}
-		return paramValue
+		return paramValue, true
 	}
 
 	// fmt.Printf("macro/template.go#L88: Eval for param value: %s and p.Src: %s\n", paramValue, p.Src)
 
 	newValue, passed := p.TypeEvaluator(paramValue)
 	if !passed {
-		return nil
+		if newValue != nil && p.HandleError != nil { // return this error only when a HandleError was registered.
+			if _, ok := newValue.(errorInterface); ok {
+				return newValue, false // this is an error, see `HandleError` and `MakeFilter`.
+			}
+		}
+
+		return nil, false
 	}
 
 	if len(p.Funcs) > 0 {
@@ -94,14 +107,14 @@ func (p *TemplateParam) Eval(paramValue string) interface{} {
 			// or make it as func(interface{}) bool and pass directly the "newValue"
 			// but that would not be as easy for end-developer, so keep that "slower":
 			if !evalFunc.Call(paramIn)[0].Interface().(bool) { // i.e func(paramValue int) bool
-				return nil
+				return nil, false
 			}
 		}
 	}
 
 	// fmt.Printf("macro/template.go: passed with value: %v and type: %T\n", newValue, newValue)
 
-	return newValue
+	return newValue, true
 }
 
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)
@@ -130,6 +143,7 @@ func Parse(src string, macros Macros) (Template, error) {
 			Name:          p.Name,
 			Index:         idx,
 			ErrCode:       p.ErrorCode,
+			HandleError:   m.handleError,
 			TypeEvaluator: typEval,
 		}
 

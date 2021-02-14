@@ -152,6 +152,15 @@ func main() {
 	// +------------------------+
 	// UUIDv4 (and v1) path parameter validation.
 
+	// Optionally, set custom handler on path parameter type error:
+	app.Macros().Get("uuid").HandleError(func(ctx iris.Context, err error) {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{
+			"error":   err.Error(),
+			"message": "invalid path parameter",
+		})
+	})
+
 	// http://localhost:8080/user/bb4f33e4-dc08-40d8-9f2b-e8b2bb615c0e -> OK
 	// http://localhost:8080/user/dsadsa-invalid-uuid                  -> NOT FOUND
 	app.Get("/user/{id:uuid}", func(ctx iris.Context) {

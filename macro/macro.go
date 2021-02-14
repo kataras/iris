@@ -125,6 +125,12 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 
 	numFields := typFn.NumIn()
 
+	panicIfErr := func(i int, err error) {
+		if err != nil {
+			panic(fmt.Sprintf("on field index: %d: %v", i, err))
+		}
+	}
+
 	return func(args []string) reflect.Value {
 		if len(args) != numFields {
 			// no variadics support, for now.
@@ -138,12 +144,6 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 			// try to convert the string literal as we get it from the parser.
 			var (
 				val interface{}
-
-				panicIfErr = func(i int, err error) {
-					if err != nil {
-						panic(fmt.Sprintf("on field index: %d: %v", i, err))
-					}
-				}
 			)
 
 			// try to get the value based on the expected type.
@@ -254,8 +254,9 @@ type (
 		master   bool
 		trailing bool
 
-		Evaluator ParamEvaluator
-		funcs     []ParamFunc
+		Evaluator   ParamEvaluator
+		handleError interface{}
+		funcs       []ParamFunc
 	}
 
 	// ParamFuncBuilder is a func
@@ -310,6 +311,17 @@ func (m *Macro) Master() bool {
 // A wildcard should be registered in the last path segment only.
 func (m *Macro) Trailing() bool {
 	return m.trailing
+}
+
+// HandleError registers a handler which will be executed
+// when a parameter evaluator returns false and a non nil value which is a type of `error`.
+// The "fnHandler" value MUST BE a type of `func(iris.Context, err error)`,
+// otherwise the program will receive a panic before server startup.
+// The status code of the ErrCode (`else` literal) is set
+// before the error handler but it can be modified inside the handler itself.
+func (m *Macro) HandleError(fnHandler interface{}) *Macro { // See handler.MakeFilter.
+	m.handleError = fnHandler
+	return m
 }
 
 // func (m *Macro) SetParamResolver(fn func(memstore.Entry) interface{}) *Macro {

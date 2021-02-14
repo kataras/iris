@@ -1,6 +1,8 @@
 package macro
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -47,19 +49,14 @@ var (
 			}
 		})
 
-	simpleNumberEval = MustRegexp("^-?[0-9]+$")
 	// Int or number type
 	// both positive and negative numbers, actual value can be min-max int64 or min-max int32 depends on the arch.
 	// If x64: -9223372036854775808 to 9223372036854775807.
 	// If x32: -2147483648 to 2147483647 and etc..
 	Int = NewMacro("int", "number", false, false, func(paramValue string) (interface{}, bool) {
-		if !simpleNumberEval(paramValue) {
-			return nil, false
-		}
-
 		v, err := strconv.Atoi(paramValue)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 
 		return v, true
@@ -89,13 +86,9 @@ var (
 	// Int8 type
 	// -128 to 127.
 	Int8 = NewMacro("int8", "", false, false, func(paramValue string) (interface{}, bool) {
-		if !simpleNumberEval(paramValue) {
-			return nil, false
-		}
-
 		v, err := strconv.ParseInt(paramValue, 10, 8)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return int8(v), true
 	}).
@@ -118,13 +111,9 @@ var (
 	// Int16 type
 	// -32768 to 32767.
 	Int16 = NewMacro("int16", "", false, false, func(paramValue string) (interface{}, bool) {
-		if !simpleNumberEval(paramValue) {
-			return nil, false
-		}
-
 		v, err := strconv.ParseInt(paramValue, 10, 16)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return int16(v), true
 	}).
@@ -147,13 +136,9 @@ var (
 	// Int32 type
 	// -2147483648 to 2147483647.
 	Int32 = NewMacro("int32", "", false, false, func(paramValue string) (interface{}, bool) {
-		if !simpleNumberEval(paramValue) {
-			return nil, false
-		}
-
 		v, err := strconv.ParseInt(paramValue, 10, 32)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return int32(v), true
 	}).
@@ -176,13 +161,9 @@ var (
 	// Int64 as int64 type
 	// -9223372036854775808 to 9223372036854775807.
 	Int64 = NewMacro("int64", "long", false, false, func(paramValue string) (interface{}, bool) {
-		if !simpleNumberEval(paramValue) {
-			return nil, false
-		}
-
 		v, err := strconv.ParseInt(paramValue, 10, 64)
 		if err != nil { // if err == strconv.ErrRange...
-			return nil, false
+			return err, false
 		}
 		return v, true
 	}).
@@ -215,7 +196,7 @@ var (
 	Uint = NewMacro("uint", "", false, false, func(paramValue string) (interface{}, bool) {
 		v, err := strconv.ParseUint(paramValue, 10, strconv.IntSize) // 32,64...
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return uint(v), true
 	}).
@@ -241,17 +222,12 @@ var (
 			}
 		})
 
-	uint8Eval = MustRegexp("^([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
 	// Uint8 as uint8 type
 	// 0 to 255.
 	Uint8 = NewMacro("uint8", "", false, false, func(paramValue string) (interface{}, bool) {
-		if !uint8Eval(paramValue) {
-			return nil, false
-		}
-
 		v, err := strconv.ParseUint(paramValue, 10, 8)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return uint8(v), true
 	}).
@@ -282,7 +258,7 @@ var (
 	Uint16 = NewMacro("uint16", "", false, false, func(paramValue string) (interface{}, bool) {
 		v, err := strconv.ParseUint(paramValue, 10, 16)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return uint16(v), true
 	}).
@@ -307,7 +283,7 @@ var (
 	Uint32 = NewMacro("uint32", "", false, false, func(paramValue string) (interface{}, bool) {
 		v, err := strconv.ParseUint(paramValue, 10, 32)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return uint32(v), true
 	}).
@@ -332,7 +308,7 @@ var (
 	Uint64 = NewMacro("uint64", "", false, false, func(paramValue string) (interface{}, bool) {
 		v, err := strconv.ParseUint(paramValue, 10, 64)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return v, true
 	}).
@@ -366,22 +342,26 @@ var (
 		// in this case.
 		v, err := strconv.ParseBool(paramValue)
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 		return v, true
 	})
 
-	alphabeticalEval = MustRegexp("^[a-zA-Z ]+$")
+	// ErrParamNotAlphabetical is fired when the parameter value is not an alphabetical text.
+	ErrParamNotAlphabetical = errors.New("parameter is not alphabetical")
+	alphabeticalEval        = MustRegexp("^[a-zA-Z ]+$")
 	// Alphabetical letter type
 	// letters only (upper or lowercase)
 	Alphabetical = NewMacro("alphabetical", "", false, false, func(paramValue string) (interface{}, bool) {
 		if !alphabeticalEval(paramValue) {
-			return nil, false
+			return fmt.Errorf("%s: %w", paramValue, ErrParamNotAlphabetical), false
 		}
 		return paramValue, true
 	})
 
-	fileEval = MustRegexp("^[a-zA-Z0-9_.-]*$")
+	// ErrParamNotFile is fired when the parameter value is not a form of a file.
+	ErrParamNotFile = errors.New("parameter is not a file")
+	fileEval        = MustRegexp("^[a-zA-Z0-9_.-]*$")
 	// File type
 	// letters (upper or lowercase)
 	// numbers (0-9)
@@ -391,7 +371,7 @@ var (
 	// no spaces! or other character
 	File = NewMacro("file", "", false, false, func(paramValue string) (interface{}, bool) {
 		if !fileEval(paramValue) {
-			return nil, false
+			return fmt.Errorf("%s: %w", paramValue, ErrParamNotFile), false
 		}
 		return paramValue, true
 	})
@@ -409,7 +389,7 @@ var (
 	UUID = NewMacro("uuid", "uuidv4", false, false, func(paramValue string) (interface{}, bool) {
 		_, err := uuid.Parse(paramValue) // this is x10+ times faster than regexp.
 		if err != nil {
-			return nil, false
+			return err, false
 		}
 
 		return paramValue, true
