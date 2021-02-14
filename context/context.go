@@ -2386,8 +2386,11 @@ var (
 	// A shortcut for the `schema#IsErrPath`.
 	IsErrPath = schema.IsErrPath
 
-	// ErrEmptyForm is returned by `context#ReadForm` and `context#ReadBody`
-	// when it should read data from a request form data but there is none.
+	// ErrEmptyForm is returned by
+	// - `context#ReadForm`
+	// - `context#ReadQuery`
+	// - `context#ReadBody`
+	// when the request data (form, query and body respectfully) is empty.
 	ErrEmptyForm = errors.New("empty form")
 
 	// ErrEmptyFormField reports whether a specific field exists but it's empty.
@@ -2460,6 +2463,9 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 func (ctx *Context) ReadQuery(ptr interface{}) error {
 	values := ctx.getQuery()
 	if len(values) == 0 {
+		if ctx.app.ConfigurationReadOnly().GetFireEmptyFormError() {
+			return ErrEmptyForm
+		}
 		return nil
 	}
 

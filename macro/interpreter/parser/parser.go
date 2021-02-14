@@ -39,7 +39,7 @@ func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, 
 		}
 		// if we have param type path but it's not the last path part
 		if ast.IsTrailing(stmt.Type) && i < len(pathParts)-1 {
-			return nil, fmt.Errorf("%s: parameter type \"%s\" should be registered to the very last of a path", s, stmt.Type.Indent())
+			return nil, fmt.Errorf("%s: parameter type \"%s\" should be registered to the very end of a path", s, stmt.Type.Indent())
 		}
 
 		statements = append(statements, stmt)

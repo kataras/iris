@@ -17,7 +17,18 @@ func main() {
 	app.Get("/", func(ctx iris.Context) {
 		var t MyType
 		err := ctx.ReadQuery(&t)
-		if err != nil && !iris.IsErrPath(err) {
+
+		// To ignore errors of "required" or when unexpected values are passed to the query,
+		// use the iris.IsErrPath.
+		// It can be ignored, e.g:
+		// if err!=nil && !iris.IsErrPath(err) { ... return }
+		//
+		// To receive an error on EMPTY query when ReadQuery is called
+		// you should enable the `FireEmptyFormError/WithEmptyFormError` ( see below).
+		// To check for the empty error you simple compare the error with the ErrEmptyForm, e.g.:
+		// err == iris.ErrEmptyForm, so, to ignore both path and empty errors, you do:
+		// if err!=nil && err != iris.ErrEmptyForm && !iris.IsErrPath(err) { ctx.StopWithError(...); return }
+		if err != nil {
 			ctx.StopWithError(iris.StatusInternalServerError, err)
 			return
 		}
@@ -32,5 +43,7 @@ func main() {
 
 	// http://localhost:8080?name=iris&age=3
 	// http://localhost:8080/simple?name=john&name=doe&name=kataras
-	app.Listen(":8080")
+	//
+	// Note: this `WithEmptyFormError` will give an error if the query was empty.
+	app.Listen(":8080", iris.WithEmptyFormError)
 }

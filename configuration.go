@@ -731,7 +731,7 @@ type Configuration struct {
 	//
 	// See `Context.RecordRequestBody` method for the same feature, per-request.
 	DisableBodyConsumptionOnUnmarshal bool `ini:"disable_body_consumption" json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
-	// FireEmptyFormError returns if set to tue true then the `context.ReadBody/ReadForm`
+	// FireEmptyFormError returns if set to tue true then the `context.ReadForm/ReadQuery/ReadBody`
 	// will return an `iris.ErrEmptyForm` on empty request form data.
 	FireEmptyFormError bool `ini:"fire_empty_form_error" json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" toml:"FireEmptyFormError"`
 

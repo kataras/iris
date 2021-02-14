@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- The `iris.WithEmptyFormError` option is respected on `context.ReadQuery` method too, as requested at [#1727](https://github.com/kataras/iris/issues/1727). [Example comments](https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go) were updated.
+
 - New `httptest.Strict` option setter to enable the `httpexpect.RequireReporter` instead of the default `httpexpect.AssetReporter. Use that to enable complete test failure on the first error. As requested at: [#1722](https://github.com/kataras/iris/issues/1722).
 
 - New `uuid` builtin path parameter type. Example:
