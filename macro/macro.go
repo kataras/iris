@@ -315,7 +315,7 @@ func (m *Macro) Trailing() bool {
 
 // HandleError registers a handler which will be executed
 // when a parameter evaluator returns false and a non nil value which is a type of `error`.
-// The "fnHandler" value MUST BE a type of `func(iris.Context, err error)`,
+// The "fnHandler" value MUST BE a type of `func(iris.Context, paramIndex int, err error)`,
 // otherwise the program will receive a panic before server startup.
 // The status code of the ErrCode (`else` literal) is set
 // before the error handler but it can be modified inside the handler itself.

@@ -31,11 +31,15 @@ The codebase for Dependency Injection, Internationalization and localization and
 - **New feature:** add the ability to set custom error handlers on path type parameters errors (existing or custom ones). Example Code:
 
 ```go
-app.Macros().Get("uuid").HandleError(func(ctx iris.Context, err error) {
+app.Macros().Get("uuid").HandleError(func(ctx iris.Context, paramIndex int, err error) {
     ctx.StatusCode(iris.StatusBadRequest)
+
+    param := ctx.Params().GetEntryAt(paramIndex)
     ctx.JSON(iris.Map{
-        "error":   err.Error(),
-        "message": "invalid path parameter",
+        "error":     err.Error(),
+        "message":   "invalid path parameter",
+        "parameter": param.Key,
+        "value":     param.ValueRaw,
     })
 })
 

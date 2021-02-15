@@ -34,7 +34,7 @@ type TemplateParam struct {
 	Name    string        `json:"name"`
 	Index   int           `json:"index"`
 	ErrCode int           `json:"errCode"`
-	// Note that, the value MUST BE a type of `func(iris.Context, err error)`.
+	// Note that, the value MUST BE a type of `handler.ParamErrorHandler`.
 	HandleError interface{} `json:"-"` /* It's not an typed value because of import-cycle,
 	// neither a special struct required, see `handler.MakeFilter`. */
 	TypeEvaluator ParamEvaluator  `json:"-"`

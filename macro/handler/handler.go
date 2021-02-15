@@ -18,11 +18,11 @@ import (
 // Note that the builtin macros return error too, but they're handled
 // by the `else` literal (error code). To change this behavior
 // and send a custom error response you have to register it:
-//  app.Macros().Get("uuid").HandleError(func(iris.Context, err error)).
+//  app.Macros().Get("uuid").HandleError(func(ctx iris.Context, paramIndex int, err error)).
 // You can also set custom macros by `app.Macros().Register`.
 //
 // See macro.HandleError to set it.
-type ParamErrorHandler = func(*context.Context, error) // alias.
+type ParamErrorHandler = func(*context.Context, int, error) // alias.
 
 // CanMakeHandler reports whether a macro template needs a special macro's evaluator handler to be validated
 // before procceed to the next handler(s).
@@ -112,9 +112,8 @@ func MakeFilter(tmpl macro.Template) context.Filter {
 				if value != nil && p.HandleError != nil {
 					// The "value" is an error here, always (see template.Eval).
 					// This is always a type of ParamErrorHandler at this state (see CanMakeHandler).
-					p.HandleError.(ParamErrorHandler)(ctx, value.(error))
+					p.HandleError.(ParamErrorHandler)(ctx, p.Index, value.(error))
 				}
-
 				return false
 			}
 
