@@ -44,7 +44,7 @@ func CanMakeHandler(tmpl macro.Template) (needsMacroHandler bool) {
 			if p.HandleError != nil {
 				// Check for its type.
 				if _, ok := p.HandleError.(ParamErrorHandler); !ok {
-					panic(fmt.Sprintf("HandleError must be a type of func(iris.Context, error) but got: %T", p.HandleError))
+					panic(fmt.Sprintf("HandleError must be a type of func(iris.Context, int, error) but got: %T", p.HandleError))
 				}
 			}
 			break
