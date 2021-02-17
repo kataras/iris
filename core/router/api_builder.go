@@ -870,8 +870,14 @@ type PartyConfigurator interface {
 //   router.Get("/{id:uuid}", api.getUser)
 //   [...]
 //  }
-func (api *APIBuilder) PartyConfigure(relativePath string, partyReg PartyConfigurator) Party {
-	return api.PartyFunc(relativePath, partyReg.Configure)
+func (api *APIBuilder) PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party {
+	child := api.Party(relativePath)
+	for _, p := range partyReg {
+		if p != nil {
+			p.Configure(child)
+		}
+	}
+	return child
 }
 
 // Subdomain returns a new party which is responsible to register routes to

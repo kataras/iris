@@ -99,7 +99,7 @@ type Party interface {
 	//   router.Get("/{id:uuid}", api.getUser)
 	//   [...]
 	//  }
-	PartyConfigure(relativePath string, partyReg PartyConfigurator) Party
+	PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party
 	// Subdomain returns a new party which is responsible to register routes to
 	// this specific "subdomain".
 	//

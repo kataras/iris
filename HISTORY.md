@@ -28,7 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
-- New `PartyConfigure(relativePath string, partyReg PartyConfigurator) Party` helper, registers a children Party like `Party` and `PartyFunc` but instead it accepts a structure value (useful when the api's dependencies amount are too much to pass on a function).
+- New `PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party` helper, registers a children Party like `Party` and `PartyFunc` but instead it accepts a structure value (useful when the api's dependencies amount are too much to pass on a function).
 
 - **New feature:** add the ability to set custom error handlers on path type parameters errors (existing or custom ones). Example Code:
 
