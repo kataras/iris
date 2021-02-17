@@ -87,6 +87,19 @@ type Party interface {
 	//
 	// Look `Party` for more.
 	PartyFunc(relativePath string, partyBuilderFunc func(p Party)) Party
+	// PartyConfigure like `Party` and `PartyFunc` registers a new children Party but instead it accepts a struct value.
+	// It initializes a new children Party and executes the PartyConfigurator's Configure.
+	// Useful when the api's dependencies amount are too much to pass on a function.
+	//
+	// Usage:
+	//  app.PartyConfigure("/users", &api.UsersAPI{UserRepository: ..., ...})
+	// Where UsersAPI looks like:
+	//  type UsersAPI struct { [...] }
+	//  func(api *UsersAPI) Configure(router iris.Party) {
+	//   router.Get("/{id:uuid}", api.getUser)
+	//   [...]
+	//  }
+	PartyConfigure(relativePath string, partyReg PartyConfigurator) Party
 	// Subdomain returns a new party which is responsible to register routes to
 	// this specific "subdomain".
 	//
