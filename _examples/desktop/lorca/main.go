@@ -8,7 +8,7 @@ import (
 const addr = "127.0.0.1:8080"
 
 /*
-	$ go build -ldflags="-H windowsgui" -o myapp.exe # build for windows
+	$ go build -mod=mod -ldflags="-H windowsgui" -o myapp.exe # build for windows
 	$ ./myapp.exe # run
 */
 func main() {

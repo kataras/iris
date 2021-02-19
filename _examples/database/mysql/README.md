@@ -76,7 +76,7 @@ $ docker-compose up --build
 
 ### Install (Manually)
 
-Run `go build` or `go run main.go` and read below.
+Run `go build -mod=mod` or `go run -mod=mod main.go` and read below.
 
 #### MySQL
 

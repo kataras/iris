@@ -5,8 +5,8 @@ import (
 )
 
 /*
-You need to build the hello.wasm first, download the go1.14 and execute the below command:
-$ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.14/bin/go build -o hello.wasm hello_go114.go
+You need to build the hello.wasm first, download the go1.16 and execute the below command:
+$ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.16/bin/go build -mod=mod -o hello.wasm hello_go116.go
 */
 
 func main() {

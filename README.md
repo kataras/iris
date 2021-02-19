@@ -222,13 +222,43 @@ Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;hei
 
 ## 📖 Learning Iris
 
+### Create a new project
+
 ```sh
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
 $ go get github.com/kataras/iris/v12@master # or @v12.2.0-alpha2
-$ go mod download
 ```
+
+<details><summary>Install on existing project</summary>
+
+```sh
+$ cd myapp
+$ go get github.com/kataras/iris/v12@master
+```
+
+</details>
+
+<details><summary>Install with a go.mod file</summary>
+
+```txt
+module myapp
+
+go 1.16
+
+require github.com/kataras/iris/v12 master # or v12.2.0-alpha2
+```
+
+**Run**
+
+```sh
+$ go mod download
+$ go run main.go
+# OR go run -mod=mod main.go
+```
+
+</details>
 
 ![](https://www.iris-go.com/images/gifs/install-create-iris.gif)
 
