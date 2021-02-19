@@ -56,6 +56,7 @@ func (r resource) loadFromBase(dir string) string {
 
 	if runtime.GOOS != "windows" {
 		result = strings.ReplaceAll(result, "\n", "\r\n")
+		result = strings.ReplaceAll(result, "\r\r", "")
 	}
 	return result
 }
