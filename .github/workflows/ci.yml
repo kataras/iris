@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main,travis-to-github-actions]
+    branches: [main]
   pull_request:
     branches: [main]
 
