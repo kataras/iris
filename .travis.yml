@@ -7,8 +7,8 @@ os:
 go:
 # We support the latest two major Go versions:
 # https://golang.org/doc/devel/release.html
-  - 1.14.x
   - 1.15.x
+  - 1.16.x
 # - master
 go_import_path: github.com/kataras/iris/v12
 env:
