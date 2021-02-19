@@ -15,8 +15,7 @@ import (
 // 1. Install Redis:
 // 1.1 Windows: https://github.com/ServiceStack/redis-windows
 // 1.2 Other: https://redis.io/download
-// 2. go mod download
-// 3. go run main.go
+// 2. Run command: go run -mod=mod main.go
 //
 // Tested with redis version 3.0.503.
 func main() {
