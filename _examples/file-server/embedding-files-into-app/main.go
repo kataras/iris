@@ -38,8 +38,8 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 
-	// http://localhost:8080/static/css/bootstrap.min.css
-	// http://localhost:8080/static/js/jquery-2.1.1.js
+	// http://localhost:8080/static/css/main.css
+	// http://localhost:8080/static/js/main.js
 	// http://localhost:8080/static/favicon.ico
 	app.Listen(":8080")
 }

@@ -10,7 +10,7 @@ import (
 // # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
 // # to save it to your go.mod file
 // $ go-bindata -prefix "../embedding-files-into-app/assets/" -fs ../embedding-files-into-app/assets/...
-// $ go run .
+// $ go run -mod=mod .
 // Time to complete the compression and caching of [2/3] files: 31.9998ms
 // Total size reduced from 156.6 kB to:
 // br      (22.9 kB) [85.37%]
@@ -45,8 +45,8 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 
-	// http://localhost:8080/static/css/bootstrap.min.css
-	// http://localhost:8080/static/js/jquery-2.1.1.js
+	// http://localhost:8080/static/css/main.css
+	// http://localhost:8080/static/js/main.js
 	// http://localhost:8080/static/favicon.ico
 	app.Listen(":8080")
 }

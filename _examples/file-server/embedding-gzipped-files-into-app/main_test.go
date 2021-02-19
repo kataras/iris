@@ -62,8 +62,8 @@ func (r resource) loadFromBase(dir string) string {
 }
 
 var urls = []resource{
-	"/static/css/bootstrap.min.css",
-	"/static/js/jquery-2.1.1.js",
+	"/static/css/main.css",
+	"/static/js/main.js",
 	"/static/favicon.ico",
 }
 
