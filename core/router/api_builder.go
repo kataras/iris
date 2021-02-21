@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"time"
@@ -321,6 +322,20 @@ func (api *APIBuilder) ConfigureContainer(builder ...func(*APIContainer)) *APICo
 	}
 
 	return api.apiBuilderDI
+}
+
+// RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
+// with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
+func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {
+	diContainer := api.ConfigureContainer()
+	for i, dependency := range dependencies {
+		if dependency == nil {
+			api.logger.Warnf("Party: %s: nil dependency on position: %d", api.relativePath, i)
+			continue
+		}
+
+		diContainer.RegisterDependency(dependency)
+	}
 }
 
 // HandleFunc registers a route on HTTP verb "method" and relative, to this Party, path.
@@ -862,6 +877,11 @@ type PartyConfigurator interface {
 // It initializes a new children Party and executes the PartyConfigurator's Configure.
 // Useful when the api's dependencies amount are too much to pass on a function.
 //
+// As an exception, if the end-developer registered one or more dependencies upfront through
+// RegisterDependencies or ConfigureContainer.RegisterDependency methods
+// and "p" is a pointer to a struct then try to bind the unset/zero exported fields
+// to the registered dependencies, just like we do with Controllers.
+//
 // Usage:
 //  app.PartyConfigure("/users", &api.UsersAPI{UserRepository: ..., ...})
 // Where UsersAPI looks like:
@@ -870,12 +890,23 @@ type PartyConfigurator interface {
 //   router.Get("/{id:uuid}", api.getUser)
 //   [...]
 //  }
+// Usage with (static) dependencies:
+//  app.RegisterDependency(userRepo, ...)
+//  app.PartyConfigure("/users", &api.UsersAPI{})
 func (api *APIBuilder) PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party {
 	child := api.Party(relativePath)
 	for _, p := range partyReg {
-		if p != nil {
-			p.Configure(child)
+		if p == nil {
+			continue
 		}
+
+		if len(api.apiBuilderDI.Container.Dependencies) > 0 {
+			if typ := reflect.TypeOf(p); typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Struct {
+				api.apiBuilderDI.Container.Struct(p, -1)
+			}
+		}
+
+		p.Configure(child)
 	}
 	return child
 }

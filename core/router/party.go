@@ -27,6 +27,79 @@ type Party interface {
 	//
 	// It returns the same `APIBuilder` featured with Dependency Injection.
 	ConfigureContainer(builder ...func(*APIContainer)) *APIContainer
+	// RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
+	// with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
+	RegisterDependency(dependencies ...interface{})
+	// HandleFunc registers a route on HTTP verb "method" and relative, to this Party, path.
+	// It is like the `Handle` method but it accepts one or more "handlersFn" functions
+	// that each one of them can accept any input arguments as the HTTP request and
+	// output a result as the HTTP response. Specifically,
+	// the input of the "handlersFn" can be any registered dependency
+	// (see ConfigureContainer().RegisterDependency)
+	// or leave the framework to parse the request and fill the values accordingly.
+	// The output of the "handlersFn" can be any output result:
+	//  custom structs <T>, string, []byte, int, error,
+	//  a combination of the above, hero.Result(hero.View | hero.Response) and more.
+	//
+	// If more than one handler function is registered
+	// then the execution happens without the nessecity of the `Context.Next` method,
+	// simply, to stop the execution and not continue to the next "handlersFn" in chain
+	// you should return an `iris.ErrStopExecution`.
+	//
+	// Example Code:
+	//
+	// The client's request body and server's response body Go types.
+	// Could be any data structure.
+	//
+	// 	type (
+	// 		request struct {
+	// 			Firstname string `json:"firstname"`
+	// 			Lastname string `json:"lastname"`
+	// 		}
+	//
+	// 		response struct {
+	// 			ID uint64 `json:"id"`
+	// 			Message string `json:"message"`
+	// 		}
+	// 	)
+	//
+	// Register the route hander.
+	//
+	//              HTTP VERB    ROUTE PATH       ROUTE HANDLER
+	//  app.HandleFunc("PUT", "/users/{id:uint64}", updateUser)
+	//
+	// Code the route handler function.
+	// Path parameters and request body are binded
+	// automatically.
+	// The "id" uint64 binds to "{id:uint64}" route path parameter and
+	// the "input" binds to client request data such as JSON.
+	//
+	// 	func updateUser(id uint64, input request) response {
+	// 		// [custom logic...]
+	//
+	// 		return response{
+	// 			ID:id,
+	// 			Message: "User updated successfully",
+	// 		}
+	// 	}
+	//
+	// Simulate a client request which sends data
+	// to the server and prints out the response.
+	//
+	// 	curl --request PUT -d '{"firstname":"John","lastname":"Doe"}' \
+	// 	-H "Content-Type: application/json" \
+	// 	http://localhost:8080/users/42
+	//
+	// 	{
+	// 		"id": 42,
+	// 		"message": "User updated successfully"
+	// 	}
+	//
+	// See the `ConfigureContainer` for more features regrading
+	// the dependency injection, mvc and function handlers.
+	//
+	// This method is just a shortcut for the `ConfigureContainer().Handle` one.
+	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
 
 	// GetRelPath returns the current party's relative path.
 	// i.e:
@@ -91,6 +164,11 @@ type Party interface {
 	// It initializes a new children Party and executes the PartyConfigurator's Configure.
 	// Useful when the api's dependencies amount are too much to pass on a function.
 	//
+	// As an exception, if the end-developer registered one or more dependencies upfront through
+	// RegisterDependencies or ConfigureContainer.RegisterDependency methods
+	// and "p" is a pointer to a struct then try to bind the unset/zero exported fields
+	// to the registered dependencies, just like we do with Controllers.
+	//
 	// Usage:
 	//  app.PartyConfigure("/users", &api.UsersAPI{UserRepository: ..., ...})
 	// Where UsersAPI looks like:
@@ -99,6 +177,9 @@ type Party interface {
 	//   router.Get("/{id:uuid}", api.getUser)
 	//   [...]
 	//  }
+	// Usage with (static) dependencies:
+	//  app.RegisterDependency(userRepo, ...)
+	//  app.PartyConfigure("/users", &api.UsersAPI{})
 	PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party
 	// Subdomain returns a new party which is responsible to register routes to
 	// this specific "subdomain".

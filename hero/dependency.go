@@ -21,7 +21,7 @@ type (
 		// It's the exact type of return to bind, if declared to return <T>, otherwise nil.
 		DestType reflect.Type
 		Static   bool
-		// If true then input and dependnecy DestType should be indedical,
+		// If true then input and dependency DestType should be indedical,
 		// not just assiginable to each other.
 		// Example of use case: depenendency like time.Time that we want to be bindable
 		// only to time.Time inputs and not to a service with a `String() string` method that time.Time struct implements too.
@@ -215,7 +215,7 @@ func fromDependentFunc(v reflect.Value, dest *Dependency, funcDependencies []*De
 	// d1 = Logger
 	// d2 = func(Logger) S1
 	// d2 should be static: it accepts dependencies that are static
-	// (note: we don't check the output argument(s) of this dependnecy).
+	// (note: we don't check the output argument(s) of this dependency).
 	if numIn == len(bindings) {
 		static := true
 		for _, b := range bindings {
