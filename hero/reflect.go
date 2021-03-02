@@ -231,8 +231,10 @@ func isZero(v reflect.Value) bool {
 		return len(v.Interface().(net.IP)) == 0
 	}
 
-	zero := reflect.Zero(v.Type())
-	return v.Interface() == zero.Interface()
+	// zero := reflect.Zero(v.Type())
+	// return v.Interface() == zero.Interface()
+
+	return v.IsZero()
 }
 
 // IsNil same as `reflect.IsNil` but a bit safer to use, returns false if not a correct type.

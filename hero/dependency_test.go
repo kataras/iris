@@ -77,6 +77,11 @@ func TestDependency(t *testing.T) {
 			},
 			Expected: false,
 		},
+		{
+
+			Dependency: map[string]string{"test": "value"},
+			Expected:   map[string]string{"test": "value"},
+		},
 	}
 
 	testDependencies(t, tests)

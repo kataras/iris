@@ -204,12 +204,15 @@ type testMessage struct {
 	Body string
 }
 
+type myMap map[string]*testMessage
+
 func TestDependentDependencies(t *testing.T) {
 	b := New()
 	b.Register(&testServiceImpl{prefix: "prefix:"})
 	b.Register(func(service testService) testMessage {
 		return testMessage{Body: service.Say("it is a deep") + " dependency"}
 	})
+	b.Register(myMap{"test": &testMessage{Body: "value"}})
 	var (
 		h1 = b.Handler(func(msg testMessage) string {
 			return msg.Body
@@ -217,15 +220,20 @@ func TestDependentDependencies(t *testing.T) {
 		h2 = b.Handler(func(reuse testService) string {
 			return reuse.Say("message")
 		})
+		h3 = b.Handler(func(m myMap) string {
+			return m["test"].Body
+		})
 	)
 
 	app := iris.New()
 	app.Get("/h1", h1)
 	app.Get("/h2", h2)
+	app.Get("/h3", h3)
 
 	e := httptest.New(t, app)
 	e.GET("/h1").Expect().Status(httptest.StatusOK).Body().Equal("prefix: it is a deep dependency")
 	e.GET("/h2").Expect().Status(httptest.StatusOK).Body().Equal("prefix: message")
+	e.GET("/h3").Expect().Status(httptest.StatusOK).Body().Equal("value")
 }
 
 func TestHandlerPathParams(t *testing.T) {
