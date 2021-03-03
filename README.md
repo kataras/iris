@@ -135,6 +135,9 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/cpp2go"><img src="https://avatars1.githubusercontent.com/u/12148026?v=4" alt ="Li Yang" title="cpp2go" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/lafayetteDan"><img src="https://avatars1.githubusercontent.com/u/26064396?v=4" alt ="Qianyu Zhou" title="lafayetteDan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/anilpdv"><img src="https://avatars1.githubusercontent.com/u/32708402?v=4" alt ="anilpdv" title="anilpdv" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/baoch254"><img src="https://avatars1.githubusercontent.com/u/74555344?v=4" alt ="CAO HOAI BAO" title="baoch254" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/hdezoscar93"><img src="https://avatars1.githubusercontent.com/u/21270107?v=4" alt ="Oscar Hernandez" title="hdezoscar93" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/blackHoleNgc1277"><img src="https://avatars1.githubusercontent.com/u/41342763?v=4" alt ="Gerard Lancea" title="blackHoleNgc1277" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
