@@ -28,7 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
-- New `PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party` helper, registers a children Party like `Party` and `PartyFunc` but instead it accepts a structure value which may contain one or more of the dependencies registered by `RegisterDependency` or `ConfigureContainer().RegisterDependency` methods and fills the unset/zero exported struct's fields respectfully (useful when the api's dependencies amount are too much to pass on a function).
+- New `Party.PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party` helper, registers a children Party like `Party` and `PartyFunc` but instead it accepts a structure value which may contain one or more of the dependencies registered by `RegisterDependency` or `ConfigureContainer().RegisterDependency` methods and fills the unset/zero exported struct's fields respectfully (useful when the api's dependencies amount are too much to pass on a function).
 
 - **New feature:** add the ability to set custom error handlers on path type parameters errors (existing or custom ones). Example Code:
 

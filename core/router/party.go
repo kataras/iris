@@ -160,14 +160,19 @@ type Party interface {
 	//
 	// Look `Party` for more.
 	PartyFunc(relativePath string, partyBuilderFunc func(p Party)) Party
-	// PartyConfigure like `Party` and `PartyFunc` registers a new children Party but instead it accepts a struct value.
-	// It initializes a new children Party and executes the PartyConfigurator's Configure.
-	// Useful when the api's dependencies amount are too much to pass on a function.
+	// PartyConfigure like `Party` and `PartyFunc` registers a new children Party
+	// but instead it accepts a struct value which should implement the PartyConfigurator interface.
 	//
-	// As an exception, if the end-developer registered one or more dependencies upfront through
+	// PartyConfigure accepts the relative path of the child party
+	// (As an exception, if it's empty then all configurators are applied to the current Party)
+	// and one or more Party configurators and
+	// executes the PartyConfigurator's Configure method.
+	//
+	// If the end-developer registered one or more dependencies upfront through
 	// RegisterDependencies or ConfigureContainer.RegisterDependency methods
 	// and "p" is a pointer to a struct then try to bind the unset/zero exported fields
 	// to the registered dependencies, just like we do with Controllers.
+	// Useful when the api's dependencies amount are too much to pass on a function.
 	//
 	// Usage:
 	//  app.PartyConfigure("/users", &api.UsersAPI{UserRepository: ..., ...})

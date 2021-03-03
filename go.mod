@@ -21,7 +21,7 @@ require (
 	github.com/json-iterator/go v1.1.10
 	github.com/kataras/blocks v0.0.4
 	github.com/kataras/golog v0.1.7
-	github.com/kataras/jwt v0.1.0
+	github.com/kataras/jwt v0.1.2
 	github.com/kataras/neffos v0.0.18
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
