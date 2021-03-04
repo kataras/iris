@@ -61,5 +61,5 @@ func TestJWT(t *testing.T) {
 	// Test expired (note checks happen based on second round).
 	time.Sleep(5 * time.Second)
 	e.GET("/protected").WithHeader("Authorization", headerValue).Expect().
-		Status(iris.StatusUnauthorized).Body().Equal("token expired")
+		Status(iris.StatusUnauthorized).Body().Equal("jwt: token expired")
 }
