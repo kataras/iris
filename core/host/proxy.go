@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12/core/netutil"
@@ -38,15 +39,35 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	return p
 }
 
+
+// mergeQuery return a query string that combines targetQuery and reqQuery
+// and remove the duplicated query parameters of them.
+func mergeQuery(targetQuery, reqQuery string) string {
+	var paramSlice []string
+	if targetQuery != "" {
+		paramSlice = strings.Split(targetQuery, "&")
+	}
+
+	if reqQuery != "" {
+		paramSlice = append(paramSlice, strings.Split(reqQuery, "&")...)
+	}
+
+	var mergedSlice []string
+	queryMap := make(map[string]bool)
+	for _, param := range paramSlice {
+		size := len(queryMap)
+		queryMap[param] = true
+		if size != len(queryMap) {
+			mergedSlice = append(mergedSlice, param)
+		}
+	}
+	return strings.Join(mergedSlice, "&")
+}
+
 func modifyProxiedRequest(req *http.Request, target *url.URL) {
 	req.URL.Scheme = target.Scheme
 	req.URL.Host = target.Host
-
-	if target.RawQuery == "" || req.URL.RawQuery == "" {
-		req.URL.RawQuery = target.RawQuery + req.URL.RawQuery
-	} else {
-		req.URL.RawQuery = target.RawQuery + "&" + req.URL.RawQuery
-	}
+	req.URL.RawQuery = mergeQuery(target.RawQuery, req.URL.RawQuery)
 
 	if _, ok := req.Header["User-Agent"]; !ok {
 		// explicitly disable User-Agent so it's not set to default value
