@@ -20,7 +20,11 @@ import (
 // Relative to httputil.NewSingleHostReverseProxy with some additions.
 //
 // Look `ProxyHandlerRemote` too.
-func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
+func ProxyHandler(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
+	if config == nil {
+		config = &tls.Config{}
+	}
+
 	director := func(req *http.Request) {
 		modifyProxiedRequest(req, target)
 		req.Host = target.Host
@@ -31,7 +35,7 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 
 	if netutil.IsLoopbackHost(target.Host) {
 		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // lint:ignore
+			TLSClientConfig: config, // lint:ignore
 		}
 		p.Transport = transport
 	}
@@ -84,7 +88,11 @@ func modifyProxiedRequest(req *http.Request, target *url.URL) {
 // insecureSkipVerify indicates enable ssl certificate verification or not.
 //
 // Look `ProxyHandler` too.
-func ProxyHandlerRemote(target *url.URL, insecureSkipVerify bool) *httputil.ReverseProxy {
+func ProxyHandlerRemote(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
+	if config == nil {
+		config = &tls.Config{}
+	}
+
 	director := func(req *http.Request) {
 		modifyProxiedRequest(req, target)
 
@@ -99,11 +107,11 @@ func ProxyHandlerRemote(target *url.URL, insecureSkipVerify bool) *httputil.Reve
 	p := &httputil.ReverseProxy{Director: director}
 
 	if netutil.IsLoopbackHost(target.Host) {
-		insecureSkipVerify = true
+		config.InsecureSkipVerify = true
 	}
 
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify}, // lint:ignore
+		TLSClientConfig: config, // lint:ignore
 	}
 	p.Transport = transport
 	return p
@@ -117,8 +125,8 @@ func ProxyHandlerRemote(target *url.URL, insecureSkipVerify bool) *httputil.Reve
 // target, _ := url.Parse("https://mydomain.com")
 // proxy := NewProxy("mydomain.com:80", target)
 // proxy.ListenAndServe() // use of `proxy.Shutdown` to close the proxy server.
-func NewProxy(hostAddr string, target *url.URL) *Supervisor {
-	proxyHandler := ProxyHandler(target)
+func NewProxy(hostAddr string, target *url.URL, config *tls.Config) *Supervisor {
+	proxyHandler := ProxyHandler(target, config)
 	proxy := New(&http.Server{
 		Addr:    hostAddr,
 		Handler: proxyHandler,
@@ -135,8 +143,8 @@ func NewProxy(hostAddr string, target *url.URL) *Supervisor {
 // target, _ := url.Parse("https://anotherdomain.com/abc")
 // proxy := NewProxyRemote("mydomain.com", target, false)
 // proxy.ListenAndServe() // use of `proxy.Shutdown` to close the proxy server.
-func NewProxyRemote(hostAddr string, target *url.URL, insecureSkipVerify bool) *Supervisor {
-	proxyHandler := ProxyHandlerRemote(target, insecureSkipVerify)
+func NewProxyRemote(hostAddr string, target *url.URL, config *tls.Config) *Supervisor {
+	proxyHandler := ProxyHandlerRemote(target, config)
 	proxy := New(&http.Server{
 		Addr:    hostAddr,
 		Handler: proxyHandler,
