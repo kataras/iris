@@ -37,6 +37,9 @@ type Application struct {
 	// Disables verbose logging for controllers under this and its children mvc apps.
 	// Defaults to false.
 	controllersNoLog bool
+
+	// Set custom path
+	customPathWordFunc CustomPathWordFunc
 }
 
 func newApp(subRouter router.Party, container *hero.Container) *Application {
@@ -116,6 +119,11 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // It returns this Application.
 func (app *Application) SetName(appName string) *Application {
 	app.Name = appName
+	return app
+}
+
+func (app *Application) SetCustomPathWordFunc(wordFunc CustomPathWordFunc) *Application {
+	app.customPathWordFunc = wordFunc
 	return app
 }
 
