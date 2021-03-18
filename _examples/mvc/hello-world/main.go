@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
-
 	"github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/kataras/iris/v12/mvc"
+	"strings"
 )
 
 // This example is equivalent to the
@@ -40,6 +40,16 @@ func newApp() *iris.Application {
 
 	// Serve a controller based on the root Router, "/".
 	mvc.New(app).Handle(new(ExampleController))
+	// Add custom path func
+	mvc.New(app).SetCustomPathWordFunc(func(path, w string, wordIndex int) string {
+
+		if wordIndex == 0 {
+			w = strings.ToLower(w)
+		}
+		path += w
+		return  path
+
+	}).Handle(new(ExampleControllerCustomPath))
 	return app
 }
 
@@ -80,6 +90,13 @@ func (c *ExampleController) GetHello() interface{} {
 	return map[string]string{"message": "Hello Iris!"}
 }
 
+// GetHelloWorld serves
+// Method:   GET
+// Resource: http://localhost:8080/hello/world
+func (c *ExampleController) GetHelloWorld() interface{} {
+	return map[string]string{"message": "Hello Iris! DefaultPath"}
+}
+
 // BeforeActivation called once, before the controller adapted to the main application
 // and of course before the server ran.
 // After version 9 you can also add custom routes for a specific controller's methods.
@@ -104,6 +121,16 @@ func (c *ExampleController) BeforeActivation(b mvc.BeforeActivation) {
 func (c *ExampleController) CustomHandlerWithoutFollowingTheNamingGuide() string {
 	return "hello from the custom handler without following the naming guide"
 }
+
+type ExampleControllerCustomPath struct{}
+
+// GetHelloWorld serves
+// Method:   GET
+// Resource: http://localhost:8080/helloWorld
+func (c *ExampleControllerCustomPath) GetHelloWorld() interface{} {
+	return map[string]string{"message": "Hello Iris! CustomPath"}
+}
+
 
 // GetUserBy serves
 // Method:   GET

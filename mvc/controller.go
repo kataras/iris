@@ -318,7 +318,7 @@ func (c *ControllerActivator) parseMethods() {
 }
 
 func (c *ControllerActivator) parseMethod(m reflect.Method) {
-	httpMethod, httpPath, err := parseMethod(c.app.Router.Macros(), m, c.isReservedMethod)
+	httpMethod, httpPath, err := parseMethod(c.app.Router.Macros(), m, c.isReservedMethod,c.app.customPathWordFunc)
 	if err != nil {
 		if err != errSkip {
 			c.logErrorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err)

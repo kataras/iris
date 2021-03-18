@@ -95,9 +95,10 @@ type methodParser struct {
 	lexer  *methodLexer
 	fn     reflect.Method
 	macros *macro.Macros
+	customPathWordFunc CustomPathWordFunc
 }
 
-func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
+func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool,wordFunc CustomPathWordFunc) (method, path string, err error) {
 	if skipper(fn.Name) {
 		return "", "", errSkip
 	}
@@ -106,6 +107,7 @@ func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) b
 		fn:     fn,
 		lexer:  newMethodLexer(fn.Name),
 		macros: macros,
+		customPathWordFunc: wordFunc,
 	}
 	return p.parse()
 }
@@ -118,6 +120,8 @@ func methodTitle(httpMethod string) string {
 var errSkip = errors.New("skip")
 
 var allMethods = append(router.AllMethods[0:], []string{"ALL", "ANY"}...)
+
+type CustomPathWordFunc func(path, w string,wordIndex int) string
 
 func addPathWord(path, w string) string {
 	if path[len(path)-1] != '/' {
@@ -147,6 +151,7 @@ func (p *methodParser) parse() (method, path string, err error) {
 		return "", "", errSkip
 	}
 
+	wordIndex:=0
 	for {
 		w := p.lexer.next()
 		if w == "" {
@@ -171,8 +176,15 @@ func (p *methodParser) parse() (method, path string, err error) {
 
 			continue
 		}
-		// static path.
-		path = addPathWord(path, w)
+
+		// custom static path.
+		if p.customPathWordFunc!=nil {
+			path = p.customPathWordFunc(path, w,wordIndex)
+		}else{
+			// default static path.
+			path = addPathWord(path, w)
+		}
+		wordIndex++
 	}
 	return
 }
