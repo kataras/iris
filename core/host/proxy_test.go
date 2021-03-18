@@ -2,6 +2,7 @@
 package host_test
 
 import (
+	"crypto/tls"
 	"net"
 	"net/url"
 	"testing"
@@ -24,7 +25,11 @@ func TestProxy(t *testing.T) {
 		t.Fatalf("%v while parsing url", err)
 	}
 
-	proxy := host.NewProxy("", u)
+	config := &tls.Config{
+		InsecureSkipVerify: true,
+		MaxVersion: tls.VersionTLS12,
+	}
+	proxy := host.NewProxy("", u, config)
 
 	addr := &net.TCPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
