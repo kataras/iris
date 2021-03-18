@@ -137,6 +137,8 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/GeorgeFourikis"><img src="https://avatars1.githubusercontent.com/u/17906313?v=4" alt ="George Fourikis" title="GeorgeFourikis" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/mblandr"><img src="https://avatars1.githubusercontent.com/u/42862020?v=4" alt ="Александр Лебединский" title="mblandr" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/cpp2go"><img src="https://avatars1.githubusercontent.com/u/12148026?v=4" alt ="Li Yang" title="cpp2go" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/lafayetteDan"><img src="https://avatars1.githubusercontent.com/u/26064396?v=4" alt ="Qianyu Zhou" title="lafayetteDan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/anilpdv"><img src="https://avatars1.githubusercontent.com/u/32708402?v=4" alt ="anilpdv" title="anilpdv" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
