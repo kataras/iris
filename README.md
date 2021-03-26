@@ -1,10 +1,5 @@
 [![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
 
-
-
-<img width="50px" align="center" src="https://iris-go.com/images/flag-greece.svg" /> Happy Greek Independence Day!
-> [The World Turns Greek on March 25 to Mark Greece’s Bicentennial](https://greekreporter.com/2021/03/21/world-turns-greek-march-25-greece-bicentennial-independence)
-
 # News
 
 > This is the under-**development branch**. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
@@ -142,6 +137,10 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/knavels"><img src="https://avatars1.githubusercontent.com/u/57287952?v=4" alt ="Navid Dezashibi" title="knavels" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/rxrw"><img src="https://avatars1.githubusercontent.com/u/9566402?v=4" alt ="Sky Lee" title="rxrw" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/rbondi"><img src="https://avatars1.githubusercontent.com/u/81764?v=4" alt ="Richard Bondi" title="rbondi" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/aprinslo1"><img src="https://avatars1.githubusercontent.com/u/711650?v=4" alt ="Anthonius Prinslo" title="aprinslo1" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/wofka72"><img src="https://avatars1.githubusercontent.com/u/10855340?v=4" alt ="Vladimir" title="wofka72" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/GeorgeFourikis"><img src="https://avatars1.githubusercontent.com/u/17906313?v=4" alt ="George Fourikis" title="GeorgeFourikis" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/mblandr"><img src="https://avatars1.githubusercontent.com/u/42862020?v=4" alt ="Александр Лебединский" title="mblandr" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
