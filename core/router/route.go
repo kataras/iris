@@ -294,6 +294,16 @@ func (r *Route) DeepEqual(other *Route) bool {
 	return r.Equal(other) && r.tmpl.Src == other.tmpl.Src
 }
 
+// SetName overrides the default route name which defaults to
+// method + subdomain + path and
+// statusErrorCode_method+subdomain+path for error routes.
+//
+// Note that the route name MUST BE unique per Iris Application.
+func (r *Route) SetName(newRouteName string) *Route {
+	r.Name = newRouteName
+	return r
+}
+
 // ExcludeSitemap excludes this route page from sitemap generator.
 // It sets the NoSitemap field to true.
 //

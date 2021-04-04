@@ -43,7 +43,7 @@ var AllMethods = []string{
 // all the routes.
 type repository struct {
 	routes []*Route
-	pos    map[string]int
+	paths  map[string]*Route // only the fullname path part, required at CreateRoutes for registering index page.
 }
 
 func (repo *repository) get(routeName string) *Route {
@@ -70,12 +70,8 @@ func (repo *repository) getRelative(r *Route) *Route {
 }
 
 func (repo *repository) getByPath(tmplPath string) *Route {
-	if repo.pos != nil {
-		if idx, ok := repo.pos[tmplPath]; ok {
-			if len(repo.routes) > idx {
-				return repo.routes[idx]
-			}
-		}
+	if r, ok := repo.paths[tmplPath]; ok {
+		return r
 	}
 
 	return nil
@@ -83,6 +79,25 @@ func (repo *repository) getByPath(tmplPath string) *Route {
 
 func (repo *repository) getAll() []*Route {
 	return repo.routes
+}
+
+func (repo *repository) remove(routeName string) bool {
+	for i, r := range repo.routes {
+		if r.Name == routeName {
+			lastIdx := len(repo.routes) - 1
+			if lastIdx == i {
+				repo.routes = repo.routes[0:lastIdx]
+			} else {
+				cp := make([]*Route, 0, lastIdx)
+				cp = append(cp, repo.routes[:i]...)
+				repo.routes = append(cp, repo.routes[i+1:]...)
+			}
+
+			delete(repo.paths, r.tmpl.Src)
+			return true
+		}
+	}
+	return false
 }
 
 func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, error) {
@@ -110,10 +125,10 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 	repo.routes = append(repo.routes, route)
 
 	if route.StatusCode == 0 { // a common resource route, not a status code error handler.
-		if repo.pos == nil {
-			repo.pos = make(map[string]int)
+		if repo.paths == nil {
+			repo.paths = make(map[string]*Route)
 		}
-		repo.pos[route.tmpl.Src] = len(repo.routes) - 1
+		repo.paths[route.tmpl.Src] = route
 	}
 
 	return route, nil
@@ -641,6 +656,17 @@ func (api *APIBuilder) CreateRoutes(methods []string, relativePath string, handl
 	return api.createRoutes(0, methods, relativePath, handlers...)
 }
 
+// RemoveRoute deletes a registered route by its name before `Application.Listen`.
+// The default naming for newly created routes is: method + subdomain + path.
+// Reports whether a route with that name was found and removed successfully.
+//
+// Note that this method applies to all Parties (sub routers)
+// even if each of the Parties have access to this method,
+// as the route name is unique per Iris Application.
+func (api *APIBuilder) RemoveRoute(routeName string) bool {
+	return api.routes.remove(routeName)
+}
+
 func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePath string, handlers ...context.Handler) []*Route {
 	if statusCodeSuccessful(errorCode) {
 		errorCode = 0
@@ -808,7 +834,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	copy(allowMethods, api.allowMethods)
 
 	// make a copy of the parent properties.
-	var properties context.Map
+	properties := make(context.Map, len(api.properties))
 	for k, v := range api.properties {
 		properties[k] = v
 	}
@@ -922,11 +948,6 @@ func (api *APIBuilder) PartyConfigure(relativePath string, partyReg ...PartyConf
 	}
 
 	return child
-}
-
-func (api *APIBuilder) configureParty(partyReg ...PartyConfigurator) Party {
-
-	return api
 }
 
 // Subdomain returns a new party which is responsible to register routes to

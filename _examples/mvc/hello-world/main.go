@@ -1,11 +1,12 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/mvc"
-	"strings"
 )
 
 // This example is equivalent to the
@@ -47,7 +48,7 @@ func newApp() *iris.Application {
 			w = strings.ToLower(w)
 		}
 		path += w
-		return  path
+		return path
 
 	}).Handle(new(ExampleControllerCustomPath))
 	return app
@@ -130,7 +131,6 @@ type ExampleControllerCustomPath struct{}
 func (c *ExampleControllerCustomPath) GetHelloWorld() interface{} {
 	return map[string]string{"message": "Hello Iris! CustomPath"}
 }
-
 
 // GetUserBy serves
 // Method:   GET

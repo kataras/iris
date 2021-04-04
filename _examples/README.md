@@ -59,6 +59,7 @@
             * [From func(http.HandlerFunc) http.HandlerFunc](convert-handlers/real-usecase-raven/writing-middleware/main.go)
     * [Rewrite Middleware](routing/rewrite/main.go)
     * [Route State](routing/route-state/main.go)
+    * [Remove Route](routing/remove-route/main.go)
     * [Reverse Routing](routing/reverse/main.go)
     * [Router Wrapper](routing/custom-wrapper/main.go)
     * [Custom Router](routing/custom-router/main.go)

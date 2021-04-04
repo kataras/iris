@@ -388,6 +388,15 @@ type Party interface {
 	// This method can be used for third-parties Iris helpers packages and tools
 	// that want a more detailed view of Party-based Routes before take the decision to register them.
 	CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route
+	// RemoveRoute deletes a registered route by its name before `Application.Listen`.
+	// The default naming for newly created routes is: method + subdomain + path.
+	// Reports whether a route with that name was found and removed successfully.
+	//
+	// Note that this method applies to all Parties (sub routers)
+	// even if each of the Parties have access to this method,
+	// as the route name is unique per Iris Application.
+	RemoveRoute(routeName string) bool
+
 	// StaticContent registers a GET and HEAD method routes to the requestPath
 	// that are ready to serve raw static bytes, memory cached.
 	//
