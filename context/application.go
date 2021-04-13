@@ -135,7 +135,7 @@ func GetApplications() []Application {
 	// the return value is read-only but it can be casted to *iris.Application.
 	apps := make([]Application, 0, len(registeredApps))
 	copy(apps, registeredApps)
-	mu.RLock()
+	mu.RUnlock()
 
 	return apps
 }
