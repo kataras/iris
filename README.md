@@ -137,6 +137,8 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/rfunix"><img src="https://avatars1.githubusercontent.com/u/6026357?v=4" alt ="Rafael Francischini" title="rfunix" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/liheyuan"><img src="https://avatars1.githubusercontent.com/u/776423?v=4" alt ="Heyuan Li" title="liheyuan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/RainerGevers"><img src="https://avatars1.githubusercontent.com/u/32453861?v=4" alt ="Rainer Gevers" title="RainerGevers" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/shadowfiga"><img src="https://avatars1.githubusercontent.com/u/42721390?v=4" alt ="Matic Zarnec" title="shadowfiga" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/knavels"><img src="https://avatars1.githubusercontent.com/u/57287952?v=4" alt ="Navid Dezashibi" title="knavels" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
