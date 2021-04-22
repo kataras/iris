@@ -92,21 +92,21 @@ func genParamKey(argIdx int) string {
 }
 
 type methodParser struct {
-	lexer  *methodLexer
-	fn     reflect.Method
-	macros *macro.Macros
+	lexer              *methodLexer
+	fn                 reflect.Method
+	macros             *macro.Macros
 	customPathWordFunc CustomPathWordFunc
 }
 
-func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool,wordFunc CustomPathWordFunc) (method, path string, err error) {
+func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool, wordFunc CustomPathWordFunc) (method, path string, err error) {
 	if skipper(fn.Name) {
 		return "", "", errSkip
 	}
 
 	p := &methodParser{
-		fn:     fn,
-		lexer:  newMethodLexer(fn.Name),
-		macros: macros,
+		fn:                 fn,
+		lexer:              newMethodLexer(fn.Name),
+		macros:             macros,
 		customPathWordFunc: wordFunc,
 	}
 	return p.parse()
@@ -121,7 +121,10 @@ var errSkip = errors.New("skip")
 
 var allMethods = append(router.AllMethods[0:], []string{"ALL", "ANY"}...)
 
-type CustomPathWordFunc func(path, w string,wordIndex int) string
+// CustomPathWordFunc describes the function which can be passed
+// through `Application.SetCustomPathWordFunc` to customize
+// the controllers method parsing.
+type CustomPathWordFunc func(path, w string, wordIndex int) string
 
 func addPathWord(path, w string) string {
 	if path[len(path)-1] != '/' {
@@ -151,7 +154,7 @@ func (p *methodParser) parse() (method, path string, err error) {
 		return "", "", errSkip
 	}
 
-	wordIndex:=0
+	wordIndex := 0
 	for {
 		w := p.lexer.next()
 		if w == "" {
@@ -178,9 +181,9 @@ func (p *methodParser) parse() (method, path string, err error) {
 		}
 
 		// custom static path.
-		if p.customPathWordFunc!=nil {
-			path = p.customPathWordFunc(path, w,wordIndex)
-		}else{
+		if p.customPathWordFunc != nil {
+			path = p.customPathWordFunc(path, w, wordIndex)
+		} else {
 			// default static path.
 			path = addPathWord(path, w)
 		}

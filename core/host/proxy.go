@@ -43,7 +43,6 @@ func ProxyHandler(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
 	return p
 }
 
-
 // mergeQuery return a query string that combines targetQuery and reqQuery
 // and remove the duplicated query parameters of them.
 func mergeQuery(targetQuery, reqQuery string) string {

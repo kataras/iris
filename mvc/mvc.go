@@ -122,6 +122,8 @@ func (app *Application) SetName(appName string) *Application {
 	return app
 }
 
+// SetCustomPathWordFunc sets a custom function
+// which is responsible to override the existing controllers method parsing.
 func (app *Application) SetCustomPathWordFunc(wordFunc CustomPathWordFunc) *Application {
 	app.customPathWordFunc = wordFunc
 	return app
