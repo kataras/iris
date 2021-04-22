@@ -118,7 +118,7 @@ func matchDependency(dep *Dependency, in reflect.Type) bool {
 	return dep.DestType == nil || equalTypes(dep.DestType, in)
 }
 
-func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) (bindings []*binding) {
+func getBindingsFor(inputs []reflect.Type, deps []*Dependency, disablePayloadAutoBinding bool, paramsCount int) (bindings []*binding) {
 	// Path parameter start index is the result of [total path parameters] - [total func path parameters inputs],
 	// moving from last to first path parameters and first to last (probably) available input args.
 	//
@@ -208,15 +208,17 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, paramsCount int) 
 		}
 
 		if prevN == len(bindings) {
-			if canBePathParameter {
+			if canBePathParameter { // Let's keep that option just for "payload": disablePayloadAutoBinding
 				// no new dependency added for this input,
 				// let's check for path parameters.
 				bindings = append(bindings, paramBinding(i, getParamIndex(), in))
 				continue
 			}
 
-			// else add builtin bindings that may be registered by user too, but they didn't.
-			if isPayloadType(in) {
+			// else, if payload binding is not disabled,
+			// add builtin request bindings that
+			// could be registered by end-dev but they didn't
+			if !disablePayloadAutoBinding && isPayloadType(in) {
 				bindings = append(bindings, payloadBinding(i, in))
 				continue
 			}
@@ -235,7 +237,7 @@ func isPayloadType(in reflect.Type) bool {
 	}
 }
 
-func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramsCount int) []*binding {
+func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePayloadAutoBinding bool, paramsCount int) []*binding {
 	fnTyp := fn.Type()
 	if !isFunc(fnTyp) {
 		panic("bindings: unresolved: not a func type")
@@ -247,7 +249,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramsCoun
 		inputs[i] = fnTyp.In(i)
 	}
 
-	bindings := getBindingsFor(inputs, dependencies, paramsCount)
+	bindings := getBindingsFor(inputs, dependencies, disablePayloadAutoBinding, paramsCount)
 	if expected, got := n, len(bindings); expected != got {
 		expectedInputs := ""
 		missingInputs := ""
@@ -276,7 +278,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, paramsCoun
 	return bindings
 }
 
-func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCount int, sorter Sorter) (bindings []*binding) {
+func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding bool, paramsCount int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
 		panic("bindings: unresolved: no struct type")
@@ -288,7 +290,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 	for _, f := range nonZero {
 		// fmt.Printf("Controller [%s] | NonZero | Field Index: %v | Field Type: %s\n", typ, f.Index, f.Type)
 		bindings = append(bindings, &binding{
-			Dependency: NewDependency(elem.FieldByIndex(f.Index).Interface()),
+			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding),
 			Input:      newStructFieldInput(f),
 		})
 	}
@@ -308,12 +310,17 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, paramsCou
 		inputs[i] = fields[i].Type
 	}
 
-	exportedBindings := getBindingsFor(inputs, dependencies, paramsCount)
+	exportedBindings := getBindingsFor(inputs, dependencies, disablePayloadAutoBinding, paramsCount)
+
 	// fmt.Printf("Controller [%s] | Inputs length: %d vs Bindings length: %d | NonZero: %d | Stateless : %d\n",
 	// 	typ, n, len(exportedBindings), len(nonZero), stateless)
 	// for i, b := range exportedBindings {
 	// 	fmt.Printf("[%d] [Static=%v] %#+v\n", i, b.Dependency.Static, b.Dependency.OriginalValue)
 	// }
+
+	if markExportedFieldsAsRequired && len(exportedBindings) != n {
+		panic(fmt.Sprintf("MarkExportedFieldsAsRequired is true and at least one of struct's (%s) field was not binded to a dependency.\nFields length: %d, matched exported bindings length: %d.\nUse the Reporter for further details", typ.String(), n, len(exportedBindings)))
+	}
 
 	if stateless == 0 && len(nonZero) >= len(exportedBindings) {
 		// if we have not a single stateless and fields are defined then just return.

@@ -269,7 +269,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		bindings := getBindingsForFunc(reflect.ValueOf(tt.Func), c.Dependencies, 0)
+		bindings := getBindingsForFunc(reflect.ValueOf(tt.Func), c.Dependencies, c.DisablePayloadAutoBinding, 0)
 
 		if expected, got := len(tt.Expected), len(bindings); expected != got {
 			t.Fatalf("[%d] expected bindings length to be: %d but got: %d of: %s", i, expected, got, bindings)
@@ -524,7 +524,7 @@ func TestBindingsForStruct(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		bindings := getBindingsForStruct(reflect.ValueOf(tt.Value), tt.Registered, 0, nil)
+		bindings := getBindingsForStruct(reflect.ValueOf(tt.Value), tt.Registered, false, false, 0, nil)
 
 		if expected, got := len(tt.Expected), len(bindings); expected != got {
 			t.Logf("[%d] expected bindings length to be: %d but got: %d:\n", i, expected, got)
@@ -545,4 +545,25 @@ func TestBindingsForStruct(t *testing.T) {
 		}
 	}
 
+}
+
+func TestBindingsForStructMarkExportedFieldsAsRequred(t *testing.T) {
+	type (
+		Embedded struct {
+			Val string
+		}
+
+		controller struct {
+			MyService service
+			Embedded  *Embedded
+		}
+	)
+
+	dependencies := []*Dependency{
+		NewDependency(&Embedded{"test"}),
+		NewDependency(&serviceImpl{}),
+	}
+
+	// should panic if fail.
+	_ = getBindingsForStruct(reflect.ValueOf(new(controller)), dependencies, true, true, 0, nil)
 }

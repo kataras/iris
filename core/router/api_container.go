@@ -79,6 +79,22 @@ func (api *APIContainer) UseResultHandler(handler func(next hero.ResultHandler) 
 	return api
 }
 
+// EnableStrictMode sets the container's DisablePayloadAutoBinding and MarkExportedFieldsAsRequired to true.
+// Meaning that all struct's  fields (or function's parameters) should be binded manually (except the path parameters).
+//
+// Note that children will clone the same properties.
+// Call the same method with `false` for children
+// to enable automatic binding on missing dependencies.
+//
+// Strict mode is disabled by default;
+// structs or path parameters that don't match to registered dependencies
+// are automatically binded from the request context (body and url path parameters respectfully).
+func (api *APIContainer) EnableStrictMode(strictMode bool) *APIContainer {
+	api.Container.DisablePayloadAutoBinding = strictMode
+	api.Container.MarkExportedFieldsAsRequired = strictMode
+	return api
+}
+
 // convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
 func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...interface{}) context.Handlers {
 	fullpath := api.Self.GetRelPath() + relativePath

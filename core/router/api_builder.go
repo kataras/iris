@@ -893,11 +893,21 @@ func (api *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Pa
 	return p
 }
 
-// PartyConfigurator is an interface which all child parties that are registered
-// through `PartyConfigure` should implement.
-type PartyConfigurator interface {
-	Configure(parent Party)
-}
+type (
+	// PartyConfigurator is an interface which all child parties that are registered
+	// through `PartyConfigure` should implement.
+	PartyConfigurator interface {
+		Configure(parent Party)
+	}
+
+	// StrictlyPartyConfigurator is an optional interface which a `PartyConfigurator`
+	// can implement to make sure that all exported fields having a not-nin, non-zero
+	// value before server starts.
+	// StrictlyPartyConfigurator interface {
+	// 	Strict() bool
+	// }
+	// Good idea but a `mvc or bind:"required"` is a better one I think.
+)
 
 // PartyConfigure like `Party` and `PartyFunc` registers a new children Party
 // but instead it accepts a struct value which should implement the PartyConfigurator interface.

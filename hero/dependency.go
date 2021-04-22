@@ -51,6 +51,10 @@ func (d *Dependency) String() string {
 //
 // See `Container.Handler` for more.
 func NewDependency(dependency interface{}, funcDependencies ...*Dependency) *Dependency {
+	return newDependency(dependency, false, funcDependencies...)
+}
+
+func newDependency(dependency interface{}, disablePayloadAutoBinding bool, funcDependencies ...*Dependency) *Dependency {
 	if dependency == nil {
 		panic(fmt.Sprintf("bad value: nil: %T", dependency))
 	}
@@ -70,7 +74,7 @@ func NewDependency(dependency interface{}, funcDependencies ...*Dependency) *Dep
 		OriginalValue: dependency,
 	}
 
-	if !resolveDependency(v, dest, funcDependencies...) {
+	if !resolveDependency(v, disablePayloadAutoBinding, dest, funcDependencies...) {
 		panic(fmt.Sprintf("bad value: could not resolve a dependency from: %#+v", dependency))
 	}
 
@@ -80,11 +84,11 @@ func NewDependency(dependency interface{}, funcDependencies ...*Dependency) *Dep
 // DependencyResolver func(v reflect.Value, dest *Dependency) bool
 // Resolver     DependencyResolver
 
-func resolveDependency(v reflect.Value, dest *Dependency, funcDependencies ...*Dependency) bool {
+func resolveDependency(v reflect.Value, disablePayloadAutoBinding bool, dest *Dependency, funcDependencies ...*Dependency) bool {
 	return fromDependencyHandler(v, dest) ||
 		fromStructValue(v, dest) ||
 		fromFunc(v, dest) ||
-		len(funcDependencies) > 0 && fromDependentFunc(v, dest, funcDependencies)
+		len(funcDependencies) > 0 && fromDependentFunc(v, disablePayloadAutoBinding, dest, funcDependencies)
 }
 
 func fromDependencyHandler(_ reflect.Value, dest *Dependency) bool {
@@ -197,7 +201,7 @@ func handlerFromFunc(v reflect.Value, typ reflect.Type) DependencyHandler {
 	}
 }
 
-func fromDependentFunc(v reflect.Value, dest *Dependency, funcDependencies []*Dependency) bool {
+func fromDependentFunc(v reflect.Value, disablePayloadAutoBinding bool, dest *Dependency, funcDependencies []*Dependency) bool {
 	// * func(<D>...) returns <T>
 	// * func(<D>...) returns error
 	// * func(<D>...) returns <T>, error
@@ -207,7 +211,7 @@ func fromDependentFunc(v reflect.Value, dest *Dependency, funcDependencies []*De
 		return false
 	}
 
-	bindings := getBindingsForFunc(v, funcDependencies, -1 /* parameter bindings are disabled for depent dependencies */)
+	bindings := getBindingsForFunc(v, funcDependencies, disablePayloadAutoBinding, -1 /* parameter bindings are disabled for depent dependencies */)
 
 	numIn := typ.NumIn()
 	numOut := typ.NumOut()

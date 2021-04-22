@@ -38,6 +38,21 @@ type Container struct {
 	Sorter Sorter
 	// The dependencies entries.
 	Dependencies []*Dependency
+
+	// MarkExportedFieldsAsRequired reports whether all struct's fields
+	// MUST be binded to a dependency from the `Dependencies` list field.
+	// In-short, if it is set to true and if at least one exported field
+	// of a struct is not binded to a dependency then
+	// the entire application will exit with a panic message before server startup.
+	MarkExportedFieldsAsRequired bool
+	// DisablePayloadAutoBinding reports whether
+	// a function's parameter or struct's field of struct type
+	// should not be binded automatically to the request body (e.g. JSON)
+	// if a dependency for that type is missing.
+	// By default the binder will bind structs to request body,
+	// set to true to disable that kind of behavior.
+	DisablePayloadAutoBinding bool
+
 	// GetErrorHandler should return a valid `ErrorHandler` to handle bindings AND handler dispatch errors.
 	// Defaults to a functon which returns the `DefaultErrorHandler`.
 	GetErrorHandler func(*context.Context) ErrorHandler // cannot be nil.
@@ -124,13 +139,13 @@ func (c *Container) fillReport(fullName string, bindings []*binding) {
 // Contains the iris context, standard context, iris sessions and time dependencies.
 var BuiltinDependencies = []*Dependency{
 	// iris context dependency.
-	NewDependency(func(ctx *context.Context) *context.Context { return ctx }).Explicitly(),
+	newDependency(func(ctx *context.Context) *context.Context { return ctx }, true).Explicitly(),
 	// standard context dependency.
-	NewDependency(func(ctx *context.Context) stdContext.Context {
+	newDependency(func(ctx *context.Context) stdContext.Context {
 		return ctx.Request().Context()
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// iris session dependency.
-	NewDependency(func(ctx *context.Context) *sessions.Session {
+	newDependency(func(ctx *context.Context) *sessions.Session {
 		session := sessions.Get(ctx)
 		if session == nil {
 			ctx.Application().Logger().Debugf("binding: session is nil\nMaybe inside HandleHTTPError? Register it with app.UseRouter(sess.Handler()) to fix it")
@@ -141,52 +156,52 @@ var BuiltinDependencies = []*Dependency{
 		}
 
 		return session
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// application's logger.
-	NewDependency(func(ctx *context.Context) *golog.Logger {
+	newDependency(func(ctx *context.Context) *golog.Logger {
 		return ctx.Application().Logger()
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// time.Time to time.Now dependency.
-	NewDependency(func(ctx *context.Context) time.Time {
+	newDependency(func(ctx *context.Context) time.Time {
 		return time.Now()
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// standard http Request dependency.
-	NewDependency(func(ctx *context.Context) *http.Request {
+	newDependency(func(ctx *context.Context) *http.Request {
 		return ctx.Request()
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// standard http ResponseWriter dependency.
-	NewDependency(func(ctx *context.Context) http.ResponseWriter {
+	newDependency(func(ctx *context.Context) http.ResponseWriter {
 		return ctx.ResponseWriter()
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// http headers dependency.
-	NewDependency(func(ctx *context.Context) http.Header {
+	newDependency(func(ctx *context.Context) http.Header {
 		return ctx.Request().Header
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// Client IP.
-	NewDependency(func(ctx *context.Context) net.IP {
+	newDependency(func(ctx *context.Context) net.IP {
 		return net.ParseIP(ctx.RemoteAddr())
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// Status Code (special type for MVC HTTP Error handler to not conflict with path parameters)
-	NewDependency(func(ctx *context.Context) Code {
+	newDependency(func(ctx *context.Context) Code {
 		return Code(ctx.GetStatusCode())
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// Context Error. May be nil
-	NewDependency(func(ctx *context.Context) Err {
+	newDependency(func(ctx *context.Context) Err {
 		err := ctx.GetErr()
 		if err == nil {
 			return nil
 		}
 		return err
-	}).Explicitly(),
+	}, true).Explicitly(),
 	// Context User, e.g. from basic authentication.
-	NewDependency(func(ctx *context.Context) context.User {
+	newDependency(func(ctx *context.Context) context.User {
 		u := ctx.User()
 		if u == nil {
 			return nil
 		}
 
 		return u
-	}),
+	}, true),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
 
@@ -228,6 +243,8 @@ func (c *Container) Clone() *Container {
 	clonedDeps := make([]*Dependency, len(c.Dependencies))
 	copy(clonedDeps, c.Dependencies)
 	cloned.Dependencies = clonedDeps
+	cloned.DisablePayloadAutoBinding = c.DisablePayloadAutoBinding
+	cloned.MarkExportedFieldsAsRequired = c.MarkExportedFieldsAsRequired
 	cloned.resultHandlers = c.resultHandlers
 	// Reports are not cloned.
 	return cloned
@@ -264,7 +281,7 @@ func Register(dependency interface{}) *Dependency {
 // - Register(func(ctx iris.Context) User {...})
 // - Register(func(User) OtherResponse {...})
 func (c *Container) Register(dependency interface{}) *Dependency {
-	d := NewDependency(dependency, c.Dependencies...)
+	d := newDependency(dependency, c.DisablePayloadAutoBinding, c.Dependencies...)
 	if d.DestType == nil {
 		// prepend the dynamic dependency so it will be tried at the end
 		// (we don't care about performance here, design-time)

@@ -107,7 +107,7 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 	typ := v.Type()
 	numIn := typ.NumIn()
 
-	bindings := getBindingsForFunc(v, c.Dependencies, paramsCount)
+	bindings := getBindingsForFunc(v, c.Dependencies, c.DisablePayloadAutoBinding, paramsCount)
 	c.fillReport(context.HandlerName(fn), bindings)
 
 	resultHandler := defaultResultHandler
