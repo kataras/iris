@@ -137,6 +137,10 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/paulxu21"><img src="https://avatars1.githubusercontent.com/u/6261758?v=4" alt ="Paul Xu" title="paulxu21" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/DavidShaw"><img src="https://avatars1.githubusercontent.com/u/356970?v=4" alt ="David Shaw" title="DavidShaw" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/lingyingtan"><img src="https://avatars1.githubusercontent.com/u/15610136?v=4" alt ="Stone Travel" title="lingyingtan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/Laotanling"><img src="https://avatars1.githubusercontent.com/u/28570289?v=4" alt ="Tan" title="Laotanling" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/acdias"><img src="https://avatars1.githubusercontent.com/u/11966653?v=4" alt ="Andre Dias" title="acdias" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/rfunix"><img src="https://avatars1.githubusercontent.com/u/6026357?v=4" alt ="Rafael Francischini" title="rfunix" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/liheyuan"><img src="https://avatars1.githubusercontent.com/u/776423?v=4" alt ="Heyuan Li" title="liheyuan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
