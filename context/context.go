@@ -2194,16 +2194,19 @@ func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 	//
 	// See 'BodyDecoder' for more.
 	if decoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
-		return decoder.Decode(rawData)
+		err = decoder.Decode(rawData)
+		if err != nil {
+			return err
+		}
 	}
 
-	// // check if v is already a pointer, if yes then pass as it's
+	//  check if v is already a pointer, if yes then pass as it's
 	// if reflect.TypeOf(v).Kind() == reflect.Ptr {
 	// 	return unmarshaler.Unmarshal(rawData, v)
 	// } <- no need for that, ReadJSON is documented enough to receive a pointer,
 	// we don't need to reduce the performance here by using the reflect.TypeOf method.
 
-	// f the v doesn't contains a self-body decoder use the custom unmarshaler to bind the body.
+	// if the v doesn't contains a self-body decoder use the custom unmarshaler to bind the body.
 	err = unmarshaler.Unmarshal(rawData, outPtr)
 	if err != nil {
 		return err
@@ -2231,7 +2234,10 @@ func (ctx *Context) decodeBody(outPtr interface{}, decoder internalBodyDecoder) 
 			return err
 		}
 
-		return decoder.Decode(rawData)
+		err = decoder.Decode(rawData)
+		if err != nil {
+			return err
+		}
 	}
 
 	err := decoder.Decode(outPtr)
