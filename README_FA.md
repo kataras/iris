@@ -8,7 +8,7 @@
 
 > با توجه به بالا بودن حجم کار، ممکن است در پاسخ به [سوالات](https://github.com/kataras/iris/issues) شما تاخیری وجود داشته باشد.
 
-# چهارچوب وب آیریس
+# چارچوب وب آیریس
     
 [![build status](https://img.shields.io/github/workflow/status/kataras/iris/CI/master?style=for-the-badge)](https://github.com/kataras/iris/actions) [![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)<!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=7E18DD&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community)<!--[![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://iris-go.com/donate)--><!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
     
@@ -115,7 +115,7 @@ func (c *userController) PutBy(id uint64, req request) response {
 </details>
 <div dir="rtl">
     
-> .دیگران درباره آیریس چه می گویند و برای پشتیبانی از پتانسیل‌های  این پروژه متن باز  می‌توانید از آن حمایت کنید
+> دیگران درباره آیریس چه می گویند و برای پشتیبانی از پتانسیل‌های  این پروژه متن باز  می‌توانید از آن حمایت کنید
 
 [![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
 
@@ -290,7 +290,7 @@ require github.com/kataras/iris/v12 master
     
  ## 🙌 مشارکت
     
- ما خیلی دوست داریم شما سهمی در توسعه چهارچوب آیریس داشته باشید! برای دریافت اطلاعات بیشتر در مورد مشارکت در پروژه آیریس لطفاً پرونده [CONTRIBUTING.md](CONTRIBUTING.md) را مطالعه کنید.  
+ ما خیلی دوست داریم شما سهمی در توسعه چارچوب آیریس داشته باشید! برای دریافت اطلاعات بیشتر در مورد مشارکت در پروژه آیریس لطفاً پرونده [CONTRIBUTING.md](CONTRIBUTING.md) را مطالعه کنید.  
     
 [لیست همه شرکت کنندگان](https://github.com/kataras/iris/graphs/contributors)
     
