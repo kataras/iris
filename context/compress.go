@@ -8,10 +8,10 @@ import (
 	"sync"
 
 	"github.com/andybalholm/brotli"
+	"github.com/golang/snappy"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/s2" // snappy output but likely faster decompression.
-	"github.com/klauspost/compress/snappy"
 )
 
 // The available builtin compression algorithms.
