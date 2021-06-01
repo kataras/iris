@@ -1,6 +1,6 @@
 module grpcexample
 
-go 1.15
+go 1.16
 
 // replace github.com/kataras/iris/v12 => ../../../
 

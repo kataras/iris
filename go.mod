@@ -1,12 +1,12 @@
 module github.com/kataras/iris/v12
 
-go 1.15
+go 1.16
 
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CloudyKit/jet/v6 v6.0.2
 	github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398
-	github.com/andybalholm/brotli v1.0.1
+	github.com/andybalholm/brotli v1.0.3
 	github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.2
@@ -14,6 +14,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/go-redis/redis/v8 v8.5.0
+	github.com/golang/snappy v0.0.3
 	github.com/google/uuid v1.2.0
 	github.com/iris-contrib/httpexpect/v2 v2.0.5
 	github.com/iris-contrib/jade v1.1.4
@@ -44,3 +45,5 @@ require (
 	gopkg.in/ini.v1 v1.62.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
+
+// retract v12.1.8 // please update to @master
