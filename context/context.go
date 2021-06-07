@@ -1943,6 +1943,51 @@ func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 	return ctx.request.FormFile(key)
 }
 
+// FormFiles same as FormFile but may return multiple file inputs based on a key, e.g. "files[]".
+func (ctx *Context) FormFiles(key string, before ...func(*Context, *multipart.FileHeader) bool) (files []multipart.File, headers []*multipart.FileHeader, err error) {
+	err = ctx.request.ParseMultipartForm(ctx.app.ConfigurationReadOnly().GetPostMaxMemory())
+	if err != nil {
+		return
+	}
+
+	if ctx.request.MultipartForm != nil {
+		fhs := ctx.request.MultipartForm.File
+		if n := len(fhs); n > 0 {
+			files = make([]multipart.File, 0, n)
+			headers = make([]*multipart.FileHeader, 0, n)
+
+		innerLoop:
+			for _, header := range fhs[key] {
+				// Fix an issue that net/http has,
+				// an attacker can push a filename
+				// which could lead to override existing system files
+				// by ../../$header.
+				// Reported by Frank through security reports.
+				header.Filename = strings.ReplaceAll(header.Filename, "../", "")
+				header.Filename = strings.ReplaceAll(header.Filename, "..\\", "")
+
+				for _, b := range before {
+					if !b(ctx, header) {
+						continue innerLoop
+					}
+				}
+
+				file, fErr := header.Open()
+				if fErr != nil { // exit on first error but return the succeed.
+					return files, headers, fErr
+				}
+
+				files = append(files, file)
+				headers = append(headers, header)
+			}
+		}
+
+		return
+	}
+
+	return nil, nil, http.ErrMissingFile
+}
+
 // UploadFormFiles uploads any received file(s) from the client
 // to the system physical location "destDirectory".
 //
@@ -1967,7 +2012,7 @@ func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 // the `WithPostMaxMemory` configurator or by `SetMaxRequestBodySize` or
 // by the `LimitRequestBodySize` middleware (depends the use case).
 //
-// See `FormFile` to a more controlled way to receive a file.
+// See `FormFile` and `FormFiles` to a more controlled way to receive a file.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-files
 func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error) {

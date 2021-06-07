@@ -98,6 +98,29 @@ var IsLoopbackHost = func(requestHost string) bool {
 	return valid
 }
 
+/*
+func isLoopbackHostGoVersion(host string) bool {
+	ip := net.ParseIP(host)
+	if ip != nil {
+		return ip.IsLoopback()
+	}
+
+	// Host is not an ip, perform lookup.
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return false
+	}
+
+	for _, addr := range addrs {
+		if !net.ParseIP(addr).IsLoopback() {
+			return false
+		}
+	}
+
+	return true
+}
+*/
+
 const (
 	// defaultServerHostname returns the default hostname which is "localhost"
 	defaultServerHostname = "localhost"
