@@ -1059,12 +1059,10 @@ func cacheFiles(ctx stdContext.Context, fs http.FileSystem, names []string, comp
 		// so, unless requested keep it as it's.
 		buf := new(bytes.Buffer)
 		for _, alg := range compressAlgs {
-			// stop all compressions if at least one file failed to.
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return ctx.Err() // stop all compressions if at least one file failed to.
 			default:
-				break // lint:ignore
 			}
 
 			if alg == "brotli" {

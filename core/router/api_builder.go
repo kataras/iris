@@ -933,7 +933,7 @@ type (
 //  }
 // Usage with (static) dependencies:
 //  app.RegisterDependency(userRepo, ...)
-//  app.PartyConfigure("/users", &api.UsersAPI{})
+//  app.PartyConfigure("/users", new(api.UsersAPI))
 func (api *APIBuilder) PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party {
 	var child Party
 

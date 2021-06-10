@@ -315,6 +315,26 @@ func Handler(fn interface{}) context.Handler {
 // custom structs, Result(View | Response) and more.
 // It returns a standard `iris/context.Handler` which can be used anywhere in an Iris Application,
 // as middleware or as simple route handler or subdomain's handler.
+//
+//  func(...<T>) iris.Handler
+// - if <T> are all static dependencies then
+// there is no reflection involved at serve-time.
+//
+//  func(pathParameter string, ...<T>)
+// - one or more path parameters (e.g. :uid, :string, :int, :path, :uint64)
+// are automatically binded to the first input Go standard types (string, int, uint64 and e.t.c.)
+//
+//  func(<T>) error
+// - if a function returns an error then this error's text is sent to the client automatically.
+//
+//  func(<T>) <R>
+// - The result of the function is a dependency too.
+// If <R> is a request-scope dependency (dynamic) then
+// this function will be called at every request.
+//
+//  func(<T>) <R>
+// - If <R> is static dependency (e.g. a database or a service) then its result
+// can be used as a static dependency to the next dependencies or to the controller/function itself.
 func (c *Container) Handler(fn interface{}) context.Handler {
 	return c.HandlerWithParams(fn, 0)
 }

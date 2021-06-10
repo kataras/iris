@@ -454,10 +454,9 @@ func (r Response) Dispatch(ctx *context.Context) {
 
 			ctx.SetLanguage(r.Lang)
 			r.Content = []byte(ctx.Tr(r.Text, r.Object))
-			return
+		} else {
+			r.Content = []byte(r.Text)
 		}
-
-		r.Content = []byte(r.Text)
 	}
 
 	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, defaultResultHandler, true)

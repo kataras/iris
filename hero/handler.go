@@ -84,6 +84,15 @@ var (
 	})
 )
 
+var (
+	irisHandlerType     = reflect.TypeOf((*context.Handler)(nil)).Elem()
+	irisHandlerFuncType = reflect.TypeOf(func(*context.Context) {})
+)
+
+func isIrisHandlerType(typ reflect.Type) bool {
+	return typ == irisHandlerType || typ == irisHandlerFuncType
+}
+
 func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler {
 	if fn == nil {
 		panic("makeHandler: function is nil")
@@ -109,6 +118,20 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 
 	bindings := getBindingsForFunc(v, c.Dependencies, c.DisablePayloadAutoBinding, paramsCount)
 	c.fillReport(context.HandlerName(fn), bindings)
+
+	// Check if it's a function that accept zero or more dependencies
+	// and returns an Iris Handler.
+	if paramsCount <= 0 {
+		// println(irisHandlerType.String())
+		if typ.NumOut() == 1 && isIrisHandlerType(typ.Out(0)) {
+			inputs := getStaticInputs(bindings, numIn)
+			if len(inputs) != numIn {
+				panic(fmt.Sprintf("makeHandler: func(...<T>) iris.Handler: expected %d function input parameters but fewer static dependencies matched (%d)", numIn, len(inputs)))
+			}
+			handler := v.Call(inputs)[0].Interface().(context.Handler)
+			return handler
+		}
+	}
 
 	resultHandler := defaultResultHandler
 	for i, lidx := 0, len(c.resultHandlers)-1; i <= lidx; i++ {

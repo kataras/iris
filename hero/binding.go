@@ -347,6 +347,17 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExpor
 	return
 }
 
+func getStaticInputs(bindings []*binding, numIn int) []reflect.Value {
+	inputs := make([]reflect.Value, numIn)
+	for _, b := range bindings {
+		if d := b.Dependency; d != nil && d.Static {
+			inputs[b.Input.Index], _ = d.Handle(nil, nil)
+		}
+	}
+
+	return inputs
+}
+
 /*
 	Builtin dynamic bindings.
 */
