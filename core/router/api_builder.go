@@ -421,9 +421,18 @@ func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {
 // See the `ConfigureContainer` for more features regrading
 // the dependency injection, mvc and function handlers.
 //
-// This method is just a shortcut for the `ConfigureContainer().Handle` one.
+// This method is just a shortcut of the `ConfigureContainer().Handle`.
 func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
 	return api.ConfigureContainer().Handle(method, relativePath, handlersFn...)
+}
+
+// UseFunc registers a function which can accept one or more
+// dependencies (see RegisterDependency) and returns an iris.Handler
+// or a result of <T> and/or an error.
+//
+// This method is just a shortcut of the `ConfigureContainer().Use`.
+func (api *APIBuilder) UseFunc(handlersFn ...interface{}) {
+	api.ConfigureContainer().Use(handlersFn...)
 }
 
 // GetRelPath returns the current party's relative path.

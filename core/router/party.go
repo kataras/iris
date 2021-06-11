@@ -100,6 +100,12 @@ type Party interface {
 	//
 	// This method is just a shortcut for the `ConfigureContainer().Handle` one.
 	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+	// UseFunc registers a function which can accept one or more
+	// dependencies (see RegisterDependency) and returns an iris.Handler
+	// or a result of <T> and/or an error.
+	//
+	// This method is just a shortcut of the `ConfigureContainer().Use`.
+	UseFunc(handlersFn ...interface{})
 
 	// GetRelPath returns the current party's relative path.
 	// i.e:
