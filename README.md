@@ -137,6 +137,24 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from **China** are now accepted!
 
 <p>
+  <a href="https://github.com/xytis"><img src="https://avatars1.githubusercontent.com/u/78025?v=4" alt ="Vytis Valentinavičius" title="xytis" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/siriushaha"><img src="https://avatars1.githubusercontent.com/u/7924311?v=4" alt ="Daniel Ha" title="siriushaha" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/SamuelNeves"><img src="https://avatars1.githubusercontent.com/u/10797137?v=4" alt ="Samuel Antônio Das Neves" title="SamuelNeves" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/srinivasganti"><img src="https://avatars1.githubusercontent.com/u/2057165?v=4" alt ="Agile Data Inc" title="srinivasganti" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/mark2b"><img src="https://avatars1.githubusercontent.com/u/539063?v=4" alt ="Mark Berner" title="mark2b" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/odas0r"><img src="https://avatars1.githubusercontent.com/u/32167770?v=4" alt ="Guilherme Rosado" title="odas0r" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/bobmcallan"><img src="https://avatars1.githubusercontent.com/u/8773580?v=4" alt ="Bob McAllan" title="bobmcallan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/Major2828"><img src="https://avatars1.githubusercontent.com/u/19783402?v=4" alt ="Alexander Grining" title="Major2828" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/edwindna2"><img src="https://avatars1.githubusercontent.com/u/5441354?v=4" alt ="Edwin García Martínez" title="edwindna2" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/iantuan"><img src="https://avatars1.githubusercontent.com/u/4869968?v=4" alt ="Ian Tuan" title="iantuan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/macropas"><img src="https://avatars1.githubusercontent.com/u/7488502?v=4" alt ="Artem Stavischansky" title="macropas" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/vladimir-petukhov-sr"><img src="https://avatars1.githubusercontent.com/u/1183901?v=4" alt ="Vladimir Petukhov" title="vladimir-petukhov-sr" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/grassshrimp"><img src="https://avatars1.githubusercontent.com/u/3070576?v=4" alt ="劉品均" title="grassshrimp" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/carlosmoran092"><img src="https://avatars1.githubusercontent.com/u/10361754?v=4" alt ="Carlos Moran" title="carlosmoran092" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/pr123"><img src="https://avatars1.githubusercontent.com/u/23333176?v=4" alt ="Peter Riemenschneider" title="pr123" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/primadi"><img src="https://avatars1.githubusercontent.com/u/7625413?v=4" alt ="Primadi Setiawan" title="primadi" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/mubariz-ahmed"><img src="https://avatars1.githubusercontent.com/u/18215455?v=4" alt ="Mubariz Ahmed" title="mubariz-ahmed" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/trading-peter"><img src="https://avatars1.githubusercontent.com/u/11567985?v=4" alt ="Peter Kaske" title="trading-peter" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/paulxu21"><img src="https://avatars1.githubusercontent.com/u/6261758?v=4" alt ="Paul Xu" title="paulxu21" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/DavidShaw"><img src="https://avatars1.githubusercontent.com/u/356970?v=4" alt ="David Shaw" title="DavidShaw" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/lingyingtan"><img src="https://avatars1.githubusercontent.com/u/15610136?v=4" alt ="Stone Travel" title="lingyingtan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
