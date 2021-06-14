@@ -81,6 +81,6 @@ func newProxyHandler(proxyURL string) iris.Handler {
 	if err != nil {
 		panic(err)
 	}
-	reverseProxy := host.ProxyHandler(target)
+	reverseProxy := host.ProxyHandler(target, nil)
 	return iris.FromStd(reverseProxy)
 }
