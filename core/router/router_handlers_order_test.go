@@ -362,3 +362,57 @@ func TestUseWrapOrder(t *testing.T) {
 	e.GET("/NotFound").Expect().Status(iris.StatusNotFound).Body().Equal(expectedNotFoundBody)
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }
+
+func TestResumeExecution(t *testing.T) {
+	before := func(ctx iris.Context) {
+		ctx.WriteString("1")
+
+		curIdx := ctx.HandlerIndex(-1)
+
+		ctx.StopExecution()
+		ctx.Next()
+		ctx.StopExecution()
+		ctx.Next()
+		ctx.ResumeExecution()
+
+		if ctx.HandlerIndex(-1) != curIdx {
+			ctx.WriteString("| 1. NOT OK")
+		}
+
+		ctx.StopExecution()
+		ctx.ResumeExecution()
+
+		if ctx.HandlerIndex(-1) != curIdx {
+			ctx.WriteString("| 2. NOT OK")
+		}
+
+		ctx.Next()
+
+		if ctx.HandlerIndex(-1) != curIdx+2 /* 2 and 3 */ {
+			ctx.WriteString("| 3. NOT OK")
+		}
+	}
+
+	handler := func(ctx iris.Context) {
+		ctx.WriteString("2")
+		ctx.Next()
+	}
+
+	after := func(ctx iris.Context) {
+		ctx.WriteString("3")
+
+		if !ctx.Proceed(func(ctx iris.Context) {
+			ctx.Next()
+		}) {
+			ctx.WriteString(" | 4. NOT OK")
+		}
+	}
+
+	expectedBody := "123"
+
+	app := iris.New()
+	app.Get("/", before, handler, after)
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+}

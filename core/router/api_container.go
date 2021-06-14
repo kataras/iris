@@ -105,10 +105,12 @@ func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...
 		handlers = append(handlers, api.Container.HandlerWithParams(h, paramsCount))
 	}
 
+	// Note: let end-developer to decide that through Party.SetExecutionRules.
 	// On that type of handlers the end-developer does not have to include the Context in the handler,
 	// so the ctx.Next is automatically called unless an `ErrStopExecution` returned (implementation inside hero pkg).
-	o := ExecutionOptions{Force: true}
-	o.apply(&handlers)
+	//
+	// o := ExecutionOptions{Force: true}
+	// o.apply(&handlers)
 
 	return handlers
 }

@@ -443,6 +443,7 @@ func (b *BasicAuth) serveHTTP(ctx *context.Context) {
 		user = &context.SimpleUser{
 			Authorization: authorizationType,
 			AuthorizedAt:  authorizedAt,
+			ID:            username,
 			Username:      username,
 			Password:      password,
 		}
