@@ -6,20 +6,32 @@
 
 </div>
 
+<div dir="rtl">
 آیریس سریع ترین و ساده ترین و موثرترین فریمورک وب در زبان GO میباشد. آیریس ساختاری بسیار زیبا و کارآمد را فراهم کرده است تا شما از آن برای پروژه های بعدی تان استفاده کنید. .
-
+</br>
 برای این که بدانید دیگران در مورد آیریس چه می گویند لطفا در این لینک کلیک کنید [دیگران در مورد آیریس چه می گویند](https://iris-go.com/testimonials/) لطفا این پروژه را در گیتاب **استار** کنید.
+
+</div></br>
+
+<div dir="rtl" align="center">
 
 [![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
 
 [![Benchmarks: Apr 2, 2020 at 12:13pm (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
+</div></br>
+
+
+<div dir="rtl">
+
 ## آموزش آیریس
 
+<br>
 <details>
+
 <summary>شروع سریع</summary>
 
-<div dir="ltr" align="left">
+
 
 <div dir="rtl" align="right">
 
@@ -59,25 +71,29 @@ $ go run example.go
 
 <div>
 
-<div dir="rtl" align="right" >
+<div dir="rtl" >
 
 > ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع ترین پروژه مسیریابی در GO می باشد استفاده می کند.
 
 <div>
 
-</details>
+</details></br>
+
+<div dir="rtl" >
 
 آیریس داری **[wiki](https://github.com/kataras/iris/wiki)** بسیار کامل و گسترده ای میباشد که یادگیری ان را ساده می کند.
 
 شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [مثال ها](_examples/) استفاده کنید .
 
+<div><br>
+
 ### آیا شما مطالعه کردن در طول سفر را دوست دارید ؟
 
-<div dir="ltr" align="left">
+<div dir="ltr" align="center"><br>
 
 <a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
-</div>
+<br></div>
 
 [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 
