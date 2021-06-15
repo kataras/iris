@@ -43,6 +43,8 @@
 
 </div>
 
+<div dir="ltr" >
+
 ```sh
 $ cat example.go
 ```
@@ -70,7 +72,7 @@ func main() {
 $ go run example.go
 ```
 
-<div>
+</div>
 
 <div dir="rtl" >
 
