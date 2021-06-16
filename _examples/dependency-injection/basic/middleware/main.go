@@ -47,6 +47,12 @@ func newApp() *iris.Application {
 	// or 202 status code and empty body
 	// or a 409 status code and "my_error" body.
 	app.ConfigureContainer(func(api *iris.APIContainer) {
+		// TODO: fix that test as well.
+		// api.Self.SetExecutionRules(iris.ExecutionRules{
+		// 	Begin: iris.ExecutionOptions{
+		// 		Force: true,
+		// 	},
+		// })
 		api.Use(middleware)
 		api.Post("/{id:int}", handler)
 	})

@@ -496,6 +496,10 @@ var (
 	// A shortcut for the `context#CookieEncoding`.
 	CookieEncoding = context.CookieEncoding
 
+	// IsErrEmptyJSON reports whether the given "err" is caused by a
+	// Context.ReadJSON call when the request body
+	// didn't start with { or it was totally empty.
+	IsErrEmptyJSON = context.IsErrEmptyJSON
 	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
 	// It reports whether the incoming error is type of `schema.ErrPath`,
 	// which can be ignored when server allows unknown post values to be sent by the client.

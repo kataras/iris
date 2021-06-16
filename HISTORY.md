@@ -28,6 +28,25 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `iris.IsErrEmptyJSON(err) bool` which reports whether the given "err" is caused by a
+`Context.ReadJSON` call when the request body didn't start with { (or it was totally empty). 
+
+Example Code:
+
+```go
+func handler(ctx iris.Context) {
+    var opts SearchOptions
+    if err := ctx.ReadJSON(&opts); err != nil && !iris.IsErrEmptyJSON(err) {
+        ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{"message": "unable to parse body"})
+        return
+    }
+
+    // [...continue with default values of "opts" struct if the client didn't provide some]
+}
+```
+
+That means that the client can optionally set a JSON body.
+	
 - New `APIContainer.EnableStrictMode(bool)` to disable automatic payload binding and panic on missing dependencies for exported struct'sfields or function's input parameters on MVC controller or hero function or PartyConfigurator.
 
 - New `Party.PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party` helper, registers a children Party like `Party` and `PartyFunc` but instead it accepts a structure value which may contain one or more of the dependencies registered by `RegisterDependency` or `ConfigureContainer().RegisterDependency` methods and fills the unset/zero exported struct's fields respectfully (useful when the api's dependencies amount are too much to pass on a function).

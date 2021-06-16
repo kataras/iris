@@ -2311,13 +2311,13 @@ func (ctx *Context) decodeBody(outPtr interface{}, decoder internalBodyDecoder) 
 	// but this is up to the user's custom Decode implementation*
 	//
 	// See 'BodyDecoder' for more.
-	if decoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
+	if structDecoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
 		rawData, err := ctx.GetBody()
 		if err != nil {
 			return err
 		}
 
-		return decoder.Decode(rawData)
+		return structDecoder.Decode(rawData)
 	}
 
 	err := decoder.Decode(outPtr)
@@ -2465,6 +2465,23 @@ func (ctx *Context) ReadYAML(outPtr interface{}) error {
 }
 
 var (
+	// IsErrEmptyJSON reports whether the given "err" is caused by a
+	// Context.ReadJSON call when the request body
+	// didn't start with { or it was totally empty.
+	IsErrEmptyJSON = func(err error) bool {
+		if err == nil {
+			return false
+		}
+
+		if v, ok := err.(*json.SyntaxError); ok {
+			// standard go json encoder error.
+			return v.Offset == 0 && v.Error() == "unexpected end of JSON input"
+		}
+
+		// when optimization is enabled, the jsoniter will report the following error:
+		return strings.Contains(err.Error(), "readObjectStart: expect {")
+	}
+
 	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
 	// It reports whether the incoming error
 	// can be ignored when server allows unknown post values to be sent by the client.
