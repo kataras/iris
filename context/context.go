@@ -1178,7 +1178,7 @@ func (ctx *Context) IsHTTP2() bool {
 
 // IsGRPC reports whether the request came from a gRPC client.
 func (ctx *Context) IsGRPC() bool {
-	return ctx.IsHTTP2() && ctx.GetContentTypeRequested() == ContentGRPCHeaderValue
+	return ctx.IsHTTP2() && strings.Contains(ctx.GetContentTypeRequested(), ContentGRPCHeaderValue)
 }
 
 type (
