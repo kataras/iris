@@ -25,10 +25,10 @@ require (
 	github.com/kataras/sitemap v0.0.5
 	github.com/klauspost/compress v1.9.7
 	github.com/mediocregopher/radix/v3 v3.4.2
-	github.com/microcosm-cc/bluemonday v1.0.2
+	github.com/microcosm-cc/bluemonday v1.0.15
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
 	golang.org/x/text v0.3.2
 	gopkg.in/ini.v1 v1.51.1
