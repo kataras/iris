@@ -521,6 +521,5 @@ func fileExists(filename string) bool {
 		return false
 	}
 
-
 	return !info.IsDir()
 }
