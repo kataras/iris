@@ -41,6 +41,10 @@ func New(cfg Config) *Sessions {
 		cookieOptions = append(cookieOptions, context.CookieEncoding(cfg.Encoding, cfg.Cookie))
 	}
 
+	if cfg.SameSite != http.SameSiteDefaultMode {
+		cookieOptions = append(cookieOptions, context.CookieSameSite(cfg.SameSite))
+	}
+
 	return &Sessions{
 		cookieOptions: cookieOptions,
 		config:        cfg.Validate(),

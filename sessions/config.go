@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kataras/golog"
+	"net/http"
 )
 
 const (
@@ -64,6 +65,11 @@ type (
 		//
 		// Defaults to false.
 		DisableSubdomainPersistence bool
+
+		//developers may set the "SameSite" attribute in a "Lax"enforcement mode that carves out an exception which
+		//sends same-site cookies along with cross-site requests if and only if they are top-level navigations which
+		//use a "safe" (in the [RFC7231] sense) HTTP method.
+		SameSite http.SameSite
 	}
 )
 
