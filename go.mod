@@ -26,7 +26,7 @@ require (
 	github.com/kataras/neffos v0.0.18
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
-	github.com/kataras/tunnel v0.0.2
+	github.com/kataras/tunnel v0.0.3
 	github.com/klauspost/compress v1.13.1
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.15
