@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
@@ -244,7 +243,7 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 				// this performs better, no need to check query or host,
 				// the uri already built.
 				e.debugf("Full redirect: from: %s to: %s\n", src, target)
-				redirectAbs(w, r, target, rd.code)
+				router.RedirectAbsolute(w, r, target, rd.code)
 			} else {
 				e.debugf("Path redirect: from: %s to: %s\n", src, target)
 				http.Redirect(w, r, target, rd.code)
@@ -323,23 +322,4 @@ func getPort(hostport string) string { // returns :port, note that this is only 
 	}
 
 	return ""
-}
-
-func redirectAbs(w http.ResponseWriter, r *http.Request, url string, code int) {
-	// part of net/http std library.
-	h := w.Header()
-
-	_, hadCT := h[context.ContentTypeHeaderKey]
-
-	h.Set("Location", url)
-	if !hadCT && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
-		h.Set(context.ContentTypeHeaderKey, "text/html; charset=utf-8")
-	}
-	w.WriteHeader(code)
-
-	// Shouldn't send the body for POST or HEAD; that leaves GET.
-	if !hadCT && r.Method == "GET" {
-		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
-		fmt.Fprintln(w, body)
-	}
 }

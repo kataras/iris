@@ -3,8 +3,10 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
+	"unicode/utf8"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/netutil"
@@ -217,7 +219,7 @@ func RedirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code i
 	// Do it only if the request didn't already have a Content-Type header.
 	_, hadCT := h[context.ContentTypeHeaderKey]
 
-	h.Set("Location", url)
+	h.Set("Location", hexEscapeNonASCII(url))
 	if !hadCT && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 		h.Set(context.ContentTypeHeaderKey, "text/html; charset=utf-8")
 	}
@@ -228,4 +230,28 @@ func RedirectAbsolute(w http.ResponseWriter, r *http.Request, url string, code i
 		body := "<a href=\"" + template.HTMLEscapeString(url) + "\">" + http.StatusText(code) + "</a>.\n"
 		fmt.Fprintln(w, body)
 	}
+}
+
+func hexEscapeNonASCII(s string) string { // part of the standard library.
+	newLen := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] >= utf8.RuneSelf {
+			newLen += 3
+		} else {
+			newLen++
+		}
+	}
+	if newLen == len(s) {
+		return s
+	}
+	b := make([]byte, 0, newLen)
+	for i := 0; i < len(s); i++ {
+		if s[i] >= utf8.RuneSelf {
+			b = append(b, '%')
+			b = strconv.AppendInt(b, int64(s[i]), 16)
+		} else {
+			b = append(b, s[i])
+		}
+	}
+	return string(b)
 }
