@@ -451,6 +451,7 @@ var (
 		File,
 		Path,
 		UUID,
+		Mail,
 		Email,
 	}
 )
