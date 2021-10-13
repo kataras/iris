@@ -28,6 +28,34 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `email` builtin path parameter type. Example:
+
+```go
+// +------------------------+
+// | {param:email}           |
+// +------------------------+
+// Email + mx look up path parameter validation. Use it on production.
+
+// http://localhost:8080/user/kataras2006@hotmail.com -> OK
+// http://localhost:8080/user/b-c@invalid_domain      -> NOT FOUND
+app.Get("/user/{user_email:email}", func(ctx iris.Context) {
+    email := ctx.Params().Get("user_email")
+    ctx.WriteString(email)
+})
+
+// +------------------------+
+// | {param:mail}           |
+// +------------------------+
+// Simple email path parameter validation.
+
+// http://localhost:8080/user/kataras2006@hotmail.com    -> OK
+// http://localhost:8080/user/b-c@invalid_domainxxx1.com -> NOT FOUND
+app.Get("/user/{local_email:mail}", func(ctx iris.Context) {
+    email := ctx.Params().Get("local_email")
+    ctx.WriteString(email)
+})
+```
+
 - New `iris.IsErrEmptyJSON(err) bool` which reports whether the given "err" is caused by a
 `Context.ReadJSON` call when the request body didn't start with { (or it was totally empty). 
 

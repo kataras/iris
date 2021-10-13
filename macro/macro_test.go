@@ -448,6 +448,42 @@ func TestUUIDEvaluatorRaw(t *testing.T) {
 	}
 }
 
+func TestMailEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{true, "kataras2006@hotmail.com"}, // 0
+		{true, "iris-go@outlook.com"},     // 1
+		{true, "iris-go@mail"},            // 2
+		{true, "kataras@k.c"},             // 3
+		{false, "www.kataras@"},           // 4
+		{false, "name"},                   // 5
+		{false, "b-c@"},                   // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Mail, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
+func TestEmailEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{true, "kataras2006@hotmail.com"}, // 0
+		{true, "iris-go@outlook.com"},     // 1
+		{false, "iris-go@mail"},           // 2
+		{false, "kataras@k.c"},            // 3
+		{false, "www.kataras@"},           // 4
+		{false, "name"},                   // 5
+		{false, "b-c@"},                   // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Email, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
 func TestConvertBuilderFunc(t *testing.T) {
 	fn := func(min uint64, slice []string) func(string) bool {
 		return func(paramValue string) bool {

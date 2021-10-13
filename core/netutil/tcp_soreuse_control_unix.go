@@ -1,3 +1,4 @@
+//go:build !windows && !wasm
 // +build !windows,!wasm
 
 package netutil

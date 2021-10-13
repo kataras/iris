@@ -3,6 +3,8 @@ package macro
 import (
 	"errors"
 	"fmt"
+	"net"
+	"net/mail"
 	"strconv"
 	"strings"
 
@@ -384,8 +386,8 @@ var (
 	// Should be living in the latest path segment of a route path.
 	Path = NewMacro("path", "", false, true, nil)
 
-	// UUID string type for validating a uuidv4 (and v1) path parameter
-	// Read more at: https://tools.ietf.org/html/rfc4122
+	// UUID string type for validating a uuidv4 (and v1) path parameter.
+	// Read more at: https://tools.ietf.org/html/rfc4122.
 	UUID = NewMacro("uuid", "uuidv4", false, false, func(paramValue string) (interface{}, bool) {
 		_, err := uuid.Parse(paramValue) // this is x10+ times faster than regexp.
 		if err != nil {
@@ -394,6 +396,41 @@ var (
 
 		return paramValue, true
 	})
+
+	// Email string type for validating an e-mail path parameter. It returns the address as string, instead of an *mail.Address.
+	// Read more at go std mail.ParseAddress method. See the ':email' path parameter for a more strictly version of validation.
+	Mail = NewMacro("mail", "", false, false, func(paramValue string) (interface{}, bool) {
+		_, err := mail.ParseAddress(paramValue)
+		if err != nil {
+			return fmt.Errorf("%s: %w", paramValue, err), false
+		}
+
+		return paramValue, true
+	})
+
+	// Email string type for validating an e-mail path parameter. It returns the address as string, instead of an *mail.Address.
+	// It is a combined validation using mail.ParseAddress and net.LookupMX so only valid domains can be passed.
+	// It's a more strictly version of the ':mail' path parameter.
+	Email = NewMacro("email", "", false, false, func(paramValue string) (interface{}, bool) {
+		_, err := mail.ParseAddress(paramValue)
+		if err != nil {
+			return fmt.Errorf("%s: %w", paramValue, err), false
+		}
+
+		domainPart := strings.Split(paramValue, "@")[1]
+
+		mx, err := net.LookupMX(domainPart)
+		if err != nil {
+			return fmt.Errorf("%s: %w", paramValue, err), false
+		}
+
+		if len(mx) == 0 {
+			return fmt.Errorf("%s: mx is empty", paramValue), false
+		}
+
+		return paramValue, true
+	})
+
 	// Defaults contains the defaults macro and parameters types for the router.
 	//
 	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
@@ -414,6 +451,7 @@ var (
 		File,
 		Path,
 		UUID,
+		Email,
 	}
 )
 

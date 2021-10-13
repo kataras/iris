@@ -172,7 +172,7 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 		hostport := context.GetHost(r)
 		root := context.GetDomain(hostport)
 
-		e.initDebugf("Begin request: full host: %s and root domain: %s", hostport, root)
+		e.initDebugf("Begin request: full host: %s and root domain: %s\n", hostport, root)
 		// Note:
 		// localhost and 127.0.0.1 are not supported for subdomain rewrite, by purpose,
 		// use a virtual host instead.

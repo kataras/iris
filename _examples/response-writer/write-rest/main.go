@@ -34,7 +34,12 @@ func main() {
 	app.Post("/decode", func(ctx iris.Context) {
 		// Read https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go as well.
 		var user User
-		ctx.ReadJSON(&user)
+		err := ctx.ReadJSON(&user)
+		if err != nil {
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.Writef("unable to read body: %s\nbody is empty: %v", err.Error(), iris.IsErrEmptyJSON(err))
+			return
+		}
 
 		ctx.Writef("%s %s is %d years old and comes from %s!", user.Firstname, user.Lastname, user.Age, user.City)
 	})

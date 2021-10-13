@@ -172,6 +172,19 @@ func main() {
 		ctx.WriteString(id)
 	})
 
+	// +------------------------+
+	// | {param:email}           |
+	// +------------------------+
+	// Email + mx look uppath parameter validation.
+	// Note that, you can also use the simplier ":mail" to accept any domain email.
+
+	// http://localhost:8080/user/email/kataras2006@hotmail.com -> OK
+	// http://localhost:8080/user/email/b-c@                    -> NOT FOUND
+	app.Get("/user/email/{user_email:email}", func(ctx iris.Context) {
+		email := ctx.Params().Get("user_email")
+		ctx.WriteString(email)
+	})
+
 	// you can use the "string" type which is valid for a single path parameter that can be anything.
 	app.Get("/username/{name}", func(ctx iris.Context) {
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))

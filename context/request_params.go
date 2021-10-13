@@ -53,6 +53,10 @@ func (r *RequestParams) Get(key string) string {
 				return v // it should always be string here on :string parameter.
 			}
 
+			if v, ok := kv.ValueRaw.(fmt.Stringer); ok {
+				return v.String()
+			}
+
 			return fmt.Sprintf("%s", kv.ValueRaw)
 		}
 	}

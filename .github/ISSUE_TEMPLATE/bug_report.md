@@ -24,7 +24,7 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. ubuntu, windows]
 
 **iris.Version**
-- e.g. v12.2.0-alpha or master
+- e.g. v12.2.0-alpha3 or master
 
 Please make sure the bug is reproducible over the `master` branch:
 
