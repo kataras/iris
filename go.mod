@@ -29,7 +29,7 @@ require (
 	github.com/kataras/tunnel v0.0.3
 	github.com/klauspost/compress v1.13.5
 	github.com/mailru/easyjson v0.7.7
-	github.com/microcosm-cc/bluemonday v1.0.15
+	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/tdewolff/minify/v2 v2.9.22
