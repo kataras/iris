@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New [/x/client](x/client) HTTP Client sub-package.
+
 - New `email` builtin path parameter type. Example:
 
 ```go
