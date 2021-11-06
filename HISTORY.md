@@ -28,6 +28,10 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New [x/jsonx](x/jsonx) sub-package for JSON type helpers.
+
+- New [x/mathx](x/mathx) sub-package for math related functions.
+
 - New [/x/client](x/client) HTTP Client sub-package.
 
 - New `email` builtin path parameter type. Example:
