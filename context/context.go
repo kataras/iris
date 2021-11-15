@@ -33,6 +33,8 @@ import (
 	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/kataras/golog"
+	"github.com/mailru/easyjson"
+	"github.com/mailru/easyjson/jwriter"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"github.com/vmihailenco/msgpack/v5"
@@ -3553,6 +3555,12 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (in
 		return writer.Write(result)
 	}
 
+	if easyObject, ok := v.(easyjson.Marshaler); ok {
+		jw := jwriter.Writer{NoEscapeHTML: !options.UnescapeHTML}
+		easyObject.MarshalEasyJSON(&jw)
+		return jw.DumpTo(writer)
+	}
+
 	if !optimize && options.Indent == "" {
 		options.Indent = "  "
 	}
@@ -5780,6 +5788,81 @@ func (ctx *Context) User() User {
 	}
 
 	return nil
+}
+
+// Ensure Iris Context implements the standard Context package, build-time.
+var _ stdContext.Context = (*Context)(nil)
+
+// Deadline returns the time when work done on behalf of this context
+// should be canceled. Deadline returns ok==false when no deadline is
+// set. Successive calls to Deadline return the same results.
+//
+// Shortcut of Request().Context().Deadline().
+func (ctx *Context) Deadline() (deadline time.Time, ok bool) {
+	return ctx.request.Context().Deadline()
+}
+
+// Done returns a channel that's closed when work done on behalf of this
+// context should be canceled. Done may return nil if this context can
+// never be canceled. Successive calls to Done return the same value.
+// The close of the Done channel may happen asynchronously,
+// after the cancel function returns.
+//
+// WithCancel arranges for Done to be closed when cancel is called;
+// WithDeadline arranges for Done to be closed when the deadline
+// expires; WithTimeout arranges for Done to be closed when the timeout
+// elapses.
+//
+// Done is provided for use in select statements:
+//
+//  // Stream generates values with DoSomething and sends them to out
+//  // until DoSomething returns an error or ctx.Done is closed.
+//  func Stream(ctx context.Context, out chan<- Value) error {
+//  	for {
+//  		v, err := DoSomething(ctx)
+//  		if err != nil {
+//  			return err
+//  		}
+//  		select {
+//  		case <-ctx.Done():
+//  			return ctx.Err()
+//  		case out <- v:
+//  		}
+//  	}
+//  }
+//
+// See https://blog.golang.org/pipelines for more examples of how to use
+// a Done channel for cancellation.
+//
+// Shortcut of Request().Context().Done().
+func (ctx *Context) Done() <-chan struct{} {
+	return ctx.request.Context().Done()
+}
+
+// If Done is not yet closed, Err returns nil.
+// If Done is closed, Err returns a non-nil error explaining why:
+// Canceled if the context was canceled
+// or DeadlineExceeded if the context's deadline passed.
+// After Err returns a non-nil error, successive calls to Err return the same error.
+//
+// Shortcut of Request().Context().Err().
+func (ctx *Context) Err() error {
+	return ctx.request.Context().Err()
+}
+
+// Value returns the value associated with this context for key, or nil
+// if no value is associated with key. Successive calls to Value with
+// the same key returns the same result.
+//
+// Shortcut of Request().Context().Value(key interface{}) interface{}.
+func (ctx *Context) Value(key interface{}) interface{} {
+	if keyStr, ok := key.(string); ok { // check if the key is a type of string, which can be retrieved by the mem store.
+		if entry, exists := ctx.values.GetEntry(keyStr); exists {
+			return entry.ValueRaw
+		}
+	}
+	// otherwise return the chained value.
+	return ctx.request.Context().Value(key)
 }
 
 const idContextKey = "iris.context.id"

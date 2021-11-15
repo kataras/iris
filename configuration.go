@@ -832,6 +832,7 @@ type Configuration struct {
 	//    "X-Forwarded-For",
 	//    "CF-Connecting-IP",
 	//    "True-Client-Ip",
+	//    "X-Appengine-Remote-Addr",
 	//	}
 	//
 	// Look `context.RemoteAddr()` for more.
