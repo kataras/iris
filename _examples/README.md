@@ -5,6 +5,8 @@
 * [URL Shortener](url-shortener)
 * [Dropzone.js](dropzonejs)
 * [Caddy](caddy)
+* [Bootstrapper](bootstrapper)
+* [Project Structure](project) :fire:
 * Database
     * [MySQL, Groupcache & Docker](database/mysql)
     * [MongoDB](database/mongodb)
@@ -274,7 +276,6 @@
     * [Handle errors using mvc.Result](mvc/error-handler-custom-result)
     * [Handle errors using PreflightResult](mvc/error-handler-preflight)
     * [Handle errors by hijacking the result](mvc/error-handler-hijack)
-* [Bootstrapper](bootstrapper)
 * Desktop Applications
     * [The blink package](desktop/blink)
     * [The lorca package](desktop/lorca)

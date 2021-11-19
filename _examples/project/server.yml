@@ -1,0 +1,17 @@
+ServerName: My Project
+Host: 0.0.0.0
+Port: 80
+EnableCompression: true
+AllowOrigin: "*"
+Iris:
+  # Defaults to info.
+  LogLevel: info
+  # Defaults to false.
+  EnableOptimizations: true
+  # Defaults to empty.
+  RemoteAddrHeaders:
+  - "X-Real-Ip"
+  - "X-Forwarded-For"
+  - "CF-Connecting-IP"
+  - "True-Client-Ip"
+  - "X-Appengine-Remote-Addr"
