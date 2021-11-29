@@ -100,6 +100,8 @@ func (t *KitckenTime) Scan(src interface{}) error {
 			return err
 		}
 		*t = tt
+	case nil:
+		*t = KitckenTime(time.Time{})
 	default:
 		return fmt.Errorf("KitckenTime: unknown type of: %T", v)
 	}

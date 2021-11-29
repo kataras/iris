@@ -104,6 +104,8 @@ func (t *ISO8601) Scan(src interface{}) error {
 			return err
 		}
 		*t = tt
+	case nil:
+		*t = ISO8601(time.Time{})
 	default:
 		return fmt.Errorf("ISO8601: unknown type of: %T", v)
 	}

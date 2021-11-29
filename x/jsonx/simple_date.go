@@ -105,6 +105,8 @@ func (t *SimpleDate) Scan(src interface{}) error {
 			return err
 		}
 		*t = tt
+	case nil:
+		*t = SimpleDate(time.Time{})
 	default:
 		return fmt.Errorf("SimpleDate: unknown type of: %T", v)
 	}
