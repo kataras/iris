@@ -39,10 +39,11 @@ func (t *SimpleDate) UnmarshalJSON(data []byte) error {
 	}
 
 	data = trimQuotes(data)
-	dataStr := string(data)
-	if len(dataStr) == 0 {
-		return nil // as an excepption here, allow empty "" on simple dates, as the server would render it on a response: https://endomedical.slack.com/archives/D02BF660JA1/p1630486704048100.
+	if len(data) == 0 {
+		return nil // as an excepption here, allow empty "" on simple dates, as the server would render it on a response.
 	}
+
+	dataStr := string(data)
 
 	tt, err := time.Parse(SimpleDateLayout, dataStr)
 	if err != nil {
