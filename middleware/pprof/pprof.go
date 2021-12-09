@@ -12,6 +12,17 @@ import (
 
 func init() {
 	context.SetHandlerName("iris/middleware/pprof.*", "iris.profiling")
+
+	/* for our readers:
+	apps.OnApplicationRegistered(func(app *iris.Application) {
+		app.Any("/debug/pprof/cmdline", iris.FromStd(pprof.Cmdline))
+		app.Any("/debug/pprof/profile", iris.FromStd(pprof.Profile))
+		app.Any("/debug/pprof/symbol", iris.FromStd(pprof.Symbol))
+		app.Any("/debug/pprof/trace", iris.FromStd(pprof.Trace))
+
+		app.Any("/debug/pprof /debug/pprof/{action:string}", New())
+	})
+	*/
 }
 
 // net/http/pprof copy:

@@ -20,6 +20,10 @@ type ConfigurationReadOnly interface {
 	GetSocketSharding() bool
 	// GetKeepAlive returns the KeepAlive field.
 	GetKeepAlive() time.Duration
+	// GetKeepAlive returns the Timeout field.
+	GetTimeout() time.Duration
+	// GetKeepAlive returns the TimeoutMessage field.
+	GetTimeoutMessage() string
 	// GetDisablePathCorrection returns the DisablePathCorrection field
 	GetDisablePathCorrection() bool
 	// GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.

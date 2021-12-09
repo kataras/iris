@@ -208,6 +208,14 @@ func WithKeepAlive(keepAliveDur time.Duration) Configurator {
 	}
 }
 
+// WithTimeout sets the `Configuration.Timeout` field to the given duration.
+func WithTimeout(timeoutDur time.Duration, htmlBody string) Configurator {
+	return func(app *Application) {
+		app.config.Timeout = timeoutDur
+		app.config.TimeoutMessage = htmlBody
+	}
+}
+
 // WithoutServerError will cause to ignore the matched "errors"
 // from the main application's `Run/Listen` function.
 //
@@ -498,7 +506,6 @@ func WithSitemap(startURL string) Configurator {
 					} else {
 						href = "/" + langPath + loc
 					}
-
 				} else if app.I18n.Subdomain {
 					// then use the subdomain.
 					// e.g. http://el.domain.com/path
@@ -627,6 +634,17 @@ type Configuration struct {
 	//
 	// Defaults to 0.
 	KeepAlive time.Duration `ini:"keepalive" json:"keepAlive" yaml:"KeepAlive" toml:"KeepAlive" env:"KEEP_ALIVE"`
+	// Timeout wraps the application's router with an http timeout handler
+	// if the value is greater than zero.
+	//
+	// The underline response writer supports the Pusher interface but does not support
+	// the Hijacker or Flusher interfaces when Timeout handler is registered.
+	//
+	// Read more at: https://pkg.go.dev/net/http#TimeoutHandler.
+	Timeout time.Duration `ini:"timeout" json:"timeout" yaml:"Timeout" toml:"Timeout"`
+	// TimeoutMessage specifies the HTML body when a handler hits its life time based
+	// on the Timeout configuration field.
+	TimeoutMessage string `ini:"timeout_message" json:"timeoutMessage" yaml:"TimeoutMessage" toml:"TimeoutMessage"`
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
 	Tunneling TunnelingConfiguration `ini:"tunneling" json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
@@ -914,6 +932,16 @@ func (c Configuration) GetKeepAlive() time.Duration {
 	return c.KeepAlive
 }
 
+// GetKeepAlive returns the Timeout field.
+func (c Configuration) GetTimeout() time.Duration {
+	return c.Timeout
+}
+
+// GetKeepAlive returns the TimeoutMessage field.
+func (c Configuration) GetTimeoutMessage() string {
+	return c.TimeoutMessage
+}
+
 // GetDisablePathCorrection returns the DisablePathCorrection field.
 func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
@@ -1088,6 +1116,14 @@ func WithConfiguration(c Configuration) Configurator {
 			main.KeepAlive = v
 		}
 
+		if v := c.Timeout; v > 0 {
+			main.Timeout = v
+		}
+
+		if v := c.TimeoutMessage; v != "" {
+			main.TimeoutMessage = v
+		}
+
 		if len(c.Tunneling.Tunnels) > 0 {
 			main.Tunneling = c.Tunneling
 		}
@@ -1234,12 +1270,18 @@ func WithConfiguration(c Configuration) Configurator {
 	}
 }
 
+// DefaultTimeoutMessage is the default timeout message which is rendered
+// on expired handlers when timeout handler is registered (see Timeout configuration field).
+var DefaultTimeoutMessage = `<html><head><title>Timeout</title></head><body><h1>Timeout</h1>Looks like the server is taking too long to respond, this can be caused by either poor connectivity or an error with our servers. Please try again in a while.</body></html>`
+
 // DefaultConfiguration returns the default configuration for an iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
 		LogLevel:                          "info",
 		SocketSharding:                    false,
 		KeepAlive:                         0,
+		Timeout:                           0,
+		TimeoutMessage:                    DefaultTimeoutMessage,
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,

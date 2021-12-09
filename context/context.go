@@ -708,7 +708,6 @@ func (ctx *Context) StopExecution() {
 		// And stop.
 		ctx.currentHandlerIndex = stopExecutionIndex
 	}
-
 }
 
 // IsStopped reports whether the current position of the context's handlers is -1,
@@ -2697,7 +2696,6 @@ func (ctx *Context) ReadMsgPack(ptr interface{}) error {
 // As a special case if the "ptr" was a pointer to string or []byte
 // then it will bind it to the request body as it is.
 func (ctx *Context) ReadBody(ptr interface{}) error {
-
 	// If the ptr is string or byte, read the body as it's.
 	switch v := ptr.(type) {
 	case *string:
@@ -4871,7 +4869,6 @@ func CookieAllowReclaim(cookieNames ...string) CookieOption {
 			header.Del("Cookie")
 		}
 	}
-
 }
 
 // CookieAllowSubdomains set to the Cookie Options
@@ -5888,5 +5885,12 @@ func (ctx *Context) GetID() interface{} {
 // It returns the Context's ID given by a `SetID`call,
 // followed by the client's IP and the method:uri.
 func (ctx *Context) String() string {
-	return fmt.Sprintf("[%s] %s ▶ %s:%s", ctx.GetID(), ctx.RemoteAddr(), ctx.Method(), ctx.Request().RequestURI)
+	id := ctx.GetID()
+	if id != nil {
+		if stringer, ok := id.(fmt.Stringer); ok {
+			id = stringer.String()
+		}
+	}
+
+	return fmt.Sprintf("[%v] %s ▶ %s:%s", id, ctx.RemoteAddr(), ctx.Method(), ctx.Request().RequestURI)
 }

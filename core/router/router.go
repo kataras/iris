@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kataras/iris/v12/context"
 
@@ -269,6 +270,25 @@ func (router *Router) Downgrade(newMainHandler http.HandlerFunc) {
 // Downgraded returns true if this router is downgraded.
 func (router *Router) Downgraded() bool {
 	return router.mainHandler != nil && router.requestHandler == nil
+}
+
+// SetTimeoutHandler overrides the main handler with a timeout handler.
+//
+// TimeoutHandler supports the Pusher interface but does not support
+// the Hijacker or Flusher interfaces.
+//
+// All previous registered wrappers and middlewares are still executed as expected.
+func (router *Router) SetTimeoutHandler(timeout time.Duration, msg string) {
+	if timeout <= 0 {
+		return
+	}
+
+	mainHandler := router.mainHandler
+	h := func(w http.ResponseWriter, r *http.Request) {
+		mainHandler(w, r)
+	}
+
+	router.mainHandler = http.TimeoutHandler(http.HandlerFunc(h), timeout, msg).ServeHTTP
 }
 
 // WrapRouter adds a wrapper on the top of the main router.

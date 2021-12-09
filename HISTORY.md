@@ -28,6 +28,10 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `Configuration.Timeout` and `Configuration.TimeoutMessage` fields. Use it to set HTTP timeouts. Note that your http server's (`Application.ConfigureHost`) Read/Write timeouts should be a bit higher than the `Configuration.Timeout` in order to give some time to http timeout handler to kick in and be able to send the `Configuration.TimeoutMessage` properly.
+
+- New `apps.OnApplicationRegistered` method which listens on new Iris applications hosted under the same binary. Use it on your `init` functions to configure Iris applications by any spot in your project's files.
+
 - `Context.JSON` respects any object implements the `easyjson.Marshaler` interface and renders the result using the [easyjon](https://github.com/mailru/easyjson)'s writer.
 
 - minor: `Context` structure implements the standard go Context interface now (includes: Deadline, Done, Err and Value methods). Handlers can now just pass the `ctx iris.Context` as a shortcut of `ctx.Request().Context()` when needed.

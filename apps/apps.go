@@ -48,3 +48,15 @@ func GetAll() []*iris.Application {
 
 	return apps
 }
+
+// OnApplicationRegistered adds a function which fires when a new application
+// is registered.
+func OnApplicationRegistered(listeners ...func(app *iris.Application)) {
+	appListeners := make([]func(context.Application), 0, len(listeners))
+	for i := range listeners {
+		appListeners = append(appListeners, func(ctxApp context.Application) {
+			listeners[i](ctxApp.(*iris.Application))
+		})
+	}
+	context.OnApplicationRegistered(appListeners...)
+}

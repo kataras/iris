@@ -640,6 +640,11 @@ func (app *Application) Build() error {
 			return err
 		}
 		app.HTTPErrorHandler = routerHandler
+
+		if app.config.Timeout > 0 {
+			app.Router.SetTimeoutHandler(app.config.Timeout, app.config.TimeoutMessage)
+		}
+
 		// re-build of the router from outside can be done with
 		// app.RefreshRouter()
 	}
