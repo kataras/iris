@@ -8,3 +8,4 @@ issue-*/
 internalcode-*/
 /_examples/feature-*/
 _examples/**/uploads/*
+.DS_STORE

@@ -1467,9 +1467,26 @@ func (ctx *Context) URLParam(name string) string {
 // Returns the values of a url query of the given "name" as string slice, e.g.
 // ?name=john&name=doe&name=kataras will return [ john doe kataras].
 //
+// Note that, this method skips any empty entries.
+//
 // See `URLParamsSorted` for sorted values.
 func (ctx *Context) URLParamSlice(name string) []string {
-	return ctx.getQuery()[name]
+	values := ctx.getQuery()[name]
+	n := len(values)
+	if n == 0 {
+		return values
+	}
+
+	normalizedValues := make([]string, 0, n)
+
+	for _, v := range values {
+		if v == "" {
+			continue
+		}
+		normalizedValues = append(normalizedValues, v)
+	}
+
+	return normalizedValues
 }
 
 // URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
