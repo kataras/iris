@@ -232,14 +232,28 @@ func (ctx *Context) EndRequest() {
 // Note that it will always return true
 // when called from a goroutine after the request-response lifecycle.
 func (ctx *Context) IsCanceled() bool {
+	var err error
 	if reqCtx := ctx.request.Context(); reqCtx != nil {
-		err := reqCtx.Err()
-		if err != nil && errors.Is(err, stdContext.Canceled) {
-			return true
-		}
+		err = reqCtx.Err()
+	} else {
+		err = ctx.GetErr()
 	}
 
-	return false
+	return IsErrCanceled(err)
+}
+
+// IsErrCanceled reports whether the "err" is caused by a cancellation or timeout.
+func IsErrCanceled(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var netErr net.Error
+	return (errors.As(err, &netErr) && netErr.Timeout()) ||
+		errors.Is(err, stdContext.Canceled) ||
+		errors.Is(err, stdContext.DeadlineExceeded) ||
+		errors.Is(err, http.ErrHandlerTimeout) ||
+		err.Error() == "closed pool"
 }
 
 // OnConnectionClose registers the "cb" Handler
@@ -1483,6 +1497,7 @@ func (ctx *Context) URLParamSlice(name string) []string {
 		if v == "" {
 			continue
 		}
+
 		normalizedValues = append(normalizedValues, v)
 	}
 

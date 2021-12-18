@@ -506,6 +506,10 @@ var (
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
+	// IsErrCanceled reports whether the "err" is caused by a cancellation or timeout.
+	//
+	// A shortcut for the `context#IsErrCanceled`.
+	IsErrCanceled = context.IsErrCanceled
 	// ErrEmptyForm is the type error which API users can make use of
 	// to check if a form was empty on `Context.ReadForm`.
 	//
