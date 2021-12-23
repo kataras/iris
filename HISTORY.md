@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Push a security fix reported by [Kirill Efimov](https://github.com/kirill89) for older go runtimes.
+
 - New `Configuration.Timeout` and `Configuration.TimeoutMessage` fields. Use it to set HTTP timeouts. Note that your http server's (`Application.ConfigureHost`) Read/Write timeouts should be a bit higher than the `Configuration.Timeout` in order to give some time to http timeout handler to kick in and be able to send the `Configuration.TimeoutMessage` properly.
 
 - New `apps.OnApplicationRegistered` method which listens on new Iris applications hosted under the same binary. Use it on your `init` functions to configure Iris applications by any spot in your project's files.

@@ -2032,13 +2032,7 @@ func (ctx *Context) FormFiles(key string, before ...func(*Context, *multipart.Fi
 
 		innerLoop:
 			for _, header := range fhs[key] {
-				// Fix an issue that net/http has,
-				// an attacker can push a filename
-				// which could lead to override existing system files
-				// by ../../$header.
-				// Reported by Frank through security reports.
-				header.Filename = strings.ReplaceAll(header.Filename, "../", "")
-				header.Filename = strings.ReplaceAll(header.Filename, "..\\", "")
+				header.Filename = filepath.Base(header.Filename)
 
 				for _, b := range before {
 					if !b(ctx, header) {
@@ -2100,13 +2094,9 @@ func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Contex
 			for _, files := range fhs {
 			innerLoop:
 				for _, file := range files {
-					// Fix an issue that net/http has,
-					// an attacker can push a filename
-					// which could lead to override existing system files
-					// by ../../$file.
-					// Reported by Frank through security reports.
-					file.Filename = strings.ReplaceAll(file.Filename, "../", "")
-					file.Filename = strings.ReplaceAll(file.Filename, "..\\", "")
+					// Security fix for go < 1.17.5:
+					// Reported by Kirill Efimov (snyk.io) through security reports.
+					file.Filename = filepath.Base(file.Filename)
 
 					for _, b := range before {
 						if !b(ctx, file) {
