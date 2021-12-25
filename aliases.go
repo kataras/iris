@@ -44,6 +44,14 @@ type (
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc = context.UnmarshalerFunc
+	// DecodeFunc is a generic type of decoder function.
+	// When the returned error is not nil the decode operation
+	// is terminated and the error is received by the ReadJSONStream method,
+	// otherwise it continues to read the next available object.
+	// Look the `Context.ReadJSONStream` method.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream.
+	DecodeFunc = context.DecodeFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.
 	// Returning signals that the request is finished;

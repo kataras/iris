@@ -212,7 +212,7 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 			if m, is := binding.(map[string]interface{}); is { // handlebars accepts maps,
 				context = m
 			} else {
-				return fmt.Errorf("Please provide a map[string]interface{} type as the binding instead of the %#v", binding)
+				return fmt.Errorf("please provide a map[string]interface{} type as the binding instead of the %#v", binding)
 			}
 
 			contents, err := s.executeTemplateBuf(filename, binding)
@@ -235,5 +235,9 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 		return err
 	}
 
-	return ErrNotExist{fmt.Sprintf("%s (file: %s)", renderFilename, filename), false, bindingData}
+	return ErrNotExist{
+		Name:     fmt.Sprintf("%s (file: %s)", renderFilename, filename),
+		IsLayout: false,
+		Data:     bindingData,
+	}
 }

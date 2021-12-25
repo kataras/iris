@@ -421,14 +421,14 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 
 	t := s.Templates.Lookup(name)
 	if t == nil {
-		return ErrNotExist{name, false, bindingData}
+		return ErrNotExist{Name: name, IsLayout: false, Data: bindingData}
 	}
 	s.runtimeFuncsFor(t, name, bindingData)
 
 	if layout = getLayout(layout, s.layout); layout != "" {
 		lt := s.Templates.Lookup(layout)
 		if lt == nil {
-			return ErrNotExist{layout, true, bindingData}
+			return ErrNotExist{Name: layout, IsLayout: true, Data: bindingData}
 		}
 
 		s.layoutFuncsFor(lt, name, bindingData)

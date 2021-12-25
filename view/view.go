@@ -79,7 +79,7 @@ func (v *View) AddFunc(funcName string, funcBody interface{}) {
 // Load compiles all the registered engines.
 func (v *View) Load() error {
 	if !v.Registered() {
-		return fmt.Errorf("No engine is registered")
+		return fmt.Errorf("no engine was registered")
 	}
 	return v.Engine.Load()
 }

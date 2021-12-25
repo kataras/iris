@@ -307,5 +307,5 @@ func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, _ string, bin
 		return tmpl.ExecuteWriter(getPongoContext(bindingData), w)
 	}
 
-	return ErrNotExist{filename, false, bindingData}
+	return ErrNotExist{Name: filename, IsLayout: false, Data: bindingData}
 }
