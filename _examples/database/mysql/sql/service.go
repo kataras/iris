@@ -115,9 +115,8 @@ func ParseListOptions(q url.Values) ListOptions {
 	offset, _ := strconv.ParseUint(q.Get("offset"), 10, 64)
 	limit, _ := strconv.ParseUint(q.Get("limit"), 10, 64)
 	order := q.Get("order") // empty, asc(...) or desc(...).
-	orderBy := q.Get("by")  // e.g. price
 
-	return ListOptions{Offset: offset, Limit: limit, Order: order, OrderByColumn: orderBy}
+	return ListOptions{Offset: offset, Limit: limit, Order: order}
 }
 
 // List binds one or more records from the database to the "dest".
@@ -130,10 +129,9 @@ func (s *Service) List(ctx context.Context, dest interface{}, opts ListOptions) 
 		// If missing then try to set it by record info.
 		opts.Table = s.rec.TableName()
 	}
-	if opts.OrderByColumn == "" {
-		if b, ok := s.rec.(Sorted); ok {
-			opts.OrderByColumn = b.SortBy()
-		}
+
+	if b, ok := s.rec.(Sorted); ok {
+		opts.OrderByColumn = b.SortBy()
 	}
 
 	q, args := opts.BuildQuery()
