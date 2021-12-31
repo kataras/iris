@@ -4727,10 +4727,6 @@ func (ctx *Context) ServeContentWithRate(content io.ReadSeeker, filename string,
 		}
 	}
 
-	if ctx.GetContentType() == "" {
-		ctx.ContentType(filename)
-	}
-
 	http.ServeContent(ctx.writer, ctx.request, filename, modtime, content)
 }
 
