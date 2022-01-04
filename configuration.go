@@ -209,10 +209,12 @@ func WithKeepAlive(keepAliveDur time.Duration) Configurator {
 }
 
 // WithTimeout sets the `Configuration.Timeout` field to the given duration.
-func WithTimeout(timeoutDur time.Duration, htmlBody string) Configurator {
+func WithTimeout(timeoutDur time.Duration, htmlBody ...string) Configurator {
 	return func(app *Application) {
 		app.config.Timeout = timeoutDur
-		app.config.TimeoutMessage = htmlBody
+		if len(htmlBody) > 0 {
+			app.config.TimeoutMessage = htmlBody[0]
+		}
 	}
 }
 

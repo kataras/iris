@@ -643,6 +643,24 @@ func (app *Application) Build() error {
 
 		if app.config.Timeout > 0 {
 			app.Router.SetTimeoutHandler(app.config.Timeout, app.config.TimeoutMessage)
+
+			app.ConfigureHost(func(su *Supervisor) {
+				if su.Server.ReadHeaderTimeout == 0 {
+					su.Server.ReadHeaderTimeout = app.config.Timeout + 5*time.Second
+				}
+
+				if su.Server.ReadTimeout == 0 {
+					su.Server.ReadTimeout = app.config.Timeout + 10*time.Second
+				}
+
+				if su.Server.WriteTimeout == 0 {
+					su.Server.WriteTimeout = app.config.Timeout + 15*time.Second
+				}
+
+				if su.Server.IdleTimeout == 0 {
+					su.Server.IdleTimeout = app.config.Timeout + 25*time.Second
+				}
+			})
 		}
 
 		// re-build of the router from outside can be done with

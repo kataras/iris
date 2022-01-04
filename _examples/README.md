@@ -29,6 +29,7 @@
         * [Use Iris as a single http.Handler](http-server/custom-httpserver/std-way/main.go)
         * [Multi Instances](http-server/custom-httpserver/multi/main.go)
         * [HTTP/3 Quic](http-server/http3-quic)
+    * [Timeout](http-server/timeout/main.go)
 * Configuration
     * [Functional](configuration/functional/main.go)
     * [Configuration Struct](configuration/from-configuration-structure/main.go)
