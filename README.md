@@ -317,7 +317,7 @@ Iris contains extensive and thorough **[documentation](https://www.iris-go.com/d
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
-For a more detailed technical documentation you can head over to our [godocs](https://godoc.org/github.com/kataras/iris). And for executable code you can always visit the [./_examples](_examples) repository's subdirectory.
+For a more detailed technical documentation you can head over to our [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@master). And for executable code you can always visit the [./_examples](_examples) repository's subdirectory.
 
 ### Do you like to read while traveling?
 

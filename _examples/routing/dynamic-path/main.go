@@ -176,7 +176,7 @@ func main() {
 	// | {param:email}           |
 	// +------------------------+
 	// Email + mx look uppath parameter validation.
-	// Note that, you can also use the simplier ":mail" to accept any domain email.
+	// Note that, you can also use the simpler ":mail" to accept any domain email.
 
 	// http://localhost:8080/user/email/kataras2006@hotmail.com -> OK
 	// http://localhost:8080/user/email/b-c@                    -> NOT FOUND

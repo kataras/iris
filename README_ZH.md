@@ -185,7 +185,7 @@ Iris 有完整且详尽的 **[使用文档](https://github.com/kataras/iris/wiki
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
-要了解更详细的技术文档，请访问我们的 [godocs](https://godoc.org/github.com/kataras/iris)。如果想要寻找代码示例，您可以到仓库的 [./_examples](_examples) 子目录下获取。
+要了解更详细的技术文档，请访问我们的 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@master)。如果想要寻找代码示例，您可以到仓库的 [./_examples](_examples) 子目录下获取。
 
 ### 你喜欢在旅行时阅读吗？
 

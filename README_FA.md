@@ -274,7 +274,7 @@ require github.com/kataras/iris/v12 master
     
 برای اطلاعات بیشتر در مورد اسناد فنی می توانید به مستندات اصلی ما مراجعه کنید. 
 
-> [مستندات اصلی](https://godoc.org/github.com/kataras/iris)
+> [مستندات اصلی](https://pkg.go.dev/github.com/kataras/iris/v12@master)
     
 ## دوست دارید در حین مسافرت کتاب بخوانید ?
     

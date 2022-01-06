@@ -28,11 +28,11 @@ Go version 1.13 and above is required.
 
 More than 180 practical examples, tutorials and articles at:
 
-- https://iris-go.com/start
-- https://bit.ly/iris-req-book
+- https://www.iris-go.com/docs
+- https://www.iris-go.com/#ebookDonateForm
 - https://github.com/kataras/iris/wiki/Starter-kits
 - https://github.com/kataras/iris/tree/master/_examples
-- https://godoc.org/github.com/kataras/iris <!--https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0-->
+- https://pkg.go.dev/github.com/kataras/iris/v12@master
 
 ## Active development mode
 
@@ -53,4 +53,4 @@ Yes, https://chat.iris-go.com
 
 By people like you, who help us by donating small or large amounts of money.
 
-Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://iris-go.com/donate). Your name will be published [here](https://iris-go.com) after your approval via e-mail.
+Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal or Stripe](https://iris-go.com/donate). Your name will be published [here](https://www.iris-go.com/#review) after your approval via e-mail.
