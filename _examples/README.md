@@ -38,6 +38,7 @@
         * [Share Configuration across instances](configuration/from-yaml-file/shared-configuration/main.go)
     * [Import from TOML](configuration/from-toml-file/main.go)
 * Routing
+    * [Party Controller](routing/party-controller) **NEW**
     * [Overview](routing/overview/main.go)
     * [Basic](routing/basic/main.go)
     * [Custom HTTP Errors](routing/http-errors/main.go)

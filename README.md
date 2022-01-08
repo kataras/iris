@@ -34,19 +34,19 @@ type (
   }
 
   response struct {
-    ID      uint64 `json:"id"`
+    ID      string `json:"id"`
     Message string `json:"message"`
   }
 )
 
 func main() {
   app := iris.New()
-  app.Handle("PUT", "/users/{id:uint64}", updateUser)
+  app.Handle("PUT", "/users/{id:uuid}", updateUser)
   app.Listen(":8080")
 }
 
 func updateUser(ctx iris.Context) {
-  id, _ := ctx.Params().GetUint64("id")
+  id, _ := ctx.Params().Get("id")
 
   var req request
   if err := ctx.ReadJSON(&req); err != nil {
@@ -74,6 +74,11 @@ func updateUser(ctx iris.Context) {
 
 </details>
 
+<details><summary>Party Controller (NEW)</summary>
+
+> Head over to the [full running example](https://github.com/kataras/iris/blob/master/_examples/routing/party-controller)!
+
+</details>
 
 <details><summary>MVC</summary>
 
