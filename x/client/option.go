@@ -1,8 +1,13 @@
 package client
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
+	"github.com/kataras/golog"
 	"golang.org/x/time/rate"
 )
 
@@ -45,4 +50,46 @@ func RateLimit(requestsPerSecond int) Option {
 	return func(c *Client) {
 		c.rateLimiter = rate.NewLimiter(rate.Limit(requestsPerSecond), requestsPerSecond)
 	}
+}
+
+// Debug enables the client's debug logger.
+func Debug(c *Client) {
+	handler := &debugRequestHandler{
+		logger: golog.Child("Iris HTTP Client: ").SetLevel("debug"),
+	}
+	c.requestHandlers = append(c.requestHandlers, handler)
+}
+
+type debugRequestHandler struct {
+	logger *golog.Logger
+}
+
+func (h *debugRequestHandler) getHeadersLine(headers http.Header) (headersLine string) {
+	for k, v := range headers {
+		headersLine += fmt.Sprintf("%s(%s), ", k, strings.Join(v, ","))
+	}
+
+	headersLine = strings.TrimRight(headersLine, ", ")
+	return
+}
+
+func (h *debugRequestHandler) BeginRequest(ctx context.Context, req *http.Request) error {
+	format := "%s: %s: content length: %d: headers: %s"
+	headersLine := h.getHeadersLine(req.Header)
+
+	h.logger.Debugf(format, req.Method, req.URL.String(), req.ContentLength, headersLine)
+	return nil
+}
+
+func (h *debugRequestHandler) EndRequest(ctx context.Context, resp *http.Response, err error) error {
+	if err != nil {
+		h.logger.Debugf("%s: %s: ERR: %s", resp.Request.Method, resp.Request.URL.String(), err.Error())
+	} else {
+		format := "%s: %s: content length: %d: headers: %s"
+		headersLine := h.getHeadersLine(resp.Header)
+
+		h.logger.Debugf(format, resp.Request.Method, resp.Request.URL.String(), resp.ContentLength, headersLine)
+	}
+
+	return err
 }

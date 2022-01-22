@@ -30,6 +30,8 @@
         * [Multi Instances](http-server/custom-httpserver/multi/main.go)
         * [HTTP/3 Quic](http-server/http3-quic)
     * [Timeout](http-server/timeout/main.go)
+* HTTP Client
+    * [Weather Client](http-client/weatherapi)
 * Configuration
     * [Functional](configuration/functional/main.go)
     * [Configuration Struct](configuration/from-configuration-structure/main.go)
