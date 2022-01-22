@@ -1,6 +1,10 @@
 package client
 
-import "time"
+import (
+	"time"
+
+	"golang.org/x/time/rate"
+)
 
 // All the builtin client options should live here, for easy discovery.
 
@@ -31,5 +35,14 @@ func Timeout(d time.Duration) Option {
 func PersistentRequestOptions(reqOpts ...RequestOption) Option {
 	return func(c *Client) {
 		c.PersistentRequestOptions = append(c.PersistentRequestOptions, reqOpts...)
+	}
+}
+
+// RateLimit configures the rate limit for requests.
+//
+// Defaults to zero which disables rate limiting.
+func RateLimit(requestsPerSecond int) Option {
+	return func(c *Client) {
+		c.rateLimiter = rate.NewLimiter(rate.Limit(requestsPerSecond), requestsPerSecond)
 	}
 }

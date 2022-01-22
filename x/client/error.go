@@ -73,7 +73,8 @@ func DecodeError(err error, destPtr interface{}) error {
 
 // GetErrorCode reads an error, which should be a type of APIError,
 // and returns its status code.
-// If the given "err" is nil or is not an APIError it returns 200, acting as we have no error.
+// If the given "err" is nil or is not an APIError it returns 200,
+// acting as we have no error.
 func GetErrorCode(err error) int {
 	apiErr, ok := GetError(err)
 	if !ok {

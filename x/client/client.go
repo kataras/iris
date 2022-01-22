@@ -14,9 +14,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"golang.org/x/time/rate"
 )
 
-// the base client
+// A Client is an HTTP client. Initialize with the New package-level function.
 type Client struct {
 	HTTPClient *http.Client
 
@@ -25,12 +27,30 @@ type Client struct {
 
 	// A list of persistent request options.
 	PersistentRequestOptions []RequestOption
+
+	// Optional rate limiter instance initialized by the RateLimit method.
+	rateLimiter *rate.Limiter
+
+	// Optional handlers that are being fired before and after each new request.
+	requestHandlers []RequestHandler
 }
 
+// New returns a new Iris HTTP Client.
+// Available options:
+// - BaseURL
+// - Timeout
+// - PersistentRequestOptions
+// - RateLimit
+//
+// Look the Client.Do/JSON/... methods to send requests and
+// ReadXXX methods to read responses.
+//
+// The default content type to send and receive data is JSON.
 func New(opts ...Option) *Client {
 	c := &Client{
 		HTTPClient:               &http.Client{},
 		PersistentRequestOptions: defaultRequestOptions,
+		requestHandlers:          defaultRequestHandlers,
 	}
 
 	for _, opt := range opts {
@@ -40,6 +60,60 @@ func New(opts ...Option) *Client {
 	return c
 }
 
+// RegisterRequestHandler registers one or more request handlers
+// to be ran before and after of each new request.
+//
+// Request handler's BeginRequest method run after each request constructed
+// and right before sent to the server.
+//
+// Request handler's EndRequest method run after response each received
+// and right before methods return back to the caller.
+//
+// Any request handlers MUST be set right after the Client's initialization.
+func (c *Client) RegisterRequestHandler(reqHandlers ...RequestHandler) {
+	reqHandlersToRegister := make([]RequestHandler, 0, len(reqHandlers))
+	for _, h := range reqHandlers {
+		if h == nil {
+			continue
+		}
+
+		reqHandlersToRegister = append(reqHandlersToRegister, h)
+	}
+
+	c.requestHandlers = append(c.requestHandlers, reqHandlersToRegister...)
+}
+
+func (c *Client) emitBeginRequest(ctx context.Context, req *http.Request) error {
+	if len(c.requestHandlers) == 0 {
+		return nil
+	}
+
+	for _, h := range c.requestHandlers {
+		if hErr := h.BeginRequest(ctx, req); hErr != nil {
+			return hErr
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) emitEndRequest(ctx context.Context, resp *http.Response, err error) error {
+	if len(c.requestHandlers) == 0 {
+		return nil
+	}
+
+	for _, h := range c.requestHandlers {
+		if hErr := h.EndRequest(ctx, resp, err); hErr != nil {
+			return hErr
+		}
+	}
+
+	return err
+}
+
+// RequestOption declares the type of option one can pass
+// to the Do methods(JSON, Form, ReadJSON...).
+// Request options run before request constructed.
 type RequestOption func(*http.Request) error
 
 // We always add the following request headers, unless they're removed by custom ones.
@@ -47,6 +121,7 @@ var defaultRequestOptions = []RequestOption{
 	RequestHeader(false, acceptKey, contentTypeJSON),
 }
 
+// RequestHeader adds or sets (if overridePrev is true) a header to the request.
 func RequestHeader(overridePrev bool, key string, values ...string) RequestOption {
 	key = http.CanonicalHeaderKey(key)
 
@@ -113,6 +188,12 @@ func (c *Client) Do(ctx context.Context, method, urlpath string, payload interfa
 		ctx = context.Background()
 	}
 
+	if c.rateLimiter != nil {
+		if err := c.rateLimiter.Wait(ctx); err != nil {
+			return nil, err
+		}
+	}
+
 	// Method defaults to GET.
 	if method == "" {
 		method = http.MethodGet
@@ -175,9 +256,19 @@ func (c *Client) Do(ctx context.Context, method, urlpath string, payload interfa
 		}
 	}
 
+	if err = c.emitBeginRequest(ctx, req); err != nil {
+		return nil, err
+	}
+
 	// Caller is responsible for closing the response body.
 	// Also note that the gzip compression is handled automatically nowadays.
-	return c.HTTPClient.Do(req)
+	resp, respErr := c.HTTPClient.Do(req)
+
+	if err = c.emitEndRequest(ctx, resp, respErr); err != nil {
+		return nil, err
+	}
+
+	return resp, respErr
 }
 
 const (
@@ -189,11 +280,13 @@ const (
 	contentTypeFormURLEncoded = "application/x-www-form-urlencoded"
 )
 
+// JSON writes data as JSON to the server.
 func (c *Client) JSON(ctx context.Context, method, urlpath string, payload interface{}, opts ...RequestOption) (*http.Response, error) {
 	opts = append(opts, RequestHeader(true, contentTypeKey, contentTypeJSON))
 	return c.Do(ctx, method, urlpath, payload, opts...)
 }
 
+// JSON writes form data to the server.
 func (c *Client) Form(ctx context.Context, method, urlpath string, formValues url.Values, opts ...RequestOption) (*http.Response, error) {
 	payload := formValues.Encode()
 
@@ -205,6 +298,9 @@ func (c *Client) Form(ctx context.Context, method, urlpath string, formValues ur
 	return c.Do(ctx, method, urlpath, payload, opts...)
 }
 
+// Uploader holds the necessary information for upload requests.
+//
+// Look the Client.NewUploader method.
 type Uploader struct {
 	client *Client
 
@@ -212,6 +308,7 @@ type Uploader struct {
 	Writer *multipart.Writer
 }
 
+// AddFileSource adds a form field to the uploader with the given key.
 func (u *Uploader) AddField(key, value string) error {
 	f, err := u.Writer.CreateFormField(key)
 	if err != nil {
@@ -222,6 +319,7 @@ func (u *Uploader) AddField(key, value string) error {
 	return err
 }
 
+// AddFileSource adds a form file to the uploader with the given key.
 func (u *Uploader) AddFileSource(key, filename string, source io.Reader) error {
 	f, err := u.Writer.CreateFormFile(key, filename)
 	if err != nil {
@@ -232,6 +330,7 @@ func (u *Uploader) AddFileSource(key, filename string, source io.Reader) error {
 	return err
 }
 
+// AddFile adds a local form file to the uploader with the given key.
 func (u *Uploader) AddFile(key, filename string) error {
 	source, err := os.Open(filename)
 	if err != nil {
@@ -241,6 +340,7 @@ func (u *Uploader) AddFile(key, filename string) error {
 	return u.AddFileSource(key, filename, source)
 }
 
+// Uploads sends local data to the server.
 func (u *Uploader) Upload(ctx context.Context, method, urlpath string, opts ...RequestOption) (*http.Response, error) {
 	err := u.Writer.Close()
 	if err != nil {
@@ -253,6 +353,8 @@ func (u *Uploader) Upload(ctx context.Context, method, urlpath string, opts ...R
 	return u.client.Do(ctx, method, urlpath, payload, opts...)
 }
 
+// NewUploader returns a structure which is responsible for sending
+// file and form data to the server.
 func (c *Client) NewUploader() *Uploader {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -264,6 +366,8 @@ func (c *Client) NewUploader() *Uploader {
 	}
 }
 
+// ReadJSON binds "dest" to the response's body.
+// After this call, the response body reader is closed.
 func (c *Client) ReadJSON(ctx context.Context, dest interface{}, method, urlpath string, payload interface{}, opts ...RequestOption) error {
 	if payload != nil {
 		opts = append(opts, RequestHeader(true, contentTypeKey, contentTypeJSON))
