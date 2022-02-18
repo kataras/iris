@@ -325,7 +325,7 @@ func TestControllerDependencies(t *testing.T) {
 		Body().Equal("kataras")
 
 	e.POST("/deep").Expect().Status(iris.StatusBadRequest).
-		Body().Equal("unexpected end of JSON input")
+		Body().Equal("EOF")
 }
 
 type testCtrl0 struct {

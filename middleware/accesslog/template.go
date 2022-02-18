@@ -51,6 +51,32 @@ func (f *Template) SetOutput(dest io.Writer) {
 
 const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Code}}|{{.Method}}|{{.Path}}|{{.IP}}|{{.RequestValuesLine}}|{{.BytesReceivedLine}}|{{.BytesSentLine}}|{{.Request}}|{{.Response}}|\n"
 
+func (f *Template) LogText(log *Log) (string, error) {
+	var err error
+
+	// A template may be executed safely in parallel, although if parallel
+	// executions share a Writer the output may be interleaved.
+	// We solve that using a buffer pool, no locks when template is executing (x2 performance boost).
+	temp := f.ac.bufPool.Get().(*bytes.Buffer)
+
+	if f.TmplName != "" {
+		err = f.Tmpl.ExecuteTemplate(temp, f.TmplName, log)
+	} else {
+		err = f.Tmpl.Execute(temp, log)
+	}
+
+	if err != nil {
+		f.ac.bufPool.Put(temp)
+		return "", err
+	}
+
+	text := temp.String()
+	temp.Reset()
+	f.ac.bufPool.Put(temp)
+
+	return text, nil
+}
+
 // Format prints the logs in text/template format.
 func (f *Template) Format(log *Log) (bool, error) {
 	var err error

@@ -30,8 +30,8 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
+	gojson "github.com/goccy/go-json"
 	"github.com/iris-contrib/schema"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/kataras/golog"
 	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
@@ -67,6 +67,12 @@ type (
 		Decode(data []byte) error
 	}
 
+	// BodyDecoderWithContext same as BodyDecoder but it can accept a standard context,
+	// which is binded to the HTTP request's context.
+	BodyDecoderWithContext interface {
+		DecodeContext(ctx stdContext.Context, data []byte) error
+	}
+
 	// Unmarshaler is the interface implemented by types that can unmarshal any raw data.
 	// TIP INFO: Any pointer to a value which implements the BodyDecoder can be override the unmarshaler.
 	Unmarshaler interface {
@@ -85,7 +91,7 @@ type (
 	// is terminated and the error is received by the ReadJSONStream method,
 	// otherwise it continues to read the next available object.
 	// Look the `Context.ReadJSONStream` method.
-	DecodeFunc func(outPtr interface{}) error
+	DecodeFunc func(ctx stdContext.Context, outPtr interface{}) error
 )
 
 // Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
@@ -2297,6 +2303,10 @@ func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 		return err
 	}
 
+	if decoderWithCtx, ok := outPtr.(BodyDecoderWithContext); ok {
+		return decoderWithCtx.DecodeContext(ctx.request.Context(), rawData)
+	}
+
 	// check if the v contains its own decode
 	// in this case the v should be a pointer also,
 	// but this is up to the user's custom Decode implementation*
@@ -2314,36 +2324,6 @@ func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 
 	// f the v doesn't contains a self-body decoder use the custom unmarshaler to bind the body.
 	err = unmarshaler.Unmarshal(rawData, outPtr)
-	if err != nil {
-		return err
-	}
-
-	return ctx.app.Validate(outPtr)
-}
-
-// internalBodyDecoder is a generic type of decoder, usually used to export stream reading functionality
-// of a JSON request.
-type internalBodyDecoder interface {
-	Decode(outPutr interface{}) error
-}
-
-// Same as UnmarshalBody but it operates on body stream.
-func (ctx *Context) decodeBody(outPtr interface{}, decoder internalBodyDecoder) error {
-	// check if the v contains its own decode
-	// in this case the v should be a pointer also,
-	// but this is up to the user's custom Decode implementation*
-	//
-	// See 'BodyDecoder' for more.
-	if structDecoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
-		rawData, err := ctx.GetBody()
-		if err != nil {
-			return err
-		}
-
-		return structDecoder.Decode(rawData)
-	}
-
-	err := decoder.Decode(outPtr)
 	if err != nil {
 		return err
 	}
@@ -2379,45 +2359,69 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 	//  {"username": "makis"}
 	//  {"username": "george"}
 	ArrayStream bool
+
+	// Optional context cancelation of decoder when Optimize field is enabled.
+	// On ReadJSON method this is automatically binded to the request context.
+	Context stdContext.Context
 }
 
 type internalJSONDecoder interface {
-	internalBodyDecoder
-	DisallowUnknownFields()
+	Token() (json.Token, error) // gojson.Token is an alias of this, so we are ok.
 	More() bool
+	DisallowUnknownFields()
 }
 
-func (cfg JSONReader) getDecoder(r io.Reader, globalShouldOptimize bool) (decoder internalJSONDecoder) {
-	if cfg.Optimize || globalShouldOptimize {
-		decoder = jsoniter.ConfigCompatibleWithStandardLibrary.NewDecoder(r)
+func (options JSONReader) getDecoder(r io.Reader) (internalJSONDecoder, DecodeFunc) {
+	var (
+		decoder    internalJSONDecoder
+		decodeFunc DecodeFunc
+	)
+
+	if options.Optimize {
+		dec := gojson.NewDecoder(r)
+		decodeFunc = dec.DecodeContext
+		decoder = dec
 	} else {
-		decoder = json.NewDecoder(r)
+		dec := json.NewDecoder(r)
+		decodeFunc = func(_ stdContext.Context, outPtr interface{}) error {
+			return dec.Decode(outPtr)
+		}
+		decoder = dec
 	}
 
-	if cfg.DisallowUnknownFields {
+	if options.DisallowUnknownFields {
 		decoder.DisallowUnknownFields()
 	}
 
-	return
+	return decoder, decodeFunc
 }
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go
 func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
-	shouldOptimize := ctx.shouldOptimize()
+	var options JSONReader
+	options.Optimize = ctx.shouldOptimize()
 
 	if len(opts) > 0 {
-		cfg := opts[0]
-		return ctx.decodeBody(outPtr, cfg.getDecoder(ctx.request.Body, shouldOptimize))
+		options = opts[0]
 	}
 
-	unmarshaler := json.Unmarshal
-	if shouldOptimize {
-		unmarshaler = jsoniter.Unmarshal
-	}
+	_, decodeFunc := options.getDecoder(ctx.request.Body)
+	return decodeFunc(ctx.request.Context(), outPtr)
 
-	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(unmarshaler))
+	/*
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+
+		if options.Optimize {
+			return gojson.UnmarshalContext(ctx.request.Context(), b, outPtr)
+		} else {
+			return json.Unmarshal(b, outPtr)
+		}
+	*/
 }
 
 // ReadJSONStream is an alternative of ReadJSON which can reduce the memory load
@@ -2431,20 +2435,14 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream/main.go
 func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSONReader) error {
-	var cfg JSONReader
+	var options JSONReader
 	if len(opts) > 0 {
-		cfg = opts[0]
+		options = opts[0]
 	}
 
-	// note that only the standard package supports an object
-	// stream of arrays (when the receiver is not an array).
-	if cfg.ArrayStream || !cfg.Optimize {
-		decoder := json.NewDecoder(ctx.request.Body)
-		if cfg.DisallowUnknownFields {
-			decoder.DisallowUnknownFields()
-		}
-		decodeFunc := decoder.Decode
+	decoder, decodeFunc := options.getDecoder(ctx.request.Body)
 
+	if options.ArrayStream {
 		_, err := decoder.Token() // read open bracket.
 		if err != nil {
 			return err
@@ -2460,11 +2458,8 @@ func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSON
 		return err
 	}
 
-	dec := cfg.getDecoder(ctx.request.Body, ctx.shouldOptimize())
-	decodeFunc := dec.Decode
-
 	// while the array contains values
-	for dec.More() {
+	for decoder.More() {
 		if err := onDecode(decodeFunc); err != nil {
 			return err
 		}
@@ -2494,6 +2489,10 @@ var (
 	IsErrEmptyJSON = func(err error) bool {
 		if err == nil {
 			return false
+		}
+
+		if errors.Is(err, io.EOF) {
+			return true
 		}
 
 		if v, ok := err.(*json.SyntaxError); ok {
@@ -3518,6 +3517,30 @@ type JSON struct {
 	Secure       bool // if true then it prepends a "while(1);" when Go slice (to JSON Array) value.
 	// proto.Message specific marshal options.
 	Proto ProtoMarshalOptions
+
+	// Optional context cancelation of encoder when Iris optimizations field is enabled.
+	// On JSON method this is automatically binded to the request context.
+	Context stdContext.Context
+}
+
+// IsDefault reports whether this JSON options structure holds the default values.
+func (j *JSON) IsDefault() bool {
+	return j.StreamingJSON == DefaultJSONOptions.StreamingJSON &&
+		j.UnescapeHTML == DefaultJSONOptions.UnescapeHTML &&
+		j.Indent == DefaultJSONOptions.Indent &&
+		j.Prefix == DefaultJSONOptions.Prefix &&
+		j.ASCII == DefaultJSONOptions.ASCII &&
+		j.Secure == DefaultJSONOptions.Secure &&
+		j.Proto == DefaultJSONOptions.Proto
+}
+
+// GetContext returns the option's Context or the HTTP request's one.
+func (j *JSON) GetContext(ctx *Context) stdContext.Context {
+	if j.Context == nil {
+		return ctx.request.Context()
+	}
+
+	return j.Context
 }
 
 // JSONP contains the options for the JSONP (Context's) Renderer.
@@ -3558,48 +3581,63 @@ var (
 	secureJSONPrefix = []byte("while(1);")
 )
 
-// WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
-// Ignores StatusCode and StreamingJSON options.
-func WriteJSON(writer io.Writer, v interface{}, options JSON, optimize bool) (int, error) {
-	var (
-		result []byte
-		err    error
-	)
-
+func handleJSONResponseValue(w io.Writer, v interface{}, options JSON) (bool, int, error) {
 	if m, ok := v.(proto.Message); ok {
-		result, err = options.Proto.Marshal(m)
+		result, err := options.Proto.Marshal(m)
 		if err != nil {
-			return 0, err
+			return true, 0, err
 		}
 
-		return writer.Write(result)
+		n, err := w.Write(result)
+		return true, n, err
 	}
 
 	if easyObject, ok := v.(easyjson.Marshaler); ok {
 		jw := jwriter.Writer{NoEscapeHTML: !options.UnescapeHTML}
 		easyObject.MarshalEasyJSON(&jw)
-		return jw.DumpTo(writer)
+		n, err := jw.DumpTo(w)
+		return true, n, err
 	}
 
-	if !optimize && options.Indent == "" {
+	return false, 0, nil
+}
+
+// WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
+// Ignores StatusCode and StreamingJSON options.
+func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize bool) (int, error) {
+	if handled, n, err := handleJSONResponseValue(writer, v, options); handled {
+		return n, err
+	}
+
+	var (
+		result []byte
+		err    error
+	)
+
+	if !shouldOptimize && options.Indent == "" {
 		options.Indent = "  "
 	}
 
 	if indent := options.Indent; indent != "" {
-		marshalIndent := json.MarshalIndent
-		if optimize {
-			marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+		if shouldOptimize {
+			// result,err = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+			result, err = gojson.MarshalIndent(v, "", indent)
+		} else {
+			result, err = json.MarshalIndent(v, "", indent)
 		}
 
-		result, err = marshalIndent(v, "", indent)
 		result = append(result, newLineB...)
 	} else {
-		marshal := json.Marshal
-		if optimize {
-			marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+		if shouldOptimize {
+			// result, err =  jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+			if options.Context != nil {
+				result, err = gojson.MarshalContext(options.Context, v)
+			} else {
+				result, err = gojson.Marshal(v)
+			}
+		} else {
+			result, err = json.Marshal(v)
 		}
-
-		result, err = marshal(v)
 	}
 
 	if err != nil {
@@ -3668,22 +3706,43 @@ var DefaultJSONOptions = JSON{}
 // If the value is a compatible `proto.Message` one
 // then it only uses the options.Proto settings to marshal.
 func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
-	options := DefaultJSONOptions
+	ctx.ContentType(ContentJSONHeaderValue)
+	shouldOptimize := ctx.shouldOptimize()
 
-	if len(opts) > 0 {
+	optsLength := len(opts)
+
+	if shouldOptimize && optsLength == 0 { // if no options given and optimizations are enabled.
+		// try handle proto or easyjson.
+		if handled, n, err := handleJSONResponseValue(ctx, v, DefaultJSONOptions); handled {
+			return n, err
+		}
+
+		// as soon as possible, use the fast json marshaler with the http request context.
+		result, err := gojson.MarshalContext(ctx.request.Context(), v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.Write(result)
+	}
+
+	options := DefaultJSONOptions
+	if optsLength > 0 {
 		options = opts[0]
 	}
 
-	ctx.ContentType(ContentJSONHeaderValue)
-
 	if options.StreamingJSON {
-		if ctx.shouldOptimize() {
-			jsoniterConfig := jsoniter.Config{
-				EscapeHTML:    !options.UnescapeHTML,
-				IndentionStep: 4,
-			}.Froze()
-			enc := jsoniterConfig.NewEncoder(ctx.writer)
-			err = enc.Encode(v)
+		if shouldOptimize {
+			// jsoniterConfig := jsoniter.Config{
+			// 	EscapeHTML:    !options.UnescapeHTML,
+			// 	IndentionStep: 4,
+			// }.Froze()
+			// enc := jsoniterConfig.NewEncoder(ctx.writer)
+			// err = enc.Encode(v)
+			enc := gojson.NewEncoder(ctx.writer)
+			enc.SetEscapeHTML(!options.UnescapeHTML)
+			enc.SetIndent(options.Prefix, options.Indent)
+			err = enc.EncodeContext(options.GetContext(ctx), v)
 		} else {
 			enc := json.NewEncoder(ctx.writer)
 			enc.SetEscapeHTML(!options.UnescapeHTML)
@@ -3699,7 +3758,7 @@ func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		return ctx.writer.Written(), err
 	}
 
-	n, err = WriteJSON(ctx.writer, v, options, ctx.shouldOptimize())
+	n, err = WriteJSON(ctx.writer, v, options, shouldOptimize)
 	if err != nil {
 		ctx.app.Logger().Debugf("JSON: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
@@ -3728,7 +3787,8 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (
 	if indent := options.Indent; indent != "" {
 		marshalIndent := json.MarshalIndent
 		if optimize {
-			marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+			// marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+			marshalIndent = gojson.MarshalIndent
 		}
 
 		result, err := marshalIndent(v, "", indent)
@@ -3741,7 +3801,8 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (
 
 	marshal := json.Marshal
 	if optimize {
-		marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+		// marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+		marshal = gojson.Marshal
 	}
 
 	result, err := marshal(v)
@@ -5177,19 +5238,28 @@ func (ctx *Context) SetCookieKV(name, value string, options ...CookieOption) {
 // returns empty string if nothing was found.
 //
 // If you want more than the value then:
-// cookie, err := ctx.Request().Cookie("name")
+// cookie, err := ctx.GetRequestCookie("name")
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 func (ctx *Context) GetCookie(name string, options ...CookieOption) string {
-	c, err := ctx.request.Cookie(name)
+	c, err := ctx.GetRequestCookie(name, options...)
 	if err != nil {
 		return ""
 	}
 
-	ctx.applyCookieOptions(c, OpCookieGet, options)
-
 	value, _ := url.QueryUnescape(c.Value)
 	return value
+}
+
+// GetRequestCookie returns the request cookie including any context's cookie options (stored or given by this method).
+func (ctx *Context) GetRequestCookie(name string, options ...CookieOption) (*http.Cookie, error) {
+	c, err := ctx.request.Cookie(name)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx.applyCookieOptions(c, OpCookieGet, options)
+	return c, nil
 }
 
 var (

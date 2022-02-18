@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/memstore"
 
 	"github.com/kataras/golog"
@@ -59,6 +60,14 @@ type Database interface {
 	Release(sid string) error
 	// Close should terminate the database connection. It's called automatically on interrupt signals.
 	Close() error
+}
+
+// DatabaseRequestHandler is an optional interface that a sessions database
+// can implement. It contains a single EndRequest method which is fired
+// on the very end of the request life cycle. It should be used to Flush
+// any local session's values to the client.
+type DatabaseRequestHandler interface {
+	EndRequest(ctx *context.Context, session *Session)
 }
 
 type mem struct {

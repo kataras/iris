@@ -2,6 +2,7 @@ package sessions
 
 import (
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -98,13 +99,27 @@ func (s *Sessions) upsertCookie(ctx *context.Context, cookie *http.Cookie, cooki
 	ctx.UpsertCookie(cookie, opts...)
 }
 
-func (s *Sessions) getCookie(ctx *context.Context, cookieOptions []context.CookieOption) string {
+func (s *Sessions) getCookieValue(ctx *context.Context, cookieOptions []context.CookieOption) string {
+	c := s.getCookie(ctx, cookieOptions)
+	if c == nil {
+		return ""
+	}
+	return c.Value
+}
+
+func (s *Sessions) getCookie(ctx *context.Context, cookieOptions []context.CookieOption) *http.Cookie {
 	opts := s.cookieOptions
 	if len(cookieOptions) > 0 {
 		opts = append(opts, cookieOptions...)
 	}
 
-	return ctx.GetCookie(s.config.Cookie, opts...)
+	cookie, err := ctx.GetRequestCookie(s.config.Cookie, opts...)
+	if err != nil {
+		return nil
+	}
+
+	cookie.Value, _ = url.QueryUnescape(cookie.Value)
+	return cookie
 }
 
 // Start creates or retrieves an existing session for the particular request.
@@ -116,25 +131,46 @@ func (s *Sessions) getCookie(ctx *context.Context, cookieOptions []context.Cooki
 //
 // NOTE: Use `app.Use(sess.Handler())` instead, avoid using `Start` manually.
 func (s *Sessions) Start(ctx *context.Context, cookieOptions ...context.CookieOption) *Session {
-	cookieValue := s.getCookie(ctx, cookieOptions)
-
-	if cookieValue == "" { // cookie doesn't exist, let's generate a session and set a cookie.
-		sid := s.config.SessionIDGenerator(ctx)
-
-		sess := s.provider.Init(s, sid, s.config.Expires)
-		// n := s.provider.db.Len(sid)
-		// fmt.Printf("db.Len(%s) = %d\n", sid, n)
-		// if n > 0 {
-		// 	s.provider.db.Visit(sid, func(key string, value interface{}) {
-		// 		fmt.Printf("%s=%s\n", key, value)
-		// 	})
-		// }
-		s.updateCookie(ctx, sid, s.config.Expires, cookieOptions...)
-
-		return sess
+	// cookieValue := s.getCookieValue(ctx, cookieOptions)
+	cookie := s.getCookie(ctx, cookieOptions)
+	if cookie != nil {
+		sid := cookie.Value
+		if sid == "" { // rare case: a client may contains a cookie with session name but with empty value.
+			// ctx.RemoveCookie(cookie.Name)
+			cookie = nil
+		} else if cookie.Expires.Add(time.Second).After(time.Now()) { // rare case: of custom clients that may hold expired cookies.
+			s.DestroyByID(sid)
+			// ctx.RemoveCookie(cookie.Name)
+			cookie = nil
+		} else {
+			// rare case: new expiration configuration that it's lower
+			// than the previous setting.
+			expiresTime := time.Now().Add(s.config.Expires)
+			if cookie.Expires.After(expiresTime) {
+				s.DestroyByID(sid)
+				//	ctx.RemoveCookie(cookie.Name)
+				cookie = nil
+			} else {
+				//	untilExpirationDur := time.Until(cookie.Expires)
+				// ^ this should be
+				return s.provider.Read(s, sid, s.config.Expires) // cookie exists and it's valid, let's return its session.
+			}
+		}
 	}
 
-	return s.provider.Read(s, cookieValue, s.config.Expires)
+	// Cookie doesn't exist, let's generate a session and set a cookie.
+	sid := s.config.SessionIDGenerator(ctx)
+
+	sess := s.provider.Init(s, sid, s.config.Expires)
+	// n := s.provider.db.Len(sid)
+	// fmt.Printf("db.Len(%s) = %d\n", sid, n)
+	// if n > 0 {
+	// 	s.provider.db.Visit(sid, func(key string, value interface{}) {
+	// 		fmt.Printf("%s=%s\n", key, value)
+	// 	})
+	// }
+	s.updateCookie(ctx, sid, s.config.Expires, cookieOptions...)
+	return sess
 }
 
 const sessionContextKey = "iris.session"
@@ -149,6 +185,8 @@ func (s *Sessions) Handler(requestOptions ...context.CookieOption) context.Handl
 
 		ctx.Values().Set(sessionContextKey, session)
 		ctx.Next()
+
+		s.provider.EndRequest(ctx, session)
 	}
 }
 
@@ -189,7 +227,7 @@ func (s *Sessions) ShiftExpiration(ctx *context.Context, cookieOptions ...contex
 // It will return `ErrNotFound` when trying to update expiration on a non-existence or not valid session entry.
 // It will return `ErrNotImplemented` if a database is used and it does not support this feature, yet.
 func (s *Sessions) UpdateExpiration(ctx *context.Context, expires time.Duration, cookieOptions ...context.CookieOption) error {
-	cookieValue := s.getCookie(ctx, cookieOptions)
+	cookieValue := s.getCookieValue(ctx, cookieOptions)
 	if cookieValue == "" {
 		return ErrNotFound
 	}
@@ -223,7 +261,7 @@ func (s *Sessions) OnDestroy(listeners ...DestroyListener) {
 // use `Sessions#Start` method for renewal
 // or use the Session's Destroy method which does keep the session entry with its values cleared.
 func (s *Sessions) Destroy(ctx *context.Context) {
-	cookieValue := s.getCookie(ctx, nil)
+	cookieValue := s.getCookieValue(ctx, nil)
 	if cookieValue == "" { // nothing to destroy
 		return
 	}

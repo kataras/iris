@@ -28,8 +28,13 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Minor improvements to the [JSON Kitchen Time](x/jsonx/kitchen_time.go).
+- A session database can now implement the `EndRequest(ctx *context.Context, session *Session)` method which will be fired at the end of the request-response lifecycle. 
+- Improvements on JSON and ReadJSON when `Iris.Configuration.EnableOptimizations` is true. The request's Context is used whenever is necessary.
+- New [monitor](_examples/monitor/monitor-middleware/main.go) middleware.
+
 - New `RegisterRequestHandler` package-level and client methods to the new `x/client` package. Control or log the request-response lifecycle.
-- New `RateLimit` HTTP Client option to the new `x/client` package.
+- New `RateLimit` and `Debug` HTTP Client options to the new `x/client` package.
 
 - Push a security fix reported by [Kirill Efimov](https://github.com/kirill89) for older go runtimes.
 

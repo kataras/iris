@@ -93,6 +93,7 @@
         * [The CSV Formatter](logging/request-logger/accesslog-csv/main.go)
         * [Create your own Formatter](logging/request-logger/accesslog-formatter/main.go)
         * [Root and Proxy AccessLog instances](logging/request-logger/accesslog-proxy/main.go)
+        * [Slack integration example](logging/request-logger/accesslog-slack/main.go)
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)
     * [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)

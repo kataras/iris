@@ -16,7 +16,7 @@ type BusinessModel struct {
 // NewApp returns a new application for showcasing the sessions feature.
 func NewApp(sess *sessions.Sessions) *iris.Application {
 	app := iris.New()
-	app.Use(sess.Handler()) // session is always non-nil inside handlers now.
+	app.Use(sess.Handler()) // register the session manager on a group of routes or the root app.
 
 	app.Get("/", func(ctx iris.Context) {
 		session := sessions.Get(ctx) // same as sess.Start(ctx, cookieOptions...)

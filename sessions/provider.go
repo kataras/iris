@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 type (
@@ -13,6 +15,7 @@ type (
 		mu               sync.RWMutex
 		sessions         map[string]*Session
 		db               Database
+		dbRequestHandler DatabaseRequestHandler
 		destroyListeners []DestroyListener
 	}
 )
@@ -35,6 +38,9 @@ func (p *provider) RegisterDatabase(db Database) {
 
 	p.mu.Lock() // for any case
 	p.db = db
+	if dbreq, ok := db.(DatabaseRequestHandler); ok {
+		p.dbRequestHandler = dbreq
+	}
 	p.mu.Unlock()
 }
 
@@ -82,6 +88,12 @@ func (p *provider) Init(man *Sessions, sid string, expires time.Duration) *Sessi
 	p.sessions[sid] = newSession
 	p.mu.Unlock()
 	return newSession
+}
+
+func (p *provider) EndRequest(ctx *context.Context, session *Session) {
+	if p.dbRequestHandler != nil {
+		p.dbRequestHandler.EndRequest(ctx, session)
+	}
 }
 
 // ErrNotFound may be returned from `UpdateExpiration` of a non-existing or

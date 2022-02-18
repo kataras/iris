@@ -6,34 +6,50 @@ import (
 	"time"
 )
 
-func TestJSONKitckenTime(t *testing.T) {
-	data := `{"start": "8:33 AM", "end": "3:04 PM", "nothing": null, "empty": ""}`
-	v := struct {
-		Start   KitckenTime `json:"start"`
-		End     KitckenTime `json:"end"`
-		Nothing KitckenTime `json:"nothing"`
-		Empty   KitckenTime `json:"empty"`
-	}{}
-	err := json.Unmarshal([]byte(data), &v)
-	if err != nil {
-		t.Fatal(err)
+func TestJSONKitchenTime(t *testing.T) {
+	tests := []struct {
+		rawData string
+	}{
+		{
+			rawData: `{"start": "8:33 AM", "end": "3:04 PM", "nothing": null, "empty": ""}`,
+		},
+		{
+			rawData: `{"start": "08:33 AM", "end": "03:04 PM", "nothing": null, "empty": ""}`,
+		},
+		{
+			rawData: `{"start": "08:33:00.000000 AM", "end": "03:04 PM", "nothing": null, "empty": ""}`,
+		},
 	}
 
-	if !v.Nothing.IsZero() {
-		t.Fatalf("expected 'nothing' to be zero but got: %v", v.Nothing)
-	}
+	for _, tt := range tests {
+		v := struct {
+			Start   KitchenTime `json:"start"`
+			End     KitchenTime `json:"end"`
+			Nothing KitchenTime `json:"nothing"`
+			Empty   KitchenTime `json:"empty"`
+		}{}
 
-	if !v.Empty.IsZero() {
-		t.Fatalf("expected 'empty' to be zero but got: %v", v.Empty)
-	}
+		err := json.Unmarshal([]byte(tt.rawData), &v)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	loc := time.UTC
+		if !v.Nothing.IsZero() {
+			t.Fatalf("expected 'nothing' to be zero but got: %v", v.Nothing)
+		}
 
-	if expected, got := time.Date(0, time.January, 1, 8, 33, 0, 0, loc), v.Start.Value(); expected != got {
-		t.Fatalf("expected 'start' to be: %v but got: %v", expected, got)
-	}
+		if !v.Empty.IsZero() {
+			t.Fatalf("expected 'empty' to be zero but got: %v", v.Empty)
+		}
 
-	if expected, got := time.Date(0, time.January, 1, 15, 4, 0, 0, loc), v.End.Value(); expected != got {
-		t.Fatalf("expected 'start' to be: %v but got: %v", expected, got)
+		loc := time.UTC
+
+		if expected, got := time.Date(0, time.January, 1, 8, 33, 0, 0, loc), v.Start.Value(); expected != got {
+			t.Fatalf("expected 'start' to be: %v but got: %v", expected, got)
+		}
+
+		if expected, got := time.Date(0, time.January, 1, 15, 4, 0, 0, loc), v.End.Value(); expected != got {
+			t.Fatalf("expected 'start' to be: %v but got: %v", expected, got)
+		}
 	}
 }
