@@ -2371,7 +2371,18 @@ type internalJSONDecoder interface {
 	DisallowUnknownFields()
 }
 
-func (options JSONReader) getDecoder(r io.Reader) (internalJSONDecoder, DecodeFunc) {
+type unmarshalerContext interface {
+	// UnmarshalJSON unmarshal json with context support.
+	UnmarshalJSON(stdContext.Context, []byte) error //lint:ignore stdmethods external pkg.
+}
+
+func wrapDecodeFunc(decodeFunc func(interface{}) error) DecodeFunc {
+	return func(_ stdContext.Context, outPtr interface{}) error {
+		return decodeFunc(outPtr)
+	}
+}
+
+func (options JSONReader) getDecoder(r io.Reader, outPtr interface{}) (internalJSONDecoder, DecodeFunc) {
 	var (
 		decoder    internalJSONDecoder
 		decodeFunc DecodeFunc
@@ -2379,13 +2390,24 @@ func (options JSONReader) getDecoder(r io.Reader) (internalJSONDecoder, DecodeFu
 
 	if options.Optimize {
 		dec := gojson.NewDecoder(r)
-		decodeFunc = dec.DecodeContext
+
+		if outPtr != nil {
+			// If a custom type does not implement the unnmarshal json with context interface
+			// that is REQUIRED by the gojson, then fallback to the normal gojson decode without context support,
+			// so we protect compability against existing objects.
+			if _, supportsContext := outPtr.(unmarshalerContext); supportsContext {
+				decodeFunc = dec.DecodeContext
+			} else {
+				decodeFunc = wrapDecodeFunc(dec.Decode)
+			}
+		} else {
+			decodeFunc = dec.DecodeContext
+		}
+
 		decoder = dec
 	} else {
 		dec := json.NewDecoder(r)
-		decodeFunc = func(_ stdContext.Context, outPtr interface{}) error {
-			return dec.Decode(outPtr)
-		}
+		decodeFunc = wrapDecodeFunc(dec.Decode)
 		decoder = dec
 	}
 
@@ -2407,7 +2429,7 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 		options = opts[0]
 	}
 
-	_, decodeFunc := options.getDecoder(ctx.request.Body)
+	_, decodeFunc := options.getDecoder(ctx.request.Body, outPtr)
 	return decodeFunc(ctx.request.Context(), outPtr)
 
 	/*
@@ -2440,7 +2462,7 @@ func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSON
 		options = opts[0]
 	}
 
-	decoder, decodeFunc := options.getDecoder(ctx.request.Body)
+	decoder, decodeFunc := options.getDecoder(ctx.request.Body, nil)
 
 	if options.ArrayStream {
 		_, err := decoder.Token() // read open bracket.

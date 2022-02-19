@@ -86,7 +86,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/shiyanhui/hero v0.0.2 // indirect
 	github.com/smartystreets/goconvey v1.7.2 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tdewolff/parse/v2 v2.5.27 // indirect
