@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New [x/timex](x/timex) sub-package, helps working with weekdays.
+
 - Minor improvements to the [JSON Kitchen Time](x/jsonx/kitchen_time.go).
 - A session database can now implement the `EndRequest(ctx *context.Context, session *Session)` method which will be fired at the end of the request-response lifecycle. 
 - Improvements on JSON and ReadJSON when `Iris.Configuration.EnableOptimizations` is true. The request's Context is used whenever is necessary.
