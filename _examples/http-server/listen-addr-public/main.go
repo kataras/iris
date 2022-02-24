@@ -28,6 +28,7 @@ func main() {
 					{
 						Name: "MyApp",
 						Addr: ":8080",
+						Hostname: "your-custom-sub-domain.ngrok.io", // optionally
 					},
 				},
 			},

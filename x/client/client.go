@@ -33,6 +33,9 @@ type Client struct {
 
 	// Optional handlers that are being fired before and after each new request.
 	requestHandlers []RequestHandler
+
+	// store it here for future use.
+	keepAlive bool
 }
 
 // New returns a new Iris HTTP Client.
@@ -55,6 +58,10 @@ func New(opts ...Option) *Client {
 
 	for _, opt := range opts {
 		opt(c)
+	}
+
+	if transport, ok := c.HTTPClient.Transport.(*http.Transport); ok {
+		c.keepAlive = !transport.DisableKeepAlives
 	}
 
 	return c
@@ -271,6 +278,13 @@ func (c *Client) Do(ctx context.Context, method, urlpath string, payload interfa
 	return resp, respErr
 }
 
+// DrainResponseBody drains response body and close it, allowing the transport to reuse TCP connections.
+// It's automatically called on Client.ReadXXX methods on the end.
+func (c *Client) DrainResponseBody(resp *http.Response) {
+	_, _ = io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
+}
+
 const (
 	acceptKey                 = "Accept"
 	contentTypeKey            = "Content-Type"
@@ -377,7 +391,7 @@ func (c *Client) ReadJSON(ctx context.Context, dest interface{}, method, urlpath
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer c.DrainResponseBody(resp)
 
 	if resp.StatusCode >= http.StatusBadRequest {
 		return ExtractError(resp)
@@ -398,7 +412,7 @@ func (c *Client) ReadPlain(ctx context.Context, dest interface{}, method, urlpat
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer c.DrainResponseBody(resp)
 
 	if resp.StatusCode >= http.StatusBadRequest {
 		return ExtractError(resp)

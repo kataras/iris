@@ -4,6 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// See _examples/routing/http-wire-errors as well.
 func main() {
 	app := iris.New()
 

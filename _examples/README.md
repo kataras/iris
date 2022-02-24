@@ -44,6 +44,7 @@
     * [Overview](routing/overview/main.go)
     * [Basic](routing/basic/main.go)
     * [Custom HTTP Errors](routing/http-errors/main.go)
+    * [HTTP Wire Errors](routing/http-wire-errors/main.go) **NEW**
     * [Not Found - Intelligence](routing/intelligence/main.go)
         * [Not Found - Suggest Closest Paths](routing/intelligence/manual/main.go)
     * [Dynamic Path](routing/dynamic-path/main.go)
