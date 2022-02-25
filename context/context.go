@@ -2394,7 +2394,7 @@ func (options JSONReader) getDecoder(r io.Reader, outPtr interface{}) (internalJ
 		if outPtr != nil {
 			// If a custom type does not implement the unnmarshal json with context interface
 			// that is REQUIRED by the gojson, then fallback to the normal gojson decode without context support,
-			// so we protect compability against existing objects.
+			// so we protect compatibility against existing objects.
 			if _, supportsContext := outPtr.(unmarshalerContext); supportsContext {
 				decodeFunc = dec.DecodeContext
 			} else {

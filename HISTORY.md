@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New basic [cors middleware](middleware/cors).
+- New `httptest.NewServer` helper.
 - New [x/errors](x/errors) sub-package, helps with HTTP Wire Errors. Example can be found [here](_examples/routing/http-wire-errors/main.go).
 
 - New [x/timex](x/timex) sub-package, helps working with weekdays.

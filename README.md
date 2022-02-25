@@ -281,7 +281,7 @@ Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;hei
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-alpha2
+$ go get github.com/kataras/iris/v12@master # or @v12.2.0-alpha7
 ```
 
 <details><summary>Install on existing project</summary>
