@@ -593,6 +593,9 @@ func (ctx *Context) Proceed(h Handler) bool {
 	return ok
 }
 
+// ProceedAndReportIfStopped same as "Proceed" method
+// but the first output parameter reports whether the "h"
+// called "StopExecution" manually.
 func (ctx *Context) ProceedAndReportIfStopped(h Handler) (bool, bool) {
 	ctx.proceeded = internalPauseExecutionIndex
 
