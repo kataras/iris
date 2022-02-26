@@ -35,6 +35,17 @@ func Timeout(d time.Duration) Option {
 	}
 }
 
+// Handler specifies an iris.Application or any http.Handler
+// instance which can be tested using this Client.
+//
+// It registers a custom HTTP client transport
+// which allows "fake calls" to the "h" server. Use it for testing.
+func Handler(h http.Handler) Option {
+	return func(c *Client) {
+		c.HTTPClient.Transport = new(handlerTransport)
+	}
+}
+
 // PersistentRequestOptions adds one or more persistent request options
 // that all requests made by this Client will respect.
 func PersistentRequestOptions(reqOpts ...RequestOption) Option {
