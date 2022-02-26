@@ -37,7 +37,7 @@ func TestURLShortener(t *testing.T) {
 
 	// get
 	e.GET("/u/" + keys[0]).Expect().
-		Status(httptest.StatusTemporaryRedirect).Header("Location").Equal(originalURL)
+		Status(httptest.StatusBadGateway).Header("Location").Equal(originalURL)
 
 	// save the same again, it should add a new key
 	e.POST("/shorten").

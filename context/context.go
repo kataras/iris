@@ -589,6 +589,11 @@ func (ctx *Context) HandlerIndex(n int) (currentIndex int) {
 //}
 // Alternative way is `!ctx.IsStopped()` if middleware make use of the `ctx.StopExecution()` on failure.
 func (ctx *Context) Proceed(h Handler) bool {
+	_, ok := ctx.ProceedAndReportIfStopped(h)
+	return ok
+}
+
+func (ctx *Context) ProceedAndReportIfStopped(h Handler) (bool, bool) {
 	ctx.proceeded = internalPauseExecutionIndex
 
 	// Store the current index.
@@ -604,15 +609,15 @@ func (ctx *Context) Proceed(h Handler) bool {
 
 	// Stop called, return false but keep the handlers index.
 	if afterIdx == stopExecutionIndex {
-		return false
+		return true, false
 	}
 
 	if proceededByNext {
-		return true
+		return false, true
 	}
 
 	// Next called or not.
-	return afterIdx > beforeIdx
+	return false, afterIdx > beforeIdx
 }
 
 // HandlerName returns the current handler's name, helpful for debugging.
@@ -2382,6 +2387,20 @@ func wrapDecodeFunc(decodeFunc func(interface{}) error) DecodeFunc {
 	}
 }
 
+func (options JSONReader) unmarshal(ctx stdContext.Context, body []byte, outPtr interface{}) error {
+	if options.Optimize {
+		if outPtr != nil {
+			if _, supportsContext := outPtr.(unmarshalerContext); !supportsContext {
+				return gojson.Unmarshal(body, outPtr)
+			}
+		}
+
+		return gojson.UnmarshalContext(ctx, body, outPtr)
+	}
+
+	return json.Unmarshal(body, outPtr)
+}
+
 func (options JSONReader) getDecoder(r io.Reader, outPtr interface{}) (internalJSONDecoder, DecodeFunc) {
 	var (
 		decoder    internalJSONDecoder
@@ -2427,6 +2446,15 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 
 	if len(opts) > 0 {
 		options = opts[0]
+	}
+
+	if ctx.IsRecordingBody() {
+		body, err := GetBody(ctx.request, true)
+		if err != nil {
+			return err
+		}
+
+		return options.unmarshal(ctx.request.Context(), body, outPtr)
 	}
 
 	_, decodeFunc := options.getDecoder(ctx.request.Body, outPtr)

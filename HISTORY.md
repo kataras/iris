@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Fix a bug of `WithoutBodyConsumptionOnUnmarshal` configurator and a minor dependency injection issue caused by the previous alpha version between 20 and 26 February of 2022.
+
 - New basic [cors middleware](middleware/cors).
 - New `httptest.NewServer` helper.
 - New [x/errors](x/errors) sub-package, helps with HTTP Wire Errors. Example can be found [here](_examples/routing/http-wire-errors/main.go).

@@ -40,10 +40,7 @@ func newApp(db *DB) *iris.Application {
 	//
 	// Look ./templates/index.html#L16
 	tmpl.AddFunc("IsPositive", func(n int) bool {
-		if n > 0 {
-			return true
-		}
-		return false
+		return n > 0
 	})
 
 	app.RegisterView(tmpl)
@@ -72,7 +69,7 @@ func newApp(db *DB) *iris.Application {
 			return
 		}
 
-		ctx.Redirect(value, iris.StatusTemporaryRedirect)
+		ctx.Redirect(value, iris.StatusBadGateway)
 	}
 	app.Get("/u/{shortkey}", func(ctx iris.Context) {
 		execShortURL(ctx, ctx.Params().Get("shortkey"))
