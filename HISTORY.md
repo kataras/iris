@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add [x/jsonx: DayTime](/x/jsonx/day_time.go) for JSON marshal and unmarshal of "15:04:05" (hour, minute, second).
+
 - Fix a bug of `WithoutBodyConsumptionOnUnmarshal` configurator and a minor dependency injection issue caused by the previous alpha version between 20 and 26 February of 2022.
 
 - New basic [cors middleware](middleware/cors).

@@ -13,7 +13,7 @@ import (
 
 // All the builtin client options should live here, for easy discovery.
 
-type Option func(*Client)
+type Option = func(*Client)
 
 // BaseURL registers the base URL of this client.
 // All of its methods will prepend this url.

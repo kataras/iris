@@ -121,7 +121,7 @@ func (c *Client) emitEndRequest(ctx context.Context, resp *http.Response, err er
 // RequestOption declares the type of option one can pass
 // to the Do methods(JSON, Form, ReadJSON...).
 // Request options run before request constructed.
-type RequestOption func(*http.Request) error
+type RequestOption = func(*http.Request) error
 
 // We always add the following request headers, unless they're removed by custom ones.
 var defaultRequestOptions = []RequestOption{
