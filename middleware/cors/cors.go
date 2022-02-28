@@ -33,14 +33,17 @@ var (
 
 	// DefaultOriginExtractor is the default method which
 	// an origin is extracted. It returns the value of the request's "Origin" header.
-	DefaultOriginExtractor = func(ctx iris.Context) string {
-		return ctx.GetHeader("Origin")
+	//
+	// Should report whether an origin was found or shall not proceed with the request.
+	DefaultOriginExtractor = func(ctx iris.Context) (string, bool) {
+		header := ctx.GetHeader("Origin")
+		return header, header != ""
 	}
 )
 
 type (
-	// ExtractOriginFunc describes the function which should return the request's origin.
-	ExtractOriginFunc = func(ctx iris.Context) string
+	// ExtractOriginFunc describes the function which should return the request's origin or false.
+	ExtractOriginFunc = func(ctx iris.Context) (string, bool)
 
 	// AllowOriginFunc describes the function which is called when the
 	// middleware decides if the request's origin should be allowed or not.
@@ -63,10 +66,30 @@ type (
 		exposeHeadersValue    string
 		allowHeadersValue     string
 		allowMethodsValue     string
-
-		maxAgeSecondsValue string
+		maxAgeSecondsValue    string
+		referrerPolicyValue   string
 	}
 )
+
+// New returns the default CORS middleware.
+// For a more advanced type of protection middleware with more options
+// please refer to: https://github.com/iris-contrib/middleware repository instead.
+func New() *CORS {
+	return &CORS{
+		extractOriginFunc: DefaultOriginExtractor,
+		allowOriginFunc:   AllowAnyOrigin,
+		errorHandler:      DefaultErrorHandler,
+
+		allowCredentialsValue: "true",
+		exposeHeadersValue:    "*, Authorization, X-Authorization",
+		allowHeadersValue:     "*",
+		// This field cannot be modified by the end-developer,
+		// as we have another type of controlling the HTTP verbs per handler.
+		allowMethodsValue:   "*",
+		maxAgeSecondsValue:  "86400",
+		referrerPolicyValue: NoReferrerWhenDowngrade.String(),
+	}
+}
 
 // ExtractOriginFunc sets the function which should return the request's origin.
 func (c *CORS) ExtractOriginFunc(fn ExtractOriginFunc) *CORS {
@@ -177,6 +200,37 @@ func (c *CORS) AllowHeaders(headers ...string) *CORS {
 	return c
 }
 
+// ReferrerPolicy type for referrer-policy header value.
+type ReferrerPolicy string
+
+// All available referrer policies.
+// Read more at: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy.
+const (
+	NoReferrer                  ReferrerPolicy = "no-referrer"
+	NoReferrerWhenDowngrade     ReferrerPolicy = "no-referrer-when-downgrade"
+	Origin                      ReferrerPolicy = "origin"
+	OriginWhenCrossOrigin       ReferrerPolicy = "origin-when-cross-origin"
+	SameOrigin                  ReferrerPolicy = "same-origin"
+	StrictOrigin                ReferrerPolicy = "strict-origin"
+	StrictOriginWhenCrossOrigin ReferrerPolicy = "strict-origin-when-cross-origin"
+	UnsafeURL                   ReferrerPolicy = "unsafe-url"
+)
+
+// String returns the text representation of the "r" ReferrerPolicy.
+func (r ReferrerPolicy) String() string {
+	return string(r)
+}
+
+// ReferrerPolicy sets the "Referrer-Policy" header value.
+// Defaults to "no-referrer-when-downgrade".
+//
+// Read more at: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+// and https://developer.mozilla.org/en-US/docs/Web/Security/Referer_header:_privacy_and_security_concerns.
+func (c *CORS) ReferrerPolicy(referrerPolicy ReferrerPolicy) *CORS {
+	c.referrerPolicyValue = referrerPolicy.String()
+	return c
+}
+
 // MaxAge sets the "Access-Control-Max-Age" header value.
 //
 // Read more at: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#access-control-max-age.
@@ -185,12 +239,24 @@ func (c *CORS) MaxAge(d time.Duration) *CORS {
 	return c
 }
 
+const (
+	allowOriginHeader      = "Access-Control-Allow-Origin"
+	allowCredentialsHeader = "Access-Control-Allow-Credentials"
+	referrerPolicyHeader   = "Referrer-Policy"
+	exposeHeadersHeader    = "Access-Control-Expose-Headers"
+
+	allowMethodsHeader   = "Access-Control-Allow-Methods"
+	allowAllMethodsValue = "*"
+	allowHeadersHeader   = "Access-Control-Allow-Headers"
+	maxAgeHeader         = "Access-Control-Max-Age"
+)
+
 // Handler method returns the Iris CORS Handler with basic features.
 // Note that the caller should NOT modify any of the CORS instance fields afterwards.
 func (c *CORS) Handler() iris.Handler {
 	return func(ctx iris.Context) {
-		origin := c.extractOriginFunc(ctx)
-		if !c.allowOriginFunc(ctx, origin) {
+		origin, ok := c.extractOriginFunc(ctx)
+		if !ok || !c.allowOriginFunc(ctx, origin) {
 			c.errorHandler(ctx, ErrOriginNotAllowed)
 			return
 		}
@@ -199,38 +265,19 @@ func (c *CORS) Handler() iris.Handler {
 			origin = "*"
 		}
 
-		ctx.Header("Access-Control-Allow-Origin", origin)
-		ctx.Header("Access-Control-Allow-Credentials", c.allowCredentialsValue)
+		ctx.Header(allowOriginHeader, origin)
+		ctx.Header(allowCredentialsHeader, c.allowCredentialsValue)
 		// 08 July 2021 Mozzila updated the following document: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-		ctx.Header("Referrer-Policy", "no-referrer-when-downgrade")
-		ctx.Header("Access-Control-Expose-Headers", c.exposeHeadersValue)
+		ctx.Header(referrerPolicyHeader, c.referrerPolicyValue)
+		ctx.Header(exposeHeadersHeader, c.exposeHeadersValue)
 		if ctx.Method() == iris.MethodOptions {
-			ctx.Header("Access-Control-Allow-Methods", "*")
-			ctx.Header("Access-Control-Allow-Headers", c.allowHeadersValue)
-			ctx.Header("Access-Control-Max-Age", c.maxAgeSecondsValue)
+			ctx.Header(allowMethodsHeader, allowAllMethodsValue)
+			ctx.Header(allowHeadersHeader, c.allowHeadersValue)
+			ctx.Header(maxAgeHeader, c.maxAgeSecondsValue)
 			ctx.StatusCode(iris.StatusNoContent)
 			return
 		}
 
 		ctx.Next()
-	}
-}
-
-// New returns the default CORS middleware.
-// For a more advanced type of protection middleware with more options
-// please refer to: https://github.com/iris-contrib/middleware repository instead.
-func New() *CORS {
-	return &CORS{
-		extractOriginFunc: DefaultOriginExtractor,
-		allowOriginFunc:   AllowAnyOrigin,
-		errorHandler:      DefaultErrorHandler,
-
-		allowCredentialsValue: "true",
-		exposeHeadersValue:    "*, Authorization, X-Authorization",
-		allowHeadersValue:     "*",
-		// This field cannot be modified by the end-developer,
-		// as we have another type of controlling the HTTP verbs per handler.
-		allowMethodsValue:  "*",
-		maxAgeSecondsValue: "86400",
 	}
 }
