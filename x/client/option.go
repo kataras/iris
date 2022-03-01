@@ -2,9 +2,8 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
+	"net/http/httputil"
 	"time"
 
 	"github.com/kataras/golog"
@@ -64,6 +63,29 @@ func RateLimit(requestsPerSecond int) Option {
 }
 
 // Debug enables the client's debug logger.
+// It fires right before request is created
+// and right after a response from the server is received.
+//
+// Example Output for request:
+//  [DBUG] 2022/03/01 21:54 Iris HTTP Client: POST / HTTP/1.1
+//  Host: 127.0.0.1:50948
+//  User-Agent: Go-http-client/1.1
+//  Content-Length: 22
+//  Accept: application/json
+//  Content-Type: application/json
+//  Accept-Encoding: gzip
+//
+//  {"firstname":"Makis"}
+//
+// Example Output for response:
+//  [DBUG] 2022/03/01 21:54 Iris HTTP Client: HTTP/1.1 200 OK
+//  Content-Length: 27
+//  Content-Type: application/json; charset=utf-8
+//  Date: Tue, 01 Mar 2022 19:54:03 GMT
+//
+//  {
+//      "firstname": "Makis"
+//  }
 func Debug(c *Client) {
 	handler := &debugRequestHandler{
 		logger: golog.Child("Iris HTTP Client: ").SetLevel("debug"),
@@ -75,20 +97,13 @@ type debugRequestHandler struct {
 	logger *golog.Logger
 }
 
-func (h *debugRequestHandler) getHeadersLine(headers http.Header) (headersLine string) {
-	for k, v := range headers {
-		headersLine += fmt.Sprintf("%s(%s), ", k, strings.Join(v, ","))
+func (h *debugRequestHandler) BeginRequest(ctx context.Context, req *http.Request) error {
+	dump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		return err
 	}
 
-	headersLine = strings.TrimRight(headersLine, ", ")
-	return
-}
-
-func (h *debugRequestHandler) BeginRequest(ctx context.Context, req *http.Request) error {
-	format := "%s: %s: content length: %d: headers: %s"
-	headersLine := h.getHeadersLine(req.Header)
-
-	h.logger.Debugf(format, req.Method, req.URL.String(), req.ContentLength, headersLine)
+	h.logger.Debug(string(dump))
 	return nil
 }
 
@@ -96,10 +111,12 @@ func (h *debugRequestHandler) EndRequest(ctx context.Context, resp *http.Respons
 	if err != nil {
 		h.logger.Debugf("%s: %s: ERR: %s", resp.Request.Method, resp.Request.URL.String(), err.Error())
 	} else {
-		format := "%s: %s: content length: %d: headers: %s"
-		headersLine := h.getHeadersLine(resp.Header)
+		dump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return err
+		}
 
-		h.logger.Debugf(format, resp.Request.Method, resp.Request.URL.String(), resp.ContentLength, headersLine)
+		h.logger.Debug(string(dump))
 	}
 
 	return err
