@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `Container.DependencyMatcher` and `Dependency.Match` to implement the feature requested at [issues/#1842](https://github.com/kataras/iris/issues/1842).
+
 - Register [CORS middleware](middleware/cors) to the Application by default when `iris.Default()` is used instead of `iris.New()`.
 
 - Add [x/jsonx: DayTime](/x/jsonx/day_time.go) for JSON marshal and unmarshal of "15:04:05" (hour, minute, second).

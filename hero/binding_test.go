@@ -524,7 +524,7 @@ func TestBindingsForStruct(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		bindings := getBindingsForStruct(reflect.ValueOf(tt.Value), tt.Registered, false, false, 0, nil)
+		bindings := getBindingsForStruct(reflect.ValueOf(tt.Value), tt.Registered, false, false, DefaultDependencyMatcher, 0, nil)
 
 		if expected, got := len(tt.Expected), len(bindings); expected != got {
 			t.Logf("[%d] expected bindings length to be: %d but got: %d:\n", i, expected, got)
@@ -565,5 +565,5 @@ func TestBindingsForStructMarkExportedFieldsAsRequred(t *testing.T) {
 	}
 
 	// should panic if fail.
-	_ = getBindingsForStruct(reflect.ValueOf(new(controller)), dependencies, true, true, 0, nil)
+	_ = getBindingsForStruct(reflect.ValueOf(new(controller)), dependencies, true, true, DefaultDependencyMatcher, 0, nil)
 }

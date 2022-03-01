@@ -110,12 +110,25 @@ func (b *binding) Equal(other *binding) bool {
 	return true
 }
 
-func matchDependency(dep *Dependency, in reflect.Type) bool {
+// DependencyMatcher type alias describes a dependency match function.
+type DependencyMatcher = func(*Dependency, reflect.Type) bool
+
+// DefaultDependencyMatcher is the default dependency match function for all DI containers.
+// It is used to collect dependencies from struct's fields and function's parameters.
+var DefaultDependencyMatcher = func(dep *Dependency, in reflect.Type) bool {
 	if dep.Explicit {
 		return dep.DestType == in
 	}
 
 	return dep.DestType == nil || equalTypes(dep.DestType, in)
+}
+
+// ToDependencyMatchFunc converts a DependencyMatcher (generic for all dependencies)
+// to a dependency-specific input matcher.
+func ToDependencyMatchFunc(d *Dependency, match DependencyMatcher) DependencyMatchFunc {
+	return func(in reflect.Type) bool {
+		return match(d, in)
+	}
 }
 
 func getBindingsFor(inputs []reflect.Type, deps []*Dependency, disablePayloadAutoBinding bool, paramsCount int) (bindings []*binding) {
@@ -174,7 +187,7 @@ func getBindingsFor(inputs []reflect.Type, deps []*Dependency, disablePayloadAut
 				continue
 			}
 
-			match := matchDependency(d, in)
+			match := d.Match(in)
 			if !match {
 				continue
 			}
@@ -278,7 +291,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePay
 	return bindings
 }
 
-func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding bool, paramsCount int, sorter Sorter) (bindings []*binding) {
+func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding bool, matchDependency DependencyMatcher, paramsCount int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
 		panic("bindings: unresolved: no struct type")
@@ -290,7 +303,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExpor
 	for _, f := range nonZero {
 		// fmt.Printf("Controller [%s] | NonZero | Field Index: %v | Field Type: %s\n", typ, f.Index, f.Type)
 		bindings = append(bindings, &binding{
-			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding),
+			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding, nil),
 			Input:      newStructFieldInput(f),
 		})
 	}

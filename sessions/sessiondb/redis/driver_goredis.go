@@ -85,7 +85,7 @@ func (r *GoRedisDriver) mergeClusterOptions(c Config) *ClusterOptions {
 	}
 
 	if opts.Password == "" {
-		opts.Username = c.Password
+		opts.Password = c.Password
 	}
 
 	if opts.ReadTimeout == 0 {

@@ -95,6 +95,19 @@ func (api *APIContainer) EnableStrictMode(strictMode bool) *APIContainer {
 	return api
 }
 
+// SetDependencyMatcher replaces the function that compares equality between
+// a dependency and an input (struct field or function parameter).
+//
+// Defaults to hero.DefaultMatchDependencyFunc.
+func (api *APIContainer) SetDependencyMatcher(fn hero.DependencyMatcher) *APIContainer {
+	if fn == nil {
+		panic("api container: set dependency matcher: fn cannot be nil")
+	}
+
+	api.Container.DependencyMatcher = fn
+	return api
+}
+
 // convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
 func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...interface{}) context.Handlers {
 	fullpath := api.Self.GetRelPath() + relativePath

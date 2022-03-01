@@ -53,6 +53,9 @@ type Container struct {
 	// set to true to disable that kind of behavior.
 	DisablePayloadAutoBinding bool
 
+	// DependencyMatcher holds the function that compares equality between
+	// a dependency with an input. Defaults to DefaultMatchDependencyFunc.
+	DependencyMatcher DependencyMatcher
 	// GetErrorHandler should return a valid `ErrorHandler` to handle bindings AND handler dispatch errors.
 	// Defaults to a functon which returns the `DefaultErrorHandler`.
 	GetErrorHandler func(*context.Context) ErrorHandler // cannot be nil.
@@ -139,11 +142,11 @@ func (c *Container) fillReport(fullName string, bindings []*binding) {
 // Contains the iris context, standard context, iris sessions and time dependencies.
 var BuiltinDependencies = []*Dependency{
 	// iris context dependency.
-	newDependency(func(ctx *context.Context) *context.Context { return ctx }, true).Explicitly(),
+	newDependency(func(ctx *context.Context) *context.Context { return ctx }, true, nil).Explicitly(),
 	// standard context dependency.
 	newDependency(func(ctx *context.Context) stdContext.Context {
 		return ctx.Request().Context()
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// iris session dependency.
 	newDependency(func(ctx *context.Context) *sessions.Session {
 		session := sessions.Get(ctx)
@@ -156,35 +159,35 @@ var BuiltinDependencies = []*Dependency{
 		}
 
 		return session
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// application's logger.
 	newDependency(func(ctx *context.Context) *golog.Logger {
 		return ctx.Application().Logger()
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// time.Time to time.Now dependency.
 	newDependency(func(ctx *context.Context) time.Time {
 		return time.Now()
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// standard http Request dependency.
 	newDependency(func(ctx *context.Context) *http.Request {
 		return ctx.Request()
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// standard http ResponseWriter dependency.
 	newDependency(func(ctx *context.Context) http.ResponseWriter {
 		return ctx.ResponseWriter()
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// http headers dependency.
 	newDependency(func(ctx *context.Context) http.Header {
 		return ctx.Request().Header
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// Client IP.
 	newDependency(func(ctx *context.Context) net.IP {
 		return net.ParseIP(ctx.RemoteAddr())
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// Status Code (special type for MVC HTTP Error handler to not conflict with path parameters)
 	newDependency(func(ctx *context.Context) Code {
 		return Code(ctx.GetStatusCode())
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// Context Error. May be nil
 	newDependency(func(ctx *context.Context) Err {
 		err := ctx.GetErr()
@@ -192,7 +195,7 @@ var BuiltinDependencies = []*Dependency{
 			return nil
 		}
 		return err
-	}, true).Explicitly(),
+	}, true, nil).Explicitly(),
 	// Context User, e.g. from basic authentication.
 	newDependency(func(ctx *context.Context) context.User {
 		u := ctx.User()
@@ -201,7 +204,7 @@ var BuiltinDependencies = []*Dependency{
 		}
 
 		return u
-	}, true),
+	}, true, nil),
 	// payload and param bindings are dynamically allocated and declared at the end of the `binding` source file.
 }
 
@@ -218,6 +221,7 @@ func New(dependencies ...interface{}) *Container {
 		GetErrorHandler: func(*context.Context) ErrorHandler {
 			return DefaultErrorHandler
 		},
+		DependencyMatcher: DefaultDependencyMatcher,
 	}
 
 	for _, dependency := range dependencies {
@@ -240,6 +244,7 @@ func (c *Container) Clone() *Container {
 	cloned.Logger = c.Logger
 	cloned.GetErrorHandler = c.GetErrorHandler
 	cloned.Sorter = c.Sorter
+	cloned.DependencyMatcher = c.DependencyMatcher
 	clonedDeps := make([]*Dependency, len(c.Dependencies))
 	copy(clonedDeps, c.Dependencies)
 	cloned.Dependencies = clonedDeps
@@ -281,7 +286,7 @@ func Register(dependency interface{}) *Dependency {
 // - Register(func(ctx iris.Context) User {...})
 // - Register(func(User) OtherResponse {...})
 func (c *Container) Register(dependency interface{}) *Dependency {
-	d := newDependency(dependency, c.DisablePayloadAutoBinding, c.Dependencies...)
+	d := newDependency(dependency, c.DisablePayloadAutoBinding, c.DependencyMatcher, c.Dependencies...)
 	if d.DestType == nil {
 		// prepend the dynamic dependency so it will be tried at the end
 		// (we don't care about performance here, design-time)
@@ -376,7 +381,7 @@ func (c *Container) Inject(toPtr interface{}) error {
 	typ := val.Type()
 
 	for _, d := range c.Dependencies {
-		if d.Static && matchDependency(d, typ) {
+		if d.Static && c.DependencyMatcher(d, typ) {
 			v, err := d.Handle(nil, &Input{Type: typ})
 			if err != nil {
 				if err == ErrSeeOther {

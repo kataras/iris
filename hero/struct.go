@@ -51,7 +51,7 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 	}
 
 	// get struct's fields bindings.
-	bindings := getBindingsForStruct(v, c.Dependencies, c.MarkExportedFieldsAsRequired, c.DisablePayloadAutoBinding, partyParamsCount, c.Sorter)
+	bindings := getBindingsForStruct(v, c.Dependencies, c.MarkExportedFieldsAsRequired, c.DisablePayloadAutoBinding, c.DependencyMatcher, partyParamsCount, c.Sorter)
 
 	// length bindings of 0, means that it has no fields or all mapped deps are static.
 	// If static then Struct.Acquire will return the same "value" instance, otherwise it will create a new one.
