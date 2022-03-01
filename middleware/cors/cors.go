@@ -92,7 +92,7 @@ type (
 //      HandleErrorFunc(func(ctx iris.Context, err error) {
 //          errors.FailedPrecondition.Err(ctx, err)
 //      }).
-//		ExtractOriginFunc(cors.StrictOriginExtractor).
+//      ExtractOriginFunc(cors.StrictOriginExtractor).
 //      ReferrerPolicy(cors.NoReferrerWhenDowngrade).
 //      AllowOrigin("domain1.com,domain2.com,domain3.com").
 //      Handler())
