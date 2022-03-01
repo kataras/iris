@@ -32,11 +32,20 @@ var (
 	}
 
 	// DefaultOriginExtractor is the default method which
-	// an origin is extracted. It returns the value of the request's "Origin" header.
-	//
-	// Should report whether an origin was found or shall not proceed with the request.
+	// an origin is extracted. It returns the value of the request's "Origin" header
+	// and always true, means that it allows empty origin headers as well.
 	DefaultOriginExtractor = func(ctx iris.Context) (string, bool) {
-		header := ctx.GetHeader("Origin")
+		header := ctx.GetHeader(originRequestHeader)
+		return header, true
+	}
+
+	// StrictOriginExtractor is an ExtractOriginFunc type
+	// which is a bit more strictly than the DefaultOriginExtractor.
+	// It allows only non-empty "Origin" header values to be passed.
+	// If the header is missing, the middleware will not allow the execution
+	// of the next handler(s).
+	StrictOriginExtractor = func(ctx iris.Context) (string, bool) {
+		header := ctx.GetHeader(originRequestHeader)
 		return header, header != ""
 	}
 )
@@ -240,6 +249,7 @@ func (c *CORS) MaxAge(d time.Duration) *CORS {
 }
 
 const (
+	originRequestHeader    = "Origin"
 	allowOriginHeader      = "Access-Control-Allow-Origin"
 	allowCredentialsHeader = "Access-Control-Allow-Credentials"
 	referrerPolicyHeader   = "Referrer-Policy"
@@ -253,6 +263,19 @@ const (
 
 // Handler method returns the Iris CORS Handler with basic features.
 // Note that the caller should NOT modify any of the CORS instance fields afterwards.
+//
+// Example Code:
+//	import "github.com/kataras/iris/v12/middleware/cors"
+//  import "github.com/kataras/iris/v12/x/errors"
+//
+//  app.UseRouter(cors.New().
+//      HandleErrorFunc(func(ctx iris.Context, err error) {
+//          errors.FailedPrecondition.Err(ctx, err)
+//      }).
+//		ExtractOriginFunc(cors.StrictOriginExtractor).
+//      ReferrerPolicy(cors.NoReferrerWhenDowngrade).
+//      AllowOrigin("domain1.com,domain2.com,domain3.com").
+//      Handler())
 func (c *CORS) Handler() iris.Handler {
 	return func(ctx iris.Context) {
 		origin, ok := c.extractOriginFunc(ctx)
