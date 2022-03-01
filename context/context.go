@@ -2457,11 +2457,19 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 			return err
 		}
 
-		return options.unmarshal(ctx.request.Context(), body, outPtr)
+		err = options.unmarshal(ctx.request.Context(), body, outPtr)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, decodeFunc := options.getDecoder(ctx.request.Body, outPtr)
+		err := decodeFunc(ctx.request.Context(), outPtr)
+		if err != nil {
+			return err
+		}
 	}
 
-	_, decodeFunc := options.getDecoder(ctx.request.Body, outPtr)
-	return decodeFunc(ctx.request.Context(), outPtr)
+	return ctx.app.Validate(outPtr)
 
 	/*
 		b, err := ctx.GetBody()
