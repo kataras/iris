@@ -2,12 +2,12 @@ package cors
 
 import (
 	"errors"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 )
 
@@ -21,20 +21,20 @@ var (
 	ErrOriginNotAllowed = errors.New("origin not allowed")
 
 	// AllowAnyOrigin allows all origins to pass.
-	AllowAnyOrigin = func(_ iris.Context, _ string) bool {
+	AllowAnyOrigin = func(_ *context.Context, _ string) bool {
 		return true
 	}
 
 	// DefaultErrorHandler is the default error handler which
 	// fires forbidden status (403) on disallowed origins.
-	DefaultErrorHandler = func(ctx iris.Context, _ error) {
-		ctx.StopWithStatus(iris.StatusForbidden)
+	DefaultErrorHandler = func(ctx *context.Context, _ error) {
+		ctx.StopWithStatus(http.StatusForbidden)
 	}
 
 	// DefaultOriginExtractor is the default method which
 	// an origin is extracted. It returns the value of the request's "Origin" header
 	// and always true, means that it allows empty origin headers as well.
-	DefaultOriginExtractor = func(ctx iris.Context) (string, bool) {
+	DefaultOriginExtractor = func(ctx *context.Context) (string, bool) {
 		header := ctx.GetHeader(originRequestHeader)
 		return header, true
 	}
@@ -44,7 +44,7 @@ var (
 	// It allows only non-empty "Origin" header values to be passed.
 	// If the header is missing, the middleware will not allow the execution
 	// of the next handler(s).
-	StrictOriginExtractor = func(ctx iris.Context) (string, bool) {
+	StrictOriginExtractor = func(ctx *context.Context) (string, bool) {
 		header := ctx.GetHeader(originRequestHeader)
 		return header, header != ""
 	}
@@ -52,15 +52,15 @@ var (
 
 type (
 	// ExtractOriginFunc describes the function which should return the request's origin or false.
-	ExtractOriginFunc = func(ctx iris.Context) (string, bool)
+	ExtractOriginFunc = func(ctx *context.Context) (string, bool)
 
 	// AllowOriginFunc describes the function which is called when the
 	// middleware decides if the request's origin should be allowed or not.
-	AllowOriginFunc = func(ctx iris.Context, origin string) bool
+	AllowOriginFunc = func(ctx *context.Context, origin string) bool
 
 	// HandleErrorFunc describes the function which is fired
 	// when a request by a specific (or empty) origin was not allowed to pass through.
-	HandleErrorFunc = func(ctx iris.Context, err error)
+	HandleErrorFunc = func(ctx *context.Context, err error)
 
 	// CORS holds the customizations developers can
 	// do on the cors middleware.
@@ -83,6 +83,19 @@ type (
 // New returns the default CORS middleware.
 // For a more advanced type of protection middleware with more options
 // please refer to: https://github.com/iris-contrib/middleware repository instead.
+//
+// Example Code:
+//	import "github.com/kataras/iris/v12/middleware/cors"
+//  import "github.com/kataras/iris/v12/x/errors"
+//
+//  app.UseRouter(cors.New().
+//      HandleErrorFunc(func(ctx iris.Context, err error) {
+//          errors.FailedPrecondition.Err(ctx, err)
+//      }).
+//		ExtractOriginFunc(cors.StrictOriginExtractor).
+//      ReferrerPolicy(cors.NoReferrerWhenDowngrade).
+//      AllowOrigin("domain1.com,domain2.com,domain3.com").
+//      Handler())
 func New() *CORS {
 	return &CORS{
 		extractOriginFunc: DefaultOriginExtractor,
@@ -127,7 +140,7 @@ func (c *CORS) AllowOrigin(originLine string) *CORS {
 // AllowOriginMatcherFunc sets the allow origin func without iris.Context
 // as its first parameter, i.e. a regular expression.
 func (c *CORS) AllowOriginMatcherFunc(fn func(origin string) bool) *CORS {
-	return c.AllowOriginFunc(func(ctx iris.Context, origin string) bool {
+	return c.AllowOriginFunc(func(ctx *context.Context, origin string) bool {
 		return fn(origin)
 	})
 }
@@ -142,7 +155,7 @@ func (c *CORS) AllowOriginRegex(regexpLines ...string) *CORS {
 		matchers = append(matchers, matcher)
 	}
 
-	return c.AllowOriginFunc(func(ctx iris.Context, origin string) bool {
+	return c.AllowOriginFunc(func(ctx *context.Context, origin string) bool {
 		for _, m := range matchers {
 			if m(origin) {
 				return true
@@ -172,7 +185,7 @@ func (c *CORS) AllowOrigins(origins ...string) *CORS {
 		allowOrigins[origin] = struct{}{}
 	}
 
-	return c.AllowOriginFunc(func(ctx iris.Context, origin string) bool {
+	return c.AllowOriginFunc(func(ctx *context.Context, origin string) bool {
 		_, allow := allowOrigins[origin]
 		return allow
 	})
@@ -263,21 +276,8 @@ const (
 
 // Handler method returns the Iris CORS Handler with basic features.
 // Note that the caller should NOT modify any of the CORS instance fields afterwards.
-//
-// Example Code:
-//	import "github.com/kataras/iris/v12/middleware/cors"
-//  import "github.com/kataras/iris/v12/x/errors"
-//
-//  app.UseRouter(cors.New().
-//      HandleErrorFunc(func(ctx iris.Context, err error) {
-//          errors.FailedPrecondition.Err(ctx, err)
-//      }).
-//		ExtractOriginFunc(cors.StrictOriginExtractor).
-//      ReferrerPolicy(cors.NoReferrerWhenDowngrade).
-//      AllowOrigin("domain1.com,domain2.com,domain3.com").
-//      Handler())
-func (c *CORS) Handler() iris.Handler {
-	return func(ctx iris.Context) {
+func (c *CORS) Handler() context.Handler {
+	return func(ctx *context.Context) {
 		origin, ok := c.extractOriginFunc(ctx)
 		if !ok || !c.allowOriginFunc(ctx, origin) {
 			c.errorHandler(ctx, ErrOriginNotAllowed)
@@ -293,11 +293,11 @@ func (c *CORS) Handler() iris.Handler {
 		// 08 July 2021 Mozzila updated the following document: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 		ctx.Header(referrerPolicyHeader, c.referrerPolicyValue)
 		ctx.Header(exposeHeadersHeader, c.exposeHeadersValue)
-		if ctx.Method() == iris.MethodOptions {
+		if ctx.Method() == http.MethodOptions {
 			ctx.Header(allowMethodsHeader, allowAllMethodsValue)
 			ctx.Header(allowHeadersHeader, c.allowHeadersValue)
 			ctx.Header(maxAgeHeader, c.maxAgeSecondsValue)
-			ctx.StatusCode(iris.StatusNoContent)
+			ctx.StatusCode(http.StatusNoContent)
 			return
 		}
 

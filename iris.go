@@ -20,6 +20,7 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/i18n"
 	"github.com/kataras/iris/v12/middleware/accesslog"
+	"github.com/kataras/iris/v12/middleware/cors"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
 	"github.com/kataras/iris/v12/view"
@@ -134,7 +135,7 @@ func New() *Application {
 // Localization enabled on "./locales" directory
 // and HTML templates on "./views" or "./templates" directory.
 // It runs with the AccessLog on "./access.log",
-// Recovery and Request ID middleware already attached.
+// CORS (allow all), Recovery and Request ID middleware already attached.
 func Default() *Application {
 	app := New()
 	// Set default log level.
@@ -165,6 +166,13 @@ func Default() *Application {
 	// Register the recovery, after accesslog and recover,
 	// before end-developer's middleware.
 	app.UseRouter(recover.New())
+
+	// Register CORS (allow any origin to pass through) middleware.
+	app.UseRouter(cors.New().
+		ExtractOriginFunc(cors.DefaultOriginExtractor).
+		ReferrerPolicy(cors.NoReferrerWhenDowngrade).
+		AllowOriginFunc(cors.AllowAnyOrigin).
+		Handler())
 
 	app.defaultMode = true
 
