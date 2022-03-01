@@ -102,7 +102,7 @@ func upload(ctx iris.Context) {
 
 	_, _, err := ctx.UploadFormFiles(uploadDir, beforeSave)
 	if err != nil {
-		ctx.StopWithError(iris.StatusPayloadTooRage, err)
+		ctx.StopWithError(iris.StatusRequestEntityTooLarge, err)
 		return
 	}
 
