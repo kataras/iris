@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -1783,15 +1784,16 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 		}
 	}
 
-	var bodyCopy []byte
-
 	if resetBody {
 		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
 		if m := r.Method; m == "POST" || m == "PUT" || m == "PATCH" {
-			bodyCopy, _ = GetBody(r, resetBody)
-			if len(bodyCopy) == 0 {
+			body, restoreBody, err := GetBody(r, resetBody)
+			if err != nil {
 				return nil, false
 			}
+			setBody(r, body)    // so the ctx.request.Body works
+			defer restoreBody() // so the next GetForm calls work.
+
 			// r.Body = ioutil.NopCloser(io.TeeReader(r.Body, buf))
 		} else {
 			resetBody = false
@@ -1803,9 +1805,9 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
 	err := r.ParseMultipartForm(postMaxMemory)
-	if resetBody {
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
-	}
+	// if resetBody {
+	// 	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	// }
 	if err != nil && err != http.ErrNotMultipart {
 		return nil, false
 	}
@@ -2247,20 +2249,28 @@ func (ctx *Context) SetMaxRequestBodySize(limitOverBytes int64) {
 	ctx.request.Body = http.MaxBytesReader(ctx.writer, ctx.request.Body, limitOverBytes)
 }
 
+var emptyFunc = func() {}
+
 // GetBody reads and returns the request body.
-func GetBody(r *http.Request, resetBody bool) ([]byte, error) {
+func GetBody(r *http.Request, resetBody bool) ([]byte, func(), error) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if resetBody {
 		// * remember, Request.Body has no Bytes(), we have to consume them first
 		// and after re-set them to the body, this is the only solution.
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+		return data, func() {
+			setBody(r, data)
+		}, nil
 	}
 
-	return data, nil
+	return data, emptyFunc, nil
+}
+
+func setBody(r *http.Request, data []byte) {
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 }
 
 const disableRequestBodyConsumptionContextKey = "iris.request.body.record"
@@ -2285,7 +2295,12 @@ func (ctx *Context) IsRecordingBody() bool {
 //
 // However, whenever you can use the `ctx.Request().Body` instead.
 func (ctx *Context) GetBody() ([]byte, error) {
-	return GetBody(ctx.request, ctx.IsRecordingBody())
+	body, release, err := GetBody(ctx.request, ctx.IsRecordingBody())
+	if err != nil {
+		return nil, err
+	}
+	release()
+	return body, nil
 }
 
 // Validator is the validator for request body on Context methods such as
@@ -2452,10 +2467,11 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 	}
 
 	if ctx.IsRecordingBody() {
-		body, err := GetBody(ctx.request, true)
+		body, restoreBody, err := GetBody(ctx.request, true)
 		if err != nil {
 			return err
 		}
+		restoreBody()
 
 		err = options.unmarshal(ctx.request.Context(), body, outPtr)
 		if err != nil {
@@ -2643,6 +2659,143 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	return ctx.app.Validate(formObject)
 }
 
+type (
+	// MultipartRelated is the result of the context.ReadMultipartRelated method.
+	MultipartRelated struct {
+		// ContentIDs keeps an ordered list of all the
+		// content-ids of the multipart related request.
+		ContentIDs []string
+		// Contents keeps each part's information by Content-ID.
+		// Contents holds each of the multipart/related part's data.
+		Contents map[string]MultipartRelatedContent
+	}
+
+	// MultipartRelatedContent holds a multipart/related part's id, header and body.
+	MultipartRelatedContent struct {
+		// ID holds the Content-ID.
+		ID string
+		// Headers holds the part's request headers.
+		Headers map[string][]string
+		// Body holds the part's body.
+		Body []byte
+	}
+)
+
+// ReadMultipartRelated returns a structure which contain
+// information about each part (id, headers, body).
+//
+// Read more at: https://www.ietf.org/rfc/rfc2387.txt.
+//
+// Example request (2387/5.2 Text/X-Okie):
+// Content-Type: Multipart/Related; boundary=example-2;
+// start="<950118.AEBH@XIson.com>"
+// type="Text/x-Okie"
+//
+// --example-2
+// Content-Type: Text/x-Okie; charset=iso-8859-1;
+// declaration="<950118.AEB0@XIson.com>"
+// Content-ID: <950118.AEBH@XIson.com>
+// Content-Description: Document
+//
+// {doc}
+// This picture was taken by an automatic camera mounted ...
+// {image file=cid:950118.AECB@XIson.com}
+// {para}
+// Now this is an enlargement of the area ...
+// {image file=cid:950118:AFDH@XIson.com}
+// {/doc}
+// --example-2
+// Content-Type: image/jpeg
+// Content-ID: <950118.AFDH@XIson.com>
+// Content-Transfer-Encoding: BASE64
+// Content-Description: Picture A
+//
+// [encoded jpeg image]
+// --example-2
+// Content-Type: image/jpeg
+// Content-ID: <950118.AECB@XIson.com>
+// Content-Transfer-Encoding: BASE64
+// Content-Description: Picture B
+//
+// [encoded jpeg image]
+// --example-2--
+func (ctx *Context) ReadMultipartRelated() (MultipartRelated, error) {
+	contentType, params, err := mime.ParseMediaType(ctx.GetHeader(ContentTypeHeaderKey))
+	if err != nil {
+		return MultipartRelated{}, err
+	}
+
+	if !strings.HasPrefix(contentType, ContentMultipartRelatedHeaderValue) {
+		return MultipartRelated{}, ErrEmptyForm
+	}
+
+	var (
+		contentIDs []string
+		contents   = make(map[string]MultipartRelatedContent)
+	)
+
+	if ctx.IsRecordingBody() {
+		// * remember, Request.Body has no Bytes(), we have to consume them first
+		// and after re-set them to the body, this is the only solution.
+		body, restoreBody, err := GetBody(ctx.request, true)
+		if err != nil {
+			return MultipartRelated{}, fmt.Errorf("multipart related: body copy because of iris.Configuration.DisableBodyConsumptionOnUnmarshal: %w", err)
+		}
+		setBody(ctx.request, body) // so the ctx.request.Body works
+		defer restoreBody()        // so the next ctx.GetBody calls work.
+	}
+
+	multipartReader := multipart.NewReader(ctx.request.Body, params["boundary"])
+	for {
+		part, err := multipartReader.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return MultipartRelated{}, fmt.Errorf("multipart related: next part: %w", err)
+		}
+		defer part.Close()
+
+		b, err := ioutil.ReadAll(part)
+		if err != nil {
+			return MultipartRelated{}, fmt.Errorf("multipart related: next part: read: %w", err)
+		}
+
+		contentID := part.Header.Get("Content-ID")
+		contentIDs = append(contentIDs, contentID)
+		contents[contentID] = MultipartRelatedContent{ // replace if same Content-ID appears, which it shouldn't.
+			ID:      contentID,
+			Headers: http.Header(part.Header),
+			Body:    b,
+		}
+	}
+
+	if len(contents) != len(contentIDs) {
+		contentIDs = distinctStrings(contentIDs)
+	}
+
+	result := MultipartRelated{
+		ContentIDs: contentIDs,
+		Contents:   contents,
+	}
+	return result, nil
+}
+
+func distinctStrings(values []string) (result []string) {
+	seen := make(map[string]struct{})
+
+	for v := range values {
+		val := values[v]
+		if _, ok := seen[val]; !ok {
+			seen[val] = struct{}{}
+			result = append(result, val)
+		}
+	}
+
+	return result
+}
+
 // ReadQuery binds URL Query to "ptr". The struct field tag is "url".
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
@@ -2818,6 +2971,8 @@ func (ctx *Context) ReadBody(ptr interface{}) error {
 		return ctx.ReadYAML(ptr)
 	case ContentFormHeaderValue, ContentFormMultipartHeaderValue:
 		return ctx.ReadForm(ptr)
+	case ContentMultipartRelatedHeaderValue:
+		return fmt.Errorf("context: read body: cannot bind multipart/related: use ReadMultipartRelated instead")
 	case ContentJSONHeaderValue:
 		return ctx.ReadJSON(ptr)
 	case ContentProtobufHeaderValue:
@@ -3541,6 +3696,8 @@ const (
 	ContentFormHeaderValue = "application/x-www-form-urlencoded"
 	// ContentFormMultipartHeaderValue header value for post multipart form data.
 	ContentFormMultipartHeaderValue = "multipart/form-data"
+	// ContentMultipartRelatedHeaderValue header value for multipart related data.
+	ContentMultipartRelatedHeaderValue = "multipart/related"
 	// ContentGRPCHeaderValue Content-Type header value for gRPC.
 	ContentGRPCHeaderValue = "application/grpc"
 )

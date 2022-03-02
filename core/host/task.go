@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"runtime"
 	"time"
 
 	"github.com/kataras/iris/v12/core/netutil"
@@ -28,13 +27,8 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 			addr = h.Supervisor.Server.Addr
 		}
 		listeningURI := netutil.ResolveURL(guessScheme, addr)
-		interruptkey := "CTRL"
-		if runtime.GOOS == "darwin" {
-			interruptkey = "CMD"
-		}
-
-		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press %s+C to shut down.\n",
-			listeningURI, interruptkey)
+		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press CTRL/CMD+C to shut down.\n",
+			listeningURI)
 	}
 }
 
