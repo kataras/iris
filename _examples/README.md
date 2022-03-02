@@ -29,6 +29,7 @@
         * [Use Iris as a single http.Handler](http-server/custom-httpserver/std-way/main.go)
         * [Multi Instances](http-server/custom-httpserver/multi/main.go)
         * [HTTP/3 Quic](http-server/http3-quic)
+        * [H2C](http-server/h2c/main.go) **NEW**
     * [Timeout](http-server/timeout/main.go)
 * HTTP Client
     * [Weather Client](http-client/weatherapi)
