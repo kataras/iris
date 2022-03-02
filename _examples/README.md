@@ -7,6 +7,9 @@
 * [Caddy](caddy)
 * [Bootstrapper](bootstrapper)
 * [Project Structure](project) :fire:
+* Monitor
+    * [Simple Proccess Monitor (includes UI)](monitor/monitor-middleware/main.go) **NEW**
+    * [Heap, MSpan/MCache, Size Classes, Objects, Goroutines, GC/CPU fraction (includes UI)](monitor/statsviz/main.go) **NEW**
 * Database
     * [MySQL, Groupcache & Docker](database/mysql)
     * [MongoDB](database/mongodb)
