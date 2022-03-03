@@ -912,7 +912,7 @@ type Configuration struct {
 	Other map[string]interface{} `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
 
-var _ context.ConfigurationReadOnly = &Configuration{}
+var _ context.ConfigurationReadOnly = (*Configuration)(nil)
 
 // GetVHost returns the non-exported vhost config field.
 func (c Configuration) GetVHost() string {

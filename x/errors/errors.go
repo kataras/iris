@@ -134,9 +134,13 @@ func (e ErrorCodeName) DataWithDetails(ctx iris.Context, msg, details string, da
 	fail(ctx, e, msg, details, nil, data)
 }
 
-// Validation sends an error which contains the invalid fields to the client.
-func (e ErrorCodeName) Validation(ctx iris.Context, errs ...ValidationError) {
-	fail(ctx, e, "validation failure", "fields were invalid", errs, nil)
+// Validation sends an error which renders the invalid fields to the client.
+func (e ErrorCodeName) Validation(ctx iris.Context, validationErrors ...ValidationError) {
+	e.validation(ctx, validationErrors)
+}
+
+func (e ErrorCodeName) validation(ctx iris.Context, validationErrors interface{}) {
+	fail(ctx, e, "validation failure", "fields were invalid", validationErrors, nil)
 }
 
 // Err sends the error's text as a message to the client.
@@ -148,7 +152,7 @@ func (e ErrorCodeName) Err(ctx iris.Context, err error) {
 	}
 
 	if validationErrors, ok := AsValidationErrors(err); ok {
-		e.Validation(ctx, validationErrors...)
+		e.validation(ctx, validationErrors)
 		return
 	}
 
@@ -231,12 +235,15 @@ var (
 )
 
 // Error represents the JSON form of "http wire errors".
+//
+// Examples can be found at:
+//  https://github.com/kataras/iris/tree/master/_examples/routing/http-wire-errors.
 type Error struct {
-	ErrorCode        ErrorCode        `json:"http_error_code" yaml:"HTTPErrorCode"`
-	Message          string           `json:"message,omitempty" yaml:"Message"`
-	Details          string           `json:"details,omitempty" yaml:"Details"`
-	ValidationErrors ValidationErrors `json:"validation,omitempty" yaml:"Validation,omitempty"`
-	Data             json.RawMessage  `json:"data,omitempty" yaml:"Data,omitempty"` // any other custom json data.
+	ErrorCode  ErrorCode       `json:"http_error_code" yaml:"HTTPErrorCode"`
+	Message    string          `json:"message,omitempty" yaml:"Message"`
+	Details    string          `json:"details,omitempty" yaml:"Details"`
+	Validation interface{}     `json:"validation,omitempty" yaml:"Validation,omitempty"`
+	Data       json.RawMessage `json:"data,omitempty" yaml:"Data,omitempty"` // any other custom json data.
 }
 
 // Error method completes the error interface. It just returns the canonical name, status code, message and details.
@@ -260,7 +267,7 @@ func (err Error) Error() string {
 	return sprintf("iris http wire error: canonical name: %s, http status code: %d, message: %s, details: %s", err.ErrorCode.CanonicalName, err.ErrorCode.Status, err.Message, err.Details)
 }
 
-func fail(ctx iris.Context, codeName ErrorCodeName, msg, details string, validationErrors ValidationErrors, dataValue interface{}) {
+func fail(ctx iris.Context, codeName ErrorCodeName, msg, details string, validationErrors interface{}, dataValue interface{}) {
 	errorCode, ok := errorCodeMap[codeName]
 	if !ok {
 		// This SHOULD NEVER happen, all ErrorCodeNames MUST be registered.
@@ -297,11 +304,11 @@ func fail(ctx iris.Context, codeName ErrorCodeName, msg, details string, validat
 	}
 
 	err := Error{
-		ErrorCode:        errorCode,
-		Message:          msg,
-		Details:          details,
-		Data:             data,
-		ValidationErrors: validationErrors,
+		ErrorCode:  errorCode,
+		Message:    msg,
+		Details:    details,
+		Data:       data,
+		Validation: validationErrors,
 	}
 
 	// ctx.SetErr(err)
