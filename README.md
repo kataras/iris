@@ -2,7 +2,7 @@
 
 # News
 
-> This is the under-**development branch**. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
+> This is the under-**development branch** - contains the latest and greatest features. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a more stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
 >
 > ![](https://iris-go.com/images/cli.png) Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
 

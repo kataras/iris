@@ -267,17 +267,30 @@ const (
 	allowCredentialsHeader = "Access-Control-Allow-Credentials"
 	referrerPolicyHeader   = "Referrer-Policy"
 	exposeHeadersHeader    = "Access-Control-Expose-Headers"
-
-	allowMethodsHeader   = "Access-Control-Allow-Methods"
-	allowAllMethodsValue = "*"
-	allowHeadersHeader   = "Access-Control-Allow-Headers"
-	maxAgeHeader         = "Access-Control-Max-Age"
+	requestMethodHeader    = "Access-Control-Request-Method"
+	requestHeadersHeader   = "Access-Control-Request-Headers"
+	allowMethodsHeader     = "Access-Control-Allow-Methods"
+	allowAllMethodsValue   = "*"
+	allowHeadersHeader     = "Access-Control-Allow-Headers"
+	maxAgeHeader           = "Access-Control-Max-Age"
+	varyHeader             = "Vary"
 )
+
+func (c *CORS) addVaryHeaders(ctx *context.Context) {
+	ctx.Header(varyHeader, originRequestHeader)
+
+	if ctx.Method() == http.MethodOptions {
+		ctx.Header(varyHeader, requestMethodHeader)
+		ctx.Header(varyHeader, requestHeadersHeader)
+	}
+}
 
 // Handler method returns the Iris CORS Handler with basic features.
 // Note that the caller should NOT modify any of the CORS instance fields afterwards.
 func (c *CORS) Handler() context.Handler {
 	return func(ctx *context.Context) {
+		c.addVaryHeaders(ctx) // add vary headers at any case.
+
 		origin, ok := c.extractOriginFunc(ctx)
 		if !ok || !c.allowOriginFunc(ctx, origin) {
 			c.errorHandler(ctx, ErrOriginNotAllowed)
