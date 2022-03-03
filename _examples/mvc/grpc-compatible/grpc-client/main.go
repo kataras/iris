@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
 	"os"
 	"time"
@@ -20,10 +21,14 @@ const (
 
 func main() {
 	// Set up a connection to the server.
-	cred, err := credentials.NewClientTLSFromFile("../server.crt", "localhost")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// cred, err := credentials.NewClientTLSFromFile("../server.crt", "localhost")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	cred := credentials.NewTLS(&tls.Config{
+		InsecureSkipVerify: true,
+		Renegotiation:      tls.RenegotiateNever,
+	})
 
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(cred), grpc.WithBlock())
 	if err != nil {
