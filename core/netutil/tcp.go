@@ -145,7 +145,7 @@ func LETSENCRYPT(addr string, reuse bool, serverName string, cacheDirOptional ..
 	} else {
 		m.Cache = autocert.DirCache(cacheDir)
 	}
-	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
+	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate, MinVersion: tls.VersionTLS13}
 
 	// use InsecureSkipVerify or ServerName to a value
 	if serverName == "" {

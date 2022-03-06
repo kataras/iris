@@ -27,6 +27,7 @@ func TestProxy(t *testing.T) {
 
 	config := &tls.Config{
 		InsecureSkipVerify: true,
+		MinVersion:         tls.VersionTLS11,
 		MaxVersion:         tls.VersionTLS12,
 	}
 	proxy := host.NewProxy("", u, config)
