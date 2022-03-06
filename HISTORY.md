@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add a new [x/reflex](/x/reflex) sub-package. 
+
 - Add `Context.ReadMultipartRelated` as requested at: [issues/#1787](https://github.com/kataras/iris/issues/1787).
 
 - Add `Container.DependencyMatcher` and `Dependency.Match` to implement the feature requested at [issues/#1842](https://github.com/kataras/iris/issues/1842).
