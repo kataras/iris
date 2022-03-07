@@ -2,7 +2,7 @@ package reflex
 
 import "reflect"
 
-// LookupFields returns a slice of all fields containg a struct field
+// LookupFields returns a slice of all fields containing a struct field
 // of the given "fieldTag" of the "typ" struct. The fields returned
 // are flatted and reclusive over fields with value of struct.
 // Panics if "typ" is not a type of Struct.
@@ -53,4 +53,15 @@ func lookupFields(typ reflect.Type, fieldTag string, parentIndex []int) []reflec
 	}
 
 	return fields
+}
+
+// LookupUnderlineValueType returns the underline type of "v".
+func LookupUnderlineValueType(v reflect.Value) (reflect.Value, reflect.Type) {
+	typ := v.Type()
+	for typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+		v = reflect.New(typ).Elem()
+	}
+
+	return v, typ
 }

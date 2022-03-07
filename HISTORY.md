@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add a new [x/sqlx](/x/sqlx/) sub-package ([example](_examples/database/sqlx/main.go)).
+
 - Add a new [x/reflex](/x/reflex) sub-package. 
 
 - Add `Context.ReadMultipartRelated` as requested at: [issues/#1787](https://github.com/kataras/iris/issues/1787).

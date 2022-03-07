@@ -8,7 +8,7 @@
 * [Bootstrapper](bootstrapper)
 * [Project Structure](project) :fire:
 * Monitor
-    * [Simple Proccess Monitor (includes UI)](monitor/monitor-middleware/main.go) **NEW**
+    * [Simple Process Monitor (includes UI)](monitor/monitor-middleware/main.go) **NEW**
     * [Heap, MSpan/MCache, Size Classes, Objects, Goroutines, GC/CPU fraction (includes UI)](monitor/statsviz/main.go) **NEW**
 * Database
     * [MySQL, Groupcache & Docker](database/mysql)
@@ -16,6 +16,7 @@
     * [Sqlx](database/orm/sqlx/main.go)
     * [Gorm](database/orm/gorm/main.go)
     * [Reform](database/orm/reform/main.go)
+    * [x/sqlx](database/sqlx/main.go) **NEW**
 * HTTP Server
     * [HOST:PORT](http-server/listen-addr/main.go)
     * [Public Test Domain](http-server/listen-addr-public/main.go)
