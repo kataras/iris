@@ -16,7 +16,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/go-redis/redis/v8 v8.11.4
-	github.com/goccy/go-json v0.9.4
+	github.com/goccy/go-json v0.9.5
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
 	github.com/iris-contrib/httpexpect/v2 v2.3.1

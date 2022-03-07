@@ -174,10 +174,14 @@ func (r *Row) lookupStructFieldPtrs(typ reflect.Type, val reflect.Value, columnT
 			continue
 		}
 
-		tableColumnField, err := val.FieldByIndexErr(tableColumn.FieldIndex)
-		if err != nil {
-			return nil, fmt.Errorf("column: %q: %w", tableColumn.Name, err)
-		}
+		// TODO: when go 1.18 released, replace with that:
+		/*
+			tableColumnField, err := val.FieldByIndexErr(tableColumn.FieldIndex)
+			if err != nil {
+				return nil, fmt.Errorf("column: %q: %w", tableColumn.Name, err)
+			}
+		*/
+		tableColumnField := val.FieldByIndex(tableColumn.FieldIndex)
 
 		tableColumnFieldType := tableColumnField.Type()
 
