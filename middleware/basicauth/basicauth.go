@@ -493,6 +493,12 @@ func (b *BasicAuth) logout(ctx *context.Context) {
 		b.mu.Lock()
 		delete(b.credentials, fullUser)
 		b.mu.Unlock()
+
+		if b.opts.MaxTries > 0 {
+			b.setCurrentTries(ctx, 0)
+		}
+
+		ctx.StatusCode(http.StatusUnauthorized)
 	}
 }
 

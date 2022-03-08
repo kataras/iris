@@ -123,17 +123,22 @@ func listEvents(ctx context.Context, db *sql.DB) ([]Event, error) {
 	return list, nil
 }
 
-func getEvent(ctx context.Context, db *sql.DB, id string) (Event, error) {
+func getEvent(ctx context.Context, db *sql.DB, id string) (evt Event, err error) {
 	query := `SELECT * FROM events WHERE id = $1 LIMIT 1;`
-	rows, err := db.QueryContext(ctx, query, id)
-	if err != nil {
-		return Event{}, err
-	}
-
-	var evt Event
-	err = sqlx.Bind(&evt, rows)
-
-	return evt, err
+	err = sqlx.Query(ctx, db, &evt, query, id)
+	return
+	//
+	// Same as:
+	//
+	// rows, err := db.QueryContext(ctx, query, id)
+	// if err != nil {
+	// 	return Event{}, err
+	// }
+	//
+	// var evt Event
+	// err = sqlx.Bind(&evt, rows)
+	//
+	// return evt, err
 }
 
 func insert(db *sql.DB) iris.Handler {

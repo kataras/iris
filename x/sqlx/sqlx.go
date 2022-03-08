@@ -1,6 +1,7 @@
 package sqlx
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -54,6 +55,11 @@ func Register(tableName string, value interface{}) *Schema {
 	return DefaultSchema.Register(tableName, value)
 }
 
+// Query is a shortcut of executing a query and bind the result to "dst".
+func Query(ctx context.Context, db *sql.DB, dst interface{}, query string, args ...interface{}) error {
+	return DefaultSchema.Query(ctx, db, dst, query, args...)
+}
+
 // Bind sets "dst" to the result of "src" and reports any errors.
 func Bind(dst interface{}, src *sql.Rows) error {
 	return DefaultSchema.Bind(dst, src)
@@ -88,6 +94,21 @@ func (s *Schema) Register(tableName string, value interface{}) *Schema {
 	}
 
 	return s
+}
+
+// Query is a shortcut of executing a query and bind the result to "dst".
+func (s *Schema) Query(ctx context.Context, db *sql.DB, dst interface{}, query string, args ...interface{}) error {
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	if !s.AutoCloseRows { // if not close on bind, we must close it here.
+		defer rows.Close()
+	}
+
+	err = s.Bind(dst, rows)
+	return err
 }
 
 // Bind sets "dst" to the result of "src" and reports any errors.

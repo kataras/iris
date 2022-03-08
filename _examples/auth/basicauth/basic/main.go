@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/x/errors"
+
 	"github.com/kataras/iris/v12/middleware/basicauth"
 )
 
@@ -31,8 +33,22 @@ func newApp() *iris.Application {
 		"mySecondusername": "mySecondpassword",
 	})
 
-	// to global app.Use(auth) (or app.UseGlobal before the .Run)
-	// to routes
+	// To the next routes of a party (group of routes):
+	/*
+		app.Use(auth)
+	*/
+
+	// For global effect, including not founds:
+	/*
+		app.UseRouter(auth)
+	*/
+
+	// For global effect, excluding http errors such as not founds:
+	/*
+		app.UseGlobal(auth) or app.Use(auth) before any route registered.
+	*/
+
+	// For single/per routes:
 	/*
 		app.Get("/mysecret", auth, h)
 	*/
@@ -73,9 +89,11 @@ func handler(ctx iris.Context) {
 }
 
 func logout(ctx iris.Context) {
-	err := ctx.Logout() // fires 401, invalidates the basic auth.
+	// fires 401, invalidates the basic auth,
+	// logout through javascript and ajax is a better solution though.
+	err := ctx.Logout()
 	if err != nil {
-		ctx.Application().Logger().Errorf("Logout error: %v", err)
+		errors.Internal.Err(ctx, err)
+		return
 	}
-	ctx.Redirect("/admin", iris.StatusTemporaryRedirect)
 }

@@ -2160,6 +2160,15 @@ func (ctx *Context) AbsoluteURI(s string) string {
 		return ""
 	}
 
+	userInfo := ""
+	if s[0] == '@' {
+		endUserInfoIdx := strings.IndexByte(s, '/')
+		if endUserInfoIdx > 0 && len(s) > endUserInfoIdx {
+			userInfo = s[1:endUserInfoIdx] + "@"
+			s = s[endUserInfoIdx:]
+		}
+	}
+
 	if s[0] == '/' {
 		scheme := ctx.request.URL.Scheme
 		if scheme == "" {
@@ -2172,7 +2181,7 @@ func (ctx *Context) AbsoluteURI(s string) string {
 
 		host := ctx.Host()
 
-		return scheme + "//" + host + path.Clean(s)
+		return scheme + "//" + userInfo + host + path.Clean(s)
 	}
 
 	if u, err := url.Parse(s); err == nil {
