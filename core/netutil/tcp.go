@@ -106,7 +106,7 @@ func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
 	tlsConfig := &tls.Config{
 		Certificates:             []tls.Certificate{cert},
 		PreferServerCipherSuites: true,
-		MinVersion:               tls.VersionTLS11,
+		MinVersion:               tls.VersionTLS13,
 	}
 	return tls.NewListener(l, tlsConfig), nil
 }
@@ -146,7 +146,7 @@ func LETSENCRYPT(addr string, reuse bool, serverName string, cacheDirOptional ..
 	} else {
 		m.Cache = autocert.DirCache(cacheDir)
 	}
-	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate, MinVersion: tls.VersionTLS11}
+	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate, MinVersion: tls.VersionTLS13}
 
 	// use InsecureSkipVerify or ServerName to a value
 	if serverName == "" {

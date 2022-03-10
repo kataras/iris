@@ -25,7 +25,7 @@ func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.E
 
 	if strings.HasPrefix(baseURL, "http") { // means we are testing real serve time
 		transporter = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS11},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS13},
 		}
 	} else { // means we are testing the handler itself
 		transporter = httpexpect.NewBinder(handler)

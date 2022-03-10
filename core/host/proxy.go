@@ -22,7 +22,7 @@ import (
 // Look `ProxyHandlerRemote` too.
 func ProxyHandler(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
 	if config == nil {
-		config = &tls.Config{MinVersion: tls.VersionTLS11}
+		config = &tls.Config{MinVersion: tls.VersionTLS13}
 	}
 
 	director := func(req *http.Request) {
@@ -89,7 +89,7 @@ func modifyProxiedRequest(req *http.Request, target *url.URL) {
 // Look `ProxyHandler` too.
 func ProxyHandlerRemote(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
 	if config == nil {
-		config = &tls.Config{MinVersion: tls.VersionTLS11}
+		config = &tls.Config{MinVersion: tls.VersionTLS13}
 	}
 
 	director := func(req *http.Request) {
