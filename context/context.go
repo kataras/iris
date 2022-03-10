@@ -33,7 +33,6 @@ import (
 	"github.com/fatih/structs"
 	gojson "github.com/goccy/go-json"
 	"github.com/iris-contrib/schema"
-	"github.com/kataras/golog"
 	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/microcosm-cc/bluemonday"
@@ -3627,15 +3626,18 @@ func (ctx *Context) View(filename string, optionalViewModel ...interface{}) erro
 	ctx.ContentType(ContentHTMLHeaderValue)
 
 	err := ctx.renderView(filename, optionalViewModel...)
-	if errNotExists, ok := err.(ErrViewNotExist); ok {
-		err = ctx.fireFallbackViewOnce(errNotExists)
+	if err != nil {
+		if errNotExists, ok := err.(ErrViewNotExist); ok {
+			err = ctx.fireFallbackViewOnce(errNotExists)
+		}
 	}
 
 	if err != nil {
-		if ctx.app.Logger().Level == golog.DebugLevel {
+		if ctx.IsDebug() {
 			// send the error back to the client, when debug mode.
 			ctx.StopWithError(http.StatusInternalServerError, err)
 		} else {
+			ctx.SetErrPrivate(err)
 			ctx.StopWithStatus(http.StatusInternalServerError)
 		}
 	}
