@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `Party.EnsureStaticBindings` which, if called, the MVC binder panics if a struct's input binding depends on the HTTP request data instead of a static dependency. This is useful to make sure your API crafted through `Party.PartyConfigure` depends only on struct values you already defined at `Party.RegisterDependency` == will never use reflection at serve-time (maximum performance).
+
 - Add a new [x/sqlx](/x/sqlx/) sub-package ([example](_examples/database/sqlx/main.go)).
 
 - Add a new [x/reflex](/x/reflex) sub-package. 

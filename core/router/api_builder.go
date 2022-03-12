@@ -339,6 +339,15 @@ func (api *APIBuilder) ConfigureContainer(builder ...func(*APIContainer)) *APICo
 	return api.apiBuilderDI
 }
 
+// EnsureStaticBindings panics on struct handler (controller)
+// if at least one input binding depends on the request and not in a static structure.
+// Should be called before `RegisterDependency`.
+func (api *APIBuilder) EnsureStaticBindings() Party {
+	diContainer := api.ConfigureContainer()
+	diContainer.Container.DisableStructDynamicBindings = true
+	return api
+}
+
 // RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
 // with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
 func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {

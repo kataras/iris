@@ -53,6 +53,10 @@ type Container struct {
 	// set to true to disable that kind of behavior.
 	DisablePayloadAutoBinding bool
 
+	// DisableStructDynamicBindings if true panics on struct handler (controller)
+	// if at least one input binding depends on the request and not in a static structure.
+	DisableStructDynamicBindings bool
+
 	// DependencyMatcher holds the function that compares equality between
 	// a dependency with an input. Defaults to DefaultMatchDependencyFunc.
 	DependencyMatcher DependencyMatcher
@@ -249,6 +253,7 @@ func (c *Container) Clone() *Container {
 	copy(clonedDeps, c.Dependencies)
 	cloned.Dependencies = clonedDeps
 	cloned.DisablePayloadAutoBinding = c.DisablePayloadAutoBinding
+	cloned.DisableStructDynamicBindings = c.DisableStructDynamicBindings
 	cloned.MarkExportedFieldsAsRequired = c.MarkExportedFieldsAsRequired
 	cloned.resultHandlers = c.resultHandlers
 	// Reports are not cloned.

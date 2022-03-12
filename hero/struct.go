@@ -71,6 +71,10 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 
 			elem.FieldByIndex(b.Input.StructFieldIndex).Set(input)
 		} else if !b.Dependency.Static {
+			if c.DisableStructDynamicBindings {
+				panic(fmt.Sprintf("binder: DisableStructDynamicBindings setting is set to true: dynamic binding found: %s", b.String()))
+			}
+
 			singleton = false
 		}
 	}
