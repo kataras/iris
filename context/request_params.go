@@ -57,7 +57,7 @@ func (r *RequestParams) Get(key string) string {
 				return v.String()
 			}
 
-			return fmt.Sprintf("%s", kv.ValueRaw)
+			return fmt.Sprintf("%v", kv.ValueRaw)
 		}
 	}
 
