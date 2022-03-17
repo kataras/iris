@@ -147,6 +147,9 @@ type Context struct {
 	// Also it's responsible to keep the old value of the last known handler index
 	// before StopExecution. See ResumeExecution.
 	proceeded int
+
+	// if true, caller is responsible to release the context (put the context to the pool).
+	manualRelease bool
 }
 
 // NewContext returns a new Context instance.
@@ -190,6 +193,7 @@ func (ctx *Context) Clone() *Context {
 		request:             req,
 		currentHandlerIndex: stopExecutionIndex,
 		proceeded:           ctx.proceeded,
+		manualRelease:       ctx.manualRelease,
 		currentRoute:        ctx.currentRoute,
 	}
 }
@@ -213,6 +217,7 @@ func (ctx *Context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
 	ctx.proceeded = 0
+	ctx.manualRelease = false
 	ctx.writer = AcquireResponseWriter()
 	ctx.writer.BeginResponse(w)
 }
@@ -231,6 +236,12 @@ func (ctx *Context) EndRequest() {
 
 	ctx.writer.FlushResponse()
 	ctx.writer.EndResponse()
+}
+
+// DisablePoolRelease disables the auto context pool Put call.
+// Do NOT use it, unless you know what you are doing.
+func (ctx *Context) DisablePoolRelease() {
+	ctx.manualRelease = true
 }
 
 // IsCanceled reports whether the client canceled the request

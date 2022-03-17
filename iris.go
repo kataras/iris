@@ -421,6 +421,14 @@ func (app *Application) View(writer io.Writer, filename string, layout string, b
 	return app.view.ExecuteWriter(writer, filename, layout, bindingData)
 }
 
+// GetContextPool returns the Iris sync.Pool which holds the contexts values.
+// Iris automatically releases the request context, so you don't have to use it.
+// It's only useful to manually release the context on cases that connection
+// is hijacked by a third-party middleware and the http handler return too fast.
+func (app *Application) GetContextPool() *context.Pool {
+	return app.ContextPool
+}
+
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run` or `app.Listen`,
 // they're being executed when application is ready to being served to the public.

@@ -26,13 +26,17 @@ func (c *Pool) Acquire(w http.ResponseWriter, r *http.Request) *Context {
 // Release puts a Context back to its pull, this function releases its resources.
 // See Acquire.
 func (c *Pool) Release(ctx *Context) {
-	ctx.EndRequest()
-	c.pool.Put(ctx)
+	if !ctx.manualRelease {
+		ctx.EndRequest()
+		c.pool.Put(ctx)
+	}
 }
 
 // ReleaseLight will just release the object back to the pool, but the
 // clean method is caller's responsibility now, currently this is only used
-// on `SPABuilder`.
+// on `SPABuilder` and `websocket.Handler`.
+//
+// ReleaseLight does a force-put, it does NOT respect the context.DisablePoolRelease.
 func (c *Pool) ReleaseLight(ctx *Context) {
 	c.pool.Put(ctx)
 }

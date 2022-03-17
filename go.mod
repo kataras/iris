@@ -1,6 +1,6 @@
 module github.com/kataras/iris/v12
 
-go 1.17
+go 1.18
 
 // retract v12.1.8 // please update to @master
 
@@ -15,7 +15,7 @@ require (
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
-	github.com/go-redis/redis/v8 v8.11.4
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/goccy/go-json v0.9.5
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
@@ -25,12 +25,12 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kataras/blocks v0.0.5
 	github.com/kataras/golog v0.1.7
-	github.com/kataras/jwt v0.1.3
+	github.com/kataras/jwt v0.1.5
 	github.com/kataras/neffos v0.0.19
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.3
-	github.com/klauspost/compress v1.15.0
+	github.com/klauspost/compress v1.15.1
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/russross/blackfriday/v2 v2.1.0
@@ -40,9 +40,9 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7
+	golang.org/x/sys v0.0.0-20220317061510-51cd9980dadf
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
 	google.golang.org/protobuf v1.27.1
