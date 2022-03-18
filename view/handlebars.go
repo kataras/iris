@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/aymerick/raymond"
+	"github.com/mailgun/raymond/v2"
 )
 
 // HandlebarsEngine contains the handlebars view engine structure.

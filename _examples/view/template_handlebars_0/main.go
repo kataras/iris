@@ -57,7 +57,7 @@ func main() {
 	mvc.New(exampleRouter).Handle(new(controller))
 
 	// Read more about its syntax at:
-	// https://github.com/aymerick/raymond and
+	// https://github.com/mailgun/raymond and
 	// https://handlebarsjs.com/guide
 
 	// http://localhost:8080

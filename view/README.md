@@ -12,7 +12,7 @@ Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, 
 | 2 | Blocks     | [kataras/blocks](https://github.com/kataras/blocks) |
 | 3 | Django     | [flosch/pongo2](https://github.com/flosch/pongo2) |
 | 4 | Pug        | [Joker/jade](https://github.com/Joker/jade) |
-| 5 | Handlebars | [aymerick/raymond](https://github.com/aymerick/raymond) |
+| 5 | Handlebars | [mailgun/raymond](https://github.com/mailgun/raymond) |
 | 6 | Amber      | [eknkc/amber](https://github.com/eknkc/amber) |
 | 7 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
 | 8 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |

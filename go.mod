@@ -9,7 +9,6 @@ require (
 	github.com/CloudyKit/jet/v6 v6.1.0
 	github.com/Shopify/goreferrer v0.0.0-20210630161223-536fa16abd6f
 	github.com/andybalholm/brotli v1.0.4
-	github.com/aymerick/raymond v2.0.2+incompatible
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
@@ -31,6 +30,7 @@ require (
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.3
 	github.com/klauspost/compress v1.15.1
+	github.com/mailgun/raymond/v2 v2.0.46
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/russross/blackfriday/v2 v2.1.0
@@ -42,7 +42,7 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-	golang.org/x/sys v0.0.0-20220317061510-51cd9980dadf
+	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
 	google.golang.org/protobuf v1.27.1
@@ -89,6 +89,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/smartystreets/assertions v1.2.1 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tdewolff/parse/v2 v2.5.27 // indirect

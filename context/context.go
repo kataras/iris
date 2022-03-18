@@ -1248,7 +1248,7 @@ type (
 )
 
 // String returns the raw ref url.
-func (ref Referrer) String() string {
+func (ref *Referrer) String() string {
 	return ref.Raw
 }
 
