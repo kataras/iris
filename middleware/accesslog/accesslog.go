@@ -498,6 +498,10 @@ func (ac *AccessLog) setOutput(reset bool, writers ...io.Writer) {
 		}
 		for _, closer := range closers {
 			if closer != nil {
+				// cannot close os.Stdout/os.Stderr
+				if closer == os.Stdout || closer == os.Stderr {
+					continue
+				}
 				closer.Close()
 			}
 		}
