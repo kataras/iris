@@ -39,6 +39,13 @@ var AllMethods = []string{
 	http.MethodTrace,
 }
 
+// RegisterMethods adds custom http methods to the "AllMethods" list.
+// Use it on initialization of your program.
+func RegisterMethods(newCustomHTTPVerbs ...string) {
+	newMethods := append(AllMethods, newCustomHTTPVerbs...)
+	AllMethods = removeDuplicates(newMethods)
+}
+
 // repository passed to all parties(subrouters), it's the object witch keeps
 // all the routes.
 type repository struct {

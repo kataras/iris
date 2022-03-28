@@ -124,6 +124,7 @@
         * [Embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
     * [Upload File](file-server/upload-file/main.go)
     * [Upload Multiple Files](file-server/upload-files/main.go)
+    * [WebDAV](file-server/webdav/main.go)
 * View
     * [Overview](view/overview/main.go)
     * [Layout](view/layout)
@@ -212,7 +213,7 @@
     * [Basic](i18n/basic)
     * [Ttemplates and Functions](i18n/template)
     * [Pluralization and Variables](i18n/plurals)
-* Authentication, Authorization & Bot Detection 
+* Authentication, Authorization & Bot Detection
     * Basic Authentication
         * [Basic](auth/basicauth/basic)
         * [Load from a slice of Users](auth/basicauth/users_list)
@@ -225,6 +226,7 @@
         * [Blocklist](auth/jwt/blocklist/main.go)
         * [Refresh Token](auth/jwt/refresh-token/main.go)
         * [Tutorial](auth/jwt/tutorial)
+        * [SSO](auth/sso) **NEW (GO 1.18 Generics required)**
     * [JWT (community edition)](https://github.com/iris-contrib/middleware/tree/v12/jwt/_example/main.go)
     * [OAUth2](auth/goth/main.go)
     * [Manage Permissions](auth/permissions/main.go)
@@ -277,6 +279,7 @@
     * [Authenticated Controller](mvc/authenticated-controller/main.go)
     * [Versioned Controller](mvc/versioned-controller/main.go)
     * [Websocket Controller](mvc/websocket)
+        * [Websocket + Authentication (SSO)](mvc/websocket-sso) **NEW (GO 1.18 Generics required)**
     * [Register Middleware](mvc/middleware)
     * [gRPC](mvc/grpc-compatible)
     * [gRPC Bidirectional Stream](mvc/grpc-compatible-bidirectional-stream)

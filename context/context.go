@@ -5314,7 +5314,11 @@ type SecureCookie interface {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
 func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
-	return func(_ *Context, c *http.Cookie, op uint8) {
+	if encoding == nil {
+		return func(_ *Context, _ *http.Cookie, _ uint8) {}
+	}
+
+	return func(ctx *Context, c *http.Cookie, op uint8) {
 		if op == OpCookieDel {
 			return
 		}
@@ -5328,10 +5332,12 @@ func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
 			// Should encode, it's a write to the client operation.
 			newVal, err := encoding.Encode(c.Name, c.Value)
 			if err != nil {
+				ctx.Application().Logger().Error(err)
 				c.Value = ""
 			} else {
 				c.Value = newVal
 			}
+
 			return
 		case OpCookieGet:
 			// Should decode, it's a read from the client operation.

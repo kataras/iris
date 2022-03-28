@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .Title }}{{ .Title }}{{ else }}Default Main Title{{ end }}</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        flex-direction: column;
+    }
+    main {
+        display: block;
+        flex: 1 0 auto;
+    }
+    .container {
+        max-width: 500px;
+        margin: auto;
+    }
+</style>
+<body>
+    <div class="container">
+        <main>{{ template "content" . }}</main>
+        <footer style="position: fixed; bottom: 0; width: 100%;">{{ partial "partials/footer" .}}</footer>
+    </div>
+</body>
+</html>

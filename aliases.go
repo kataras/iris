@@ -660,8 +660,41 @@ const (
 	StatusNetworkReadTimeout     = context.StatusNetworkReadTimeout
 )
 
-// StatusText returns a text for the HTTP status code. It returns the empty
-// string if the code is unknown.
-//
-// Shortcut for core/router#StatusText.
-var StatusText = context.StatusText
+var (
+	// StatusText returns a text for the HTTP status code. It returns the empty
+	// string if the code is unknown.
+	//
+	// Shortcut for core/router#StatusText.
+	StatusText = context.StatusText
+	// RegisterMethods adds custom http methods to the "AllMethods" list.
+	// Use it on initialization of your program.
+	//
+	// Shortcut for core/router#RegisterMethods.
+	RegisterMethods = router.RegisterMethods
+
+	// WebDAVMethods contains a list of WebDAV HTTP Verbs.
+	// Register using RegiterMethods package-level function or
+	// through HandleMany party-level method.
+	WebDAVMethods = []string{
+		MethodGet,
+		MethodHead,
+		MethodPatch,
+		MethodPut,
+		MethodPost,
+		MethodDelete,
+		MethodOptions,
+		MethodConnect,
+		MethodTrace,
+		"MKCOL",
+		"COPY",
+		"MOVE",
+		"LOCK",
+		"UNLOCK",
+		"PROPFIND",
+		"PROPPATCH",
+		"LINK",
+		"UNLINK",
+		"PURGE",
+		"VIEW",
+	}
+)
