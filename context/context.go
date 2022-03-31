@@ -3971,6 +3971,7 @@ const jsonOptionsContextKey = "iris.context.json_options"
 // 	 ctx.SetJSONOptions(iris.JSON{
 // 		 ErrorHandler: errHandler,
 // 	 })
+//	 ctx.Next()
 //  })
 func (ctx *Context) SetJSONOptions(opts JSON) {
 	ctx.values.Set(jsonOptionsContextKey, opts)
