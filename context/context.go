@@ -3761,6 +3761,16 @@ type JSON struct {
 	// Optional context cancelation of encoder when Iris optimizations field is enabled.
 	// On JSON method this is automatically binded to the request context.
 	Context stdContext.Context
+
+	// ErrorHandler can be optionally registered to fire a customized
+	// error to the client on JSON write failures.
+	ErrorHandler ErrorHandler
+}
+
+// ErrorHandler describes a context error handler. As for today this is only used
+// to globally or per-party or per-route handle JSON writes error.
+type ErrorHandler interface {
+	HandleContextError(ctx *Context, err error)
 }
 
 // IsDefault reports whether this JSON options structure holds the default values.
@@ -3771,7 +3781,8 @@ func (j *JSON) IsDefault() bool {
 		j.Prefix == DefaultJSONOptions.Prefix &&
 		j.ASCII == DefaultJSONOptions.ASCII &&
 		j.Secure == DefaultJSONOptions.Secure &&
-		j.Proto == DefaultJSONOptions.Proto
+		j.Proto == DefaultJSONOptions.Proto &&
+		j.ErrorHandler == nil
 }
 
 // GetContext returns the option's Context or the HTTP request's one.
@@ -3942,18 +3953,55 @@ func stringToBytes(s string) []byte {
 // inside `ctx.JSON`.
 var DefaultJSONOptions = JSON{}
 
+const jsonOptionsContextKey = "iris.context.json_options"
+
+// SetJSONOptions stores the given JSON options to the handler
+// for any next Context.JSON calls. Note that the Context.JSON's
+// variadic options have priority over these given options.
+func (ctx *Context) SetJSONOptions(opts JSON) {
+	ctx.values.Set(jsonOptionsContextKey, opts)
+}
+
+func (ctx *Context) getJSONOptions() (JSON, bool) {
+	if v := ctx.values.Get(jsonOptionsContextKey); v != nil {
+		opts, ok := v.(JSON)
+		return opts, ok
+	}
+
+	return DefaultJSONOptions, false
+}
+
 // JSON marshals the given interface object and writes the JSON response to the client.
 // If the value is a compatible `proto.Message` one
 // then it only uses the options.Proto settings to marshal.
 func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
+	if n, err = ctx.writeJSON(v, opts...); err != nil {
+		if opts, ok := ctx.getJSONOptions(); ok {
+			opts.ErrorHandler.HandleContextError(ctx, err)
+		} // keep the error so the caller has control over further actions.
+	}
+
+	return
+}
+
+func (ctx *Context) writeJSON(v interface{}, opts ...JSON) (n int, err error) {
 	ctx.ContentType(ContentJSONHeaderValue)
 	shouldOptimize := ctx.shouldOptimize()
 
+	options := DefaultJSONOptions
 	optsLength := len(opts)
+	if optsLength > 0 {
+		options = opts[0]
+	} else {
+		if opt, ok := ctx.getJSONOptions(); ok {
+			opts = []JSON{opt}
+			optsLength = 1
+		}
+	}
 
 	if shouldOptimize && optsLength == 0 { // if no options given and optimizations are enabled.
 		// try handle proto or easyjson.
-		if handled, n, err := handleJSONResponseValue(ctx, v, DefaultJSONOptions); handled {
+		if handled, n, err := handleJSONResponseValue(ctx, v, options); handled {
 			return n, err
 		}
 
@@ -3964,11 +4012,6 @@ func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		}
 
 		return ctx.Write(result)
-	}
-
-	options := DefaultJSONOptions
-	if optsLength > 0 {
-		options = opts[0]
 	}
 
 	if options.StreamingJSON {

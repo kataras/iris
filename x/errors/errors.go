@@ -248,7 +248,7 @@ type Error struct {
 }
 
 // Error method completes the error interface. It just returns the canonical name, status code, message and details.
-func (err Error) Error() string {
+func (err *Error) Error() string {
 	if err.Message == "" {
 		err.Message = "<empty>"
 	}
@@ -312,6 +312,6 @@ func fail(ctx *context.Context, codeName ErrorCodeName, msg, details string, val
 		Validation: validationErrors,
 	}
 
-	// ctx.SetErr(err)
+	// ctx.SetErr(&err)
 	ctx.StopWithJSON(errorCode.Status, err)
 }
