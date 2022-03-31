@@ -3781,8 +3781,8 @@ func (j *JSON) IsDefault() bool {
 		j.Prefix == DefaultJSONOptions.Prefix &&
 		j.ASCII == DefaultJSONOptions.ASCII &&
 		j.Secure == DefaultJSONOptions.Secure &&
-		j.Proto == DefaultJSONOptions.Proto &&
-		j.ErrorHandler == nil
+		j.Proto == DefaultJSONOptions.Proto
+	// except context and error handler
 }
 
 // GetContext returns the option's Context or the HTTP request's one.
@@ -3958,6 +3958,20 @@ const jsonOptionsContextKey = "iris.context.json_options"
 // SetJSONOptions stores the given JSON options to the handler
 // for any next Context.JSON calls. Note that the Context.JSON's
 // variadic options have priority over these given options.
+//
+// Usage Example:
+//
+//  type jsonErrorHandler struct{}
+//  func (e *jsonErrorHandler) HandleContextError(ctx iris.Context, err error) {
+// 	 errors.InvalidArgument.Err(ctx, err)
+//  }
+//  ...
+//  errHandler := new(jsonErrorHandler)
+//  srv.Use(func(ctx iris.Context) {
+// 	 ctx.SetJSONOptions(iris.JSON{
+// 		 ErrorHandler: errHandler,
+// 	 })
+//  })
 func (ctx *Context) SetJSONOptions(opts JSON) {
 	ctx.values.Set(jsonOptionsContextKey, opts)
 }
@@ -3994,8 +4008,10 @@ func (ctx *Context) writeJSON(v interface{}, opts ...JSON) (n int, err error) {
 		options = opts[0]
 	} else {
 		if opt, ok := ctx.getJSONOptions(); ok {
-			opts = []JSON{opt}
-			optsLength = 1
+			options = opt
+			if !options.IsDefault() { // keep the next branch valid when only the Context or/and ErrorHandler are modified.
+				optsLength = 1
+			}
 		}
 	}
 
