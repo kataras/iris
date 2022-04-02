@@ -38,7 +38,11 @@ func logout(ctx iris.Context) {
 
 func main() {
 	app := iris.New()
-	sess := sessions.New(sessions.Config{Cookie: cookieNameForSessionID, AllowReclaim: true})
+	sess := sessions.New(sessions.Config{
+		Cookie: cookieNameForSessionID,
+		// CookieSecureTLS: true,
+		AllowReclaim: true,
+	})
 	app.Use(sess.Handler())
 	// ^ or comment this line and use sess.Start(ctx) inside your handlers
 	// instead of sessions.Get(ctx).
