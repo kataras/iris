@@ -9,18 +9,25 @@ import (
 )
 
 type (
+	// StandardClaims is an alias of jwt.Claims, it holds the standard JWT claims.
 	StandardClaims = jwt.Claims
-	User           = interface{} // any type.
+	// User is an alias of an empty interface, it's here to declare the typeof T,
+	// which can be any custom struct type.
+	User = interface{}
 )
 
 const accessTokenContextKey = "iris.auth.context.access_token"
 
+// GetAccessToken accepts the iris Context and returns the raw access token value.
+// It's only available after Auth.VerifyHandler is executed.
 func GetAccessToken(ctx *context.Context) string {
 	return ctx.Values().GetString(accessTokenContextKey)
 }
 
 const standardClaimsContextKey = "iris.auth.context.standard_claims"
 
+// GetStandardClaims accepts the iris Context and returns the standard token's claims.
+// It's only available after Auth.VerifyHandler is executed.
 func GetStandardClaims(ctx *context.Context) StandardClaims {
 	if v := ctx.Values().Get(standardClaimsContextKey); v != nil {
 		if c, ok := v.(StandardClaims); ok {
@@ -31,12 +38,10 @@ func GetStandardClaims(ctx *context.Context) StandardClaims {
 	return StandardClaims{}
 }
 
-func (s *Auth[T]) GetStandardClaims(ctx *context.Context) StandardClaims {
-	return GetStandardClaims(ctx)
-}
-
 const userContextKey = "iris.auth.context.user"
 
+// GetUser is the package-level function of the Auth.GetUser method.
+// It returns the T user value after Auth.VerifyHandler is executed.
 func GetUser[T User](ctx *context.Context) T {
 	if v := ctx.Values().Get(userContextKey); v != nil {
 		if t, ok := v.(T); ok {
@@ -48,6 +53,8 @@ func GetUser[T User](ctx *context.Context) T {
 	return empty
 }
 
+// GetUser accepts the iris Context and returns the T custom user/claims struct value.
+// It's only available after Auth.VerifyHandler is executed.
 func (s *Auth[T]) GetUser(ctx *context.Context) T {
 	return GetUser[T](ctx)
 }

@@ -90,6 +90,19 @@ func New[T User](config Configuration) (*Auth[T], error) {
 	return s, nil
 }
 
+// WithProviderAndErrorHandler registers a provider (if not nil) and
+// an error handler (if not nil) and returns this "s" Auth instance.
+// It's the same as calling AddProvider and SetErrorHandler at once.
+// It's really useful when registering an Auth instance using the iris.Party.PartyConfigure
+// method when a Provider of T and ErrorHandler is available through the registered Party's dependencies.
+//
+// Usage Example:
+//  api := app.Party("/api")
+//  api.EnsureStaticBindings().RegisterDependency(
+//    NewAuthProviderErrorHandler(),
+//    NewAuthCustomerProvider,
+//    auth.Must(auth.New[Customer](authConfig)).WithProviderAndErrorHandler,
+//  )
 func (s *Auth[T]) WithProviderAndErrorHandler(provider Provider[T], errHandler ErrorHandler) *Auth[T] {
 	if provider != nil {
 		for i := range s.providers {
