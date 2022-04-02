@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/v12/sso"
+	"github.com/kataras/iris/v12/auth"
 )
 
 type Provider struct {
@@ -49,16 +49,16 @@ func (p *Provider) Signin(ctx context.Context, username, password string) (User,
 	return User{}, fmt.Errorf("user not found")
 }
 
-func (p *Provider) ValidateToken(ctx context.Context, standardClaims sso.StandardClaims, u User) error { // fired on VerifyHandler.
+func (p *Provider) ValidateToken(ctx context.Context, standardClaims auth.StandardClaims, u User) error { // fired on VerifyHandler.
 	// your database and checks of blocked tokens...
 
 	// check for specific token ids.
 	p.mu.RLock()
 	_, tokenBlocked := p.invalidated[standardClaims.ID]
 	if !tokenBlocked {
-		// this will disallow refresh tokens with origin jwt token id as the blocked access token as well.
-		if standardClaims.OriginID != "" {
-			_, tokenBlocked = p.invalidated[standardClaims.OriginID]
+		// this will disallow refresh tokens with issuer as the blocked access token as well.
+		if standardClaims.Issuer != "" {
+			_, tokenBlocked = p.invalidated[standardClaims.Issuer]
 		}
 	}
 	p.mu.RUnlock()
@@ -81,7 +81,7 @@ func (p *Provider) ValidateToken(ctx context.Context, standardClaims sso.Standar
 	return nil // else valid.
 }
 
-func (p *Provider) InvalidateToken(ctx context.Context, standardClaims sso.StandardClaims, u User) error { // fired on SignoutHandler.
+func (p *Provider) InvalidateToken(ctx context.Context, standardClaims auth.StandardClaims, u User) error { // fired on SignoutHandler.
 	// invalidate this specific token.
 	p.mu.Lock()
 	p.invalidated[standardClaims.ID] = struct{}{}

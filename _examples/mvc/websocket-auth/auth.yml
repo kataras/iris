@@ -1,9 +1,12 @@
+Headers: # required.
+  - "Authorization"
+  - "X-Authorization"
 Cookie: # optional.
-  Name: "iris_sso"
+  Name: "iris_auth_cookie"
   Hash: "D*G-KaPdSgUkXp2s5v8y/B?E(H+MbQeThWmYq3t6w9z$C&F)J@NcRfUjXn2r4u7x" # length of 64 characters (512-bit).
   Block: "VkYp3s6v9y$B&E)H@McQfTjWmZq4t7w!" # length of 32 characters (256-bit).
 Keys:
-  - ID: IRIS_SSO_ACCESS # required.
+  - ID: IRIS_AUTH_ACCESS # required.
     Alg: EdDSA
     MaxAge: 2h # 2 hours lifetime for access tokens. 
     Private: |+
@@ -14,7 +17,7 @@ Keys:
       -----BEGIN PUBLIC KEY-----
       MCowBQYDK2VwAyEAzpgjKSr9E032DX+foiOxq1QDsbzjLxagTN+yVpGWZB4=
       -----END PUBLIC KEY-----
-  - ID: IRIS_SSO_REFRESH # optional. Good practise to have it though.
+  - ID: IRIS_AUTH_REFRESH # optional. Good practise to have it though.
     Alg: EdDSA
     # 1 month lifetime for refresh tokens,
     # after that period the user has to signin again.

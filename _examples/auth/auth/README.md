@@ -1,4 +1,4 @@
-# SSO (Single Sign On)
+# Auth Package (+ Single Sign On)
 
 ```sh
 $ go run .

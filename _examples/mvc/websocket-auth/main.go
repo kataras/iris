@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/auth"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/kataras/iris/v12/sso"
 	"github.com/kataras/iris/v12/websocket"
 )
 
@@ -29,7 +29,7 @@ func newApp() *iris.Application {
 		LayoutDir("layouts").
 		Layout("main"))
 
-	s := sso.MustLoad[User]("./sso.yml")
+	s := auth.MustLoad[User]("./auth.yml")
 	s.AddProvider(NewProvider())
 
 	app.Get("/signin", renderSigninForm)
@@ -63,7 +63,7 @@ func (c *websocketController) Namespace() string {
 
 func (c *websocketController) OnChat(msg websocket.Message) error {
 	ctx := websocket.GetContext(c.Conn)
-	user := sso.GetUser[User](ctx)
+	user := auth.GetUser[User](ctx)
 
 	msg.Body = []byte(fmt.Sprintf("%s: %s", user.Email, string(msg.Body)))
 	c.Conn.Server().Broadcast(c, msg)

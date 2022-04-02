@@ -214,6 +214,7 @@
     * [Ttemplates and Functions](i18n/template)
     * [Pluralization and Variables](i18n/plurals)
 * Authentication, Authorization & Bot Detection
+    * [Recommended: Auth package and Single-Sign-On](auth/auth) **NEW (GO 1.18 Generics required)**
     * Basic Authentication
         * [Basic](auth/basicauth/basic)
         * [Load from a slice of Users](auth/basicauth/users_list)
@@ -226,7 +227,6 @@
         * [Blocklist](auth/jwt/blocklist/main.go)
         * [Refresh Token](auth/jwt/refresh-token/main.go)
         * [Tutorial](auth/jwt/tutorial)
-        * [SSO](auth/sso) **NEW (GO 1.18 Generics required)**
     * [JWT (community edition)](https://github.com/iris-contrib/middleware/tree/v12/jwt/_example/main.go)
     * [OAUth2](auth/goth/main.go)
     * [Manage Permissions](auth/permissions/main.go)
@@ -279,7 +279,7 @@
     * [Authenticated Controller](mvc/authenticated-controller/main.go)
     * [Versioned Controller](mvc/versioned-controller/main.go)
     * [Websocket Controller](mvc/websocket)
-        * [Websocket + Authentication (SSO)](mvc/websocket-sso) **NEW (GO 1.18 Generics required)**
+        * [Websocket + Authentication (Single-Sign-On)](mvc/websocket-auth) **NEW (GO 1.18 Generics required)**
     * [Register Middleware](mvc/middleware)
     * [gRPC](mvc/grpc-compatible)
     * [gRPC Bidirectional Stream](mvc/grpc-compatible-bidirectional-stream)

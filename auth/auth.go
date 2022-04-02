@@ -1,6 +1,6 @@
 //go:build go1.18
 
-package sso
+package auth
 
 import (
 	stdContext "context"
@@ -18,7 +18,7 @@ import (
 )
 
 type (
-	SSO[T User] struct {
+	Auth[T User] struct {
 		config Configuration
 
 		keys         jwt.Keys
@@ -49,7 +49,7 @@ type (
 	}
 )
 
-func MustLoad[T User](filename string) *SSO[T] {
+func MustLoad[T User](filename string) *Auth[T] {
 	var config Configuration
 	if err := config.BindFile(filename); err != nil {
 		panic(err)
@@ -63,7 +63,7 @@ func MustLoad[T User](filename string) *SSO[T] {
 	return s
 }
 
-func Must[T User](s *SSO[T], err error) *SSO[T] {
+func Must[T User](s *Auth[T], err error) *Auth[T] {
 	if err != nil {
 		panic(err)
 	}
@@ -71,14 +71,14 @@ func Must[T User](s *SSO[T], err error) *SSO[T] {
 	return s
 }
 
-func New[T User](config Configuration) (*SSO[T], error) {
+func New[T User](config Configuration) (*Auth[T], error) {
 	keys, err := config.validate()
 	if err != nil {
 		return nil, err
 	}
 	_, refreshEnabled := keys[KIDRefresh]
 
-	s := &SSO[T]{
+	s := &Auth[T]{
 		config:         config,
 		keys:           keys,
 		securecookie:   securecookie.New([]byte(config.Cookie.Hash), []byte(config.Cookie.Block)),
@@ -90,7 +90,7 @@ func New[T User](config Configuration) (*SSO[T], error) {
 	return s, nil
 }
 
-func (s *SSO[T]) WithProviderAndErrorHandler(provider Provider[T], errHandler ErrorHandler) *SSO[T] {
+func (s *Auth[T]) WithProviderAndErrorHandler(provider Provider[T], errHandler ErrorHandler) *Auth[T] {
 	if provider != nil {
 		for i := range s.providers {
 			s.providers[i] = nil
@@ -108,11 +108,7 @@ func (s *SSO[T]) WithProviderAndErrorHandler(provider Provider[T], errHandler Er
 	return s
 }
 
-func (s *SSO[T]) AddProvider(providers ...Provider[T]) *SSO[T] {
-	// defaultProviderTypename := strings.Replace(fmt.Sprintf("%T", s), "SSO", "provider", 1)
-	// if len(s.providers) == 1 && fmt.Sprintf("%T", s.providers[0]) == defaultProviderTypename {
-	// 	s.providers = append(s.providers[1:], p...)
-
+func (s *Auth[T]) AddProvider(providers ...Provider[T]) *Auth[T] {
 	// A provider can also implement both transformer and
 	// error handler if that's the design option of the end-developer.
 	for _, p := range providers {
@@ -137,22 +133,22 @@ func (s *SSO[T]) AddProvider(providers ...Provider[T]) *SSO[T] {
 	return s
 }
 
-func (s *SSO[T]) SetErrorHandler(errHandler ErrorHandler) *SSO[T] {
+func (s *Auth[T]) SetErrorHandler(errHandler ErrorHandler) *Auth[T] {
 	s.errorHandler = errHandler
 	return s
 }
 
-func (s *SSO[T]) SetTransformer(transformer Transformer[T]) *SSO[T] {
+func (s *Auth[T]) SetTransformer(transformer Transformer[T]) *Auth[T] {
 	s.transformer = transformer
 	return s
 }
 
-func (s *SSO[T]) SetTransformerFunc(transfermerFunc func(ctx stdContext.Context, tok *VerifiedToken) (T, error)) *SSO[T] {
+func (s *Auth[T]) SetTransformerFunc(transfermerFunc func(ctx stdContext.Context, tok *VerifiedToken) (T, error)) *Auth[T] {
 	s.transformer = TransformerFunc[T](transfermerFunc)
 	return s
 }
 
-func (s *SSO[T]) Signin(ctx stdContext.Context, username, password string) ([]byte, []byte, error) {
+func (s *Auth[T]) Signin(ctx stdContext.Context, username, password string) ([]byte, []byte, error) {
 	var t T
 
 	// get "t" from a valid provider.
@@ -163,7 +159,7 @@ func (s *SSO[T]) Signin(ctx stdContext.Context, username, password string) ([]by
 			v, err := p.Signin(ctx, username, password)
 			if err != nil {
 				if i == n-1 { // last provider errored.
-					return nil, nil, fmt.Errorf("sso: signin: %w", err)
+					return nil, nil, fmt.Errorf("auth: signin: %w", err)
 				}
 				// keep searching.
 				continue
@@ -174,19 +170,19 @@ func (s *SSO[T]) Signin(ctx stdContext.Context, username, password string) ([]by
 			break
 		}
 	} else {
-		return nil, nil, fmt.Errorf("sso: signin: no provider")
+		return nil, nil, fmt.Errorf("auth: signin: no provider")
 	}
 
 	// sign the tokens.
 	accessToken, refreshToken, err := s.sign(t)
 	if err != nil {
-		return nil, nil, fmt.Errorf("sso: signin: %w", err)
+		return nil, nil, fmt.Errorf("auth: signin: %w", err)
 	}
 
 	return accessToken, refreshToken, nil
 }
 
-func (s *SSO[T]) sign(t T) ([]byte, []byte, error) {
+func (s *Auth[T]) sign(t T) ([]byte, []byte, error) {
 	// sign the tokens.
 	var (
 		accessStdClaims  StandardClaims
@@ -239,7 +235,7 @@ func (s *SSO[T]) sign(t T) ([]byte, []byte, error) {
 	return accessToken, refreshToken, nil
 }
 
-func (s *SSO[T]) SigninHandler(ctx *context.Context) {
+func (s *Auth[T]) SigninHandler(ctx *context.Context) {
 	// No, let the developer decide it based on a middleware, e.g. iris.LimitRequestBodySize.
 	// ctx.SetMaxRequestBodySize(s.maxRequestBodySize)
 
@@ -283,16 +279,16 @@ func (s *SSO[T]) SigninHandler(ctx *context.Context) {
 	ctx.JSON(resp)
 }
 
-func (s *SSO[T]) Verify(ctx stdContext.Context, token []byte) (T, StandardClaims, error) {
+func (s *Auth[T]) Verify(ctx stdContext.Context, token []byte) (T, StandardClaims, error) {
 	t, claims, err := s.verify(ctx, token)
 	if err != nil {
-		return t, StandardClaims{}, fmt.Errorf("sso: verify: %w", err)
+		return t, StandardClaims{}, fmt.Errorf("auth: verify: %w", err)
 	}
 
 	return t, claims, nil
 }
 
-func (s *SSO[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaims, error) {
+func (s *Auth[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaims, error) {
 	var t T
 
 	if len(token) == 0 { // should never happen at this state.
@@ -339,23 +335,7 @@ func (s *SSO[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaims
 	return t, standardClaims, nil
 }
 
-/* Good idea but not practical.
-func Transform[T User, V User](transformer Transformer[T, V]) context.Handler {
-	return func(ctx *context.Context) {
-		existingUserValue := GetUser[T](ctx)
-		newUserValue, err := transformer.Transform(ctx, existingUserValue)
-		if err != nil {
-			ctx.SetErr(err)
-			return
-		}
-
-		ctx.Values().Set(userContextKey, newUserValue)
-		ctx.Next()
-	}
-}
-*/
-
-func (s *SSO[T]) VerifyHandler(verifyFuncs ...TVerify[T]) context.Handler {
+func (s *Auth[T]) VerifyHandler(verifyFuncs ...TVerify[T]) context.Handler {
 	return func(ctx *context.Context) {
 		accessToken := s.extractAccessToken(ctx)
 
@@ -376,7 +356,7 @@ func (s *SSO[T]) VerifyHandler(verifyFuncs ...TVerify[T]) context.Handler {
 			}
 
 			if err = verify(t); err != nil {
-				err = fmt.Errorf("sso: verify: %v", err)
+				err = fmt.Errorf("auth: verify: %v", err)
 				s.errorHandler.Unauthenticated(ctx, err)
 				return
 			}
@@ -394,9 +374,9 @@ func (s *SSO[T]) VerifyHandler(verifyFuncs ...TVerify[T]) context.Handler {
 	}
 }
 
-func (s *SSO[T]) extractAccessToken(ctx *context.Context) string {
+func (s *Auth[T]) extractAccessToken(ctx *context.Context) string {
 	// first try from authorization: bearer header.
-	accessToken := extractTokenFromHeader(ctx)
+	accessToken := s.extractTokenFromHeader(ctx)
 
 	// then if no header, try try extract from cookie.
 	if accessToken == "" {
@@ -408,27 +388,27 @@ func (s *SSO[T]) extractAccessToken(ctx *context.Context) string {
 	return accessToken
 }
 
-func (s *SSO[T]) Refresh(ctx stdContext.Context, refreshToken []byte) ([]byte, []byte, error) {
+func (s *Auth[T]) Refresh(ctx stdContext.Context, refreshToken []byte) ([]byte, []byte, error) {
 	if !s.refreshEnabled {
-		return nil, nil, fmt.Errorf("sso: refresh: disabled")
+		return nil, nil, fmt.Errorf("auth: refresh: disabled")
 	}
 
 	t, _, err := s.verify(ctx, refreshToken)
 	if err != nil {
-		return nil, nil, fmt.Errorf("sso: refresh: %w", err)
+		return nil, nil, fmt.Errorf("auth: refresh: %w", err)
 	}
 
 	// refresh the tokens, both refresh & access tokens will be renew to prevent
 	// malicious 😈 users that may hold a refresh token.
 	accessTok, refreshTok, err := s.sign(t)
 	if err != nil {
-		return nil, nil, fmt.Errorf("sso: refresh: %w", err)
+		return nil, nil, fmt.Errorf("auth: refresh: %w", err)
 	}
 
 	return accessTok, refreshTok, nil
 }
 
-func (s *SSO[T]) RefreshHandler(ctx *context.Context) {
+func (s *Auth[T]) RefreshHandler(ctx *context.Context) {
 	var req RefreshRequest
 	err := ctx.ReadJSON(&req)
 	if err != nil {
@@ -455,10 +435,10 @@ func (s *SSO[T]) RefreshHandler(ctx *context.Context) {
 	ctx.JSON(resp)
 }
 
-func (s *SSO[T]) Signout(ctx stdContext.Context, token []byte, all bool) error {
+func (s *Auth[T]) Signout(ctx stdContext.Context, token []byte, all bool) error {
 	t, standardClaims, err := s.verify(ctx, token)
 	if err != nil {
-		return fmt.Errorf("sso: signout: verify: %w", err)
+		return fmt.Errorf("auth: signout: verify: %w", err)
 	}
 
 	for i, n := 0, len(s.providers)-1; i <= n; i++ {
@@ -485,15 +465,15 @@ func (s *SSO[T]) Signout(ctx stdContext.Context, token []byte, all bool) error {
 	return nil
 }
 
-func (s *SSO[T]) SignoutHandler(ctx *context.Context) {
+func (s *Auth[T]) SignoutHandler(ctx *context.Context) {
 	s.signoutHandler(ctx, false)
 }
 
-func (s *SSO[T]) SignoutAllHandler(ctx *context.Context) {
+func (s *Auth[T]) SignoutAllHandler(ctx *context.Context) {
 	s.signoutHandler(ctx, true)
 }
 
-func (s *SSO[T]) signoutHandler(ctx *context.Context, all bool) {
+func (s *Auth[T]) signoutHandler(ctx *context.Context, all bool) {
 	accessToken := s.extractAccessToken(ctx)
 	if accessToken == "" {
 		s.errorHandler.Unauthenticated(ctx, jwt.ErrMissing)
@@ -515,13 +495,8 @@ func (s *SSO[T]) signoutHandler(ctx *context.Context, all bool) {
 	ctx.Values().Remove(standardClaimsContextKey)
 }
 
-var headerKeys = [...]string{
-	"Authorization",
-	"X-Authorization",
-}
-
-func extractTokenFromHeader(ctx *context.Context) string {
-	for _, headerKey := range headerKeys {
+func (s *Auth[T]) extractTokenFromHeader(ctx *context.Context) string {
+	for _, headerKey := range s.config.Headers {
 		headerValue := ctx.GetHeader(headerKey)
 		if headerValue == "" {
 			continue
@@ -539,7 +514,7 @@ func extractTokenFromHeader(ctx *context.Context) string {
 	return ""
 }
 
-func (s *SSO[T]) trySetCookie(ctx *context.Context, accessToken string) {
+func (s *Auth[T]) trySetCookie(ctx *context.Context, accessToken string) {
 	if cookieName := s.config.Cookie.Name; cookieName != "" {
 		maxAge := s.keys[KIDAccess].MaxAge
 		if maxAge == 0 {
@@ -551,6 +526,7 @@ func (s *SSO[T]) trySetCookie(ctx *context.Context, accessToken string) {
 			Name:     cookieName,
 			Value:    url.QueryEscape(accessToken),
 			HttpOnly: true,
+			Secure:   ctx.IsSSL(),
 			Domain:   ctx.Domain(),
 			SameSite: http.SameSiteLaxMode,
 			Expires:  time.Now().Add(maxAge),
@@ -561,7 +537,7 @@ func (s *SSO[T]) trySetCookie(ctx *context.Context, accessToken string) {
 	}
 }
 
-func (s *SSO[T]) tryRemoveCookie(ctx *context.Context) {
+func (s *Auth[T]) tryRemoveCookie(ctx *context.Context) {
 	if cookieName := s.config.Cookie.Name; cookieName != "" {
 		ctx.RemoveCookie(cookieName)
 	}

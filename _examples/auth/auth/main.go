@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/sso"
+	"github.com/kataras/iris/v12/auth"
 )
 
-func allowRole(role AccessRole) sso.TVerify[User] {
+func allowRole(role AccessRole) auth.TVerify[User] {
 	return func(u User) error {
 		if !u.Role.Allow(role) {
 			return fmt.Errorf("invalid role")
@@ -19,7 +19,7 @@ func allowRole(role AccessRole) sso.TVerify[User] {
 	}
 }
 
-const configFilename = "./sso.yml"
+const configFilename = "./auth.yml"
 
 func main() {
 	app := iris.New()
@@ -28,23 +28,23 @@ func main() {
 		Layout("main"))
 
 	/*
-		// Easiest 1-liner way, load from configuration and initialize a new sso instance:
-		s := sso.MustLoad[User]("./sso.yml")
+		// Easiest 1-liner way, load from configuration and initialize a new auth instance:
+		s := auth.MustLoad[User]("./auth.yml")
 		// Bind a configuration from file:
-		var c sso.Configuration
-		c.BindFile("./sso.yml")
-		s, err := sso.New[User](c)
+		var c auth.Configuration
+		c.BindFile("./auth.yml")
+		s, err := auth.New[User](c)
 		// OR create new programmatically configuration:
-		config := sso.Configuration{
+		config := auth.Configuration{
 			...fields
 		}
-		s, err := sso.New[User](config)
+		s, err := auth.New[User](config)
 		// OR generate a new configuration:
-		config := sso.MustGenerateConfiguration()
-		s, err := sso.New[User](config)
+		config := auth.MustGenerateConfiguration()
+		s, err := auth.New[User](config)
 		// OR generate a new config and save it if cannot open the config file.
 		if _, err := os.Stat(configFilename); err != nil {
-		    generatedConfig := sso.MustGenerateConfiguration()
+		    generatedConfig := auth.MustGenerateConfiguration()
 		    configContents, err := generatedConfig.ToYAML()
 		    if err != nil {
 		        panic(err)
@@ -58,13 +58,13 @@ func main() {
 	*/
 
 	// 1. Load configuration from a file.
-	ssoConfig, err := sso.LoadConfiguration(configFilename)
+	authConfig, err := auth.LoadConfiguration(configFilename)
 	if err != nil {
 		panic(err)
 	}
 
-	// 2. Initialize a new sso instance for "User" claims (generics: go1.18 +).
-	s, err := sso.New[User](ssoConfig)
+	// 2. Initialize a new auth instance for "User" claims (generics: go1.18 +).
+	s, err := auth.New[User](authConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +72,7 @@ func main() {
 	// 3. Add a custom provider, in our case is just a memory-based one.
 	s.AddProvider(NewProvider())
 	// 3.1. Optionally set a custom error handler.
-	// s.SetErrorHandler(new(sso.DefaultErrorHandler))
+	// s.SetErrorHandler(new(auth.DefaultErrorHandler))
 
 	app.Get("/signin", renderSigninForm)
 	// 4. generate token pairs.
@@ -102,12 +102,12 @@ func main() {
 			Region:    "us",
 			Tunnels: []tunnel.Tunnel{
 				{
-					Name:     "Iris SSO (Test)",
+					Name:     "Iris Auth (Test)",
 					Addr:     ":8080",
 					Hostname: "YOUR_DOMAIN",
 				},
 				{
-					Name:     "Iris SSO (Test Subdomain)",
+					Name:     "Iris Auth (Test Subdomain)",
 					Addr:     ":8080",
 					Hostname: "owner.YOUR_DOMAIN",
 				},
@@ -120,14 +120,14 @@ func renderSigninForm(ctx iris.Context) {
 	ctx.View("signin", iris.Map{"Title": "Signin Page"})
 }
 
-func renderMemberPage(s *sso.SSO[User]) iris.Handler {
+func renderMemberPage(s *auth.Auth[User]) iris.Handler {
 	return func(ctx iris.Context) {
 		user := s.GetUser(ctx)
 		ctx.Writef("Hello member: %s\n", user.Email)
 	}
 }
 
-func renderOwnerPage(s *sso.SSO[User]) iris.Handler {
+func renderOwnerPage(s *auth.Auth[User]) iris.Handler {
 	return func(ctx iris.Context) {
 		user := s.GetUser(ctx)
 		ctx.Writef("Hello owner: %s\n", user.Email)
