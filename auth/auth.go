@@ -526,7 +526,7 @@ func (s *Auth[T]) trySetCookie(ctx *context.Context, accessToken string) {
 			Name:     cookieName,
 			Value:    url.QueryEscape(accessToken),
 			HttpOnly: true,
-			Secure:   ctx.IsSSL(),
+			Secure:   s.config.Cookie.Secure || ctx.IsSSL(),
 			Domain:   ctx.Domain(),
 			SameSite: http.SameSiteLaxMode,
 			Expires:  time.Now().Add(maxAge),

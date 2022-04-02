@@ -3,6 +3,7 @@ Headers: # required.
   - "X-Authorization"
 Cookie: # optional.
   Name: "iris_auth_cookie"
+  Secure: false
   Hash: "D*G-KaPdSgUkXp2s5v8y/B?E(H+MbQeThWmYq3t6w9z$C&F)J@NcRfUjXn2r4u7x" # length of 64 characters (512-bit).
   Block: "VkYp3s6v9y$B&E)H@McQfTjWmZq4t7w!" # length of 32 characters (256-bit).
 Keys:

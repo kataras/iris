@@ -45,6 +45,12 @@ type (
 	CookieConfiguration struct {
 		// Name defines the cookie's name.
 		Name string `json:"cookie" yaml:"Name" toml:"Name" ini:"name"`
+		// Secure if true then "; Secure" is appended to the Set-Cookie header.
+		// By setting the secure to true, the web browser will prevent the
+		// transmission of a cookie over an unencrypted channel.
+		//
+		// Defaults to false but it's true when the request is under iris.Context.IsSSL().
+		Secure bool `json:"secure" yaml:"Secure" toml:"Secure" ini:"secure"`
 		// Hash is optional, it is used to authenticate cookie value using HMAC.
 		// It is recommended to use a key with 32 or 64 bytes.
 		Hash string `json:"hash" yaml:"Hash" toml:"Hash" ini:"hash"`
@@ -104,9 +110,10 @@ func (c *Configuration) BindRandom() error {
 			"X-Authorization",
 		},
 		Cookie: CookieConfiguration{
-			Name:  "iris_auth_cookie",
-			Hash:  string(securecookie.GenerateRandomKey(64)),
-			Block: string(securecookie.GenerateRandomKey(32)),
+			Name:   "iris_auth_cookie",
+			Secure: false,
+			Hash:   string(securecookie.GenerateRandomKey(64)),
+			Block:  string(securecookie.GenerateRandomKey(32)),
 		},
 		Keys: jwt.KeysConfiguration{
 			{
