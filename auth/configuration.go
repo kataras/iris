@@ -192,16 +192,8 @@ func MustGenerateConfiguration() (c Configuration) {
 	return
 }
 
-// LoadConfiguration reads a filename (fullpath)
-// and returns a Configuration binded to the contents of the given filename.
-// See Configuration.BindFile method too.
-func LoadConfiguration(filename string) (c Configuration, err error) {
-	err = c.BindFile(filename)
-	return
-}
-
 // MustLoadConfiguration same as LoadConfiguration package-level function
-// but it panics on errors.
+// but it panics on error.
 func MustLoadConfiguration(filename string) Configuration {
 	c, err := LoadConfiguration(filename)
 	if err != nil {
@@ -209,4 +201,12 @@ func MustLoadConfiguration(filename string) Configuration {
 	}
 
 	return c
+}
+
+// LoadConfiguration reads a filename (fullpath)
+// and returns a Configuration binded to the contents of the given filename.
+// See Configuration.BindFile method too.
+func LoadConfiguration(filename string) (c Configuration, err error) {
+	err = c.BindFile(filename)
+	return
 }

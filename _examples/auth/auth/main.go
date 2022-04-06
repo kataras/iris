@@ -9,7 +9,7 @@ import (
 	"github.com/kataras/iris/v12/auth"
 )
 
-func allowRole(role AccessRole) auth.TVerify[User] {
+func allowRole(role AccessRole) auth.VerifyUserFunc[User] {
 	return func(u User) error {
 		if !u.Role.Allow(role) {
 			return fmt.Errorf("invalid role")

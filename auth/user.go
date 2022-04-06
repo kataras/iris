@@ -13,7 +13,9 @@ type (
 	StandardClaims = jwt.Claims
 	// User is an alias of an empty interface, it's here to declare the typeof T,
 	// which can be any custom struct type.
-	User = interface{}
+	//
+	// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/user.go.
+	User = any
 )
 
 const accessTokenContextKey = "iris.auth.context.access_token"

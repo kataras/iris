@@ -18,51 +18,87 @@ import (
 )
 
 type (
+	// Auth holds the necessary functionality to authorize and optionally authenticating
+	// users to access and perform actions against the resource server (Iris API).
+	// It completes a secure and fast JSON Web Token signer and verifier which,
+	// based on the custom application needs, can be further customized.
+	// Each Auth of T instance can sign and verify a single custom <T> instance,
+	// more Auth instances can share the same configuration to support multiple custom user types.
+	// Initialize a new Auth of T instance using the New or MustLoad package-level functions.
+	// Most important methods of the instance are:
+	// - AddProvider
+	// - SigninHandler
+	// - VerifyHandler
+	// - SignoutHandler
+	// - SignoutAllHandler
+	//
+	// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/main.go.
 	Auth[T User] struct {
+		// Holds the configuration passed through the New and MustLoad
+		// package-level functions. One or more Auth instance can share the
+		// same configuration's values.
 		config Configuration
-
-		keys         jwt.Keys
+		// Holds the result of the config.KeysConfiguration.
+		keys jwt.Keys
+		// This is an Iris cookie option used to encrypt and decrypt a cookie when
+		// the config.Cookie.Hash & Block are not empty.
 		securecookie context.SecureCookie
-
-		providers      []Provider[T] // at least one.
-		errorHandler   ErrorHandler
-		transformer    Transformer[T]
+		// Defaults to an empty list, which cannot sign any tokens.
+		// One or more custom providers should be registered through
+		// the AddProvider or WithProviderAndErrorHandler methods.
+		providers []Provider[T] // at least one.
+		// Always not nil, set to custom error handler on SetErrorHandler.
+		errorHandler ErrorHandler
+		// Not nil if a transformer is registered.
+		transformer Transformer[T]
+		// Not nil if a custom claims provider is registered.
 		claimsProvider ClaimsProvider
-		refreshEnabled bool // if KIDRefresh exists in keys.
+		// True if KIDRefresh on config.Keys.
+		refreshEnabled bool
 	}
 
-	TVerify[T User] func(t T) error
+	// VerifyUserFunc is passed on Verify and VerifyHandler method
+	// to, optionally, further validate a T user value.
+	VerifyUserFunc[T User] func(t T) error
 
+	// SigninRequest is the request body the server expects
+	// on SignHandler. The Password and Username or Email should be filled.
 	SigninRequest struct {
 		Username string `json:"username" form:"username,omitempty"` // username OR email, username has priority over email.
 		Email    string `json:"email" form:"email,omitempty"`       // email OR username.
 		Password string `json:"password" form:"password"`
 	}
 
+	// SigninResponse is the response body the server sends
+	// to the client on the SignHandler. It contains a pair of the access token
+	// and the refresh token if the refresh jwt token id exists in the configuration.
 	SigninResponse struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token,omitempty"`
 	}
 
+	// RefreshRequest is the request body the server expects
+	// on VerifyHandler to renew an access and refresh token pair.
 	RefreshRequest struct {
 		RefreshToken string `json:"refresh_token"`
 	}
 )
 
+// MustLoad binds a filename (fullpath) configuration yaml or json
+// and constructs a new Auth instance. It panics on error.
 func MustLoad[T User](filename string) *Auth[T] {
 	var config Configuration
 	if err := config.BindFile(filename); err != nil {
 		panic(err)
 	}
 
-	s, err := New[T](config)
-	if err != nil {
-		panic(err)
-	}
-
-	return s
+	return Must(New[T](config))
 }
 
+// Must is a helper that wraps a call to a function returning (*Auth[T], error)
+// and panics if the error is non-nil. It is intended for use in variable
+// initializations such as
+//	var s = auth.Must(auth.New[MyUser](config))
 func Must[T User](s *Auth[T], err error) *Auth[T] {
 	if err != nil {
 		panic(err)
@@ -71,6 +107,14 @@ func Must[T User](s *Auth[T], err error) *Auth[T] {
 	return s
 }
 
+// New initializes a new Auth instance typeof T and returns it.
+// The T generic can be any custom struct.
+// It accepts a Configuration value which can be constructed
+// manually or through a configuration file using the
+// MustGenerateConfiguration or MustLoadConfiguration
+// or LoadConfiguration or MustLoad package-level functions.
+//
+// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/main.go.
 func New[T User](config Configuration) (*Auth[T], error) {
 	keys, err := config.validate()
 	if err != nil {
@@ -121,6 +165,8 @@ func (s *Auth[T]) WithProviderAndErrorHandler(provider Provider[T], errHandler E
 	return s
 }
 
+// AddProvider registers one or more providers to this Auth of T instance and returns itself.
+// Look the Provider godoc for more.
 func (s *Auth[T]) AddProvider(providers ...Provider[T]) *Auth[T] {
 	// A provider can also implement both transformer and
 	// error handler if that's the design option of the end-developer.
@@ -146,21 +192,31 @@ func (s *Auth[T]) AddProvider(providers ...Provider[T]) *Auth[T] {
 	return s
 }
 
+// SetErrorHandler sets a custom error handler to this Auth of T instance and returns itself.
+// Look the Provider and ErrorHandler godoc for more.
 func (s *Auth[T]) SetErrorHandler(errHandler ErrorHandler) *Auth[T] {
 	s.errorHandler = errHandler
 	return s
 }
 
+// SetTransformer sets a custom transformer to this Auth of T instance and returns itself.
+// Look the Provider and Transformer godoc for more.
 func (s *Auth[T]) SetTransformer(transformer Transformer[T]) *Auth[T] {
 	s.transformer = transformer
 	return s
 }
 
+// SetTransformerFunc like SetTransformer method but accepts a function instead.
 func (s *Auth[T]) SetTransformerFunc(transfermerFunc func(ctx stdContext.Context, tok *VerifiedToken) (T, error)) *Auth[T] {
 	s.transformer = TransformerFunc[T](transfermerFunc)
 	return s
 }
 
+// Signin signs a token based on the provided username and password
+// and returns a pair of access and refresh tokens.
+//
+// Signin calls the Provider.Signin method to check if a user
+// is authenticated by the given username and password combination.
 func (s *Auth[T]) Signin(ctx stdContext.Context, username, password string) ([]byte, []byte, error) {
 	var t T
 
@@ -292,10 +348,20 @@ func (s *Auth[T]) SigninHandler(ctx *context.Context) {
 	ctx.JSON(resp)
 }
 
-func (s *Auth[T]) Verify(ctx stdContext.Context, token []byte) (T, StandardClaims, error) {
+func (s *Auth[T]) Verify(ctx stdContext.Context, token []byte, verifyFuncs ...VerifyUserFunc[T]) (T, StandardClaims, error) {
 	t, claims, err := s.verify(ctx, token)
 	if err != nil {
 		return t, StandardClaims{}, fmt.Errorf("auth: verify: %w", err)
+	}
+
+	for _, verify := range verifyFuncs {
+		if verify == nil {
+			continue
+		}
+
+		if err = verify(t); err != nil {
+			return t, StandardClaims{}, fmt.Errorf("auth: verify: %w", err)
+		}
 	}
 
 	return t, claims, nil
@@ -348,7 +414,7 @@ func (s *Auth[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaim
 	return t, standardClaims, nil
 }
 
-func (s *Auth[T]) VerifyHandler(verifyFuncs ...TVerify[T]) context.Handler {
+func (s *Auth[T]) VerifyHandler(verifyFuncs ...VerifyUserFunc[T]) context.Handler {
 	return func(ctx *context.Context) {
 		accessToken := s.extractAccessToken(ctx)
 
@@ -357,31 +423,18 @@ func (s *Auth[T]) VerifyHandler(verifyFuncs ...TVerify[T]) context.Handler {
 			return
 		}
 
-		t, claims, err := s.Verify(ctx, []byte(accessToken))
+		t, claims, err := s.Verify(ctx, []byte(accessToken), verifyFuncs...)
 		if err != nil {
 			s.errorHandler.Unauthenticated(ctx, err)
 			return
-		}
-
-		for _, verify := range verifyFuncs {
-			if verify == nil {
-				continue
-			}
-
-			if err = verify(t); err != nil {
-				err = fmt.Errorf("auth: verify: %v", err)
-				s.errorHandler.Unauthenticated(ctx, err)
-				return
-			}
 		}
 
 		ctx.SetUser(t)
 
 		// store the user to the request.
 		ctx.Values().Set(accessTokenContextKey, accessToken)
-
-		ctx.Values().Set(userContextKey, t)
 		ctx.Values().Set(standardClaimsContextKey, claims)
+		ctx.Values().Set(userContextKey, t)
 
 		ctx.Next()
 	}
@@ -504,8 +557,8 @@ func (s *Auth[T]) signoutHandler(ctx *context.Context, all bool) {
 	ctx.SetUser(nil)
 
 	ctx.Values().Remove(accessTokenContextKey)
-	ctx.Values().Remove(userContextKey)
 	ctx.Values().Remove(standardClaimsContextKey)
+	ctx.Values().Remove(userContextKey)
 }
 
 func (s *Auth[T]) extractTokenFromHeader(ctx *context.Context) string {
@@ -535,9 +588,9 @@ func (s *Auth[T]) trySetCookie(ctx *context.Context, accessToken string) {
 		}
 
 		cookie := &http.Cookie{
-			Path:     "/",
 			Name:     cookieName,
 			Value:    url.QueryEscape(accessToken),
+			Path:     "/",
 			HttpOnly: true,
 			Secure:   s.config.Cookie.Secure || ctx.IsSSL(),
 			Domain:   ctx.Domain(),
@@ -546,7 +599,7 @@ func (s *Auth[T]) trySetCookie(ctx *context.Context, accessToken string) {
 			MaxAge:   int(maxAge.Seconds()),
 		}
 
-		ctx.SetCookie(cookie, context.CookieEncoding(s.securecookie))
+		ctx.SetCookie(cookie, context.CookieEncoding(s.securecookie), context.CookieAllowReclaim())
 	}
 }
 

@@ -3865,9 +3865,10 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize boo
 		err    error
 	)
 
-	if !shouldOptimize && options.Indent == "" {
-		options.Indent = "  "
-	}
+	// Let's keep it as it is.
+	// if !shouldOptimize && options.Indent == "" {
+	// 	options.Indent = "  "
+	// }
 
 	if indent := options.Indent; indent != "" {
 		if shouldOptimize {

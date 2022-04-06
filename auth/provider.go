@@ -21,12 +21,17 @@ type VerifiedToken = jwt.VerifiedToken
 // A provider can optionally complete the Transformer, ClaimsProvider and
 // ErrorHandler all in once when necessary.
 // Set a provider using the AddProvider method of Auth type.
+//
+// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/user_provider.go.
 type Provider[T User] interface {
 	// Signin accepts a username (or email) and a password and should
 	// return a valid T value or an error describing
 	// the user authentication or verification reason of failure.
 	//
-	// It's called on Auth.SigninHandler
+	// The first input argument standard context can be
+	// casted to iris.Context if executed through Auth.SigninHandler.
+	//
+	// It's called on Auth.SigninHandler.
 	Signin(ctx stdContext.Context, username, password string) (T, error)
 
 	// ValidateToken accepts the standard JWT claims and the T value obtained
@@ -36,6 +41,9 @@ type Provider[T User] interface {
 	// the standard claim's (e.g. origin jwt token id).
 	// It can be an empty method too which returns a nil error.
 	//
+	// The first input argument standard context can be
+	// casted to iris.Context if executed through Auth.VerifyHandler.
+	//
 	// It's caleld on Auth.VerifyHandler.
 	ValidateToken(ctx stdContext.Context, standardClaims StandardClaims, t T) error
 
@@ -44,11 +52,17 @@ type Provider[T User] interface {
 	// on a persistence storage and server can decide which token is valid or invalid.
 	// It can be an empty method too which returns a nil error.
 	//
+	// The first input argument standard context can be
+	// casted to iris.Context if executed through Auth.SignoutHandler.
+	//
 	// It's called on Auth.SignoutHandler.
 	InvalidateToken(ctx stdContext.Context, standardClaims StandardClaims, t T) error
 	// InvalidateTokens is like InvalidateToken but it should invalidate
 	// all tokens generated for a specific T value.
 	// It can be an empty method too which returns a nil error.
+	//
+	// The first input argument standard context can be
+	// casted to iris.Context if executed through Auth.SignoutAllHandler.
 	//
 	// It's called on Auth.SignoutAllHandler.
 	InvalidateTokens(ctx stdContext.Context, t T) error
@@ -70,6 +84,9 @@ type ClaimsProvider interface {
 // A transformer is called on Auth.VerifyHandler before Provider.ValidateToken and it can
 // be used to modify the T value based on the token's contents. It is mostly used
 // to convert the json claims to T value manually, when they differ.
+//
+// The first input argument standard context can be
+// casted to iris.Context if executed through Auth.VerifyHandler.
 type Transformer[T User] interface {
 	Transform(ctx stdContext.Context, tok *VerifiedToken) (T, error)
 }
