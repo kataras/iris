@@ -304,6 +304,9 @@ func (s *Auth[T]) sign(t T) ([]byte, []byte, error) {
 	return accessToken, refreshToken, nil
 }
 
+// SignHandler generates and sends a pair of access and refresh token to the client
+// as JSON body of `SigninResponse` and cookie (if cookie setting was provided).
+// See `Signin` method for more.
 func (s *Auth[T]) SigninHandler(ctx *context.Context) {
 	// No, let the developer decide it based on a middleware, e.g. iris.LimitRequestBodySize.
 	// ctx.SetMaxRequestBodySize(s.maxRequestBodySize)
@@ -348,6 +351,8 @@ func (s *Auth[T]) SigninHandler(ctx *context.Context) {
 	ctx.JSON(resp)
 }
 
+// Verify accepts a token and verifies it.
+// It returns the token's custom and standard JWT claims.
 func (s *Auth[T]) Verify(ctx stdContext.Context, token []byte, verifyFuncs ...VerifyUserFunc[T]) (T, StandardClaims, error) {
 	t, claims, err := s.verify(ctx, token)
 	if err != nil {
@@ -414,6 +419,12 @@ func (s *Auth[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaim
 	return t, standardClaims, nil
 }
 
+// VerifyHandler verifies and sets the necessary information about the user(claims) and
+// the verified token to the Iris Context and calls the Context's Next method.
+// This information is available through auth.GetAccessToken, auth.GetStandardClaims and
+// auth.GetUser[T] package-level functions.
+//
+// See `Verify` method for more.
 func (s *Auth[T]) VerifyHandler(verifyFuncs ...VerifyUserFunc[T]) context.Handler {
 	return func(ctx *context.Context) {
 		accessToken := s.extractAccessToken(ctx)
@@ -454,6 +465,8 @@ func (s *Auth[T]) extractAccessToken(ctx *context.Context) string {
 	return accessToken
 }
 
+// Refresh accepts a previously generated refresh token (from SigninHandler) and
+// returns a new access and refresh token pair.
 func (s *Auth[T]) Refresh(ctx stdContext.Context, refreshToken []byte) ([]byte, []byte, error) {
 	if !s.refreshEnabled {
 		return nil, nil, fmt.Errorf("auth: refresh: disabled")
@@ -474,6 +487,10 @@ func (s *Auth[T]) Refresh(ctx stdContext.Context, refreshToken []byte) ([]byte, 
 	return accessTok, refreshTok, nil
 }
 
+// RefreshHandler reads the request body which should include data for `RefreshRequest` structure
+// and sends a new access and refresh token pair,
+// also sets the cookie to the new encrypted access token value.
+// See `Refresh` method for more.
 func (s *Auth[T]) RefreshHandler(ctx *context.Context) {
 	var req RefreshRequest
 	err := ctx.ReadJSON(&req)
@@ -501,6 +518,10 @@ func (s *Auth[T]) RefreshHandler(ctx *context.Context) {
 	ctx.JSON(resp)
 }
 
+// Signout accepts the access token and a boolean which reports whether
+// the signout should be applied to all tokens generated for a specific user (logout from all devices)
+// or just the provided token's one.
+// It calls the Provider's InvalidateToken(all=false) or InvalidateTokens (all=true).
 func (s *Auth[T]) Signout(ctx stdContext.Context, token []byte, all bool) error {
 	t, standardClaims, err := s.verify(ctx, token)
 	if err != nil {
@@ -531,10 +552,17 @@ func (s *Auth[T]) Signout(ctx stdContext.Context, token []byte, all bool) error 
 	return nil
 }
 
+// SignoutHandler verifies the request's access token and invalidates it, calling
+// the Provider's InvalidateToken method.
+// See `Signout` method too.
 func (s *Auth[T]) SignoutHandler(ctx *context.Context) {
 	s.signoutHandler(ctx, false)
 }
 
+// SignoutAllHandler verifies the request's access token and
+// should invalidate all the tokens generated previously calling
+// the Provider's InvalidateTokens method.
+// See `Signout` method too.
 func (s *Auth[T]) SignoutAllHandler(ctx *context.Context) {
 	s.signoutHandler(ctx, true)
 }
