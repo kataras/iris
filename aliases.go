@@ -16,8 +16,10 @@ import (
 
 var (
 	// BuildRevision holds the vcs commit id information.
+	// Available at go version 1.18+
 	BuildRevision = context.BuildRevision
 	// BuildTime holds the vcs commit time information.
+	// Available at go version 1.18+
 	BuildTime = context.BuildTime
 )
 

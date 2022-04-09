@@ -19,7 +19,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -48,28 +47,12 @@ import (
 
 var (
 	// BuildRevision holds the vcs commit id information.
+	// Available at go version 1.18+
 	BuildRevision string
 	// BuildTime holds the vcs commit time information.
+	// Available at go version 1.18+
 	BuildTime string
 )
-
-func init() {
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, setting := range info.Settings {
-			if BuildRevision != "" && BuildTime != "" {
-				break
-			}
-
-			if setting.Key == "vcs.revision" {
-				BuildRevision = setting.Value
-			}
-
-			if setting.Key == "vcs.time" {
-				BuildTime = setting.Key
-			}
-		}
-	}
-}
 
 type (
 	// BodyDecoder is an interface which any struct can implement in order to customize the decode action
