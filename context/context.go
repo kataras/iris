@@ -3793,10 +3793,18 @@ type JSON struct {
 	ErrorHandler ErrorHandler
 }
 
-// ErrorHandler describes a context error handler. As for today this is only used
-// to globally or per-party or per-route handle JSON writes error.
-type ErrorHandler interface {
-	HandleContextError(ctx *Context, err error)
+type (
+	// ErrorHandler describes a context error handler. As for today this is only used
+	// to globally or per-party or per-route handle JSON writes error.
+	ErrorHandler interface {
+		HandleContextError(ctx *Context, err error)
+	}
+	// ErrorHandlerFunc a function shortcut for ErrorHandler interface.
+	ErrorHandlerFunc func(ctx *Context, err error)
+)
+
+func (h ErrorHandlerFunc) HandleContextError(ctx *Context, err error) {
+	h(ctx, err)
 }
 
 // IsDefault reports whether this JSON options structure holds the default values.
