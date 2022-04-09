@@ -27,15 +27,6 @@ type Options struct {
 	TimeLocation *time.Location
 }
 
-type modRevision struct {
-	options Options
-
-	buildTime     string
-	buildRevision string
-
-	contents []byte
-}
-
 // New returns an Iris Handler which renders
 // the server name (env), build information (if available)
 // and an OK message. The handler displays simple debug information such as build commit id and time.
@@ -50,25 +41,32 @@ type modRevision struct {
 //   TimeLocation: time.FixedZone("Greece/Athens", 10800),
 //  }))
 func New(opts Options) context.Handler {
-	bTime, bRevision := context.BuildTime, context.BuildRevision
+	buildTime, buildRevision := context.BuildTime, context.BuildRevision
 	if opts.UnixTime {
-		if t, err := time.Parse(time.RFC3339, bTime); err == nil {
-			bTime = fmt.Sprintf("%d", t.Unix())
+		if t, err := time.Parse(time.RFC3339, buildTime); err == nil {
+			buildTime = fmt.Sprintf("%d", t.Unix())
 		}
 	} else if opts.TimeLocation != nil {
-		if t, err := time.Parse(time.RFC3339, bTime); err == nil {
-			bTime = t.In(opts.TimeLocation).String()
+		if t, err := time.Parse(time.RFC3339, buildTime); err == nil {
+			buildTime = t.In(opts.TimeLocation).String()
 		}
 	}
 
-	m := &modRevision{
-		options: opts,
-
-		buildTime:     bTime,
-		buildRevision: bRevision,
+	var buildInfo string
+	if buildInfo = opts.ServerName; buildInfo != "" {
+		if env := opts.Env; env != "" {
+			buildInfo += fmt.Sprintf(" (%s)", env)
+		}
 	}
 
-	contents := []byte(m.String())
+	if buildRevision != "" && buildTime != "" {
+		buildTitle := ">>>> build"
+		tab := strings.Repeat(" ", len(buildTitle))
+		buildInfo += fmt.Sprintf("\n\n%s\n%[2]srevision        %[3]s\n%[2]sbuildtime       %[4]s\n%[2]sdeveloper       %[5]s",
+			buildTitle, tab, buildRevision, buildTime, opts.Developer)
+	}
+
+	contents := []byte(buildInfo)
 	if len(contents) > 0 {
 		contents = append(contents, []byte("\n\nOK")...)
 	} else {
@@ -78,25 +76,4 @@ func New(opts Options) context.Handler {
 	return func(ctx *context.Context) {
 		ctx.Write(contents)
 	}
-}
-
-// String returns the server name and its running environment or an empty string
-// of the given server name is empty.
-func (m *modRevision) String() string {
-	if name := m.options.ServerName; name != "" {
-		if env := m.options.Env; env != "" {
-			name += fmt.Sprintf(" (%s)", env)
-		}
-
-		if m.buildRevision != "" && m.buildTime != "" {
-			buildTitle := ">>>> build" // if we ever want an emoji, there is one: \U0001f4bb
-			tab := strings.Repeat(" ", len(buildTitle))
-			name += fmt.Sprintf("\n\n%[1]s\n%srevision        %s\n[1]sbuildtime       %s\n[1]sdeveloper       %s", tab,
-				buildTitle, m.buildRevision, m.buildTime, m.options.Developer)
-		}
-
-		return name
-	}
-
-	return ""
 }

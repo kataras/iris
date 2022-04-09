@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/username/project/api"
 
+	"github.com/kataras/iris/v12"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,7 @@ var serverConfig api.Configuration
 // New returns a new CLI app.
 // Build with:
 // $ go build -ldflags="-s -w"
-func New(buildRevision, buildTime string) *cobra.Command {
+func New() *cobra.Command {
 	configFile := defaultConfigFilename
 
 	rootCmd := &cobra.Command{
@@ -35,8 +36,8 @@ func New(buildRevision, buildTime string) *cobra.Command {
 	}
 
 	helpTemplate := HelpTemplate{
-		BuildRevision:        buildRevision,
-		BuildTime:            buildTime,
+		BuildRevision:        iris.BuildRevision,
+		BuildTime:            iris.BuildTime,
 		ShowGoRuntimeVersion: true,
 	}
 	rootCmd.SetHelpTemplate(helpTemplate.String())

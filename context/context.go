@@ -46,10 +46,10 @@ import (
 )
 
 var (
-	// BuildRevision holds the vcs commit id information.
+	// BuildRevision holds the vcs commit id information of the program's build.
 	// Available at go version 1.18+
 	BuildRevision string
-	// BuildTime holds the vcs commit time information.
+	// BuildTime holds the vcs commit time information of the program's build.
 	// Available at go version 1.18+
 	BuildTime string
 )
