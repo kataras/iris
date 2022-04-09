@@ -14,6 +14,13 @@ import (
 	"github.com/kataras/iris/v12/view"
 )
 
+var (
+	// BuildRevision holds the vcs commit id information.
+	BuildRevision = context.BuildRevision
+	// BuildTime holds the vcs commit time information.
+	BuildTime = context.BuildTime
+)
+
 // SameSite attributes.
 const (
 	SameSiteDefaultMode = http.SameSiteDefaultMode

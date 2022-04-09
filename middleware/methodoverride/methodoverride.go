@@ -9,6 +9,10 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 )
 
+func init() {
+	context.SetHandlerName("iris/middleware/methodoverride.*", "iris.methodoverride")
+}
+
 type options struct {
 	getters                      []GetterFunc
 	methods                      []string

@@ -12,6 +12,7 @@ import (
 // for our server, including the Iris one.
 type Configuration struct {
 	ServerName string `yaml:"ServerName"`
+	Env        string `yaml:"Env"`
 	// The server's host, if empty, defaults to 0.0.0.0
 	Host string `yaml:"Host"`
 	// The server's port, e.g. 80
@@ -27,7 +28,8 @@ type Configuration struct {
 	// If not empty a request logger is registered,
 	// note that this will cost a lot in performance, use it only for debug.
 	RequestLog string `yaml:"RequestLog"`
-
+	// The database connection string.
+	ConnString string `yaml:"ConnString"`
 	// Iris specific configuration.
 	Iris iris.Configuration `yaml:"Iris"`
 }

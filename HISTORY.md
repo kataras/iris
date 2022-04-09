@@ -28,6 +28,10 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add new [x/pagination](x/pagination/pagination.go) sub-package which supports generics code (go 1.18+).
+- Add new [middleware/modrevision](middleware/modrevision) middleware (example at [_examples/project/api/router.go]_examples/project/api/router.go).
+- Add `iris.BuildRevision` and `iris.BuildTime` to embrace the new go's 1.18 debug build information.
+
 - Add `Context.SetJSONOptions` to customize on a higher level the JSON options on `Context.JSON` calls.
 - Add new [auth](auth) sub-package which helps on any user type auth using JWT (access & refresh tokens) and a cookie (optional).
 
