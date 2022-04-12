@@ -32,7 +32,7 @@ func main() {
 	app.HandleMany(strings.Join(iris.WebDAVMethods, " "), "/{p:path}", iris.FromStd(webdavHandler))
 
 	app.Listen(":8080",
-		iris.WithoutServerError(iris.ErrServerClosed),
+		iris.WithoutServerError(iris.ErrServerClosed, iris.ErrURLQuerySemicolon),
 		iris.WithoutPathCorrection,
 	)
 }

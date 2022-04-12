@@ -28,6 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `iris.AllowQuerySemicolons` and `iris.WithoutServerError(iris.ErrURLQuerySemicolon)` to handle golang.org/issue/25192 as reported at: https://github.com/kataras/iris/issues/1875. 
 - Add new `Application.SetContextErrorHandler` to globally customize the default behavior (status code 500 without body) on `JSON`, `JSONP`, `Protobuf`, `MsgPack`, `XML`, `YAML` and `Markdown` method call write errors instead of catching the error on each handler.
 - Add new [x/pagination](x/pagination/pagination.go) sub-package which supports generics code (go 1.18+).
 - Add new [middleware/modrevision](middleware/modrevision) middleware (example at [_examples/project/api/router.go]_examples/project/api/router.go).

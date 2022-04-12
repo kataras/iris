@@ -2,8 +2,10 @@ package iris
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/kataras/iris/v12/cache"
 	"github.com/kataras/iris/v12/context"
@@ -325,6 +327,35 @@ var (
 	Compression = func(ctx Context) {
 		ctx.CompressWriter(true)
 		ctx.CompressReader(true)
+		ctx.Next()
+	}
+
+	// AllowQuerySemicolons returns a middleware that serves requests by converting any
+	// unescaped semicolons(;) in the URL query to ampersands(&).
+	//
+	// This restores the pre-Go 1.17 behavior of splitting query parameters on both
+	// semicolons and ampersands.
+	// (See golang.org/issue/25192 and https://github.com/kataras/iris/issues/1875).
+	// Note that this behavior doesn't match that of many proxies,
+	// and the mismatch can lead to security issues.
+	//
+	// AllowQuerySemicolons should be invoked before any Context read query or
+	// form methods are called.
+	//
+	// To skip HTTP Server logging for this type of warning:
+	// app.Listen/Run(..., iris.WithoutServerError(iris.ErrURLQuerySemicolon)).
+	AllowQuerySemicolons = func(ctx Context) {
+		// clopy of net/http.AllowQuerySemicolons.
+		r := ctx.Request()
+		if s := r.URL.RawQuery; strings.Contains(s, ";") {
+			r2 := new(http.Request)
+			*r2 = *r
+			r2.URL = new(url.URL)
+			*r2.URL = *r.URL
+			r2.URL.RawQuery = strings.ReplaceAll(s, ";", "&")
+			ctx.ResetRequest(r2)
+		}
+
 		ctx.Next()
 	}
 
