@@ -59,6 +59,8 @@ type Application struct {
 	*router.Router
 	router.HTTPErrorHandler // if Router is Downgraded this is nil.
 	ContextPool             *context.Pool
+	// See SetContextErrorHandler, defaults to nil.
+	contextErrorHandler context.ErrorHandler
 
 	// config contains the configuration fields
 	// all fields defaults to something that is working, developers don't have to set it.
@@ -427,6 +429,28 @@ func (app *Application) View(writer io.Writer, filename string, layout string, b
 // is hijacked by a third-party middleware and the http handler return too fast.
 func (app *Application) GetContextPool() *context.Pool {
 	return app.ContextPool
+}
+
+// SetContextErrorHandler can optionally register a handler to handle
+// and fire a customized error body to the client on JSON write failures.
+//
+// ExampleCode:
+//
+//  type contextErrorHandler struct{}
+//  func (e *contextErrorHandler) HandleContextError(ctx iris.Context, err error) {
+// 	 errors.InvalidArgument.Err(ctx, err)
+//  }
+//  ...
+//	app.SetContextErrorHandler(new(contextErrorHandler))
+func (app *Application) SetContextErrorHandler(errHandler context.ErrorHandler) *Application {
+	app.contextErrorHandler = errHandler
+	return app
+}
+
+// GetContextErrorHandler returns the handler which handles errors
+// on JSON write failures.
+func (app *Application) GetContextErrorHandler() context.ErrorHandler {
+	return app.contextErrorHandler
 }
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions

@@ -28,11 +28,12 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add new `Application.SetContextErrorHandler` to globally customize the default behavior (status code 500 without body) on `JSON`, `JSONP`, `Protobuf`, `MsgPack`, `XML`, `YAML` and `Markdown` method call write errors instead of catching the error on each handler.
 - Add new [x/pagination](x/pagination/pagination.go) sub-package which supports generics code (go 1.18+).
 - Add new [middleware/modrevision](middleware/modrevision) middleware (example at [_examples/project/api/router.go]_examples/project/api/router.go).
 - Add `iris.BuildRevision` and `iris.BuildTime` to embrace the new go's 1.18 debug build information.
 
-- Add `Context.SetJSONOptions` to customize on a higher level the JSON options on `Context.JSON` calls.
+- ~Add `Context.SetJSONOptions` to customize on a higher level the JSON options on `Context.JSON` calls.~ update: remains as it's, per JSON call.
 - Add new [auth](auth) sub-package which helps on any user type auth using JWT (access & refresh tokens) and a cookie (optional).
 
 - Add `Party.EnsureStaticBindings` which, if called, the MVC binder panics if a struct's input binding depends on the HTTP request data instead of a static dependency. This is useful to make sure your API crafted through `Party.PartyConfigure` depends only on struct values you already defined at `Party.RegisterDependency` == will never use reflection at serve-time (maximum performance).
@@ -71,7 +72,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 - New `apps.OnApplicationRegistered` method which listens on new Iris applications hosted under the same binary. Use it on your `init` functions to configure Iris applications by any spot in your project's files.
 
-- `Context.JSON` respects any object implements the `easyjson.Marshaler` interface and renders the result using the [easyjon](https://github.com/mailru/easyjson)'s writer.
+- `Context.JSON` respects any object implements the `easyjson.Marshaler` interface and renders the result using the [easyjon](https://github.com/mailru/easyjson)'s writer. **Set** the `Configuration.EnableProtoJSON` and `Configuration.EnableEasyJSON` to true in order to enable this feature.
 
 - minor: `Context` structure implements the standard go Context interface now (includes: Deadline, Done, Err and Value methods). Handlers can now just pass the `ctx iris.Context` as a shortcut of `ctx.Request().Context()` when needed.
 

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/netutil"
 
 	"github.com/BurntSushi/toml"
+	"github.com/kataras/golog"
 	"github.com/kataras/sitemap"
 	"github.com/kataras/tunnel"
 	"gopkg.in/yaml.v3"
@@ -315,6 +315,20 @@ var WithLowercaseRouting = func(app *Application) {
 // See `Configuration`.
 var WithOptimizations = func(app *Application) {
 	app.config.EnableOptimizations = true
+}
+
+// WithProtoJSON enables the proto marshaler on Context.JSON method.
+//
+// See `Configuration` for more.
+var WithProtoJSON = func(app *Application) {
+	app.config.EnableProtoJSON = true
+}
+
+// WithEasyJSON enables the fast easy json marshaler on Context.JSON method.
+//
+// See `Configuration` for more.
+var WithEasyJSON = func(app *Application) {
+	app.config.EnableEasyJSON = true
 }
 
 // WithFireMethodNotAllowed enables the FireMethodNotAllowed setting.
@@ -740,6 +754,17 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	EnableOptimizations bool `ini:"enable_optimizations" json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
+	// EnableProtoJSON when this field is true
+	// enables the proto marshaler on given proto messages when calling the Context.JSON method.
+	//
+	// Defaults to false.
+	EnableProtoJSON bool `ini:"enable_proto_json" json:"enableProtoJSON,omitempty" yaml:"EnableProtoJSON" toml:"EnableProtoJSON"`
+	// EnableEasyJSON when this field is true
+	// enables the fast easy json marshaler on compatible struct values when calling the Context.JSON method.
+	//
+	// Defaults to false.
+	EnableEasyJSON bool `ini:"enable_easy_json" json:"enableEasyJSON,omitempty" yaml:"EnableEasyJSON" toml:"EnableEasyJSON"`
+
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If set to true then it
 	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
@@ -915,177 +940,187 @@ type Configuration struct {
 var _ context.ConfigurationReadOnly = (*Configuration)(nil)
 
 // GetVHost returns the non-exported vhost config field.
-func (c Configuration) GetVHost() string {
+func (c *Configuration) GetVHost() string {
 	return c.vhost
 }
 
 // GetLogLevel returns the LogLevel field.
-func (c Configuration) GetLogLevel() string {
+func (c *Configuration) GetLogLevel() string {
 	return c.vhost
 }
 
 // GetSocketSharding returns the SocketSharding field.
-func (c Configuration) GetSocketSharding() bool {
+func (c *Configuration) GetSocketSharding() bool {
 	return c.SocketSharding
 }
 
 // GetKeepAlive returns the KeepAlive field.
-func (c Configuration) GetKeepAlive() time.Duration {
+func (c *Configuration) GetKeepAlive() time.Duration {
 	return c.KeepAlive
 }
 
 // GetKeepAlive returns the Timeout field.
-func (c Configuration) GetTimeout() time.Duration {
+func (c *Configuration) GetTimeout() time.Duration {
 	return c.Timeout
 }
 
 // GetKeepAlive returns the TimeoutMessage field.
-func (c Configuration) GetTimeoutMessage() string {
+func (c *Configuration) GetTimeoutMessage() string {
 	return c.TimeoutMessage
 }
 
 // GetDisablePathCorrection returns the DisablePathCorrection field.
-func (c Configuration) GetDisablePathCorrection() bool {
+func (c *Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
 
 // GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.
-func (c Configuration) GetDisablePathCorrectionRedirection() bool {
+func (c *Configuration) GetDisablePathCorrectionRedirection() bool {
 	return c.DisablePathCorrectionRedirection
 }
 
 // GetEnablePathIntelligence returns the EnablePathIntelligence field.
-func (c Configuration) GetEnablePathIntelligence() bool {
+func (c *Configuration) GetEnablePathIntelligence() bool {
 	return c.EnablePathIntelligence
 }
 
 // GetEnablePathEscape returns the EnablePathEscape field.
-func (c Configuration) GetEnablePathEscape() bool {
+func (c *Configuration) GetEnablePathEscape() bool {
 	return c.EnablePathEscape
 }
 
 // GetForceLowercaseRouting returns the ForceLowercaseRouting field.
-func (c Configuration) GetForceLowercaseRouting() bool {
+func (c *Configuration) GetForceLowercaseRouting() bool {
 	return c.ForceLowercaseRouting
 }
 
 // GetFireMethodNotAllowed returns the FireMethodNotAllowed field.
-func (c Configuration) GetFireMethodNotAllowed() bool {
+func (c *Configuration) GetFireMethodNotAllowed() bool {
 	return c.FireMethodNotAllowed
 }
 
 // GetEnableOptimizations returns the EnableOptimizations.
-func (c Configuration) GetEnableOptimizations() bool {
+func (c *Configuration) GetEnableOptimizations() bool {
 	return c.EnableOptimizations
 }
 
+// GetEnableProtoJSON returns the EnableProtoJSON field.
+func (c *Configuration) GetEnableProtoJSON() bool {
+	return c.EnableProtoJSON
+}
+
+// GetEnableEasyJSON returns the EnableEasyJSON field.
+func (c *Configuration) GetEnableEasyJSON() bool {
+	return c.EnableEasyJSON
+}
+
 // GetDisableBodyConsumptionOnUnmarshal returns the DisableBodyConsumptionOnUnmarshal field.
-func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
+func (c *Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
 	return c.DisableBodyConsumptionOnUnmarshal
 }
 
 // GetFireEmptyFormError returns the DisableBodyConsumptionOnUnmarshal field.
-func (c Configuration) GetFireEmptyFormError() bool {
+func (c *Configuration) GetFireEmptyFormError() bool {
 	return c.FireEmptyFormError
 }
 
 // GetDisableAutoFireStatusCode returns the DisableAutoFireStatusCode field.
-func (c Configuration) GetDisableAutoFireStatusCode() bool {
+func (c *Configuration) GetDisableAutoFireStatusCode() bool {
 	return c.DisableAutoFireStatusCode
 }
 
 // GetResetOnFireErrorCode returns ResetOnFireErrorCode field.
-func (c Configuration) GetResetOnFireErrorCode() bool {
+func (c *Configuration) GetResetOnFireErrorCode() bool {
 	return c.ResetOnFireErrorCode
 }
 
 // GetTimeFormat returns the TimeFormat field.
-func (c Configuration) GetTimeFormat() string {
+func (c *Configuration) GetTimeFormat() string {
 	return c.TimeFormat
 }
 
 // GetCharset returns the Charset field.
-func (c Configuration) GetCharset() string {
+func (c *Configuration) GetCharset() string {
 	return c.Charset
 }
 
 // GetPostMaxMemory returns the PostMaxMemory field.
-func (c Configuration) GetPostMaxMemory() int64 {
+func (c *Configuration) GetPostMaxMemory() int64 {
 	return c.PostMaxMemory
 }
 
 // GetLocaleContextKey returns the LocaleContextKey field.
-func (c Configuration) GetLocaleContextKey() string {
+func (c *Configuration) GetLocaleContextKey() string {
 	return c.LocaleContextKey
 }
 
 // GetLanguageContextKey returns the LanguageContextKey field.
-func (c Configuration) GetLanguageContextKey() string {
+func (c *Configuration) GetLanguageContextKey() string {
 	return c.LanguageContextKey
 }
 
 // GetLanguageInputContextKey returns the LanguageInputContextKey field.
-func (c Configuration) GetLanguageInputContextKey() string {
+func (c *Configuration) GetLanguageInputContextKey() string {
 	return c.LanguageInputContextKey
 }
 
 // GetVersionContextKey returns the VersionContextKey field.
-func (c Configuration) GetVersionContextKey() string {
+func (c *Configuration) GetVersionContextKey() string {
 	return c.VersionContextKey
 }
 
 // GetVersionAliasesContextKey returns the VersionAliasesContextKey field.
-func (c Configuration) GetVersionAliasesContextKey() string {
+func (c *Configuration) GetVersionAliasesContextKey() string {
 	return c.VersionAliasesContextKey
 }
 
 // GetViewEngineContextKey returns the ViewEngineContextKey field.
-func (c Configuration) GetViewEngineContextKey() string {
+func (c *Configuration) GetViewEngineContextKey() string {
 	return c.ViewEngineContextKey
 }
 
 // GetViewLayoutContextKey returns the ViewLayoutContextKey field.
-func (c Configuration) GetViewLayoutContextKey() string {
+func (c *Configuration) GetViewLayoutContextKey() string {
 	return c.ViewLayoutContextKey
 }
 
 // GetViewDataContextKey returns the ViewDataContextKey field.
-func (c Configuration) GetViewDataContextKey() string {
+func (c *Configuration) GetViewDataContextKey() string {
 	return c.ViewDataContextKey
 }
 
 // GetFallbackViewContextKey returns the FallbackViewContextKey field.
-func (c Configuration) GetFallbackViewContextKey() string {
+func (c *Configuration) GetFallbackViewContextKey() string {
 	return c.FallbackViewContextKey
 }
 
 // GetRemoteAddrHeaders returns the RemoteAddrHeaders field.
-func (c Configuration) GetRemoteAddrHeaders() []string {
+func (c *Configuration) GetRemoteAddrHeaders() []string {
 	return c.RemoteAddrHeaders
 }
 
 // GetRemoteAddrHeadersForce returns RemoteAddrHeadersForce field.
-func (c Configuration) GetRemoteAddrHeadersForce() bool {
+func (c *Configuration) GetRemoteAddrHeadersForce() bool {
 	return c.RemoteAddrHeadersForce
 }
 
 // GetSSLProxyHeaders returns the SSLProxyHeaders field.
-func (c Configuration) GetSSLProxyHeaders() map[string]string {
+func (c *Configuration) GetSSLProxyHeaders() map[string]string {
 	return c.SSLProxyHeaders
 }
 
 // GetRemoteAddrPrivateSubnets returns the RemoteAddrPrivateSubnets field.
-func (c Configuration) GetRemoteAddrPrivateSubnets() []netutil.IPRange {
+func (c *Configuration) GetRemoteAddrPrivateSubnets() []netutil.IPRange {
 	return c.RemoteAddrPrivateSubnets
 }
 
 // GetHostProxyHeaders returns the HostProxyHeaders field.
-func (c Configuration) GetHostProxyHeaders() map[string]bool {
+func (c *Configuration) GetHostProxyHeaders() map[string]bool {
 	return c.HostProxyHeaders
 }
 
 // GetOther returns the Other field.
-func (c Configuration) GetOther() map[string]interface{} {
+func (c *Configuration) GetOther() map[string]interface{} {
 	return c.Other
 }
 
@@ -1164,6 +1199,14 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.EnableOptimizations; v {
 			main.EnableOptimizations = v
+		}
+
+		if v := c.EnableProtoJSON; v {
+			main.EnableProtoJSON = v
+		}
+
+		if v := c.EnableEasyJSON; v {
+			main.EnableEasyJSON = v
 		}
 
 		if v := c.FireMethodNotAllowed; v {
@@ -1342,6 +1385,8 @@ func DefaultConfiguration() Configuration {
 		SSLProxyHeaders:     make(map[string]string),
 		HostProxyHeaders:    make(map[string]bool),
 		EnableOptimizations: false,
+		EnableProtoJSON:     false,
+		EnableEasyJSON:      false,
 		Other:               make(map[string]interface{}),
 	}
 }
