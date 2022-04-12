@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/x/errors"
 )
 
 // User example struct for json and msgpack.
@@ -29,15 +30,16 @@ type ExampleYAML struct {
 
 func main() {
 	app := iris.New()
-
+	// Optionally, set a custom handler for JSON, JSONP, Protobuf, MsgPack, YAML, Markdown...
+	// write errors.
+	app.SetContextErrorHandler(new(errorHandler))
 	// Read
 	app.Post("/decode", func(ctx iris.Context) {
 		// Read https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go as well.
 		var user User
 		err := ctx.ReadJSON(&user)
 		if err != nil {
-			ctx.StatusCode(iris.StatusBadRequest)
-			ctx.Writef("unable to read body: %s\nbody is empty: %v", err.Error(), iris.IsErrEmptyJSON(err))
+			errors.InvalidArgument.Details(ctx, "unable to parse body", err.Error())
 			return
 		}
 
@@ -164,4 +166,10 @@ func main() {
 	// `iris.WithoutServerError` is an optional configurator,
 	// if passed to the `Run` then it will not print its passed error as an actual server error.
 	app.Listen(":8080", iris.WithOptimizations)
+}
+
+type errorHandler struct{}
+
+func (h *errorHandler) HandleContextError(ctx iris.Context, err error) {
+	errors.Internal.Err(ctx, err)
 }

@@ -3966,9 +3966,9 @@ func WriteJSON(ctx stdContext.Context, writer io.Writer, v interface{}, options 
 }
 
 // See https://golang.org/src/strings/builder.go#L45
-func bytesToString(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
+// func bytesToString(b []byte) string {
+// 	return *(*string)(unsafe.Pointer(&b))
+// }
 
 func stringToBytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&s))
