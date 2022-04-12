@@ -43,6 +43,11 @@ type ConfigurationReadOnly interface {
 
 	// GetEnableOptimizations returns the EnableOptimizations field.
 	GetEnableOptimizations() bool
+	// GetEnableProtoJSON returns the EnableProtoJSON field.
+	GetEnableProtoJSON() bool
+	// GetEnableEasyJSON returns the EnableEasyJSON field.
+	GetEnableEasyJSON() bool
+
 	// GetDisableBodyConsumptionOnUnmarshal returns the DisableBodyConsumptionOnUnmarshal field.
 	GetDisableBodyConsumptionOnUnmarshal() bool
 	// GetFireEmptyFormError returns the FireEmptyFormError field.

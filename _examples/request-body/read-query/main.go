@@ -13,6 +13,7 @@ type MyType struct {
 
 func main() {
 	app := iris.New()
+	app.UseRouter(iris.AllowQuerySemicolons) // Optionally: to restore pre go1.17 behavior of url parsing.
 
 	app.Get("/", func(ctx iris.Context) {
 		var t MyType
@@ -45,5 +46,6 @@ func main() {
 	// http://localhost:8080/simple?name=john&name=doe&name=kataras
 	//
 	// Note: this `WithEmptyFormError` will give an error if the query was empty.
-	app.Listen(":8080", iris.WithEmptyFormError)
+	app.Listen(":8080", iris.WithEmptyFormError,
+		iris.WithoutServerError(iris.ErrServerClosed, iris.ErrURLQuerySemicolon))
 }

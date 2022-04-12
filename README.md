@@ -281,7 +281,7 @@ Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;hei
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-alpha8
+$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta1
 ```
 
 <details><summary>Install on existing project</summary>
@@ -291,25 +291,11 @@ $ cd myapp
 $ go get github.com/kataras/iris/v12@master
 ```
 
-</details>
-
-<details><summary>Install with a go.mod file</summary>
-
-```txt
-module myapp
-
-go 1.16
-
-require github.com/kataras/iris/v12 master
-```
-
 **Run**
 
 ```sh
-$ go mod download
-$ go run main.go
-# OR just:
-# go run -mod=mod main.go
+$ go mod tidy -compat=1.18
+$ go run .
 ```
 
 </details>

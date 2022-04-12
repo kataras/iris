@@ -1,4 +1,5 @@
 ServerName: My Project
+Env: development
 Host: 0.0.0.0
 Port: 80
 EnableCompression: true

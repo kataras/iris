@@ -45,6 +45,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	// BuildRevision holds the vcs commit id information of the program's build.
+	// Available at go version 1.18+
+	BuildRevision string
+	// BuildTime holds the vcs commit time information of the program's build.
+	// Available at go version 1.18+
+	BuildTime string
+)
+
 type (
 	// BodyDecoder is an interface which any struct can implement in order to customize the decode action
 	// from ReadJSON and ReadXML
@@ -3037,6 +3046,9 @@ func (ctx *Context) ReadBody(ptr interface{}) error {
 // writing the response. However, such behavior may not be supported
 // by all HTTP/2 clients. Handlers should read before writing if
 // possible to maximize compatibility.
+//
+// It reports any write errors back to the caller, Application.SetContentErrorHandler does NOT apply here
+// as this is a lower-level method which must be remain as it is.
 func (ctx *Context) Write(rawBody []byte) (int, error) {
 	return ctx.writer.Write(rawBody)
 }
@@ -3748,20 +3760,20 @@ type ProtoMarshalOptions = protojson.MarshalOptions
 // JSON contains the options for the JSON (Context's) Renderer.
 type JSON struct {
 	// http-specific
-	StreamingJSON bool
+	StreamingJSON bool `yaml:"StreamingJSON"`
 	// content-specific
-	UnescapeHTML bool
-	Indent       string
-	Prefix       string
-	ASCII        bool // if true writes with unicode to ASCII content.
-	Secure       bool // if true then it prepends a "while(1);" when Go slice (to JSON Array) value.
+	UnescapeHTML bool   `yaml:"UnescapeHTML"`
+	Indent       string `yaml:"Indent"`
+	Prefix       string `yaml:"Prefix"`
+	ASCII        bool   `yaml:"ASCII"`  // if true writes with unicode to ASCII content.
+	Secure       bool   `yaml:"Secure"` // if true then it prepends a "while(1);" when Go slice (to JSON Array) value.
 	// proto.Message specific marshal options.
-	Proto ProtoMarshalOptions
-
-	// Optional context cancelation of encoder when Iris optimizations field is enabled.
-	// On JSON method this is automatically binded to the request context.
-	Context stdContext.Context
+	Proto ProtoMarshalOptions `yaml:"ProtoMarshalOptions"`
 }
+
+// DefaultJSONOptions is the optional settings that are being used
+// inside `Context.JSON`.
+var DefaultJSONOptions = JSON{}
 
 // IsDefault reports whether this JSON options structure holds the default values.
 func (j *JSON) IsDefault() bool {
@@ -3772,15 +3784,6 @@ func (j *JSON) IsDefault() bool {
 		j.ASCII == DefaultJSONOptions.ASCII &&
 		j.Secure == DefaultJSONOptions.Secure &&
 		j.Proto == DefaultJSONOptions.Proto
-}
-
-// GetContext returns the option's Context or the HTTP request's one.
-func (j *JSON) GetContext(ctx *Context) stdContext.Context {
-	if j.Context == nil {
-		return ctx.request.Context()
-	}
-
-	return j.Context
 }
 
 // JSONP contains the options for the JSONP (Context's) Renderer.
@@ -3821,32 +3824,64 @@ var (
 	secureJSONPrefix = []byte("while(1);")
 )
 
-func handleJSONResponseValue(w io.Writer, v interface{}, options JSON) (bool, int, error) {
-	if m, ok := v.(proto.Message); ok {
-		result, err := options.Proto.Marshal(m)
-		if err != nil {
-			return true, 0, err
-		}
+func (ctx *Context) handleSpecialJSONResponseValue(v interface{}, options *JSON) (bool, int, error) {
+	if ctx.app.ConfigurationReadOnly().GetEnableProtoJSON() {
+		if m, ok := v.(proto.Message); ok {
+			protoJSON := ProtoMarshalOptions{}
+			if options != nil {
+				protoJSON = options.Proto
+			}
 
-		n, err := w.Write(result)
-		return true, n, err
+			result, err := protoJSON.Marshal(m)
+			if err != nil {
+				return true, 0, err
+			}
+
+			n, err := ctx.writer.Write(result)
+			return true, n, err
+		}
 	}
 
-	if easyObject, ok := v.(easyjson.Marshaler); ok {
-		jw := jwriter.Writer{NoEscapeHTML: !options.UnescapeHTML}
-		easyObject.MarshalEasyJSON(&jw)
-		n, err := jw.DumpTo(w)
-		return true, n, err
+	if ctx.app.ConfigurationReadOnly().GetEnableEasyJSON() {
+		if easyObject, ok := v.(easyjson.Marshaler); ok {
+			noEscapeHTML := false
+			if options != nil {
+				noEscapeHTML = !options.UnescapeHTML
+			}
+			jw := jwriter.Writer{NoEscapeHTML: noEscapeHTML}
+			easyObject.MarshalEasyJSON(&jw)
+
+			n, err := jw.DumpTo(ctx.writer)
+			return true, n, err
+		}
 	}
 
 	return false, 0, nil
 }
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
-// Ignores StatusCode and StreamingJSON options.
-func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize bool) (int, error) {
-	if handled, n, err := handleJSONResponseValue(writer, v, options); handled {
-		return n, err
+func WriteJSON(ctx stdContext.Context, writer io.Writer, v interface{}, options *JSON, shouldOptimize bool) (int, error) {
+	if options.StreamingJSON {
+		var err error
+		if shouldOptimize {
+			// jsoniterConfig := jsoniter.Config{
+			// 	EscapeHTML:    !options.UnescapeHTML,
+			// 	IndentionStep: 4,
+			// }.Froze()
+			// enc := jsoniterConfig.NewEncoder(ctx.writer)
+			// err = enc.Encode(v)
+			enc := gojson.NewEncoder(writer)
+			enc.SetEscapeHTML(!options.UnescapeHTML)
+			enc.SetIndent(options.Prefix, options.Indent)
+			err = enc.EncodeContext(ctx, v)
+		} else {
+			enc := json.NewEncoder(writer)
+			enc.SetEscapeHTML(!options.UnescapeHTML)
+			enc.SetIndent(options.Prefix, options.Indent)
+			err = enc.Encode(v)
+		}
+
+		return 0, err
 	}
 
 	var (
@@ -3854,9 +3889,10 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize boo
 		err    error
 	)
 
-	if !shouldOptimize && options.Indent == "" {
-		options.Indent = "  "
-	}
+	// Let's keep it as it is.
+	// if !shouldOptimize && options.Indent == "" {
+	// 	options.Indent = "  "
+	// }
 
 	if indent := options.Indent; indent != "" {
 		if shouldOptimize {
@@ -3870,8 +3906,8 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize boo
 	} else {
 		if shouldOptimize {
 			// result, err =  jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
-			if options.Context != nil {
-				result, err = gojson.MarshalContext(options.Context, v)
+			if ctx != nil {
+				result, err = gojson.MarshalContext(ctx, v)
 			} else {
 				result, err = gojson.Marshal(v)
 			}
@@ -3910,7 +3946,7 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize boo
 	if options.ASCII {
 		if len(result) > 0 {
 			buf := new(bytes.Buffer)
-			for _, s := range bytesToString(result) {
+			for _, s := range string(result) {
 				char := string(s)
 				if s >= 128 {
 					char = fmt.Sprintf("\\u%04x", int64(s))
@@ -3930,82 +3966,92 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, shouldOptimize boo
 }
 
 // See https://golang.org/src/strings/builder.go#L45
-func bytesToString(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
+// func bytesToString(b []byte) string {
+// 	return *(*string)(unsafe.Pointer(&b))
+// }
 
 func stringToBytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&s))
 }
 
-// DefaultJSONOptions is the optional settings that are being used
-// inside `ctx.JSON`.
-var DefaultJSONOptions = JSON{}
-
-// JSON marshals the given interface object and writes the JSON response to the client.
-// If the value is a compatible `proto.Message` one
-// then it only uses the options.Proto settings to marshal.
-func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
-	ctx.ContentType(ContentJSONHeaderValue)
-	shouldOptimize := ctx.shouldOptimize()
-
-	optsLength := len(opts)
-
-	if shouldOptimize && optsLength == 0 { // if no options given and optimizations are enabled.
-		// try handle proto or easyjson.
-		if handled, n, err := handleJSONResponseValue(ctx, v, DefaultJSONOptions); handled {
-			return n, err
-		}
-
-		// as soon as possible, use the fast json marshaler with the http request context.
-		result, err := gojson.MarshalContext(ctx.request.Context(), v)
-		if err != nil {
-			return 0, err
-		}
-
-		return ctx.Write(result)
+type (
+	// ErrorHandler describes a context error handler which applies on
+	// JSON, JSONP, Protobuf, MsgPack, XML, YAML and Markdown write errors.
+	//
+	// An ErrorHandler can be registered once via Application.SetErrorHandler method to override the default behavior.
+	// The default behavior is to simply send status internal code error
+	// without a body back to the client.
+	ErrorHandler interface {
+		HandleContextError(ctx *Context, err error)
 	}
+	// ErrorHandlerFunc a function shortcut for ErrorHandler interface.
+	ErrorHandlerFunc func(ctx *Context, err error)
+)
 
-	options := DefaultJSONOptions
-	if optsLength > 0 {
-		options = opts[0]
-	}
+// HandleContextError completes the ErrorHandler interface.
+func (h ErrorHandlerFunc) HandleContextError(ctx *Context, err error) {
+	h(ctx, err)
+}
 
-	if options.StreamingJSON {
-		if shouldOptimize {
-			// jsoniterConfig := jsoniter.Config{
-			// 	EscapeHTML:    !options.UnescapeHTML,
-			// 	IndentionStep: 4,
-			// }.Froze()
-			// enc := jsoniterConfig.NewEncoder(ctx.writer)
-			// err = enc.Encode(v)
-			enc := gojson.NewEncoder(ctx.writer)
-			enc.SetEscapeHTML(!options.UnescapeHTML)
-			enc.SetIndent(options.Prefix, options.Indent)
-			err = enc.EncodeContext(options.GetContext(ctx), v)
-		} else {
-			enc := json.NewEncoder(ctx.writer)
-			enc.SetEscapeHTML(!options.UnescapeHTML)
-			enc.SetIndent(options.Prefix, options.Indent)
-			err = enc.Encode(v)
-		}
-
-		if err != nil {
-			ctx.app.Logger().Debugf("JSON: %v", err)
-			ctx.StatusCode(http.StatusInternalServerError) // it handles the fallback to normal mode here which also removes any compression headers.
-			return 0, err
-		}
-		return ctx.writer.Written(), err
-	}
-
-	n, err = WriteJSON(ctx.writer, v, options, shouldOptimize)
-	if err != nil {
-		ctx.app.Logger().Debugf("JSON: %v", err)
+func (ctx *Context) handleContextError(err error) {
+	if errHandler := ctx.app.GetContextErrorHandler(); errHandler != nil {
+		errHandler.HandleContextError(ctx, err)
+	} else {
 		ctx.StatusCode(http.StatusInternalServerError)
-		return 0, err
 	}
 
-	return n, err
+	// keep the error non nil so the caller has control over further actions.
+}
+
+// JSON marshals the given "v" value to JSON and writes the response to the client.
+// Look the Configuration.EnableProtoJSON/EnableEasyJSON and EnableOptimizations too.
+//
+// It reports any JSON parser or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
+//
+// It can, optionally, accept the JSON structure which may hold customizations over the
+// final JSON response but keep in mind that the caller should NOT modify that JSON options
+// value in another goroutine while JSON method is still running.
+func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
+	var options *JSON
+	if len(opts) > 0 {
+		options = &opts[0]
+	}
+
+	if n, err = ctx.writeJSON(v, options); err != nil {
+		ctx.handleContextError(err)
+	}
+
+	return
+}
+
+func (ctx *Context) writeJSON(v interface{}, options *JSON) (int, error) {
+	ctx.ContentType(ContentJSONHeaderValue)
+
+	// After content type given and before everything else, try handle proto or easyjson, no matter the performance mode.
+	if handled, n, err := ctx.handleSpecialJSONResponseValue(v, options); handled {
+		return n, err
+	}
+
+	shouldOptimize := ctx.shouldOptimize()
+	if options == nil {
+		if shouldOptimize {
+			// If no options given and optimizations are enabled.
+			// write using the fast json marshaler with the http request context as soon as possible.
+			result, err := gojson.MarshalContext(ctx.request.Context(), v)
+			if err != nil {
+				return 0, err
+			}
+
+			return ctx.Write(result)
+		}
+
+		// Else if no options given neither optimizations are enabled, then safely read the already-initialized object.
+		options = &DefaultJSONOptions
+	}
+
+	return WriteJSON(ctx, ctx.writer, v, options, shouldOptimize)
 }
 
 var finishCallbackB = []byte(");")
@@ -4056,24 +4102,23 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (
 // inside `ctx.JSONP`.
 var DefaultJSONPOptions = JSONP{}
 
-// JSONP marshals the given interface object and writes the JSON response to the client.
-func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (int, error) {
+// JSONP marshals the given "v" value to JSON and sends the response to the client.
+//
+// It reports any JSON parser or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
+func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (n int, err error) {
 	options := DefaultJSONPOptions
-
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
 	ctx.ContentType(ContentJavascriptHeaderValue)
-
-	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
-	if err != nil {
-		ctx.app.Logger().Debugf("JSONP: %v", err)
-		ctx.StatusCode(http.StatusInternalServerError)
-		return 0, err
+	if n, err = WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize()); err != nil {
+		ctx.handleContextError(err)
 	}
 
-	return n, err
+	return
 }
 
 type xmlMapEntry struct {
@@ -4154,29 +4199,28 @@ var DefaultXMLOptions = XML{}
 
 // XML marshals the given interface object and writes the XML response to the client.
 // To render maps as XML see the `XMLMap` package-level function.
-func (ctx *Context) XML(v interface{}, opts ...XML) (int, error) {
+//
+// It reports any XML parser or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
+func (ctx *Context) XML(v interface{}, opts ...XML) (n int, err error) {
 	options := DefaultXMLOptions
-
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
 	ctx.ContentType(ContentXMLHeaderValue)
-
-	n, err := WriteXML(ctx.writer, v, options, ctx.shouldOptimize())
-	if err != nil {
-		ctx.app.Logger().Debugf("XML: %v", err)
-		ctx.StatusCode(http.StatusInternalServerError)
-		return 0, err
+	if n, err = WriteXML(ctx.writer, v, options, ctx.shouldOptimize()); err != nil {
+		ctx.handleContextError(err)
 	}
 
-	return n, err
+	return
 }
 
 // Problem writes a JSON or XML problem response.
 // Order of Problem fields are not always rendered the same.
 //
-// Behaves exactly like `Context.JSON`
+// Behaves exactly like the `Context.JSON` method
 // but with default ProblemOptions.JSON indent of " " and
 // a response content type of "application/problem+json" instead.
 //
@@ -4221,11 +4265,12 @@ func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) (int, error) 
 }
 
 // WriteMarkdown parses the markdown to html and writes these contents to the writer.
-func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, error) {
+func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (n int, err error) {
 	buf := blackfriday.Run(markdownB)
 	if options.Sanitize {
 		buf = bluemonday.UGCPolicy().SanitizeBytes(buf)
 	}
+
 	return writer.Write(buf)
 }
 
@@ -4234,66 +4279,90 @@ func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, e
 var DefaultMarkdownOptions = Markdown{}
 
 // Markdown parses the markdown to html and renders its result to the client.
-func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
+//
+// It reports any Markdown parser or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
+func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (n int, err error) {
 	options := DefaultMarkdownOptions
-
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
 	ctx.ContentType(ContentHTMLHeaderValue)
+	if n, err = WriteMarkdown(ctx.writer, markdownB, options); err != nil {
+		ctx.handleContextError(err)
+	}
 
-	n, err := WriteMarkdown(ctx.writer, markdownB, options)
+	return
+}
+
+// YAML marshals the given "v" value using the yaml marshaler and writes the result to the client.
+//
+// It reports any YAML parser or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
+func (ctx *Context) YAML(v interface{}) (int, error) {
+	out, err := yaml.Marshal(v)
 	if err != nil {
-		ctx.app.Logger().Debugf("Markdown: %v", err)
-		ctx.StatusCode(http.StatusInternalServerError)
+		ctx.handleContextError(err)
 		return 0, err
+	}
+
+	ctx.ContentType(ContentYAMLHeaderValue)
+	n, err := ctx.Write(out)
+	if err != nil {
+		ctx.handleContextError(err)
 	}
 
 	return n, err
 }
 
-// YAML marshals the "v" using the yaml marshaler
-// and sends the result to the client.
-func (ctx *Context) YAML(v interface{}) (int, error) {
-	out, err := yaml.Marshal(v)
-	if err != nil {
-		ctx.app.Logger().Debugf("YAML: %v", err)
-		ctx.StatusCode(http.StatusInternalServerError)
-		return 0, err
-	}
-
-	ctx.ContentType(ContentYAMLHeaderValue)
-	return ctx.Write(out)
-}
-
-// TextYAML marshals the "v" using the yaml marshaler
-// and renders to the client.
+// TextYAML calls the Context.YAML method but with the text/yaml content type instead.
 func (ctx *Context) TextYAML(v interface{}) (int, error) {
 	ctx.contentTypeOnce(ContentYAMLTextHeaderValue, "")
 	return ctx.YAML(v)
 }
 
-// Protobuf parses the "v" of proto Message and renders its result to the client.
+// Protobuf marshals the given "v" value of proto Message and writes its result to the client.
+//
+// It reports any protobuf parser or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
 func (ctx *Context) Protobuf(v proto.Message) (int, error) {
 	out, err := proto.Marshal(v)
 	if err != nil {
+		ctx.handleContextError(err)
 		return 0, err
 	}
 
 	ctx.ContentType(ContentProtobufHeaderValue)
-	return ctx.Write(out)
+	n, err := ctx.Write(out)
+	if err != nil {
+		ctx.handleContextError(err)
+	}
+
+	return n, err
 }
 
-// MsgPack parses the "v" of msgpack format and renders its result to the client.
+// MsgPack marshals the given "v" value of msgpack format and writes its result to the client.
+//
+// It reports any message pack or write errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
 func (ctx *Context) MsgPack(v interface{}) (int, error) {
 	out, err := msgpack.Marshal(v)
 	if err != nil {
-		return 0, err
+		ctx.handleContextError(err)
 	}
 
 	ctx.ContentType(ContentMsgPackHeaderValue)
-	return ctx.Write(out)
+	n, err := ctx.Write(out)
+	if err != nil {
+		ctx.handleContextError(err)
+	}
+
+	return n, err
 }
 
 //  +-----------------------------------------------------------------------+
@@ -5314,7 +5383,11 @@ type SecureCookie interface {
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
 func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
-	return func(_ *Context, c *http.Cookie, op uint8) {
+	if encoding == nil {
+		return func(_ *Context, _ *http.Cookie, _ uint8) {}
+	}
+
+	return func(ctx *Context, c *http.Cookie, op uint8) {
 		if op == OpCookieDel {
 			return
 		}
@@ -5328,10 +5401,12 @@ func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
 			// Should encode, it's a write to the client operation.
 			newVal, err := encoding.Encode(c.Name, c.Value)
 			if err != nil {
+				ctx.Application().Logger().Error(err)
 				c.Value = ""
 			} else {
 				c.Value = newVal
 			}
+
 			return
 		case OpCookieGet:
 			// Should decode, it's a read from the client operation.

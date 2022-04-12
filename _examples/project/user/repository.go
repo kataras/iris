@@ -1,12 +1,14 @@
 package user
 
+import "github.com/username/project/pkg/database"
+
 type Repository interface { // Repo methods here...
 }
 
 type repo struct { // Hold database instance here: e.g.
-	// *mydatabase_pkg.DB
+	db *database.DB
 }
 
-func NewRepository( /*  *mydatabase_pkg.DB */ ) Repository {
-	return &repo{ /* db: db */ }
+func NewRepository(db *database.DB) Repository {
+	return &repo{db: db}
 }

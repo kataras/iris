@@ -2,8 +2,10 @@ package iris
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/kataras/iris/v12/cache"
 	"github.com/kataras/iris/v12/context"
@@ -12,6 +14,16 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/view"
+)
+
+var (
+	// BuildRevision holds the vcs commit id information of the program's build.
+	// To display the Iris' version please use the iris.Version constant instead.
+	// Available at go version 1.18+
+	BuildRevision = context.BuildRevision
+	// BuildTime holds the vcs commit time information of the program's build.
+	// Available at go version 1.18+
+	BuildTime = context.BuildTime
 )
 
 // SameSite attributes.
@@ -315,6 +327,35 @@ var (
 	Compression = func(ctx Context) {
 		ctx.CompressWriter(true)
 		ctx.CompressReader(true)
+		ctx.Next()
+	}
+
+	// AllowQuerySemicolons returns a middleware that serves requests by converting any
+	// unescaped semicolons(;) in the URL query to ampersands(&).
+	//
+	// This restores the pre-Go 1.17 behavior of splitting query parameters on both
+	// semicolons and ampersands.
+	// (See golang.org/issue/25192 and https://github.com/kataras/iris/issues/1875).
+	// Note that this behavior doesn't match that of many proxies,
+	// and the mismatch can lead to security issues.
+	//
+	// AllowQuerySemicolons should be invoked before any Context read query or
+	// form methods are called.
+	//
+	// To skip HTTP Server logging for this type of warning:
+	// app.Listen/Run(..., iris.WithoutServerError(iris.ErrURLQuerySemicolon)).
+	AllowQuerySemicolons = func(ctx Context) {
+		// clopy of net/http.AllowQuerySemicolons.
+		r := ctx.Request()
+		if s := r.URL.RawQuery; strings.Contains(s, ";") {
+			r2 := new(http.Request)
+			*r2 = *r
+			r2.URL = new(url.URL)
+			*r2.URL = *r.URL
+			r2.URL.RawQuery = strings.ReplaceAll(s, ";", "&")
+			ctx.ResetRequest(r2)
+		}
+
 		ctx.Next()
 	}
 
@@ -660,8 +701,41 @@ const (
 	StatusNetworkReadTimeout     = context.StatusNetworkReadTimeout
 )
 
-// StatusText returns a text for the HTTP status code. It returns the empty
-// string if the code is unknown.
-//
-// Shortcut for core/router#StatusText.
-var StatusText = context.StatusText
+var (
+	// StatusText returns a text for the HTTP status code. It returns the empty
+	// string if the code is unknown.
+	//
+	// Shortcut for core/router#StatusText.
+	StatusText = context.StatusText
+	// RegisterMethods adds custom http methods to the "AllMethods" list.
+	// Use it on initialization of your program.
+	//
+	// Shortcut for core/router#RegisterMethods.
+	RegisterMethods = router.RegisterMethods
+
+	// WebDAVMethods contains a list of WebDAV HTTP Verbs.
+	// Register using RegiterMethods package-level function or
+	// through HandleMany party-level method.
+	WebDAVMethods = []string{
+		MethodGet,
+		MethodHead,
+		MethodPatch,
+		MethodPut,
+		MethodPost,
+		MethodDelete,
+		MethodOptions,
+		MethodConnect,
+		MethodTrace,
+		"MKCOL",
+		"COPY",
+		"MOVE",
+		"LOCK",
+		"UNLOCK",
+		"PROPFIND",
+		"PROPPATCH",
+		"LINK",
+		"UNLINK",
+		"PURGE",
+		"VIEW",
+	}
+)

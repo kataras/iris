@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 
 	pb "github.com/kataras/iris/v12/_examples/mvc/grpc-compatible/helloworld"
 
@@ -47,17 +48,32 @@ func newApp() *iris.Application {
 	// Register MVC application controller for gRPC services.
 	// You can bind as many mvc gRpc services in the same Party or app,
 	// as the ServiceName differs.
-	mvc.New(app).Handle(ctrl, mvc.GRPC{
-		Server:      grpcServer,           // Required.
-		ServiceName: "helloworld.Greeter", // Required.
-		Strict:      false,
-	})
+	mvc.New(app).
+		Register(new(myService)).
+		Handle(ctrl, mvc.GRPC{
+			Server:      grpcServer,           // Required.
+			ServiceName: "helloworld.Greeter", // Required.
+			Strict:      false,
+		})
 
 	return app
 }
 
+type service interface {
+	DoSomething() error
+}
+
+type myService struct{}
+
+func (s *myService) DoSomething() error {
+	log.Println("service: DoSomething")
+	return nil
+}
+
 type myController struct {
 	// Ctx iris.Context
+
+	SingletonDependency service
 }
 
 // SayHello implements helloworld.GreeterServer.
@@ -70,5 +86,10 @@ type myController struct {
 // @Success 200 {string} string	"Hello {name}"
 // @Router /helloworld.Greeter/SayHello [post]
 func (c *myController) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	err := c.SingletonDependency.DoSomething()
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }

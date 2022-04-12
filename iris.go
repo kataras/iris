@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"bytes"
 	stdContext "context"
 	"errors"
 	"fmt"
@@ -38,7 +39,7 @@ import (
 )
 
 // Version is the current version of the Iris Web Framework.
-const Version = "12.2.0-alpha9"
+const Version = "12.2.0-beta1"
 
 // Byte unit helpers.
 const (
@@ -59,6 +60,8 @@ type Application struct {
 	*router.Router
 	router.HTTPErrorHandler // if Router is Downgraded this is nil.
 	ContextPool             *context.Pool
+	// See SetContextErrorHandler, defaults to nil.
+	contextErrorHandler context.ErrorHandler
 
 	// config contains the configuration fields
 	// all fields defaults to something that is working, developers don't have to set it.
@@ -429,6 +432,28 @@ func (app *Application) GetContextPool() *context.Pool {
 	return app.ContextPool
 }
 
+// SetContextErrorHandler can optionally register a handler to handle
+// and fire a customized error body to the client on JSON write failures.
+//
+// ExampleCode:
+//
+//  type contextErrorHandler struct{}
+//  func (e *contextErrorHandler) HandleContextError(ctx iris.Context, err error) {
+// 	 errors.InvalidArgument.Err(ctx, err)
+//  }
+//  ...
+//	app.SetContextErrorHandler(new(contextErrorHandler))
+func (app *Application) SetContextErrorHandler(errHandler context.ErrorHandler) *Application {
+	app.contextErrorHandler = errHandler
+	return app
+}
+
+// GetContextErrorHandler returns the handler which handles errors
+// on JSON write failures.
+func (app *Application) GetContextErrorHandler() context.ErrorHandler {
+	return app.contextErrorHandler
+}
+
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run` or `app.Listen`,
 // they're being executed when application is ready to being served to the public.
@@ -451,6 +476,40 @@ func (app *Application) ConfigureHost(configurators ...host.Configurator) *Appli
 	return app
 }
 
+const serverLoggerPrefix = "[HTTP Server] "
+
+type customHostServerLogger struct { // see #1875
+	parent     io.Writer
+	ignoreLogs [][]byte
+}
+
+var newLineBytes = []byte("\n")
+
+func newCustomHostServerLogger(w io.Writer, ignoreLogs []string) *customHostServerLogger {
+	prefixAsByteSlice := []byte(serverLoggerPrefix)
+
+	// build the ignore lines.
+	ignoreLogsAsByteSlice := make([][]byte, 0, len(ignoreLogs))
+	for _, s := range ignoreLogs {
+		ignoreLogsAsByteSlice = append(ignoreLogsAsByteSlice, append(prefixAsByteSlice, []byte(s)...)) // append([]byte(s), newLineBytes...)
+	}
+
+	return &customHostServerLogger{
+		parent:     w,
+		ignoreLogs: ignoreLogsAsByteSlice,
+	}
+}
+
+func (l *customHostServerLogger) Write(p []byte) (int, error) {
+	for _, ignoredLogBytes := range l.ignoreLogs {
+		if bytes.Equal(bytes.TrimSuffix(p, newLineBytes), ignoredLogBytes) {
+			return 0, nil
+		}
+	}
+
+	return l.parent.Write(p)
+}
+
 // NewHost accepts a standard *http.Server object,
 // completes the necessary missing parts of that "srv"
 // and returns a new, ready-to-use, host (supervisor).
@@ -463,9 +522,10 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		srv.Handler = app.Router
 	}
 
-	// check if different ErrorLog provided, if not bind it with the framework's logger
+	// check if different ErrorLog provided, if not bind it with the framework's logger.
 	if srv.ErrorLog == nil {
-		srv.ErrorLog = log.New(app.logger.Printer.Output, "[HTTP Server] ", 0)
+		serverLogger := newCustomHostServerLogger(app.logger.Printer.Output, app.config.IgnoreServerErrors)
+		srv.ErrorLog = log.New(serverLogger, serverLoggerPrefix, 0)
 	}
 
 	if addr := srv.Addr; addr == "" {
@@ -889,11 +949,23 @@ func Raw(f func() error) Runner {
 	}
 }
 
-// ErrServerClosed is returned by the Server's Serve, ServeTLS, ListenAndServe,
-// and ListenAndServeTLS methods after a call to Shutdown or Close.
-//
-// A shortcut for the `http#ErrServerClosed`.
-var ErrServerClosed = http.ErrServerClosed
+var (
+	// ErrServerClosed is logged by the standard net/http server when the server is terminated.
+	// Ignore it by passing this error to the `iris.WithoutServerError` configurator
+	// on `Application.Run/Listen` method.
+	//
+	// An alias of the `http#ErrServerClosed`.
+	ErrServerClosed = http.ErrServerClosed
+
+	// ErrURLQuerySemicolon is logged by the standard net/http server when
+	// the request contains a semicolon (;) wihch, after go1.17 it's not used as a key-value separator character.
+	//
+	// Ignore it by passing this error to the `iris.WithoutServerError` configurator
+	// on `Application.Run/Listen` method.
+	//
+	// An alias of the `http#ErrServerClosed`.
+	ErrURLQuerySemicolon = errors.New("http: URL query contains semicolon, which is no longer a supported separator; parts of the query may be stripped when parsed; see golang.org/issue/25192")
+)
 
 // Listen builds the application and starts the server
 // on the TCP network address "host:port" which

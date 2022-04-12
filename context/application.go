@@ -52,6 +52,10 @@ type Application interface {
 	// is hijacked by a third-party middleware and the http handler return too fast.
 	GetContextPool() *Pool
 
+	// GetContextErrorHandler returns the handler which handles errors
+	// on JSON write failures.
+	GetContextErrorHandler() ErrorHandler
+
 	// ServeHTTPC is the internal router, it's visible because it can be used for advanced use cases,
 	// i.e: routing within a foreign context.
 	//

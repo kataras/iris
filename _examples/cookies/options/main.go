@@ -41,6 +41,15 @@ func withCookieOptions(ctx iris.Context) {
 	//  * CookieExpires
 	//  * CookieEncoding
 	ctx.AddCookieOptions(iris.CookieAllowReclaim())
+	// ctx.AddCookieOptions(iris.CookieSecure)
+	// OR for a specific cookie:
+	// ctx.SetCookieKV("cookie_name", "cookie_value", iris.CookieScure)
+	// OR by passing a a &http.Cookie:
+	// ctx.SetCookie(&http.Cookie{
+	// 	Name: "cookie_name",
+	// 	Value: "cookie_value",
+	// 	Secure: true,
+	// })
 	ctx.Next()
 }
 

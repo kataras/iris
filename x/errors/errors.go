@@ -3,8 +3,9 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/x/client"
 )
 
@@ -13,11 +14,11 @@ import (
 //
 // See "OnErrorLog" variable to change the way an error is logged,
 // by default the error is logged using the Application's Logger's Error method.
-type LogErrorFunc = func(ctx iris.Context, err error)
+type LogErrorFunc = func(ctx *context.Context, err error)
 
 // LogError can be modified to customize the way an error is logged to the server (most common: internal server errors, database errors et.c.).
 // Can be used to customize the error logging, e.g. using Sentry (cloud-based error console).
-var LogError LogErrorFunc = func(ctx iris.Context, err error) {
+var LogError LogErrorFunc = func(ctx *context.Context, err error) {
 	ctx.Application().Logger().Error(err)
 }
 
@@ -56,7 +57,7 @@ var errorCodeMap = make(map[ErrorCodeName]ErrorCode)
 //
 // Example:
 // 	var (
-//    NotFound = errors.E("NOT_FOUND", iris.StatusNotFound)
+//    NotFound = errors.E("NOT_FOUND", http.StatusNotFound)
 // 	)
 // 	...
 // 	NotFound.Details(ctx, "resource not found", "user with id: %q was not found", userID)
@@ -96,57 +97,57 @@ func RegisterErrorCodeMap(errorMap map[ErrorCodeName]int) {
 
 // List of default error codes a server should follow and send back to the client.
 var (
-	Cancelled          ErrorCodeName = E("CANCELLED", iris.StatusTokenRequired)
-	Unknown            ErrorCodeName = E("UNKNOWN", iris.StatusInternalServerError)
-	InvalidArgument    ErrorCodeName = E("INVALID_ARGUMENT", iris.StatusBadRequest)
-	DeadlineExceeded   ErrorCodeName = E("DEADLINE_EXCEEDED", iris.StatusGatewayTimeout)
-	NotFound           ErrorCodeName = E("NOT_FOUND", iris.StatusNotFound)
-	AlreadyExists      ErrorCodeName = E("ALREADY_EXISTS", iris.StatusConflict)
-	PermissionDenied   ErrorCodeName = E("PERMISSION_DENIED", iris.StatusForbidden)
-	Unauthenticated    ErrorCodeName = E("UNAUTHENTICATED", iris.StatusUnauthorized)
-	ResourceExhausted  ErrorCodeName = E("RESOURCE_EXHAUSTED", iris.StatusTooManyRequests)
-	FailedPrecondition ErrorCodeName = E("FAILED_PRECONDITION", iris.StatusBadRequest)
-	Aborted            ErrorCodeName = E("ABORTED", iris.StatusConflict)
-	OutOfRange         ErrorCodeName = E("OUT_OF_RANGE", iris.StatusBadRequest)
-	Unimplemented      ErrorCodeName = E("UNIMPLEMENTED", iris.StatusNotImplemented)
-	Internal           ErrorCodeName = E("INTERNAL", iris.StatusInternalServerError)
-	Unavailable        ErrorCodeName = E("UNAVAILABLE", iris.StatusServiceUnavailable)
-	DataLoss           ErrorCodeName = E("DATA_LOSS", iris.StatusInternalServerError)
+	Cancelled          ErrorCodeName = E("CANCELLED", context.StatusTokenRequired)
+	Unknown            ErrorCodeName = E("UNKNOWN", http.StatusInternalServerError)
+	InvalidArgument    ErrorCodeName = E("INVALID_ARGUMENT", http.StatusBadRequest)
+	DeadlineExceeded   ErrorCodeName = E("DEADLINE_EXCEEDED", http.StatusGatewayTimeout)
+	NotFound           ErrorCodeName = E("NOT_FOUND", http.StatusNotFound)
+	AlreadyExists      ErrorCodeName = E("ALREADY_EXISTS", http.StatusConflict)
+	PermissionDenied   ErrorCodeName = E("PERMISSION_DENIED", http.StatusForbidden)
+	Unauthenticated    ErrorCodeName = E("UNAUTHENTICATED", http.StatusUnauthorized)
+	ResourceExhausted  ErrorCodeName = E("RESOURCE_EXHAUSTED", http.StatusTooManyRequests)
+	FailedPrecondition ErrorCodeName = E("FAILED_PRECONDITION", http.StatusBadRequest)
+	Aborted            ErrorCodeName = E("ABORTED", http.StatusConflict)
+	OutOfRange         ErrorCodeName = E("OUT_OF_RANGE", http.StatusBadRequest)
+	Unimplemented      ErrorCodeName = E("UNIMPLEMENTED", http.StatusNotImplemented)
+	Internal           ErrorCodeName = E("INTERNAL", http.StatusInternalServerError)
+	Unavailable        ErrorCodeName = E("UNAVAILABLE", http.StatusServiceUnavailable)
+	DataLoss           ErrorCodeName = E("DATA_LOSS", http.StatusInternalServerError)
 )
 
 // Message sends an error with a simple message to the client.
-func (e ErrorCodeName) Message(ctx iris.Context, format string, args ...interface{}) {
+func (e ErrorCodeName) Message(ctx *context.Context, format string, args ...interface{}) {
 	fail(ctx, e, sprintf(format, args...), "", nil, nil)
 }
 
 // Details sends an error with a message and details to the client.
-func (e ErrorCodeName) Details(ctx iris.Context, msg, details string, detailsArgs ...interface{}) {
+func (e ErrorCodeName) Details(ctx *context.Context, msg, details string, detailsArgs ...interface{}) {
 	fail(ctx, e, msg, sprintf(details, detailsArgs...), nil, nil)
 }
 
 // Data sends an error with a message and json data to the client.
-func (e ErrorCodeName) Data(ctx iris.Context, msg string, data interface{}) {
+func (e ErrorCodeName) Data(ctx *context.Context, msg string, data interface{}) {
 	fail(ctx, e, msg, "", nil, data)
 }
 
 // DataWithDetails sends an error with a message, details and json data to the client.
-func (e ErrorCodeName) DataWithDetails(ctx iris.Context, msg, details string, data interface{}) {
+func (e ErrorCodeName) DataWithDetails(ctx *context.Context, msg, details string, data interface{}) {
 	fail(ctx, e, msg, details, nil, data)
 }
 
 // Validation sends an error which renders the invalid fields to the client.
-func (e ErrorCodeName) Validation(ctx iris.Context, validationErrors ...ValidationError) {
+func (e ErrorCodeName) Validation(ctx *context.Context, validationErrors ...ValidationError) {
 	e.validation(ctx, validationErrors)
 }
 
-func (e ErrorCodeName) validation(ctx iris.Context, validationErrors interface{}) {
+func (e ErrorCodeName) validation(ctx *context.Context, validationErrors interface{}) {
 	fail(ctx, e, "validation failure", "fields were invalid", validationErrors, nil)
 }
 
 // Err sends the error's text as a message to the client.
 // In exception, if the given "err" is a type of validation error
 // then the Validation method is called instead.
-func (e ErrorCodeName) Err(ctx iris.Context, err error) {
+func (e ErrorCodeName) Err(ctx *context.Context, err error) {
 	if err == nil {
 		return
 	}
@@ -163,7 +164,7 @@ func (e ErrorCodeName) Err(ctx iris.Context, err error) {
 // error using the "LogError" package-level function, which can be customized.
 //
 // See "LogErr" too.
-func (e ErrorCodeName) Log(ctx iris.Context, format string, args ...interface{}) {
+func (e ErrorCodeName) Log(ctx *context.Context, format string, args ...interface{}) {
 	if SkipCanceled {
 		if ctx.IsCanceled() {
 			return
@@ -171,7 +172,7 @@ func (e ErrorCodeName) Log(ctx iris.Context, format string, args ...interface{})
 
 		for _, arg := range args {
 			if err, ok := arg.(error); ok {
-				if iris.IsErrCanceled(err) {
+				if context.IsErrCanceled(err) {
 					return
 				}
 			}
@@ -184,8 +185,8 @@ func (e ErrorCodeName) Log(ctx iris.Context, format string, args ...interface{})
 
 // LogErr sends the given "err" as message to the client and prints that
 // error to using the "LogError" package-level function, which can be customized.
-func (e ErrorCodeName) LogErr(ctx iris.Context, err error) {
-	if SkipCanceled && (ctx.IsCanceled() || iris.IsErrCanceled(err)) {
+func (e ErrorCodeName) LogErr(ctx *context.Context, err error) {
+	if SkipCanceled && (ctx.IsCanceled() || context.IsErrCanceled(err)) {
 		return
 	}
 
@@ -204,7 +205,7 @@ func (e ErrorCodeName) LogErr(ctx iris.Context, err error) {
 // the error will be sent using the "Internal.LogErr" method which sends
 // HTTP internal server error to the end-client and
 // prints the "err" using the "LogError" package-level function.
-func HandleAPIError(ctx iris.Context, err error) {
+func HandleAPIError(ctx *context.Context, err error) {
 	// Error expected and came from the external server,
 	// save its body so we can forward it to the end-client.
 	if apiErr, ok := client.GetError(err); ok {
@@ -228,7 +229,7 @@ var (
 	// The server fails to send an error on two cases:
 	// 1. when the provided error code name is not registered (the error value is the ErrUnexpectedErrorCode)
 	// 2. when the error contains data but cannot be encoded to json (the value of the error is the result error of json.Marshal).
-	ErrUnexpected = E("UNEXPECTED_ERROR", iris.StatusInternalServerError)
+	ErrUnexpected = E("UNEXPECTED_ERROR", http.StatusInternalServerError)
 	// ErrUnexpectedErrorCode is the error which logged
 	// when the given error code name is not registered.
 	ErrUnexpectedErrorCode = New("unexpected error code name")
@@ -247,7 +248,7 @@ type Error struct {
 }
 
 // Error method completes the error interface. It just returns the canonical name, status code, message and details.
-func (err Error) Error() string {
+func (err *Error) Error() string {
 	if err.Message == "" {
 		err.Message = "<empty>"
 	}
@@ -261,13 +262,13 @@ func (err Error) Error() string {
 	}
 
 	if err.ErrorCode.Status <= 0 {
-		err.ErrorCode.Status = iris.StatusInternalServerError
+		err.ErrorCode.Status = http.StatusInternalServerError
 	}
 
 	return sprintf("iris http wire error: canonical name: %s, http status code: %d, message: %s, details: %s", err.ErrorCode.CanonicalName, err.ErrorCode.Status, err.Message, err.Details)
 }
 
-func fail(ctx iris.Context, codeName ErrorCodeName, msg, details string, validationErrors interface{}, dataValue interface{}) {
+func fail(ctx *context.Context, codeName ErrorCodeName, msg, details string, validationErrors interface{}, dataValue interface{}) {
 	errorCode, ok := errorCodeMap[codeName]
 	if !ok {
 		// This SHOULD NEVER happen, all ErrorCodeNames MUST be registered.
@@ -311,6 +312,6 @@ func fail(ctx iris.Context, codeName ErrorCodeName, msg, details string, validat
 		Validation: validationErrors,
 	}
 
-	// ctx.SetErr(err)
+	// ctx.SetErr(&err)
 	ctx.StopWithJSON(errorCode.Status, err)
 }
