@@ -231,6 +231,9 @@ func (p Problem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		return err
 	}
 
+	// toTitle := cases.Title(language.English)
+	// toTitle.String(k)
+
 	for k, v := range p {
 		// convert keys like "type" to "Type", "productName" to "ProductName" and e.t.c. when xml.
 		err = e.Encode(xmlMapEntry{XMLName: xml.Name{Local: strings.Title(k)}, Value: v})
