@@ -16,7 +16,7 @@ func init() {
 			}
 
 			if setting.Key == "vcs.time" {
-				BuildTime = setting.Key
+				BuildTime = setting.Value
 			}
 		}
 	}

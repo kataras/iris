@@ -36,7 +36,8 @@ func CanMakeHandler(tmpl macro.Template) (needsMacroHandler bool) {
 	// check if we have params like: {name:string} or {name} or {anything:path} without else keyword or any functions used inside these params.
 	// 1. if we don't have, then we don't need to add a handler before the main route's handler (as I said, no performance if macro is not really used)
 	// 2. if we don't have any named params then we don't need a handler too.
-	for _, p := range tmpl.Params {
+	for i := range tmpl.Params {
+		p := tmpl.Params[i]
 		if p.CanEval() {
 			// if at least one needs it, then create the handler.
 			needsMacroHandler = true
@@ -85,7 +86,8 @@ func MakeFilter(tmpl macro.Template) context.Filter {
 	}
 
 	return func(ctx *context.Context) bool {
-		for _, p := range tmpl.Params {
+		for i := range tmpl.Params {
+			p := tmpl.Params[i]
 			if !p.CanEval() {
 				continue // allow.
 			}

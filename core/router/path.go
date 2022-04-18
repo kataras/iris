@@ -43,7 +43,8 @@ func convertMacroTmplToNodePath(tmpl macro.Template) string {
 	// if it has started with {} and it's valid
 	// then the tmpl.Params will be filled,
 	// so no any further check needed.
-	for _, p := range tmpl.Params {
+	for i := range tmpl.Params {
+		p := tmpl.Params[i]
 		if ast.IsTrailing(p.Type) {
 			routePath = strings.Replace(routePath, p.Src, WildcardParam(p.Name), 1)
 		} else {
