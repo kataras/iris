@@ -839,9 +839,10 @@ func (ctx *Context) StopWithPlainError(statusCode int, err error) {
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
-func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) {
+func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) error {
 	ctx.StopWithStatus(statusCode)
-	ctx.JSON(jsonObject)
+	_, err := ctx.writeJSON(jsonObject, nil)
+	return err
 }
 
 // StopWithProblem stops the handlers chain, writes the status code
@@ -850,10 +851,11 @@ func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) {
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
-func (ctx *Context) StopWithProblem(statusCode int, problem Problem) {
+func (ctx *Context) StopWithProblem(statusCode int, problem Problem) error {
 	ctx.StopWithStatus(statusCode)
 	problem.Status(statusCode)
-	ctx.Problem(problem)
+	_, err := ctx.Problem(problem)
+	return err
 }
 
 //  +------------------------------------------------------------+
@@ -3769,6 +3771,11 @@ type JSON struct {
 	Secure       bool   `yaml:"Secure"` // if true then it prepends a "while(1);" when Go slice (to JSON Array) value.
 	// proto.Message specific marshal options.
 	Proto ProtoMarshalOptions `yaml:"ProtoMarshalOptions"`
+	// If true and json writing failed then the error handler is skipped
+	// and it just returns to the caller.
+	//
+	// See StopWithJSON and x/errors package.
+	OmitErrorHandler bool `yaml:"OmitErrorHandler"`
 }
 
 // DefaultJSONOptions is the optional settings that are being used
@@ -3789,21 +3796,24 @@ func (j *JSON) IsDefault() bool {
 // JSONP contains the options for the JSONP (Context's) Renderer.
 type JSONP struct {
 	// content-specific
-	Indent   string
-	Callback string
+	Indent           string
+	Callback         string
+	OmitErrorHandler bool // See JSON.OmitErrorHandler.
 }
 
 // XML contains the options for the XML (Context's) Renderer.
 type XML struct {
 	// content-specific
-	Indent string
-	Prefix string
+	Indent           string
+	Prefix           string
+	OmitErrorHandler bool // See JSON.OmitErrorHandler.
 }
 
 // Markdown contains the options for the Markdown (Context's) Renderer.
 type Markdown struct {
 	// content-specific
-	Sanitize bool
+	Sanitize         bool
+	OmitErrorHandler bool // See JSON.OmitErrorHandler.
 }
 
 var (
@@ -4020,7 +4030,11 @@ func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	}
 
 	if n, err = ctx.writeJSON(v, options); err != nil {
-		ctx.handleContextError(err)
+		// if no options are given or OmitErrorHandler is true
+		// then do call the error handler (which may lead to a cycle).
+		if options == nil || !options.OmitErrorHandler {
+			ctx.handleContextError(err)
+		}
 	}
 
 	return
@@ -4115,7 +4129,9 @@ func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (n int, err error) {
 
 	ctx.ContentType(ContentJavascriptHeaderValue)
 	if n, err = WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize()); err != nil {
-		ctx.handleContextError(err)
+		if !options.OmitErrorHandler {
+			ctx.handleContextError(err)
+		}
 	}
 
 	return
@@ -4211,7 +4227,9 @@ func (ctx *Context) XML(v interface{}, opts ...XML) (n int, err error) {
 
 	ctx.ContentType(ContentXMLHeaderValue)
 	if n, err = WriteXML(ctx.writer, v, options, ctx.shouldOptimize()); err != nil {
-		ctx.handleContextError(err)
+		if !options.OmitErrorHandler {
+			ctx.handleContextError(err)
+		}
 	}
 
 	return
@@ -4261,7 +4279,7 @@ func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) (int, error) 
 	}
 
 	ctx.contentTypeOnce(ContentJSONProblemHeaderValue, "")
-	return ctx.JSON(v, options.JSON)
+	return ctx.writeJSON(v, &options.JSON)
 }
 
 // WriteMarkdown parses the markdown to html and writes these contents to the writer.
@@ -4291,7 +4309,9 @@ func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (n int, err err
 
 	ctx.ContentType(ContentHTMLHeaderValue)
 	if n, err = WriteMarkdown(ctx.writer, markdownB, options); err != nil {
-		ctx.handleContextError(err)
+		if !options.OmitErrorHandler {
+			ctx.handleContextError(err)
+		}
 	}
 
 	return
