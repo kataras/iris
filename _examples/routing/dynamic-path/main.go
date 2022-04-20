@@ -125,8 +125,30 @@ func main() {
 	// anything, should be the last part, can be more than one path segment,
 	// i.e: "/test/{param:path}" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 	//
-	// if type is missing then parameter's type is defaulted to string, so
-	// {param} == {param:string}.
+	// +------------------------+
+	// | {param:uuid}           |
+	// +------------------------+
+	// UUIDv4 (and v1) path parameter validation.
+	//
+	// +------------------------+
+	// | {param:mail}           |
+	// +------------------------+
+	// Email without domain validation.
+	//
+	// +------------------------+
+	// | {param:email}           |
+	// +------------------------+
+	// Email with domain validation.
+	//
+	//
+	// +------------------------+
+	// | {param:date}           |
+	// +------------------------+
+	// yyyy/mm/dd format e.g. /blog/{param:date} matches /blog/2022/04/21.
+	//
+	//
+	// If type is missing then parameter's type is defaulted to string, so
+	// {param} is identical to {param:string}.
 	//
 	// If a function not found on that type then the `string` macro type's functions are being used.
 	//
@@ -147,10 +169,6 @@ func main() {
 	// app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
 	// 	return func(paramValue string) bool { return argument == paramValue }
 	// })
-	// +------------------------+
-	// | {param:uuid}           |
-	// +------------------------+
-	// UUIDv4 (and v1) path parameter validation.
 
 	// Optionally, set custom handler on path parameter type error:
 	app.Macros().Get("uuid").HandleError(func(ctx iris.Context, paramIndex int, err error) {
@@ -183,6 +201,17 @@ func main() {
 	app.Get("/user/email/{user_email:email}", func(ctx iris.Context) {
 		email := ctx.Params().Get("user_email")
 		ctx.WriteString(email)
+	})
+
+	// http://localhost:8080/blog/2022/04/21
+	app.Get("/blog/{date:date}", func(ctx iris.Context) {
+		// rawTimeValue := ctx.Params().GetEntry("d").ValueRaw.(time.Time)
+		// OR
+		rawTimeValue, _ := ctx.Params().GetTime("date")
+		// yearMonthDay := rawTimeValue.Format("2006/01/02")
+		// OR
+		yearMonthDay := ctx.Params().SimpleDate("date")
+		ctx.Writef("Raw time.Time.String value: %v\nyyyy/mm/dd: %s\n", rawTimeValue, yearMonthDay)
 	})
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.

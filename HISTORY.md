@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `date` dynamic path parameter type. E.g. `/blog/{param:date}` matches to `"/blog/2022/04/21"`.
+
 - Add `iris.AllowQuerySemicolons` and `iris.WithoutServerError(iris.ErrURLQuerySemicolon)` to handle golang.org/issue/25192 as reported at: https://github.com/kataras/iris/issues/1875. 
 - Add new `Application.SetContextErrorHandler` to globally customize the default behavior (status code 500 without body) on `JSON`, `JSONP`, `Protobuf`, `MsgPack`, `XML`, `YAML` and `Markdown` method call write errors instead of catching the error on each handler.
 - Add new [x/pagination](x/pagination/pagination.go) sub-package which supports generics code (go 1.18+).

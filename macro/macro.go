@@ -207,7 +207,6 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 						val = strings.Split(arg[1:len(arg)-1], ",") // only string slices.
 					}
 				}
-
 			default:
 				val = arg
 			}

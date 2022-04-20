@@ -7,6 +7,7 @@ import (
 	"net/mail"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/macro/interpreter/ast"
 
@@ -431,6 +432,18 @@ var (
 		return paramValue, true
 	})
 
+	simpleDateLayout = "2006/01/02"
+
+	// Date type.
+	Date = NewMacro("date", "", false, true, func(paramValue string) (interface{}, bool) {
+		tt, err := time.Parse(simpleDateLayout, paramValue)
+		if err != nil {
+			return fmt.Errorf("%s: %w", paramValue, err), false
+		}
+
+		return tt, true
+	})
+
 	// Defaults contains the defaults macro and parameters types for the router.
 	//
 	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
@@ -453,6 +466,7 @@ var (
 		UUID,
 		Mail,
 		Email,
+		Date,
 	}
 )
 

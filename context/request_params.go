@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/core/memstore"
 )
@@ -238,6 +239,20 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 				return false
 			}
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
+		}
+	},
+	reflect.TypeOf(time.Time{}): func(paramIndex int) interface{} {
+		return func(ctx *Context) time.Time {
+			if ctx.Params().Len() <= paramIndex {
+				return unixEpochTime
+			}
+
+			v, ok := ctx.Params().GetEntryAt(paramIndex).ValueRaw.(time.Time)
+			if !ok {
+				return unixEpochTime
+			}
+
+			return v
 		}
 	},
 }

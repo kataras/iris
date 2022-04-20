@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 )
 
 // Most important tests to look:
@@ -481,6 +482,35 @@ func TestEmailEvaluatorRaw(t *testing.T) {
 	}
 	for i, tt := range tests {
 		testEvaluatorRaw(t, Email, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
+func TestDateEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass            bool
+		input           string
+		timeStringValue string
+	}{
+		{true, "2022/04/21", "2022-04-21 00:00:00 +0000 UTC"}, // 0
+		{true, "2022/12/05", "2022-12-05 00:00:00 +0000 UTC"}, // 1
+		{false, "2022/4", ""},      // 2
+		{false, "1/4/1", ""},       // 3
+		{false, "2022/4/", ""},     // 4
+		{false, "2022/4/21/0", ""}, // 5
+		{false, "1993", ""},        // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Date, tt.input, reflect.TypeOf(time.Time{}).Kind(), tt.pass, i)
+
+		if v, ok := Date.Evaluator(tt.input); ok {
+			if value, ok := v.(time.Time); ok {
+				if expected, got := tt.timeStringValue, value.String(); expected != got {
+					t.Fatalf("[%d] expected: %s but got: %s", i, expected, got)
+				}
+			} else {
+				t.Fatalf("[%d] expected to be able to cast as time.Time directly", i)
+			}
+		}
 	}
 }
 
