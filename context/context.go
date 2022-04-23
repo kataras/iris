@@ -3450,9 +3450,7 @@ func (ctx *Context) ViewData(key string, value interface{}) {
 		return
 	}
 
-	if data, ok := v.(map[string]interface{}); ok {
-		data[key] = value
-	} else if data, ok := v.(Map); ok {
+	if data, ok := v.(Map); ok {
 		data[key] = value
 	}
 }
@@ -3467,30 +3465,19 @@ func (ctx *Context) ViewData(key string, value interface{}) {
 // Similarly to `viewData := ctx.Values().Get("iris.view.data")` or
 // `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
 func (ctx *Context) GetViewData() map[string]interface{} {
-	viewDataContextKey := ctx.app.ConfigurationReadOnly().GetViewDataContextKey()
-	v := ctx.values.Get(viewDataContextKey)
+	if v := ctx.values.Get(ctx.app.ConfigurationReadOnly().GetViewDataContextKey()); v != nil {
+		// if pure map[string]interface{}
+		if viewData, ok := v.(Map); ok {
+			return viewData
+		}
+
+		// if struct, convert it to map[string]interface{}
+		if structs.IsStruct(v) {
+			return structs.Map(v)
+		}
+	}
 
 	// if no values found, then return nil
-	if v == nil {
-		return nil
-	}
-
-	// if struct, convert it to map[string]interface{}
-	if structs.IsStruct(v) {
-		return structs.Map(v)
-	}
-
-	// if pure map[string]interface{}
-	if viewData, ok := v.(map[string]interface{}); ok {
-		return viewData
-	}
-
-	// if context#Map
-	if viewData, ok := v.(Map); ok {
-		return viewData
-	}
-
-	// if failure, then return nil
 	return nil
 }
 

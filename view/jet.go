@@ -334,6 +334,20 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 			}
 		}
 
+		if viewContextData := ctx.GetViewData(); len(viewContextData) > 0 { // fix #1876
+			if vars == nil {
+				vars = make(JetRuntimeVars)
+			}
+
+			for k, v := range viewContextData {
+				val, ok := v.(reflect.Value)
+				if !ok {
+					val = reflect.ValueOf(v)
+				}
+				vars[k] = val
+			}
+		}
+
 		if v := ctx.Values().Get(s.jetDataContextKey); v != nil {
 			if bindingData == nil {
 				// if bindingData is nil, try to fill them by context key (a middleware can set data).
@@ -348,6 +362,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 				}
 			}
 		}
+
 	}
 
 	if bindingData == nil {

@@ -53,7 +53,7 @@ func (dt *doneTODOs) Range() (reflect.Value, reflect.Value, bool) {
 func (dt *doneTODOs) ProvidesIndex() bool { return true }
 
 func (dt *doneTODOs) Render(r *view.JetRuntime) {
-	r.Write([]byte(fmt.Sprintf("custom renderer")))
+	r.Write([]byte("custom renderer"))
 }
 
 // Render implements jet.Renderer interface
@@ -112,6 +112,7 @@ func main() {
 			return
 		}
 
+		ctx.ViewData("title", "Show TODO")
 		ctx.View("todos/show.jet", todo)
 	})
 	app.Get("/all-done", func(ctx iris.Context) {
@@ -122,7 +123,6 @@ func main() {
 		// ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
 		//
 		// OR
-
 		ctx.ViewData("showingAllDone", true)
 		ctx.ViewData("title", "Todos - All Done")
 

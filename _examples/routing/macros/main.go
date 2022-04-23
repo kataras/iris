@@ -1,4 +1,5 @@
 // Package main shows how you can register a custom parameter type and macro functions that belongs to it.
+// See _examples/routing/dynamic-path/main.go first.
 package main
 
 import (
