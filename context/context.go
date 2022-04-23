@@ -5498,18 +5498,30 @@ func (ctx *Context) UpsertCookie(cookie *http.Cookie, options ...CookieOption) b
 	ctx.applyCookieOptions(cookie, OpCookieSet, options)
 
 	header := ctx.ResponseWriter().Header()
-
 	if cookies := header[setCookieHeaderKey]; len(cookies) > 0 {
 		s := cookie.Name + "=" // name=?value
+
+		existingUpdated := false
+
 		for i, c := range cookies {
 			if strings.HasPrefix(c, s) {
+				if existingUpdated { // fixes #1877
+					// remove any duplicated.
+					cookies[i] = ""
+					header[setCookieHeaderKey] = cookies
+					continue
+				}
 				// We need to update the Set-Cookie (to update the expiration or any other cookie's properties).
 				// Probably the cookie is set and then updated in the first session creation
 				// (e.g. UpdateExpiration, see https://github.com/kataras/iris/issues/1485).
 				cookies[i] = cookie.String()
 				header[setCookieHeaderKey] = cookies
-				return false
+				existingUpdated = true
 			}
+		}
+
+		if existingUpdated {
+			return false // existing one updated.
 		}
 	}
 

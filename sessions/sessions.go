@@ -268,7 +268,7 @@ func (s *Sessions) Destroy(ctx *context.Context) {
 
 	ctx.Values().Remove(sessionContextKey)
 
-	ctx.RemoveCookie(s.config.Cookie)
+	ctx.RemoveCookie(s.config.Cookie, s.cookieOptions...)
 	s.provider.Destroy(cookieValue)
 }
 
