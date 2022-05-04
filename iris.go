@@ -560,8 +560,28 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	// the below schedules some tasks that will run among the server
 
 	if !app.config.DisableStartupLog {
-		// show the available info to exit from app.
-		su.RegisterOnServe(host.WriteStartupLogOnServe(app.logger.Printer.Output)) // app.logger.Writer -> Info
+		printer := app.logger.Printer.Output
+		hostPrinter := host.WriteStartupLogOnServe(printer)
+		if len(app.Hosts) == 0 { // print the version info on the first running host.
+			su.RegisterOnServe(func(h host.TaskHost) {
+				hasBuildInfo := BuildTime != "" && BuildRevision != ""
+				tab := " "
+				if hasBuildInfo {
+					tab = "   "
+				}
+				fmt.Fprintf(printer, "Iris Version:%s%s\n", tab, Version)
+
+				if hasBuildInfo {
+					fmt.Fprintf(printer, "Build Time:     %s\nBuild Revision: %s\n", BuildTime, BuildRevision)
+				}
+				fmt.Fprintln(printer)
+
+				hostPrinter(h)
+			})
+		} else {
+			su.RegisterOnServe(hostPrinter)
+		}
+
 		// app.logger.Debugf("Host: register startup notifier")
 	}
 

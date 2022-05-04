@@ -27,7 +27,7 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 			addr = h.Supervisor.Server.Addr
 		}
 		listeningURI := netutil.ResolveURL(guessScheme, addr)
-		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press CTRL/CMD+C to shut down.\n",
+		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press CTRL+C to shut down.\n",
 			listeningURI)
 	}
 }

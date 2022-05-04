@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	debug = false
+	debugMode = false
 )
 
 func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.Expect {
@@ -40,7 +40,7 @@ func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.E
 		Reporter: httpexpect.NewAssertReporter(t),
 	}
 
-	if debug {
+	if debugMode {
 		testConfiguration.Printers = []httpexpect.Printer{
 			httpexpect.NewDebugPrinter(t, true),
 		}

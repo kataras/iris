@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/kataras/iris/v12"
@@ -13,10 +12,7 @@ import (
 
 func main() {
 	app := iris.New()
-	server, err := socketio.NewServer(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	server := socketio.NewServer(nil)
 	server.OnConnect("/", func(s socketio.Conn) error {
 		s.SetContext("")
 		fmt.Println("connected:", s.ID())
