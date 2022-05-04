@@ -595,3 +595,17 @@ func (ms *Macros) GetTrailings() (macros []*Macro) {
 
 	return
 }
+
+// SetErrorHandler registers a common type path parameter error handler.
+// The "fnHandler" MUST be a type of handler.ParamErrorHandler:
+// func(ctx iris.Context, paramIndex int, err error). It calls
+// the Macro.HandleError method for each of the "ms" entries.
+func (ms *Macros) SetErrorHandler(fnHandler interface{}) {
+	for _, m := range *ms {
+		if m == nil {
+			continue
+		}
+
+		m.HandleError(fnHandler)
+	}
+}

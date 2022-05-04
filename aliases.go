@@ -318,6 +318,20 @@ func (p *prefixedDir) Open(name string) (http.File, error) {
 	return p.fs.Open(name)
 }
 
+type partyConfiguratorMiddleware struct {
+	handlers []Handler
+}
+
+func (p *partyConfiguratorMiddleware) Configure(r Party) {
+	r.Use(p.handlers...)
+}
+
+// ConfigureMiddleware is a PartyConfigurator which can be used
+// as a shortcut to add middlewares on Party.PartyConfigure("/path", WithMiddleware(handler), new(example.API)).
+func ConfigureMiddleware(handlers ...Handler) router.PartyConfigurator {
+	return &partyConfiguratorMiddleware{handlers: handlers}
+}
+
 var (
 	// Compression is a middleware which enables
 	// writing and reading using the best offered compression.
