@@ -15,7 +15,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/goccy/go-json v0.9.7-0.20220412154129-171d97575378
+	github.com/goccy/go-json v0.9.8-0.20220503045905-3fdc55a60ade
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/securecookie v1.1.1
@@ -30,20 +30,20 @@ require (
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.3
-	github.com/klauspost/compress v1.15.1
+	github.com/klauspost/compress v1.15.2
 	github.com/mailgun/raymond/v2 v2.0.46
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	github.com/shirou/gopsutil/v3 v3.22.3
-	github.com/tdewolff/minify/v2 v2.11.1
+	github.com/shirou/gopsutil/v3 v3.22.4
+	github.com/tdewolff/minify/v2 v2.11.2
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	google.golang.org/protobuf v1.28.0
@@ -69,7 +69,7 @@ require (
 	github.com/gobwas/ws v1.1.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20220410123724-9e86199038b0 // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
@@ -91,9 +91,9 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/smartystreets/assertions v1.2.1 // indirect
+	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/stretchr/testify v1.7.1 // indirect
-	github.com/tdewolff/parse/v2 v2.5.28 // indirect
+	github.com/tdewolff/parse/v2 v2.5.29 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
