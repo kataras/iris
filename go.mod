@@ -15,7 +15,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/goccy/go-json v0.9.8-0.20220503045905-3fdc55a60ade
+	github.com/goccy/go-json v0.9.8-0.20220506185958-23bd66f4c0d5
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/securecookie v1.1.1
@@ -30,7 +30,7 @@ require (
 	github.com/kataras/pio v0.0.10
 	github.com/kataras/sitemap v0.0.5
 	github.com/kataras/tunnel v0.0.3
-	github.com/klauspost/compress v1.15.2
+	github.com/klauspost/compress v1.15.3
 	github.com/mailgun/raymond/v2 v2.0.46
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.18
@@ -41,7 +41,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122
 	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
 	golang.org/x/text v0.3.7
