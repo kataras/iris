@@ -946,7 +946,7 @@ func (c *Configuration) GetVHost() string {
 
 // GetLogLevel returns the LogLevel field.
 func (c *Configuration) GetLogLevel() string {
-	return c.vhost
+	return c.LogLevel
 }
 
 // GetSocketSharding returns the SocketSharding field.
