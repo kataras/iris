@@ -1,4 +1,5 @@
-[![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
+<!-- [![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
+
 
 # News
 
@@ -6,7 +7,7 @@
 >
 > ![](https://iris-go.com/images/cli.png) Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
 
-> Due to the large workload, there may be delays in answering your [questions](https://github.com/kataras/iris/issues).
+> Due to the large workload, there may be delays in answering your [questions](https://github.com/kataras/iris/issues). -->
 
 <!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
 
@@ -19,6 +20,22 @@
 Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
+
+```go
+package main
+
+import "github.com/kataras/iris/v12"
+
+func main() {
+	app := iris.New()
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.HTML("Hello <strong>%s</strong>!", "World")
+	})
+
+	app.Listen(":8080")
+}
+```
 
 <details><summary>Simple Handler</summary>
 
@@ -46,7 +63,7 @@ func main() {
 }
 
 func updateUser(ctx iris.Context) {
-  id, _ := ctx.Params().Get("id")
+  id := ctx.Params().Get("id")
 
   var req request
   if err := ctx.ReadJSON(&req); err != nil {
