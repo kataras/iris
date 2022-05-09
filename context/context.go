@@ -841,7 +841,7 @@ func (ctx *Context) StopWithPlainError(statusCode int, err error) {
 // it will also fire the specified error code handler.
 func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) error {
 	ctx.StopWithStatus(statusCode)
-	_, err := ctx.writeJSON(jsonObject, nil)
+	_, err := ctx.writeJSON(jsonObject, nil) // do not modify - see errors.DefaultContextErrorHandler.
 	return err
 }
 
@@ -3975,9 +3975,14 @@ type (
 	// ErrorHandler describes a context error handler which applies on
 	// JSON, JSONP, Protobuf, MsgPack, XML, YAML and Markdown write errors.
 	//
+	// It does NOT modify or handle the result of Context.GetErr at all,
+	// use a custom middleware instead if you want to handle the handler-provided custom errors (Context.SetErr)
+	//
 	// An ErrorHandler can be registered once via Application.SetErrorHandler method to override the default behavior.
 	// The default behavior is to simply send status internal code error
 	// without a body back to the client.
+	//
+	// See Application.SetContextErrorHandler for more.
 	ErrorHandler interface {
 		HandleContextError(ctx *Context, err error)
 	}

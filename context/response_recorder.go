@@ -143,6 +143,11 @@ func (w *ResponseRecorder) ClearHeaders() {
 // Reset clears headers, sets the status code to 200
 // and clears the cached body.
 //
+// - Use ResetBody() and ResetHeaders() instead to keep compression after reseting.
+//
+// - Use Reset() & ResponseRecorder.ResponseWriter.(*context.CompressResponseWriter).Disabled = true
+// to set a new body without compression when the previous handler was iris.Compression.
+//
 // Implements the `ResponseWriterReseter`.
 func (w *ResponseRecorder) Reset() bool {
 	w.ClearHeaders()

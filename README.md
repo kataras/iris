@@ -28,6 +28,7 @@ import "github.com/kataras/iris/v12"
 
 func main() {
 	app := iris.New()
+	app.Use(iris.Compression)
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("Hello <strong>%s</strong>!", "World")
@@ -362,7 +363,7 @@ With your help, we can improve Open Source web development for everyone!
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta1
+$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta2
 ```
 
 <details><summary>Install on existing project</summary>

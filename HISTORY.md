@@ -28,6 +28,10 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Fix [#1882](https://github.com/kataras/iris/issues/1882)
+- Fix [#1877](https://github.com/kataras/iris/issues/1877)
+- Fix [#1876](https://github.com/kataras/iris/issues/1876)
+
 - New `date` dynamic path parameter type. E.g. `/blog/{param:date}` matches to `"/blog/2022/04/21"`.
 
 - Add `iris.AllowQuerySemicolons` and `iris.WithoutServerError(iris.ErrURLQuerySemicolon)` to handle golang.org/issue/25192 as reported at: https://github.com/kataras/iris/issues/1875. 

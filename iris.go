@@ -39,7 +39,7 @@ import (
 )
 
 // Version is the current version of the Iris Web Framework.
-const Version = "12.2.0-beta1"
+const Version = "12.2.0-beta2"
 
 // Byte unit helpers.
 const (
@@ -146,7 +146,7 @@ func Default() *Application {
 	app.logger.Debugf(`Log level set to "debug"`)
 
 	// Register the accesslog middleware.
-	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err == nil {
 		// Close the file on shutdown.
 		app.ConfigureHost(func(su *Supervisor) {
@@ -945,7 +945,8 @@ func TLS(addr string, certFileOrContents, keyFileOrContents string, hostConfigs 
 func AutoTLS(
 	addr string,
 	domain string, email string,
-	hostConfigs ...host.Configurator) Runner {
+	hostConfigs ...host.Configurator,
+) Runner {
 	return func(app *Application) error {
 		return app.NewHost(&http.Server{Addr: addr}).
 			Configure(hostConfigs...).
