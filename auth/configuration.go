@@ -1,4 +1,5 @@
 //go:build go1.18
+// +build go1.18
 
 package auth
 
@@ -169,7 +170,6 @@ func (c *Configuration) BindFile(filename string) error {
 
 		return yaml.Unmarshal(contents, c)
 	}
-
 }
 
 // ToYAML returns the "c" Configuration's contents as raw yaml byte slice.

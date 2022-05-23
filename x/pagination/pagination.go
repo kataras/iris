@@ -1,4 +1,5 @@
 //go:build go1.18
+// +build go1.18
 
 /*
 Until go version 2, we can't really apply the type alias feature on a generic type or function,
