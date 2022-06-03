@@ -44,6 +44,7 @@
     * [Import from YAML](configuration/from-yaml-file/main.go)
         * [Share Configuration across instances](configuration/from-yaml-file/shared-configuration/main.go)
     * [Import from TOML](configuration/from-toml-file/main.go)
+    * [Multi Environment Configuration](configuration/multi-environments) **NEW**
 * Routing
     * [Party Controller](routing/party-controller) **NEW**
     * [Overview](routing/overview/main.go)
