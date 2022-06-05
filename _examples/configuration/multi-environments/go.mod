@@ -3,9 +3,9 @@ module github.com/kataras/my-iris-app
 go 1.18
 
 require (
-	github.com/kataras/iris/v12 v12.2.0-beta2.0.20220602093840-c201b6ccc8ec
+	github.com/kataras/iris/v12 v12.2.0-beta2.0.20220605191257-288a67bc58fd
 	github.com/spf13/cobra v1.4.0
-	gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 require (
