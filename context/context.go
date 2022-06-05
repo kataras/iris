@@ -1001,7 +1001,8 @@ func (ctx *Context) Host() string {
 }
 
 // GetDomain resolves and returns the server's domain.
-func GetDomain(hostport string) string {
+// To customize its behavior, developers can modify this package-level function at initialization.
+var GetDomain = func(hostport string) string {
 	host := hostport
 	if tmp, _, err := net.SplitHostPort(hostport); err == nil {
 		host = tmp
@@ -1459,7 +1460,7 @@ func (ctx *Context) GetContentLength() int64 {
 // StatusCode sets the status code header to the response.
 // Look .GetStatusCode & .FireStatusCode too.
 //
-// Remember, the last one before .Write matters except recorder and transactions.
+// Note that you must set status code before write response body (except when recorder is used).
 func (ctx *Context) StatusCode(statusCode int) {
 	ctx.writer.WriteHeader(statusCode)
 }
@@ -5656,7 +5657,7 @@ func (ctx *Context) MaxAge() int64 {
 }
 
 //  +------------------------------------------------------------+
-//  | Advanced: Response Recorder and Transactions               |
+//  | Advanced: Response Recorder                                |
 //  +------------------------------------------------------------+
 
 // Record transforms the context's basic and direct responseWriter to a *ResponseRecorder
@@ -5689,72 +5690,6 @@ func (ctx *Context) IsRecording() (*ResponseRecorder, bool) {
 	// instead we do: recorder,ok = Recording()
 	rr, ok := ctx.writer.(*ResponseRecorder)
 	return rr, ok
-}
-
-// ErrTransactionInterrupt can be used to manually force-complete a Context's transaction
-// and log(warn) the wrapped error's message.
-// Usage: `... return fmt.Errorf("my custom error message: %w", context.ErrTransactionInterrupt)`.
-var ErrTransactionInterrupt = errors.New("transaction interrupted")
-
-// BeginTransaction starts a scoped transaction.
-//
-// Can't say a lot here because it will take more than 200 lines to write about.
-// You can search third-party articles or books on how Business Transaction works (it's quite simple, especially here).
-//
-// Note that this is unique and new
-// (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)
-// it's not covers all paths,
-// such as databases, this should be managed by the libraries you use to make your database connection,
-// this transaction scope is only for context's response.
-// Transactions have their own middleware ecosystem also.
-//
-// See https://github.com/kataras/iris/tree/master/_examples/ for more
-func (ctx *Context) BeginTransaction(pipe func(t *Transaction)) {
-	// do NOT begin a transaction when the previous transaction has been failed
-	// and it was requested scoped or SkipTransactions called manually.
-	if ctx.TransactionsSkipped() {
-		return
-	}
-
-	// start recording in order to be able to control the full response writer
-	ctx.Record()
-
-	t := newTransaction(ctx) // it calls this *context, so the overriding with a new pool's New of context.Context wil not work here.
-	defer func() {
-		if err := recover(); err != nil {
-			ctx.app.Logger().Warn(fmt.Errorf("recovery from panic: %w", ErrTransactionInterrupt))
-			// complete (again or not , doesn't matters) the scope without loud
-			t.Complete(nil)
-			// we continue as normal, no need to return here*
-		}
-
-		// write the temp contents to the original writer
-		t.Context().ResponseWriter().CopyTo(ctx.writer)
-		// give back to the transaction the original writer (SetBeforeFlush works this way and only this way)
-		// this is tricky but nessecery if we want ctx.FireStatusCode to work inside transactions
-		t.Context().ResetResponseWriter(ctx.writer)
-	}()
-
-	// run the worker with its context clone inside.
-	pipe(t)
-}
-
-// skipTransactionsContextKey set this to any value to stop executing next transactions
-// it's a context-key in order to be used from anywhere, set it by calling the SkipTransactions()
-const skipTransactionsContextKey = "iris.transactions.skip"
-
-// SkipTransactions if called then skip the rest of the transactions
-// or all of them if called before the first transaction
-func (ctx *Context) SkipTransactions() {
-	ctx.values.Set(skipTransactionsContextKey, 1)
-}
-
-// TransactionsSkipped returns true if the transactions skipped or canceled at all.
-func (ctx *Context) TransactionsSkipped() bool {
-	if n, err := ctx.values.GetInt(skipTransactionsContextKey); err == nil && n == 1 {
-		return true
-	}
-	return false
 }
 
 // Exec calls the framewrok's ServeHTTPC

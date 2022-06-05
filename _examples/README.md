@@ -200,7 +200,6 @@
     * [Protocol Buffers](response-writer/protobuf/main.go)
     * [HTTP/2 Server Push](response-writer/http2push/main.go)
     * [Stream Writer](response-writer/stream-writer/main.go)
-    * [Transactions](response-writer/transactions/main.go)
     * [Server-Sent Events](response-writer/sse/main.go)
         * [SSE 3rd-party (r3labs/sse)](response-writer/sse-third-party/main.go)
         * [SSE 3rd-party (alexandrevicenzi/go-sse)](response-writer/sse-third-party-2/main.go)

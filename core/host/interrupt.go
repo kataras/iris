@@ -7,15 +7,30 @@ import (
 	"syscall"
 )
 
-// RegisterOnInterrupt registers a global function to call when CTRL+C/CMD+C pressed or a unix kill command received.
+// RegisterOnInterrupt registers a global function to call when CTRL+C pressed or a unix kill command received.
 func RegisterOnInterrupt(cb func()) {
+	// var cb func()
+	// switch v := callbackFuncOrFuncReturnsError.(type) {
+	// case func():
+	// 	cb = v
+	// case func() error:
+	// 	cb = func() { v() }
+	// default:
+	// 	panic(fmt.Errorf("unknown type of RegisterOnInterrupt callback: expected func() or func() error but got: %T", v))
+	// }
+
 	Interrupt.Register(cb)
 }
 
 // Interrupt watches the os.Signals for interruption signals
 // and fires the callbacks when those happens.
 // A call of its `FireNow` manually will fire and reset the registered interrupt handlers.
-var Interrupt = new(interruptListener)
+var Interrupt TnterruptListener = new(interruptListener)
+
+type TnterruptListener interface {
+	Register(cb func())
+	FireNow()
+}
 
 type interruptListener struct {
 	mu   sync.Mutex

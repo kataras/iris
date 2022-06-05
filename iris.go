@@ -588,7 +588,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	if !app.config.DisableInterruptHandler {
 		// when CTRL/CMD+C pressed.
 		shutdownTimeout := 10 * time.Second
-		host.RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
+		RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
 		// app.logger.Debugf("Host: register server shutdown on interrupt(CTRL+C/CMD+C)")
 	}
 
