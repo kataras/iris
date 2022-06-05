@@ -545,17 +545,21 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	// bind the constructed server and return it
 	su := host.New(srv)
 
-	if app.config.vhost == "" { // vhost now is useful for router subdomain on wildcard subdomains,
+	if app.config.VHost == "" { // vhost now is useful for router subdomain on wildcard subdomains,
 		// in order to correct decide what to do on:
 		// mydomain.com -> invalid
 		// localhost -> invalid
 		// sub.mydomain.com -> valid
 		// sub.localhost -> valid
 		// we need the host (without port if 80 or 443) in order to validate these, so:
-		app.config.vhost = netutil.ResolveVHost(srv.Addr)
+		app.config.VHost = netutil.ResolveVHost(srv.Addr)
+	} else {
+		context.GetDomain = func(_ string) string { // #1886
+			return app.config.VHost
+		}
 	}
 
-	// app.logger.Debugf("Host: virtual host is %s", app.config.vhost)
+	// app.logger.Debugf("Host: virtual host is %s", app.config.VHost)
 
 	// the below schedules some tasks that will run among the server
 
@@ -603,6 +607,15 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	return su
 }
+
+// func (app *Application) OnShutdown(closers ...func()) {
+// 	for _,cb := range closers {
+// 		if cb == nil {
+// 			continue
+// 		}
+// 		RegisterOnInterrupt(cb)
+// 	}
+// }
 
 // Shutdown gracefully terminates all the application's server hosts and any tunnels.
 // Returns an error on the first failure, otherwise nil.
@@ -795,7 +808,7 @@ type Runner func(*Application) error
 // See `Run` for more.
 func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
-		app.config.vhost = netutil.ResolveVHost(l.Addr().String())
+		app.config.VHost = netutil.ResolveVHost(l.Addr().String())
 		return app.NewHost(&http.Server{Addr: l.Addr().String()}).
 			Configure(hostConfigs...).
 			Serve(l)
@@ -1059,7 +1072,7 @@ func (app *Application) tryStartTunneling() {
 
 			publicAddr := publicAddrs[0]
 			// to make subdomains resolution still based on this new remote, public addresses.
-			app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
+			app.config.VHost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
 			directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
 			app.logger.Printer.Write(directLog) // nolint:errcheck

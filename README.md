@@ -19,7 +19,7 @@
 
 Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
-It provides a beautifully expressive and easy to use foundation for your next website or API.
+It provides a [beautifully](iris_guide.go#L31-L44) expressive and easy to use foundation for your next website or API.
 
 ```go
 package main
@@ -38,7 +38,37 @@ func main() {
 }
 ```
 
-<details><summary>Simple Handler</summary>
+<details><summary>API Guide</summary>
+
+```go
+package main
+
+import (
+  // [other packages...]
+
+  "github.com/kataras/iris/v12"
+)
+
+func main() {
+  app := iris.NewGuide().
+    AllowOrigin("*").
+    Compression(true).
+    Health(true, "development", "kataras").
+    Timeout(0, 20*time.Second, 20*time.Second).
+    Middlewares(basicauth.New(...)).
+    Services(
+        // NewDatabase(),
+        // NewPostgresRepositoryRegistry,
+        // NewUserService,
+    ).
+    API("/users", new(UsersAPI)).
+    Listen(":80")
+}
+```
+
+</details>
+
+<details><summary>More with simple Handler</summary>
 
 ```go
 package main

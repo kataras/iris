@@ -28,7 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
-- Make `Context.Domain()` customizable by letting developers to set the custom `Context.GetDomain` package-level function.
+- Add new `iris.NewGuide` which helps you build a simple and nice JSON API with services as dependencies and better design pattern.
+- Make `Context.Domain()` customizable by letting developers to modify the `Context.GetDomain` package-level function.
 - Remove Request Context-based Transaction feature as its usage can be replaced with just the Iris Context (as of go1.7+) and better [project](_examples/project) structure.
 - Fix [#1882](https://github.com/kataras/iris/issues/1882)
 - Fix [#1877](https://github.com/kataras/iris/issues/1877)

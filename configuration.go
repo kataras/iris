@@ -613,9 +613,10 @@ type (
 // app.Configure(iris.WithConfiguration(conf)) OR
 // app.Run/Listen(..., iris.WithConfiguration(conf)).
 type Configuration struct {
-	// vhost is private and set only with .Run/Listen methods, it cannot be changed after the first set.
+	// VHost lets you customize the trusted domain this server should run on.
+	// Its value will be used as the return value of Context.Domain() too.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
-	vhost string
+	VHost string `ini:"v_host" json:"vHost" yaml:"VHost" toml:"VHost" env:"V_HOST"`
 
 	// LogLevel is the log level the application should use to output messages.
 	// Logger, by default, is mostly used on Build state but it is also possible
@@ -941,7 +942,7 @@ var _ context.ConfigurationReadOnly = (*Configuration)(nil)
 
 // GetVHost returns the non-exported vhost config field.
 func (c *Configuration) GetVHost() string {
-	return c.vhost
+	return c.VHost
 }
 
 // GetLogLevel returns the LogLevel field.

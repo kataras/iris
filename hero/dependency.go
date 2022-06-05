@@ -157,7 +157,16 @@ func fromFunc(v reflect.Value, dest *Dependency) bool {
 	numOut := typ.NumOut()
 
 	if numIn == 0 {
-		panic("bad value: function has zero inputs")
+		// it's an empty function, that must return a structure.
+		if numOut != 1 {
+			firstOutType := indirectType(typ.Out(0))
+			if firstOutType.Kind() != reflect.Struct && firstOutType.Kind() != reflect.Interface {
+				panic(fmt.Sprintf("bad value: function has zero inputs: empty input function must output a single value but got: length=%v, type[0]=%s", numOut, firstOutType.String()))
+			}
+		}
+
+		// fallback to structure.
+		return fromStructValue(v.Call(nil)[0], dest)
 	}
 
 	if numOut == 0 {

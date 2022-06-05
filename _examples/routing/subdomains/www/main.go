@@ -32,7 +32,7 @@ func newApp() *iris.Application {
 		// party or subdomain:
 		// Get all routes that are registered so far, including all "Parties" and subdomains:
 		currentRoutes := app.GetRoutes()
-		// Register them to the www subdomain/vhost as well:
+		// Register them to the www subdomain/VHost as well:
 		for _, r := range currentRoutes {
 			www.Handle(r.Method, r.Tmpl().Src, r.Handlers...)
 		}
