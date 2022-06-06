@@ -13,7 +13,7 @@
 
 # Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a>
 
-[![build status](https://img.shields.io/github/workflow/status/kataras/iris/CI/master?style=for-the-badge)](https://github.com/kataras/iris/actions) [![view examples](https://img.shields.io/badge/examples%20-253-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+[![build status](https://img.shields.io/github/workflow/status/kataras/iris/CI/master?style=for-the-badge)](https://github.com/kataras/iris/actions) [![view examples](https://img.shields.io/badge/examples%20-269-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
 <!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
 
@@ -37,36 +37,6 @@ func main() {
 	app.Listen(":8080")
 }
 ```
-
-<details><summary>API Guide</summary>
-
-```go
-package main
-
-import (
-  // [other packages...]
-
-  "github.com/kataras/iris/v12"
-)
-
-func main() {
-  app := iris.NewGuide().
-    AllowOrigin("*").
-    Compression(true).
-    Health(true, "development", "kataras").
-    Timeout(0, 20*time.Second, 20*time.Second).
-    Middlewares(basicauth.New(...)).
-    Services(
-        // NewDatabase(),
-        // NewPostgresRepositoryRegistry,
-        // NewUserService,
-    ).
-    API("/users", new(UsersAPI)).
-    Listen(":80")
-}
-```
-
-</details>
 
 <details><summary>More with simple Handler</summary>
 
@@ -176,6 +146,37 @@ Want to see more? Navigate through [mvc examples](_examples/mvc)!
 </details>
 
 
+<details><summary>API Guide <strong>HOT</strong></summary>
+
+```go
+package main
+
+import (
+  // [other packages...]
+
+  "github.com/kataras/iris/v12"
+)
+
+func main() {
+  app := iris.NewGuide().
+    AllowOrigin("*").
+    Compression(true).
+    Health(true, "development", "kataras").
+    Timeout(0, 20*time.Second, 20*time.Second).
+    Middlewares(basicauth.New(...)).
+    Services(
+        // NewDatabase(),
+        // NewPostgresRepositoryRegistry,
+        // NewUserService,
+    ).
+    API("/users", new(UsersAPI)).
+    Listen(":80")
+}
+```
+
+</details>
+
+<br/>
 
 Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
 
@@ -430,7 +431,7 @@ For a more detailed technical documentation you can head over to our [godocs](ht
 
 [![follow Iris web framework on twitter](https://img.shields.io/twitter/follow/iris_framework?color=ee7506&logoColor=ee7506&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=iris_framework)
 
-[![follow Iris web framework on facebook](https://img.shields.io/badge/Follow%20%40Iris.framework-522-2D88FF.svg?style=for-the-badge&logo=facebook)](https://www.facebook.com/iris.framework)
+[![follow Iris web framework on facebook](https://img.shields.io/badge/Follow%20%40Iris.framework-569-2D88FF.svg?style=for-the-badge&logo=facebook)](https://www.facebook.com/iris.framework)
 
 You can [request](https://www.iris-go.com/#ebookDonateForm) a PDF and online access of the **Iris E-Book** (New Edition, **future v12.2.0+**) today and be participated in the development of Iris.
 
