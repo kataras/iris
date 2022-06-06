@@ -158,7 +158,7 @@ import (
 )
 
 func main() {
-  app := iris.NewGuide().
+  iris.NewGuide().
     AllowOrigin("*").
     Compression(true).
     Health(true, "development", "kataras").
