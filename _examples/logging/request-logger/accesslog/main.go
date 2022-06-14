@@ -10,7 +10,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/requestid"
 	"github.com/kataras/iris/v12/sessions"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	rotatelogs "github.com/iproj/file-rotatelogs"
 )
 
 // Default line format:
