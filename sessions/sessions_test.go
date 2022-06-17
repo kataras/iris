@@ -35,7 +35,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 		s := sessions.Get(ctx)
 		sessValues := s.GetAll()
 
-		_, err := ctx.JSON(sessValues)
+		err := ctx.JSON(sessValues)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -141,8 +141,7 @@ func TestFlashMessages(t *testing.T) {
 	}
 
 	writeValues := func(ctx *context.Context, values map[string]interface{}) error {
-		_, err := ctx.JSON(values)
-		return err
+		return ctx.JSON(values)
 	}
 
 	app.Post("/set", func(ctx *context.Context) {

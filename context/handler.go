@@ -275,7 +275,6 @@ type Filter func(*Context) bool
 // Handlers here should act like middleware, they should contain `ctx.Next` to proceed
 // to the next handler of the chain. Those "handlers" are registered to the per-request context.
 //
-//
 // It checks the "filter" and if passed then
 // it, correctly, executes the "handlers".
 //

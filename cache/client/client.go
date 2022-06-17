@@ -2,7 +2,7 @@ package client
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -17,8 +17,8 @@ import (
 // register one client handler per route.
 //
 // it's just calls a remote cache service server/handler,
-//  which lives on other, external machine.
 //
+//	which lives on other, external machine.
 type ClientHandler struct {
 	// bodyHandler the original route's handler
 	bodyHandler context.Handler
@@ -162,7 +162,7 @@ func (h *ClientHandler) ServeHTTP(ctx *context.Context) {
 		// get the status code , content type and the write the response body
 		ctx.ContentType(response.Header.Get(cfg.ContentTypeHeader))
 		ctx.StatusCode(response.StatusCode)
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		response.Body.Close()
 		if err != nil {
 			return

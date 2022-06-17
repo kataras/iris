@@ -22,12 +22,13 @@ type PreValidator func(*context.Context) bool
 //
 // Q: What's the difference between this and a PreValidator?
 // A: PreValidator runs BEFORE trying to get the cache, it cares only for the request
-//    and if at least one PreValidator returns false then it just runs the original handler and stop there, at the other hand
-//    a PostValidator runs if all PreValidators returns true and original handler is executed but with a response recorder,
-//    also the PostValidator should return true to store the cached response.
-//    Last, a PostValidator accepts a context
-//    in order to be able to catch the original handler's response,
-//    the PreValidator checks only for request.
+//
+//	and if at least one PreValidator returns false then it just runs the original handler and stop there, at the other hand
+//	a PostValidator runs if all PreValidators returns true and original handler is executed but with a response recorder,
+//	also the PostValidator should return true to store the cached response.
+//	Last, a PostValidator accepts a context
+//	in order to be able to catch the original handler's response,
+//	the PreValidator checks only for request.
 //
 // If a function of type of PostValidator returns true then the (shared-always) cache is allowed to be stored.
 type PostValidator func(*context.Context) bool

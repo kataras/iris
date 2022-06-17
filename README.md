@@ -19,7 +19,8 @@
 
 Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
-It provides a [beautifully](iris_guide.go#L31-L44) expressive and easy to use foundation for your next website or API.
+It provides a beautifully expressive and easy to use foundation for your next website or API.
+
 
 ```go
 package main
@@ -27,18 +28,18 @@ package main
 import "github.com/kataras/iris/v12"
 
 func main() {
-	app := iris.New()
-	app.Use(iris.Compression)
+  app := iris.New()
+  app.Use(iris.Compression)
 
-	app.Get("/", func(ctx iris.Context) {
-		ctx.HTML("Hello <strong>%s</strong>!", "World")
-	})
+  app.Get("/", func(ctx iris.Context) {
+    ctx.HTML("Hello <strong>%s</strong>!", "World")
+  })
 
-	app.Listen(":8080")
+  app.Listen(":8080")
 }
 ```
 
-<details><summary>More with simple Handler</summary>
+<!-- <details><summary>More with simple Handler</summary>
 
 ```go
 package main
@@ -177,6 +178,34 @@ func main() {
 </details>
 
 <br/>
+
+-->
+
+As one [Go developer](https://twitter.com/dkuye/status/1532087942696554497) once said, **Iris got you covered all-round and standing strong over the years**.
+
+Some of the features Iris offers:
+
+* HTTP/2 (Push, even Embedded data)
+* Middleware (Accesslog, Basicauth, CORS, gRPC, Anti-Bot hCaptcha, JWT, MethodOverride, ModRevision, Monitor, PPROF, Ratelimit, Anti-Bot reCaptcha, Recovery, RequestID, Rewrite)
+* API Versioning
+* Model-View-Controller
+* Websockets
+* gRPC
+* Auto-HTTPS
+* Builtin support for ngrok to put your app on the internet, the fastest way
+* Unique Router with dynamic path as parameter with standard types like :uuid, :string, :int... and the ability to create your own
+* Compression
+* View Engines (HTML, Django, Amber, Handlebars, Pug/Jade and more)
+* Create your own File Server and host your own WebDAV server
+* Cache
+* Localization (i18n, sitemap)
+* Sessions
+* Rich Responses (HTML, Text, Markdown, XML, YAML, Binary, JSON, JSONP, Protocol Buffers, MessagePack, Content Negotiation, Streaming, Server-Sent Events and more)
+* Response Compression (gzip, deflate, brotli, snappy, s2)
+* Rich Requests (Bind URL Query, Headers, Form, Text, XML, YAML, Binary, JSON, Validation, Protocol Buffers, MessagePack and more)
+* Dependency Injection (MVC, Handlers, API Routers)
+* Testing Suite
+* And the most important... you get fast answers and support from the 1st day until now - that's six full years!
 
 Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
 

@@ -2,7 +2,7 @@ package view
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -80,7 +80,7 @@ func asset(fs http.FileSystem, name string) ([]byte, error) {
 		return nil, err
 	}
 
-	contents, err := ioutil.ReadAll(f)
+	contents, err := io.ReadAll(f)
 	f.Close()
 	return contents, err
 }

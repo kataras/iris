@@ -18,7 +18,9 @@ import (
 // Note that the builtin macros return error too, but they're handled
 // by the `else` literal (error code). To change this behavior
 // and send a custom error response you have to register it:
-//  app.Macros().Get("uuid").HandleError(func(ctx iris.Context, paramIndex int, err error)).
+//
+//	app.Macros().Get("uuid").HandleError(func(ctx iris.Context, paramIndex int, err error)).
+//
 // You can also set custom macros by `app.Macros().Register`.
 //
 // See macro.HandleError to set it.

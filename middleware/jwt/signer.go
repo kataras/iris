@@ -31,8 +31,8 @@ type Signer struct {
 //
 // Usage:
 //
-//  signer := NewSigner(HS256, secret, 15*time.Minute)
-//  token, err := signer.Sign(userClaims{Username: "kataras"})
+//	signer := NewSigner(HS256, secret, 15*time.Minute)
+//	token, err := signer.Sign(userClaims{Username: "kataras"})
 func NewSigner(signatureAlg Alg, signatureKey interface{}, maxAge time.Duration) *Signer {
 	if signatureAlg == HS256 {
 		// A tiny helper if the end-developer uses string instead of []byte for hmac keys.

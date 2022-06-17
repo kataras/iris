@@ -560,9 +560,9 @@ func init() {
 // system's mime.types file(s) if available under one or more of these
 // names:
 //
-//   /etc/mime.types
-//   /etc/apache2/mime.types
-//   /etc/apache/mime.types
+//	/etc/mime.types
+//	/etc/apache2/mime.types
+//	/etc/apache/mime.types
 //
 // On Windows, MIME types are extracted from the registry.
 //

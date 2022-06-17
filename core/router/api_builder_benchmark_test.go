@@ -12,7 +12,6 @@ import (
 	"github.com/kataras/golog"
 )
 
-//
 // randStringBytesMaskImprSrc helps us to generate random paths for the test,
 // the below piece of code is external, as an answer to a stackoverflow question.
 //

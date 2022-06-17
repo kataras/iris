@@ -1,7 +1,6 @@
 package iris
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -103,7 +102,7 @@ func createGlobalConfiguration(t *testing.T) {
 		out, err := yaml.Marshal(&c)
 
 		if err == nil {
-			err = ioutil.WriteFile(filename, out, os.FileMode(0666))
+			err = os.WriteFile(filename, out, os.FileMode(0666))
 		}
 		if err != nil {
 			t.Fatalf("error while writing the global configuration field at: %s. Trace: %v\n", filename, err)
@@ -131,7 +130,7 @@ func testConfigurationGlobal(t *testing.T, c Configurator) {
 }
 
 func TestConfigurationYAML(t *testing.T) {
-	yamlFile, ferr := ioutil.TempFile("", "configuration.yml")
+	yamlFile, ferr := os.CreateTemp("", "configuration.yml")
 
 	if ferr != nil {
 		t.Fatal(ferr)
@@ -264,7 +263,7 @@ Other:
 }
 
 func TestConfigurationTOML(t *testing.T) {
-	tomlFile, ferr := ioutil.TempFile("", "configuration.toml")
+	tomlFile, ferr := os.CreateTemp("", "configuration.toml")
 
 	if ferr != nil {
 		t.Fatal(ferr)

@@ -10,9 +10,10 @@ import (
 // FromStd converts native http.Handler & http.HandlerFunc to context.Handler.
 //
 // Supported form types:
-// 		 .FromStd(h http.Handler)
-// 		 .FromStd(func(w http.ResponseWriter, r *http.Request))
-// 		 .FromStd(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
+//
+//	.FromStd(h http.Handler)
+//	.FromStd(func(w http.ResponseWriter, r *http.Request))
+//	.FromStd(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
 func FromStd(handler interface{}) context.Handler {
 	switch h := handler.(type) {
 	case context.Handler:

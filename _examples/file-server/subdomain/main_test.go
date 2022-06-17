@@ -1,8 +1,8 @@
 package main
 
 import (
-	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -40,7 +40,7 @@ func (r resource) loadFromBase(dir string) string {
 
 	fullpath := filepath.Join(dir, filename)
 
-	b, err := ioutil.ReadFile(fullpath)
+	b, err := os.ReadFile(fullpath)
 	if err != nil {
 		panic(fullpath + " failed with error: " + err.Error())
 	}

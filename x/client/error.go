@@ -2,7 +2,7 @@ package client
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -39,7 +39,7 @@ func (e APIError) Error() string {
 
 // ExtractError returns the response wrapped inside an APIError.
 func ExtractError(resp *http.Response) APIError {
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	return APIError{
 		Response: resp,

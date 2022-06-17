@@ -491,8 +491,9 @@ func (r *Route) GetTitle() string {
 // Should be called after `Build` state.
 //
 // It prints the @method: @path (@description) (@route_rel_location)
-//               * @handler_name (@handler_rel_location)
-//               * @second_handler ...
+//   - @handler_name (@handler_rel_location)
+//   - @second_handler ...
+//
 // If route and handler line:number locations are equal then the second is ignored.
 func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 	title := r.GetTitle()

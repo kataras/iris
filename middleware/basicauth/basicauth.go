@@ -52,8 +52,9 @@ type ErrorHandler func(ctx *context.Context, err error)
 // The only required value is the Allow field.
 //
 // Usage:
-//  opts := Options { ... }
-//  auth := New(opts)
+//
+//	opts := Options { ... }
+//	auth := New(opts)
 type Options struct {
 	// Realm directive, read http://tools.ietf.org/html/rfc2617#section-1.2 for details.
 	// E.g. "Authorization Required".
@@ -171,17 +172,18 @@ type BasicAuth struct {
 // The result should be used to wrap an existing handler or the HTTP application's root router.
 //
 // Example Code:
-//  opts := basicauth.Options{
-//  	Realm: basicauth.DefaultRealm,
-//      ErrorHandler: basicauth.DefaultErrorHandler,
-//  	MaxAge: 2 * time.Hour,
-//  	GC: basicauth.GC{
-//  		Every: 3 * time.Hour,
-//  	},
-//  	Allow: basicauth.AllowUsers(users),
-//  }
-//  auth := basicauth.New(opts)
-//  app.Use(auth)
+//
+//	opts := basicauth.Options{
+//		Realm: basicauth.DefaultRealm,
+//	    ErrorHandler: basicauth.DefaultErrorHandler,
+//		MaxAge: 2 * time.Hour,
+//		GC: basicauth.GC{
+//			Every: 3 * time.Hour,
+//		},
+//		Allow: basicauth.AllowUsers(users),
+//	}
+//	auth := basicauth.New(opts)
+//	app.Use(auth)
 //
 // Access the user in the route handler with: ctx.User().GetRaw().(*myCustomType).
 //
@@ -238,16 +240,18 @@ func New(opts Options) context.Handler {
 // are required as they are compared against the user input
 // when access to protected resource is requested.
 // A user list can defined with one of the following values:
-//  map[string]string form of: {username:password, ...}
-//  map[string]interface{} form of: {"username": {"password": "...", "other_field": ...}, ...}
-//  []T which T completes the User interface, where T is a struct value
-//  []T which T contains at least Username and Password fields.
+//
+//	map[string]string form of: {username:password, ...}
+//	map[string]interface{} form of: {"username": {"password": "...", "other_field": ...}, ...}
+//	[]T which T completes the User interface, where T is a struct value
+//	[]T which T contains at least Username and Password fields.
 //
 // Usage:
-//  auth := Default(map[string]string{
-//    "admin": "admin",
-//    "john": "p@ss",
-//  })
+//
+//	auth := Default(map[string]string{
+//	  "admin": "admin",
+//	  "john": "p@ss",
+//	})
 func Default(users interface{}, userOpts ...UserAuthOption) context.Handler {
 	opts := Options{
 		Realm: DefaultRealm,
@@ -260,7 +264,8 @@ func Default(users interface{}, userOpts ...UserAuthOption) context.Handler {
 // a filename to load the users from.
 //
 // Usage:
-//  auth := Load("users.yml")
+//
+//	auth := Load("users.yml")
 func Load(jsonOrYamlFilename string, userOpts ...UserAuthOption) context.Handler {
 	opts := Options{
 		Realm: DefaultRealm,

@@ -55,14 +55,14 @@ var _ jwt.Blocklist = (*Blocklist)(nil)
 //
 // Usage:
 //
-//  blocklist := NewBlocklist()
-//  blocklist.ClientOptions.Addr = ...
-//  err := blocklist.Connect()
+//	blocklist := NewBlocklist()
+//	blocklist.ClientOptions.Addr = ...
+//	err := blocklist.Connect()
 //
 // And register it:
 //
-//  verifier := jwt.NewVerifier(...)
-//  verifier.Blocklist = blocklist
+//	verifier := jwt.NewVerifier(...)
+//	verifier.Blocklist = blocklist
 func NewBlocklist() *Blocklist {
 	return &Blocklist{
 		GetKey: defaultGetKey,

@@ -299,6 +299,7 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 // Adding one or more outputs : app.Logger().AddOutput(io.Writer...)
 //
 // Adding custom levels requires import of the `github.com/kataras/golog` package:
+//
 //	First we create our level to a golog.Level
 //	in order to be used in the Log functions.
 //	var SuccessLevel golog.Level = 6
@@ -309,6 +310,7 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 //		// ColorfulText (Green Color[SUCC])
 //		ColorfulText: "\x1b[32m[SUCC]\x1b[0m",
 //	}
+//
 // Usage:
 // app.Logger().SetLevel("success")
 // app.Logger().Logf(SuccessLevel, "a custom leveled log message")
@@ -437,12 +439,12 @@ func (app *Application) GetContextPool() *context.Pool {
 //
 // ExampleCode:
 //
-//  type contextErrorHandler struct{}
-//  func (e *contextErrorHandler) HandleContextError(ctx iris.Context, err error) {
-// 	 errors.InvalidArgument.Err(ctx, err)
-//  }
-//  ...
-//	app.SetContextErrorHandler(new(contextErrorHandler))
+//	 type contextErrorHandler struct{}
+//	 func (e *contextErrorHandler) HandleContextError(ctx iris.Context, err error) {
+//		 errors.InvalidArgument.Err(ctx, err)
+//	 }
+//	 ...
+//		app.SetContextErrorHandler(new(contextErrorHandler))
 func (app *Application) SetContextErrorHandler(errHandler context.ErrorHandler) *Application {
 	app.contextErrorHandler = errHandler
 	return app
@@ -653,9 +655,9 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 //
 // import "github.com/kataras/iris/v12/core/errgroup"
 //
-// errgroup.Walk(app.Build(), func(typ interface{}, err error) {
-// 	app.Logger().Errorf("%s: %s", typ, err)
-// })
+//	errgroup.Walk(app.Build(), func(typ interface{}, err error) {
+//		app.Logger().Errorf("%s: %s", typ, err)
+//	})
 func (app *Application) Build() error {
 	if app.builded {
 		return nil

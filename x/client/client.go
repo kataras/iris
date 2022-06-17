@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -281,7 +280,7 @@ func (c *Client) Do(ctx context.Context, method, urlpath string, payload interfa
 // DrainResponseBody drains response body and close it, allowing the transport to reuse TCP connections.
 // It's automatically called on Client.ReadXXX methods on the end.
 func (c *Client) DrainResponseBody(resp *http.Response) {
-	_, _ = io.Copy(ioutil.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
 }
 
@@ -398,7 +397,7 @@ func (c *Client) ReadJSON(ctx context.Context, dest interface{}, method, urlpath
 	}
 
 	// DBUG
-	// b, _ := ioutil.ReadAll(resp.Body)
+	// b, _ := io.ReadAll(resp.Body)
 	// println(string(b))
 	// return json.Unmarshal(b, &dest)
 
@@ -418,7 +417,7 @@ func (c *Client) ReadPlain(ctx context.Context, dest interface{}, method, urlpat
 		return ExtractError(resp)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -495,7 +494,7 @@ func BindResponse(resp *http.Response, dest interface{}) (err error) {
 	case contentTypeJSON: // the most common scenario on successful responses.
 		return json.NewDecoder(resp.Body).Decode(&dest)
 	case contentTypePlainText:
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

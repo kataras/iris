@@ -166,10 +166,12 @@ func (u *SimpleUser) GetField(key string) (interface{}, error) {
 
 // UserMap can be used to convert a common map[string]interface{} to a User.
 // Usage:
-// user := map[string]interface{}{
-//   "username": "kataras",
-//   "age"     : 27,
-// }
+//
+//	user := map[string]interface{}{
+//	  "username": "kataras",
+//	  "age"     : 27,
+//	}
+//
 // ctx.SetUser(user)
 // OR
 // user := UserStruct{....}

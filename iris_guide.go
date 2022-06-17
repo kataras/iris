@@ -237,7 +237,7 @@ type (
 	Step3 interface {
 		// Health enables the /health route.
 		// If "env" and "developer" are given, these fields will be populated to the client
-		// through headers and environemnt on health route.
+		// through headers and environment on health route.
 		Health(b bool, env, developer string) Step4
 	}
 

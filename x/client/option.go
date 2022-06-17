@@ -67,25 +67,27 @@ func RateLimit(requestsPerSecond int) Option {
 // and right after a response from the server is received.
 //
 // Example Output for request:
-//  [DBUG] 2022/03/01 21:54 Iris HTTP Client: POST / HTTP/1.1
-//  Host: 127.0.0.1:50948
-//  User-Agent: Go-http-client/1.1
-//  Content-Length: 22
-//  Accept: application/json
-//  Content-Type: application/json
-//  Accept-Encoding: gzip
 //
-//  {"firstname":"Makis"}
+//	[DBUG] 2022/03/01 21:54 Iris HTTP Client: POST / HTTP/1.1
+//	Host: 127.0.0.1:50948
+//	User-Agent: Go-http-client/1.1
+//	Content-Length: 22
+//	Accept: application/json
+//	Content-Type: application/json
+//	Accept-Encoding: gzip
+//
+//	{"firstname":"Makis"}
 //
 // Example Output for response:
-//  [DBUG] 2022/03/01 21:54 Iris HTTP Client: HTTP/1.1 200 OK
-//  Content-Length: 27
-//  Content-Type: application/json; charset=utf-8
-//  Date: Tue, 01 Mar 2022 19:54:03 GMT
 //
-//  {
-//      "firstname": "Makis"
-//  }
+//	[DBUG] 2022/03/01 21:54 Iris HTTP Client: HTTP/1.1 200 OK
+//	Content-Length: 27
+//	Content-Type: application/json; charset=utf-8
+//	Date: Tue, 01 Mar 2022 19:54:03 GMT
+//
+//	{
+//	    "firstname": "Makis"
+//	}
 func Debug(c *Client) {
 	handler := &debugRequestHandler{
 		logger: golog.Child("Iris HTTP Client: ").SetLevel("debug"),

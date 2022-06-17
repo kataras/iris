@@ -34,34 +34,33 @@ Easy to learn for new gophers and advanced features for experienced, it goes as 
 
 Source code and other details for the project are available at GitHub:
 
-   https://github.com/kataras/iris
+	https://github.com/kataras/iris
 
-Current Version
+# Current Version
 
-12.2.0-beta3
+12.2.0-beta4
 
-Installation
+# Installation
 
 The only requirement is the Go Programming Language, at least version 1.18.
 
-    $ go get github.com/kataras/iris/v12@master
+	$ go get github.com/kataras/iris/v12@master
 
 Wiki:
 
-    https://github.com/kataras/iris/wiki
+	https://github.com/kataras/iris/wiki
 
 Examples:
 
-    https://github.com/kataras/iris/tree/master/_examples
+	https://github.com/kataras/iris/tree/master/_examples
 
 Middleware:
 
-    https://github.com/kataras/iris/tree/master/middleware
-    https://github.com/iris-contrib/middleware
+	https://github.com/kataras/iris/tree/master/middleware
+	https://github.com/iris-contrib/middleware
 
 Home Page:
 
-    https://iris-go.com
-
+	https://iris-go.com
 */
 package iris

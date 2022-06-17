@@ -76,6 +76,7 @@ func (s *Session) runFlashGC() {
 			delete(s.flashes, key)
 		}
 	}
+
 	s.mu.Unlock()
 }
 
@@ -558,6 +559,10 @@ func (s *Session) SetImmutable(key string, value interface{}) {
 // If you want to define more than one flash messages, you will have to use different keys.
 func (s *Session) SetFlash(key string, value interface{}) {
 	s.mu.Lock()
+	if s.flashes == nil {
+		s.flashes = make(map[string]*flashMessage)
+	}
+
 	s.flashes[key] = &flashMessage{value: value}
 	s.mu.Unlock()
 }

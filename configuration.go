@@ -2,7 +2,6 @@ package iris
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -65,7 +64,7 @@ func parseYAML(filename string) (Configuration, error) {
 	}
 
 	// read the raw contents of the file
-	data, err := ioutil.ReadFile(yamlAbsPath)
+	data, err := os.ReadFile(yamlAbsPath)
 	if err != nil {
 		return c, fmt.Errorf("parse yaml: %w", err)
 	}
@@ -112,7 +111,6 @@ func YAML(filename string) Configuration {
 // Read more about toml's implementation at:
 // https://github.com/toml-lang/toml
 //
-//
 // Accepts the absolute path of the configuration file.
 // An error will be shown to the user via panic with the error message.
 // Error may occur when the file does not exist or is not formatted correctly.
@@ -144,7 +142,7 @@ func TOML(filename string) Configuration {
 	}
 
 	// read the raw contents of the file
-	data, err := ioutil.ReadFile(tomlAbsPath)
+	data, err := os.ReadFile(tomlAbsPath)
 	if err != nil {
 		panic(fmt.Errorf("toml :%w", err))
 	}
@@ -754,6 +752,7 @@ type Configuration struct {
 	// then the application tries to optimize for the best performance where is possible.
 	//
 	// Defaults to false.
+	// Deprecated. As of version 12.2.x this field does nothing.
 	EnableOptimizations bool `ini:"enable_optimizations" json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
 	// EnableProtoJSON when this field is true
 	// enables the proto marshaler on given proto messages when calling the Context.JSON method.

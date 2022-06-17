@@ -152,7 +152,7 @@ func (loc *Locale) Tag() *language.Tag {
 }
 
 // Language should return the exact languagecode of this `Locale`
-//that the user provided on `New` function.
+// that the user provided on `New` function.
 //
 // Same as `Tag().String()` but it's static.
 func (loc *Locale) Language() string {

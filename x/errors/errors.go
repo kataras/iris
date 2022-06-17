@@ -56,11 +56,12 @@ var errorCodeMap = make(map[ErrorCodeName]ErrorCode)
 // See "RegisterErrorCode" and "RegisterErrorCodeMap" for alternatives.
 //
 // Example:
-// 	var (
-//    NotFound = errors.E("NOT_FOUND", http.StatusNotFound)
-// 	)
-// 	...
-// 	NotFound.Details(ctx, "resource not found", "user with id: %q was not found", userID)
+//
+//		var (
+//	   NotFound = errors.E("NOT_FOUND", http.StatusNotFound)
+//		)
+//		...
+//		NotFound.Details(ctx, "resource not found", "user with id: %q was not found", userID)
 //
 // This method MUST be called on initialization, before HTTP server starts as
 // the internal map is not protected by mutex.
@@ -238,7 +239,8 @@ var (
 // Error represents the JSON form of "http wire errors".
 //
 // Examples can be found at:
-//  https://github.com/kataras/iris/tree/master/_examples/routing/http-wire-errors.
+//
+//	https://github.com/kataras/iris/tree/master/_examples/routing/http-wire-errors.
 type Error struct {
 	ErrorCode  ErrorCode       `json:"http_error_code" yaml:"HTTPErrorCode"`
 	Message    string          `json:"message,omitempty" yaml:"Message"`

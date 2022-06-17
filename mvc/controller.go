@@ -384,9 +384,11 @@ func (c *ControllerActivator) handleHTTPError(funcName string) *router.Route {
 //
 // Just like `Party#HandleMany`:, it returns the `[]*router.Routes`.
 // Usage:
-// func (*Controller) BeforeActivation(b mvc.BeforeActivation) {
-// 	b.HandleMany("GET", "/path /path1" /path2", "HandlePath")
-// }
+//
+//	func (*Controller) BeforeActivation(b mvc.BeforeActivation) {
+//		b.HandleMany("GET", "/path /path1" /path2", "HandlePath")
+//	}
+//
 // HandleMany will override any routes of this "funcName".
 func (c *ControllerActivator) HandleMany(method, path, funcName string, middleware ...context.Handler) []*router.Route {
 	return c.handleMany(method, path, funcName, true, middleware...)

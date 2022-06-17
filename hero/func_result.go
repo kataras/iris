@@ -27,11 +27,9 @@ func defaultResultHandler(ctx *context.Context, v interface{}) error {
 
 	switch context.TrimHeaderValue(ctx.GetContentType()) {
 	case context.ContentXMLHeaderValue, context.ContentXMLUnreadableHeaderValue:
-		_, err := ctx.XML(v)
-		return err
+		return ctx.XML(v)
 	case context.ContentYAMLHeaderValue:
-		_, err := ctx.YAML(v)
-		return err
+		return ctx.YAML(v)
 	case context.ContentProtobufHeaderValue:
 		msg, ok := v.(proto.Message)
 		if !ok {
@@ -45,8 +43,7 @@ func defaultResultHandler(ctx *context.Context, v interface{}) error {
 		return err
 	default:
 		// otherwise default to JSON.
-		_, err := ctx.JSON(v)
-		return err
+		return ctx.JSON(v)
 	}
 }
 

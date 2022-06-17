@@ -61,24 +61,31 @@ type Verifier struct {
 //
 // Usage:
 //
-//  verifier := NewVerifier(HS256, secret)
-// OR
-//  verifier := NewVerifier(HS256, secret, Expected{Issuer: "my-app"})
+//	verifier := NewVerifier(HS256, secret)
 //
-//  claimsGetter := func() interface{} { return new(userClaims) }
-//  middleware := verifier.Verify(claimsGetter)
 // OR
-//  middleware := verifier.Verify(claimsGetter, Expected{Issuer: "my-app"})
+//
+//	verifier := NewVerifier(HS256, secret, Expected{Issuer: "my-app"})
+//
+//	claimsGetter := func() interface{} { return new(userClaims) }
+//	middleware := verifier.Verify(claimsGetter)
+//
+// OR
+//
+//	middleware := verifier.Verify(claimsGetter, Expected{Issuer: "my-app"})
 //
 // Register the middleware, e.g.
-//  app.Use(middleware)
+//
+//	app.Use(middleware)
 //
 // Get the claims:
-//  claims := jwt.Get(ctx).(*userClaims)
-//  username := claims.Username
+//
+//	claims := jwt.Get(ctx).(*userClaims)
+//	username := claims.Username
 //
 // Get the context user:
-//  username, err := ctx.User().GetUsername()
+//
+//	username, err := ctx.User().GetUsername()
 func NewVerifier(signatureAlg Alg, signatureKey interface{}, validators ...TokenValidator) *Verifier {
 	if signatureAlg == HS256 {
 		// A tiny helper if the end-developer uses string instead of []byte for hmac keys.

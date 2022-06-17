@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -105,5 +104,5 @@ func BindResponse(resp *http.Response, dest interface{}) error {
 func RawResponse(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }

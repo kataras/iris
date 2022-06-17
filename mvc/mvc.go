@@ -86,7 +86,8 @@ func New(party router.Party) *Application {
 // this function simply calls the `New(party)` and its `.Configure(configurators...)`.
 //
 // A call of `mvc.New(app.Party("/path").Configure(buildMyMVC)` is equal to
-//           	 `mvc.Configure(app.Party("/path"), buildMyMVC)`.
+//
+//	`mvc.Configure(app.Party("/path"), buildMyMVC)`.
 //
 // Read more at `New() Application` and `Application#Configure` methods.
 func Configure(party router.Party, configurators ...func(*Application)) *Application {

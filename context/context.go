@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net"
@@ -31,7 +30,6 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
-	gojson "github.com/goccy/go-json"
 	"github.com/iris-contrib/schema"
 	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
@@ -100,7 +98,7 @@ type (
 	// is terminated and the error is received by the ReadJSONStream method,
 	// otherwise it continues to read the next available object.
 	// Look the `Context.ReadJSONStream` method.
-	DecodeFunc func(ctx stdContext.Context, outPtr interface{}) error
+	DecodeFunc func(outPtr interface{}) error
 )
 
 // Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
@@ -539,7 +537,6 @@ func (ctx *Context) Do(handlers Handlers) {
 // Router is calling this function to add the route's handler.
 // If AddHandler called then the handlers will be inserted
 // to the end of the already-defined route's handler.
-//
 func (ctx *Context) AddHandler(handlers ...Handler) {
 	ctx.handlers = append(ctx.handlers, handlers...)
 }
@@ -590,23 +587,26 @@ func (ctx *Context) HandlerIndex(n int) (currentIndex int) {
 //
 // That said let's see an example of `ctx.Proceed`:
 //
-// var authMiddleware = basicauth.New(basicauth.Config{
-// 	Users: map[string]string{
-// 		"admin": "password",
-// 	},
-// })
+//	var authMiddleware = basicauth.New(basicauth.Config{
+//		Users: map[string]string{
+//			"admin": "password",
+//		},
+//	})
 //
-// func (c *UsersController) BeginRequest(ctx iris.Context) {
-// 	if !ctx.Proceed(authMiddleware) {
-// 		ctx.StopExecution()
-// 	}
-// }
+//	func (c *UsersController) BeginRequest(ctx iris.Context) {
+//		if !ctx.Proceed(authMiddleware) {
+//			ctx.StopExecution()
+//		}
+//	}
+//
 // This Get() will be executed in the same handler as `BeginRequest`,
 // internally controller checks for `ctx.StopExecution`.
 // So it will not be fired if BeginRequest called the `StopExecution`.
-// func(c *UsersController) Get() []models.User {
-//	  return c.Service.GetAll()
-//}
+//
+//	func(c *UsersController) Get() []models.User {
+//		  return c.Service.GetAll()
+//	}
+//
 // Alternative way is `!ctx.IsStopped()` if middleware make use of the `ctx.StopExecution()` on failure.
 func (ctx *Context) Proceed(h Handler) bool {
 	_, ok := ctx.ProceedAndReportIfStopped(h)
@@ -841,8 +841,7 @@ func (ctx *Context) StopWithPlainError(statusCode int, err error) {
 // it will also fire the specified error code handler.
 func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) error {
 	ctx.StopWithStatus(statusCode)
-	_, err := ctx.writeJSON(jsonObject, nil) // do not modify - see errors.DefaultContextErrorHandler.
-	return err
+	return ctx.writeJSON(jsonObject, nil) // do not modify - see errors.DefaultContextErrorHandler.
 }
 
 // StopWithProblem stops the handlers chain, writes the status code
@@ -854,8 +853,7 @@ func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) error {
 func (ctx *Context) StopWithProblem(statusCode int, problem Problem) error {
 	ctx.StopWithStatus(statusCode)
 	problem.Status(statusCode)
-	_, err := ctx.Problem(problem)
-	return err
+	return ctx.Problem(problem)
 }
 
 //  +------------------------------------------------------------+
@@ -939,7 +937,7 @@ func (ctx *Context) RequestPath(escape bool) string {
 
 const sufscheme = "://"
 
-// GetScheme returns the full scheme of the request URL (https://, http:// or ws:// and e.t.c.``).
+// GetScheme returns the full scheme of the request URL (https://, http:// or ws:// and e.t.c.).
 func GetScheme(r *http.Request) string {
 	scheme := r.URL.Scheme
 
@@ -1111,10 +1109,11 @@ func (ctx *Context) FullRequestURI() string {
 // even if it's part of a private network.
 //
 // Look `Configuration.RemoteAddrHeaders`,
-//		`Configuration.RemoteAddrHeadersForce`,
-//      `Configuration.WithRemoteAddrHeader(...)`,
-//      `Configuration.WithoutRemoteAddrHeader(...)` and
-//      `Configuration.RemoteAddrPrivateSubnets` for more.
+//
+//	Configuration.RemoteAddrHeadersForce,
+//	Configuration.WithRemoteAddrHeader(...),
+//	Configuration.WithoutRemoteAddrHeader(...) and
+//	Configuration.RemoteAddrPrivateSubnetsW for more.
 func (ctx *Context) RemoteAddr() string {
 	if remoteHeaders := ctx.app.ConfigurationReadOnly().GetRemoteAddrHeaders(); len(remoteHeaders) > 0 {
 		privateSubnets := ctx.app.ConfigurationReadOnly().GetRemoteAddrPrivateSubnets()
@@ -1176,7 +1175,7 @@ func (ctx *Context) GetHeader(name string) string {
 // try to find another way of detecting the type(i.e, content type),
 // there are many blogs that describe these problems and provide different kind of solutions,
 // it's always depending on the application you're building,
-// this is the reason why this `IsAjax`` is simple enough for general purpose use.
+// this is the reason why this `IsAjax` is simple enough for general purpose use.
 //
 // Read more at: https://developer.mozilla.org/en-US/docs/AJAX
 // and https://xhr.spec.whatwg.org/
@@ -1557,9 +1556,11 @@ func (ctx *Context) URLParamEscape(name string) string {
 // Example:
 //
 // n, err := context.URLParamInt("url_query_param_name")
-// if errors.Is(err, context.ErrNotFound) {
-// 	// [handle error...]
-// }
+//
+//	if errors.Is(err, context.ErrNotFound) {
+//		// [handle error...]
+//	}
+//
 // Another usage would be `err == context.ErrNotFound`
 // HOWEVER prefer use the new `errors.Is` as API details may change in the future.
 var ErrNotFound = errors.New("not found")
@@ -1816,7 +1817,7 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 			setBody(r, body)    // so the ctx.request.Body works
 			defer restoreBody() // so the next GetForm calls work.
 
-			// r.Body = ioutil.NopCloser(io.TeeReader(r.Body, buf))
+			// r.Body = io.NopCloser(io.TeeReader(r.Body, buf))
 		} else {
 			resetBody = false
 		}
@@ -1828,7 +1829,7 @@ func GetForm(r *http.Request, postMaxMemory int64, resetBody bool) (form map[str
 	// subsequent calls have no effect, are idempotent.
 	err := r.ParseMultipartForm(postMaxMemory)
 	// if resetBody {
-	// 	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	// 	r.Body = io.NopCloser(bytes.NewBuffer(bodyCopy))
 	// }
 	if err != nil && err != http.ErrNotMultipart {
 		return nil, false
@@ -2036,7 +2037,6 @@ func (ctx *Context) PostValueBool(name string) (bool, error) {
 }
 
 // FormFile returns the first uploaded file that received from the client.
-//
 //
 // The default form's memory maximum size is 32MB, it can be changed by the
 // `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
@@ -2284,7 +2284,7 @@ var emptyFunc = func() {}
 
 // GetBody reads and returns the request body.
 func GetBody(r *http.Request, resetBody bool) ([]byte, func(), error) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -2301,7 +2301,7 @@ func GetBody(r *http.Request, resetBody bool) ([]byte, func(), error) {
 }
 
 func setBody(r *http.Request, data []byte) {
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 }
 
 const disableRequestBodyConsumptionContextKey = "iris.request.body.record"
@@ -2385,10 +2385,6 @@ func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 	return ctx.app.Validate(outPtr)
 }
 
-func (ctx *Context) shouldOptimize() bool {
-	return ctx.app.ConfigurationReadOnly().GetEnableOptimizations()
-}
-
 // JSONReader holds the JSON decode options of the `Context.ReadJSON, ReadBody` methods.
 type JSONReader struct { // Note(@kataras): struct instead of optional funcs to keep consistently with the encoder options.
 	// DisallowUnknownFields causes the json decoder to return an error when the destination
@@ -2413,123 +2409,31 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 	//  {"username": "makis"}
 	//  {"username": "george"}
 	ArrayStream bool
-
-	// Optional context cancelation of decoder when Optimize field is enabled.
-	// On ReadJSON method this is automatically binded to the request context.
-	Context stdContext.Context
 }
 
-type internalJSONDecoder interface {
-	Token() (json.Token, error) // gojson.Token is an alias of this, so we are ok.
-	More() bool
-	DisallowUnknownFields()
-}
+var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error {
+	decoder := json.NewDecoder(ctx.request.Body)
+	// decoder := gojson.NewDecoder(ctx.Request().Body)
+	if len(opts) > 0 {
+		options := opts[0]
 
-type unmarshalerContext interface {
-	// UnmarshalJSON unmarshal json with context support.
-	UnmarshalJSON(stdContext.Context, []byte) error //lint:ignore stdmethods external pkg.
-}
-
-func wrapDecodeFunc(decodeFunc func(interface{}) error) DecodeFunc {
-	return func(_ stdContext.Context, outPtr interface{}) error {
-		return decodeFunc(outPtr)
-	}
-}
-
-func (options JSONReader) unmarshal(ctx stdContext.Context, body []byte, outPtr interface{}) error {
-	if options.Optimize {
-		if outPtr != nil {
-			if _, supportsContext := outPtr.(unmarshalerContext); !supportsContext {
-				return gojson.Unmarshal(body, outPtr)
-			}
+		if options.DisallowUnknownFields {
+			decoder.DisallowUnknownFields()
 		}
-
-		return gojson.UnmarshalContext(ctx, body, outPtr)
 	}
 
-	return json.Unmarshal(body, outPtr)
-}
-
-func (options JSONReader) getDecoder(r io.Reader, outPtr interface{}) (internalJSONDecoder, DecodeFunc) {
-	var (
-		decoder    internalJSONDecoder
-		decodeFunc DecodeFunc
-	)
-
-	if options.Optimize {
-		dec := gojson.NewDecoder(r)
-
-		if outPtr != nil {
-			// If a custom type does not implement the unnmarshal json with context interface
-			// that is REQUIRED by the gojson, then fallback to the normal gojson decode without context support,
-			// so we protect compatibility against existing objects.
-			if _, supportsContext := outPtr.(unmarshalerContext); supportsContext {
-				decodeFunc = dec.DecodeContext
-			} else {
-				decodeFunc = wrapDecodeFunc(dec.Decode)
-			}
-		} else {
-			decodeFunc = dec.DecodeContext
-		}
-
-		decoder = dec
-	} else {
-		dec := json.NewDecoder(r)
-		decodeFunc = wrapDecodeFunc(dec.Decode)
-		decoder = dec
+	if err := decoder.Decode(&outPtr); err != nil {
+		return err
 	}
 
-	if options.DisallowUnknownFields {
-		decoder.DisallowUnknownFields()
-	}
-
-	return decoder, decodeFunc
+	return ctx.app.Validate(outPtr)
 }
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go
 func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
-	var options JSONReader
-	options.Optimize = ctx.shouldOptimize()
-
-	if len(opts) > 0 {
-		options = opts[0]
-	}
-
-	if ctx.IsRecordingBody() {
-		body, restoreBody, err := GetBody(ctx.request, true)
-		if err != nil {
-			return err
-		}
-		restoreBody()
-
-		err = options.unmarshal(ctx.request.Context(), body, outPtr)
-		if err != nil {
-			return err
-		}
-	} else {
-		_, decodeFunc := options.getDecoder(ctx.request.Body, outPtr)
-		err := decodeFunc(ctx.request.Context(), outPtr)
-		if err != nil {
-			return err
-		}
-	}
-
-	return ctx.app.Validate(outPtr)
-
-	/*
-		b, err := ctx.GetBody()
-		if err != nil {
-			return err
-		}
-
-		if options.Optimize {
-			return gojson.UnmarshalContext(ctx.request.Context(), b, outPtr)
-		} else {
-			return json.Unmarshal(b, outPtr)
-		}
-	*/
+	return ReadJSON(ctx, outPtr, opts...)
 }
 
 // ReadJSONStream is an alternative of ReadJSON which can reduce the memory load
@@ -2543,21 +2447,16 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream/main.go
 func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSONReader) error {
-	var options JSONReader
-	if len(opts) > 0 {
-		options = opts[0]
-	}
+	decoder := json.NewDecoder(ctx.request.Body)
 
-	decoder, decodeFunc := options.getDecoder(ctx.request.Body, nil)
-
-	if options.ArrayStream {
+	if len(opts) > 0 && opts[0].ArrayStream {
 		_, err := decoder.Token() // read open bracket.
 		if err != nil {
 			return err
 		}
 
 		for decoder.More() { // hile the array contains values.
-			if err = onDecode(decodeFunc); err != nil {
+			if err = onDecode(decoder.Decode); err != nil {
 				return err
 			}
 		}
@@ -2568,7 +2467,7 @@ func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSON
 
 	// while the array contains values
 	for decoder.More() {
-		if err := onDecode(decodeFunc); err != nil {
+		if err := onDecode(decoder.Decode); err != nil {
 			return err
 		}
 	}
@@ -2788,7 +2687,7 @@ func (ctx *Context) ReadMultipartRelated() (MultipartRelated, error) {
 		}
 		defer part.Close()
 
-		b, err := ioutil.ReadAll(part)
+		b, err := io.ReadAll(part)
 		if err != nil {
 			return MultipartRelated{}, fmt.Errorf("multipart related: next part: read: %w", err)
 		}
@@ -3149,13 +3048,14 @@ func (ctx *Context) SetLastModified(modtime time.Time) {
 // that has to perform one or more client side preconditions before the actual check, e.g. `CheckIfModifiedSince`.
 // Usage:
 // ok, err := context.CheckIfModifiedSince(modTime)
-// if err != nil {
-//    if errors.Is(err, context.ErrPreconditionFailed) {
-//         [handle missing client conditions,such as not valid request method...]
-//     }else {
-//         [the error is probably a time parse error...]
-//    }
-// }
+//
+//	if err != nil {
+//	   if errors.Is(err, context.ErrPreconditionFailed) {
+//	        [handle missing client conditions,such as not valid request method...]
+//	    }else {
+//	        [the error is probably a time parse error...]
+//	   }
+//	}
 var ErrPreconditionFailed = errors.New("precondition failed")
 
 // CheckIfModifiedSince checks if the response is modified since the "modtime".
@@ -3232,9 +3132,9 @@ func (ctx *Context) WriteWithExpiration(body []byte, modtime time.Time) (int, er
 //
 // This function may be used in the following cases:
 //
-//     * if response body is too big (more than iris.LimitRequestBodySize(if set)).
-//     * if response body is streamed from slow external sources.
-//     * if response body must be streamed to the client in chunks.
+//   - if response body is too big (more than iris.LimitRequestBodySize(if set)).
+//   - if response body is streamed from slow external sources.
+//   - if response body must be streamed to the client in chunks.
 //     (aka `http server push`).
 func (ctx *Context) StreamWriter(writer func(w io.Writer) error) error {
 	cancelCtx := ctx.Request().Context()
@@ -3287,10 +3187,12 @@ func (ctx *Context) ClientSupportsEncoding(encodings ...string) bool {
 // will change the response writer to a compress writer instead.
 // All future write and rich write methods will respect this option.
 // Usage:
-// app.Use(func(ctx iris.Context){
-// 	err := ctx.CompressWriter(true)
-// 	ctx.Next()
-// })
+//
+//	app.Use(func(ctx iris.Context){
+//		err := ctx.CompressWriter(true)
+//		ctx.Next()
+//	})
+//
 // The recommendation is to compress data as much as possible and therefore to use this field,
 // but some types of resources, such as jpeg images, are already compressed.
 // Sometimes, using additional compression doesn't reduce payload size and
@@ -3350,15 +3252,18 @@ func (ctx *Context) CompressWriter(enable bool) error {
 // All future calls of `ctx.GetBody/ReadXXX/UnmarshalBody` methods will respect this option.
 //
 // Usage:
-// app.Use(func(ctx iris.Context){
-// 	err := ctx.CompressReader(true)
-// 	ctx.Next()
-// })
+//
+//	app.Use(func(ctx iris.Context){
+//		err := ctx.CompressReader(true)
+//		ctx.Next()
+//	})
+//
 // More:
-// if cr, ok := ctx.Request().Body.(*CompressReader); ok {
-// 	cr.Src // the original request body
-//  cr.Encoding // the compression algorithm.
-// }
+//
+//	if cr, ok := ctx.Request().Body.(*CompressReader); ok {
+//		cr.Src // the original request body
+//	 cr.Encoding // the compression algorithm.
+//	}
 //
 // It returns `ErrRequestNotCompressed` if client's request data are not compressed
 // (or empty)
@@ -3592,15 +3497,16 @@ func (ctx *Context) fireFallbackViewOnce(err ErrViewNotExist) error {
 // is responsible to handle the error or render a different view.
 //
 // Usage:
-//  FallbackView(iris.FallbackView("fallback.html"))
-//  FallbackView(iris.FallbackViewLayout("layouts/fallback.html"))
-//  OR
-//  FallbackView(iris.FallbackViewFunc(ctx iris.Context, err iris.ErrViewNotExist) error {
-//    err.Name is the previous template name.
-//    err.IsLayout reports whether the failure came from the layout template.
-//    err.Data is the template data provided to the previous View call.
-//    [...custom logic e.g. ctx.View("fallback", err.Data)]
-//  })
+//
+//	FallbackView(iris.FallbackView("fallback.html"))
+//	FallbackView(iris.FallbackViewLayout("layouts/fallback.html"))
+//	OR
+//	FallbackView(iris.FallbackViewFunc(ctx iris.Context, err iris.ErrViewNotExist) error {
+//	  err.Name is the previous template name.
+//	  err.IsLayout reports whether the failure came from the layout template.
+//	  err.Data is the template data provided to the previous View call.
+//	  [...custom logic e.g. ctx.View("fallback", err.Data)]
+//	})
 func (ctx *Context) FallbackView(providers ...FallbackViewProvider) {
 	key := ctx.app.ConfigurationReadOnly().GetFallbackViewContextKey()
 	if key == "" {
@@ -3749,8 +3655,6 @@ type ProtoMarshalOptions = protojson.MarshalOptions
 
 // JSON contains the options for the JSON (Context's) Renderer.
 type JSON struct {
-	// http-specific
-	StreamingJSON bool `yaml:"StreamingJSON"`
 	// content-specific
 	UnescapeHTML bool   `yaml:"UnescapeHTML"`
 	Indent       string `yaml:"Indent"`
@@ -3772,8 +3676,7 @@ var DefaultJSONOptions = JSON{}
 
 // IsDefault reports whether this JSON options structure holds the default values.
 func (j *JSON) IsDefault() bool {
-	return j.StreamingJSON == DefaultJSONOptions.StreamingJSON &&
-		j.UnescapeHTML == DefaultJSONOptions.UnescapeHTML &&
+	return j.UnescapeHTML == DefaultJSONOptions.UnescapeHTML &&
 		j.Indent == DefaultJSONOptions.Indent &&
 		j.Prefix == DefaultJSONOptions.Prefix &&
 		j.ASCII == DefaultJSONOptions.ASCII &&
@@ -3858,28 +3761,24 @@ func (ctx *Context) handleSpecialJSONResponseValue(v interface{}, options *JSON)
 }
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
-func WriteJSON(ctx stdContext.Context, writer io.Writer, v interface{}, options *JSON, shouldOptimize bool) (int, error) {
-	if options.StreamingJSON {
-		var err error
-		if shouldOptimize {
-			// jsoniterConfig := jsoniter.Config{
-			// 	EscapeHTML:    !options.UnescapeHTML,
-			// 	IndentionStep: 4,
-			// }.Froze()
-			// enc := jsoniterConfig.NewEncoder(ctx.writer)
-			// err = enc.Encode(v)
-			enc := gojson.NewEncoder(writer)
-			enc.SetEscapeHTML(!options.UnescapeHTML)
-			enc.SetIndent(options.Prefix, options.Indent)
-			err = enc.EncodeContext(ctx, v)
-		} else {
-			enc := json.NewEncoder(writer)
-			enc.SetEscapeHTML(!options.UnescapeHTML)
-			enc.SetIndent(options.Prefix, options.Indent)
-			err = enc.Encode(v)
-		}
+var WriteJSON = func(ctx *Context, v interface{}, options *JSON) error {
+	if !options.Secure && !options.ASCII && options.Prefix == "" {
+		// jsoniterConfig := jsoniter.Config{
+		// 	EscapeHTML:    !options.UnescapeHTML,
+		// 	IndentionStep: 4,
+		// }.Froze()
+		// enc := jsoniterConfig.NewEncoder(ctx.writer)
+		// err = enc.Encode(v)
+		//
+		// enc := gojson.NewEncoder(ctx.writer)
+		// enc.SetEscapeHTML(!options.UnescapeHTML)
+		// enc.SetIndent(options.Prefix, options.Indent)
+		// err = enc.EncodeContext(ctx, v)
+		enc := json.NewEncoder(ctx.writer)
+		enc.SetEscapeHTML(!options.UnescapeHTML)
+		enc.SetIndent(options.Prefix, options.Indent)
 
-		return 0, err
+		return enc.Encode(v)
 	}
 
 	var (
@@ -3887,35 +3786,15 @@ func WriteJSON(ctx stdContext.Context, writer io.Writer, v interface{}, options 
 		err    error
 	)
 
-	// Let's keep it as it is.
-	// if !shouldOptimize && options.Indent == "" {
-	// 	options.Indent = "  "
-	// }
-
 	if indent := options.Indent; indent != "" {
-		if shouldOptimize {
-			// result,err = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
-			result, err = gojson.MarshalIndent(v, "", indent)
-		} else {
-			result, err = json.MarshalIndent(v, "", indent)
-		}
-
+		result, err = json.MarshalIndent(v, "", indent)
 		result = append(result, newLineB...)
 	} else {
-		if shouldOptimize {
-			// result, err =  jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
-			if ctx != nil {
-				result, err = gojson.MarshalContext(ctx, v)
-			} else {
-				result, err = gojson.Marshal(v)
-			}
-		} else {
-			result, err = json.Marshal(v)
-		}
+		result, err = json.Marshal(v)
 	}
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	prependSecure := false
@@ -3960,7 +3839,8 @@ func WriteJSON(ctx stdContext.Context, writer io.Writer, v interface{}, options 
 		result = append(stringToBytes(prefix), result...)
 	}
 
-	return writer.Write(result)
+	_, err = ctx.Write(result)
+	return err
 }
 
 // See https://golang.org/src/strings/builder.go#L45
@@ -4007,25 +3887,27 @@ func (ctx *Context) handleContextError(err error) {
 }
 
 // JSON marshals the given "v" value to JSON and writes the response to the client.
-// Look the Configuration.EnableProtoJSON/EnableEasyJSON and EnableOptimizations too.
+// Look the Configuration.EnableProtoJSON and EnableEasyJSON too.
 //
 // It reports any JSON parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
 //
-// It can, optionally, accept the JSON structure which may hold customizations over the
-// final JSON response but keep in mind that the caller should NOT modify that JSON options
-// value in another goroutine while JSON method is still running.
-func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
+// Customize the behavior of every `Context.JSON“ can be achieved
+// by modifying the package-level `WriteJSON` function on program initilization.
+func (ctx *Context) JSON(v interface{}, opts ...JSON) (err error) {
 	var options *JSON
 	if len(opts) > 0 {
 		options = &opts[0]
+	} else {
+		// If no options are given safely read the already-initialized value.
+		options = &DefaultJSONOptions
 	}
 
-	if n, err = ctx.writeJSON(v, options); err != nil {
+	if err = ctx.writeJSON(v, options); err != nil {
 		// if no options are given or OmitErrorHandler is true
 		// then do call the error handler (which may lead to a cycle).
-		if options == nil || !options.OmitErrorHandler {
+		if !options.OmitErrorHandler {
 			ctx.handleContextError(err)
 		}
 	}
@@ -4033,76 +3915,38 @@ func (ctx *Context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	return
 }
 
-func (ctx *Context) writeJSON(v interface{}, options *JSON) (int, error) {
+func (ctx *Context) writeJSON(v interface{}, options *JSON) error {
 	ctx.ContentType(ContentJSONHeaderValue)
 
 	// After content type given and before everything else, try handle proto or easyjson, no matter the performance mode.
-	if handled, n, err := ctx.handleSpecialJSONResponseValue(v, options); handled {
-		return n, err
+	if handled, _, err := ctx.handleSpecialJSONResponseValue(v, options); handled {
+		return err
 	}
 
-	shouldOptimize := ctx.shouldOptimize()
-	if options == nil {
-		if shouldOptimize {
-			// If no options given and optimizations are enabled.
-			// write using the fast json marshaler with the http request context as soon as possible.
-			result, err := gojson.MarshalContext(ctx.request.Context(), v)
-			if err != nil {
-				return 0, err
-			}
-
-			return ctx.Write(result)
-		}
-
-		// Else if no options given neither optimizations are enabled, then safely read the already-initialized object.
-		options = &DefaultJSONOptions
-	}
-
-	return WriteJSON(ctx, ctx.writer, v, options, shouldOptimize)
+	return WriteJSON(ctx, v, options)
 }
 
 var finishCallbackB = []byte(");")
 
-// WriteJSONP marshals the given interface object and writes the JSON response to the writer.
-func WriteJSONP(writer io.Writer, v interface{}, options JSONP, optimize bool) (int, error) {
+// WriteJSONP marshals the given interface object and writes the JSONP response to the writer.
+var WriteJSONP = func(ctx *Context, v interface{}, options *JSONP) (err error) {
 	if callback := options.Callback; callback != "" {
-		n, err := writer.Write(stringToBytes(callback + "("))
+		_, err = ctx.Write(stringToBytes(callback + "("))
 		if err != nil {
-			return n, err
+			return err
 		}
-		defer writer.Write(finishCallbackB)
+		defer func() {
+			if err == nil {
+				ctx.Write(finishCallbackB)
+			}
+		}()
 	}
 
-	if !optimize && options.Indent == "" {
-		options.Indent = "    "
-	}
-
-	if indent := options.Indent; indent != "" {
-		marshalIndent := json.MarshalIndent
-		if optimize {
-			// marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
-			marshalIndent = gojson.MarshalIndent
-		}
-
-		result, err := marshalIndent(v, "", indent)
-		if err != nil {
-			return 0, err
-		}
-		result = append(result, newLineB...)
-		return writer.Write(result)
-	}
-
-	marshal := json.Marshal
-	if optimize {
-		// marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
-		marshal = gojson.Marshal
-	}
-
-	result, err := marshal(v)
-	if err != nil {
-		return 0, err
-	}
-	return writer.Write(result)
+	err = WriteJSON(ctx, v, &JSON{
+		Indent:           options.Indent,
+		OmitErrorHandler: options.OmitErrorHandler,
+	})
+	return err
 }
 
 // DefaultJSONPOptions is the optional settings that are being used
@@ -4114,14 +3958,16 @@ var DefaultJSONPOptions = JSONP{}
 // It reports any JSON parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (n int, err error) {
-	options := DefaultJSONPOptions
+func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (err error) {
+	var options *JSONP
 	if len(opts) > 0 {
-		options = opts[0]
+		options = &opts[0]
+	} else {
+		options = &DefaultJSONPOptions
 	}
 
 	ctx.ContentType(ContentJavascriptHeaderValue)
-	if n, err = WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize()); err != nil {
+	if err = WriteJSONP(ctx, v, options); err != nil {
 		if !options.OmitErrorHandler {
 			ctx.handleContextError(err)
 		}
@@ -4174,32 +4020,21 @@ func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 }
 
 // WriteXML marshals the given interface object and writes the XML response to the writer.
-func WriteXML(writer io.Writer, v interface{}, options XML, optimize bool) (int, error) {
+var WriteXML = func(ctx *Context, v interface{}, options *XML) error {
 	if prefix := options.Prefix; prefix != "" {
-		n, err := writer.Write(stringToBytes(prefix))
+		_, err := ctx.Write(stringToBytes(prefix))
 		if err != nil {
-			return n, err
+			return err
 		}
 	}
 
-	if !optimize && options.Indent == "" {
-		options.Indent = "  " // Two spaces for XML is the default indentation when not optimized.
+	encoder := xml.NewEncoder(ctx.writer)
+	encoder.Indent("", options.Indent)
+	if err := encoder.Encode(v); err != nil {
+		return err
 	}
 
-	if indent := options.Indent; indent != "" {
-		result, err := xml.MarshalIndent(v, "", indent)
-		if err != nil {
-			return 0, err
-		}
-		result = append(result, newLineB...)
-		return writer.Write(result)
-	}
-
-	result, err := xml.Marshal(v)
-	if err != nil {
-		return 0, err
-	}
-	return writer.Write(result)
+	return encoder.Flush()
 }
 
 // DefaultXMLOptions is the optional settings that are being used
@@ -4212,14 +4047,16 @@ var DefaultXMLOptions = XML{}
 // It reports any XML parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) XML(v interface{}, opts ...XML) (n int, err error) {
-	options := DefaultXMLOptions
+func (ctx *Context) XML(v interface{}, opts ...XML) (err error) {
+	var options *XML
 	if len(opts) > 0 {
-		options = opts[0]
+		options = &opts[0]
+	} else {
+		options = &DefaultXMLOptions
 	}
 
 	ctx.ContentType(ContentXMLHeaderValue)
-	if n, err = WriteXML(ctx.writer, v, options, ctx.shouldOptimize()); err != nil {
+	if err = WriteXML(ctx, v, options); err != nil {
 		if !options.OmitErrorHandler {
 			ctx.handleContextError(err)
 		}
@@ -4239,7 +4076,7 @@ func (ctx *Context) XML(v interface{}, opts ...XML) (n int, err error) {
 // send a response of content type "application/problem+xml" instead.
 //
 // Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
-func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) (int, error) {
+func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) error {
 	options := DefaultProblemOptions
 	if len(opts) > 0 {
 		options = opts[0]
@@ -4276,13 +4113,14 @@ func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) (int, error) 
 }
 
 // WriteMarkdown parses the markdown to html and writes these contents to the writer.
-func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (n int, err error) {
+var WriteMarkdown = func(ctx *Context, markdownB []byte, options *Markdown) error {
 	buf := blackfriday.Run(markdownB)
 	if options.Sanitize {
 		buf = bluemonday.UGCPolicy().SanitizeBytes(buf)
 	}
 
-	return writer.Write(buf)
+	_, err := ctx.Write(buf)
+	return err
 }
 
 // DefaultMarkdownOptions is the optional settings that are being used
@@ -4294,14 +4132,16 @@ var DefaultMarkdownOptions = Markdown{}
 // It reports any Markdown parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (n int, err error) {
-	options := DefaultMarkdownOptions
+func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (err error) {
+	var options *Markdown
 	if len(opts) > 0 {
-		options = opts[0]
+		options = &opts[0]
+	} else {
+		options = &DefaultMarkdownOptions
 	}
 
 	ctx.ContentType(ContentHTMLHeaderValue)
-	if n, err = WriteMarkdown(ctx.writer, markdownB, options); err != nil {
+	if err = WriteMarkdown(ctx, markdownB, options); err != nil {
 		if !options.OmitErrorHandler {
 			ctx.handleContextError(err)
 		}
@@ -4310,31 +4150,46 @@ func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (n int, err err
 	return
 }
 
+// WriteYAML sends YAML response to the client.
+var WriteYAML = func(ctx *Context, v interface{}, indentSpace int) error {
+	encoder := yaml.NewEncoder(ctx.writer)
+	encoder.SetIndent(indentSpace)
+
+	if err := encoder.Encode(v); err != nil {
+		return err
+	}
+
+	return encoder.Close()
+}
+
 // YAML marshals the given "v" value using the yaml marshaler and writes the result to the client.
 //
 // It reports any YAML parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) YAML(v interface{}) (int, error) {
-	out, err := yaml.Marshal(v)
-	if err != nil {
-		ctx.handleContextError(err)
-		return 0, err
-	}
-
+func (ctx *Context) YAML(v interface{}) error {
 	ctx.ContentType(ContentYAMLHeaderValue)
-	n, err := ctx.Write(out)
+
+	err := WriteYAML(ctx, v, 0)
 	if err != nil {
 		ctx.handleContextError(err)
+		return err
 	}
 
-	return n, err
+	return nil
 }
 
 // TextYAML calls the Context.YAML method but with the text/yaml content type instead.
-func (ctx *Context) TextYAML(v interface{}) (int, error) {
-	ctx.contentTypeOnce(ContentYAMLTextHeaderValue, "")
-	return ctx.YAML(v)
+func (ctx *Context) TextYAML(v interface{}) error {
+	ctx.ContentType(ContentYAMLTextHeaderValue)
+
+	err := WriteYAML(ctx, v, 4)
+	if err != nil {
+		ctx.handleContextError(err)
+		return err
+	}
+
+	return nil
 }
 
 // Protobuf marshals the given "v" value of proto Message and writes its result to the client.
@@ -4583,19 +4438,54 @@ func (ctx *Context) Negotiate(v interface{}) (int, error) {
 	case ContentTextHeaderValue, ContentHTMLHeaderValue:
 		return ctx.WriteString(v.(string))
 	case ContentMarkdownHeaderValue:
-		return ctx.Markdown(v.([]byte))
+		err := ctx.Markdown(v.([]byte))
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentJSONHeaderValue:
-		return ctx.JSON(v)
+		err := ctx.JSON(v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentJSONProblemHeaderValue, ContentXMLProblemHeaderValue:
-		return ctx.Problem(v)
+		err := ctx.Problem(v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentJavascriptHeaderValue:
-		return ctx.JSONP(v)
+		err := ctx.JSONP(v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentXMLHeaderValue, ContentXMLUnreadableHeaderValue:
-		return ctx.XML(v)
+		err := ctx.XML(v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentYAMLHeaderValue:
-		return ctx.YAML(v)
+		err := ctx.YAML(v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentYAMLTextHeaderValue:
-		return ctx.TextYAML(v)
+		err := ctx.TextYAML(v)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.writer.Written(), nil
 	case ContentProtobufHeaderValue:
 		msg, ok := v.(proto.Message)
 		if !ok {
@@ -5438,15 +5328,15 @@ const cookieOptionsContextKey = "iris.cookie.options"
 // cookies sent or received from the next Handler in the chain.
 //
 // Available builtin Cookie options are:
-//  * CookieAllowReclaim
-//  * CookieAllowSubdomains
-//  * CookieSecure
-//  * CookieHTTPOnly
-//  * CookieSameSite
-//  * CookiePath
-//  * CookieCleanPath
-//  * CookieExpires
-//  * CookieEncoding
+//   - CookieAllowReclaim
+//   - CookieAllowSubdomains
+//   - CookieSecure
+//   - CookieHTTPOnly
+//   - CookieSameSite
+//   - CookiePath
+//   - CookieCleanPath
+//   - CookieExpires
+//   - CookieEncoding
 //
 // Example at: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
 func (ctx *Context) AddCookieOptions(options ...CookieOption) {
@@ -5554,8 +5444,9 @@ var SetCookieKVExpiration = 8760 * time.Hour
 // (note that client should be responsible for that if server sent an empty cookie's path, all browsers are compatible)
 // ctx.SetCookieKV(name, value, iris.CookieCleanPath/iris.CookiePath(""))
 // More:
-//                              iris.CookieExpires(time.Duration)
-//                              iris.CookieHTTPOnly(false)
+//
+//	iris.CookieExpires(time.Duration)
+//	iris.CookieHTTPOnly(false)
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 func (ctx *Context) SetCookieKV(name, value string, options ...CookieOption) {
@@ -6102,11 +5993,11 @@ const userContextKey = "iris.user"
 // next handlers in the chain.
 //
 // The "i" input argument can be:
-// - A value which completes the User interface
-// - A map[string]interface{}.
-// - A value which does not complete the whole User interface
-// - A value which does not complete the User interface at all
-//   (only its `User().GetRaw` method is available).
+//   - A value which completes the User interface
+//   - A map[string]interface{}.
+//   - A value which does not complete the whole User interface
+//   - A value which does not complete the User interface at all
+//     (only its `User().GetRaw` method is available).
 //
 // Look the `User` method to retrieve it.
 func (ctx *Context) SetUser(i interface{}) error {
@@ -6174,21 +6065,21 @@ func (ctx *Context) Deadline() (deadline time.Time, ok bool) {
 //
 // Done is provided for use in select statements:
 //
-//  // Stream generates values with DoSomething and sends them to out
-//  // until DoSomething returns an error or ctx.Done is closed.
-//  func Stream(ctx context.Context, out chan<- Value) error {
-//  	for {
-//  		v, err := DoSomething(ctx)
-//  		if err != nil {
-//  			return err
-//  		}
-//  		select {
-//  		case <-ctx.Done():
-//  			return ctx.Err()
-//  		case out <- v:
-//  		}
-//  	}
-//  }
+//	// Stream generates values with DoSomething and sends them to out
+//	// until DoSomething returns an error or ctx.Done is closed.
+//	func Stream(ctx context.Context, out chan<- Value) error {
+//		for {
+//			v, err := DoSomething(ctx)
+//			if err != nil {
+//				return err
+//			}
+//			select {
+//			case <-ctx.Done():
+//				return ctx.Err()
+//			case out <- v:
+//			}
+//		}
+//	}
 //
 // See https://blog.golang.org/pipelines for more examples of how to use
 // a Done channel for cancellation.

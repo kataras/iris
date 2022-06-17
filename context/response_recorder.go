@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/textproto"
 	"strconv"
@@ -32,7 +32,7 @@ func releaseResponseRecorder(w *ResponseRecorder) {
 // A ResponseRecorder is used mostly for testing
 // in order to record and modify, if necessary, the body and status code and headers.
 //
-// See `context.Recorder`` method too.
+// See `context.Recorder“ method too.
 type ResponseRecorder struct {
 	ResponseWriter
 
@@ -366,7 +366,7 @@ func (w *ResponseRecorder) Result() *http.Response { // a modified copy of net/h
 	}
 	res.Status = fmt.Sprintf("%03d %s", res.StatusCode, http.StatusText(res.StatusCode))
 	if w.chunks != nil {
-		res.Body = ioutil.NopCloser(bytes.NewReader(w.chunks))
+		res.Body = io.NopCloser(bytes.NewReader(w.chunks))
 	} else {
 		res.Body = http.NoBody
 	}

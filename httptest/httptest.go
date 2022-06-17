@@ -98,9 +98,12 @@ func DefaultConfiguration() *Configuration {
 
 // New Prepares and returns a new test framework based on the "app".
 // Usage:
-//  httptest.New(t, app)
+//
+//	httptest.New(t, app)
+//
 // With options:
-//  httptest.New(t, app, httptest.URL(...), httptest.Debug(true), httptest.LogLevel("debug"), httptest.Strict(true))
+//
+//	httptest.New(t, app, httptest.URL(...), httptest.Debug(true), httptest.LogLevel("debug"), httptest.Strict(true))
 //
 // Example at: https://github.com/kataras/iris/tree/master/_examples/testing/httptest.
 func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {

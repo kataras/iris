@@ -50,7 +50,8 @@ type (
 // through a Context or within filter functions.
 //
 // Example:
-//     AsValue("my string")
+//
+//	AsValue("my string")
 //
 // Shortcut for `pongo2.AsValue`.
 var AsValue = pongo2.AsValue

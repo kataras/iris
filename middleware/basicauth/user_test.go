@@ -2,7 +2,6 @@ package basicauth
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -164,7 +163,7 @@ func TestAllowUsers(t *testing.T) {
 
 // Test YAML user loading with b-encrypted passwords.
 func TestAllowUsersFile(t *testing.T) {
-	f, err := ioutil.TempFile("", "*users.yml")
+	f, err := os.CreateTemp("", "*users.yml")
 	if err != nil {
 		t.Fatal(err)
 	}

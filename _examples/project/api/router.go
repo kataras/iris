@@ -18,7 +18,7 @@ func (srv *Server) buildRouter() {
 		ServerName:   srv.config.ServerName,
 		Env:          srv.config.Env,
 		Developer:    "kataras",
-		TimeLocation: time.FixedZone("Greece/Athens", 10800),
+		TimeLocation: time.FixedZone("Greece/Athens", 7200),
 	}))
 
 	api := srv.Party("/api")

@@ -187,11 +187,13 @@ func GetVersion(ctx *context.Context) string {
 // It can be used inside a middleware.
 // Example of how you can change the default behavior to extract a requested version (which is by headers)
 // from a "version" url parameter instead:
-//  func(ctx iris.Context) { // &version=1
-//   version := ctx.URLParamDefault("version", "1.0.0")
-//   versioning.SetVersion(ctx, version)
-// 	 ctx.Next()
-//  }
+//
+//	 func(ctx iris.Context) { // &version=1
+//	  version := ctx.URLParamDefault("version", "1.0.0")
+//	  versioning.SetVersion(ctx, version)
+//		 ctx.Next()
+//	 }
+//
 // See `GetVersion` too.
 func SetVersion(ctx *context.Context, constraint string) {
 	ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetVersionContextKey(), constraint)
@@ -205,23 +207,24 @@ type AliasMap = map[string]string
 // for the children Parties(routers). It's respected by versioning Groups.
 //
 // Example Code:
-//  app := iris.New()
 //
-//  api := app.Party("/api")
-//  api.Use(Aliases(map[string]string{
-//   versioning.Empty: "1.0.0", // when no version was provided by the client.
-//   "beta": "4.0.0",
-//   "stage": "5.0.0-alpha"
-//  }))
+//	app := iris.New()
 //
-//  v1 := NewGroup(api, ">=1.0.0 < 2.0.0")
-//  v1.Get/Post...
+//	api := app.Party("/api")
+//	api.Use(Aliases(map[string]string{
+//	 versioning.Empty: "1.0.0", // when no version was provided by the client.
+//	 "beta": "4.0.0",
+//	 "stage": "5.0.0-alpha"
+//	}))
 //
-//  v4 := NewGroup(api, ">=4.0.0 < 5.0.0")
-//  v4.Get/Post...
+//	v1 := NewGroup(api, ">=1.0.0 < 2.0.0")
+//	v1.Get/Post...
 //
-//  stage := NewGroup(api, "5.0.0-alpha")
-//  stage.Get/Post...
+//	v4 := NewGroup(api, ">=4.0.0 < 5.0.0")
+//	v4.Get/Post...
+//
+//	stage := NewGroup(api, "5.0.0-alpha")
+//	stage.Get/Post...
 func Aliases(aliases AliasMap) context.Handler {
 	cp := make(AliasMap, len(aliases)) // copy the map here so we are safe of later modifications by end-dev.
 	for k, v := range aliases {

@@ -50,7 +50,6 @@ func (p *provider) newSession(man *Sessions, sid string, expires time.Duration) 
 		sid:      sid,
 		Man:      man,
 		provider: p,
-		flashes:  make(map[string]*flashMessage),
 	}
 
 	onExpire := func() {
@@ -99,9 +98,10 @@ func (p *provider) EndRequest(ctx *context.Context, session *Session) {
 // ErrNotFound may be returned from `UpdateExpiration` of a non-existing or
 // invalid session entry from memory storage or databases.
 // Usage:
-// if err != nil && err.Is(err, sessions.ErrNotFound) {
-//     [handle error...]
-// }
+//
+//	if err != nil && err.Is(err, sessions.ErrNotFound) {
+//	    [handle error...]
+//	}
 var ErrNotFound = errors.New("session not found")
 
 // UpdateExpiration resets the expiration of a session.

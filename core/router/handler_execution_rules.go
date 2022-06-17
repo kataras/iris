@@ -6,9 +6,10 @@ import (
 
 // ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
 // Usage:
-// Party#SetExecutionRules(ExecutionRules {
-//   Done: ExecutionOptions{Force: true},
-// })
+//
+//	Party#SetExecutionRules(ExecutionRules {
+//	  Done: ExecutionOptions{Force: true},
+//	})
 //
 // See `Party#SetExecutionRules` for more.
 type ExecutionRules struct {

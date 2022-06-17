@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/kataras/iris/v12/context"
@@ -51,7 +51,7 @@ func getExample() {
 	}
 	defer cr.Close()
 
-	body, err := ioutil.ReadAll(cr)
+	body, err := io.ReadAll(cr)
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +103,7 @@ func postExample() {
 	}
 	defer cr.Close()
 
-	body, err := ioutil.ReadAll(cr)
+	body, err := io.ReadAll(cr)
 	if err != nil {
 		panic(err)
 	}

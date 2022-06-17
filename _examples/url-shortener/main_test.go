@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -14,7 +13,7 @@ import (
 // The rest possible checks is up to you, take it as as an exercise!
 func TestURLShortener(t *testing.T) {
 	// temp db file
-	f, err := ioutil.TempFile("", "shortener")
+	f, err := os.CreateTemp("", "shortener")
 	if err != nil {
 		t.Fatalf("creating temp file for database failed: %v", err)
 	}

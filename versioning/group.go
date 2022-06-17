@@ -30,25 +30,31 @@ type Group struct {
 // any changes to its parent won't affect this one (e.g. register global middlewares afterwards).
 //
 // A version is extracted through the versioning.GetVersion function:
-//  Accept-Version: 1.0.0
-//  Accept: application/json; version=1.0.0
-// You can customize it by setting a version based on the request context:
-//  api.Use(func(ctx *context.Context) {
-// 	 if version := ctx.URLParam("version"); version != "" {
-// 	  SetVersion(ctx, version)
-// 	 }
 //
-//   ctx.Next()
-//  })
+//	Accept-Version: 1.0.0
+//	Accept: application/json; version=1.0.0
+//
+// You can customize it by setting a version based on the request context:
+//
+//	 api.Use(func(ctx *context.Context) {
+//		 if version := ctx.URLParam("version"); version != "" {
+//		  SetVersion(ctx, version)
+//		 }
+//
+//	  ctx.Next()
+//	 })
+//
 // OR:
-//  api.Use(versioning.FromQuery("version", ""))
+//
+//	api.Use(versioning.FromQuery("version", ""))
 //
 // Examples at: _examples/routing/versioning
 // Usage:
-//  app := iris.New()
-//  api := app.Party("/api")
-//  v1 := versioning.NewGroup(api, ">=1.0.0 <2.0.0")
-//  v1.Get/Post/Put/Delete...
+//
+//	app := iris.New()
+//	api := app.Party("/api")
+//	v1 := versioning.NewGroup(api, ">=1.0.0 <2.0.0")
+//	v1.Get/Post/Put/Delete...
 //
 // Valid ranges are:
 //   - "<1.0.0"
@@ -61,8 +67,10 @@ type Group struct {
 // A Range can consist of multiple ranges separated by space:
 // Ranges can be linked by logical AND:
 //   - ">1.0.0 <2.0.0" would match between both ranges, so "1.1.1" and "1.8.7"
+//
 // but not "1.0.0" or "2.0.0"
 //   - ">1.0.0 <3.0.0 !2.0.3-beta.2" would match every version between 1.0.0 and 3.0.0
+//
 // except 2.0.3-beta.2
 //
 // Ranges can also be linked by logical OR:
@@ -72,7 +80,8 @@ type Group struct {
 //
 // Ranges can be combined by both AND and OR
 //
-//  - `>1.0.0 <2.0.0 || >3.0.0 !4.2.1` would match `1.2.3`, `1.9.9`, `3.1.1`,
+//   - `>1.0.0 <2.0.0 || >3.0.0 !4.2.1` would match `1.2.3`, `1.9.9`, `3.1.1`,
+//
 // but not `4.2.1`, `2.1.1`
 func NewGroup(r API, version string) *Group {
 	version = strings.ReplaceAll(version, ",", " ")

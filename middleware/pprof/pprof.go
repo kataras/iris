@@ -41,7 +41,8 @@ var profileDescriptions = map[string]string{
 // New returns a new pprof (profile, cmdline, symbol, goroutine, heap, threadcreate, debug/block) Middleware.
 // Note: Route MUST have the last named parameter wildcard named '{action:path}'.
 // Example:
-//   app.HandleMany("GET", "/debug/pprof /debug/pprof/{action:path}", pprof.New())
+//
+//	app.HandleMany("GET", "/debug/pprof /debug/pprof/{action:path}", pprof.New())
 func New() context.Handler {
 	return func(ctx *context.Context) {
 		if action := ctx.Params().Get("action"); action != "" {

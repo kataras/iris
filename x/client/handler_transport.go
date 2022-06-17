@@ -3,7 +3,7 @@ package client
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 )
@@ -27,7 +27,7 @@ func (t *handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 			reqCopy.TransferEncoding = []string{"chunked"}
 		}
 	} else {
-		reqCopy.Body = ioutil.NopCloser(bytes.NewReader(nil))
+		reqCopy.Body = io.NopCloser(bytes.NewReader(nil))
 	}
 
 	if reqCopy.RequestURI == "" {
@@ -50,7 +50,7 @@ func (t *handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 
 	if recorder.Body != nil {
-		resp.Body = ioutil.NopCloser(recorder.Body)
+		resp.Body = io.NopCloser(recorder.Body)
 	}
 
 	return &resp, nil

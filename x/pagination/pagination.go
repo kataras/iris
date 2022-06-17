@@ -114,43 +114,43 @@ type List[T any] struct {
 //
 // Example Code:
 //
-//  import "github.com/kataras/iris/v12/x/pagination"
-//  ...more code
+//	import "github.com/kataras/iris/v12/x/pagination"
+//	...more code
 //
-//  type User struct {
-//  	Firstname string `json:"firstname"`
-//  	Lastname  string `json:"lastname"`
-//  }
+//	type User struct {
+//		Firstname string `json:"firstname"`
+//		Lastname  string `json:"lastname"`
+//	}
 //
-//  type ExtraUser struct {
-//  	User
-//  	ExtraData string
-//  }
+//	type ExtraUser struct {
+//		User
+//		ExtraData string
+//	}
 //
-//  func main() {
-//  	users := []User{
-//  		{"Gerasimos", "Maropoulos"},
-//  		{"Efi", "Kwfidou"},
-//  	}
+//	func main() {
+//		users := []User{
+//			{"Gerasimos", "Maropoulos"},
+//			{"Efi", "Kwfidou"},
+//		}
 //
-//  	t := pagination.NewList(users, 100, nil, pagination.ListOptions{
-//  		Page: 1,
-//  		Size: 50,
-//  	})
+//		t := pagination.NewList(users, 100, nil, pagination.ListOptions{
+//			Page: 1,
+//			Size: 50,
+//		})
 //
-//  	// Optionally, transform a T list of objects to a V list of objects.
-//  	v, err := pagination.TransformList(t, func(u User) (ExtraUser, error) {
-//  		return ExtraUser{
-//  			User:      u,
-//  			ExtraData: "test extra data",
-//  		}, nil
-//  	})
-//  	if err != nil { panic(err) }
+//		// Optionally, transform a T list of objects to a V list of objects.
+//		v, err := pagination.TransformList(t, func(u User) (ExtraUser, error) {
+//			return ExtraUser{
+//				User:      u,
+//				ExtraData: "test extra data",
+//			}, nil
+//		})
+//		if err != nil { panic(err) }
 //
-//  	paginationJSON, err := json.MarshalIndent(v, "", "    ")
-//  	if err!=nil { panic(err) }
-//  	fmt.Println(paginationJSON)
-//  }
+//		paginationJSON, err := json.MarshalIndent(v, "", "    ")
+//		if err!=nil { panic(err) }
+//		fmt.Println(paginationJSON)
+//	}
 func NewList[T any](items []T, totalCount int64, filter any, opts ListOptions) *List[T] {
 	pageSize := opts.GetLimit()
 
@@ -199,13 +199,13 @@ func NewList[T any](items []T, totalCount int64, filter any, opts ListOptions) *
 //
 // Example Code:
 //
-//  listOfUsers := pagination.NewList(...)
-//  newListOfExtraUsers, err := pagination.TransformList(listOfUsers, func(u User) (ExtraUser, error) {
-//  	return ExtraUser{
-//  		User:      u,
-//  		ExtraData: "test extra data",
-//  	}, nil
-//  })
+//	listOfUsers := pagination.NewList(...)
+//	newListOfExtraUsers, err := pagination.TransformList(listOfUsers, func(u User) (ExtraUser, error) {
+//		return ExtraUser{
+//			User:      u,
+//			ExtraData: "test extra data",
+//		}, nil
+//	})
 func TransformList[T any, V any](list *List[T], transform func(T) (V, error)) (*List[V], error) {
 	if list == nil {
 		return &List[V]{

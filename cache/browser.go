@@ -49,10 +49,11 @@ var NoCache = func(ctx *context.Context) {
 // Usage: `app.Use(cache.StaticCache(24 * time.Hour))` or `app.Use(cache.Staticcache(-1))`.
 // A middleware, which is a simple Handler can be called inside another handler as well, example:
 // cacheMiddleware := cache.StaticCache(...)
-// func(ctx iris.Context){
-//  cacheMiddleware(ctx)
-//  [...]
-// }
+//
+//	func(ctx iris.Context){
+//	 cacheMiddleware(ctx)
+//	 [...]
+//	}
 var StaticCache = func(cacheDur time.Duration) context.Handler {
 	if int64(cacheDur) <= 0 {
 		return NoCache

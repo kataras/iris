@@ -3,7 +3,7 @@ package hcaptcha
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -70,7 +70,9 @@ func New(secret string, options ...Option) context.Handler {
 
 // Handler is the HTTP route middleware featured hcaptcha validation.
 // It calls the `SiteVerify` method and fires the "next" when user completed the hcaptcha successfully,
-//  otherwise it calls the Client's `FailureHandler`.
+//
+//	otherwise it calls the Client's `FailureHandler`.
+//
 // The hcaptcha's `Response` (which contains any `ErrorCodes`)
 // is saved on the Request's Context (see `GetResponseFromContext`).
 func (c *Client) Handler(ctx *context.Context) {
@@ -113,7 +115,7 @@ func SiteVerify(ctx *context.Context, secret string) (response Response) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		response.ErrorCodes = append(response.ErrorCodes, err.Error())

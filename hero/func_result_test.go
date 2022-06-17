@@ -92,7 +92,7 @@ func (e err) Dispatch(ctx iris.Context) {
 	// write the status code based on the err's StatusCode.
 	ctx.StatusCode(e.Status)
 	// send to the client the whole object as json
-	_, _ = ctx.JSON(e)
+	_ = ctx.JSON(e)
 }
 
 func GetCustomErrorAsDispatcher() err {

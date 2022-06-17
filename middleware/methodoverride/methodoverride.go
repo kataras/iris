@@ -166,11 +166,12 @@ func Query(paramName string) Option {
 // to determinate the method to override with.
 //
 // Use cases:
-// 1. When need to check only for headers and ignore other fields:
-//   New(Only(Headers("X-Custom-Header")))
 //
-// 2. When need to check only for (first) form field and (second) custom getter:
-//   New(Only(FormField("fieldName"), Getter(...)))
+//  1. When need to check only for headers and ignore other fields:
+//     New(Only(Headers("X-Custom-Header")))
+//
+//  2. When need to check only for (first) form field and (second) custom getter:
+//     New(Only(FormField("fieldName"), Getter(...)))
 func Only(o ...Option) Option {
 	return func(opts *options) {
 		opts.getters = opts.getters[0:0]
@@ -184,7 +185,6 @@ func Only(o ...Option) Option {
 // Use this wrapper when you expecting clients
 // that do not support certain HTTP operations such as DELETE or PUT for security reasons.
 // This wrapper will accept a method, based on criteria, to override the POST method with.
-//
 //
 // Read more at:
 // https://github.com/kataras/iris/issues/1325

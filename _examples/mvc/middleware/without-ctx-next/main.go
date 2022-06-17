@@ -1,8 +1,10 @@
-/*Package main shows how to add done handlers in an MVC application without
+/*
+Package main shows how to add done handlers in an MVC application without
 the necessity of `ctx.Next()` inside the controller's methods.
 
 When we want the `Done` handlers of that specific mvc app's `Party`
-to be executed but we don't want to add `ctx.Next()` on the `exampleController#EndRequest`*/
+to be executed but we don't want to add `ctx.Next()` on the `exampleController#EndRequest`
+*/
 package main
 
 import (

@@ -99,6 +99,7 @@ func MustLoad[T User](filename string) *Auth[T] {
 // Must is a helper that wraps a call to a function returning (*Auth[T], error)
 // and panics if the error is non-nil. It is intended for use in variable
 // initializations such as
+//
 //	var s = auth.Must(auth.New[MyUser](config))
 func Must[T User](s *Auth[T], err error) *Auth[T] {
 	if err != nil {
@@ -142,12 +143,13 @@ func New[T User](config Configuration) (*Auth[T], error) {
 // method when a Provider of T and ErrorHandler is available through the registered Party's dependencies.
 //
 // Usage Example:
-//  api := app.Party("/api")
-//  api.EnsureStaticBindings().RegisterDependency(
-//    NewAuthProviderErrorHandler(),
-//    NewAuthCustomerProvider,
-//    auth.Must(auth.New[Customer](authConfig)).WithProviderAndErrorHandler,
-//  )
+//
+//	api := app.Party("/api")
+//	api.EnsureStaticBindings().RegisterDependency(
+//	  NewAuthProviderErrorHandler(),
+//	  NewAuthCustomerProvider,
+//	  auth.Must(auth.New[Customer](authConfig)).WithProviderAndErrorHandler,
+//	)
 func (s *Auth[T]) WithProviderAndErrorHandler(provider Provider[T], errHandler ErrorHandler) *Auth[T] {
 	if provider != nil {
 		for i := range s.providers {

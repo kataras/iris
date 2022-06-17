@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -324,7 +323,7 @@ func BenchmarkAccessLogAfterPrint(b *testing.B) {
 }
 
 func benchmarkAccessLogAfter(b *testing.B, withLogStruct, async bool) {
-	ac := New(ioutil.Discard)
+	ac := New(io.Discard)
 	ac.Clock = TClock(time.Time{})
 	ac.BytesReceived = false
 	ac.BytesReceivedBody = false

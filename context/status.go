@@ -111,7 +111,6 @@ func StatusText(code int) string {
 // Read more at `iris/Configuration#DisableAutoFireStatusCode` and
 // `iris/core/router/Party#OnAnyErrorCode` for relative information.
 //
-//
 // Modify this variable when your Iris server or/and client
 // not follows the RFC: https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 var StatusCodeNotSuccessful = func(statusCode int) bool { return statusCode >= 400 }

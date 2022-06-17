@@ -8,21 +8,21 @@ import (
 const addr = "127.0.0.1:8080"
 
 /*
-	# Windows requires special linker flags for GUI apps.
-	# It's also recommended to use TDM-GCC-64 compiler for CGo.
-	# http://tdm-gcc.tdragon.net/download
-	#
-	#
-	$ go build -mod=mod -ldflags="-H windowsgui" -o myapp.exe # build for windows
-	$ ./myapp.exe # run
-	#
-	# MacOS uses app bundles for GUI apps
-	$ mkdir -p example.app/Contents/MacOS
-	$ go build -o example.app/Contents/MacOS/example
-	$ open example.app # Or click on the app in Finder
-	#
-	# Note: if you see "use option -std=c99 or -std=gnu99 to compile your code"
-	# please refer to: https://github.com/webview/webview/issues/188
+# Windows requires special linker flags for GUI apps.
+# It's also recommended to use TDM-GCC-64 compiler for CGo.
+# http://tdm-gcc.tdragon.net/download
+#
+#
+$ go build -mod=mod -ldflags="-H windowsgui" -o myapp.exe # build for windows
+$ ./myapp.exe # run
+#
+# MacOS uses app bundles for GUI apps
+$ mkdir -p example.app/Contents/MacOS
+$ go build -o example.app/Contents/MacOS/example
+$ open example.app # Or click on the app in Finder
+#
+# Note: if you see "use option -std=c99 or -std=gnu99 to compile your code"
+# please refer to: https://github.com/webview/webview/issues/188
 */
 func main() {
 	go runServer()

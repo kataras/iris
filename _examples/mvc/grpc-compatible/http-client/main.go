@@ -5,15 +5,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	pb "github.com/kataras/iris/v12/_examples/mvc/grpc-compatible/helloworld"
 )
 
 func main() {
-	b, err := ioutil.ReadFile("../server.crt")
+	b, err := os.ReadFile("../server.crt")
 	if err != nil {
 		log.Fatal(err)
 	}

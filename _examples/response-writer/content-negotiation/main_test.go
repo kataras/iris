@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/xml"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/kataras/iris/v12"
@@ -69,7 +69,7 @@ func TestContentNegotiation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rawResponse, err := ioutil.ReadAll(zr)
+	rawResponse, err := io.ReadAll(zr)
 	if err != nil {
 		t.Fatal(err)
 	}

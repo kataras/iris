@@ -13,12 +13,13 @@ import (
 // The cases are filtered in order of their registration.
 //
 // Example Code:
-// 	switcher := Switch(Hosts{
-// 		"mydomain.com": app,
-// 		"test.mydomain.com": testSubdomainApp,
-// 		"otherdomain.com": "appName",
-// 	})
-// 	switcher.Listen(":80")
+//
+//	switcher := Switch(Hosts{
+//		"mydomain.com": app,
+//		"test.mydomain.com": testSubdomainApp,
+//		"otherdomain.com": "appName",
+//	})
+//	switcher.Listen(":80")
 //
 // Note that this is NOT an alternative for a load balancer.
 // The filters are executed by registration order and a matched Application

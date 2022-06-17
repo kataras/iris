@@ -9,9 +9,11 @@ else as well, otherwise I am going with the first one:
 
 ```go
 // 1
-mvc.Configure(app.Party("/user"), func(m *mvc.Application) {
-     m.Router.Use(cache.Handler(10*time.Second))
-})
+
+	mvc.Configure(app.Party("/user"), func(m *mvc.Application) {
+	     m.Router.Use(cache.Handler(10*time.Second))
+	})
+
 ```
 
 ```go
@@ -32,10 +34,12 @@ mvc.Configure(userRouter, ...)
 ```go
 // 4
 // same:
-app.PartyFunc("/user", func(r iris.Party){
-    r.Use(cache.Handler(10*time.Second))
-    mvc.Configure(r, ...)
-})
+
+	app.PartyFunc("/user", func(r iris.Party){
+	    r.Use(cache.Handler(10*time.Second))
+	    mvc.Configure(r, ...)
+	})
+
 ```
 
 If you want to use a middleware for a single route,
@@ -48,16 +52,18 @@ then you just call it on the method:
 var myMiddleware := myMiddleware.New(...) // this should return an iris/context.Handler
 
 type UserController struct{}
-func (c *UserController) GetSomething(ctx iris.Context) {
-    // ctx.Proceed checks if myMiddleware called `ctx.Next()`
-    // inside it and returns true if so, otherwise false.
-    nextCalled := ctx.Proceed(myMiddleware)
-    if !nextCalled {
-        return
-    }
 
-    // else do the job here, it's allowed
-}
+	func (c *UserController) GetSomething(ctx iris.Context) {
+	    // ctx.Proceed checks if myMiddleware called `ctx.Next()`
+	    // inside it and returns true if so, otherwise false.
+	    nextCalled := ctx.Proceed(myMiddleware)
+	    if !nextCalled {
+	        return
+	    }
+
+	    // else do the job here, it's allowed
+	}
+
 ```
 
 And last, if you want to add a middleware on a specific method

@@ -7,14 +7,15 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 )
 
-/* A Router should contain all three of the following methods:
-   - HandleRequest should handle the request based on the Context.
-	  HandleRequest(ctx iris.Context)
-   - Build should builds the handler, it's being called on router's BuildRouter.
-	  Build(provider router.RoutesProvider) error
-   - RouteExists reports whether a particular route exists.
-	  RouteExists(ctx iris.Context, method, path string) bool
-   - FireErrorCode(ctx iris.Context) should handle the given ctx.GetStatusCode().
+/*
+	 A Router should contain all three of the following methods:
+	   - HandleRequest should handle the request based on the Context.
+		  HandleRequest(ctx iris.Context)
+	   - Build should builds the handler, it's being called on router's BuildRouter.
+		  Build(provider router.RoutesProvider) error
+	   - RouteExists reports whether a particular route exists.
+		  RouteExists(ctx iris.Context, method, path string) bool
+	   - FireErrorCode(ctx iris.Context) should handle the given ctx.GetStatusCode().
 
 For a more detailed, complete and useful example
 you can take a look at the iris' router itself which is located at:

@@ -11,8 +11,8 @@ import (
 const addr = "127.0.0.1:8080"
 
 /*
-	$ go build -mod=mod -ldflags -H=windowsgui -o myapp.exe
-	$ ./myapp.exe # run the app
+$ go build -mod=mod -ldflags -H=windowsgui -o myapp.exe
+$ ./myapp.exe # run the app
 */
 func main() {
 	go runServer()

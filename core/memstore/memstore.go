@@ -730,7 +730,6 @@ func (e Entry) Value() interface{} {
 // Save same as `Set`
 // However, if "immutable" is true then saves it as immutable (same as `SetImmutable`).
 //
-//
 // Returns the entry and true if it was just inserted, meaning that
 // it will return the entry and a false boolean if the entry exists and it has been updated.
 func (r *Store) Save(key string, value interface{}, immutable bool) (Entry, bool) {

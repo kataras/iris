@@ -3,7 +3,7 @@ package i18n
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -33,7 +33,7 @@ func Glob(globPattern string, options LoaderConfig) Loader {
 		panic(err)
 	}
 
-	return load(assetNames, ioutil.ReadFile, options)
+	return load(assetNames, os.ReadFile, options)
 }
 
 // Assets accepts a function that returns a list of filenames (physical or virtual),

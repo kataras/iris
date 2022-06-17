@@ -34,12 +34,13 @@ type Options struct {
 // for security reasons.
 //
 // Example Code:
-//  app.Get("/health", modrevision.New(modrevision.Options{
-//   ServerName:   "Iris Server",
-//   Env:          "development",
-//   Developer:    "kataras",
-//   TimeLocation: time.FixedZone("Greece/Athens", 10800),
-//  }))
+//
+//	app.Get("/health", modrevision.New(modrevision.Options{
+//	 ServerName:   "Iris Server",
+//	 Env:          "development",
+//	 Developer:    "kataras",
+//	 TimeLocation: time.FixedZone("Greece/Athens", 7200),
+//	}))
 func New(opts Options) context.Handler {
 	buildTime, buildRevision := context.BuildTime, context.BuildRevision
 	if opts.UnixTime {

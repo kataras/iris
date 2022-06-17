@@ -1,10 +1,12 @@
-/*Package main is a proxy + accesslog example.
+/*
+Package main is a proxy + accesslog example.
 In this example we will make a small proxy which listens requests on "/proxy/+path".
 With two accesslog instances, one for the main application and one for the /proxy/ requests.
 Of cource, you could a single accesslog for the whole application, but for the sake of the example
 let's log them separately.
 
-We will make use of iris.StripPrefix and host.ProxyHandler.*/
+We will make use of iris.StripPrefix and host.ProxyHandler.
+*/
 package main
 
 import (

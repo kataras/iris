@@ -7,7 +7,6 @@ import (
 	"html"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -1041,7 +1040,7 @@ func cacheFiles(ctx stdContext.Context, fs http.FileSystem, names []string, comp
 
 		fi := newFileInfo(path.Base(name), inf.Mode(), inf.ModTime())
 
-		contents, err := ioutil.ReadAll(f)
+		contents, err := io.ReadAll(f)
 		f.Close()
 		if err != nil {
 			return err

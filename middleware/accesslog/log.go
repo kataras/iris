@@ -11,6 +11,7 @@ import (
 )
 
 // Log represents the log data specifically for the accesslog middleware.
+//
 //easyjson:json
 type Log struct {
 	// The AccessLog instance this Log was created of.

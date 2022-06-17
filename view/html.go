@@ -140,6 +140,7 @@ func (s *HTMLEngine) Reload(developmentMode bool) *HTMLEngine {
 //
 // missingkey: Control the behavior during execution if a map is
 // indexed with a key that is not present in the map.
+//
 //	"missingkey=default" or "missingkey=invalid"
 //		The default behavior: Do nothing and continue execution.
 //		If printed, the result of the index operation is the string
@@ -148,7 +149,6 @@ func (s *HTMLEngine) Reload(developmentMode bool) *HTMLEngine {
 //		The operation returns the zero value for the map type's element.
 //	"missingkey=error"
 //		Execution stops immediately with an error.
-//
 func (s *HTMLEngine) Option(opt ...string) *HTMLEngine {
 	s.rmu.Lock()
 	s.options = append(s.options, opt...)
@@ -172,7 +172,8 @@ func (s *HTMLEngine) Delims(left, right string) *HTMLEngine {
 // for the template file with its extension.
 //
 // Example: HTML("./templates", ".html").Layout("layouts/mainLayout.html")
-//         // mainLayout.html is inside: "./templates/layouts/".
+//
+//	// mainLayout.html is inside: "./templates/layouts/".
 //
 // Note: Layout can be changed for a specific call
 // action with the option: "layout" on the iris' context.Render function.

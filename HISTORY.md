@@ -28,6 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Make the `Context.JSON` method customizable by modifying the `context.WriteJSON` package-level function.
 - Add new `iris.NewGuide` which helps you build a simple and nice JSON API with services as dependencies and better design pattern.
 - Make `Context.Domain()` customizable by letting developers to modify the `Context.GetDomain` package-level function.
 - Remove Request Context-based Transaction feature as its usage can be replaced with just the Iris Context (as of go1.7+) and better [project](_examples/project) structure.

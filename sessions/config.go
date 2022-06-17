@@ -78,8 +78,13 @@ func (c Config) Validate() Config {
 	}
 
 	if c.SessionIDGenerator == nil {
-		c.SessionIDGenerator = func(*context.Context) string {
-			id, _ := uuid.NewRandom()
+		c.SessionIDGenerator = func(ctx *context.Context) string {
+			id, err := uuid.NewRandom()
+			if err != nil {
+				ctx.StopWithError(400, err)
+				return ""
+			}
+
 			return id.String()
 		}
 	}

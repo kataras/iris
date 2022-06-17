@@ -131,11 +131,12 @@ func (r *RequestParams) GetIntUnslashed(key string) (int, bool) {
 // Key is the specific type, which should be unique.
 // The value is a function which accepts the parameter index
 // and it should return the value as the parameter type evaluator expects it.
-// i.e [reflect.TypeOf("string")] = func(paramIndex int) interface{} {
-//     return func(ctx *Context) <T> {
-//         return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(<T>)
-//     }
-// }
+//
+//	i.e [reflect.TypeOf("string")] = func(paramIndex int) interface{} {
+//	    return func(ctx *Context) <T> {
+//	        return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(<T>)
+//	    }
+//	}
 //
 // Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 // Checks for total available request parameters length
@@ -261,7 +262,9 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 // and the parameter's index based on the registered path.
 // Usage: nameResolver := ParamResolverByKindAndKey(reflect.TypeOf(""), 0)
 // Inside a Handler:      nameResolver.Call(ctx)[0]
-//        it will return the reflect.Value Of the exact type of the parameter(based on the path parameters and macros).
+//
+//	it will return the reflect.Value Of the exact type of the parameter(based on the path parameters and macros).
+//
 // It is only useful for dynamic binding of the parameter, it is used on "hero" package and it should be modified
 // only when Macros are modified in such way that the default selections for the available go std types are not enough.
 //

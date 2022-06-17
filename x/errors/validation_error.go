@@ -13,7 +13,8 @@ import (
 // A validation error(s) can be given by ErrorCodeName's Validation or Err methods.
 //
 // Example can be found at:
-//  https://github.com/kataras/iris/tree/master/_examples/routing/http-wire-errors/custom-validation-errors
+//
+//	https://github.com/kataras/iris/tree/master/_examples/routing/http-wire-errors/custom-validation-errors
 type ValidationError interface {
 	error
 
