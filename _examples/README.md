@@ -70,7 +70,8 @@
         * Convert net/http Handlers
             * [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
             * [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
-            * [From func(http.HandlerFunc) http.HandlerFunc](convert-handlers/real-usecase-raven/writing-middleware/main.go)
+            * [From func(http.Handler) http.Handler](convert-handlers/wrapper/main.go)
+            * [Convert by your own: sentry/raven middleware](convert-handlers/real-usecase-raven/writing-middleware/main.go)
     * [Rewrite Middleware](routing/rewrite/main.go)
     * [Route State](routing/route-state/main.go)
     * [Remove Route](routing/remove-route/main.go)
