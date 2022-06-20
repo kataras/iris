@@ -841,7 +841,7 @@ func (ctx *Context) StopWithPlainError(statusCode int, err error) {
 // it will also fire the specified error code handler.
 func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) error {
 	ctx.StopWithStatus(statusCode)
-	return ctx.writeJSON(jsonObject, nil) // do not modify - see errors.DefaultContextErrorHandler.
+	return ctx.writeJSON(jsonObject, &DefaultJSONOptions) // do not modify - see errors.DefaultContextErrorHandler.
 }
 
 // StopWithProblem stops the handlers chain, writes the status code
