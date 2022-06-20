@@ -48,7 +48,7 @@ func (r *RequestParams) Set(key, value string) {
 
 // Get returns a path parameter's value based on its route's dynamic path key.
 func (r *RequestParams) Get(key string) string {
-	for i := 0; i < len(r.Store); i++ {
+	for i := range r.Store {
 		if kv := r.Store[i]; kv.Key == key {
 			if v, ok := kv.ValueRaw.(string); ok {
 				return v // it should always be string here on :string parameter.

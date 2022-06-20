@@ -42,7 +42,13 @@ type (
 )
 
 type routerHandler struct {
-	config context.ConfigurationReadOnly
+	// Config.
+	disablePathCorrection            bool
+	disablePathCorrectionRedirection bool
+	fireMethodNotAllowed             bool
+	enablePathIntelligence           bool
+	forceLowercaseRouting            bool
+	//
 	logger *golog.Logger
 
 	trees      []*trie
@@ -60,8 +66,12 @@ var _ HTTPErrorHandler = (*routerHandler)(nil)
 // to map the request with a route (aka mux implementation).
 func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logger) RequestHandler {
 	return &routerHandler{
-		config: config,
-		logger: logger,
+		disablePathCorrection:            config.GetDisablePathCorrection(),
+		disablePathCorrectionRedirection: config.GetDisablePathCorrectionRedirection(),
+		fireMethodNotAllowed:             config.GetFireMethodNotAllowed(),
+		enablePathIntelligence:           config.GetEnablePathIntelligence(),
+		forceLowercaseRouting:            config.GetForceLowercaseRouting(),
+		logger:                           logger,
 	}
 }
 
@@ -200,7 +210,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			noLogCount++
 		}
 
-		if h.config != nil && h.config.GetForceLowercaseRouting() {
+		if h.forceLowercaseRouting {
 			// only in that state, keep everything else as end-developer registered.
 			r.Path = strings.ToLower(r.Path)
 		}
@@ -393,9 +403,8 @@ func canHandleSubdomain(ctx *context.Context, subdomain string) bool {
 func (h *routerHandler) HandleRequest(ctx *context.Context) {
 	method := ctx.Method()
 	path := ctx.Path()
-	config := h.config // ctx.Application().GetConfigurationReadOnly()
 
-	if !config.GetDisablePathCorrection() {
+	if !h.disablePathCorrection {
 		if len(path) > 1 && strings.HasSuffix(path, "/") {
 			// Remove trailing slash and client-permanent rule for redirection,
 			// if confgiuration allows that and path has an extra slash.
@@ -405,7 +414,7 @@ func (h *routerHandler) HandleRequest(ctx *context.Context) {
 			// use Trim to ensure there is no open redirect due to two leading slashes
 			path = "/" + strings.Trim(path, "/")
 			u.Path = path
-			if !config.GetDisablePathCorrectionRedirection() {
+			if !h.disablePathCorrectionRedirection {
 				// do redirect, else continue with the modified path without the last "/".
 				url := u.String()
 
@@ -445,7 +454,7 @@ func (h *routerHandler) HandleRequest(ctx *context.Context) {
 		break
 	}
 
-	if config.GetFireMethodNotAllowed() {
+	if h.fireMethodNotAllowed {
 		for i := range h.trees {
 			t := h.trees[i]
 			// if `Configuration#FireMethodNotAllowed` is kept as defaulted(false) then this function will not
@@ -460,7 +469,7 @@ func (h *routerHandler) HandleRequest(ctx *context.Context) {
 		}
 	}
 
-	if config.GetEnablePathIntelligence() && method == http.MethodGet {
+	if h.enablePathIntelligence && method == http.MethodGet {
 		closestPaths := ctx.FindClosest(1)
 		if len(closestPaths) > 0 {
 			u := ctx.Request().URL
