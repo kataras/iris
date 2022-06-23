@@ -444,6 +444,48 @@ var (
 		return tt, true
 	})
 
+	// ErrParamNotWeekday is fired when the parameter value is not a form of a time.Weekday.
+	ErrParamNotWeekday = errors.New("parameter is not a valid weekday")
+	longDayNames       = map[string]time.Weekday{
+		"Sunday":    time.Sunday,
+		"Monday":    time.Monday,
+		"Tuesday":   time.Tuesday,
+		"Wednesday": time.Wednesday,
+		"Thursday":  time.Thursday,
+		"Friday":    time.Friday,
+		"Saturday":  time.Saturday,
+		// lowercase.
+		"sunday":    time.Sunday,
+		"monday":    time.Monday,
+		"tuesday":   time.Tuesday,
+		"wednesday": time.Wednesday,
+		"thursday":  time.Thursday,
+		"friday":    time.Friday,
+		"saturday":  time.Saturday,
+	}
+
+	// Weekday type, returns a type of time.Weekday.
+	// Valid values:
+	// 0 to 7 (leading zeros don't matter)  or "Sunday" to "Monday" or "sunday" to "monday".
+	Weekday = NewMacro("weekday", "", false, false, func(paramValue string) (interface{}, bool) {
+		d, ok := longDayNames[paramValue]
+		if !ok {
+			// try parse from integer.
+			n, err := strconv.Atoi(paramValue)
+			if err != nil {
+				return fmt.Errorf("%s: %w", paramValue, err), false
+			}
+
+			if n < 0 || n > 6 {
+				return fmt.Errorf("%s: %w", paramValue, ErrParamNotWeekday), false
+			}
+
+			return time.Weekday(n), true
+		}
+
+		return d, true
+	})
+
 	// Defaults contains the defaults macro and parameters types for the router.
 	//
 	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
@@ -467,6 +509,7 @@ var (
 		Mail,
 		Email,
 		Date,
+		Weekday,
 	}
 )
 

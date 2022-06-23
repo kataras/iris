@@ -146,6 +146,12 @@ func main() {
 	// +------------------------+
 	// yyyy/mm/dd format e.g. /blog/{param:date} matches /blog/2022/04/21.
 	//
+	// +------------------------+
+	// | {param:weekday}        |
+	// +------------------------+
+	// positive integer 0 to 6 or
+	// string of time.Weekday longname format ("sunday" to "monday" or "Sunday" to "Monday")
+	// format e.g. /schedule/{param:weekday} matches /schedule/monday.
 	//
 	// If type is missing then parameter's type is defaulted to string, so
 	// {param} is identical to {param:string}.
@@ -212,6 +218,14 @@ func main() {
 		// OR
 		yearMonthDay := ctx.Params().SimpleDate("date")
 		ctx.Writef("Raw time.Time.String value: %v\nyyyy/mm/dd: %s\n", rawTimeValue, yearMonthDay)
+	})
+
+	// 0 to 7 or "Sunday" to "Monday" or "sunday" to "monday". Leading zeros don't matter.
+	// http://localhost:8080/schedule/monday or http://localhost:8080/schedule/Monday or
+	// http://localhost:8080/schedule/1 or http://localhost:8080/schedule/0001.
+	app.Get("/schedule/{day:weekday}", func(ctx iris.Context) {
+		day, _ := ctx.Params().GetWeekday("day")
+		ctx.Writef("Weekday requested was: %v\n", day)
 	})
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.

@@ -28,6 +28,18 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- New `{x:weekday}` path parameter type, example code:
+
+```go
+// 0 to 7 (leading zeros don't matter) or "Sunday" to "Monday" or "sunday" to "monday".
+// http://localhost:8080/schedule/monday or http://localhost:8080/schedule/Monday or
+// http://localhost:8080/schedule/1 or http://localhost:8080/schedule/0001.
+app.Get("/schedule/{day:weekday}", func(ctx iris.Context) {
+    day, _ := ctx.Params().GetWeekday("day")
+    ctx.Writef("Weekday requested was: %v\n", day)
+})
+```
+
 - Make the `Context.JSON` method customizable by modifying the `context.WriteJSON` package-level function.
 - Add new `iris.NewGuide` which helps you build a simple and nice JSON API with services as dependencies and better design pattern.
 - Make `Context.Domain()` customizable by letting developers to modify the `Context.GetDomain` package-level function.

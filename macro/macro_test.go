@@ -514,6 +514,36 @@ func TestDateEvaluatorRaw(t *testing.T) {
 	}
 }
 
+func TestWeekdayEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass     bool
+		input    string
+		expected time.Weekday
+	}{
+		{true, "Monday", time.Monday},        // 0
+		{true, "monday", time.Monday},        // 1
+		{false, "Sundays", time.Weekday(-1)}, // 2
+		{false, "sundays", time.Weekday(-1)}, // 3
+		{false, "-1", time.Weekday(-1)},      // 4
+		{true, "0000002", time.Tuesday},      // 5
+		{true, "3", time.Wednesday},          // 6
+		{true, "6", time.Saturday},           // 7
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Weekday, tt.input, reflect.TypeOf(time.Weekday(0)).Kind(), tt.pass, i)
+
+		if v, ok := Weekday.Evaluator(tt.input); ok {
+			if value, ok := v.(time.Weekday); ok {
+				if expected, got := tt.expected, value; expected != got {
+					t.Fatalf("[%d] expected: %s but got: %s", i, expected, got)
+				}
+			} else {
+				t.Fatalf("[%d] expected to be able to cast as time.Weekday directly", i)
+			}
+		}
+	}
+}
+
 func TestConvertBuilderFunc(t *testing.T) {
 	fn := func(min uint64, slice []string) func(string) bool {
 		return func(paramValue string) bool {

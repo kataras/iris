@@ -700,6 +700,25 @@ func (e Entry) TimeDefault(def time.Time) (time.Time, error) {
 	return vv, nil
 }
 
+var weekdayType = reflect.TypeOf(time.Weekday(0))
+
+// WeekdayDefault returns the stored time.Weekday value based on its "key".
+// If does not exist or the stored key's value is not a weekday
+// it returns the "def" weekday value and a not found error.
+func (e Entry) WeekdayDefault(def time.Weekday) (time.Weekday, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, e.notFound(weekdayType)
+	}
+
+	vv, ok := v.(time.Weekday)
+	if !ok {
+		return def, nil
+	}
+
+	return vv, nil
+}
+
 // Value returns the value of the entry,
 // respects the immutable.
 func (e Entry) Value() interface{} {
@@ -1182,6 +1201,20 @@ func (r *Store) SimpleDate(key string) string {
 	}
 
 	return tt.Format(simpleDateLayout)
+}
+
+const zeroWeekday = time.Sunday
+
+// GetWeekday returns the stored time.Weekday value based on its "key".
+// If does not exist or the stored key's value is not a weekday
+// it returns the time.Sunday value and a not found error.
+func (r *Store) GetWeekday(key string) (time.Weekday, error) {
+	v, ok := r.GetEntry(key)
+	if !ok {
+		return zeroWeekday, v.notFound(timeType)
+	}
+
+	return v.WeekdayDefault(zeroWeekday)
 }
 
 // Remove deletes an entry linked to that "key",
