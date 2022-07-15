@@ -6,19 +6,19 @@ func negotiationMatch(in []string, priorities []string) string {
 	// e.g.
 	// match json:
 	// 	in: text/html, application/json
-	// 	prioritities: application/json
+	// 	priorities: application/json
 	// not match:
 	// 	in: text/html, application/json
-	// 	prioritities: text/xml
+	// 	priorities: text/xml
 	// match html:
 	// 	in: text/html, application/json
-	// 	prioritities: */*
+	// 	priorities: */*
 	// not match:
 	// 	in: application/json
-	// 	prioritities: text/xml
+	// 	priorities: text/xml
 	// match json:
 	// 	in: text/html, application/*
-	// 	prioritities: application/json
+	// 	priorities: application/json
 
 	if len(priorities) == 0 {
 		return ""
