@@ -959,12 +959,12 @@ func (c *Configuration) GetKeepAlive() time.Duration {
 	return c.KeepAlive
 }
 
-// GetKeepAlive returns the Timeout field.
+// GetTimeout returns the Timeout field.
 func (c *Configuration) GetTimeout() time.Duration {
 	return c.Timeout
 }
 
-// GetKeepAlive returns the TimeoutMessage field.
+// GetTimeoutMessage returns the TimeoutMessage field.
 func (c *Configuration) GetTimeoutMessage() string {
 	return c.TimeoutMessage
 }
