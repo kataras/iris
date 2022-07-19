@@ -6,9 +6,7 @@ import (
 
 // How to run:
 //
-// $ go get -u github.com/go-bindata/go-bindata/...
-// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-// # to save it to your go.mod file
+// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
 // $ go-bindata -prefix "../embedding-files-into-app/assets/" -fs ../embedding-files-into-app/assets/...
 // $ go run -mod=mod .
 // Time to complete the compression and caching of [2/3] files: 31.9998ms

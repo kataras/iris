@@ -5,9 +5,7 @@ import (
 )
 
 // Follow these steps first:
-// $ go get -u github.com/go-bindata/go-bindata/...
-// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-// # to save it to your go.mod file
+// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
 // $ go-bindata -prefix "assets" -fs ./assets/...
 // $ go run .
 // "physical" files are not used, you can delete the "assets" folder and run the example.

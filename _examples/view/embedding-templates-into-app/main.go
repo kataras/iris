@@ -5,9 +5,7 @@ import "github.com/kataras/iris/v12"
 func main() {
 	app := iris.New()
 
-	// $ go get -u github.com/go-bindata/go-bindata/...
-	// # OR: go get -u github.com/go-bindata/go-bindata/v3/go-bindata
-	// # to save it to your go.mod file
+	// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
 	// $ go-bindata -fs -prefix "templates" ./templates/...
 	// $ go run .
 	// html files are not used, you can delete the folder and run the example.

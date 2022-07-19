@@ -7,8 +7,7 @@ import (
 )
 
 // How to run:
-// $ go get -u github.com/go-bindata/go-bindata/...
-// # OR go get -u github.com/go-bindata/go-bindata/v3/go-bindata
+// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
 // $ go-bindata -nomemcopy -fs -prefix "../http2push/assets" ../http2push/assets/...
 // $ go run .
 
