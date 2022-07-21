@@ -321,7 +321,7 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 				destName = nameFunc(destName)
 			}
 
-			ctx.ResponseWriter().Header().Set(context.ContentDispositionHeaderKey, "attachment;filename="+destName)
+			ctx.ResponseWriter().Header().Set(context.ContentDispositionHeaderKey, context.MakeDisposition(destName))
 		}
 
 		// the encoding saved from the negotiation.

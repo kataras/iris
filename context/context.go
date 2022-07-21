@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unicode"
 	"unsafe"
 
 	"github.com/kataras/iris/v12/core/memstore"
@@ -5067,8 +5068,31 @@ func (ctx *Context) SendFileWithRate(src, destName string, limit float64, burst 
 		destName = filepath.Base(src)
 	}
 
-	ctx.writer.Header().Set(ContentDispositionHeaderKey, "attachment;filename="+destName)
+	ctx.writer.Header().Set(ContentDispositionHeaderKey, MakeDisposition(destName))
 	return ctx.ServeFileWithRate(src, limit, burst)
+}
+
+// MakeDisposition generates an HTTP Content-Disposition field-value.
+// Similar solution followed by: Spring(Java), Symfony(PHP) and Ruby on Rails frameworks too.
+//
+// Fixes CVE-2020-5398. Reported by motoyasu-saburi.
+func MakeDisposition(filename string) string {
+	if isASCII(filename) {
+		return `attachment; filename="` + filename + `"`
+	}
+
+	return `attachment; filename*=UTF-8''` + url.QueryEscape(filename)
+}
+
+// Found at: https://stackoverflow.com/questions/53069040/checking-a-string-contains-only-ascii-characters
+// A faster (better, more idiomatic) version, which avoids unnecessary rune conversions.
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
 }
 
 //  +------------------------------------------------------------+
