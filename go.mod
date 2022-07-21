@@ -5,7 +5,7 @@ go 1.18
 // retract v12.1.8 // please update to @master
 
 require (
-	github.com/BurntSushi/toml v1.1.0
+	github.com/BurntSushi/toml v1.2.0
 	github.com/CloudyKit/jet/v6 v6.1.0
 	github.com/Shopify/goreferrer v0.0.0-20210630161223-536fa16abd6f
 	github.com/andybalholm/brotli v1.0.4
