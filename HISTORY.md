@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Fix [CVE-2020-5398](https://github.com/advisories/GHSA-8wx2-9q48-vm9r).
+
 - New `{x:weekday}` path parameter type, example code:
 
 ```go
