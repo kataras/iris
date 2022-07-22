@@ -187,3 +187,23 @@ func (p *provider) deleteSession(sess *Session) {
 	p.db.Release(sid)
 	p.fireDestroy(sid)
 }
+
+/*
+func (p *provider) regenerateID(ctx *context.Context, oldsid string) {
+	p.mu.RLock()
+	sess, ok := p.sessions[oldsid]
+	p.mu.RUnlock()
+
+	if ok {
+		newsid := sess.Man.config.SessionIDGenerator(ctx)
+		sess.mu.Lock()
+		sess.sid = newsid
+		sess.mu.Unlock()
+
+		p.mu.Lock()
+		p.sessions[newsid] = sess
+		delete(p.sessions, oldsid)
+		p.mu.Unlock()
+	}
+}
+*/

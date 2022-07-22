@@ -26,7 +26,7 @@ Instructions can be found at: https://github.com/kataras/iris/issues/796
 
 ### Writing
 
-Write an article about Iris in https://medium.com , https://dev.to or if you're being a hackathon at https://hackernoon.com, some [examples](https://github.com/kataras/iris/wiki/Publications).
+Write an article about Iris in https://medium.com, https://dev.to or if you're being a hackathon at https://hackernoon.com, some [examples](https://github.com/kataras/iris/wiki/Publications).
 
 ### Social networks
 

@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-	"unicode"
 	"unsafe"
 
 	"github.com/kataras/iris/v12/core/memstore"
@@ -1934,6 +1933,21 @@ func (ctx *Context) PostValueDefault(name string, def string) string {
 	return values[len(values)-1]
 }
 
+// PostValueString same as `PostValue` method but it reports
+// an error if the value with key equals to "name" does not exist.
+func (ctx *Context) PostValueString(name string) (string, error) {
+	values, err := ctx.PostValues(name)
+	if err != nil {
+		return "", err
+	}
+
+	if len(values) == 0 { // just in case.
+		return "", ErrEmptyForm
+	}
+
+	return values[len(values)-1], nil
+}
+
 // PostValue returns the last parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name".
 //
@@ -1948,93 +1962,338 @@ func (ctx *Context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-// PostValueInt returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int.
+// PostValueUint returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as unassigned number.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueUint(name string) (uint, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseUint(value)
+}
+
+// PostValueUint returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as unassigned number.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueUint8(name string) (uint8, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseUint8(value)
+}
+
+// PostValueUint returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as unassigned number.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueUint16(name string) (uint16, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseUint16(value)
+}
+
+// PostValueUint returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as unassigned number.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueUint32(name string) (uint32, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseUint32(value)
+}
+
+// PostValueUint returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as unassigned number.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueUint64(name string) (uint64, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseUint64(value)
+}
+
+// PostValueInt returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as signed number.
 //
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueInt(name string) (int, error) {
-	values, err := ctx.PostValues(name)
-	if err != nil || len(values) == 0 {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
 		return 0, err
 	}
 
-	return strconv.Atoi(values[len(values)-1])
+	return strParseInt(value)
 }
 
-// PostValueIntDefault returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int.
-//
-// If not found or parse errors returns the "def".
+// PostValueIntDefault same as PostValueInt but if errored it returns
+// the given "def" default value.
 func (ctx *Context) PostValueIntDefault(name string, def int) int {
-	if v, err := ctx.PostValueInt(name); err == nil {
-		return v
+	value, err := ctx.PostValueInt(name)
+	if err != nil {
+		return def
 	}
 
-	return def
+	return value
 }
 
-// PostValueInt64 returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as float64.
+// PostValueInt8 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as int8.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueInt8(name string) (int8, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseInt8(value)
+}
+
+// PostValueInt8Default same as PostValueInt8 but if errored it returns
+// the given "def" default value.
+func (ctx *Context) PostValueInt8Default(name string, def int8) int8 {
+	value, err := ctx.PostValueInt8(name)
+	if err != nil {
+		return def
+	}
+
+	return value
+}
+
+// PostValueInt16 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as int16.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueInt16(name string) (int16, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseInt16(value)
+}
+
+// PostValueInt16Default same as PostValueInt16 but if errored it returns
+// the given "def" default value.
+func (ctx *Context) PostValueInt16Default(name string, def int16) int16 {
+	value, err := ctx.PostValueInt16(name)
+	if err != nil {
+		return def
+	}
+
+	return value
+}
+
+// PostValueInt32 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as int32.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueInt32(name string) (int32, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseInt32(value)
+}
+
+// PostValueInt32Default same as PostValueInt32 but if errored it returns
+// the given "def" default value.
+func (ctx *Context) PostValueInt32Default(name string, def int32) int32 {
+	value, err := ctx.PostValueInt32(name)
+	if err != nil {
+		return def
+	}
+
+	return value
+}
+
+// PostValueInt64 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as int64.
 //
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueInt64(name string) (int64, error) {
-	values, err := ctx.PostValues(name)
-	if err != nil || len(values) == 0 {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
 		return 0, err
 	}
 
-	return strconv.ParseInt(values[len(values)-1], 10, 64)
+	return strParseInt64(value)
 }
 
-// PostValueInt64Default returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int64.
-//
-// If not found or parse errors returns the "def".
+// PostValueInt64Default same as PostValueInt64 but if errored it returns
+// the given "def" default value.
 func (ctx *Context) PostValueInt64Default(name string, def int64) int64 {
-	if v, err := ctx.PostValueInt64(name); err == nil {
-		return v
+	value, err := ctx.PostValueInt64(name)
+	if err != nil {
+		return def
 	}
 
-	return def
+	return value
 }
 
-// PostValueFloat64 returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as float64.
+// PostValueFloat32 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as float32.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueFloat32(name string) (float32, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseFloat32(value)
+}
+
+// PostValueFloat32Default same as PostValueFloat32 but if errored it returns
+// the given "def" default value.
+func (ctx *Context) PostValueFloat32Default(name string, def float32) float32 {
+	value, err := ctx.PostValueFloat32(name)
+	if err != nil {
+		return def
+	}
+
+	return value
+}
+
+// PostValueFloat64 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as float64.
 //
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueFloat64(name string) (float64, error) {
-	values, err := ctx.PostValues(name)
-	if err != nil || len(values) == 0 {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
 		return 0, err
 	}
 
-	return strconv.ParseFloat(values[len(values)-1], 64)
+	return strParseFloat64(value)
 }
 
-// PostValueFloat64Default returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as float64.
-//
-// If not found or parse errors returns the "def".
+// PostValueFloat64Default same as PostValueFloat64 but if errored it returns
+// the given "def" default value.
 func (ctx *Context) PostValueFloat64Default(name string, def float64) float64 {
-	if v, err := ctx.PostValueFloat64(name); err == nil {
-		return v
+	value, err := ctx.PostValueFloat64(name)
+	if err != nil {
+		return def
 	}
 
-	return def
+	return value
 }
 
-// PostValueBool returns the last parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as bool.
-// If more than one value was binded to "name", then it returns the last one.
+// PostValueComplex64 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as complex64.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueComplex64(name string) (complex64, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseComplex64(value)
+}
+
+// PostValueComplex64Default same as PostValueComplex64 but if errored it returns
+// the given "def" default value.
+func (ctx *Context) PostValueComplex64Default(name string, def complex64) complex64 {
+	value, err := ctx.PostValueComplex64(name)
+	if err != nil {
+		return def
+	}
+
+	return value
+}
+
+// PostValueComplex128 returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as complex128.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueComplex128(name string) (complex128, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseComplex128(value)
+}
+
+// PostValueComplex128Default same as PostValueComplex128 but if errored it returns
+// the given "def" default value.
+func (ctx *Context) PostValueComplex128Default(name string, def complex128) complex128 {
+	value, err := ctx.PostValueComplex128(name)
+	if err != nil {
+		return def
+	}
+
+	return value
+}
+
+// PostValueBool returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as bool.
 //
 // See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
 func (ctx *Context) PostValueBool(name string) (bool, error) {
-	values, err := ctx.PostValues(name)
-	if err != nil || len(values) == 0 {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
 		return false, err
 	}
 
-	return strconv.ParseBool(values[len(values)-1]) // values cannot be empty on this state.
+	return strParseBool(value)
+}
+
+// PostValueWeekday returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as time.Weekday.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueWeekday(name string) (time.Weekday, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return strParseWeekday(value)
+}
+
+// PostValueTime returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as time.Time with the given "layout".
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueTime(layout, name string) (time.Time, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return strParseTime(layout, value)
+}
+
+// PostValueSimpleDate returns the last parsed form data matches the given "name" key
+// from POST, PATCH, or PUT body request parameters as time.Time with "2006/01/02"
+// or "2006-01-02" time layout.
+//
+// See ErrEmptyForm, ErrNotFound and ErrEmptyFormField respectfully.
+func (ctx *Context) PostValueSimpleDate(name string) (time.Time, error) {
+	value, err := ctx.PostValueString(name)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return strParseSimpleDate(value)
 }
 
 // FormFile returns the first uploaded file that received from the client.
@@ -5077,13 +5336,8 @@ func (ctx *Context) SendFileWithRate(src, destName string, limit float64, burst 
 //
 // Fixes CVE-2020-5398. Reported by motoyasu-saburi.
 func MakeDisposition(filename string) string {
-	if isASCII(filename) {
-		return `attachment; filename="` + filename + `"`
-	}
-
 	return `attachment; filename*=UTF-8''` + url.QueryEscape(filename)
-}
-
+} /*
 // Found at: https://stackoverflow.com/questions/53069040/checking-a-string-contains-only-ascii-characters
 // A faster (better, more idiomatic) version, which avoids unnecessary rune conversions.
 func isASCII(s string) bool {
@@ -5094,6 +5348,12 @@ func isASCII(s string) bool {
 	}
 	return true
 }
+func isRFC5987AttrChar(c rune) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		c == '!' || c == '#' || c == '$' || c == '&' || c == '+' || c == '-' ||
+		c == '.' || c == '^' || c == '_' || c == '`' || c == '|' || c == '~'
+}
+*/
 
 //  +------------------------------------------------------------+
 //  | Cookies                                                    |
