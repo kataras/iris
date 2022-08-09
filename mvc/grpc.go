@@ -47,7 +47,14 @@ func (g GRPC) Apply(c *ControllerActivator) {
 			return
 		}
 
-		// If strict was false, allow common HTTP clients, consumes and produces JSON.
+		// If strict was true fires 404 on common HTTP clients.
+		if g.Strict {
+			ctx.NotFound()
+			ctx.StopExecution()
+			return
+		}
+
+		// Allow common HTTP clients, consumes and produces JSON.
 		ctx.Next()
 	}
 
