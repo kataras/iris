@@ -2672,7 +2672,19 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 }
 
 var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error {
-	decoder := json.NewDecoder(ctx.request.Body)
+	var bodyReader io.Reader
+	if ctx.IsRecordingBody() {
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+		buf := new(bytes.Buffer)
+		buf.Write(b)
+		bodyReader = buf
+	} else {
+		bodyReader = ctx.request.Body
+	}
+	decoder := json.NewDecoder(bodyReader)
 	// decoder := gojson.NewDecoder(ctx.Request().Body)
 	if len(opts) > 0 {
 		options := opts[0]
