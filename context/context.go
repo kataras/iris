@@ -2719,7 +2719,19 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream/main.go
 func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSONReader) error {
-	decoder := json.NewDecoder(ctx.request.Body)
+	var bodyReader io.Reader
+	if ctx.IsRecordingBody() {
+		b, err := ctx.GetBody()
+		if err != nil {
+			return err
+		}
+		buf := new(bytes.Buffer)
+		buf.Write(b)
+		bodyReader = buf
+	} else {
+		bodyReader = ctx.request.Body
+	}
+	decoder := json.NewDecoder(bodyReader)
 
 	if len(opts) > 0 && opts[0].ArrayStream {
 		_, err := decoder.Token() // read open bracket.
