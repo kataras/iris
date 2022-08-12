@@ -27,7 +27,7 @@ const (
 	// ISO8601ZLayout same as ISO8601Layout but with the timezone suffix.
 	ISO8601ZLayout = "2006-01-02T15:04:05Z"
 	// ISO8601ZUTCOffsetLayout ISO 8601 format, with full time and zone with UTC offset.
-	// Example: 2022-08-10T03:21:00.000000+03:00.
+	// Example: 2022-08-10T03:21:00.000000+03:00, 2022-08-09T00:00:00.000000.
 	ISO8601ZUTCOffsetLayout = "2006-01-02T15:04:05.999999Z07:00"
 )
 

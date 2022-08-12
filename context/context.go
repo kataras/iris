@@ -2575,8 +2575,12 @@ func (ctx *Context) RecordRequestBody(b bool) {
 
 // IsRecordingBody reports whether the request body can be readen multiple times.
 func (ctx *Context) IsRecordingBody() bool {
-	return ctx.values.GetBoolDefault(disableRequestBodyConsumptionContextKey,
-		ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+	if ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
+		return true
+	}
+
+	value, _ := ctx.values.GetBool(disableRequestBodyConsumptionContextKey)
+	return value
 }
 
 // GetBody reads and returns the request body.
@@ -2672,7 +2676,20 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 }
 
 var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error {
-	decoder := json.NewDecoder(ctx.request.Body)
+	var body io.Reader
+
+	if ctx.IsRecordingBody() {
+		data, err := io.ReadAll(ctx.request.Body)
+		if err != nil {
+			return err
+		}
+		setBody(ctx.request, data)
+		body = bytes.NewReader(data)
+	} else {
+		body = ctx.request.Body
+	}
+
+	decoder := json.NewDecoder(body)
 	// decoder := gojson.NewDecoder(ctx.Request().Body)
 	if len(opts) > 0 {
 		options := opts[0]
