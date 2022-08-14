@@ -470,7 +470,7 @@ $ go get github.com/kataras/iris/v12@master
 **Run**
 
 ```sh
-$ go mod tidy -compat=1.18
+$ go mod tidy -compat=1.19
 $ go run .
 ```
 

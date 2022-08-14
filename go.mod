@@ -1,13 +1,13 @@
 module github.com/kataras/iris/v12
 
-go 1.18
+go 1.19
 
 // retract v12.1.8 // please update to @master
 
 require (
 	github.com/BurntSushi/toml v1.2.0
 	github.com/CloudyKit/jet/v6 v6.1.0
-	github.com/Shopify/goreferrer v0.0.0-20210630161223-536fa16abd6f
+	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
 	github.com/andybalholm/brotli v1.0.4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.4
@@ -40,11 +40,11 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+	golang.org/x/net v0.0.0-20220812174116-3211cb980234
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab
 	golang.org/x/text v0.3.7
-	golang.org/x/time v0.0.0-20220411224347-583f2d630306
+	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -81,7 +81,7 @@ require (
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nats-io/jwt/v2 v2.2.0 // indirect
+	github.com/nats-io/jwt/v2 v2.3.0 // indirect
 	github.com/nats-io/nats.go v1.16.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect

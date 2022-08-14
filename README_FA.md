@@ -261,7 +261,7 @@ $ go get github.com/kataras/iris/v12@master
 ```txt
 module myapp
 
-go 1.18
+go 1.19
 
 require github.com/kataras/iris/v12 master
 ```

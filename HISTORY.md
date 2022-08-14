@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Ignore `"csrf.token"` form data key when missing on `ctx.ReadForm` by default as requested at [#1941](https://github.com/kataras/iris/issues/1941).
+
 - Fix [CVE-2020-5398](https://github.com/advisories/GHSA-8wx2-9q48-vm9r).
 
 - New `{x:weekday}` path parameter type, example code:
