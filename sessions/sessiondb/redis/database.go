@@ -267,7 +267,8 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 
 // Clear removes all session key values but it keeps the session entry.
 func (db *Database) Clear(sid string) error {
-	keys := db.keys(db.makeSID(sid))
+	sid = db.makeSID(sid)
+	keys := db.keys(sid)
 	for _, key := range keys {
 		if key == SessionIDKey {
 			continue

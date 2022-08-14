@@ -5,8 +5,8 @@ import "github.com/kataras/iris/v12"
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(c iris.Context) {
-		c.Writef("Hello %s", "world")
+	app.Get("/", func(ctx iris.Context) {
+		ctx.Writef("Hello %s", "world")
 	})
 
 	// This is an Iris-only feature across all web frameworks
@@ -24,7 +24,7 @@ func main() {
 
 	// http://localhost:8080          -> FOUND (Hello world)
 	// http://localhost:8080/other    -> NOT FOUND
-	// http://localhost/@             -> NOT FOUND
+	// http://localhost:8080/@        -> NOT FOUND
 	// http://localhost:8080/@kataras -> FOUND (username is kataras)
 	app.Listen(":8080")
 }
