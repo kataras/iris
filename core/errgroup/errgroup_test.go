@@ -32,13 +32,22 @@ func TestErrorIs(t *testing.T) {
 	}
 }
 
+// errorString is a trivial implementation of error.
+type errorString struct {
+	s string
+}
+
+func (e *errorString) Error() string {
+	return e.s
+}
+
 func TestErrorAs(t *testing.T) {
-	testErr := errors.New("as")
+	testErr := &errorString{"as"}
 	err := &Error{Err: testErr}
 	if expected, got := true, errors.As(err, &testErr); expected != got {
 		t.Fatalf("[testErr as err] expected %v but got %v", expected, got)
 	}
-	if expected, got := true, errors.As(testErr, &err); expected != got {
+	if expected, got := false, errors.As(testErr, &err); expected != got /* errorString does not implemeny As, so the std/default functionality will be applied */ {
 		t.Fatalf("[err as testErr] expected %v but got %v", expected, got)
 	}
 }

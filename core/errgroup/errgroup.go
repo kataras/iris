@@ -147,7 +147,7 @@ func (e *Error) As(target interface{}) bool {
 			}
 		}
 
-		return errors.As(e.Err, &te.Err)
+		return errors.As(te.Err, &e)
 	}
 
 	return ok
