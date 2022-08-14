@@ -30,11 +30,16 @@ func main() {
 		Password:  "",
 		Database:  "",
 		Prefix:    "myapp-",
-		Driver:    redis.GoRedis(), // defaults.
+		Driver:    redis.GoRedis(), // defaults to this driver.
+		// To set a custom, existing go-redis client, use the "SetClient" method:
+		// Driver: redis.GoRedis().SetClient(customGoRedisClient)
 	})
 
 	// Optionally configure the underline driver:
 	// driver := redis.GoRedis()
+	// // To set a custom client:
+	// driver.SetClient(customGoRedisClient)
+	// OR:
 	// driver.ClientOptions = redis.Options{...}
 	// driver.ClusterOptions = redis.ClusterOptions{...}
 	// redis.New(redis.Config{Driver: driver, ...})
