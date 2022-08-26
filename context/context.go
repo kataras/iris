@@ -1012,6 +1012,10 @@ var GetDomain = func(hostport string) string {
 		// loopback.
 		return "localhost"
 	default:
+		if net.ParseIP(host) != nil { // if it's an IP, see #1945.
+			return host
+		}
+
 		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
 			host = domain
 		}
