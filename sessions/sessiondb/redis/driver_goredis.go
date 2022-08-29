@@ -27,7 +27,9 @@ type GoRedisClient interface {
 // for the go-redis redis driver. See driver.go file.
 type GoRedisDriver struct {
 	// Both Client and ClusterClient implements this interface.
-	client GoRedisClient
+	// Custom one can be directly passed but if so, the
+	// Connect method does nothing (so all connection and client settings are ignored).
+	Client GoRedisClient
 	// Customize any go-redis fields manually
 	// before Connect.
 	ClientOptions  Options
@@ -111,12 +113,24 @@ func (r *GoRedisDriver) mergeClusterOptions(c Config) *ClusterOptions {
 	return &opts
 }
 
+// SetClient sets an existing go redis client to the sessions redis driver.
+//
+// Returns itself.
+func (r *GoRedisDriver) SetClient(goRedisClient GoRedisClient) *GoRedisDriver {
+	r.Client = goRedisClient
+	return r
+}
+
 // Connect initializes the redis client.
 func (r *GoRedisDriver) Connect(c Config) error {
+	if r.Client != nil { // if a custom one was given through SetClient.
+		return nil
+	}
+
 	if len(c.Clusters) > 0 {
-		r.client = redis.NewClusterClient(r.mergeClusterOptions(c))
+		r.Client = redis.NewClusterClient(r.mergeClusterOptions(c))
 	} else {
-		r.client = redis.NewClient(r.mergeClientOptions(c))
+		r.Client = redis.NewClient(r.mergeClientOptions(c))
 	}
 
 	return nil
@@ -125,29 +139,29 @@ func (r *GoRedisDriver) Connect(c Config) error {
 // PingPong sends a ping message and reports whether
 // the PONG message received successfully.
 func (r *GoRedisDriver) PingPong() (bool, error) {
-	pong, err := r.client.Ping(defaultContext).Result()
+	pong, err := r.Client.Ping(defaultContext).Result()
 	return pong == "PONG", err
 }
 
 // CloseConnection terminates the underline redis connection.
 func (r *GoRedisDriver) CloseConnection() error {
-	return r.client.Close()
+	return r.Client.Close()
 }
 
 // Set stores a "value" based on the session's "key".
 // The value should be type of []byte, so unmarshal can happen.
 func (r *GoRedisDriver) Set(sid, key string, value interface{}) error {
-	return r.client.HSet(defaultContext, sid, key, value).Err()
+	return r.Client.HSet(defaultContext, sid, key, value).Err()
 }
 
 // Get returns the associated value of the session's given "key".
 func (r *GoRedisDriver) Get(sid, key string) (interface{}, error) {
-	return r.client.HGet(defaultContext, sid, key).Bytes()
+	return r.Client.HGet(defaultContext, sid, key).Bytes()
 }
 
 // Exists reports whether a session exists or not.
 func (r *GoRedisDriver) Exists(sid string) bool {
-	n, err := r.client.Exists(defaultContext, sid).Result()
+	n, err := r.Client.Exists(defaultContext, sid).Result()
 	if err != nil {
 		return false
 	}
@@ -157,7 +171,7 @@ func (r *GoRedisDriver) Exists(sid string) bool {
 
 // TTL returns any TTL value of the session.
 func (r *GoRedisDriver) TTL(sid string) time.Duration {
-	dur, err := r.client.TTL(defaultContext, sid).Result()
+	dur, err := r.Client.TTL(defaultContext, sid).Result()
 	if err != nil {
 		return 0
 	}
@@ -167,29 +181,29 @@ func (r *GoRedisDriver) TTL(sid string) time.Duration {
 
 // UpdateTTL sets expiration duration of the session.
 func (r *GoRedisDriver) UpdateTTL(sid string, newLifetime time.Duration) error {
-	_, err := r.client.Expire(defaultContext, sid, newLifetime).Result()
+	_, err := r.Client.Expire(defaultContext, sid, newLifetime).Result()
 	return err
 }
 
 // GetAll returns all the key values under the session.
 func (r *GoRedisDriver) GetAll(sid string) (map[string]string, error) {
-	return r.client.HGetAll(defaultContext, sid).Result()
+	return r.Client.HGetAll(defaultContext, sid).Result()
 }
 
 // GetKeys returns all keys under the session.
 func (r *GoRedisDriver) GetKeys(sid string) ([]string, error) {
-	return r.client.HKeys(defaultContext, sid).Result()
+	return r.Client.HKeys(defaultContext, sid).Result()
 }
 
 // Len returns the total length of key-values of the session.
 func (r *GoRedisDriver) Len(sid string) int {
-	return int(r.client.HLen(defaultContext, sid).Val())
+	return int(r.Client.HLen(defaultContext, sid).Val())
 }
 
 // Delete removes a value from the redis store.
 func (r *GoRedisDriver) Delete(sid, key string) error {
 	if key == "" {
-		return r.client.Del(defaultContext, sid).Err()
+		return r.Client.Del(defaultContext, sid).Err()
 	}
-	return r.client.HDel(defaultContext, sid, key).Err()
+	return r.Client.HDel(defaultContext, sid, key).Err()
 }

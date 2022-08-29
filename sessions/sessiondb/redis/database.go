@@ -30,6 +30,7 @@ type Config struct {
 	Addr string
 	// Clusters a list of network addresses for clusters.
 	// If not empty "Addr" is ignored and Redis clusters feature is used instead.
+	// Note that this field is ignored when setgging a custom `GoRedisClient`.
 	Clusters []string
 	// Use the specified Username to authenticate the current connection
 	// with one of the connections defined in the ACL list when connecting
@@ -267,7 +268,8 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 
 // Clear removes all session key values but it keeps the session entry.
 func (db *Database) Clear(sid string) error {
-	keys := db.keys(db.makeSID(sid))
+	sid = db.makeSID(sid)
+	keys := db.keys(sid)
 	for _, key := range keys {
 		if key == SessionIDKey {
 			continue

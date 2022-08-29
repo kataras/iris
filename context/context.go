@@ -1012,6 +1012,10 @@ var GetDomain = func(hostport string) string {
 		// loopback.
 		return "localhost"
 	default:
+		if net.ParseIP(host) != nil { // if it's an IP, see #1945.
+			return host
+		}
+
 		if domain, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
 			host = domain
 		}
@@ -2575,8 +2579,12 @@ func (ctx *Context) RecordRequestBody(b bool) {
 
 // IsRecordingBody reports whether the request body can be readen multiple times.
 func (ctx *Context) IsRecordingBody() bool {
-	return ctx.values.GetBoolDefault(disableRequestBodyConsumptionContextKey,
-		ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal())
+	if ctx.app.ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
+		return true
+	}
+
+	value, _ := ctx.values.GetBool(disableRequestBodyConsumptionContextKey)
+	return value
 }
 
 // GetBody reads and returns the request body.
@@ -2672,7 +2680,20 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 }
 
 var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error {
-	decoder := json.NewDecoder(ctx.request.Body)
+	var body io.Reader
+
+	if ctx.IsRecordingBody() {
+		data, err := io.ReadAll(ctx.request.Body)
+		if err != nil {
+			return err
+		}
+		setBody(ctx.request, data)
+		body = bytes.NewReader(data)
+	} else {
+		body = ctx.request.Body
+	}
+
+	decoder := json.NewDecoder(body)
 	// decoder := gojson.NewDecoder(ctx.Request().Body)
 	if len(opts) > 0 {
 		options := opts[0]
@@ -2778,6 +2799,24 @@ var (
 	// A shortcut for the `schema#IsErrPath`.
 	IsErrPath = schema.IsErrPath
 
+	// IsErrPathCRSFToken reports whether the given "err" is caused
+	// by unknown key error on "csrf.token". See `context#ReadForm` for more.
+	IsErrPathCRSFToken = func(err error) bool {
+		if err == nil || CSRFTokenFormKey == "" {
+			return false
+		}
+
+		if m, ok := err.(schema.MultiError); ok {
+			if csrfErr, hasCSRFToken := m[CSRFTokenFormKey]; hasCSRFToken {
+				_, is := csrfErr.(schema.UnknownKeyError)
+				return is
+
+			}
+		}
+
+		return false
+	}
+
 	// ErrEmptyForm is returned by
 	// - `context#ReadForm`
 	// - `context#ReadQuery`
@@ -2820,6 +2859,11 @@ var (
 	}
 )
 
+// CSRFTokenFormKey the CSRF token key of the form data.
+//
+// See ReadForm method for more.
+const CSRFTokenFormKey = "csrf.token"
+
 // ReadForm binds the request body of a form to the "formObject".
 // It supports any kind of type, including custom structs.
 // It will return nothing if request data are empty.
@@ -2830,6 +2874,9 @@ var (
 //
 // If a client sent an unknown field, this method will return an error,
 // in order to ignore that error use the `err != nil && !iris.IsErrPath(err)`.
+//
+// As of 15 Aug 2022, ReadForm does not return an error over unknown CSRF token form key,
+// to change this behavior globally, set the `context.CSRFTokenFormKey` to an empty value.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-form/main.go
 func (ctx *Context) ReadForm(formObject interface{}) error {
@@ -2842,7 +2889,7 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	}
 
 	err := schema.DecodeForm(values, formObject)
-	if err != nil {
+	if err != nil && !IsErrPathCRSFToken(err) {
 		return err
 	}
 

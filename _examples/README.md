@@ -55,6 +55,7 @@
     * [Not Found - Intelligence](routing/intelligence/main.go)
         * [Not Found - Suggest Closest Paths](routing/intelligence/manual/main.go)
     * [Dynamic Path](routing/dynamic-path/main.go)
+        * [At-username](routing/dynamic-path/at-username/main.go)
         * [Root Wildcard](routing/dynamic-path/root-wildcard/main.go)
         * [Implement a Parameter Type](routing/macros/main.go)
         * [Same Path Pattern but Func](routing/dynamic-path/same-pattern-different-func/main.go)
