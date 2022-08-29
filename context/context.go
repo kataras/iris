@@ -1679,6 +1679,17 @@ func (ctx *Context) URLParamBool(name string) (bool, error) {
 	return strconv.ParseBool(ctx.URLParam(name))
 }
 
+// URLParamBoolDefault returns the url query parameter as boolean value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *Context) URLParamBoolDefault(name string, def bool) bool {
+	v, err := ctx.URLParamBool(name)
+	if err != nil {
+		return def
+	}
+
+	return v
+}
+
 // URLParams returns a map of URL Query parameters.
 // If the value of a URL parameter is a slice,
 // then it is joined as one separated by comma.
