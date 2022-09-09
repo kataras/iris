@@ -3030,11 +3030,11 @@ func (ctx *Context) ReadMultipartRelated() (MultipartRelated, error) {
 	return result, nil
 }
 
-func distinctStrings(values []string) (result []string) {
-	seen := make(map[string]struct{})
+func distinctStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
 
-	for v := range values {
-		val := values[v]
+	for _, val := range values {
 		if _, ok := seen[val]; !ok {
 			seen[val] = struct{}{}
 			result = append(result, val)

@@ -301,45 +301,46 @@ func main() {
 		goth.UseProviders(openidConnect)
 	}
 
-	m := make(map[string]string)
-	m["amazon"] = "Amazon"
-	m["bitbucket"] = "Bitbucket"
-	m["box"] = "Box"
-	m["dailymotion"] = "Dailymotion"
-	m["deezer"] = "Deezer"
-	m["digitalocean"] = "Digital Ocean"
-	m["discord"] = "Discord"
-	m["dropbox"] = "Dropbox"
-	m["facebook"] = "Facebook"
-	m["fitbit"] = "Fitbit"
-	m["github"] = "Github"
-	m["gitlab"] = "Gitlab"
-	m["soundcloud"] = "SoundCloud"
-	m["spotify"] = "Spotify"
-	m["steam"] = "Steam"
-	m["stripe"] = "Stripe"
-	m["twitch"] = "Twitch"
-	m["uber"] = "Uber"
-	m["wepay"] = "Wepay"
-	m["yahoo"] = "Yahoo"
-	m["yammer"] = "Yammer"
-	m["gplus"] = "Google Plus"
-	m["heroku"] = "Heroku"
-	m["instagram"] = "Instagram"
-	m["intercom"] = "Intercom"
-	m["lastfm"] = "Last FM"
-	m["linkedin"] = "Linkedin"
-	m["onedrive"] = "Onedrive"
-	m["paypal"] = "Paypal"
-	m["twitter"] = "Twitter"
-	m["salesforce"] = "Salesforce"
-	m["slack"] = "Slack"
-	m["meetup"] = "Meetup.com"
-	m["auth0"] = "Auth0"
-	m["openid-connect"] = "OpenID Connect"
-	m["xero"] = "Xero"
+	m := map[string]string{
+		"amazon":         "Amazon",
+		"bitbucket":      "Bitbucket",
+		"box":            "Box",
+		"dailymotion":    "Dailymotion",
+		"deezer":         "Deezer",
+		"digitalocean":   "Digital Ocean",
+		"discord":        "Discord",
+		"dropbox":        "Dropbox",
+		"facebook":       "Facebook",
+		"fitbit":         "Fitbit",
+		"github":         "Github",
+		"gitlab":         "Gitlab",
+		"soundcloud":     "SoundCloud",
+		"spotify":        "Spotify",
+		"steam":          "Steam",
+		"stripe":         "Stripe",
+		"twitch":         "Twitch",
+		"uber":           "Uber",
+		"wepay":          "Wepay",
+		"yahoo":          "Yahoo",
+		"yammer":         "Yammer",
+		"gplus":          "Google Plus",
+		"heroku":         "Heroku",
+		"instagram":      "Instagram",
+		"intercom":       "Intercom",
+		"lastfm":         "Last FM",
+		"linkedin":       "Linkedin",
+		"onedrive":       "Onedrive",
+		"paypal":         "Paypal",
+		"twitter":        "Twitter",
+		"salesforce":     "Salesforce",
+		"slack":          "Slack",
+		"meetup":         "Meetup.com",
+		"auth0":          "Auth0",
+		"openid-connect": "OpenID Connect",
+		"xero":           "Xero",
+	}
 
-	var keys []string
+	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}

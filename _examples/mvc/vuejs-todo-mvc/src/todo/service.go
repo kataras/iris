@@ -18,7 +18,7 @@ type MemoryService struct {
 
 func NewMemoryService() *MemoryService {
 	return &MemoryService{
-		items: make(map[string][]Item, 0),
+		items: make(map[string][]Item),
 	}
 }
 
