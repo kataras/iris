@@ -98,19 +98,22 @@ func joinPath(path1 string, path2 string) string {
 //  6. Remove trailing '/'.
 //
 // The returned path ends in a slash only if it is the root "/".
-func cleanPath(s string) string {
+// The function does not modify the dynamic path parts.
+func cleanPath(path string) string {
 	// note that we don't care about the performance here, it's before the server ran.
-	if s == "" || s == "." {
+	if path == "" || path == "." {
 		return "/"
 	}
 
 	// remove suffix "/", if it's root "/" then it will add it as a prefix below.
-	if lidx := len(s) - 1; s[lidx] == '/' {
-		s = s[:lidx]
+	if lidx := len(path) - 1; path[lidx] == '/' {
+		path = path[:lidx]
 	}
 
 	// prefix with "/".
-	s = prefix(s, "/")
+	path = prefix(path, "/")
+
+	s := []rune(path)
 
 	// If you're learning go through Iris I will ask you to ignore the
 	// following part, it's not the recommending way to do that,
@@ -138,46 +141,34 @@ func cleanPath(s string) string {
 
 		// when inside {} then don't try to clean it.
 		if !insideMacro {
-			if s[i] == '/' {
-				if len(s)-1 >= i+1 && s[i+1] == '/' { // we have "//".
-					bckp := s
-					s = bckp[:i] + "/"
-					// forward two, we ignore the second "/" in the raw.
-					i = i + 2
-					if len(bckp)-1 >= i {
-						s += bckp[i:]
-					}
+			if s[i] == '\\' {
+				s[i] = '/'
+
+				if len(s)-1 > i+1 && s[i+1] == '\\' {
+					s = deleteCharacter(s, i+1)
+				} else {
+					i-- // set to minus in order for the next check to be applied for prev tokens too.
 				}
-				// if we have just a single slash then continue.
-				continue
 			}
 
-			if s[i] == '\\' { // this will catch "\\" and "\".
-				bckp := s
-				s = bckp[:i] + "/"
-
-				if len(bckp)-1 >= i+1 {
-					s += bckp[i+1:]
-					i++
-				}
-
-				if len(s)-1 > i && s[i] == '\\' {
-					bckp := s
-					s = bckp[:i]
-					if len(bckp)-1 >= i+2 {
-						s = bckp[:i-1] + bckp[i+1:]
-						i++
-					}
-				}
-
+			if s[i] == '/' && len(s)-1 > i+1 && s[i+1] == '/' {
+				s[i] = '/'
+				s = deleteCharacter(s, i+1)
+				i--
 				continue
 			}
-
 		}
-
 	}
 
-	return s
+	if len(s) > 1 && s[len(s)-1] == '/' { // remove any last //.
+		s = s[:len(s)-1]
+	}
+
+	return string(s)
+}
+
+func deleteCharacter(s []rune, index int) []rune {
+	return append(s[0:index], s[index+1:]...)
 }
 
 const (

@@ -90,12 +90,14 @@ type Route struct {
 // handlers are being changed to validate the macros at serve time, if needed.
 func NewRoute(p Party, statusErrorCode int, method, subdomain, unparsedPath string,
 	handlers context.Handlers, macros macro.Macros) (*Route, error) {
-	tmpl, err := macro.Parse(unparsedPath, macros)
+	path := cleanPath(unparsedPath) // required. Before macro template parse as the cleanPath does not modify the dynamic path route parts.
+
+	tmpl, err := macro.Parse(path, macros)
 	if err != nil {
 		return nil, err
 	}
 
-	path := convertMacroTmplToNodePath(tmpl)
+	path = convertMacroTmplToNodePath(tmpl)
 	// prepend the macro handler to the route, now,
 	// right before the register to the tree, so APIBuilder#UseGlobal will work as expected.
 	if handler.CanMakeHandler(tmpl) {
@@ -103,7 +105,6 @@ func NewRoute(p Party, statusErrorCode int, method, subdomain, unparsedPath stri
 		handlers = append(context.Handlers{macroEvaluatorHandler}, handlers...)
 	}
 
-	path = cleanPath(path) // maybe unnecessary here.
 	defaultName := method + subdomain + tmpl.Src
 	if statusErrorCode > 0 {
 		defaultName = fmt.Sprintf("%d_%s", statusErrorCode, defaultName)
@@ -506,7 +507,7 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 	// s := fmt.Sprintf("%s: %s", pio.Rich(title, color), path)
 	pio.WriteRich(w, title, color)
 
-	path := r.Tmpl().Src
+	path := r.tmpl.Src
 	if path == "" {
 		path = "/"
 	}

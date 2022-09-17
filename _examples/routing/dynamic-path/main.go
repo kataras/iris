@@ -369,5 +369,12 @@ func main() {
 	// should differ e.g.
 	// /path/{name:string}
 	// /path/{id:uint}
+	//
+	// Note:
+	// If * path part is declared at the end of the route path, then
+	// it's considered a wildcard (same as {p:path}). In order to declare
+	// literal * and over pass this limitation use the string's path parameter 'eq' function
+	// as shown below:
+	// app.Get("/*/*/{p:string eq(*)}", handler) <- This will match only: /*/*/* and not /*/*/anything.
 	app.Listen(":8080")
 }
