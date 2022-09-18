@@ -67,7 +67,7 @@ func TestRouterWildcardDifferentPrefixPath(t *testing.T) {
 		}},
 	}
 
-	testTheRoutes(t, tt, false)
+	testTheRoutes(t, tt, true)
 }
 
 func TestRouterWildcardAndStatic(t *testing.T) {
@@ -117,7 +117,7 @@ func TestRouterWildcardRootMany(t *testing.T) {
 		}},
 	}
 
-	testTheRoutes(t, tt, false)
+	testTheRoutes(t, tt, true)
 }
 
 func TestRouterWildcardRootManyAndRootStatic(t *testing.T) {

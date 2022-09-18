@@ -127,26 +127,32 @@ func (tr *trie) insert(path string, route context.RouteReadOnly, handlers contex
 
 	var paramKeys []string
 
-	for i, s := range input {
+	for _, s := range input {
 		if len(s) == 0 {
 			continue
 		}
 
 		c := s[0]
 
-		if len(s)-1 > i+1 && s[i+1] != '/' { // has next character and it's not slash.
-			// get the next character, if not slash then this is a parameter.
+		if len(s) > 1 { // has more than one character.
+			// get the next character, should be the name of the parameter.
 			// E.g:
 			// If /test/:param (or /test/*param) then it's dynamic.
 			// If /test/: (or /test/*) then it's static.
-			if c == paramStartCharacter {
-				n.childNamedParameter = true
-				s = ParamStart
-			} else if c == wildcardParamStartCharacter {
-				n.childWildcardParameter = true
-				s = WildcardParamStart
-				if tr.root == n {
-					tr.hasRootWildcard = true
+			if isParam, isWildcard := c == paramStartCharacter, c == wildcardParamStartCharacter; isParam || isWildcard {
+				n.hasDynamicChild = true
+				paramKeys = append(paramKeys, s[1:]) // without : or *.
+				if isParam {
+					n.childNamedParameter = true
+					s = ParamStart
+				}
+
+				if isWildcard {
+					n.childWildcardParameter = true
+					s = WildcardParamStart
+					if tr.root == n {
+						tr.hasRootWildcard = true
+					}
 				}
 			}
 		}
