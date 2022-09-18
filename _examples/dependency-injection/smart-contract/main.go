@@ -151,6 +151,6 @@ func sendJSON(ctx iris.Context, resp interface{}) (err error) {
 		}
 	}
 
-	_, err = ctx.JSON(resp, iris.JSON{Indent: indent, UnescapeHTML: true})
+	err = ctx.JSON(resp, iris.JSON{Indent: indent, UnescapeHTML: true})
 	return err
 }
