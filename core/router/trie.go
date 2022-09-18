@@ -127,24 +127,22 @@ func (tr *trie) insert(path string, route context.RouteReadOnly, handlers contex
 
 	var paramKeys []string
 
-	for _, s := range input {
+	for i, s := range input {
 		if len(s) == 0 {
 			continue
 		}
 
 		c := s[0]
 
-		if isParam, isWildcard := c == paramStartCharacter, c == wildcardParamStartCharacter; isParam || isWildcard {
-			n.hasDynamicChild = true
-			paramKeys = append(paramKeys, s[1:]) // without : or *.
-
-			// if node has already a wildcard, don't force a value, check for true only.
-			if isParam {
+		if len(s)-1 > i+1 && s[i+1] != '/' { // has next character and it's not slash.
+			// get the next character, if not slash then this is a parameter.
+			// E.g:
+			// If /test/:param (or /test/*param) then it's dynamic.
+			// If /test/: (or /test/*) then it's static.
+			if c == paramStartCharacter {
 				n.childNamedParameter = true
 				s = ParamStart
-			}
-
-			if isWildcard {
+			} else if c == wildcardParamStartCharacter {
 				n.childWildcardParameter = true
 				s = WildcardParamStart
 				if tr.root == n {
@@ -205,16 +203,6 @@ func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 			segment := q[start:i]
 			if child := n.getChild(segment); child != nil {
 				n = child
-				// Possible reserved param character, should catch it as
-				// dynamic node instead of static-path based.
-				if segment == ParamStart { // len(n.paramKeys) > 0 && (segment == ParamStart || segment == WildcardParamStart)
-					if ln := len(paramValues); cap(paramValues) > ln {
-						paramValues = paramValues[:ln+1]
-						paramValues[ln] = segment
-					} else {
-						paramValues = append(paramValues, segment)
-					}
-				}
 			} else if n.childNamedParameter {
 				n = n.getChild(ParamStart)
 				if ln := len(paramValues); cap(paramValues) > ln {
