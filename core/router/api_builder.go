@@ -620,6 +620,14 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // Usage:
 // HandleDir("/public", "./assets", DirOptions{...}) or
 // HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
+// OR
+// //go:embed assets/*
+// var filesystem embed.FS
+// HandleDir("/public",filesystem, DirOptions{...})
+// OR to pick a specific folder of the embedded filesystem:
+// import "io/fs"
+// subFilesystem, err := fs.Sub(filesystem, "assets")
+// HandleDir("/public",subFilesystem, DirOptions{...})
 //
 // Examples:
 // https://github.com/kataras/iris/tree/master/_examples/file-server
@@ -650,8 +658,10 @@ func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts .
 			panic(err)
 		}
 		fs = http.FS(subfs)
+	case stdfs.FS:
+		fs = http.FS(v)
 	default:
-		panic(fmt.Errorf(`unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
+		panic(fmt.Sprintf(`HandleDir: unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
 	}
 
 	h := FileServer(fs, options)
