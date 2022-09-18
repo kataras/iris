@@ -28,6 +28,9 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add support for `embed.FS` on `app.HandleDir`.
+- Minor fixes.
+
 - Enable setting a custom "go-redis" client through `SetClient` go redis driver method or `Client` struct field on sessions/database/redis driver as requested at [chat](https://chat.iris-go.com).
 - Ignore `"csrf.token"` form data key when missing on `ctx.ReadForm` by default as requested at [#1941](https://github.com/kataras/iris/issues/1941).
 

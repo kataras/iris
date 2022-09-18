@@ -119,7 +119,8 @@
     * [Favicon](file-server/favicon/main.go)
     * [Basic](file-server/basic/main.go)
     * [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-    * [Embedding Gzipped Files Into App Executable File](file-server/embedding-gzipped-files-into-app/main.go)
+    * [Embedding Files Into App Executable File (Bindata)](file-server/embedding-files-into-app-bindata/main.go)
+    * [Embedding Gzipped Files Into App Executable File (Bindata)](file-server/embedding-gzipped-files-into-app-bindata/main.go)
     * [Send Files (rate limiter included)](file-server/send-files/main.go)
     * Single Page Applications
         * [Vue Router](file-server/spa-vue-router)

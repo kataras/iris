@@ -7,7 +7,7 @@ import (
 // How to run:
 //
 // $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
-// $ go-bindata -prefix "../embedding-files-into-app/assets/" -fs ../embedding-files-into-app/assets/...
+// $ go-bindata -prefix "../embedding-files-into-app-bindata/assets/" -fs ../embedding-files-into-app-bindata/assets/...
 // $ go run -mod=mod .
 // Time to complete the compression and caching of [2/3] files: 31.9998ms
 // Total size reduced from 156.6 kB to:

@@ -1,19 +1,22 @@
 package main
 
 import (
-	"embed"
-
 	"github.com/kataras/iris/v12"
 )
 
-//go:embed assets/*
-var fs embed.FS
-
+// Follow these steps first:
+// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
+// $ go-bindata -prefix "assets" -fs ./assets/...
+// $ go run .
+// "physical" files are not used, you can delete the "assets" folder and run the example.
+//
+// See `file-server/embedding-gzipped-files-into-app-bindata` and
+// 'file-server/embedding-files-into-app` examples as well.
 func newApp() *iris.Application {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
-	app.HandleDir("/static", fs)
+	app.HandleDir("/static", AssetFile())
 
 	/*
 		Or if you need to cache them inside the memory (requires the assets folder

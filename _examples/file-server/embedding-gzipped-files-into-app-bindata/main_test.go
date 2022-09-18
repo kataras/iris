@@ -84,7 +84,7 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 
 	for i, u := range urls {
 		url := u.String()
-		rawContents := u.loadFromBase("../embedding-files-into-app/assets")
+		rawContents := u.loadFromBase("../embedding-files-into-app-bindata/assets")
 		shouldBeCompressed := int64(len(rawContents)) >= dirOptions.Cache.CompressMinSize
 
 		request := e.GET(url)
