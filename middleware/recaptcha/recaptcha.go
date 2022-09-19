@@ -49,11 +49,8 @@ func New(secret string) context.Handler {
 	}
 }
 
-// SiteVerify accepts  context and the secret key(https://www.google.com/recaptcha)
-//
-//	and returns the google's recaptcha response, if `response.Success` is true
-//
-// then validation passed.
+// SiteVerify accepts  context and the secret key(https://www.google.com/recaptcha) and
+// returns the google's recaptcha response, if `response.Success` is true then validation passed.
 //
 // Use `New` for middleware use instead.
 func SiteVerify(ctx *context.Context, secret string) (response Response) {
