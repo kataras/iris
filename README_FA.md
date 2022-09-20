@@ -263,7 +263,7 @@ module myapp
 
 go 1.19
 
-require github.com/kataras/iris/v12 master
+require github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920072528-ff81f370625a
 ```
 ![](https://www.iris-go.com/images/gifs/install-create-iris.gif)
 

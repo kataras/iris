@@ -753,3 +753,69 @@ var (
 		"VIEW",
 	}
 )
+
+var globalPatches = &GlobalPatches{
+	contextPatches: &ContextPatches{
+		writers: &ContextWriterPatches{},
+	},
+}
+
+// GlobalPatches is a singleton features a uniform way to apply global/package-level modifications.
+//
+// See the `Patches` package-level function.
+type GlobalPatches struct {
+	contextPatches *ContextPatches
+}
+
+// Patches returns the singleton of GlobalPatches, an easy way to modify
+// global(package-level) configuration for Iris applications.
+//
+// See its `Context` method.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/response-writer/json-third-party/main.go
+func Patches() *GlobalPatches { // singleton.
+	return globalPatches
+}
+
+// Context returns the available context patches.
+func (p *GlobalPatches) Context() *ContextPatches {
+	return p.contextPatches
+}
+
+// ContextPatches contains the available global Iris context modifications.
+type ContextPatches struct {
+	writers *ContextWriterPatches
+}
+
+// Writers returns the available global Iris context modifications for REST writers.
+func (cp *ContextPatches) Writers() *ContextWriterPatches {
+	return cp.writers
+}
+
+// ContextWriterPatches features the context's writers patches.
+type ContextWriterPatches struct{}
+
+// JSON sets a custom function which runs and overrides the default behavior of the `Context#JSON` method.
+func (cwp *ContextWriterPatches) JSON(patchFunc func(ctx Context, v interface{}, options *JSON) error) {
+	context.WriteJSON = patchFunc
+}
+
+// JSONP sets a custom function which runs and overrides the default behavior of the `Context#JSONP` method.
+func (cwp *ContextWriterPatches) JSONP(patchFunc func(ctx Context, v interface{}, options *JSONP) error) {
+	context.WriteJSONP = patchFunc
+}
+
+// XML sets a custom function which runs and overrides the default behavior of the `Context#XML` method.
+func (cwp *ContextWriterPatches) XML(patchFunc func(ctx Context, v interface{}, options *XML) error) {
+	context.WriteXML = patchFunc
+}
+
+// Markdown sets a custom function which runs and overrides the default behavior of the `Context#Markdown` method.
+func (cwp *ContextWriterPatches) Markdown(patchFunc func(ctx Context, v []byte, options *Markdown) error) {
+	context.WriteMarkdown = patchFunc
+}
+
+// YAML sets a custom function which runs and overrides the default behavior of the `Context#YAML` method.
+func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v interface{}, indentSpace int) error) {
+	context.WriteYAML = patchFunc
+}

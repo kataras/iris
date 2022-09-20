@@ -28,6 +28,7 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `iris.Patches()` package-level function to customize Iris Request Context REST (and more to come) behavior.
 - Add support for `embed.FS` on `app.HandleDir`.
 - Minor fixes.
 
