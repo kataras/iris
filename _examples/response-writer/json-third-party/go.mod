@@ -2,11 +2,9 @@ module github.com/kataras/iris/v12/_examples/response-writer/json-third-party
 
 go 1.19
 
-replace github.com/kataras/iris/v12 => ../../../
-
 require (
 	github.com/bytedance/sonic v1.5.0
-	github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920072528-ff81f370625a
+	github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920150839-0a4927f6df85
 )
 
 require (

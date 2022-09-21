@@ -462,7 +462,7 @@ With your help, we can improve Open Source web development for everyone!
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta4
+$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta5
 ```
 
 <details><summary>Install on existing project</summary>

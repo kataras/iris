@@ -6,6 +6,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/cache"
 	"github.com/kataras/iris/v12/context"
@@ -790,6 +791,18 @@ type ContextPatches struct {
 // Writers returns the available global Iris context modifications for REST writers.
 func (cp *ContextPatches) Writers() *ContextWriterPatches {
 	return cp.writers
+}
+
+// GetDomain modifies the way a domain is fetched from `Context#Domain` method,
+// which is used on subdomain redirect feature, i18n's language cookie for subdomain sharing
+// and the rewrite middleware.
+func (cp *ContextPatches) GetDomain(patchFunc func(hostport string) string) {
+	context.GetDomain = patchFunc
+}
+
+// SetCookieKVExpiration modifies the default cookie expiration time on `Context#SetCookieKV` method.
+func (cp *ContextPatches) SetCookieKVExpiration(patch time.Duration) {
+	context.SetCookieKVExpiration = patch
 }
 
 // ContextWriterPatches features the context's writers patches.
