@@ -28,8 +28,10 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Support of direct embedded view templates with `embed.FS` or `fs.FS` (in addition to `string` and `http.FileSystem` types).
+
 - Add `iris.Patches()` package-level function to customize Iris Request Context REST (and more to come) behavior.
-- Add support for `embed.FS` on `app.HandleDir`.
+- Add support for `embed.FS` and `fs.FS` on `app.HandleDir`.
 - Minor fixes.
 
 - Enable setting a custom "go-redis" client through `SetClient` go redis driver method or `Client` struct field on sessions/database/redis driver as requested at [chat](https://chat.iris-go.com).

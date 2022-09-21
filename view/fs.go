@@ -7,6 +7,8 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 // walk recursively in "fs" descends "root" path, calling "walkFn".
@@ -90,17 +92,14 @@ func getFS(fsOrDir interface{}) (fs http.FileSystem) {
 		return noOpFS{}
 	}
 
-	switch v := fsOrDir.(type) {
-	case string:
+	if v, ok := fsOrDir.(string); ok {
 		if v == "" {
 			fs = noOpFS{}
 		} else {
 			fs = httpDirWrapper{http.Dir(v)}
 		}
-	case http.FileSystem:
-		fs = v
-	default:
-		panic(fmt.Errorf(`unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
+	} else {
+		fs = context.ResolveFS(fsOrDir)
 	}
 
 	return

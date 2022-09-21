@@ -151,6 +151,7 @@
     * [Inject Data Between Handlers](view/context-view-data/main.go)
     * [Inject Engine Between Handlers](view/context-view-engine/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
+    * [Embedding Templates Into App Executable File (Bindata)](view/embedding-templates-into-app-bindata/main.go)
     * [Write to a custom `io.Writer`](view/write-to)
     * Parse a Template from Text
         * [HTML, Pug and Ace](view/parse-parse/main.go)

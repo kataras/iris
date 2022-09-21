@@ -805,6 +805,13 @@ func (cp *ContextPatches) SetCookieKVExpiration(patch time.Duration) {
 	context.SetCookieKVExpiration = patch
 }
 
+// ResolveFS modifies the default way to resolve a filesystem by any type of value.
+// It affects the view engine filesystem resolver
+// and the Application's API Builder's `HandleDir` method.
+func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) http.FileSystem) {
+	context.ResolveFS = patchFunc
+}
+
 // ContextWriterPatches features the context's writers patches.
 type ContextWriterPatches struct{}
 
