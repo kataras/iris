@@ -1,10 +1,8 @@
 package router
 
 import (
-	"embed"
 	"errors"
 	"fmt"
-	stdfs "io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -637,33 +635,7 @@ func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts .
 		options = opts[0]
 	}
 
-	var fs http.FileSystem
-	switch v := fsOrDir.(type) {
-	case string:
-		fs = http.Dir(v)
-	case http.FileSystem:
-		fs = v
-	case embed.FS:
-		direEtries, err := v.ReadDir(".")
-		if err != nil {
-			panic(err)
-		}
-
-		if len(direEtries) == 0 {
-			panic("HandleDir: no directories found under the embedded file system")
-		}
-
-		subfs, err := stdfs.Sub(v, direEtries[0].Name())
-		if err != nil {
-			panic(err)
-		}
-		fs = http.FS(subfs)
-	case stdfs.FS:
-		fs = http.FS(v)
-	default:
-		panic(fmt.Sprintf(`HandleDir: unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
-	}
-
+	fs := context.ResolveFS(fsOrDir)
 	h := FileServer(fs, options)
 	description := "file server"
 	if d, ok := fs.(http.Dir); ok {
