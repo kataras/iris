@@ -3,10 +3,12 @@ package i18n
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/i18n/internal"
 
 	"github.com/BurntSushi/toml"
@@ -41,9 +43,38 @@ func Glob(globPattern string, options LoaderConfig) Loader {
 // and any Loader options. Go-bindata usage.
 // It returns a valid `Loader` which loads and maps the locale files.
 //
-// See `Glob`, `Assets`, `New` and `LoaderConfig` too.
+// See `Glob`, `FS`, `New` and `LoaderConfig` too.
 func Assets(assetNames func() []string, asset func(string) ([]byte, error), options LoaderConfig) Loader {
 	return load(assetNames(), asset, options)
+}
+
+// LoadFS loads the files using embed.FS or fs.FS or
+// http.FileSystem or string (local directory).
+// With this method, all the embedded files into "sub" MUST be locale files.
+//
+// See `Glob`, `Assets`, `New` and `LoaderConfig` too.
+func FS(fsOrDir interface{}, sub string, options LoaderConfig) (Loader, error) {
+	if sub == "" {
+		sub = "."
+	}
+
+	fileSystem := context.ResolveFS(fsOrDir)
+
+	assetNames, err := context.FindNames(fileSystem, sub)
+	if err != nil {
+		return nil, err
+	}
+
+	assetFunc := func(name string) ([]byte, error) {
+		f, err := fileSystem.Open(name)
+		if err != nil {
+			return nil, err
+		}
+
+		return io.ReadAll(f)
+	}
+
+	return load(assetNames, assetFunc, options), nil
 }
 
 // DefaultLoaderConfig represents the default loader configuration.

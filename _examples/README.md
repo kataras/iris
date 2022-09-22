@@ -218,6 +218,7 @@
 * Localization and Internationalization
     * [Basic](i18n/basic)
     * [Ttemplates and Functions](i18n/template)
+    * [Ttemplates and Functions (Embedded)](i18n/template-embedded)
     * [Pluralization and Variables](i18n/plurals)
 * Authentication, Authorization & Bot Detection
     * [Recommended: Auth package and Single-Sign-On](auth/auth) **NEW (GO 1.18 Generics required)**

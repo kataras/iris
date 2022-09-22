@@ -140,6 +140,21 @@ func (i *I18n) LoadAssets(assetNames func() []string, asset func(string) ([]byte
 	return i.Reset(Assets(assetNames, asset, i.Loader), languages...)
 }
 
+// LoadFS is a method shortcut to load files using `embed.FS` or `fs.FS` or
+// `http.FileSystem` or `string` (local directory).
+// With this method, all the embedded files into "sub" MUST be locale files.
+//
+// See `New` and `FS` package-level functions for more.
+// Example: https://github.com/kataras/iris/blob/master/_examples/i18n/template-embedded/main.go.
+func (i *I18n) LoadFS(fsOrDir interface{}, sub string, languages ...string) error {
+	loader, err := FS(fsOrDir, sub, i.Loader)
+	if err != nil {
+		return err
+	}
+
+	return i.Reset(loader, languages...)
+}
+
 // Reset sets the locales loader and languages.
 // It is not meant to be used by users unless
 // a custom `Loader` must be used instead of the default one.
@@ -474,7 +489,9 @@ func (i *I18n) setLangWithoutContext(w http.ResponseWriter, r *http.Request, lan
 			SameSite: http.SameSiteLaxMode,
 		})
 	} else if i.URLParameter != "" {
-		r.URL.Query().Set(i.URLParameter, lang)
+		q := r.URL.Query()
+		q.Set(i.URLParameter, lang)
+		r.URL.RawQuery = q.Encode()
 	}
 
 	r.Header.Set(acceptLanguageHeaderKey, lang)
