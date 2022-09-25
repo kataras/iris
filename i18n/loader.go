@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/i18n/internal"
 
 	"github.com/BurntSushi/toml"
@@ -50,17 +50,13 @@ func Assets(assetNames func() []string, asset func(string) ([]byte, error), opti
 
 // LoadFS loads the files using embed.FS or fs.FS or
 // http.FileSystem or string (local directory).
-// With this method, all the embedded files into "sub" MUST be locale files.
+// The "pattern" is a classic glob pattern.
 //
 // See `Glob`, `Assets`, `New` and `LoaderConfig` too.
-func FS(fsOrDir interface{}, sub string, options LoaderConfig) (Loader, error) {
-	if sub == "" {
-		sub = "."
-	}
+func FS(fileSystem fs.FS, pattern string, options LoaderConfig) (Loader, error) {
+	pattern = strings.TrimPrefix(pattern, "./")
 
-	fileSystem := context.ResolveFS(fsOrDir)
-
-	assetNames, err := context.FindNames(fileSystem, sub)
+	assetNames, err := fs.Glob(fileSystem, pattern)
 	if err != nil {
 		return nil, err
 	}

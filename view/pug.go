@@ -16,7 +16,7 @@ import (
 // Usage:
 // Pug("./views", ".pug") or
 // Pug(iris.Dir("./views"), ".pug") or
-// Pug(AssetFile(), ".pug") for embedded data.
+// Pug(embed.FS, ".pug") or Pug(AssetFile(), ".pug") for embedded data.
 //
 // Examples:
 // https://github.com/kataras/iris/tree/master/_examples/view/template_pug_0

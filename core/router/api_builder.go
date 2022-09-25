@@ -635,7 +635,7 @@ func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts .
 		options = opts[0]
 	}
 
-	fs := context.ResolveFS(fsOrDir)
+	fs := context.ResolveHTTPFS(fsOrDir)
 	h := FileServer(fs, options)
 	description := "file server"
 	if d, ok := fs.(http.Dir); ok {

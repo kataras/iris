@@ -3,7 +3,7 @@ package view
 import (
 	"bytes"
 	"io"
-	"net/http"
+	"io/fs"
 	"os"
 	stdPath "path"
 	"path/filepath"
@@ -62,7 +62,7 @@ var AsSafeValue = pongo2.AsSafeValue
 
 type tDjangoAssetLoader struct {
 	rootDir string
-	fs      http.FileSystem
+	fs      fs.FS
 }
 
 // Abs calculates the path to a given template. Whenever a path must be resolved
@@ -91,7 +91,7 @@ func (l *tDjangoAssetLoader) Get(path string) (io.Reader, error) {
 
 // DjangoEngine contains the django view engine structure.
 type DjangoEngine struct {
-	fs http.FileSystem
+	fs fs.FS
 	// files configuration
 	rootDir   string
 	extension string
@@ -117,7 +117,7 @@ var (
 // Usage:
 // Django("./views", ".html") or
 // Django(iris.Dir("./views"), ".html") or
-// Django(AssetFile(), ".html") for embedded data.
+// Django(embed.FS, ".html") or Django(AssetFile(), ".html") for embedded data.
 func Django(fs interface{}, extension string) *DjangoEngine {
 	s := &DjangoEngine{
 		fs:            getFS(fs),
@@ -134,6 +134,15 @@ func Django(fs interface{}, extension string) *DjangoEngine {
 // RootDir sets the directory to be used as a starting point
 // to load templates from the provided file system.
 func (s *DjangoEngine) RootDir(root string) *DjangoEngine {
+	if s.fs != nil && root != "" && root != "/" && root != "." && root != s.rootDir {
+		sub, err := fs.Sub(s.fs, s.rootDir)
+		if err != nil {
+			panic(err)
+		}
+
+		s.fs = sub // here so the "middleware" can work.
+	}
+
 	s.rootDir = filepath.ToSlash(root)
 	return s
 }
@@ -213,7 +222,7 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {
-	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

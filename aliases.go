@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"io/fs"
 	"net/http"
 	"net/url"
 	"path"
@@ -805,10 +806,15 @@ func (cp *ContextPatches) SetCookieKVExpiration(patch time.Duration) {
 	context.SetCookieKVExpiration = patch
 }
 
-// ResolveFS modifies the default way to resolve a filesystem by any type of value.
-// It affects the view engine filesystem resolver
-// and the Application's API Builder's `HandleDir` method.
-func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) http.FileSystem) {
+// ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
+// It affects the Application's API Builder's `HandleDir` method.
+func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir interface{}) http.FileSystem) {
+	context.ResolveHTTPFS = patchFunc
+}
+
+// ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
+// It affects the view engine's filesystem resolver.
+func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) fs.FS) {
 	context.ResolveFS = patchFunc
 }
 

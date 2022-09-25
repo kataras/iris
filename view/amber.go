@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,7 +18,7 @@ import (
 
 // AmberEngine contains the amber view engine structure.
 type AmberEngine struct {
-	fs http.FileSystem
+	fs fs.FS
 	// files configuration
 	rootDir   string
 	extension string
@@ -43,15 +44,15 @@ var amberOnce = new(uint32)
 // Usage:
 // Amber("./views", ".amber") or
 // Amber(iris.Dir("./views"), ".amber") or
-// Amber(AssetFile(), ".amber") for embedded data.
-func Amber(fs interface{}, extension string) *AmberEngine {
+// Amber(embed.FS, ".amber") or Amber(AssetFile(), ".amber") for embedded data.
+func Amber(dirOrFS interface{}, extension string) *AmberEngine {
 	if atomic.LoadUint32(amberOnce) > 0 {
 		panic("Amber: cannot be registered twice as its internal implementation share the same template functions across instances.")
 	} else {
 		atomic.StoreUint32(amberOnce, 1)
 	}
 
-	fileSystem := getFS(fs)
+	fileSystem := getFS(dirOrFS)
 	s := &AmberEngine{
 		fs:            fileSystem,
 		rootDir:       "/",
@@ -60,7 +61,7 @@ func Amber(fs interface{}, extension string) *AmberEngine {
 		Options: amber.Options{
 			PrettyPrint:       false,
 			LineNumbers:       false,
-			VirtualFilesystem: fileSystem,
+			VirtualFilesystem: http.FS(fileSystem),
 		},
 		bufPool: &sync.Pool{New: func() interface{} {
 			return new(bytes.Buffer)
@@ -84,6 +85,15 @@ func Amber(fs interface{}, extension string) *AmberEngine {
 // RootDir sets the directory to be used as a starting point
 // to load templates from the provided file system.
 func (s *AmberEngine) RootDir(root string) *AmberEngine {
+	if s.fs != nil && root != "" && root != "/" && root != "." && root != s.rootDir {
+		sub, err := fs.Sub(s.fs, s.rootDir)
+		if err != nil {
+			panic(err)
+		}
+
+		s.fs = sub // here so the "middleware" can work.
+	}
+
 	s.rootDir = filepath.ToSlash(root)
 	return s
 }
@@ -142,7 +152,7 @@ func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *AmberEngine) Load() error {
-	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

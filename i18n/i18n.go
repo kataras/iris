@@ -4,6 +4,7 @@ package i18n
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"strings"
@@ -142,12 +143,12 @@ func (i *I18n) LoadAssets(assetNames func() []string, asset func(string) ([]byte
 
 // LoadFS is a method shortcut to load files using `embed.FS` or `fs.FS` or
 // `http.FileSystem` or `string` (local directory).
-// With this method, all the embedded files into "sub" MUST be locale files.
+// The "pattern" is a classic glob pattern.
 //
 // See `New` and `FS` package-level functions for more.
 // Example: https://github.com/kataras/iris/blob/master/_examples/i18n/template-embedded/main.go.
-func (i *I18n) LoadFS(fsOrDir interface{}, sub string, languages ...string) error {
-	loader, err := FS(fsOrDir, sub, i.Loader)
+func (i *I18n) LoadFS(fileSystem fs.FS, pattern string, languages ...string) error {
+	loader, err := FS(fileSystem, pattern, i.Loader)
 	if err != nil {
 		return err
 	}

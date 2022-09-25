@@ -154,7 +154,7 @@ func hi(ctx iris.Context) {
 }
 ```
 
-A real example can be found here: https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app.
+Examples can be found here: https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app and  https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app-bindata.
 
 ## Reload
 

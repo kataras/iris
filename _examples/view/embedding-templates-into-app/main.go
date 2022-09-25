@@ -7,13 +7,14 @@ import (
 	"github.com/kataras/iris/v12/x/errors"
 )
 
-//go:embed templates/*
-var embeddedTemplatesFS embed.FS
+//go:embed embedded/*
+var embeddedFS embed.FS
 
 func main() {
 	app := iris.New()
 
-	tmpl := iris.HTML(embeddedTemplatesFS, ".html")
+	tmpl := iris.HTML(embeddedFS, ".html").RootDir("embedded/templates")
+
 	tmpl.Layout("layouts/layout.html")
 	tmpl.AddFunc("greet", func(s string) string {
 		return "Greetings " + s + "!"

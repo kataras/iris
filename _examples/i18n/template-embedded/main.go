@@ -8,8 +8,8 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-//go:embed locales/*
-var filesystem embed.FS
+//go:embed embedded/locales/*
+var embeddedFS embed.FS
 
 func main() {
 	app := newApp()
@@ -31,7 +31,7 @@ func newApp() *iris.Application {
 	// Instead of:
 	// err := app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR")
 	// Apply the below in order to build with embedded locales inside your executable binary.
-	err := app.I18n.LoadFS(filesystem, ".", "en-US", "el-GR")
+	err := app.I18n.LoadFS(embeddedFS, "./embedded/locales/*/*.ini", "en-US", "el-GR")
 	if err != nil {
 		panic(err)
 	}

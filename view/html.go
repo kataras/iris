@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"net/http"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +16,7 @@ import (
 type HTMLEngine struct {
 	name string // the view engine's name, can be HTML, Ace or Pug.
 	// the file system to load from.
-	fs http.FileSystem
+	fs fs.FS
 	// files configuration
 	rootDir   string
 	extension string
@@ -80,11 +80,11 @@ var emptyFuncs = template.FuncMap{
 // Usage:
 // HTML("./views", ".html") or
 // HTML(iris.Dir("./views"), ".html") or
-// HTML(AssetFile(), ".html") for embedded data.
-func HTML(fs interface{}, extension string) *HTMLEngine {
+// HTML(embed.FS, ".html") or HTML(AssetFile(), ".html") for embedded data.
+func HTML(dirOrFS interface{}, extension string) *HTMLEngine {
 	s := &HTMLEngine{
 		name:        "HTML",
-		fs:          getFS(fs),
+		fs:          getFS(dirOrFS),
 		rootDir:     "/",
 		extension:   extension,
 		reload:      false,
@@ -104,6 +104,15 @@ func HTML(fs interface{}, extension string) *HTMLEngine {
 // RootDir sets the directory to be used as a starting point
 // to load templates from the provided file system.
 func (s *HTMLEngine) RootDir(root string) *HTMLEngine {
+	if s.fs != nil && root != "" && root != "/" && root != "." && root != s.rootDir {
+		sub, err := fs.Sub(s.fs, root)
+		if err != nil {
+			panic(err)
+		}
+
+		s.fs = sub // here so the "middleware" can work.
+	}
+
 	s.rootDir = filepath.ToSlash(root)
 	return s
 }
@@ -246,7 +255,7 @@ func (s *HTMLEngine) load() error {
 		return err
 	}
 
-	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+	err := walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -268,6 +277,16 @@ func (s *HTMLEngine) load() error {
 
 		return s.parseTemplate(path, buf, nil)
 	})
+
+	if err != nil {
+		return err
+	}
+
+	if s.Templates == nil {
+		return fmt.Errorf("no templates found")
+	}
+
+	return nil
 }
 
 func (s *HTMLEngine) reloadCustomTemplates() error {
