@@ -15,7 +15,6 @@ func walk(fileSystem fs.FS, root string, walkFn filepath.WalkFunc) error {
 		if err != nil {
 			return err
 		}
-
 		fileSystem = sub
 	}
 
@@ -25,13 +24,13 @@ func walk(fileSystem fs.FS, root string, walkFn filepath.WalkFunc) error {
 
 	return fs.WalkDir(fileSystem, root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("%s: %w", path, err)
+			return fmt.Errorf("walk: %s: %w", path, err)
 		}
 
 		info, err := d.Info()
 		if err != nil {
 			if err != filepath.SkipDir {
-				return fmt.Errorf("%s: %w", path, err)
+				return fmt.Errorf("walk stat: %s: %w", path, err)
 			}
 
 			return nil
@@ -41,15 +40,37 @@ func walk(fileSystem fs.FS, root string, walkFn filepath.WalkFunc) error {
 			return nil
 		}
 
-		return walkFn(path, info, err)
+		walkFnErr := walkFn(path, info, err)
+		if walkFnErr != nil {
+			return fmt.Errorf("walk: walkFn: %w", walkFnErr)
+		}
+
+		return nil
 	})
 
 }
 
 func asset(fileSystem fs.FS, name string) ([]byte, error) {
-	return fs.ReadFile(fileSystem, name)
+	data, err := fs.ReadFile(fileSystem, name)
+	if err != nil {
+		return nil, fmt.Errorf("asset: read file: %w", err)
+	}
+
+	return data, nil
 }
 
 func getFS(fsOrDir interface{}) fs.FS {
 	return context.ResolveFS(fsOrDir)
+}
+
+func getRootDirName(fileSystem fs.FS) string {
+	rootDirFile, err := fileSystem.Open(".")
+	if err == nil {
+		rootDirStat, err := rootDirFile.Stat()
+		if err == nil {
+			return rootDirStat.Name()
+		}
+	}
+
+	return ""
 }

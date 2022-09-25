@@ -222,6 +222,8 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {
+	rootDirName := getRootDirName(s.fs)
+
 	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -235,6 +237,11 @@ func (s *DjangoEngine) Load() error {
 			if !strings.HasSuffix(path, s.extension) {
 				return nil
 			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
 		}
 
 		contents, err := asset(s.fs, path)

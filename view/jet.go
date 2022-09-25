@@ -226,6 +226,8 @@ func (l *jetLoader) Exists(name string) bool {
 
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 func (s *JetEngine) Load() error {
+	rootDirName := getRootDirName(s.fs)
+
 	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -239,6 +241,11 @@ func (s *JetEngine) Load() error {
 			if !strings.HasSuffix(path, s.extension) {
 				return nil
 			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
 		}
 
 		buf, err := asset(s.fs, path)

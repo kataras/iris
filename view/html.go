@@ -109,7 +109,6 @@ func (s *HTMLEngine) RootDir(root string) *HTMLEngine {
 		if err != nil {
 			panic(err)
 		}
-
 		s.fs = sub // here so the "middleware" can work.
 	}
 
@@ -255,6 +254,8 @@ func (s *HTMLEngine) load() error {
 		return err
 	}
 
+	rootDirName := getRootDirName(s.fs)
+
 	err := walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -268,6 +269,11 @@ func (s *HTMLEngine) load() error {
 			if !strings.HasSuffix(path, s.extension) {
 				return nil
 			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
 		}
 
 		buf, err := asset(s.fs, path)

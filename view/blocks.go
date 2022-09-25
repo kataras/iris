@@ -54,7 +54,7 @@ func (s *BlocksEngine) Name() string {
 }
 
 // RootDir sets the directory to use as the root one inside the provided File System.
-func (s *BlocksEngine) RootDir(root string) *BlocksEngine { // TODO: update blocks for the new fs.FS interface and use it for Sub.
+func (s *BlocksEngine) RootDir(root string) *BlocksEngine {
 	s.Engine.RootDir(root)
 	return s
 }

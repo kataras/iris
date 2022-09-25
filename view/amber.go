@@ -152,6 +152,8 @@ func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *AmberEngine) Load() error {
+	rootDirName := getRootDirName(s.fs)
+
 	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -165,6 +167,11 @@ func (s *AmberEngine) Load() error {
 			if !strings.HasSuffix(path, s.extension) {
 				return nil
 			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
 		}
 
 		contents, err := asset(s.fs, path)

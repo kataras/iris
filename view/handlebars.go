@@ -134,6 +134,8 @@ func (s *HandlebarsEngine) AddGlobalFunc(funcName string, funcBody interface{}) 
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HandlebarsEngine) Load() error {
+	rootDirName := getRootDirName(s.fs)
+
 	return walk(s.fs, "", func(path string, info os.FileInfo, _ error) error {
 		if info == nil || info.IsDir() {
 			return nil
@@ -143,6 +145,11 @@ func (s *HandlebarsEngine) Load() error {
 			if !strings.HasSuffix(path, s.extension) {
 				return nil
 			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
 		}
 
 		contents, err := asset(s.fs, path)

@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -167,82 +168,82 @@ func AssetFile() http.FileSystem {
 	return &assetOperator{}
 }
 
-var _dataPublicAppJs = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2a\xcf\xcc\x4b\xc9\x2f\xd7\x4b\xcc\x49\x2d\x2a\xd1\x50\x4a\x2c\x28\xd0\xcb\x2a\x56\xc8\xc9\x4f\x4c\x49\x4d\x51\x48\x2b\xca\xcf\x55\x88\x51\xd2\x57\xd2\xb4\x06\x04\x00\x00\xff\xff\xa9\x06\xf7\xa3\x27\x00\x00\x00")
+var _publicAppJs = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2a\xcf\xcc\x4b\xc9\x2f\xd7\x4b\xcc\x49\x2d\x2a\xd1\x50\x4a\x2c\x28\xd0\xcb\x2a\x56\xc8\xc9\x4f\x4c\x49\x4d\x51\x48\x2b\xca\xcf\x55\x88\x51\xd2\x57\xd2\xb4\x06\x04\x00\x00\xff\xff\xa9\x06\xf7\xa3\x27\x00\x00\x00")
 
-func dataPublicAppJsBytes() ([]byte, error) {
+func publicAppJsBytes() ([]byte, error) {
 	return bindataRead(
-		_dataPublicAppJs,
-		"data/public/app.js",
+		_publicAppJs,
+		"public/app.js",
 	)
 }
 
-func dataPublicAppJs() (*asset, error) {
-	bytes, err := dataPublicAppJsBytes()
+func publicAppJs() (*asset, error) {
+	bytes, err := publicAppJsBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "data/public/app.js", size: 39, mode: os.FileMode(438), modTime: time.Unix(1599156854, 0)}
+	info := bindataFileInfo{name: "public/app.js", size: 39, mode: os.FileMode(420), modTime: time.Unix(1663416115, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _dataPublicApp2IndexHtml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x34\xce\xb1\x0a\x02\x31\x0c\xc6\xf1\x3d\x90\x77\xf8\x46\x5d\x2c\x77\x73\x28\xb8\xdd\xa0\x20\xe8\x0b\x54\x1b\x6d\xa1\x67\x8b\x64\xd0\xb7\x97\x3b\xeb\x18\xf8\xf3\xcb\x27\xc9\xe6\xe2\x99\x98\x24\x69\x88\x9e\x09\x00\xc4\xb2\x15\xf5\xfb\xd6\x30\x8a\xfb\x1d\x4c\xe2\x7a\xc2\x24\xd7\x1a\x3f\xff\x38\x0d\x1e\x9b\xb3\x05\xcb\x37\x4c\x97\xe3\x01\xa7\xf0\xd0\x2d\x26\x2d\xa5\xe2\xfe\xaa\x33\x42\x6b\xa3\xcb\xcf\xa8\xef\xdd\xf2\x0f\xe2\xd2\xb0\x82\x9d\x59\xed\x65\xc8\x37\x00\x00\xff\xff\xf4\x87\x93\x1a\x8f\x00\x00\x00")
+var _publicApp2IndexHtml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2c\xcd\x31\x0a\x02\x31\x10\x85\xe1\x7e\x4e\xf1\x4a\x6d\x0c\xbb\xf5\x10\xb0\xdb\x42\x41\xd0\x0b\x44\x33\x9a\x40\xd6\x0c\x32\x85\xde\x5e\x86\x6c\xf9\xe0\xf1\xfd\x5c\x6c\x6d\x91\x88\x8b\xa4\x1c\x09\x00\xd8\xaa\x35\x89\x47\x55\xcc\x1c\xc6\x20\x0e\xe3\x40\x7c\xef\xf9\xb7\x1d\xcb\x14\xb1\xbb\x5a\xb2\xfa\xc0\x72\x3b\x9f\x70\x49\x2f\xd9\x63\x91\xd6\x3a\x9e\x9f\xbe\x22\xa9\xce\xa1\xbe\xb3\x7c\x0f\x1e\x02\x87\x32\x39\x36\x10\x57\x3d\xff\x0f\x00\x00\xff\xff\xdd\xbe\x30\x69\x85\x00\x00\x00")
 
-func dataPublicApp2IndexHtmlBytes() ([]byte, error) {
+func publicApp2IndexHtmlBytes() ([]byte, error) {
 	return bindataRead(
-		_dataPublicApp2IndexHtml,
-		"data/public/app2/index.html",
+		_publicApp2IndexHtml,
+		"public/app2/index.html",
 	)
 }
 
-func dataPublicApp2IndexHtml() (*asset, error) {
-	bytes, err := dataPublicApp2IndexHtmlBytes()
+func publicApp2IndexHtml() (*asset, error) {
+	bytes, err := publicApp2IndexHtmlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "data/public/app2/index.html", size: 143, mode: os.FileMode(438), modTime: time.Unix(1600097514, 0)}
+	info := bindataFileInfo{name: "public/app2/index.html", size: 133, mode: os.FileMode(420), modTime: time.Unix(1663416115, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _dataPublicCssMainCss = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4a\xca\x4f\xa9\x54\xa8\xe6\xe5\x52\x50\x50\x50\x48\x4a\x4c\xce\x4e\x2f\xca\x2f\xcd\x4b\xd1\x4d\xce\xcf\xc9\x2f\xb2\x52\x48\xca\x49\x4c\xce\xb6\xe6\xe5\xaa\xe5\xe5\x02\x04\x00\x00\xff\xff\x03\x25\x9c\x89\x29\x00\x00\x00")
+var _publicCssMainCss = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4a\xca\x4f\xa9\x54\xa8\xe6\x52\x50\x50\x50\x48\x4a\x4c\xce\x4e\x2f\xca\x2f\xcd\x4b\xd1\x4d\xce\xcf\xc9\x2f\xb2\x52\x48\xca\x49\x4c\xce\xb6\xe6\xaa\xe5\x02\x04\x00\x00\xff\xff\x96\x97\xac\xb1\x26\x00\x00\x00")
 
-func dataPublicCssMainCssBytes() ([]byte, error) {
+func publicCssMainCssBytes() ([]byte, error) {
 	return bindataRead(
-		_dataPublicCssMainCss,
-		"data/public/css/main.css",
+		_publicCssMainCss,
+		"public/css/main.css",
 	)
 }
 
-func dataPublicCssMainCss() (*asset, error) {
-	bytes, err := dataPublicCssMainCssBytes()
+func publicCssMainCss() (*asset, error) {
+	bytes, err := publicCssMainCssBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "data/public/css/main.css", size: 41, mode: os.FileMode(438), modTime: time.Unix(1599156854, 0)}
+	info := bindataFileInfo{name: "public/css/main.css", size: 38, mode: os.FileMode(420), modTime: time.Unix(1663416115, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _dataViewsIndexHtml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x34\xce\x3d\x0e\xc2\x30\x0c\x05\xe0\x3d\x52\xee\xf0\xd4\x09\x96\x58\xdd\x4d\x66\x46\x86\x5e\x20\xb4\x86\x04\xa5\x34\x6a\x22\x7e\x54\xf5\xee\xa8\x3f\x8c\xd6\xf3\xf3\x67\xf6\xa5\x8f\x56\x2b\xad\xd8\x8b\xeb\xac\x56\x00\xc0\x25\x94\x28\x76\x9a\x60\x2e\xee\x2e\xa6\x59\x46\xcc\x33\xd3\x16\x68\xc5\xb4\xaf\x6b\xc5\xd7\xa1\xfb\xfe\x8b\xbe\xb6\x38\x34\xd2\xa7\xe8\x8a\x1c\x71\x96\x18\x07\xdc\xc6\xa1\xc7\x2b\xc8\x3b\x53\x78\x76\xf2\x31\x0b\x0a\x26\x5f\xaf\x07\xf6\x6a\x6e\xc7\x90\x0a\xf2\xd8\x9e\x2a\x72\x29\x99\x47\xae\x2c\xc0\xb4\x05\x2b\xba\x53\xab\xbf\x3c\xfe\x0b\x00\x00\xff\xff\x4a\xf7\x07\xf6\xbf\x00\x00\x00")
+var _viewsIndexHtml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2c\xce\xbd\x0e\xc2\x30\x0c\x04\xe0\xdd\x4f\x71\xea\x04\x4b\xa2\xee\xc6\x33\x23\x43\x5f\x20\xb4\x86\x04\xa5\x34\x6a\x22\x7e\x54\xf5\xdd\x51\x14\x46\xeb\x7c\xfa\x8e\x7d\x99\xa3\x10\xb1\x57\x37\x09\x01\x00\x97\x50\xa2\xca\xb6\xc1\x5c\xdc\x5d\xcd\x50\x4f\xec\x3b\xdb\x16\x10\xdb\xf6\x4c\x7c\x5d\xa6\xef\xbf\xe4\x7b\xc1\x61\xd0\x39\x45\x57\xf4\x88\xb3\xc6\xb8\xe0\xb6\x2e\x33\x5e\x41\xdf\xd9\x86\xe7\xa4\x1f\x53\x35\xb0\xf5\xbd\x10\xb5\x5e\x1e\xd7\x90\x0a\xf2\x3a\x9e\x3a\xeb\x52\x32\x8f\xdc\x09\xc0\xb6\x05\x55\x6b\x4a\x65\xeb\xd6\x5f\x00\x00\x00\xff\xff\xd6\xa4\xa5\x16\xb2\x00\x00\x00")
 
-func dataViewsIndexHtmlBytes() ([]byte, error) {
+func viewsIndexHtmlBytes() ([]byte, error) {
 	return bindataRead(
-		_dataViewsIndexHtml,
-		"data/views/index.html",
+		_viewsIndexHtml,
+		"views/index.html",
 	)
 }
 
-func dataViewsIndexHtml() (*asset, error) {
-	bytes, err := dataViewsIndexHtmlBytes()
+func viewsIndexHtml() (*asset, error) {
+	bytes, err := viewsIndexHtmlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "data/views/index.html", size: 191, mode: os.FileMode(438), modTime: time.Unix(1600097531, 0)}
+	info := bindataFileInfo{name: "views/index.html", size: 178, mode: os.FileMode(420), modTime: time.Unix(1663416115, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -251,8 +252,8 @@ func dataViewsIndexHtml() (*asset, error) {
 // It returns an error if the asset could not be found or
 // could not be loaded.
 func Asset(name string) ([]byte, error) {
-	canonicalName := strings.Replace(name, "\\", "/", -1)
-	if f, ok := _bindata[canonicalName]; ok {
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	if f, ok := _bindata[cannonicalName]; ok {
 		a, err := f()
 		if err != nil {
 			return nil, fmt.Errorf("Asset %s can't read by error: %v", name, err)
@@ -277,8 +278,8 @@ func MustAsset(name string) []byte {
 // It returns an error if the asset could not be found or
 // could not be loaded.
 func AssetInfo(name string) (os.FileInfo, error) {
-	canonicalName := strings.Replace(name, "\\", "/", -1)
-	if f, ok := _bindata[canonicalName]; ok {
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	if f, ok := _bindata[cannonicalName]; ok {
 		a, err := f()
 		if err != nil {
 			return nil, fmt.Errorf("AssetInfo %s can't read by error: %v", name, err)
@@ -299,10 +300,10 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"data/public/app.js":          dataPublicAppJs,
-	"data/public/app2/index.html": dataPublicApp2IndexHtml,
-	"data/public/css/main.css":    dataPublicCssMainCss,
-	"data/views/index.html":       dataViewsIndexHtml,
+	"public/app.js":          publicAppJs,
+	"public/app2/index.html": publicApp2IndexHtml,
+	"public/css/main.css":    publicCssMainCss,
+	"views/index.html":       viewsIndexHtml,
 }
 
 // AssetDir returns the file names below a certain
@@ -318,13 +319,13 @@ var _bindata = map[string]func() (*asset, error){
 //
 // then AssetDir("data") would return []string{"foo.txt", "img"}
 // AssetDir("data/img") would return []string{"a.png", "b.png"}
-// AssetDir("foo.txt") and AssetDir("nonexistent") would return an error
+// AssetDir("foo.txt") and AssetDir("notexist") would return an error
 // AssetDir("") will return []string{"data"}.
 func AssetDir(name string) ([]string, error) {
 	node := _bintree
 	if len(name) != 0 {
-		canonicalName := strings.Replace(name, "\\", "/", -1)
-		pathList := strings.Split(canonicalName, "/")
+		cannonicalName := strings.Replace(name, "\\", "/", -1)
+		pathList := strings.Split(cannonicalName, "/")
 		for _, p := range pathList {
 			node = node.Children[p]
 			if node == nil {
@@ -348,19 +349,17 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"data": {nil, map[string]*bintree{
-		"public": {nil, map[string]*bintree{
-			"app.js": {dataPublicAppJs, map[string]*bintree{}},
-			"app2": {nil, map[string]*bintree{
-				"index.html": {dataPublicApp2IndexHtml, map[string]*bintree{}},
-			}},
-			"css": {nil, map[string]*bintree{
-				"main.css": {dataPublicCssMainCss, map[string]*bintree{}},
-			}},
+	"public": {nil, map[string]*bintree{
+		"app.js": {publicAppJs, map[string]*bintree{}},
+		"app2": {nil, map[string]*bintree{
+			"index.html": {publicApp2IndexHtml, map[string]*bintree{}},
 		}},
-		"views": {nil, map[string]*bintree{
-			"index.html": {dataViewsIndexHtml, map[string]*bintree{}},
+		"css": {nil, map[string]*bintree{
+			"main.css": {publicCssMainCss, map[string]*bintree{}},
 		}},
+	}},
+	"views": {nil, map[string]*bintree{
+		"index.html": {viewsIndexHtml, map[string]*bintree{}},
 	}},
 }}
 
@@ -378,7 +377,7 @@ func RestoreAsset(dir, name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(_filePath(dir, name), data, info.Mode())
+	err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
 	if err != nil {
 		return err
 	}
@@ -407,6 +406,6 @@ func RestoreAssets(dir, name string) error {
 }
 
 func _filePath(dir, name string) string {
-	canonicalName := strings.Replace(name, "\\", "/", -1)
-	return filepath.Join(append([]string{dir}, strings.Split(canonicalName, "/")...)...)
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }

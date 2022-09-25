@@ -310,6 +310,11 @@ func PrefixDir(prefix string, fs http.FileSystem) http.FileSystem {
 	return &prefixedDir{prefix, fs}
 }
 
+// PrefixFS same as "PrefixDir" but for `fs.FS` type.
+func PrefixFS(fileSystem fs.FS, dir string) (fs.FS, error) {
+	return fs.Sub(fileSystem, dir)
+}
+
 type prefixedDir struct {
 	prefix string
 	fs     http.FileSystem
