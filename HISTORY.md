@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `Context.Render` method for compatibility.
+
 - Support of embedded [locale files](https://github.com/kataras/iris/blob/master/_examples/i18n/template-embedded/main.go) using standard `embed.FS` with the new `LoadFS` function.
 - Support of direct embedded view engines (`HTML, Blocks, Django, Handlebars, Pug, Amber, Jet` and `Ace`) with `embed.FS` or `fs.FS` (in addition to `string` and `http.FileSystem` types).
 - Add support for `embed.FS` and `fs.FS` on `app.HandleDir`.

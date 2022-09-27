@@ -62,7 +62,7 @@ type (
 
 func main() {
 	app := iris.New()
-	app.Post("/", your_package.Handle(handler))
+	app.Post("/", x.Handle(handler))
 	app.Listen(":8080")
 }
 

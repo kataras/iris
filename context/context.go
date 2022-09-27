@@ -4204,6 +4204,26 @@ func (ctx *Context) handleContextError(err error) {
 	// keep the error non nil so the caller has control over further actions.
 }
 
+// Render writes the response headers and calls the given renderer "r" to render data.
+// This method can be used while migrating from other frameworks.
+func (ctx *Context) Render(statusCode int, r interface {
+	// Render should push data with custom content type to the client.
+	Render(http.ResponseWriter) error
+	// WriteContentType writes custom content type to the response.
+	WriteContentType(w http.ResponseWriter)
+}) {
+	ctx.StatusCode(statusCode)
+
+	if statusCode >= 100 && statusCode <= 199 || statusCode == http.StatusNoContent || statusCode == http.StatusNotModified {
+		r.WriteContentType(ctx.writer)
+		return
+	}
+
+	if err := r.Render(ctx.writer); err != nil {
+		ctx.StopWithError(http.StatusInternalServerError, err)
+	}
+}
+
 // JSON marshals the given "v" value to JSON and writes the response to the client.
 // Look the Configuration.EnableProtoJSON and EnableEasyJSON too.
 //
