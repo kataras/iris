@@ -34,6 +34,8 @@ type HTMLEngine struct {
 
 	//
 	middleware  func(name string, contents []byte) (string, error)
+	onLoad      func()
+	onLoaded    func()
 	Templates   *template.Template
 	customCache []customTmp // required to load them again if reload is true.
 	bufPool     *sync.Pool
@@ -250,6 +252,10 @@ func (s *HTMLEngine) Load() error {
 }
 
 func (s *HTMLEngine) load() error {
+	if s.onLoad != nil {
+		s.onLoad()
+	}
+
 	if err := s.reloadCustomTemplates(); err != nil {
 		return err
 	}
@@ -283,6 +289,10 @@ func (s *HTMLEngine) load() error {
 
 		return s.parseTemplate(path, buf, nil)
 	})
+
+	if s.onLoaded != nil {
+		s.onLoaded()
+	}
 
 	if err != nil {
 		return err

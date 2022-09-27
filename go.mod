@@ -7,6 +7,7 @@ retract v12.1.8 // Please update to @master
 require (
 	github.com/BurntSushi/toml v1.2.0
 	github.com/CloudyKit/jet/v6 v6.1.0
+	github.com/Joker/jade v1.1.3
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
 	github.com/andybalholm/brotli v1.0.4
 	github.com/blang/semver/v4 v4.0.0
@@ -19,7 +20,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/iris-contrib/httpexpect/v2 v2.3.1
-	github.com/iris-contrib/jade v1.1.4
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.12
 	github.com/kataras/blocks v0.0.7
@@ -52,7 +52,6 @@ require (
 
 require (
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
-	github.com/Joker/hpp v1.0.0 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect

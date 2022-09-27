@@ -50,7 +50,7 @@ Amber, Ace and Pug parsers minifies the template before render. So, to have a fa
 ## How to Run
 
 ```sh
-$ go get -u github.com/kataras/server-benchmarks
-$ go get -u github.com/codesenberg/bombardier
+$ go install github.com/kataras/server-benchmarks@latest
+$ go install github.com/codesenberg/bombardier@latest
 $ server-benchmarks --wait-run=3s -o ./results
 ```

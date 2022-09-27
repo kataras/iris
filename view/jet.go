@@ -215,11 +215,13 @@ var _ jet.Loader = (*jetLoader)(nil)
 
 // Open opens a file from file system.
 func (l *jetLoader) Open(name string) (io.ReadCloser, error) {
+	name = strings.TrimPrefix(name, "/")
 	return l.fs.Open(name)
 }
 
 // Exists checks if the template name exists by walking the list of template paths.
 func (l *jetLoader) Exists(name string) bool {
+	name = strings.TrimPrefix(name, "/")
 	_, err := l.fs.Open(name)
 	return err == nil
 }

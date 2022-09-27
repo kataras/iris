@@ -2,8 +2,9 @@ package view
 
 import (
 	"bytes"
+	"os"
 
-	"github.com/iris-contrib/jade"
+	"github.com/Joker/jade"
 )
 
 // Pug (or Jade) returns a new pug view engine.
@@ -26,18 +27,12 @@ import (
 func Pug(fs interface{}, extension string) *HTMLEngine {
 	s := HTML(fs, extension)
 	s.name = "Pug"
-
 	s.middleware = func(name string, text []byte) (contents string, err error) {
-		tmpl := jade.New(name)
-		tmpl.ReadFunc = func(name string) ([]byte, error) {
-			return asset(s.fs, name)
+		jade.ReadFunc = func(filename string) ([]byte, error) {
+			return asset(s.fs, filename)
 		}
 
-		// Fixes: https://github.com/kataras/iris/issues/1450
-		// by adding a custom ReadFunc inside the jade parser.
-		// And Also able to use relative paths on "extends" and "include" directives:
-		// e.g. instead of extends "templates/layout.pug" we use "layout.pug"
-		// so contents of templates are independent of their root location.
+		tmpl := jade.New(name)
 		exec, err := tmpl.Parse(text)
 		if err != nil {
 			return
@@ -45,6 +40,7 @@ func Pug(fs interface{}, extension string) *HTMLEngine {
 
 		b := new(bytes.Buffer)
 		exec.WriteIn(b)
+		jade.ReadFunc = os.ReadFile // reset to original.
 		return b.String(), nil
 	}
 	return s
