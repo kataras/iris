@@ -665,7 +665,7 @@ func (app *Application) Build() error {
 
 	if cb := app.OnBuild; cb != nil {
 		if err := cb(); err != nil {
-			return err
+			return fmt.Errorf("build: %w", err)
 		}
 	}
 
@@ -721,16 +721,14 @@ func (app *Application) Build() error {
 		app.view.AddFunc("urlpath", rv.Path)
 		// app.view.AddFunc("url", rv.URL)
 		if err := app.view.Load(); err != nil {
-			app.logger.Errorf("View Builder: %v", err)
-			return err
+			return fmt.Errorf("build: view engine: %v", err)
 		}
 	}
 
 	if !app.Router.Downgraded() {
 		// router
 		if _, err := injectLiveReload(app); err != nil {
-			app.logger.Errorf("LiveReload: init: failed: %v", err)
-			return err
+			return fmt.Errorf("build: inject live reload: failed: %v", err)
 		}
 
 		if app.config.ForceLowercaseRouting {
@@ -747,8 +745,7 @@ func (app *Application) Build() error {
 		routerHandler := router.NewDefaultHandler(app.config, app.logger)
 		err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
 		if err != nil {
-			app.logger.Error(err)
-			return err
+			return fmt.Errorf("build: router: %w", err)
 		}
 		app.HTTPErrorHandler = routerHandler
 
