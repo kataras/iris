@@ -226,6 +226,7 @@ With your help, we can improve Open Source web development for everyone!
 > Donations from [China](https://github.com/kataras/iris/issues/1870#issuecomment-1101418349) are now accepted!
 
 <p>
+  <a href="https://github.com/getsentry"><img src="https://avatars1.githubusercontent.com/u/1396951?v=4" alt="getsentry" title="getsentry" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/lensesio"><img src="https://avatars1.githubusercontent.com/u/11728472?v=4" alt="lensesio" title="lensesio" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/github"><img src="https://avatars1.githubusercontent.com/u/9919?v=4" alt="github" title="github" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/trading-peter"><img src="https://avatars1.githubusercontent.com/u/11567985?v=4" alt="trading-peter" title="trading-peter" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -276,7 +277,6 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/lpintes"><img src="https://avatars1.githubusercontent.com/u/2546783?v=4" alt="lpintes" title="lpintes" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/macropas"><img src="https://avatars1.githubusercontent.com/u/7488502?v=4" alt="macropas" title="macropas" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/marcmmx"><img src="https://avatars1.githubusercontent.com/u/7670546?v=4" alt="marcmmx" title="marcmmx" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
-  <a href="https://github.com/maxbertinetti"><img src="https://avatars1.githubusercontent.com/u/26814295?v=4" alt="maxbertinetti" title="maxbertinetti" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/mihado"><img src="https://avatars1.githubusercontent.com/u/940981?v=4" alt="mihado" title="mihado" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/mmckeen75"><img src="https://avatars1.githubusercontent.com/u/49529489?v=4" alt="mmckeen75" title="mmckeen75" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/olaf-lexemo"><img src="https://avatars1.githubusercontent.com/u/51406599?v=4" alt="olaf-lexemo" title="olaf-lexemo" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -297,6 +297,7 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/Major2828"><img src="https://avatars1.githubusercontent.com/u/19783402?v=4" alt="Major2828" title="Major2828" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/MatejLach"><img src="https://avatars1.githubusercontent.com/u/531930?v=4" alt="MatejLach" title="MatejLach" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/odas0r"><img src="https://avatars1.githubusercontent.com/u/32167770?v=4" alt="odas0r" title="odas0r" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/pixelheresy"><img src="https://avatars1.githubusercontent.com/u/2491944?v=4" alt="pixelheresy" title="pixelheresy" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/syrm"><img src="https://avatars1.githubusercontent.com/u/155406?v=4" alt="syrm" title="syrm" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/thanasolykos"><img src="https://avatars1.githubusercontent.com/u/35801329?v=4" alt="thanasolykos" title="thanasolykos" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/ukitzmann"><img src="https://avatars1.githubusercontent.com/u/153834?v=4" alt="ukitzmann" title="ukitzmann" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -305,6 +306,7 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/mark2b"><img src="https://avatars1.githubusercontent.com/u/539063?v=4" alt="mark2b" title="mark2b" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/siriushaha"><img src="https://avatars1.githubusercontent.com/u/7924311?v=4" alt="siriushaha" title="siriushaha" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/spazzymoto"><img src="https://avatars1.githubusercontent.com/u/2951012?v=4" alt="spazzymoto" title="spazzymoto" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/ArishSultan"><img src="https://avatars1.githubusercontent.com/u/31086233?v=4" alt="ArishSultan" title="ArishSultan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/ehayun"><img src="https://avatars1.githubusercontent.com/u/39870648?v=4" alt="ehayun" title="ehayun" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/kukaki"><img src="https://avatars1.githubusercontent.com/u/4849535?v=4" alt="kukaki" title="kukaki" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/oshirokazuhide"><img src="https://avatars1.githubusercontent.com/u/89958891?v=4" alt="oshirokazuhide" title="oshirokazuhide" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -336,6 +338,7 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/cnzhangquan"><img src="https://avatars1.githubusercontent.com/u/5462876?v=4" alt="cnzhangquan" title="cnzhangquan" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/donam-givita"><img src="https://avatars1.githubusercontent.com/u/107529604?v=4" alt="donam-givita" title="donam-givita" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/edwindna2"><img src="https://avatars1.githubusercontent.com/u/5441354?v=4" alt="edwindna2" title="edwindna2" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/ekofedriyanto"><img src="https://avatars1.githubusercontent.com/u/1669439?v=4" alt="ekofedriyanto" title="ekofedriyanto" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/fenriz07"><img src="https://avatars1.githubusercontent.com/u/9199380?v=4" alt="fenriz07" title="fenriz07" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/ffelipelimao"><img src="https://avatars1.githubusercontent.com/u/28612817?v=4" alt="ffelipelimao" title="ffelipelimao" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/geGao123"><img src="https://avatars1.githubusercontent.com/u/6398228?v=4" alt="geGao123" title="geGao123" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -391,6 +394,7 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/vuhoanglam"><img src="https://avatars1.githubusercontent.com/u/59502855?v=4" alt="vuhoanglam" title="vuhoanglam" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/yonson2"><img src="https://avatars1.githubusercontent.com/u/1192599?v=4" alt="yonson2" title="yonson2" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/SergeShin"><img src="https://avatars1.githubusercontent.com/u/402395?v=4" alt="SergeShin" title="SergeShin" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/-"><img src="https://avatars1.githubusercontent.com/u/75544?v=4" alt="-" title="-" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/BelmonduS"><img src="https://avatars1.githubusercontent.com/u/159350?v=4" alt="BelmonduS" title="BelmonduS" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/blackHoleNgc1277"><img src="https://avatars1.githubusercontent.com/u/41342763?v=4" alt="blackHoleNgc1277" title="blackHoleNgc1277" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/martinlindhe"><img src="https://avatars1.githubusercontent.com/u/181531?v=4" alt="martinlindhe" title="martinlindhe" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -398,6 +402,7 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/mtrense"><img src="https://avatars1.githubusercontent.com/u/1008285?v=4" alt="mtrense" title="mtrense" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/netbaalzovf"><img src="https://avatars1.githubusercontent.com/u/98529711?v=4" alt="netbaalzovf" title="netbaalzovf" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/oliverjosefzimmer"><img src="https://avatars1.githubusercontent.com/u/24566297?v=4" alt="oliverjosefzimmer" title="oliverjosefzimmer" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/valkuere"><img src="https://avatars1.githubusercontent.com/u/7230144?v=4" alt="valkuere" title="valkuere" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/lfaynman"><img src="https://avatars1.githubusercontent.com/u/16815068?v=4" alt="lfaynman" title="lfaynman" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/ArturWierzbicki"><img src="https://avatars1.githubusercontent.com/u/23451458?v=4" alt="ArturWierzbicki" title="ArturWierzbicki" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/NA"><img src="https://avatars1.githubusercontent.com/u/1600?v=4" alt="NA" title="NA" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -405,7 +410,9 @@ With your help, we can improve Open Source web development for everyone!
   <a href="https://github.com/aaxx"><img src="https://avatars1.githubusercontent.com/u/476416?v=4" alt="aaxx" title="aaxx" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/crashCoder"><img src="https://avatars1.githubusercontent.com/u/1144298?v=4" alt="crashCoder" title="crashCoder" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/dochoaj"><img src="https://avatars1.githubusercontent.com/u/1789678?v=4" alt="dochoaj" title="dochoaj" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/evillgenius75"><img src="https://avatars1.githubusercontent.com/u/22817701?v=4" alt="evillgenius75" title="evillgenius75" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/gog200921"><img src="https://avatars1.githubusercontent.com/u/101519620?v=4" alt="gog200921" title="gog200921" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
+  <a href="https://github.com/mwiater"><img src="https://avatars1.githubusercontent.com/u/5323591?v=4" alt="mwiater" title="mwiater" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/nikharsaxena"><img src="https://avatars1.githubusercontent.com/u/8684362?v=4" alt="nikharsaxena" title="nikharsaxena" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/rbondi"><img src="https://avatars1.githubusercontent.com/u/81764?v=4" alt="rbondi" title="rbondi" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/statik"><img src="https://avatars1.githubusercontent.com/u/983?v=4" alt="statik" title="statik" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
@@ -456,7 +463,11 @@ With your help, we can improve Open Source web development for everyone!
 
 ## 📖 Learning Iris
 
-### Create a new project
+### Installation
+
+The only requirement is the [Go Programming Language](https://go.dev/dl/).
+
+#### Create a new project
 
 ```sh
 $ mkdir myapp

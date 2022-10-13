@@ -1056,6 +1056,23 @@ func (api *APIBuilder) GetRoutes() []*Route {
 	return api.routes.getAll()
 }
 
+// CountHandlers returns the total number of all unique
+// registered route handlers.
+func (api *APIBuilder) CountHandlers() int {
+	uniqueNames := make(map[string]struct{})
+
+	for _, r := range api.GetRoutes() {
+		for _, h := range r.Handlers {
+			handlerName := context.HandlerName(h)
+			if _, exists := uniqueNames[handlerName]; !exists {
+				uniqueNames[handlerName] = struct{}{}
+			}
+		}
+	}
+
+	return len(uniqueNames)
+}
+
 // GetRoute returns the registered route based on its name, otherwise nil.
 // One note: "routeName" should be case-sensitive.
 func (api *APIBuilder) GetRoute(routeName string) *Route {

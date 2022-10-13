@@ -132,7 +132,7 @@ var ResolveHTTPFS = func(fsOrDir interface{}) http.FileSystem {
 }
 
 // FindNames accepts a "http.FileSystem" and a root name and returns
-// the list containg its file names.
+// the list containing its file names.
 func FindNames(fileSystem http.FileSystem, name string) ([]string, error) {
 	f, err := fileSystem.Open(name)
 	if err != nil {

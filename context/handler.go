@@ -21,6 +21,24 @@ var (
 var (
 	handlerNames   = make(map[*NameExpr]string)
 	handlerNamesMu sync.RWMutex
+
+	ignoreMainHandlerNames = [...]string{
+		"iris.cache",
+		"iris.basicauth",
+		"iris.hCaptcha",
+		"iris.reCAPTCHA",
+		"iris.profiling",
+		"iris.recover",
+		"iris.accesslog",
+		"iris.grpc",
+		"iris.requestid",
+		"iris.rewrite",
+		"iris.cors",
+		"iris.jwt",
+		"iris.logger",
+		"iris.rate",
+		"iris.methodoverride",
+	}
 )
 
 // SetHandlerName sets a handler name that could be
@@ -48,6 +66,7 @@ func SetHandlerName(original string, replacement string) {
 		literal: original,
 		regex:   regex,
 	}] = replacement
+
 	handlerNamesMu.Unlock()
 }
 
@@ -106,6 +125,7 @@ func valueOf(v interface{}) reflect.Value {
 func HandlerName(h interface{}) string {
 	pc := valueOf(h).Pointer()
 	name := runtime.FuncForPC(pc).Name()
+
 	handlerNamesMu.RLock()
 	for expr, newName := range handlerNames {
 		if expr.MatchString(name) {
@@ -113,7 +133,6 @@ func HandlerName(h interface{}) string {
 			break
 		}
 	}
-
 	handlerNamesMu.RUnlock()
 
 	return trimHandlerName(name)
@@ -217,6 +236,9 @@ var ignoreHandlerNames = [...]string{
 	"iris/core/router.ExecutionOptions.buildHandler",
 	"iris/core/router.(*APIBuilder).Favicon",
 	"iris/core/router.StripPrefix",
+	"iris/core/router.PrefixDir",
+	"iris/core/router.PrefixFS",
+	"iris/context.glob..func2.1",
 }
 
 // IgnoreHandlerName compares a static slice of Iris builtin
@@ -230,19 +252,6 @@ func IgnoreHandlerName(name string) bool {
 	}
 
 	return false
-}
-
-var ignoreMainHandlerNames = [...]string{
-	"iris.cache",
-	"iris.basicauth",
-	"iris.hCaptcha",
-	"iris.reCAPTCHA",
-	"iris.profiling",
-	"iris.recover",
-	"iris.accesslog",
-	"iris.grpc",
-	"iris.requestid",
-	"iris.rewrite",
 }
 
 // ingoreMainHandlerName reports whether a main handler of "name" should
