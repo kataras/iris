@@ -43,7 +43,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0
 	golang.org/x/net v0.0.0-20221002022538-bcab6841153b
 	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
-	golang.org/x/text v0.3.8
+	golang.org/x/text v0.4.0
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/ini.v1 v1.67.0
