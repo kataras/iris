@@ -11,7 +11,7 @@ import (
 // It accepts the controller ptr to a struct value,
 // the gRPCServer itself, and a strict option which is explained below.
 //
-// The differences by a common controller are:
+// The differences between an GRPC-based controller and a common one are:
 // HTTP verb: only POST (Party.AllowMethods can be used for more),
 // method parsing is disabled: path is the function name as it is,
 // if 'strictMode' option is true then this controller will only serve gRPC-based clients
@@ -71,6 +71,5 @@ func (g GRPC) Apply(c *ControllerActivator) {
 			}
 			route.Description += " " + bckp // e.g. "gRPC controller"
 		}
-
 	}
 }

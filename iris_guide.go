@@ -247,6 +247,8 @@ type (
 	}
 
 	Step5 interface {
+		// RouterMiddlewares registers one or more handlers to run before everything else.
+		RouterMiddlewares(handlers ...Handler) Step5
 		// Middlewares registers one or more handlers to run before the requested route's handler.
 		Middlewares(handlers ...Handler) Step6
 	}
@@ -338,7 +340,13 @@ func (s *step4) Timeout(requestResponseLife, read, write time.Duration) Step5 {
 type step5 struct {
 	step4 *step4
 
-	middlewares []Handler
+	routerMiddlewares []Handler // top-level router middlewares, fire even on 404s.
+	middlewares       []Handler
+}
+
+func (s *step5) RouterMiddlewares(handlers ...Handler) Step5 {
+	s.routerMiddlewares = append(s.routerMiddlewares, handlers...)
+	return s
 }
 
 func (s *step5) Middlewares(handlers ...Handler) Step6 {
@@ -425,6 +433,10 @@ func (s *step7) Build() *Application {
 	app.Macros().SetErrorHandler(errors.DefaultPathParameterTypeErrorHandler)
 
 	app.UseRouter(recover.New())
+
+	for _, routerLevelMiddleware := range s.step6.step5.routerMiddlewares {
+		app.UseRouter(routerLevelMiddleware)
+	}
 
 	app.UseRouter(func(ctx Context) {
 		ctx.Header("Server", "Iris")
