@@ -433,11 +433,7 @@ func (s *step7) Build() *Application {
 	app.Macros().SetErrorHandler(errors.DefaultPathParameterTypeErrorHandler)
 
 	app.UseRouter(recover.New())
-
-	for _, routerLevelMiddleware := range s.step6.step5.routerMiddlewares {
-		app.UseRouter(routerLevelMiddleware)
-	}
-
+	app.UseRouter(s.step6.step5.routerMiddlewares...)
 	app.UseRouter(func(ctx Context) {
 		ctx.Header("Server", "Iris")
 		if dev := s.step6.step5.step4.step3.developer; dev != "" {
