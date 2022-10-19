@@ -448,7 +448,6 @@ Com a sua ajuda, nós podemos melhorar o desenvolvimento web de Código Aberto p
   <a href="https://github.com/HieuLsw"><img src="https://avatars1.githubusercontent.com/u/1675478?v=4" alt="HieuLsw" title="HieuLsw" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/carlosmoran092"><img src="https://avatars1.githubusercontent.com/u/10361754?v=4" alt="carlosmoran092" title="carlosmoran092" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
   <a href="https://github.com/yangxianglong"><img src="https://avatars1.githubusercontent.com/u/55280276?v=4" alt="yangxianglong" title="yangxianglong" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
-  <a href="https://github.com/edivaldoramos"><img src="https://avatars.githubusercontent.com/u/15630516?s=96&v=4" alt="edivaldoramos" title="edivaldoramos" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
 </p>
 
 ## 📖 Aprenda sobre o Iris Web Framework
