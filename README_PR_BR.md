@@ -451,7 +451,7 @@ Com a sua ajuda, nós podemos melhorar o desenvolvimento web de Código Aberto p
   <a href="https://github.com/edivaldoramos"><img src="https://avatars.githubusercontent.com/u/15630516?s=96&v=4" alt="edivaldoramos" title="edivaldoramos" with="75" style="width:75px;max-width:75px;height:75px" height="75" /></a>
 </p>
 
-## 📖 Aprenda sobre Iris
+## 📖 Aprenda sobre o Iris Web Framework
 
 ### Instalação
 
