@@ -2,12 +2,13 @@ package httptest
 
 import (
 	"crypto/tls"
+	"net/http"
+	"net/http/httptest"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/i18n"
-	"net/http"
-	"net/http/httptest"
 
 	"github.com/iris-contrib/httpexpect/v2"
 )
