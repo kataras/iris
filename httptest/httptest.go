@@ -2,14 +2,12 @@ package httptest
 
 import (
 	"crypto/tls"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/i18n"
+	"net/http"
+	"net/http/httptest"
 
 	"github.com/iris-contrib/httpexpect/v2"
 )
@@ -106,7 +104,7 @@ func DefaultConfiguration() *Configuration {
 //	httptest.New(t, app, httptest.URL(...), httptest.Debug(true), httptest.LogLevel("debug"), httptest.Strict(true))
 //
 // Example at: https://github.com/kataras/iris/tree/master/_examples/testing/httptest.
-func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
+func New(t IrisTesty, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
@@ -150,7 +148,7 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 
 // NewInsecure same as New but receives a single host instead of the whole framework.
 // Useful for testing running TLS servers.
-func NewInsecure(t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
+func NewInsecure(t IrisTesty, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
@@ -202,4 +200,25 @@ func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfig
 	ctx := app.ContextPool.Acquire(w, r)
 	handler(ctx)
 	app.ContextPool.Release(ctx)
+}
+
+type IrisTesty interface {
+	Cleanup(func())
+	Error(args ...any)
+	Errorf(format string, args ...any)
+	Fail()
+	FailNow()
+	Failed() bool
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
+	Helper()
+	Log(args ...any)
+	Logf(format string, args ...any)
+	Name() string
+	Setenv(key, value string)
+	Skip(args ...any)
+	SkipNow()
+	Skipf(format string, args ...any)
+	Skipped() bool
+	TempDir() string
 }
