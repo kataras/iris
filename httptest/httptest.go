@@ -104,7 +104,8 @@ func DefaultConfiguration() *Configuration {
 //
 //	httptest.New(t, app, httptest.URL(...), httptest.Debug(true), httptest.LogLevel("debug"), httptest.Strict(true))
 //
-// Example at: https://github.com/kataras/iris/tree/master/_examples/testing/httptest.
+// Examples at: https://github.com/kataras/iris/tree/master/_examples/testing/httptest and
+// https://github.com/kataras/iris/tree/master/_examples/testing/ginkgotest.
 func New(t IrisTesty, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {

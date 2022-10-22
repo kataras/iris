@@ -107,7 +107,9 @@
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)
     * [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)
-* [Testing](testing/httptest/main_test.go)
+* Testing
+    * [Testing with httptest](testing/httptest/main_test.go)
+    * [Testing with ginkgo](testing/ginkgotest)
 * [Recovery](recover/main.go)
     * [Panic and custom Error Handler with Compression](recover/panic-and-custom-error-handler-with-compression/main.go)
 * [Profiling](pprof/main.go)
