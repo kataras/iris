@@ -203,6 +203,10 @@ func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfig
 	app.ContextPool.Release(ctx)
 }
 
+// IrisTesty is an interface which all testing package should implement.
+// The `httptest` standard package and `ginkgo` third-party module do implement this interface indeed.
+//
+// See the `New` package-level function for more.
 type IrisTesty interface {
 	Cleanup(func())
 	Error(args ...any)

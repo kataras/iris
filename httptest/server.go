@@ -1,8 +1,9 @@
 package httptest
 
 import (
-	"github.com/kataras/iris/v12"
 	"net/http/httptest"
+
+	"github.com/kataras/iris/v12"
 )
 
 // NewServer is just a helper to create a new standard
