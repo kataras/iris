@@ -226,7 +226,7 @@ func trimHandlerName(name string) string {
 		name = strings.Replace(name, internalName, "iris-contrib", 1)
 	}
 
-	name = strings.TrimSuffix(name, ".func1")
+	name = strings.TrimSuffix(name, "GRPC.Apply.func1")
 	return name
 }
 
