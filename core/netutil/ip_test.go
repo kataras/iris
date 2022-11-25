@@ -58,4 +58,34 @@ func TestIP(t *testing.T) {
 	if expected := "126.105.144.250"; expected != got {
 		t.Logf("expected addr to be found: %s but got: %s", expected, got)
 	}
+
+	addresses = []string{
+		"10.10.233.1",
+		"126.105.144.250",
+		"192.168.99.33",
+		"172.18.22.23",
+		"10.0.0.0",
+		"10.255.255.255",
+	}
+
+	got, ok = GetIPAddress(addresses, privateRanges)
+	if !ok {
+		t.Logf("expected addr to be matched")
+	}
+
+	if expected := "126.105.144.250"; expected != got {
+		t.Logf("expected addr to be found: %s but got: %s", expected, got)
+	}
+
+	addresses = []string{
+		"10.0.0.0",
+		"10.10.233.1",
+		"192.168.99.33",
+		"172.18.22.23",
+	}
+
+	got, ok = GetIPAddress(addresses, privateRanges)
+	if ok {
+		t.Logf("expected addr to not be matched")
+	}
 }
