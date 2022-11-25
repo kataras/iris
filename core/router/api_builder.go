@@ -68,7 +68,13 @@ func (repo *repository) getRelative(r *Route) *Route {
 	}
 
 	for _, route := range repo.routes {
-		if r.Subdomain == route.Subdomain && r.StatusCode == route.StatusCode && r.Method == route.Method && r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
+		if r.tmpl.Src == route.tmpl.Src { // No topLink on the same route syntax.
+			// Fixes #2008, because of APIBuilder.handle, repo.getRelative and repo.register replacement but with a toplink of the old route.
+			continue
+		}
+
+		if r.Subdomain == route.Subdomain && r.StatusCode == route.StatusCode && r.Method == route.Method &&
+			r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
 			return route
 		}
 	}
@@ -124,11 +130,10 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 				repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
 			}
 
-			continue
+			break // continue
 		}
 	}
 
-	// fmt.Printf("repo.routes append:\t%#+v\n\n", route)
 	repo.routes = append(repo.routes, route)
 
 	if route.StatusCode == 0 { // a common resource route, not a status code error handler.
@@ -779,8 +784,8 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 		}
 
 		// The caller tiself, if anonymous, it's the first line of `app.X("/path", here)`
-		route.RegisterFileName = filename
-		route.RegisterLineNumber = line
+		route.RegisterFileName = mainHandlerFileName     // filename
+		route.RegisterLineNumber = mainHandlerFileNumber // line
 
 		route.MainHandlerName = mainHandlerName
 		route.MainHandlerIndex = mainHandlerIndex
