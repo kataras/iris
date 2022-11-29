@@ -1530,8 +1530,11 @@ func (ctx *Context) URLParamSlice(name string) []string {
 	if n == 0 {
 		return values
 	}
- 
-	sepPtr := ctx.app.ConfigurationReadOnly().GetURLParamSeparator()
+
+	var sep string
+	if sepPtr := ctx.app.ConfigurationReadOnly().GetURLParamSeparator(); sepPtr != nil {
+		sep = *sepPtr
+	}
 
 	normalizedValues := make([]string, 0, n)
 	for _, v := range values {
@@ -1539,12 +1542,10 @@ func (ctx *Context) URLParamSlice(name string) []string {
 			continue
 		}
 
-		if sepPtr != nil {
-			if sep := *sepPtr; sep != "" {
-				values := strings.Split(v, sep)
-				normalizedValues = append(normalizedValues, values...)
-				continue
-			}
+		if sep != "" {
+			values := strings.Split(v, sep)
+			normalizedValues = append(normalizedValues, values...)
+			continue
 		}
 
 		normalizedValues = append(normalizedValues, v)
