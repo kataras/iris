@@ -40,7 +40,8 @@ type ConfigurationReadOnly interface {
 	GetDisableAutoFireStatusCode() bool
 	// GetResetOnFireErrorCode returns the ResetOnFireErrorCode field.
 	GetResetOnFireErrorCode() bool
-
+	// GetURLParamSeparator returns URLParamSeparator field.
+	GetURLParamSeparator() *string
 	// GetEnableOptimizations returns the EnableOptimizations field.
 	GetEnableOptimizations() bool
 	// GetEnableProtoJSON returns the EnableProtoJSON field.

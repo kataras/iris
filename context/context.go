@@ -1519,7 +1519,7 @@ func (ctx *Context) URLParam(name string) string {
 // URLParamSlice a shortcut of ctx.Request().URL.Query()[name].
 // Like `URLParam` but it returns all values instead of a single string separated by commas.
 // Returns the values of a url query of the given "name" as string slice, e.g.
-// ?name=john&name=doe&name=kataras will return [ john doe kataras].
+// ?names=john&names=doe&names=kataras and ?names=john,doe,kataras will return [ john doe kataras].
 //
 // Note that, this method skips any empty entries.
 //
@@ -1530,12 +1530,21 @@ func (ctx *Context) URLParamSlice(name string) []string {
 	if n == 0 {
 		return values
 	}
+ 
+	sepPtr := ctx.app.ConfigurationReadOnly().GetURLParamSeparator()
 
 	normalizedValues := make([]string, 0, n)
-
 	for _, v := range values {
 		if v == "" {
 			continue
+		}
+
+		if sepPtr != nil {
+			if sep := *sepPtr; sep != "" {
+				values := strings.Split(v, sep)
+				normalizedValues = append(normalizedValues, values...)
+				continue
+			}
 		}
 
 		normalizedValues = append(normalizedValues, v)

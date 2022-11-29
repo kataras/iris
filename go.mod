@@ -25,7 +25,7 @@ require (
 	github.com/kataras/blocks v0.0.7
 	github.com/kataras/golog v0.1.8
 	github.com/kataras/jwt v0.1.8
-	github.com/kataras/neffos v0.0.20
+	github.com/kataras/neffos v0.0.21-0.20221128161812-e8e0f317accd
 	github.com/kataras/pio v0.0.11
 	github.com/kataras/sitemap v0.0.6
 	github.com/kataras/tunnel v0.0.4
@@ -76,12 +76,12 @@ require (
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
-	github.com/mediocregopher/radix/v3 v3.8.0 // indirect
+	github.com/mediocregopher/radix/v3 v3.8.1 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nats-io/jwt/v2 v2.3.0 // indirect
-	github.com/nats-io/nats.go v1.16.0 // indirect
+	github.com/nats-io/nats.go v1.20.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect

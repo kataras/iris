@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add new `URLParamSeparator` to the configuration. Defaults to "," but can be set to an empty string to disable splitting query values on `Context.URLParamSlice` method.
+
 - [PR #1992](https://github.com/kataras/iris/pull/1992): Added support for third party packages on [httptest](https://github.com/kataras/iris/tree/master/httptest). An example using 3rd-party module named [Ginkgo](github.com/onsi/ginkgo) can be found [here](https://github.com/kataras/iris/blob/master/_examples/testing/ginkgotest). 
 
 - Add `Context.Render` method for compatibility.

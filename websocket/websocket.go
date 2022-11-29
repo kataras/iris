@@ -185,6 +185,8 @@ func Handler(s *neffos.Server, idGenerator ...IDGenerator) context.Handler {
 // Upgrade upgrades the request and returns a new websocket Conn.
 // Use `Handler` for higher-level implementation instead.
 func Upgrade(ctx *context.Context, idGen IDGenerator, s *neffos.Server) *neffos.Conn {
+	/* Do NOT return the error as it is captured on the OnUpgradeError listener,
+	the end-developer should not be able to write to this http client directly. */
 	ctx.DisablePoolRelease()
 
 	conn, upgradeErr := s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
