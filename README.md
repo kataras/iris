@@ -17,7 +17,7 @@
 
 <!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
 
-Iris is a fast, simple yet fully featured and very efficient web framework for Go.
+Iris is a fast, simple yet fully featured and very efficient web framework for Go. **With a personal promise of active lifetime maintenance, [unlike other](https://github.com/gorilla/.github/blob/master/profile/README.md) free software packages offered in Go ecosystem**.
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
 
