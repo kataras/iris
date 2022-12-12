@@ -11,9 +11,12 @@ func main() {
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.amber", iris.Map{
+		if err := ctx.View("index.amber", iris.Map{
 			"Title": "Title of The Page",
-		})
+		}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	app.Listen(":8080")

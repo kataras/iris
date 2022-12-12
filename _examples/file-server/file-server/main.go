@@ -94,7 +94,10 @@ func uploadView(ctx iris.Context) {
 	io.WriteString(h, strconv.FormatInt(now, 10))
 	token := fmt.Sprintf("%x", h.Sum(nil))
 
-	ctx.View("upload.html", token)
+	if err := ctx.View("upload.html", token); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 func upload(ctx iris.Context) {

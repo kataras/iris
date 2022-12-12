@@ -35,10 +35,16 @@ func main() {
 	my := app.Party("/my").Layout("layouts/mylayout.html")
 	{ // both of these will use the layouts/mylayout.html as their layout.
 		my.Get("/", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 		my.Get("/other", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 	}
 

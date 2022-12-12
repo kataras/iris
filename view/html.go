@@ -53,27 +53,6 @@ var (
 	_ EngineFuncer = (*HTMLEngine)(nil)
 )
 
-var emptyFuncs = template.FuncMap{
-	"yield": func(binding interface{}) (string, error) {
-		return "", fmt.Errorf("yield was called, yet no layout defined")
-	},
-	"part": func() (string, error) {
-		return "", fmt.Errorf("block was called, yet no layout defined")
-	},
-	"partial": func() (string, error) {
-		return "", fmt.Errorf("block was called, yet no layout defined")
-	},
-	"partial_r": func() (string, error) {
-		return "", fmt.Errorf("block was called, yet no layout defined")
-	},
-	"current": func() (string, error) {
-		return "", nil
-	},
-	"render": func() (string, error) {
-		return "", nil
-	},
-}
-
 // HTML creates and returns a new html view engine.
 // The html engine used like the "html/template" standard go package
 // but with a lot of extra features.
@@ -175,8 +154,8 @@ func (s *HTMLEngine) Delims(left, right string) *HTMLEngine {
 }
 
 // Layout sets the layout template file which inside should use
-// the {{ yield }} func to yield the main template file
-// and optionally {{partial/partial_r/render}} to render other template files like headers and footers
+// the {{ yield . }} func to yield the main template file
+// and optionally {{partial/partial_r/render . }} to render other template files like headers and footers
 //
 // The 'tmplLayoutFile' is a relative path of the templates base directory,
 // for the template file with its extension.
@@ -334,6 +313,7 @@ func (s *HTMLEngine) parseTemplate(name string, contents []byte, funcs template.
 
 	name = strings.TrimPrefix(name, "/")
 	tmpl := s.Templates.New(name)
+	// tmpl.Option("missingkey=error")
 	tmpl.Option(s.options...)
 
 	var text string
@@ -347,7 +327,12 @@ func (s *HTMLEngine) parseTemplate(name string, contents []byte, funcs template.
 		text = string(contents)
 	}
 
-	tmpl.Funcs(emptyFuncs).Funcs(s.funcs)
+	tmpl.Funcs(s.getBuiltinFuncs(name)).Funcs(s.funcs)
+
+	if strings.Contains(name, "layout") {
+		tmpl.Funcs(s.layoutFuncs)
+	}
+
 	if len(funcs) > 0 {
 		tmpl.Funcs(funcs) // custom for this template.
 	}
@@ -376,27 +361,14 @@ func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (strin
 	return result, err
 }
 
-func (s *HTMLEngine) layoutFuncsFor(lt *template.Template, name string, binding interface{}) {
-	s.runtimeFuncsFor(lt, name, binding)
-
+func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
 	funcs := template.FuncMap{
-		"yield": func() (template.HTML, error) {
+		"yield": func(binding interface{}) (template.HTML, error) {
 			result, err := s.executeTemplateBuf(name, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(result), err
 		},
-	}
-
-	for k, v := range s.layoutFuncs {
-		funcs[k] = v
-	}
-
-	lt.Funcs(funcs)
-}
-
-func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding interface{}) {
-	funcs := template.FuncMap{
-		"part": func(partName string) (template.HTML, error) {
+		"part": func(partName string, binding interface{}) (template.HTML, error) {
 			nameTemp := strings.ReplaceAll(name, s.extension, "")
 			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
 			result, err := s.executeTemplateBuf(fullPartName, binding)
@@ -408,7 +380,7 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 		"current": func() (string, error) {
 			return name, nil
 		},
-		"partial": func(partialName string) (template.HTML, error) {
+		"partial": func(partialName string, binding interface{}) (template.HTML, error) {
 			fullPartialName := fmt.Sprintf("%s-%s", partialName, name)
 			if s.Templates.Lookup(fullPartialName) != nil {
 				result, err := s.executeTemplateBuf(fullPartialName, binding)
@@ -420,7 +392,7 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 		// it would be easier for adding pages' style/script inline
 		// for example when using partial_r '.script' in layout.html
 		// templates/users/index.html would load templates/users/index.script.html
-		"partial_r": func(partialName string) (template.HTML, error) {
+		"partial_r": func(partialName string, binding interface{}) (template.HTML, error) {
 			ext := filepath.Ext(name)
 			root := name[:len(name)-len(ext)]
 			fullPartialName := fmt.Sprintf("%s%s%s", root, partialName, ext)
@@ -430,13 +402,13 @@ func (s *HTMLEngine) runtimeFuncsFor(t *template.Template, name string, binding 
 			}
 			return "", nil
 		},
-		"render": func(fullPartialName string) (template.HTML, error) {
+		"render": func(fullPartialName string, binding interface{}) (template.HTML, error) {
 			result, err := s.executeTemplateBuf(fullPartialName, binding)
 			return template.HTML(result), err
 		},
 	}
 
-	t.Funcs(funcs)
+	return funcs
 }
 
 // ExecuteWriter executes a template and writes its result to the w writer.
@@ -455,20 +427,18 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 		}
 	}
 
-	t := s.Templates.Lookup(name)
-	if t == nil {
-		return ErrNotExist{Name: name, IsLayout: false, Data: bindingData}
-	}
-	s.runtimeFuncsFor(t, name, bindingData)
-
 	if layout = getLayout(layout, s.layout); layout != "" {
 		lt := s.Templates.Lookup(layout)
 		if lt == nil {
 			return ErrNotExist{Name: layout, IsLayout: true, Data: bindingData}
 		}
 
-		s.layoutFuncsFor(lt, name, bindingData)
 		return lt.Execute(w, bindingData)
+	}
+
+	t := s.Templates.Lookup(name)
+	if t == nil {
+		return ErrNotExist{Name: name, IsLayout: false, Data: bindingData}
 	}
 
 	return t.Execute(w, bindingData)

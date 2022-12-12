@@ -3,7 +3,7 @@
     <title>{{.Title}}</title>
 </head>
 <body>
-    {{ yield documentBody() }}
+    {{ yield . documentBody() }}
 <footer>{{ include "../partials/footer.jet" . }}</footer>
 </body>
 </html>

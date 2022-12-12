@@ -452,7 +452,10 @@ type Party interface {
 	// app.RegisterView(iris.$VIEW_ENGINE("./views", ".$extension"))
 	// my := app.Party("/my").Layout("layouts/mylayout.html")
 	// 	my.Get("/", func(ctx iris.Context) {
-	// 		ctx.View("page1.html")
+	// 	if err := ctx.View("page1.html"); err != nil {
+	//	  ctx.HTML("<h3>%s</h3>", err.Error())
+	//	  return
+	//  }
 	// 	})
 	//
 	// Examples: https://github.com/kataras/iris/tree/master/_examples/view

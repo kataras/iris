@@ -81,12 +81,15 @@ func newApp() *iris.Application {
 	app.RegisterView(view)
 
 	app.Get("/templates", func(ctx iris.Context) {
-		ctx.View("index.html", iris.Map{
+		if err := ctx.View("index.html", iris.Map{
 			"tr": ctx.Tr, // word, arguments... {call .tr "hi" "iris"}}
 			"trUnsafe": func(message string, args ...interface{}) template.HTML {
 				return template.HTML(ctx.Tr(message, args...))
 			},
-		})
+		}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 
 		// Note that,
 		// Iris automatically adds a "tr" global template function as well,

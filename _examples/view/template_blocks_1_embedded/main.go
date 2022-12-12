@@ -28,7 +28,10 @@ func index(ctx iris.Context) {
 	}
 
 	ctx.ViewLayout("main")
-	ctx.View("index", data)
+	if err := ctx.View("index", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 func internalServerError(ctx iris.Context) {
@@ -40,5 +43,8 @@ func internalServerError(ctx iris.Context) {
 	}
 
 	ctx.ViewLayout("error")
-	ctx.View("500", data)
+	if err := ctx.View("500", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"embed"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/x/errors"
 )
 
 //go:embed embedded/*
@@ -24,7 +23,7 @@ func main() {
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("page1.html"); err != nil {
-			errors.InvalidArgument.Err(ctx, err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
 			return
 		}
 	})
@@ -33,7 +32,7 @@ func main() {
 	app.Get("/nolayout", func(ctx iris.Context) {
 		ctx.ViewLayout(iris.NoLayout)
 		if err := ctx.View("page1.html"); err != nil {
-			errors.InvalidArgument.Err(ctx, err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
 			return
 		}
 	})
@@ -42,10 +41,16 @@ func main() {
 	my := app.Party("/my").Layout("layouts/mylayout.html")
 	{ // both of these will use the layouts/mylayout.html as their layout.
 		my.Get("/", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 		my.Get("/other", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 	}
 

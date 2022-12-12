@@ -2,8 +2,8 @@
     <h1>Oups, you've got an error!</h1>
     {{ if .ErrorCode }}
         {{ $tmplName := print "partials/" .ErrorCode ".html"}}
-        {{ render $tmplName }}
+        {{ render $tmplName . }}
     {{ else }}
-        {{ render "partials/500.html" }}
+        {{ render "partials/500.html" . }}
     {{ end }}
 </div>

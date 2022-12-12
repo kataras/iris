@@ -49,9 +49,9 @@ func (e errorResponse) Dispatch(ctx iris.Context) {
 	// switch e.Code {
 	// case iris.StatusNotFound:
 	// 	// use Code and Message as the template data.
-	// 	ctx.View("404.html", e)
+	// if err := ctx.View("404.html", e)
 	// default:
-	// 	ctx.View("500.html", e)
+	// if err := ctx.View("500.html", e)
 	// }
 }
 

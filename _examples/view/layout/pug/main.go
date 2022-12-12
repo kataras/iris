@@ -21,5 +21,8 @@ func index(ctx iris.Context) {
 	// On Pug this is ignored:  ctx.ViewLayout("layouts/main")
 	// Layouts are only rendered from inside the index page itself
 	// using the "extends" keyword.
-	ctx.View("index", data)
+	if err := ctx.View("index", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

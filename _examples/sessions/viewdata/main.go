@@ -29,14 +29,17 @@ func setSessionViewData(ctx iris.Context) {
 func index(ctx iris.Context) {
 	session := sessions.Get(ctx)
 	session.Set("username", "kataras")
-	ctx.View("index")
+	if err := ctx.View("index"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 	/* OR without middleware:
-	ctx.View("index", iris.Map{
-		"session": session,
-		//   {{.session.Get "username"}}
-		// OR to pass only the 'username':
-		// "username": session.Get("username"),
-		//   {{.username}}
-	})
+	if err := ctx.View("index", iris.Map{
+			"session": session,
+			//   {{.session.Get "username"}}
+			// OR to pass only the 'username':
+			// "username": session.Get("username"),
+			//   {{.username}}
+		})
 	*/
 }

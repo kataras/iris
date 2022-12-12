@@ -8,10 +8,10 @@ func main() {
 	// with default template funcs:
 	//
 	// - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
-	// - {{ render "header.html" }}
-	// - {{ render_r "header.html" }} // partial relative path to current page
-	// - {{ yield }}
-	// - {{ current }}
+	// - {{ render "header.html" . }}
+	// - {{ render_r "header.html" . }} // partial relative path to current page
+	// - {{ yield . }}
+	// - {{ current . }}
 	app.RegisterView(iris.HTML("./templates", ".html").
 		Reload(true)) // Set Reload false to production.
 
@@ -23,17 +23,23 @@ func main() {
 		ctx.ViewData("Name", "iris")
 		// render the template with the file name relative to the './templates'.
 		// file extension is OPTIONAL.
-		ctx.View("hi.html")
+		if err := ctx.View("hi.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	app.Get("/example_map", func(ctx iris.Context) {
-		ctx.View("example.html", iris.Map{
+		if err := ctx.View("example.html", iris.Map{
 			"Name":   "Example Name",
 			"Age":    42,
 			"Items":  []string{"Example slice entry 1", "entry 2", "entry 3"},
 			"Map":    iris.Map{"map key": "map value", "other key": "other value"},
 			"Nested": iris.Map{"Title": "Iris E-Book", "Pages": 620},
-		})
+		}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	app.Get("/example_struct", func(ctx iris.Context) {
@@ -59,7 +65,10 @@ func main() {
 			},
 		}
 
-		ctx.View("example.html", examplePage)
+		if err := ctx.View("example.html", examplePage); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// http://localhost:8080/

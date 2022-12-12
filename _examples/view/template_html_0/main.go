@@ -12,10 +12,10 @@ func main() {
 	// default template funcs are:
 	//
 	// - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
-	// - {{ render "header.html" }}
-	// - {{ render_r "header.html" }} // partial relative path to current page
-	// - {{ yield }}
-	// - {{ current }}
+	// - {{ render "header.html" . }}
+	// - {{ render_r "header.html" . }} // partial relative path to current page
+	// - {{ yield . }}
+	// - {{ current . }}
 	tmpl.AddFunc("greet", func(s string) string {
 		return "Greetings " + s + "!"
 	})
@@ -31,5 +31,8 @@ func hi(ctx iris.Context) {
 	ctx.ViewData("Title", "Hi Page")
 	ctx.ViewData("Name", "iris") // {{.Name}} will render: iris
 	// ctx.ViewData("", myCcustomStruct{})
-	ctx.View("hi.html")
+	if err := ctx.View("hi.html"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

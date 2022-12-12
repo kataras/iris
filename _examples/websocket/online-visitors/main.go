@@ -33,12 +33,18 @@ func main() {
 
 	h := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "index page"})
-		ctx.View("index.html")
+		if err := ctx.View("index.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	}
 
 	h2 := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "other page"})
-		ctx.View("other.html")
+		if err := ctx.View("other.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	}
 
 	// Open some browser tabs/or windows

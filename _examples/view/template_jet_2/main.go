@@ -34,7 +34,8 @@ func main() {
 		paramsAsArray := []string{"theParam1", "theParam2", "paramThirdAfterStatic"}
 		ctx.ViewData("ParamsAsArray", paramsAsArray)
 		if err := ctx.View("page.jet"); err != nil {
-			panic(err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 

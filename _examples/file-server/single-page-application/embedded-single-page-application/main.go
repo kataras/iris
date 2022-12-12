@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/x/errors"
 )
 
 // $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
@@ -28,7 +27,7 @@ func newApp() *iris.Application {
 	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("Page", page)
 		if err := ctx.View("index.html"); err != nil {
-			errors.InvalidArgument.Err(ctx, err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
 			return
 		}
 	})

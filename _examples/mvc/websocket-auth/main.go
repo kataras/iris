@@ -51,7 +51,10 @@ func newApp() *iris.Application {
 }
 
 func renderSigninForm(ctx iris.Context) {
-	ctx.View("signin", iris.Map{"Title": "Signin Page"})
+	if err := ctx.View("signin", iris.Map{"Title": "Signin Page"}); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 type websocketController struct {

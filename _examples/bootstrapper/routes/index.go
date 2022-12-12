@@ -7,5 +7,8 @@ import (
 // GetIndexHandler handles the GET: /
 func GetIndexHandler(ctx iris.Context) {
 	ctx.ViewData("Title", "Index Page")
-	ctx.View("index.html")
+	if err := ctx.View("index.html"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

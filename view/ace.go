@@ -45,7 +45,7 @@ func Ace(fs interface{}, extension string) *AceEngine {
 
 	s.middleware = func(name string, text []byte) (contents string, err error) {
 		once.Do(func() { // on first template parse, all funcs are given.
-			for k, v := range emptyFuncs {
+			for k, v := range s.getBuiltinFuncs(name) {
 				funcs[k] = v
 			}
 

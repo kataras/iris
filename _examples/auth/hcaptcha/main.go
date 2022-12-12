@@ -42,5 +42,8 @@ func register(ctx iris.Context) {
 
 func registerForm(ctx iris.Context) {
 	ctx.ViewData("SiteKey", siteKey)
-	ctx.View("register_form.html")
+	if err := ctx.View("register_form.html"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

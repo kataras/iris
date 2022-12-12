@@ -28,7 +28,10 @@ func main() {
 			}},
 		}
 
-		ctx.View("example.html", viewData)
+		if err := ctx.View("example.html", viewData); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	exampleRouter := app.Party("/example")

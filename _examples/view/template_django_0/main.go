@@ -35,9 +35,12 @@ func hi(ctx iris.Context) {
 	// or if you set all view data in the same handler you can use the
 	// iris.Map/pongo2.Context/map[string]interface{}, look below:
 
-	ctx.View("hi.html", iris.Map{
+	if err := ctx.View("hi.html", iris.Map{
 		"title":           "Hi Page",
 		"name":            "iris",
 		"serverStartTime": startTime,
-	})
+	}); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

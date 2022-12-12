@@ -28,9 +28,12 @@ func newApp() *iris.Application {
 }
 
 func handleNotFoundTestSubdomain(ctx iris.Context) {
-	ctx.View("error.html", iris.Map{
+	if err := ctx.View("error.html", iris.Map{
 		"ErrorCode": ctx.GetStatusCode(),
-	})
+	}); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 func testIndex(ctx iris.Context) {
