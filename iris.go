@@ -82,7 +82,7 @@ type Application struct {
 	minifier *minify.M
 
 	// view engine
-	view view.View
+	view *view.View
 	// used for build
 	builded     bool
 	defaultMode bool
@@ -120,6 +120,7 @@ func New() *Application {
 		Router:   router.NewRouter(),
 		I18n:     i18n.New(),
 		minifier: newMinifier(),
+		view:     new(view.View),
 	}
 
 	logger := newLogger(app)

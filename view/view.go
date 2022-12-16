@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"html/template"
 	"io"
 	"strings"
 
@@ -74,6 +75,21 @@ func (v *View) AddFunc(funcName string, funcBody interface{}) {
 	if e, ok := v.Engine.(EngineFuncer); ok {
 		e.AddFunc(funcName, funcBody)
 	}
+}
+
+// Funcs registers a template func map to the registered view engine(s).
+func (v *View) Funcs(m template.FuncMap) *View {
+	if !v.Registered() {
+		return v
+	}
+
+	if e, ok := v.Engine.(EngineFuncer); ok {
+		for k, v := range m {
+			e.AddFunc(k, v)
+		}
+	}
+
+	return v
 }
 
 // Load compiles all the registered engines.
