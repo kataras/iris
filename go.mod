@@ -6,7 +6,7 @@ retract v12.1.8 // Please update to @master
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/CloudyKit/jet/v6 v6.1.0
+	github.com/CloudyKit/jet/v6 v6.2.0
 	github.com/Joker/jade v1.1.3
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
 	github.com/andybalholm/brotli v1.0.4
