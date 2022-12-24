@@ -19,6 +19,8 @@
 
 Iris is a fast, simple yet fully featured and very efficient web framework for Go. **With the promise of active lifetime maintenance, unlike other free software packages offered in Go ecosystem**.
 
+> Star 🌟 & watch 👀 the repository in order to get news about the upcoming **v12.2.0** stable release - it's finally happening (2023🎅) .
+
 It provides a beautifully expressive and easy to use foundation for your next website or API.
 
 
@@ -499,7 +501,7 @@ The only requirement is the [Go Programming Language](https://go.dev/dl/).
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta6
+$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta7
 ```
 
 <details><summary>Install on existing project</summary>

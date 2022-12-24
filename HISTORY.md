@@ -26,8 +26,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 This release introduces new features and some breaking changes.
 The codebase for Dependency Injection, Internationalization and localization and more have been simplified a lot (fewer LOCs and easier to read and follow up).
 
-## Fixes and Improvements
+## 24 Dec 2022
 
+All new features have been tested in production and seem to work fine. Fixed all reported and reproducible bugs. The `v12.2.0-beta7` is the latest beta release of v12.2.0. Expect the final public and stable release of v12.2.0 shortly after February 2023.
+
+## Fixes and Improvements
+ 
 - Add `iris.TrimParamFilePart` to handle cases like [#2024](https://github.com/kataras/iris/issues/2024) and improve the [_examples/routing/dynamic-path/main.go](_examples/routing/dynamic-path/main.go#L356) example to include that case as well.
 
 - **Breaking-change**: HTML template functions `yield`, `part`, `partial`, `partial_r` and `render` now accept (and require for some cases) a second argument of the binding data context too. Convert: `{{ yield }}` to `{{ yield . }}`, `{{ render "templates/mytemplate.html" }}` to `{{ render "templates/mytemplate.html" . }}`, `{{ partial "partials/mypartial.html" }}` to `{{ partial "partials/mypartial.html" . }}` and so on.

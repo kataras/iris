@@ -462,7 +462,7 @@ O único requisito é a [Linguagem de programação Go](https://go.dev/dl/).
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta6
+$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta7
 ```
 
 <details><summary>Instalar num projeto existente</summary>
