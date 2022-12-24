@@ -352,6 +352,17 @@ func main() {
 	}) // for wildcard path (any number of path segments) without validation you can use:
 	// /myfiles/*
 
+	// http://localhost:8080/trimmed/42.html
+	app.Get("/trimmed/{uid:string regexp(^[0-9]{1,20}.html$)}", iris.TrimParamFilePart, func(ctx iris.Context) {
+		//
+		// The above line is useless now that we've registered the TrimParamFilePart middleware:
+		// uid := ctx.Params().GetTrimFileUint64("uid")
+		// TrimParamFilePart can be registered to a Party (group of routes) too.
+
+		uid := ctx.Params().GetUint64Default("uid", 0)
+		ctx.Writef("Param value: %d\n", uid)
+	})
+
 	// "{param}"'s performance is exactly the same of ":param"'s.
 
 	// alternatives -> ":param" for single path parameter and "*" for wildcard path parameter.

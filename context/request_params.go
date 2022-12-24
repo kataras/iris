@@ -91,6 +91,113 @@ func (r *RequestParams) GetDecoded(key string) string {
 	return r.GetEscape(key)
 }
 
+// TrimParamFilePart is a middleware which replaces all route dynamic path parameters
+// with values that do not contain any part after the last dot (.) character.
+//
+// Example Code:
+//
+//	package main
+//
+//	import (
+//		"github.com/kataras/iris/v12"
+//	)
+//
+//	func main() {
+//		app := iris.New()
+//		app.Get("/{uid:string regexp(^[0-9]{1,20}.html$)}", iris.TrimParamFilePart, handler)
+//		// TrimParamFilePart can be registered as a middleware to a Party (group of routes) as well.
+//		app.Listen(":8080")
+//	}
+//
+//	func handler(ctx iris.Context) {
+//		//
+//		// The above line is useless now that we've registered the TrimParamFilePart middleware:
+//		// uid := ctx.Params().GetTrimFileUint64("uid")
+//		//
+//
+//		uid := ctx.Params().GetUint64Default("uid", 0)
+//		ctx.Writef("Param value: %d\n", uid)
+//	}
+func TrimParamFilePart(ctx *Context) { // See #2024.
+	params := ctx.Params()
+
+	for i, param := range params.Store {
+		if value, ok := param.ValueRaw.(string); ok {
+			if idx := strings.LastIndexByte(value, '.'); idx > 1 /* at least .h */ {
+				value = value[0:idx]
+				param.ValueRaw = value
+			}
+		}
+
+		params.Store[i] = param
+	}
+
+	ctx.Next()
+}
+
+// GetTrimFile returns a parameter value but without the last ".ANYTHING_HERE" part.
+func (r *RequestParams) GetTrimFile(key string) string {
+	value := r.Get(key)
+
+	if idx := strings.LastIndexByte(value, '.'); idx > 1 /* at least .h */ {
+		return value[0:idx]
+	}
+
+	return value
+}
+
+// GetTrimFileInt same as GetTrimFile but it returns the value as int.
+func (r *RequestParams) GetTrimFileInt(key string) int {
+	value := r.Get(key)
+
+	if idx := strings.LastIndexByte(value, '.'); idx > 1 /* at least .h */ {
+		value = value[0:idx]
+	}
+
+	v, _ := strconv.Atoi(value)
+	return v
+}
+
+// GetTrimFileUint64 same as GetTrimFile but it returns the value as uint64.
+func (r *RequestParams) GetTrimFileUint64(key string) uint64 {
+	value := r.Get(key)
+
+	if idx := strings.LastIndexByte(value, '.'); idx > 1 /* at least .h */ {
+		value = value[0:idx]
+	}
+
+	v, err := strconv.ParseUint(value, 10, strconv.IntSize)
+	if err != nil {
+		return 0
+	}
+
+	return v
+}
+
+// GetTrimFileUint64 same as GetTrimFile but it returns the value as uint.
+func (r *RequestParams) GetTrimFileUint(key string) uint {
+	return uint(r.GetTrimFileUint64(key))
+}
+
+func (r *RequestParams) getRightTrimmed(key string, cutset string) string {
+	return strings.TrimRight(strings.ToLower(r.Get(key)), cutset)
+}
+
+// GetTrimHTML returns a parameter value but without the last ".html" part.
+func (r *RequestParams) GetTrimHTML(key string) string {
+	return r.getRightTrimmed(key, ".html")
+}
+
+// GetTrimJSON returns a parameter value but without the last ".json" part.
+func (r *RequestParams) GetTrimJSON(key string) string {
+	return r.getRightTrimmed(key, ".json")
+}
+
+// GetTrimXML returns a parameter value but without the last ".xml" part.
+func (r *RequestParams) GetTrimXML(key string) string {
+	return r.getRightTrimmed(key, ".xml")
+}
+
 // GetIntUnslashed same as Get but it removes the first slash if found.
 // Usage: Get an id from a wildcard path.
 //

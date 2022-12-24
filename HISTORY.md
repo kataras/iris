@@ -28,6 +28,8 @@ The codebase for Dependency Injection, Internationalization and localization and
 
 ## Fixes and Improvements
 
+- Add `iris.TrimParamFilePart` to handle cases like [#2024](https://github.com/kataras/iris/issues/2024) and improve the [_examples/routing/dynamic-path/main.go](_examples/routing/dynamic-path/main.go#L356) example to include that case as well.
+
 - **Breaking-change**: HTML template functions `yield`, `part`, `partial`, `partial_r` and `render` now accept (and require for some cases) a second argument of the binding data context too. Convert: `{{ yield }}` to `{{ yield . }}`, `{{ render "templates/mytemplate.html" }}` to `{{ render "templates/mytemplate.html" . }}`, `{{ partial "partials/mypartial.html" }}` to `{{ partial "partials/mypartial.html" . }}` and so on.
 
 - Add new `URLParamSeparator` to the configuration. Defaults to "," but can be set to an empty string to disable splitting query values on `Context.URLParamSlice` method.

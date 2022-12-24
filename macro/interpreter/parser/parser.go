@@ -27,8 +27,24 @@ func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, 
 		}
 
 		// if it's not a named path parameter of the new syntax then continue to the next
-		if s[0] != lexer.Begin || s[len(s)-1] != lexer.End {
+		// if s[0] != lexer.Begin || s[len(s)-1] != lexer.End {
+		// 	continue
+		// }
+
+		// Modified to show an error on a certain invalid action.
+		if s[0] != lexer.Begin {
 			continue
+		}
+
+		if s[len(s)-1] != lexer.End {
+			if idx := strings.LastIndexByte(s, lexer.End); idx > 2 && idx < len(s)-1 /* at least {x}*/ {
+				// Do NOT allow something more than a dynamic path parameter in the same path segment,
+				// e.g. /{param}-other-static-part/. See #2024.
+				// this allows it but NO (see trie insert): s = s[0 : idx+1]
+				return nil, fmt.Errorf("%s: invalid path part: dynamic path parameter and other parameters or static parts are not allowed in the same exact request path part, use the {regexp} function alone instead", s)
+			} else {
+				continue
+			}
 		}
 
 		p.Reset(s)

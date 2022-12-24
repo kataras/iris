@@ -618,8 +618,13 @@ var (
 	// A shortcut for the `context#ErrPushNotSupported`.
 	ErrPushNotSupported = context.ErrPushNotSupported
 	// PrivateError accepts an error and returns a wrapped private one.
-	// A shortcut for the `context#PrivateError`.
+	// A shortcut for the `context#PrivateError` function.
 	PrivateError = context.PrivateError
+
+	// TrimParamFilePart is a middleware which trims any last part after a dot (.) character
+	// of the current route's dynamic path parameters.
+	// A shortcut for the `context#TrimParamFilePart` function.
+	TrimParamFilePart Handler = context.TrimParamFilePart
 )
 
 // HTTP Methods copied from `net/http`.
