@@ -1,6 +1,6 @@
-module github.com/kataras/iris/v12/_examples/http-server/h2c
+module github.com/kataras/iris/_examples/http-server/h2c
 
-go 1.18
+go 1.19
 
 require (
 	github.com/kataras/iris/v12 v12.2.0-beta3.0.20220721103403-459ea39a8315
