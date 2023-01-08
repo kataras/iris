@@ -64,16 +64,20 @@ var (
 // HTML(embed.FS, ".html") or HTML(AssetFile(), ".html") for embedded data.
 func HTML(dirOrFS interface{}, extension string) *HTMLEngine {
 	s := &HTMLEngine{
-		name:        "HTML",
-		fs:          getFS(dirOrFS),
-		rootDir:     "/",
-		extension:   extension,
-		reload:      false,
-		left:        "{{",
-		right:       "}}",
-		layout:      "",
-		layoutFuncs: make(template.FuncMap),
-		funcs:       make(template.FuncMap),
+		name:      "HTML",
+		fs:        getFS(dirOrFS),
+		rootDir:   "/",
+		extension: extension,
+		reload:    false,
+		left:      "{{",
+		right:     "}}",
+		layout:    "",
+		layoutFuncs: template.FuncMap{
+			"yield": func(binding interface{}) template.HTML {
+				return template.HTML("")
+			},
+		},
+		funcs: make(template.FuncMap),
 		bufPool: &sync.Pool{New: func() interface{} {
 			return new(bytes.Buffer)
 		}},
@@ -361,13 +365,20 @@ func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (strin
 	return result, err
 }
 
-func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
+func (s *HTMLEngine) getBuiltinRuntimeLayoutFuncs(name string) template.FuncMap {
 	funcs := template.FuncMap{
 		"yield": func(binding interface{}) (template.HTML, error) {
 			result, err := s.executeTemplateBuf(name, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(result), err
 		},
+	}
+
+	return funcs
+}
+
+func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
+	funcs := template.FuncMap{
 		"part": func(partName string, binding interface{}) (template.HTML, error) {
 			nameTemp := strings.ReplaceAll(name, s.extension, "")
 			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
@@ -433,7 +444,7 @@ func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bind
 			return ErrNotExist{Name: layout, IsLayout: true, Data: bindingData}
 		}
 
-		return lt.Execute(w, bindingData)
+		return lt.Funcs(s.getBuiltinRuntimeLayoutFuncs(name)).Execute(w, bindingData)
 	}
 
 	t := s.Templates.Lookup(name)
