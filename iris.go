@@ -20,7 +20,6 @@ import (
 	"github.com/kataras/iris/v12/core/netutil"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/i18n"
-	"github.com/kataras/iris/v12/middleware/accesslog"
 	"github.com/kataras/iris/v12/middleware/cors"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
@@ -146,6 +145,7 @@ func Default() *Application {
 	app.logger.SetLevel("debug")
 	app.logger.Debugf(`Log level set to "debug"`)
 
+	/* #2046.
 	// Register the accesslog middleware.
 	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err == nil {
@@ -161,6 +161,7 @@ func Default() *Application {
 		app.UseRouter(ac.Handler)
 		app.logger.Debugf("Using <%s> to log requests", logFile.Name())
 	}
+	*/
 
 	// Register the requestid middleware
 	// before recover so current Context.GetID() contains the info on panic logs.
