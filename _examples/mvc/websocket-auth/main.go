@@ -26,7 +26,7 @@ func newApp() *iris.Application {
 	app := iris.New()
 
 	// Auth part.
-	app.RegisterView(iris.Blocks(iris.Dir("./views"), ".html").
+	app.RegisterView(iris.Blocks("./views", ".html").
 		LayoutDir("layouts").
 		Layout("main"))
 

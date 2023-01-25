@@ -137,8 +137,8 @@ func New() *Application {
 // Default with "debug" Logger Level.
 // Localization enabled on "./locales" directory
 // and HTML templates on "./views" or "./templates" directory.
-// It runs with the AccessLog on "./access.log",
-// CORS (allow all), Recovery and Request ID middleware already attached.
+// CORS (allow all), Recovery and
+// Request ID middleware already registered.
 func Default() *Application {
 	app := New()
 	// Set default log level.
