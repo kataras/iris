@@ -1,6 +1,4 @@
-<!-- # History/Changelog <a href="HISTORY_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a><a href="HISTORY_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a><a href="HISTORY_GR.md"> <img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> -->
-
-# Changelog
+# Changelog <a href="HISTORY_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a>
 
 ### Looking for free and real-time support?
 
