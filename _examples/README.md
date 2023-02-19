@@ -18,7 +18,7 @@
     * [Reform](database/orm/reform/main.go)
     * [x/sqlx](database/sqlx/main.go) **NEW**
 * GraphQL
-    * [GraphQL schema-first](graphql/schema-first)
+    * [GraphQL: schema-first](graphql/schema-first) **NEW**
 * HTTP Server
     * [HOST:PORT](http-server/listen-addr/main.go)
     * [Public Test Domain](http-server/listen-addr-public/main.go)

@@ -135,6 +135,15 @@ func (t ISO8601) String() string {
 	return tt.Format(ISO8601Layout)
 }
 
+// ToSimpleDate converts the current ISO8601 "t" to SimpleDate in specific location.
+func (t ISO8601) ToSimpleDate(in *time.Location) SimpleDate {
+	if in == nil {
+		in = time.UTC
+	}
+
+	return SimpleDateFromTime(t.ToTime().In(in))
+}
+
 // Value returns the database value of time.Time.
 func (t ISO8601) Value() (driver.Value, error) {
 	return time.Time(t), nil
