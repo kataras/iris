@@ -35,7 +35,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.22
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	github.com/shirou/gopsutil/v3 v3.23.1
+	github.com/shirou/gopsutil/v3 v3.23.2
 	github.com/tdewolff/minify/v2 v2.12.4
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
@@ -89,7 +89,7 @@ require (
 	github.com/sanity-io/litter v1.5.5 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
+	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/tdewolff/parse/v2 v2.6.4 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
