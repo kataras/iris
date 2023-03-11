@@ -1,15 +1,8 @@
-<!-- [![Black Lives Matter](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
+<h1><img width="24" height="25" src ="https://www.iris-go.com/images/logo-new-lq-45.png"/> News</h1>
 
+Iris version **12.2.0** has been [released](HISTORY.md#sa-11-march-2023--v1220)! As always, the latest version of Iris comes with the promise of lifetime active maintenance.
 
-# News
-
-> This is the under-**development branch** - contains the latest and greatest features. Stay tuned for the upcoming release [v12.2.0](HISTORY.md#Next). Looking for a more stable release? Head over to the [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) instead.
->
-> ![](https://iris-go.com/images/cli.png) Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
-
-> Due to the large workload, there may be delays in answering your [questions](https://github.com/kataras/iris/issues). -->
-
-<!-- ![](https://iris-go.com/images/release.png) Iris version **12.1.8** has been [released](HISTORY.md#su-16-february-2020--v1218)! -->
+Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
 
 # Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a>
 
@@ -17,9 +10,7 @@
 
 <!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
 
-Iris is a fast, simple yet fully featured and very efficient web framework for Go. **With the promise of active lifetime maintenance, unlike other free software packages offered in Go ecosystem**.
-
-> Star 🌟 & watch 👀 the repository in order to get news about the upcoming **v12.2.0** stable release - it's finally happening (2023🎅) .
+Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
 
@@ -522,20 +513,20 @@ The only requirement is the [Go Programming Language](https://go.dev/dl/).
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta7
+$ go get github.com/kataras/iris/v12@latest # or @v12.2.0
 ```
 
 <details><summary>Install on existing project</summary>
 
 ```sh
 $ cd myapp
-$ go get github.com/kataras/iris/v12@master
+$ go get github.com/kataras/iris/v12@latest
 ```
 
 **Run**
 
 ```sh
-$ go mod tidy -compat=1.19 # -compat="1.19" for windows.
+$ go mod tidy -compat=1.20 # -compat="1.20" for windows.
 $ go run .
 ```
 

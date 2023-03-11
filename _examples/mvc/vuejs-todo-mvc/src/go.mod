@@ -1,6 +1,6 @@
 module github.com/kataras/iris/v12/_examples/mvc/vuejs-todo-mvc/src
 
-go 1.19
+go 1.20
 
 require github.com/kataras/iris/v12 v12.2.0-beta7
 

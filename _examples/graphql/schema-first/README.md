@@ -16,8 +16,8 @@ Add `gqlgen` to your project's `tools.go` file
 
 ```sh
 $ printf '// +build tools\npackage tools\nimport _ "github.com/99designs/gqlgen"' | gofmt > tools.go
-$ go get github.com/kataras/iris/v12@master
-$ go mod tidy -compat=1.19
+$ go get github.com/kataras/iris/v12@latest
+$ go mod tidy -compat=1.20
 ```
 
 Start the graphql server

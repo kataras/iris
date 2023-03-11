@@ -47,7 +47,7 @@ $ go run example.go
 
 </details>
 
-Iris는 광범위하고 꼼꼼한 **[wiki](https://github.com/kataras/iris/wiki)** 를 가지고 있기 때문에 쉽게 프레임워크를 시작할 수 있습니다.
+Iris는 광범위하고 꼼꼼한 **[wiki](https://www.iris-go.com/#ebookDonateForm)** 를 가지고 있기 때문에 쉽게 프레임워크를 시작할 수 있습니다.
 
 더 자세한 기술문서를 보시려면 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)를 방문하세요. 그리고 실행가능한 예제코드는 [\_examples](_examples/) 하위 디렉토리에 있습니다.
 

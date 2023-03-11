@@ -20,7 +20,7 @@ Lisez [ce que les développeurs pensent d'Iris](https://iris-go.com/testimonials
 <summary>Un simple Hello World</summary>
 
 ```sh
-# https://github.com/kataras/iris/wiki/Installation
+# https://www.iris-go.com/#ebookDonateForm
 $ go get github.com/kataras/iris/v12@latest
 # assume the following code in example.go file
 $ cat example.go
@@ -53,7 +53,7 @@ $ go run example.go
 
 </details>
 
-Iris possède un **[wiki](https://github.com/kataras/iris/wiki)** complet et précis qui vous permettra d'implémenter ses fonctionnalités rapidement et facilement.
+Iris possède un **[wiki](https://www.iris-go.com/#ebookDonateForm)** complet et précis qui vous permettra d'implémenter ses fonctionnalités rapidement et facilement.
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 

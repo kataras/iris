@@ -14,7 +14,7 @@ import (
 // Pass a Problem value to `context.Problem` to
 // write an "application/problem+json" response.
 //
-// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+// Read more at: https://github.com/kataras/iris/blob/master/_examples/routing/http-errors.
 type Problem map[string]interface{}
 
 // NewProblem retruns a new Problem.

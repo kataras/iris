@@ -27,8 +27,8 @@ Iris 是基于 Go 编写的一个快速，简单但功能齐全且非常高效�
 ## 📖 开始学习 Iris
 
 ```sh
-# 安装Iris：https://github.com/kataras/iris/wiki/Installation
-$ go get github.com/kataras/iris/v12@master
+# 安装Iris：https://www.iris-go.com/#ebookDonateForm
+$ go get github.com/kataras/iris/v12@latest
 # 假设main.go文件中已存在以下代码
 $ cat main.go
 ```
@@ -181,7 +181,7 @@ http://localhost:8080/books
 
 [![run in the browser](https://img.shields.io/badge/Run-in%20the%20Browser-348798.svg?style=for-the-badge&logo=repl.it)](https://bit.ly/2YJeSZe)
 
-Iris 有完整且详尽的 **[使用文档](https://github.com/kataras/iris/wiki)** ，让您可以轻松地使用此框架。
+Iris 有完整且详尽的 **[使用文档](https://www.iris-go.com/#ebookDonateForm)** ，让您可以轻松地使用此框架。
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 

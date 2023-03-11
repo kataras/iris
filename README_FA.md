@@ -242,7 +242,7 @@ Venkatt Guhesan" title="vguhesan" with="75" style="width:75px;max-width:75px;hei
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta7
+$ go get github.com/kataras/iris/v12@latest # or @v12.2.0
 ```
 
 <div dir="rtl">
@@ -251,7 +251,7 @@ $ go get github.com/kataras/iris/v12@master # or @v12.2.0-beta7
 
 ```sh
 $ cd myapp
-$ go get github.com/kataras/iris/v12@master
+$ go get github.com/kataras/iris/v12@latest
 ```
 
 <div dir="rtl">
@@ -261,7 +261,7 @@ $ go get github.com/kataras/iris/v12@master
 ```txt
 module myapp
 
-go 1.19
+go 1.20
 
 require github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920072528-ff81f370625a
 ```

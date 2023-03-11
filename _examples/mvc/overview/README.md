@@ -27,7 +27,7 @@ Navigate to that `app` folder and execute the following command:
 
 ```sh
 $ go init app
-$ go get -u github.com/kataras/iris/v12@master
+$ go get github.com/kataras/iris/v12@master
 #								 	or @latest for the latest official release.
 ```
 

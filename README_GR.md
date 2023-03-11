@@ -51,7 +51,7 @@ $ go run example.go
 
 </details>
 
-Το Iris περιέχει εκτενείς και λεπτομερείς **[wiki](https://github.com/kataras/iris/wiki)** καθιστώντας το εύκολο στην εκμάθηση.
+Το Iris περιέχει εκτενείς και λεπτομερείς **[book](https://www.iris-go.com/#ebookDonateForm)** καθιστώντας το εύκολο στην εκμάθηση.
 
 Για λεπτομερέστερη τεχνική τεκμηρίωση μπορείτε να κατευθυνθείτε προς τα [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0) μας. Και για εκτελέσιμο κώδικα μπορείτε πάντα να επισκέπτεστε τα [παραδείγματα](_examples/).
 

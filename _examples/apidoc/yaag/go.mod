@@ -1,6 +1,6 @@
 module github.com/kataras/iris/_examples/apidoc/yaag
 
-go 1.19
+go 1.20
 
 // Until they accept my PR: https://github.com/betacraft/yaag/pull/72.
 replace github.com/betacraft/yaag => github.com/responsibility-act/yaag v0.0.0-20221226211414-8086c29ee199

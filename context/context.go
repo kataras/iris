@@ -4423,7 +4423,7 @@ func (ctx *Context) XML(v interface{}, opts ...XML) (err error) {
 // Use the options.RenderXML and XML fields to change this behavior and
 // send a response of content type "application/problem+xml" instead.
 //
-// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+// Read more at: https://github.com/kataras/iris/blob/master/_examples/routing/http-errors.
 func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) error {
 	options := DefaultProblemOptions
 	if len(opts) > 0 {
@@ -4735,7 +4735,7 @@ func parseHeader(headerValue string) []string {
 //
 // Supports the above without quality values.
 //
-// Read more at: https://github.com/kataras/iris/wiki/Content-negotiation
+// Read more at: https://github.com/kataras/iris/tree/master/_examples/response-writer/content-negotiation
 func (ctx *Context) Negotiate(v interface{}) (int, error) {
 	contentType, charset, encoding, content := ctx.Negotiation().Build()
 	if v == nil {

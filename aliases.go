@@ -99,7 +99,7 @@ type (
 	// Pass a Problem value to `context.Problem` to
 	// write an "application/problem+json" response.
 	//
-	// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+	// Read more at: https://github.com/kataras/iris/blob/master/_examples/routing/http-errors.
 	//
 	// It is an alias of the `context#Problem` type.
 	Problem = context.Problem

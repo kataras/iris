@@ -1,4 +1,4 @@
-# Changelog <a href="HISTORY_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a>
+# Changelog
 
 ### Looking for free and real-time support?
 
@@ -17,9 +17,9 @@
 
 Developers are not forced to upgrade if they don't really need it. Upgrade whenever you feel ready.
 
-**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest`.
+**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.20`.
 
-# Next
+# Sa, 11 March 2023 | v12.2.0
 
 This release introduces new features and some breaking changes.
 The codebase for Dependency Injection, Internationalization and localization and more have been simplified a lot (fewer LOCs and easier to read and follow up).
@@ -732,7 +732,7 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | `uint, uint8, uint16, uint32, uint64`, | |
 | `float, float32, float64`, | |
 | `bool`, | |
-| `slice` | [Path Parameter](https://github.com/kataras/iris/wiki/Routing-path-parameter-types) |
+| `slice` | [Path Parameter](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L20) |
 | Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/request-body) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
 
 Here is a preview of what the new Hero handlers look like:
@@ -1004,7 +1004,7 @@ Various improvements and linting.
 
 # Su, 29 December 2019 | v12.1.4
 
-Minor fix on serving [embedded files](https://github.com/kataras/iris/wiki/File-server).
+Minor fix on serving embedded files.
 
 # We, 25 December 2019 | v12.1.3
 
@@ -1069,15 +1069,13 @@ All known issues.
 
 ### Internationalization and localization
 
-Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/wiki/Sitemap) and [views](https://github.com/kataras/iris/blob/master/_examples/i18n/basic/main.go#L50).
-
-Refer to the wiki section: https://github.com/kataras/iris/wiki/Sitemap for details.
+Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/blob/master/_examples/routing/sitemap/main.go) and [views](https://github.com/kataras/iris/blob/master/_examples/i18n/basic/main.go#L50).
 
 ### Sitemaps
 
 Iris generates and serves one or more [sitemap.xml](https://www.sitemaps.org/protocol.html) for your static routes.
 
-Navigate through: https://github.com/kataras/iris/wiki/Sitemap for more.
+Navigate through: https://github.com/kataras/iris/blob/master/_examples/routing/sitemap/main.go for more.
 
 ## New Examples
 
@@ -1129,7 +1127,7 @@ This minor version contains improvements on the Problem Details for HTTP APIs im
 - Add `ProblemOptions` with `RetryAfter` as requested at: https://github.com/kataras/iris/issues/1335#issuecomment-521330994.
 - Add `iris.JSON` alias for `context#JSON` options type.
 
-[Example](https://github.com/kataras/iris/blob/45d7c6fedb5adaef22b9730592255f7bb375e809/_examples/routing/http-errors/main.go#L85) and [wikis](https://github.com/kataras/iris/wiki/Routing-error-handlers#the-problem-type) updated. 
+[Example](https://github.com/kataras/iris/blob/45d7c6fedb5adaef22b9730592255f7bb375e809/_examples/routing/http-errors/main.go#L85) updated. 
 
 References:
 

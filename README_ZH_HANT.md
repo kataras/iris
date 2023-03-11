@@ -499,20 +499,20 @@ Iris 提供了至少這些功能：
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master # 或 @v12.2.0-beta7
+$ go get github.com/kataras/iris/v12@latest # 或 @v12.2.0
 ```
 
 <details><summary>在現有專案安裝</summary>
 
 ```sh
 $ cd myapp
-$ go get github.com/kataras/iris/v12@master
+$ go get github.com/kataras/iris/v12@latest
 ```
 
 **執行**
 
 ```sh
-$ go mod tidy -compat=1.19 # Windows 的話，請試試 -compat="1.19"
+$ go mod tidy -compat=1.20 # Windows 的話，請試試 -compat="1.20"
 $ go run .
 ```
 

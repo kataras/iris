@@ -46,7 +46,7 @@ $ go run example.go
 
 </details>
 
-У Iris есть исчерпывающий и тщательный **[wiki](https://github.com/kataras/iris/wiki)**, который позволит вам быстрее начать работу с фреймворком.
+У Iris есть исчерпывающий и тщательный **[wiki](https://www.iris-go.com/#ebookDonateForm)**, который позволит вам быстрее начать работу с фреймворком.
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
