@@ -13,6 +13,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/kataras/iris/v12/context"
+
 	"github.com/eknkc/amber"
 )
 
@@ -152,6 +154,11 @@ func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *AmberEngine) Load() error {
+	// If only custom templates should be loaded.
+	if (s.fs == nil || context.IsNoOpFS(s.fs)) && len(s.templateCache) > 0 {
+		return nil
+	}
+
 	rootDirName := getRootDirName(s.fs)
 
 	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {

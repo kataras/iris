@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/kataras/iris/v12/context"
 )
 
 // HTMLEngine contains the html view engine structure.
@@ -61,7 +63,8 @@ var (
 // Usage:
 // HTML("./views", ".html") or
 // HTML(iris.Dir("./views"), ".html") or
-// HTML(embed.FS, ".html") or HTML(AssetFile(), ".html") for embedded data.
+// HTML(embed.FS, ".html") or HTML(AssetFile(), ".html") for embedded data or
+// HTML("","").ParseTemplate("hello", `[]byte("hello {{.Name}}")`, nil) for custom template parsing only.
 func HTML(dirOrFS interface{}, extension string) *HTMLEngine {
 	s := &HTMLEngine{
 		name:      "HTML",
@@ -241,6 +244,11 @@ func (s *HTMLEngine) load() error {
 
 	if err := s.reloadCustomTemplates(); err != nil {
 		return err
+	}
+
+	// If only custom templates should be loaded.
+	if (s.fs == nil || context.IsNoOpFS(s.fs)) && len(s.Templates.DefinedTemplates()) > 0 {
+		return nil
 	}
 
 	rootDirName := getRootDirName(s.fs)

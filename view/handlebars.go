@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kataras/iris/v12/context"
+
 	"github.com/mailgun/raymond/v2"
 )
 
@@ -134,6 +136,11 @@ func (s *HandlebarsEngine) AddGlobalFunc(funcName string, funcBody interface{}) 
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HandlebarsEngine) Load() error {
+	// If only custom templates should be loaded.
+	if (s.fs == nil || context.IsNoOpFS(s.fs)) && len(s.templateCache) > 0 {
+		return nil
+	}
+
 	rootDirName := getRootDirName(s.fs)
 
 	return walk(s.fs, "", func(path string, info os.FileInfo, _ error) error {

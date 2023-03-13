@@ -222,6 +222,11 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {
+	// If only custom templates should be loaded.
+	if (s.fs == nil || context.IsNoOpFS(s.fs)) && len(s.templateCache) > 0 {
+		return nil
+	}
+
 	rootDirName := getRootDirName(s.fs)
 
 	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
