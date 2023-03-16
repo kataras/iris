@@ -7,17 +7,25 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	// To load all system and embedded locations by name:
+	// _ "time/tzdata" 	// OR build with: -tags timetzdata
 )
 
 var fixedEastUTCLocations = make(map[int]*time.Location)
 
-func registerFixedEastUTCLocation(name string, secondsFromUTC int) {
+// RegisterFixedLocation should be called on initialization of the program.
+// It registers a fixed location to the time parser.
+//
+// E.g. for input of 2023-02-04T09:48:14+03:00 to result a time string of 2023-02-04 09:48:14 +0300 EEST
+// you have to RegisterFixedLocation("EEST", 10800) otherwise it will result to: 2023-02-04 09:48:14 +0300 +0300.
+func RegisterFixedLocation(name string, secondsFromUTC int) {
 	loc := time.FixedZone(name, secondsFromUTC)
 	fixedEastUTCLocations[secondsFromUTC] = loc
 }
 
 func init() {
-	registerFixedEastUTCLocation("EEST", 3*60*60) // + 3 hours.
+	RegisterFixedLocation("EEST", 3*60*60) // + 3 hours.
+	RegisterFixedLocation("UTC", 0)
 }
 
 const (
@@ -27,8 +35,8 @@ const (
 	// ISO8601ZLayout same as ISO8601Layout but with the timezone suffix.
 	ISO8601ZLayout = "2006-01-02T15:04:05Z"
 	// ISO8601ZUTCOffsetLayout ISO 8601 format, with full time and zone with UTC offset.
-	// Example: 2022-08-10T03:21:00.000000+03:00, 2022-08-09T00:00:00.000000.
-	ISO8601ZUTCOffsetLayout = "2006-01-02T15:04:05.999999Z07:00"
+	// Example: 2022-08-10T03:21:00.000000+03:00, 2023-02-04T09:48:14+00:00, 2022-08-09T00:00:00.000000.
+	ISO8601ZUTCOffsetLayout = "2006-01-02T15:04:05.999999Z07:00" // -07:00
 )
 
 // ISO8601 describes a time compatible with javascript time format.
@@ -45,7 +53,7 @@ func ParseISO8601(s string) (ISO8601, error) {
 		err error
 	)
 
-	if idx := strings.LastIndexFunc(s, startUTCOffsetIndexFunc); idx > 20 /* should have some distance, e.g. 26 */ {
+	if idx := strings.LastIndexFunc(s, startUTCOffsetIndexFunc); idx > 18 /* should have some distance, with and without milliseconds */ {
 		length := parseSignedOffset(s[idx:])
 
 		if idx+1 > idx+length || len(s) <= idx+length+1 {
@@ -55,7 +63,7 @@ func ParseISO8601(s string) (ISO8601, error) {
 		offsetText := s[idx+1 : idx+length]
 		offset, parseErr := strconv.Atoi(offsetText)
 		if parseErr != nil {
-			return ISO8601{}, err
+			return ISO8601{}, fmt.Errorf("ISO8601: %w", parseErr)
 		}
 
 		// E.g. offset of +0300 is returned as 10800 which is - (3 * 60 * 60).
@@ -73,7 +81,7 @@ func ParseISO8601(s string) (ISO8601, error) {
 	}
 
 	if err != nil {
-		return ISO8601{}, err
+		return ISO8601{}, fmt.Errorf("ISO8601: %w", err)
 	}
 
 	return ISO8601(tt), nil
@@ -125,6 +133,15 @@ func (t ISO8601) String() string {
 	}
 
 	return tt.Format(ISO8601Layout)
+}
+
+// ToSimpleDate converts the current ISO8601 "t" to SimpleDate in specific location.
+func (t ISO8601) ToSimpleDate(in *time.Location) SimpleDate {
+	if in == nil {
+		in = time.UTC
+	}
+
+	return SimpleDateFromTime(t.ToTime().In(in))
 }
 
 // Value returns the database value of time.Time.

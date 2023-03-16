@@ -377,9 +377,12 @@ func main() {
 		// ctx.View("user.html", user)
 		//
 		// Directly (user as .user variable):
-		ctx.View("user.html", iris.Map{
+		if err := ctx.View("user.html", iris.Map{
 			"user": user,
-		})
+		}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	app.Get("/logout/{provider}", func(ctx iris.Context) {
@@ -395,11 +398,17 @@ func main() {
 			return
 		}
 
-		ctx.View("user.html", gothUser)
+		if err := ctx.View("user.html", gothUser); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.html", providerIndex)
+		if err := ctx.View("index.html", providerIndex); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// http://localhost:3000

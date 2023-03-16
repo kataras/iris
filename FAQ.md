@@ -19,18 +19,18 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 ## How to upgrade
 
 ```sh
-go get -u github.com/kataras/iris/v12@master
+go get github.com/kataras/iris/v12@latest
 ```
 
-Go version 1.13 and above is required.
+Go version 1.20 and above is required.
 
 ## Learning
 
-More than 180 practical examples, tutorials and articles at:
+More than 280 practical examples, tutorials and articles at:
 
 - https://www.iris-go.com/docs
 - https://www.iris-go.com/#ebookDonateForm
-- https://github.com/kataras/iris/wiki/Starter-kits
+<!-- - https://github.com/kataras/iris/wiki/Starter-kits -->
 - https://github.com/kataras/iris/tree/master/_examples
 - https://pkg.go.dev/github.com/kataras/iris/v12@master
 

@@ -1,9 +1,11 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"github.com/kataras/iris/v12"
+)
 
 // $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
-// $ go-bindata -fs ./data/...
+// $ go-bindata -prefix "data" -fs ./data/...
 // $ go run .
 
 var page = struct {
@@ -13,19 +15,21 @@ var page = struct {
 func newApp() *iris.Application {
 	app := iris.New()
 
+	app.RegisterView(iris.HTML(AssetFile(), ".html").RootDir("views"))
+
 	// Using the iris.PrefixDir you can select
 	// which directories to use under a particular file system,
-	// e.g. for views the ./data/views and for static files
-	// the ./data/public.
-	templatesFS := iris.PrefixDir("./data/views", AssetFile())
-	app.RegisterView(iris.HTML(templatesFS, ".html"))
-
-	publicFS := iris.PrefixDir("./data/public", AssetFile())
+	// e.g. for views the ./public:
+	// publicFS := iris.PrefixDir("./public", AssetFile())
+	publicFS := iris.PrefixDir("./public", AssetFile())
 	app.HandleDir("/", publicFS)
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("Page", page)
-		ctx.View("index.html")
+		if err := ctx.View("index.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	return app

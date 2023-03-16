@@ -22,7 +22,10 @@ func main() {
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.jet")
+		if err := ctx.View("index.jet"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	addr := ":8080"

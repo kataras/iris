@@ -352,6 +352,17 @@ func main() {
 	}) // for wildcard path (any number of path segments) without validation you can use:
 	// /myfiles/*
 
+	// http://localhost:8080/trimmed/42.html
+	app.Get("/trimmed/{uid:string regexp(^[0-9]{1,20}.html$)}", iris.TrimParamFilePart, func(ctx iris.Context) {
+		//
+		// The above line is useless now that we've registered the TrimParamFilePart middleware:
+		// uid := ctx.Params().GetTrimFileUint64("uid")
+		// TrimParamFilePart can be registered to a Party (group of routes) too.
+
+		uid := ctx.Params().GetUint64Default("uid", 0)
+		ctx.Writef("Param value: %d\n", uid)
+	})
+
 	// "{param}"'s performance is exactly the same of ":param"'s.
 
 	// alternatives -> ":param" for single path parameter and "*" for wildcard path parameter.
@@ -369,5 +380,12 @@ func main() {
 	// should differ e.g.
 	// /path/{name:string}
 	// /path/{id:uint}
+	//
+	// Note:
+	// If * path part is declared at the end of the route path, then
+	// it's considered a wildcard (same as {p:path}). In order to declare
+	// literal * and over pass this limitation use the string's path parameter 'eq' function
+	// as shown below:
+	// app.Get("/*/*/{p:string eq(*)}", handler) <- This will match only: /*/*/* and not /*/*/anything.
 	app.Listen(":8080")
 }

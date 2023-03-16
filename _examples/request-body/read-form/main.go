@@ -19,7 +19,7 @@ func main() {
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("form.html"); err != nil {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
 			return
 		}
 	})

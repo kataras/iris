@@ -26,7 +26,7 @@ func newApp() *iris.Application {
 	app := iris.New()
 
 	// Auth part.
-	app.RegisterView(iris.Blocks(iris.Dir("./views"), ".html").
+	app.RegisterView(iris.Blocks("./views", ".html").
 		LayoutDir("layouts").
 		Layout("main"))
 
@@ -51,7 +51,10 @@ func newApp() *iris.Application {
 }
 
 func renderSigninForm(ctx iris.Context) {
-	ctx.View("signin", iris.Map{"Title": "Signin Page"})
+	if err := ctx.View("signin", iris.Map{"Title": "Signin Page"}); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 type websocketController struct {

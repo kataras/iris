@@ -372,7 +372,7 @@ func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 					}
 
 					prefixURL := strings.TrimSuffix(r.RequestURI, name)
-					names, err := findNames(fs, name)
+					names, err := context.FindNames(fs, name)
 					if err == nil {
 						for _, indexAsset := range names {
 							// it's an index file, do not pushed that.
@@ -858,7 +858,7 @@ func fsOpener(fs http.FileSystem, options DirCacheOptions) func(name string, r *
 func cache(fs http.FileSystem, options DirCacheOptions) (*cacheFS, error) {
 	start := time.Now()
 
-	names, err := findNames(fs, "/")
+	names, err := context.FindNames(fs, "/")
 	if err != nil {
 		return nil, err
 	}
@@ -1173,49 +1173,6 @@ func (f *file) Get(alg string) (http.File, error) {
 	// When client accept compression but cached contents are not compressed,
 	// e.g. file too small or ignored one.
 	return f.Get("")
-}
-
-func findNames(fs http.FileSystem, name string) ([]string, error) {
-	f, err := fs.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	if !fi.IsDir() {
-		return []string{name}, nil
-	}
-
-	fileinfos, err := f.Readdir(-1)
-	if err != nil {
-		return nil, err
-	}
-
-	files := make([]string, 0)
-
-	for _, info := range fileinfos {
-		// Note:
-		// go-bindata has absolute names with os.Separator,
-		// http.Dir the basename.
-		filename := toBaseName(info.Name())
-		fullname := path.Join(name, filename)
-		if fullname == name { // prevent looping through itself when fs is cacheFS.
-			continue
-		}
-		rfiles, err := findNames(fs, fullname)
-		if err != nil {
-			return nil, err
-		}
-
-		files = append(files, rfiles...)
-	}
-
-	return files, nil
 }
 
 type fileInfo struct {

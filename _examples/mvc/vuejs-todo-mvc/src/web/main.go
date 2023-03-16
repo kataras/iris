@@ -30,6 +30,11 @@ func main() {
 	// create a sub router and register the http controllers.
 	todosRouter := app.Party("/todos")
 
+	// Register sessions handler.
+	// TodoController.Session will automatically
+	// filled with the current request's session.
+	todosRouter.Use(sess.Handler())
+
 	// create our mvc application targeted to /todos relative sub path.
 	todosApp := mvc.New(todosRouter)
 

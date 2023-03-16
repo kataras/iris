@@ -27,7 +27,10 @@ func main() {
 }
 
 func index(ctx iris.Context) {
-	ctx.View("program.jet", iris.Map{
+	if err := ctx.View("program.jet", iris.Map{
 		"Name": "Gerasimos",
-	})
+	}); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

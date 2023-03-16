@@ -34,12 +34,35 @@ type Client struct {
 	// and without additional information.
 	FailureHandler context.Handler
 
+	// Optional checks for siteverify.
+	//
+	// The user's remote IP address.
+	RemoteIP string
+	// The sitekey form field you expect to see.
+	SiteKey string
+
 	secret string
 }
 
 // Option declares an option for the hcaptcha client.
 // See `New` package-level function.
 type Option func(*Client)
+
+// WithRemoteIP sets the remote ip field to the given value.
+// It sends the remoteip form field on "SiteVerify".
+func WithRemoteIP(remoteIP string) Option {
+	return func(c *Client) {
+		c.RemoteIP = remoteIP
+	}
+}
+
+// WithSiteKey sets the site key field to the given value.
+// It sends the sitekey form field on "SiteVerify".
+func WithSiteKey(siteKey string) Option {
+	return func(c *Client) {
+		c.SiteKey = siteKey
+	}
+}
 
 // Response is the hcaptcha JSON response.
 type Response struct {
@@ -55,6 +78,7 @@ type Response struct {
 // Instructions at: https://docs.hcaptcha.com/.
 //
 // See its `Handler` and `SiteVerify` for details.
+// See the `WithRemoteIP` and `WithSiteKey` package-level functions too.
 func New(secret string, options ...Option) context.Handler {
 	c := &Client{
 		FailureHandler: DefaultFailureHandler,
@@ -76,7 +100,7 @@ func New(secret string, options ...Option) context.Handler {
 // The hcaptcha's `Response` (which contains any `ErrorCodes`)
 // is saved on the Request's Context (see `GetResponseFromContext`).
 func (c *Client) Handler(ctx *context.Context) {
-	v := SiteVerify(ctx, c.secret)
+	v := SiteVerify(ctx, c.secret, c.RemoteIP, c.SiteKey)
 	ctx.Values().Set(ResponseContextKey, v)
 	if v.Success {
 		ctx.Next()
@@ -95,7 +119,9 @@ const apiURL = "https://hcaptcha.com/siteverify"
 // It returns the hcaptcha's `Response`.
 // The `response.Success` reports whether the validation passed.
 // Any errors are passed through the `response.ErrorCodes` field.
-func SiteVerify(ctx *context.Context, secret string) (response Response) {
+//
+// The remoteIP and siteKey input arguments are optional.
+func SiteVerify(ctx *context.Context, secret, remoteIP, siteKey string) (response Response) {
 	generatedResponseID := ctx.FormValue("h-captcha-response")
 
 	if generatedResponseID == "" {
@@ -104,12 +130,18 @@ func SiteVerify(ctx *context.Context, secret string) (response Response) {
 		return
 	}
 
-	resp, err := http.DefaultClient.PostForm(apiURL,
-		url.Values{
-			"secret":   {secret},
-			"response": {generatedResponseID},
-		},
-	)
+	values := url.Values{
+		"secret":   {secret},
+		"response": {generatedResponseID},
+	}
+	if remoteIP != "" {
+		values.Add("remoteip", remoteIP)
+	}
+	if siteKey != "" {
+		values.Add("sitekey", siteKey)
+	}
+
+	resp, err := http.DefaultClient.PostForm(apiURL, values)
 	if err != nil {
 		response.ErrorCodes = append(response.ErrorCodes, err.Error())
 		return

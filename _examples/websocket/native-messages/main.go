@@ -49,7 +49,10 @@ func main() {
 	app.Get("/my_endpoint", websocket.Handler(ws))
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("client.html", clientPage{"Client Page", "localhost:8080"})
+		if err := ctx.View("client.html", clientPage{"Client Page", "localhost:8080"}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// Target some browser windows/tabs to http://localhost:8080 and send some messages,

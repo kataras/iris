@@ -24,5 +24,8 @@ func main() {
 }
 
 func index(ctx iris.Context) {
-	ctx.View("index.pug")
+	if err := ctx.View("index.pug"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

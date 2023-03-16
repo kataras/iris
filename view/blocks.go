@@ -43,7 +43,7 @@ func WrapBlocks(v *blocks.Blocks) *BlocksEngine {
 // Usage:
 // Blocks("./views", ".html") or
 // Blocks(iris.Dir("./views"), ".html") or
-// Blocks(AssetFile(), ".html") for embedded data.
+// Blocks(embed.FS, ".html") or Blocks(AssetFile(), ".html") for embedded data.
 func Blocks(fs interface{}, extension string) *BlocksEngine {
 	return WrapBlocks(blocks.New(fs).Extension(extension))
 }

@@ -113,7 +113,10 @@ func main() {
 		}
 
 		ctx.ViewData("title", "Show TODO")
-		ctx.View("todos/show.jet", todo)
+		if err := ctx.View("todos/show.jet", todo); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 	app.Get("/all-done", func(ctx iris.Context) {
 		// vars := make(view.JetRuntimeVars)
@@ -132,7 +135,10 @@ func main() {
 		// ctx.ViewData("_jet", (&doneTODOs{}).New(todos))
 		// and ctx.View("todos/index.jet")
 		// OR
-		ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
+		if err := ctx.View("todos/index.jet", (&doneTODOs{}).New(todos)); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	port := os.Getenv("PORT")

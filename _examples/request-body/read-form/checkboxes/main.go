@@ -13,7 +13,10 @@ func main() {
 }
 
 func showForm(ctx iris.Context) {
-	ctx.View("form.html")
+	if err := ctx.View("form.html"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 type formExample struct {

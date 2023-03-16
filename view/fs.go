@@ -2,126 +2,75 @@ package view
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"path"
+	"io/fs"
 	"path/filepath"
-	"sort"
+
+	"github.com/kataras/iris/v12/context"
 )
 
-// walk recursively in "fs" descends "root" path, calling "walkFn".
-func walk(fs http.FileSystem, root string, walkFn filepath.WalkFunc) error {
-	names, err := assetNames(fs, root)
-	if err != nil {
-		return fmt.Errorf("%s: %w", root, err)
+// walk recursively in "fileSystem" descends "root" path, calling "walkFn".
+func walk(fileSystem fs.FS, root string, walkFn filepath.WalkFunc) error {
+	if root != "" && root != "/" && root != "." {
+		sub, err := fs.Sub(fileSystem, root)
+		if err != nil {
+			return err
+		}
+		fileSystem = sub
 	}
 
-	for _, name := range names {
-		fullpath := path.Join(root, name)
-		f, err := fs.Open(fullpath)
+	if root == "" {
+		root = "."
+	}
+
+	return fs.WalkDir(fileSystem, root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("%s: %w", fullpath, err)
+			return fmt.Errorf("walk: %s: %w", path, err)
 		}
-		stat, err := f.Stat()
-		err = walkFn(fullpath, stat, err)
+
+		info, err := d.Info()
 		if err != nil {
 			if err != filepath.SkipDir {
-				return fmt.Errorf("%s: %w", fullpath, err)
+				return fmt.Errorf("walk stat: %s: %w", path, err)
 			}
 
-			continue
+			return nil
 		}
 
-		if stat.IsDir() {
-			if err := walk(fs, fullpath, walkFn); err != nil {
-				return fmt.Errorf("%s: %w", fullpath, err)
-			}
+		if info.IsDir() {
+			return nil
+		}
+
+		walkFnErr := walkFn(path, info, err)
+		if walkFnErr != nil {
+			return fmt.Errorf("walk: walkFn: %w", walkFnErr)
+		}
+
+		return nil
+	})
+
+}
+
+func asset(fileSystem fs.FS, name string) ([]byte, error) {
+	data, err := fs.ReadFile(fileSystem, name)
+	if err != nil {
+		return nil, fmt.Errorf("asset: read file: %w", err)
+	}
+
+	return data, nil
+}
+
+func getFS(fsOrDir interface{}) fs.FS {
+	return context.ResolveFS(fsOrDir)
+}
+
+func getRootDirName(fileSystem fs.FS) string {
+	rootDirFile, err := fileSystem.Open(".")
+	if err == nil {
+		rootDirStat, err := rootDirFile.Stat()
+		if err == nil {
+			return rootDirStat.Name()
 		}
 	}
 
-	return nil
-}
-
-// assetNames returns the first-level directories and file, sorted, names.
-func assetNames(fs http.FileSystem, name string) ([]string, error) {
-	f, err := fs.Open(name)
-	if err != nil {
-		return nil, err
-	}
-
-	if f == nil {
-		return nil, nil
-	}
-
-	infos, err := f.Readdir(-1)
-	f.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, 0, len(infos))
-	for _, info := range infos {
-		// note: go-bindata fs returns full names whether
-		// the http.Dir returns the base part, so
-		// we only work with their base names.
-		name := filepath.ToSlash(info.Name())
-		name = path.Base(name)
-
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-	return names, nil
-}
-
-func asset(fs http.FileSystem, name string) ([]byte, error) {
-	f, err := fs.Open(name)
-	if err != nil {
-		return nil, err
-	}
-
-	contents, err := io.ReadAll(f)
-	f.Close()
-	return contents, err
-}
-
-func getFS(fsOrDir interface{}) (fs http.FileSystem) {
-	if fsOrDir == nil {
-		return noOpFS{}
-	}
-
-	switch v := fsOrDir.(type) {
-	case string:
-		if v == "" {
-			fs = noOpFS{}
-		} else {
-			fs = httpDirWrapper{http.Dir(v)}
-		}
-	case http.FileSystem:
-		fs = v
-	default:
-		panic(fmt.Errorf(`unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
-	}
-
-	return
-}
-
-type noOpFS struct{}
-
-func (fs noOpFS) Open(name string) (http.File, error) { return nil, nil }
-
-func isNoOpFS(fs http.FileSystem) bool {
-	_, ok := fs.(noOpFS)
-	return ok
-}
-
-// fixes: "invalid character in file path"
-// on amber engine (it uses the virtual fs directly
-// and it uses filepath instead of the path package...).
-type httpDirWrapper struct {
-	http.Dir
-}
-
-func (fs httpDirWrapper) Open(name string) (http.File, error) {
-	return fs.Dir.Open(filepath.ToSlash(name))
+	return ""
 }

@@ -31,7 +31,10 @@ func main() {
 		// ctx.ViewData("", token)
 		// or add second argument to the `View` method.
 		// Token will be passed as {{.}} in the template.
-		ctx.View("upload_form.html", token)
+		if err := ctx.View("upload_form.html", token); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	/* Read before continue.

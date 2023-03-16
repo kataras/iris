@@ -283,12 +283,12 @@ Let's add our view, the static html.
   <title>Iris + Vue.js • TodoMVC</title>
   <link rel="stylesheet" href="https://unpkg.com/todomvc-app-css@2.0.4/index.css">
   <!-- this needs to be loaded before guide's inline scripts -->
-  <script src="https://vuejs.org/js/vue.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <!-- $http -->
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <!-- -->
   <script src="https://unpkg.com/director@1.2.8/build/director.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/neffos.js@latest/dist/neffos.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/neffos.js@0.1.27/dist/neffos.min.js"></script>
 
   <style>
     [v-cloak] {

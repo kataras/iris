@@ -124,7 +124,10 @@ func main() {
 	app.HandleDir("/public", iris.Dir("./public"))
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("upload.html")
+		if err := ctx.View("upload.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	files := scanUploads(uploadsDir)

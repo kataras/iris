@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net"
 	"strings"
-	"unsafe"
 )
 
 /* Based on:
@@ -18,14 +17,9 @@ type IPRange struct {
 	End   string `ini:"end" json:"end" yaml:"End" toml:"End"`
 }
 
-func unsafeCompare(a []byte, b string) int {
-	bb := *(*[]byte)(unsafe.Pointer(&b))
-	return bytes.Compare(a, bb)
-}
-
 // IPInRange reports whether a given IP Address is within a range given.
 func IPInRange(r IPRange, ipAddress net.IP) bool {
-	return unsafeCompare(ipAddress, r.Start) >= 0 && unsafeCompare(ipAddress, r.End) < 0
+	return bytes.Compare(ipAddress, net.ParseIP(r.Start)) >= 0 && bytes.Compare(ipAddress, net.ParseIP(r.End)) <= 0
 }
 
 // IPIsPrivateSubnet reports whether this "ipAddress" is in a private subnet.

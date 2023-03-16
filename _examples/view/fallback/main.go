@@ -38,5 +38,8 @@ func main() {
 // }
 
 func index(ctx iris.Context) {
-	ctx.View("blabla.html")
+	if err := ctx.View("blabla.html"); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

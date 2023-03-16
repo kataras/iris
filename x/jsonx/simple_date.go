@@ -13,6 +13,13 @@ const SimpleDateLayout = "2006-01-02"
 // SimpleDate holds a json "year-month-day" time.
 type SimpleDate time.Time
 
+// SimpleDateFromTime accepts a "t" Time and returns
+// a SimpleDate. If format fails, it returns the zero value of time.Time.
+func SimpleDateFromTime(t time.Time) SimpleDate {
+	date, _ := ParseSimpleDate(t.Format(SimpleDateLayout))
+	return date
+}
+
 // ParseSimpleDate reads from "s" and returns the SimpleDate time.
 func ParseSimpleDate(s string) (SimpleDate, error) {
 	if s == "" || s == "null" {
@@ -68,6 +75,19 @@ func (t SimpleDate) MarshalJSON() ([]byte, error) {
 // It completes the pg.Zeroer interface.
 func (t SimpleDate) IsZero() bool {
 	return t.ToTime().IsZero()
+}
+
+// After reports whether the time instant t is after u.
+func (t SimpleDate) After(d2 SimpleDate) bool {
+	t1, t2 := t.ToTime(), d2.ToTime()
+	return t1.Truncate(24 * time.Hour).After(t2.Truncate(24 * time.Hour))
+}
+
+// Before reports whether the time instant t is before u.
+func (t SimpleDate) Before(d2 SimpleDate) bool {
+	t1, t2 := t.ToTime(), d2.ToTime()
+	return t1.Truncate(24 * time.Hour).Before(t2.Truncate(24 * time.Hour))
+	// OR: compare year and year's day.
 }
 
 // ToTime returns the standard time type.

@@ -20,7 +20,6 @@ import (
 	"github.com/kataras/iris/v12/core/netutil"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/i18n"
-	"github.com/kataras/iris/v12/middleware/accesslog"
 	"github.com/kataras/iris/v12/middleware/cors"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
@@ -39,7 +38,7 @@ import (
 )
 
 // Version is the current version of the Iris Web Framework.
-const Version = "12.2.0-beta4"
+const Version = "12.2.0"
 
 // Byte unit helpers.
 const (
@@ -82,7 +81,7 @@ type Application struct {
 	minifier *minify.M
 
 	// view engine
-	view view.View
+	view *view.View
 	// used for build
 	builded     bool
 	defaultMode bool
@@ -120,6 +119,7 @@ func New() *Application {
 		Router:   router.NewRouter(),
 		I18n:     i18n.New(),
 		minifier: newMinifier(),
+		view:     new(view.View),
 	}
 
 	logger := newLogger(app)
@@ -137,14 +137,15 @@ func New() *Application {
 // Default with "debug" Logger Level.
 // Localization enabled on "./locales" directory
 // and HTML templates on "./views" or "./templates" directory.
-// It runs with the AccessLog on "./access.log",
-// CORS (allow all), Recovery and Request ID middleware already attached.
+// CORS (allow all), Recovery and
+// Request ID middleware already registered.
 func Default() *Application {
 	app := New()
 	// Set default log level.
 	app.logger.SetLevel("debug")
 	app.logger.Debugf(`Log level set to "debug"`)
 
+	/* #2046.
 	// Register the accesslog middleware.
 	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err == nil {
@@ -160,6 +161,7 @@ func Default() *Application {
 		app.UseRouter(ac.Handler)
 		app.logger.Debugf("Using <%s> to log requests", logFile.Name())
 	}
+	*/
 
 	// Register the requestid middleware
 	// before recover so current Context.GetID() contains the info on panic logs.
@@ -665,7 +667,7 @@ func (app *Application) Build() error {
 
 	if cb := app.OnBuild; cb != nil {
 		if err := cb(); err != nil {
-			return err
+			return fmt.Errorf("build: %w", err)
 		}
 	}
 
@@ -721,16 +723,14 @@ func (app *Application) Build() error {
 		app.view.AddFunc("urlpath", rv.Path)
 		// app.view.AddFunc("url", rv.URL)
 		if err := app.view.Load(); err != nil {
-			app.logger.Errorf("View Builder: %v", err)
-			return err
+			return fmt.Errorf("build: view engine: %v", err)
 		}
 	}
 
 	if !app.Router.Downgraded() {
 		// router
 		if _, err := injectLiveReload(app); err != nil {
-			app.logger.Errorf("LiveReload: init: failed: %v", err)
-			return err
+			return fmt.Errorf("build: inject live reload: failed: %v", err)
 		}
 
 		if app.config.ForceLowercaseRouting {
@@ -747,8 +747,7 @@ func (app *Application) Build() error {
 		routerHandler := router.NewDefaultHandler(app.config, app.logger)
 		err := app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false)
 		if err != nil {
-			app.logger.Error(err)
-			return err
+			return fmt.Errorf("build: router: %w", err)
 		}
 		app.HTTPErrorHandler = routerHandler
 

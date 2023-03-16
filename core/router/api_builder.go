@@ -68,7 +68,13 @@ func (repo *repository) getRelative(r *Route) *Route {
 	}
 
 	for _, route := range repo.routes {
-		if r.Subdomain == route.Subdomain && r.StatusCode == route.StatusCode && r.Method == route.Method && r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
+		if r.tmpl.Src == route.tmpl.Src { // No topLink on the same route syntax.
+			// Fixes #2008, because of APIBuilder.handle, repo.getRelative and repo.register replacement but with a toplink of the old route.
+			continue
+		}
+
+		if r.Subdomain == route.Subdomain && r.StatusCode == route.StatusCode && r.Method == route.Method &&
+			r.FormattedPath == route.FormattedPath && !route.tmpl.IsTrailing() {
 			return route
 		}
 	}
@@ -124,11 +130,10 @@ func (repo *repository) register(route *Route, rule RouteRegisterRule) (*Route, 
 				repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
 			}
 
-			continue
+			break // continue
 		}
 	}
 
-	// fmt.Printf("repo.routes append:\t%#+v\n\n", route)
 	repo.routes = append(repo.routes, route)
 
 	if route.StatusCode == 0 { // a common resource route, not a status code error handler.
@@ -618,6 +623,14 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // Usage:
 // HandleDir("/public", "./assets", DirOptions{...}) or
 // HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
+// OR
+// //go:embed assets/*
+// var filesystem embed.FS
+// HandleDir("/public",filesystem, DirOptions{...})
+// OR to pick a specific folder of the embedded filesystem:
+// import "io/fs"
+// subFilesystem, err := fs.Sub(filesystem, "assets")
+// HandleDir("/public",subFilesystem, DirOptions{...})
 //
 // Examples:
 // https://github.com/kataras/iris/tree/master/_examples/file-server
@@ -627,16 +640,7 @@ func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts .
 		options = opts[0]
 	}
 
-	var fs http.FileSystem
-	switch v := fsOrDir.(type) {
-	case string:
-		fs = http.Dir(v)
-	case http.FileSystem:
-		fs = v
-	default:
-		panic(fmt.Errorf(`unexpected "fsOrDir" argument type of %T (string or http.FileSystem)`, v))
-	}
-
+	fs := context.ResolveHTTPFS(fsOrDir)
 	h := FileServer(fs, options)
 	description := "file server"
 	if d, ok := fs.(http.Dir); ok {
@@ -780,8 +784,8 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 		}
 
 		// The caller tiself, if anonymous, it's the first line of `app.X("/path", here)`
-		route.RegisterFileName = filename
-		route.RegisterLineNumber = line
+		route.RegisterFileName = mainHandlerFileName     // filename
+		route.RegisterLineNumber = mainHandlerFileNumber // line
 
 		route.MainHandlerName = mainHandlerName
 		route.MainHandlerIndex = mainHandlerIndex
@@ -1055,6 +1059,23 @@ func (api *APIBuilder) Properties() context.Map {
 // Needs refresh of the router to Method or Path or Handlers changes to take place.
 func (api *APIBuilder) GetRoutes() []*Route {
 	return api.routes.getAll()
+}
+
+// CountHandlers returns the total number of all unique
+// registered route handlers.
+func (api *APIBuilder) CountHandlers() int {
+	uniqueNames := make(map[string]struct{})
+
+	for _, r := range api.GetRoutes() {
+		for _, h := range r.Handlers {
+			handlerName := context.HandlerName(h)
+			if _, exists := uniqueNames[handlerName]; !exists {
+				uniqueNames[handlerName] = struct{}{}
+			}
+		}
+	}
+
+	return len(uniqueNames)
 }
 
 // GetRoute returns the registered route based on its name, otherwise nil.
@@ -1666,9 +1687,12 @@ func (api *APIBuilder) FallbackView(provider context.FallbackViewProvider) {
 // app.RegisterView(iris.$VIEW_ENGINE("./views", ".$extension"))
 // my := app.Party("/my").Layout("layouts/mylayout.html")
 //
-//	my.Get("/", func(ctx iris.Context) {
-//		ctx.View("page1.html")
-//	})
+//		my.Get("/", func(ctx iris.Context) {
+//		if err := ctx.View("page1.html"); err != nil {
+//		  ctx.HTML("<h3>%s</h3>", err.Error())
+//		  return
+//	 }
+//		})
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/view
 func (api *APIBuilder) Layout(tmplLayoutFile string) Party {

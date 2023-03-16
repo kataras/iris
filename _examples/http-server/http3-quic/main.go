@@ -3,13 +3,11 @@ package main
 import (
 	"github.com/kataras/iris/v12"
 
-	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/quic-go/quic-go/http3"
 )
 
 /*
-	$ go get -u github.com/lucas-clemente/quic-go/...
-	# or if you're using GO MODULES:
-	$ go get github.com/lucas-clemente/quic-go@master
+	$ go get github.com/quic-go/quic-go@master
 */
 
 func main() {

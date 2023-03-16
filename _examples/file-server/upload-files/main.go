@@ -32,7 +32,10 @@ func newApp() *iris.Application {
 		token := fmt.Sprintf("%x", h.Sum(nil))
 
 		// render the form with the token for any use you'd like.
-		ctx.View("upload_form.html", token)
+		if err := ctx.View("upload_form.html", token); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// Handle the post request from the upload_form.html to the server.

@@ -58,7 +58,7 @@ func postIndexStream(ctx iris.Context) {
 	var users []User
 	job := func(decode iris.DecodeFunc) error {
 		var u User
-		if err := decode(ctx, &u); err != nil {
+		if err := decode(&u); err != nil {
 			return err
 		}
 		users = append(users, u)

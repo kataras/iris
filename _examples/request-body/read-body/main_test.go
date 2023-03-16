@@ -14,11 +14,8 @@ func TestReadBodyAndNegotiate(t *testing.T) {
 	var (
 		expectedPayload        = payload{Message: "a message"}
 		expectedMsgPackPayload = "\x81\xa7message\xa9a message"
-		expectedXMLPayload     = `<payload>
-  <message>a message</message>
-</payload>
-`
-		expectedYAMLPayload = "Message: a message\n"
+		expectedXMLPayload     = `<payload><message>a message</message></payload>`
+		expectedYAMLPayload    = "Message: a message\n"
 	)
 
 	// Test send JSON and receive JSON.

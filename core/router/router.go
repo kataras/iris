@@ -97,6 +97,14 @@ func (router *Router) FindClosestPaths(subdomain, searchPath string, n int) []st
 	return list
 }
 
+func (router *Router) buildMainHandler(cPool *context.Pool, requestHandler RequestHandler) {
+	router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
+		ctx := cPool.Acquire(w, r)
+		router.requestHandler.HandleRequest(ctx)
+		cPool.Release(ctx)
+	}
+}
+
 func (router *Router) buildMainHandlerWithFilters(routerFilters map[Party]*Filter, cPool *context.Pool, requestHandler RequestHandler) {
 	sortedFilters := make([]*Filter, 0, len(routerFilters))
 	// key was just there to enforce uniqueness on API level.
@@ -215,11 +223,7 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 	if routerFilters := routesProvider.GetRouterFilters(); len(routerFilters) > 0 {
 		router.buildMainHandlerWithFilters(routerFilters, cPool, requestHandler)
 	} else {
-		router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
-			ctx := cPool.Acquire(w, r)
-			router.requestHandler.HandleRequest(ctx)
-			cPool.Release(ctx)
-		}
+		router.buildMainHandler(cPool, requestHandler)
 	}
 
 	for i := len(router.wrapperFuncs) - 1; i >= 0; i-- {

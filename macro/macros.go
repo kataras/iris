@@ -50,6 +50,31 @@ var (
 			return func(paramValue string) bool {
 				return max >= len(paramValue)
 			}
+		}).
+		// checks if param value's matches the given input
+		RegisterFunc("eq", func(s string) func(string) bool {
+			return func(paramValue string) bool {
+				return paramValue == s
+			}
+		}).
+		// checks if param value's matches at least one of the inputs
+		RegisterFunc("eqor", func(texts []string) func(string) bool {
+			if len(texts) == 1 {
+				text := texts[0]
+				return func(paramValue string) bool {
+					return paramValue == text
+				}
+			}
+
+			return func(paramValue string) bool {
+				for _, s := range texts {
+					if paramValue == s {
+						return true
+					}
+				}
+
+				return false
+			}
 		})
 
 	// Int or number type

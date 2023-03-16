@@ -12,16 +12,22 @@ func main() {
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index", iris.Map{
+		if err := ctx.View("index", iris.Map{
 			"Title": "Title of The Page",
-		})
+		}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	app.Get("/layout", func(ctx iris.Context) {
-		ctx.ViewLayout("layouts/main") // layout for that response.
-		ctx.View("index", iris.Map{    // file extension is optional.
+		ctx.ViewLayout("layouts/main")        // layout for that response.
+		if err := ctx.View("index", iris.Map{ // file extension is optional.
 			"Title": "Title of the main Page",
-		})
+		}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// otherGroup := app.Party("/other").Layout("layouts/other.ace") -> layout for that party.

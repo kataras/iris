@@ -1,4 +1,4 @@
-# Table of Contents
+# Table of Contents <a href="./README_ZH_HANT.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /> </a>
 
 * [Serverless](https://github.com/iris-contrib/gateway#netlify)
 * [REST API for Apache Kafka](kafka-api)
@@ -17,6 +17,8 @@
     * [Gorm](database/orm/gorm/main.go)
     * [Reform](database/orm/reform/main.go)
     * [x/sqlx](database/sqlx/main.go) **NEW**
+* GraphQL
+    * [GraphQL: schema-first](graphql/schema-first) **NEW**
 * HTTP Server
     * [HOST:PORT](http-server/listen-addr/main.go)
     * [Public Test Domain](http-server/listen-addr-public/main.go)
@@ -107,7 +109,9 @@
 * API Documentation
     * [Yaag](apidoc/yaag/main.go)
     * [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)
-* [Testing](testing/httptest/main_test.go)
+* Testing
+    * [Testing with httptest](testing/httptest/main_test.go)
+    * [Testing with ginkgo](testing/ginkgotest)
 * [Recovery](recover/main.go)
     * [Panic and custom Error Handler with Compression](recover/panic-and-custom-error-handler-with-compression/main.go)
 * [Profiling](pprof/main.go)
@@ -119,7 +123,8 @@
     * [Favicon](file-server/favicon/main.go)
     * [Basic](file-server/basic/main.go)
     * [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-    * [Embedding Gzipped Files Into App Executable File](file-server/embedding-gzipped-files-into-app/main.go)
+    * [Embedding Files Into App Executable File (Bindata)](file-server/embedding-files-into-app-bindata/main.go)
+    * [Embedding Gzipped Files Into App Executable File (Bindata)](file-server/embedding-gzipped-files-into-app-bindata/main.go)
     * [Send Files (rate limiter included)](file-server/send-files/main.go)
     * Single Page Applications
         * [Vue Router](file-server/spa-vue-router)
@@ -150,6 +155,7 @@
     * [Inject Data Between Handlers](view/context-view-data/main.go)
     * [Inject Engine Between Handlers](view/context-view-engine/main.go)
     * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
+    * [Embedding Templates Into App Executable File (Bindata)](view/embedding-templates-into-app-bindata/main.go)
     * [Write to a custom `io.Writer`](view/write-to)
     * Parse a Template from Text
         * [HTML, Pug and Ace](view/parse-parse/main.go)
@@ -199,6 +205,7 @@
 * Response Writer
     * [Content Negotiation](response-writer/content-negotiation)
     * [Text, Markdown, YAML, HTML, JSON, JSONP, Msgpack, XML and Binary](response-writer/write-rest/main.go)
+    * [Third-party JSON Encoder](response-writer/json-third-party/main.go)
     * [Protocol Buffers](response-writer/protobuf/main.go)
     * [HTTP/2 Server Push](response-writer/http2push/main.go)
     * [Stream Writer](response-writer/stream-writer/main.go)
@@ -215,6 +222,7 @@
 * Localization and Internationalization
     * [Basic](i18n/basic)
     * [Ttemplates and Functions](i18n/template)
+    * [Ttemplates and Functions (Embedded)](i18n/template-embedded)
     * [Pluralization and Variables](i18n/plurals)
 * Authentication, Authorization & Bot Detection
     * [Recommended: Auth package and Single-Sign-On](auth/auth) **NEW (GO 1.18 Generics required)**

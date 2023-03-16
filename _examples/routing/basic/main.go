@@ -18,8 +18,6 @@ func newApp() *iris.Application {
 	//
 	// Third receiver should contains the route's handler(s), they are executed by order.
 	app.Handle("GET", "/", func(ctx iris.Context) {
-		// navigate to the https://github.com/kataras/iris/wiki/Routing-context-methods
-		// to overview all context's method.
 		ctx.HTML("Hello from " + ctx.Path()) // Hello from /
 	})
 

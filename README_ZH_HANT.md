@@ -1,0 +1,561 @@
+<!-- [![黑人的命也是命](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
+
+# 新聞
+
+> 此為 **開發中** 分支——功能不僅最新，而且最好。敬請期待接下來的發行版本 [v12.2.0](HISTORY.md#Next)。若需比較穩定的分支，請改前往 [v12.1.8 分支](https://github.com/kataras/iris/tree/v12.1.8)。
+>
+> ![](https://iris-go.com/images/cli.png) 立刻試試看官方的 [Iris 命令列介面 (CLI)](https://github.com/kataras/iris-cli)！
+
+> 因為工作量過大，[問題](https://github.com/kataras/iris/issues) 解答的速度可能會有所延宕。 -->
+
+<!-- ![](https://iris-go.com/images/release.png) Iris 的 **12.1.8** 版本已經 [釋出](HISTORY.md#su-16-february-2020--v1218)! -->
+
+# Iris Web 框架 <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a>
+
+[![組建狀態](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=master&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![查看範例](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![聊天室](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![捐助](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+
+<!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
+
+Iris 是款不僅迅速、簡捷，並且功能完善、高效率的 Go 語言 Web 框架。**與 Go 生態系統中其它人提供的免費軟體套件不同，這個軟體保證終身主動維護。**
+
+> 想要取得接下來 **v12.2.0** 穩定版本（正在逐步推進 (2023🎅)）的新消息，請收藏 🌟 並關注 👀 這個儲存庫！
+
+Iris 能為你的下一個網站或 API，立下漂亮、富有表達性，且易於使用的基礎。
+
+```go
+package main
+
+import "github.com/kataras/iris/v12"
+
+func main() {
+  app := iris.New()
+  app.Use(iris.Compression)
+
+  app.Get("/", func(ctx iris.Context) {
+    ctx.HTML("哈囉，<strong>%s</strong>！", "世界")
+  })
+
+  app.Listen(":8080")
+}
+```
+
+<!-- <details><summary>More with simple Handler</summary>
+
+```go
+package main
+
+import "github.com/kataras/iris/v12"
+
+type (
+  request struct {
+    Firstname string `json:"firstname"`
+    Lastname  string `json:"lastname"`
+  }
+
+  response struct {
+    ID      string `json:"id"`
+    Message string `json:"message"`
+  }
+)
+
+func main() {
+  app := iris.New()
+  app.Handle("PUT", "/users/{id:uuid}", updateUser)
+  app.Listen(":8080")
+}
+
+func updateUser(ctx iris.Context) {
+  id := ctx.Params().Get("id")
+
+  var req request
+  if err := ctx.ReadJSON(&req); err != nil {
+    ctx.StopWithError(iris.StatusBadRequest, err)
+    return
+  }
+
+  resp := response{
+    ID:      id,
+    Message: req.Firstname + " updated successfully",
+  }
+  ctx.JSON(resp)
+}
+```
+
+> Read the [routing examples](https://github.com/kataras/iris/blob/master/_examples/routing) for more!
+
+</details>
+
+<details><summary>Handler with custom input and output arguments</summary>
+
+[![https://github.com/kataras/iris/blob/master/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
+
+> Interesting? Read the [examples](https://github.com/kataras/iris/blob/master/_examples/dependency-injection).
+
+</details>
+
+<details><summary>Party Controller (NEW)</summary>
+
+> Head over to the [full running example](https://github.com/kataras/iris/blob/master/_examples/routing/party-controller)!
+
+</details>
+
+<details><summary>MVC</summary>
+
+```go
+package main
+
+import (
+  "github.com/kataras/iris/v12"
+  "github.com/kataras/iris/v12/mvc"
+)
+
+type (
+  request struct {
+    Firstname string `json:"firstname"`
+    Lastname  string `json:"lastname"`
+  }
+
+  response struct {
+    ID      uint64 `json:"id"`
+    Message string `json:"message"`
+  }
+)
+
+func main() {
+  app := iris.New()
+  mvc.Configure(app.Party("/users"), configureMVC)
+  app.Listen(":8080")
+}
+
+func configureMVC(app *mvc.Application) {
+  app.Handle(new(userController))
+}
+
+type userController struct {
+  // [...dependencies]
+}
+
+func (c *userController) PutBy(id uint64, req request) response {
+  return response{
+    ID:      id,
+    Message: req.Firstname + " updated successfully",
+  }
+}
+```
+
+Want to see more? Navigate through [mvc examples](_examples/mvc)!
+</details>
+
+
+<details><summary>API Guide <strong>HOT</strong></summary>
+
+```go
+package main
+
+import (
+  // [other packages...]
+
+  "github.com/kataras/iris/v12"
+)
+
+func main() {
+  iris.NewGuide().
+    AllowOrigin("*").
+    Compression(true).
+    Health(true, "development", "kataras").
+    Timeout(0, 20*time.Second, 20*time.Second).
+    Middlewares(basicauth.New(...)).
+    Services(
+        // NewDatabase(),
+        // NewPostgresRepositoryRegistry,
+        // NewUserService,
+    ).
+    API("/users", new(UsersAPI)).
+    Listen(":80")
+}
+```
+
+</details>
+
+<br/>
+
+-->
+
+據一位 [Go 開發者](https://twitter.com/dkuye/status/1532087942696554497) 所言，**Iris 能向您提供全方位的服務，並地位多年來屹立不搖**。
+
+Iris 提供了至少這些功能：
+
+- HTTP/2 (Push, 甚至是 Embedded 資料)
+- 中介模組（存取日誌、基礎認證、CORS、gRPC、防機器人 hCaptcha、JWT、方法覆寫、模組版本顯示、監控、PPROF、速率限制、防機器人 reCaptcha、panic 救援、請求識別碼、重寫請求）
+- API 分版 (versioning)
+- MVC (Model-View-Controller) 模式
+- Websocket
+- gRPC
+- 自動啟用 HTTPS
+- 內建 ngrok 支援，讓您可以把 app 以最快速的方式推上網際網路
+- 包含動態路徑、具唯一性的路由，支援如 :uuid、:string、:int 等等的標準類型，並且可以自己建立
+- 壓縮功能
+- 檢視 (View) 算繪引擎 (HTML、Django、Amber、Handlebars、Pug/Jade 等等）
+- 建立自己的檔案伺服器，並寄存您自己的 WebDAV 伺服器
+- 快取
+- 本地化 (i18n、sitemap）
+- 連線階段管理
+- 豐富的回應格式（HTML、純文字、Markdown、XML、YAML、二進位、JSON、JSONP、Protocol Buffers、MessagePack、(HTTP) 內容協商、串流、Server-Sent Events 等）
+- 回應壓縮功能（gzip、deflate、brotli、snappy、s2）
+- 豐富的請求方式（綁定 URL 查詢、標頭、文字、XML、YAML、二進位、JSON、資料驗證、Protocol Buffers、MessagePack 等）
+- 依賴注入（MVC、處理常式 (handler)、API 路由）
+- 測試套件
+- 最重要的是…… 從發行第一天到現在（已經整整六年），解答與支援一直都十分迅速！
+
+看看別人 [是如何評價 Iris 的](https://www.iris-go.com/#review)，並且 **[給這個開放原始碼專案一顆小星星](https://github.com/kataras/iris/stargazers)**，支持專案的潛力。
+
+[![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
+
+[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+
+## 👑 <a href="https://iris-go.com/donate">支援者</a>
+
+你的一臂之力，能夠為大家帶來更好的開放原始碼 Web 開發體驗！
+
+> [@github](https://github.com/github) is now sponsoring you for $550.00 one time.
+>
+> A note from your new sponsor:
+>
+> To celebrate Maintainer Month we want to thank you for all you do for the open source community. Check out our blog post to learn more about how GitHub is investing in maintainers. https://github.blog/2022-06-24-thank-you-to-our-maintainers/
+
+> 現已支援來自 [中國](https://github.com/kataras/iris/issues/1870#issuecomment-1101418349) 的捐款！
+
+<p>
+  <a href="https://github.com/lensesio"><img src="https://avatars1.githubusercontent.com/u/11728472?v=4" alt="lensesio" title="lensesio" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/github"><img src="https://avatars1.githubusercontent.com/u/9919?v=4" alt="github" title="github" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/getsentry"><img src="https://avatars1.githubusercontent.com/u/1396951?v=4" alt="getsentry" title="getsentry" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/thepunterbot"><img src="https://avatars1.githubusercontent.com/u/111136029?v=4" alt="thepunterbot" title="thepunterbot" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/draFWM"><img src="https://avatars1.githubusercontent.com/u/5765340?v=4" alt="draFWM" title="draFWM" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/gf3"><img src="https://avatars1.githubusercontent.com/u/18397?v=4" alt="gf3" title="gf3" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/simpleittools"><img src="https://avatars1.githubusercontent.com/u/42871067?v=4" alt="simpleittools" title="simpleittools" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Remydeme"><img src="https://avatars1.githubusercontent.com/u/22757039?v=4" alt="Remydeme" title="Remydeme" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/CetinBasoz"><img src="https://avatars1.githubusercontent.com/u/3152637?v=4" alt="CetinBasoz" title="CetinBasoz" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/boomhut"><img src="https://avatars1.githubusercontent.com/u/56619040?v=4" alt="boomhut" title="boomhut" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/FernandoLangOFC"><img src="https://avatars1.githubusercontent.com/u/84889316?v=4" alt="FernandoLangOFC" title="FernandoLangOFC" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Hongjian0619"><img src="https://avatars1.githubusercontent.com/u/25712119?v=4" alt="Hongjian0619" title="Hongjian0619" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Ramblestsad"><img src="https://avatars1.githubusercontent.com/u/45003009?v=4" alt="Ramblestsad" title="Ramblestsad" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mukunhao"><img src="https://avatars1.githubusercontent.com/u/45845255?v=4" alt="mukunhao" title="mukunhao" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/trading-peter"><img src="https://avatars1.githubusercontent.com/u/11567985?v=4" alt="trading-peter" title="trading-peter" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/AlbinoGeek"><img src="https://avatars1.githubusercontent.com/u/1910461?v=4" alt="AlbinoGeek" title="AlbinoGeek" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/basilarchia"><img src="https://avatars1.githubusercontent.com/u/926033?v=4" alt="basilarchia" title="basilarchia" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/sumjoe"><img src="https://avatars1.githubusercontent.com/u/32655210?v=4" alt="sumjoe" title="sumjoe" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/xiaozhuai"><img src="https://avatars1.githubusercontent.com/u/4773701?v=4" alt="xiaozhuai" title="xiaozhuai" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/celsosz"><img src="https://avatars1.githubusercontent.com/u/3466493?v=4" alt="celsosz" title="celsosz" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/TechMaster"><img src="https://avatars1.githubusercontent.com/u/1491686?v=4" alt="TechMaster" title="TechMaster" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/altafino"><img src="https://avatars1.githubusercontent.com/u/24539467?v=4" alt="altafino" title="altafino" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/alekperos"><img src="https://avatars1.githubusercontent.com/u/683938?v=4" alt="alekperos" title="alekperos" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/hengestone"><img src="https://avatars1.githubusercontent.com/u/362587?v=4" alt="hengestone" title="hengestone" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/thomasfr"><img src="https://avatars1.githubusercontent.com/u/287432?v=4" alt="thomasfr" title="thomasfr" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/International"><img src="https://avatars1.githubusercontent.com/u/1022918?v=4" alt="International" title="International" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Juanses"><img src="https://avatars1.githubusercontent.com/u/6137970?v=4" alt="Juanses" title="Juanses" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ansrivas"><img src="https://avatars1.githubusercontent.com/u/1695056?v=4" alt="ansrivas" title="ansrivas" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ekobayong"><img src="https://avatars1.githubusercontent.com/u/878170?v=4" alt="ekobayong" title="ekobayong" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lexrus"><img src="https://avatars1.githubusercontent.com/u/219689?v=4" alt="lexrus" title="lexrus" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/li3p"><img src="https://avatars1.githubusercontent.com/u/55519?v=4" alt="li3p" title="li3p" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/madhu72"><img src="https://avatars1.githubusercontent.com/u/10324127?v=4" alt="madhu72" title="madhu72" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/se77en"><img src="https://avatars1.githubusercontent.com/u/1468284?v=4" alt="se77en" title="se77en" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/vincent-li"><img src="https://avatars1.githubusercontent.com/u/765470?v=4" alt="vincent-li" title="vincent-li" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/DavidShaw"><img src="https://avatars1.githubusercontent.com/u/356970?v=4" alt="DavidShaw" title="DavidShaw" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/sascha11110"><img src="https://avatars1.githubusercontent.com/u/15168372?v=4" alt="sascha11110" title="sascha11110" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/derReineke"><img src="https://avatars1.githubusercontent.com/u/35681013?v=4" alt="derReineke" title="derReineke" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Sirisap22"><img src="https://avatars1.githubusercontent.com/u/58851659?v=4" alt="Sirisap22" title="Sirisap22" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/primadi"><img src="https://avatars1.githubusercontent.com/u/7625413?v=4" alt="primadi" title="primadi" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/agoncecelia"><img src="https://avatars1.githubusercontent.com/u/10442924?v=4" alt="agoncecelia" title="agoncecelia" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/hobysmith"><img src="https://avatars1.githubusercontent.com/u/6063391?v=4" alt="hobysmith" title="hobysmith" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/clacroix"><img src="https://avatars1.githubusercontent.com/u/611064?v=4" alt="clacroix" title="clacroix" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ixalender"><img src="https://avatars1.githubusercontent.com/u/877376?v=4" alt="ixalender" title="ixalender" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mubariz-ahmed"><img src="https://avatars1.githubusercontent.com/u/18215455?v=4" alt="mubariz-ahmed" title="mubariz-ahmed" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Cesar"><img src="https://avatars1.githubusercontent.com/u/1581870?v=4" alt="Cesar" title="Cesar" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Didainius"><img src="https://avatars1.githubusercontent.com/u/15804230?v=4" alt="Didainius" title="Didainius" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/DmarshalTU"><img src="https://avatars1.githubusercontent.com/u/59089266?v=4" alt="DmarshalTU" title="DmarshalTU" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/IwateKyle"><img src="https://avatars1.githubusercontent.com/u/658799?v=4" alt="IwateKyle" title="IwateKyle" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Little-YangYang"><img src="https://avatars1.githubusercontent.com/u/10755202?v=4" alt="Little-YangYang" title="Little-YangYang" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Major2828"><img src="https://avatars1.githubusercontent.com/u/19783402?v=4" alt="Major2828" title="Major2828" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/MatejLach"><img src="https://avatars1.githubusercontent.com/u/531930?v=4" alt="MatejLach" title="MatejLach" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/coderperu"><img src="https://avatars1.githubusercontent.com/u/68706957?v=4" alt="coderperu" title="coderperu" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/cshum"><img src="https://avatars1.githubusercontent.com/u/293790?v=4" alt="cshum" title="cshum" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/dtrifonov"><img src="https://avatars1.githubusercontent.com/u/1520118?v=4" alt="dtrifonov" title="dtrifonov" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/iantuan"><img src="https://avatars1.githubusercontent.com/u/4869968?v=4" alt="iantuan" title="iantuan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ichenhe"><img src="https://avatars1.githubusercontent.com/u/10266066?v=4" alt="ichenhe" title="ichenhe" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/xvalen"><img src="https://avatars1.githubusercontent.com/u/2307513?v=4" alt="xvalen" title="xvalen" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/xytis"><img src="https://avatars1.githubusercontent.com/u/78025?v=4" alt="xytis" title="xytis" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ElNovi"><img src="https://avatars1.githubusercontent.com/u/14199592?v=4" alt="ElNovi" title="ElNovi" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/KKP4"><img src="https://avatars1.githubusercontent.com/u/24271790?v=4" alt="KKP4" title="KKP4" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Lernakow"><img src="https://avatars1.githubusercontent.com/u/46821665?v=4" alt="Lernakow" title="Lernakow" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/aprinslo1"><img src="https://avatars1.githubusercontent.com/u/711650?v=4" alt="aprinslo1" title="aprinslo1" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/pixelheresy"><img src="https://avatars1.githubusercontent.com/u/2491944?v=4" alt="pixelheresy" title="pixelheresy" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Jude-X"><img src="https://avatars1.githubusercontent.com/u/66228813?v=4" alt="Jude-X" title="Jude-X" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/KevinZhouRafael"><img src="https://avatars1.githubusercontent.com/u/16298046?v=4" alt="KevinZhouRafael" title="KevinZhouRafael" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/KrishManohar"><img src="https://avatars1.githubusercontent.com/u/1992857?v=4" alt="KrishManohar" title="KrishManohar" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Laotanling"><img src="https://avatars1.githubusercontent.com/u/28570289?v=4" alt="Laotanling" title="Laotanling" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/MihaiPopescu1985"><img src="https://avatars1.githubusercontent.com/u/34679869?v=4" alt="MihaiPopescu1985" title="MihaiPopescu1985" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/NA"><img src="https://avatars1.githubusercontent.com/u/1600?v=4" alt="NA" title="NA" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Neulhan"><img src="https://avatars1.githubusercontent.com/u/52434903?v=4" alt="Neulhan" title="Neulhan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/NguyenPhuoc"><img src="https://avatars1.githubusercontent.com/u/11747677?v=4" alt="NguyenPhuoc" title="NguyenPhuoc" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Oka00"><img src="https://avatars1.githubusercontent.com/u/72302007?v=4" alt="Oka00" title="Oka00" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/RainerGevers"><img src="https://avatars1.githubusercontent.com/u/32453861?v=4" alt="RainerGevers" title="RainerGevers" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/SamuelNeves"><img src="https://avatars1.githubusercontent.com/u/10797137?v=4" alt="SamuelNeves" title="SamuelNeves" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/TianJIANG"><img src="https://avatars1.githubusercontent.com/u/158459?v=4" alt="TianJIANG" title="TianJIANG" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Ubun1"><img src="https://avatars1.githubusercontent.com/u/13261595?v=4" alt="Ubun1" title="Ubun1" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/XinYoungCN"><img src="https://avatars1.githubusercontent.com/u/18415580?v=4" alt="XinYoungCN" title="XinYoungCN" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/YukinaMochizuki"><img src="https://avatars1.githubusercontent.com/u/26710554?v=4" alt="YukinaMochizuki" title="YukinaMochizuki" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/stgrosshh"><img src="https://avatars1.githubusercontent.com/u/8356082?v=4" alt="stgrosshh" title="stgrosshh" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/icibiri"><img src="https://avatars1.githubusercontent.com/u/32684966?v=4" alt="icibiri" title="icibiri" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/jfloresremar"><img src="https://avatars1.githubusercontent.com/u/10441071?v=4" alt="jfloresremar" title="jfloresremar" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/jingtianfeng"><img src="https://avatars1.githubusercontent.com/u/19503202?v=4" alt="jingtianfeng" title="jingtianfeng" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kilarusravankumar"><img src="https://avatars1.githubusercontent.com/u/13055113?v=4" alt="kilarusravankumar" title="kilarusravankumar" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/leandrobraga"><img src="https://avatars1.githubusercontent.com/u/506699?v=4" alt="leandrobraga" title="leandrobraga" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lfbos"><img src="https://avatars1.githubusercontent.com/u/5703286?v=4" alt="lfbos" title="lfbos" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lpintes"><img src="https://avatars1.githubusercontent.com/u/2546783?v=4" alt="lpintes" title="lpintes" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/macropas"><img src="https://avatars1.githubusercontent.com/u/7488502?v=4" alt="macropas" title="macropas" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/marcmmx"><img src="https://avatars1.githubusercontent.com/u/7670546?v=4" alt="marcmmx" title="marcmmx" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mark2b"><img src="https://avatars1.githubusercontent.com/u/539063?v=4" alt="mark2b" title="mark2b" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/miguel-devs"><img src="https://avatars1.githubusercontent.com/u/89543510?v=4" alt="miguel-devs" title="miguel-devs" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mihado"><img src="https://avatars1.githubusercontent.com/u/940981?v=4" alt="mihado" title="mihado" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mmckeen75"><img src="https://avatars1.githubusercontent.com/u/49529489?v=4" alt="mmckeen75" title="mmckeen75" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/narven"><img src="https://avatars1.githubusercontent.com/u/123594?v=4" alt="narven" title="narven" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/odas0r"><img src="https://avatars1.githubusercontent.com/u/32167770?v=4" alt="odas0r" title="odas0r" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/olaf-lexemo"><img src="https://avatars1.githubusercontent.com/u/51406599?v=4" alt="olaf-lexemo" title="olaf-lexemo" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/pitexplore"><img src="https://avatars1.githubusercontent.com/u/11956562?v=4" alt="pitexplore" title="pitexplore" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/pr123"><img src="https://avatars1.githubusercontent.com/u/23333176?v=4" alt="pr123" title="pr123" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lipatti"><img src="https://avatars1.githubusercontent.com/u/38935867?v=4" alt="lipatti" title="lipatti" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/marman-hp"><img src="https://avatars1.githubusercontent.com/u/2398413?v=4" alt="marman-hp" title="marman-hp" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mattbowen"><img src="https://avatars1.githubusercontent.com/u/46803?v=4" alt="mattbowen" title="mattbowen" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/maxgozou"><img src="https://avatars1.githubusercontent.com/u/54620900?v=4" alt="maxgozou" title="maxgozou" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mizzlespot"><img src="https://avatars1.githubusercontent.com/u/2654538?v=4" alt="mizzlespot" title="mizzlespot" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mnievesco"><img src="https://avatars1.githubusercontent.com/u/78430169?v=4" alt="mnievesco" title="mnievesco" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/motogo"><img src="https://avatars1.githubusercontent.com/u/1704958?v=4" alt="motogo" title="motogo" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rodrigoghm"><img src="https://avatars1.githubusercontent.com/u/66917643?v=4" alt="rodrigoghm" title="rodrigoghm" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/sankethpb"><img src="https://avatars1.githubusercontent.com/u/16034868?v=4" alt="sankethpb" title="sankethpb" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mtrense"><img src="https://avatars1.githubusercontent.com/u/1008285?v=4" alt="mtrense" title="mtrense" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mulyawansentosa"><img src="https://avatars1.githubusercontent.com/u/29946673?v=4" alt="mulyawansentosa" title="mulyawansentosa" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/nasoma"><img src="https://avatars1.githubusercontent.com/u/19878418?v=4" alt="nasoma" title="nasoma" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/nikharsaxena"><img src="https://avatars1.githubusercontent.com/u/8684362?v=4" alt="nikharsaxena" title="nikharsaxena" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ozfive"><img src="https://avatars1.githubusercontent.com/u/4494266?v=4" alt="ozfive" title="ozfive" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/paulxu21"><img src="https://avatars1.githubusercontent.com/u/6261758?v=4" alt="paulxu21" title="paulxu21" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/saz59"><img src="https://avatars1.githubusercontent.com/u/9706793?v=4" alt="saz59" title="saz59" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/shadowfiga"><img src="https://avatars1.githubusercontent.com/u/42721390?v=4" alt="shadowfiga" title="shadowfiga" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/siriushaha"><img src="https://avatars1.githubusercontent.com/u/7924311?v=4" alt="siriushaha" title="siriushaha" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/phil535"><img src="https://avatars1.githubusercontent.com/u/7596830?v=4" alt="phil535" title="phil535" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/pitt134"><img src="https://avatars1.githubusercontent.com/u/13091629?v=4" alt="pitt134" title="pitt134" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/qiepeipei"><img src="https://avatars1.githubusercontent.com/u/16110628?v=4" alt="qiepeipei" title="qiepeipei" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/skurtz97"><img src="https://avatars1.githubusercontent.com/u/71720714?v=4" alt="skurtz97" title="skurtz97" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/qiuzhanghua"><img src="https://avatars1.githubusercontent.com/u/478393?v=4" alt="qiuzhanghua" title="qiuzhanghua" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rapita"><img src="https://avatars1.githubusercontent.com/u/22305375?v=4" alt="rapita" title="rapita" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rbondi"><img src="https://avatars1.githubusercontent.com/u/81764?v=4" alt="rbondi" title="rbondi" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/relaera"><img src="https://avatars1.githubusercontent.com/u/26012106?v=4" alt="relaera" title="relaera" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/remopavithran"><img src="https://avatars1.githubusercontent.com/u/50388068?v=4" alt="remopavithran" title="remopavithran" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rfunix"><img src="https://avatars1.githubusercontent.com/u/6026357?v=4" alt="rfunix" title="rfunix" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rhernandez-itemsoft"><img src="https://avatars1.githubusercontent.com/u/4327356?v=4" alt="rhernandez-itemsoft" title="rhernandez-itemsoft" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/risallaw"><img src="https://avatars1.githubusercontent.com/u/15353146?v=4" alt="risallaw" title="risallaw" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/robivictor"><img src="https://avatars1.githubusercontent.com/u/761041?v=4" alt="robivictor" title="robivictor" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rxrw"><img src="https://avatars1.githubusercontent.com/u/9566402?v=4" alt="rxrw" title="rxrw" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/srinivasganti"><img src="https://avatars1.githubusercontent.com/u/2057165?v=4" alt="srinivasganti" title="srinivasganti" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/syrm"><img src="https://avatars1.githubusercontent.com/u/155406?v=4" alt="syrm" title="syrm" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/tuhao1020"><img src="https://avatars1.githubusercontent.com/u/26807520?v=4" alt="tuhao1020" title="tuhao1020" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/wahyuief"><img src="https://avatars1.githubusercontent.com/u/20138856?v=4" alt="wahyuief" title="wahyuief" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/thanasolykos"><img src="https://avatars1.githubusercontent.com/u/35801329?v=4" alt="thanasolykos" title="thanasolykos" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ukitzmann"><img src="https://avatars1.githubusercontent.com/u/153834?v=4" alt="ukitzmann" title="ukitzmann" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kyoukhana"><img src="https://avatars1.githubusercontent.com/u/756849?v=4" alt="kyoukhana" title="kyoukhana" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/spazzymoto"><img src="https://avatars1.githubusercontent.com/u/2951012?v=4" alt="spazzymoto" title="spazzymoto" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ArishSultan"><img src="https://avatars1.githubusercontent.com/u/31086233?v=4" alt="ArishSultan" title="ArishSultan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ehayun"><img src="https://avatars1.githubusercontent.com/u/39870648?v=4" alt="ehayun" title="ehayun" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kukaki"><img src="https://avatars1.githubusercontent.com/u/4849535?v=4" alt="kukaki" title="kukaki" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/oshirokazuhide"><img src="https://avatars1.githubusercontent.com/u/89958891?v=4" alt="oshirokazuhide" title="oshirokazuhide" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/t6tg"><img src="https://avatars1.githubusercontent.com/u/33445861?v=4" alt="t6tg" title="t6tg" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/AnatolyUA"><img src="https://avatars1.githubusercontent.com/u/1446703?v=4" alt="AnatolyUA" title="AnatolyUA" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/AwsIT"><img src="https://avatars1.githubusercontent.com/u/40926862?v=4" alt="AwsIT" title="AwsIT" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/BlackHole1"><img src="https://avatars1.githubusercontent.com/u/8198408?v=4" alt="BlackHole1" title="BlackHole1" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/a112121788"><img src="https://avatars1.githubusercontent.com/u/1457920?v=4" alt="a112121788" title="a112121788" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/acdias"><img src="https://avatars1.githubusercontent.com/u/11966653?v=4" alt="acdias" title="acdias" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/agent3bood"><img src="https://avatars1.githubusercontent.com/u/771902?v=4" alt="agent3bood" title="agent3bood" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/algoflows"><img src="https://avatars1.githubusercontent.com/u/65465380?v=4" alt="algoflows" title="algoflows" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/annieruci"><img src="https://avatars1.githubusercontent.com/u/49377699?v=4" alt="annieruci" title="annieruci" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/b2cbd"><img src="https://avatars1.githubusercontent.com/u/6870050?v=4" alt="b2cbd" title="b2cbd" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/baoch254"><img src="https://avatars1.githubusercontent.com/u/74555344?v=4" alt="baoch254" title="baoch254" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/bastengao"><img src="https://avatars1.githubusercontent.com/u/785335?v=4" alt="bastengao" title="bastengao" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/bjoroen"><img src="https://avatars1.githubusercontent.com/u/31513139?v=4" alt="bjoroen" title="bjoroen" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/blackHoleNgc1277"><img src="https://avatars1.githubusercontent.com/u/41342763?v=4" alt="blackHoleNgc1277" title="blackHoleNgc1277" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/bunnycodego"><img src="https://avatars1.githubusercontent.com/u/81451316?v=4" alt="bunnycodego" title="bunnycodego" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/carlos-enginner"><img src="https://avatars1.githubusercontent.com/u/59775876?v=4" alt="carlos-enginner" title="carlos-enginner" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/civicwar"><img src="https://avatars1.githubusercontent.com/u/1858104?v=4" alt="civicwar" title="civicwar" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/cnzhangquan"><img src="https://avatars1.githubusercontent.com/u/5462876?v=4" alt="cnzhangquan" title="cnzhangquan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/donam-givita"><img src="https://avatars1.githubusercontent.com/u/107529604?v=4" alt="donam-givita" title="donam-givita" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/edwindna2"><img src="https://avatars1.githubusercontent.com/u/5441354?v=4" alt="edwindna2" title="edwindna2" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ekofedriyanto"><img src="https://avatars1.githubusercontent.com/u/1669439?v=4" alt="ekofedriyanto" title="ekofedriyanto" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/fenriz07"><img src="https://avatars1.githubusercontent.com/u/9199380?v=4" alt="fenriz07" title="fenriz07" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ffelipelimao"><img src="https://avatars1.githubusercontent.com/u/28612817?v=4" alt="ffelipelimao" title="ffelipelimao" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/frenchmajesty"><img src="https://avatars1.githubusercontent.com/u/24761660?v=4" alt="frenchmajesty" title="frenchmajesty" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/gastropulgite"><img src="https://avatars1.githubusercontent.com/u/85067528?v=4" alt="gastropulgite" title="gastropulgite" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/geGao123"><img src="https://avatars1.githubusercontent.com/u/6398228?v=4" alt="geGao123" title="geGao123" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/gnosthi"><img src="https://avatars1.githubusercontent.com/u/17650528?v=4" alt="gnosthi" title="gnosthi" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/goten002"><img src="https://avatars1.githubusercontent.com/u/5025060?v=4" alt="goten002" title="goten002" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/guanzi008"><img src="https://avatars1.githubusercontent.com/u/20619190?v=4" alt="guanzi008" title="guanzi008" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/hdezoscar93"><img src="https://avatars1.githubusercontent.com/u/21270107?v=4" alt="hdezoscar93" title="hdezoscar93" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/hieungm"><img src="https://avatars1.githubusercontent.com/u/85067528?v=4" alt="hieungm" title="hieungm" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/homerious"><img src="https://avatars1.githubusercontent.com/u/22523525?v=4" alt="homerious" title="homerious" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/hzxd"><img src="https://avatars1.githubusercontent.com/u/3376231?v=4" alt="hzxd" title="hzxd" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/jackptoke"><img src="https://avatars1.githubusercontent.com/u/54049012?v=4" alt="jackptoke" title="jackptoke" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/jeremiahyan"><img src="https://avatars1.githubusercontent.com/u/2705359?v=4" alt="jeremiahyan" title="jeremiahyan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/joelywz"><img src="https://avatars1.githubusercontent.com/u/43310636?v=4" alt="joelywz" title="joelywz" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kana99"><img src="https://avatars1.githubusercontent.com/u/3714069?v=4" alt="kana99" title="kana99" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/keeio"><img src="https://avatars1.githubusercontent.com/u/147525?v=4" alt="keeio" title="keeio" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/khasanovrs"><img src="https://avatars1.githubusercontent.com/u/6076966?v=4" alt="khasanovrs" title="khasanovrs" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kkdaypenny"><img src="https://avatars1.githubusercontent.com/u/47559431?v=4" alt="kkdaypenny" title="kkdaypenny" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/knavels"><img src="https://avatars1.githubusercontent.com/u/57287952?v=4" alt="knavels" title="knavels" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kohakuhubo"><img src="https://avatars1.githubusercontent.com/u/32786755?v=4" alt="kohakuhubo" title="kohakuhubo" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/kostasvk"><img src="https://avatars1.githubusercontent.com/u/8888490?v=4" alt="kostasvk" title="kostasvk" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lafayetteDan"><img src="https://avatars1.githubusercontent.com/u/26064396?v=4" alt="lafayetteDan" title="lafayetteDan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/leki75"><img src="https://avatars1.githubusercontent.com/u/9675379?v=4" alt="leki75" title="leki75" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/liheyuan"><img src="https://avatars1.githubusercontent.com/u/776423?v=4" alt="liheyuan" title="liheyuan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lingyingtan"><img src="https://avatars1.githubusercontent.com/u/15610136?v=4" alt="lingyingtan" title="lingyingtan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/saleebm"><img src="https://avatars1.githubusercontent.com/u/34875122?v=4" alt="saleebm" title="saleebm" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/sbenimeli"><img src="https://avatars1.githubusercontent.com/u/46652122?v=4" alt="sbenimeli" title="sbenimeli" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/sebyno"><img src="https://avatars1.githubusercontent.com/u/15988169?v=4" alt="sebyno" title="sebyno" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/seun-otosho"><img src="https://avatars1.githubusercontent.com/u/74518370?v=4" alt="seun-otosho" title="seun-otosho" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/su1gen"><img src="https://avatars1.githubusercontent.com/u/86298730?v=4" alt="su1gen" title="su1gen" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/sukiejosh"><img src="https://avatars1.githubusercontent.com/u/44656210?v=4" alt="sukiejosh" title="sukiejosh" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/svirmi"><img src="https://avatars1.githubusercontent.com/u/52601346?v=4" alt="svirmi" title="svirmi" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/unixedia"><img src="https://avatars1.githubusercontent.com/u/70646128?v=4" alt="unixedia" title="unixedia" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/vadgun"><img src="https://avatars1.githubusercontent.com/u/22282464?v=4" alt="vadgun" title="vadgun" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/vguhesan"><img src="https://avatars1.githubusercontent.com/u/193960?v=4" alt="vguhesan" title="vguhesan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/vladimir-petukhov-sr"><img src="https://avatars1.githubusercontent.com/u/1183901?v=4" alt="vladimir-petukhov-sr" title="vladimir-petukhov-sr" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/vuhoanglam"><img src="https://avatars1.githubusercontent.com/u/59502855?v=4" alt="vuhoanglam" title="vuhoanglam" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/yonson2"><img src="https://avatars1.githubusercontent.com/u/1192599?v=4" alt="yonson2" title="yonson2" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/SergeShin"><img src="https://avatars1.githubusercontent.com/u/402395?v=4" alt="SergeShin" title="SergeShin" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/-"><img src="https://avatars1.githubusercontent.com/u/75544?v=4" alt="-" title="-" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/BelmonduS"><img src="https://avatars1.githubusercontent.com/u/159350?v=4" alt="BelmonduS" title="BelmonduS" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/CSRaghunandan"><img src="https://avatars1.githubusercontent.com/u/5226809?v=4" alt="CSRaghunandan" title="CSRaghunandan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/martinlindhe"><img src="https://avatars1.githubusercontent.com/u/181531?v=4" alt="martinlindhe" title="martinlindhe" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mdamschen"><img src="https://avatars1.githubusercontent.com/u/40914728?v=4" alt="mdamschen" title="mdamschen" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/netbaalzovf"><img src="https://avatars1.githubusercontent.com/u/98529711?v=4" alt="netbaalzovf" title="netbaalzovf" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/oliverjosefzimmer"><img src="https://avatars1.githubusercontent.com/u/24566297?v=4" alt="oliverjosefzimmer" title="oliverjosefzimmer" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/valkuere"><img src="https://avatars1.githubusercontent.com/u/7230144?v=4" alt="valkuere" title="valkuere" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lfaynman"><img src="https://avatars1.githubusercontent.com/u/16815068?v=4" alt="lfaynman" title="lfaynman" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ArturWierzbicki"><img src="https://avatars1.githubusercontent.com/u/23451458?v=4" alt="ArturWierzbicki" title="ArturWierzbicki" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/GeorgeFourikis"><img src="https://avatars1.githubusercontent.com/u/17906313?v=4" alt="GeorgeFourikis" title="GeorgeFourikis" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/L-M-Sherlock"><img src="https://avatars1.githubusercontent.com/u/32575846?v=4" alt="L-M-Sherlock" title="L-M-Sherlock" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/aaxx"><img src="https://avatars1.githubusercontent.com/u/476416?v=4" alt="aaxx" title="aaxx" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/claudemuller"><img src="https://avatars1.githubusercontent.com/u/8104894?v=4" alt="claudemuller" title="claudemuller" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/crashCoder"><img src="https://avatars1.githubusercontent.com/u/1144298?v=4" alt="crashCoder" title="crashCoder" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/dochoaj"><img src="https://avatars1.githubusercontent.com/u/1789678?v=4" alt="dochoaj" title="dochoaj" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/edsongley"><img src="https://avatars1.githubusercontent.com/u/35545454?v=4" alt="edsongley" title="edsongley" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/evillgenius75"><img src="https://avatars1.githubusercontent.com/u/22817701?v=4" alt="evillgenius75" title="evillgenius75" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/gog200921"><img src="https://avatars1.githubusercontent.com/u/101519620?v=4" alt="gog200921" title="gog200921" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mwiater"><img src="https://avatars1.githubusercontent.com/u/5323591?v=4" alt="mwiater" title="mwiater" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/statik"><img src="https://avatars1.githubusercontent.com/u/983?v=4" alt="statik" title="statik" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/thejones"><img src="https://avatars1.githubusercontent.com/u/682850?v=4" alt="thejones" title="thejones" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/evan"><img src="https://avatars1.githubusercontent.com/u/210?v=4" alt="evan" title="evan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/grassshrimp"><img src="https://avatars1.githubusercontent.com/u/3070576?v=4" alt="grassshrimp" title="grassshrimp" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/hazmi-e205"><img src="https://avatars1.githubusercontent.com/u/12555465?v=4" alt="hazmi-e205" title="hazmi-e205" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/jtgoral"><img src="https://avatars1.githubusercontent.com/u/19780595?v=4" alt="jtgoral" title="jtgoral" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ky2s"><img src="https://avatars1.githubusercontent.com/u/19502125?v=4" alt="ky2s" title="ky2s" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/lauweliam"><img src="https://avatars1.githubusercontent.com/u/4064517?v=4" alt="lauweliam" title="lauweliam" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/letmestudy"><img src="https://avatars1.githubusercontent.com/u/31943708?v=4" alt="letmestudy" title="letmestudy" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/mblandr"><img src="https://avatars1.githubusercontent.com/u/42862020?v=4" alt="mblandr" title="mblandr" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/midhubalan"><img src="https://avatars1.githubusercontent.com/u/13059634?v=4" alt="midhubalan" title="midhubalan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/ndimorle"><img src="https://avatars1.githubusercontent.com/u/76732415?v=4" alt="ndimorle" title="ndimorle" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/rosales-stephanie"><img src="https://avatars1.githubusercontent.com/u/43592017?v=4" alt="rosales-stephanie" title="rosales-stephanie" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/shyyawn"><img src="https://avatars1.githubusercontent.com/u/6064438?v=4" alt="shyyawn" title="shyyawn" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/vcruzato"><img src="https://avatars1.githubusercontent.com/u/3864151?v=4" alt="vcruzato" title="vcruzato" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/wangbl11"><img src="https://avatars1.githubusercontent.com/u/14358532?v=4" alt="wangbl11" title="wangbl11" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/wofka72"><img src="https://avatars1.githubusercontent.com/u/10855340?v=4" alt="wofka72" title="wofka72" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/xsokev"><img src="https://avatars1.githubusercontent.com/u/28113?v=4" alt="xsokev" title="xsokev" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/oleang"><img src="https://avatars1.githubusercontent.com/u/142615?v=4" alt="oleang" title="oleang" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/michalsz"><img src="https://avatars1.githubusercontent.com/u/187477?v=4" alt="michalsz" title="michalsz" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/Curtman"><img src="https://avatars1.githubusercontent.com/u/543481?v=4" alt="Curtman" title="Curtman" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/SridarDhandapani"><img src="https://avatars1.githubusercontent.com/u/18103118?v=4" alt="SridarDhandapani" title="SridarDhandapani" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/opusmagna"><img src="https://avatars1.githubusercontent.com/u/33766678?v=4" alt="opusmagna" title="opusmagna" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/b4zz4r"><img src="https://avatars1.githubusercontent.com/u/7438782?v=4" alt="b4zz4r" title="b4zz4r" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/bobmcallan"><img src="https://avatars1.githubusercontent.com/u/8773580?v=4" alt="bobmcallan" title="bobmcallan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/fangli"><img src="https://avatars1.githubusercontent.com/u/3032639?v=4" alt="fangli" title="fangli" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/galois-tnp"><img src="https://avatars1.githubusercontent.com/u/41128011?v=4" alt="galois-tnp" title="galois-tnp" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/geoshan"><img src="https://avatars1.githubusercontent.com/u/10161131?v=4" alt="geoshan" title="geoshan" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/juanxme"><img src="https://avatars1.githubusercontent.com/u/661043?v=4" alt="juanxme" title="juanxme" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/nguyentamvinhlong"><img src="https://avatars1.githubusercontent.com/u/1875916?v=4" alt="nguyentamvinhlong" title="nguyentamvinhlong" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/tejzpr"><img src="https://avatars1.githubusercontent.com/u/2813811?v=4" alt="tejzpr" title="tejzpr" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/theantichris"><img src="https://avatars1.githubusercontent.com/u/1486502?v=4" alt="theantichris" title="theantichris" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/tuxaanand"><img src="https://avatars1.githubusercontent.com/u/9750371?v=4" alt="tuxaanand" title="tuxaanand" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/raphael-brand"><img src="https://avatars1.githubusercontent.com/u/4279168?v=4" alt="raphael-brand" title="raphael-brand" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/HieuLsw"><img src="https://avatars1.githubusercontent.com/u/1675478?v=4" alt="HieuLsw" title="HieuLsw" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/carlosmoran092"><img src="https://avatars1.githubusercontent.com/u/10361754?v=4" alt="carlosmoran092" title="carlosmoran092" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+  <a href="https://github.com/yangxianglong"><img src="https://avatars1.githubusercontent.com/u/55280276?v=4" alt="yangxianglong" title="yangxianglong" width="75" height="75" style="width:75px;max-width:75px;height:75px" /></a>
+</p>
+
+## 📖 學習 Iris
+
+### 安裝
+
+只要先安裝好 [Go 程式語言](https://go.dev/dl/) 即可。
+
+#### 建立新專案
+
+```sh
+$ mkdir myapp
+$ cd myapp
+$ go mod init myapp
+$ go get github.com/kataras/iris/v12@latest # 或 @v12.2.0
+```
+
+<details><summary>在現有專案安裝</summary>
+
+```sh
+$ cd myapp
+$ go get github.com/kataras/iris/v12@latest
+```
+
+**執行**
+
+```sh
+$ go mod tidy -compat=1.20 # Windows 的話，請試試 -compat="1.20"
+$ go run .
+```
+
+</details>
+
+![](https://www.iris-go.com/images/gifs/install-create-iris.gif)
+
+Iris 包含極其豐富且透徹的 **[文件](https://www.iris-go.com/docs)**，讓框架的入門觸手可及。
+
+<!-- Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wiki)** making it easy to get started with the framework. -->
+
+<!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
+
+如需更為詳細的技術性文件，您可以前往我們的 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@master)。如果要可以直接執行的程式碼，可以到 [./\_examples](_examples) 儲存庫的子目錄參閱。
+
+### 想一邊旅行、一邊閱讀嗎？
+
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+
+[![在 Twitter 上追蹤作者](https://img.shields.io/twitter/follow/makismaropoulos?color=3D8AA3&logoColor=3D8AA3&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
+
+[![在 Twitter 上追蹤 Iris Web 框架](https://img.shields.io/twitter/follow/iris_framework?color=ee7506&logoColor=ee7506&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=iris_framework)
+
+[![在 Facebook 上追蹤 Iris Web 框架](https://img.shields.io/badge/Follow%20%40Iris.framework-569-2D88FF.svg?style=for-the-badge&logo=facebook)](https://www.facebook.com/iris.framework)
+
+您現在可以 [請求索取](https://www.iris-go.com/#ebookDonateForm) **Iris 電子書**（新版，**針對未來版本 v12.2.0+**) 的 PDF 和線上閱讀存取權限，並共同參與 Iris 的開發。
+
+## 🙌 貢獻
+
+我們殷切期盼你對 Iris Web 框架的貢獻！有關貢獻 Iris 專案的更多資訊，請參閱 [CONTRIBUTING.md](CONTRIBUTING.md) 檔案。
+
+[所有貢獻者名單](https://github.com/kataras/iris/graphs/contributors)
+
+## 🛡 安全性漏洞
+
+如果你發現 Iris 中有安全性漏洞，請寄一封電子郵件至 [iris-go@outlook.com](mailto:iris-go@outlook.com)。我們會儘速解決所有安全性漏洞。
+
+## 📝 授權條款
+
+本專案和 Go 語言相同，皆採 [BSD 3-clause 授權條款](LICENSE) 授權。
+
+專案的名稱「Iris」取材自希臘神話。
+
+<!-- ## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/kataras/iris.svg)](https://starchart.cc/kataras/iris) -->

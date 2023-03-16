@@ -3,7 +3,7 @@ package view
 import (
 	"fmt"
 	"io"
-	"net/http"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,7 +19,7 @@ const jetEngineName = "jet"
 
 // JetEngine is the jet template parser's view engine.
 type JetEngine struct {
-	fs          http.FileSystem
+	fs          fs.FS
 	rootDir     string
 	extension   string
 	left, right string
@@ -59,8 +59,8 @@ var jetExtensions = [...]string{
 // Usage:
 // Jet("./views", ".jet") or
 // Jet(iris.Dir("./views"), ".jet") or
-// Jet(AssetFile(), ".jet") for embedded data.
-func Jet(fs interface{}, extension string) *JetEngine {
+// Jet(embed.FS, ".jet") or Jet(AssetFile(), ".jet") for embedded data.
+func Jet(dirOrFS interface{}, extension string) *JetEngine {
 	extOK := false
 	for _, ext := range jetExtensions {
 		if ext == extension {
@@ -74,10 +74,10 @@ func Jet(fs interface{}, extension string) *JetEngine {
 	}
 
 	s := &JetEngine{
-		fs:                getFS(fs),
+		fs:                getFS(dirOrFS),
 		rootDir:           "/",
 		extension:         extension,
-		loader:            &jetLoader{fs: getFS(fs)},
+		loader:            &jetLoader{fs: getFS(dirOrFS)},
 		jetDataContextKey: "_jet",
 	}
 
@@ -92,6 +92,15 @@ func (s *JetEngine) String() string {
 // RootDir sets the directory to be used as a starting point
 // to load templates from the provided file system.
 func (s *JetEngine) RootDir(root string) *JetEngine {
+	if s.fs != nil && root != "" && root != "/" && root != "." && root != s.rootDir {
+		sub, err := fs.Sub(s.fs, s.rootDir)
+		if err != nil {
+			panic(err)
+		}
+
+		s.fs = sub
+	}
+
 	s.rootDir = filepath.ToSlash(root)
 	return s
 }
@@ -199,25 +208,29 @@ func (s *JetEngine) SetLoader(loader jet.Loader) *JetEngine {
 }
 
 type jetLoader struct {
-	fs http.FileSystem
+	fs fs.FS
 }
 
 var _ jet.Loader = (*jetLoader)(nil)
 
 // Open opens a file from file system.
 func (l *jetLoader) Open(name string) (io.ReadCloser, error) {
+	name = strings.TrimPrefix(name, "/")
 	return l.fs.Open(name)
 }
 
 // Exists checks if the template name exists by walking the list of template paths.
 func (l *jetLoader) Exists(name string) bool {
+	name = strings.TrimPrefix(name, "/")
 	_, err := l.fs.Open(name)
 	return err == nil
 }
 
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 func (s *JetEngine) Load() error {
-	return walk(s.fs, s.rootDir, func(path string, info os.FileInfo, err error) error {
+	rootDirName := getRootDirName(s.fs)
+
+	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -230,6 +243,11 @@ func (s *JetEngine) Load() error {
 			if !strings.HasSuffix(path, s.extension) {
 				return nil
 			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
 		}
 
 		buf, err := asset(s.fs, path)
@@ -256,7 +274,7 @@ func (s *JetEngine) initSet() {
 		var opts = []jet.Option{
 			jet.WithDelims(s.left, s.right),
 		}
-		if s.developmentMode && !isNoOpFS(s.fs) {
+		if s.developmentMode && !context.IsNoOpFS(s.fs) {
 			// this check is made to avoid jet's fs lookup on noOp fs (nil passed by the developer).
 			// This can be produced when nil fs passed
 			// and only `ParseTemplate` is used.

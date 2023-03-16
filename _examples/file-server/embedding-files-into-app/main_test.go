@@ -40,9 +40,7 @@ func (r resource) strip(strip string) string {
 }
 
 func (r resource) loadFromBase(dir string) string {
-	filename := r.String()
-
-	filename = r.strip("/static")
+	filename := r.strip("/static")
 
 	fullpath := filepath.Join(dir, filename)
 
@@ -52,11 +50,6 @@ func (r resource) loadFromBase(dir string) string {
 	}
 
 	result := string(b)
-
-	if runtime.GOOS != "windows" {
-		result = strings.ReplaceAll(result, "\n", "\r\n")
-		result = strings.ReplaceAll(result, "\r\r", "")
-	}
 	return result
 }
 

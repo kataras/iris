@@ -350,6 +350,15 @@ var WithResetOnFireErrorCode = func(app *Application) {
 	app.config.ResetOnFireErrorCode = true
 }
 
+// WithURLParamSeparator sets the URLParamSeparator setting to "sep".
+//
+// See `Configuration`.
+var WithURLParamSeparator = func(sep string) Configurator {
+	return func(app *Application) {
+		app.config.URLParamSeparator = &sep
+	}
+}
+
 // WithTimeFormat sets the TimeFormat setting.
 //
 // See `Configuration`.
@@ -748,6 +757,11 @@ type Configuration struct {
 	// Defaults to false.
 	ResetOnFireErrorCode bool `ini:"reset_on_fire_error_code" json:"resetOnFireErrorCode,omitempty" yaml:"ResetOnFireErrorCode" toml:"ResetOnFireErrorCode"`
 
+	// URLParamSeparator defines the character(s) separator for Context.URLParamSlice.
+	// If empty or null then request url parameters with comma separated values will be retrieved as one.
+	//
+	// Defaults to comma ",".
+	URLParamSeparator *string `ini:"url_param_separator" json:"urlParamSeparator,omitempty" yaml:"URLParamSeparator" toml:"URLParamSeparator"`
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
 	//
@@ -1034,6 +1048,11 @@ func (c *Configuration) GetResetOnFireErrorCode() bool {
 	return c.ResetOnFireErrorCode
 }
 
+// GetURLParamSeparator returns URLParamSeparator field.
+func (c *Configuration) GetURLParamSeparator() *string {
+	return c.URLParamSeparator
+}
+
 // GetTimeFormat returns the TimeFormat field.
 func (c *Configuration) GetTimeFormat() string {
 	return c.TimeFormat
@@ -1221,6 +1240,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.ResetOnFireErrorCode = v
 		}
 
+		if v := c.URLParamSeparator; v != nil {
+			main.URLParamSeparator = v
+		}
+
 		if v := c.DisableBodyConsumptionOnUnmarshal; v {
 			main.DisableBodyConsumptionOnUnmarshal = v
 		}
@@ -1319,6 +1342,10 @@ func WithConfiguration(c Configuration) Configurator {
 // on expired handlers when timeout handler is registered (see Timeout configuration field).
 var DefaultTimeoutMessage = `<html><head><title>Timeout</title></head><body><h1>Timeout</h1>Looks like the server is taking too long to respond, this can be caused by either poor connectivity or an error with our servers. Please try again in a while.</body></html>`
 
+func toStringPtr(s string) *string {
+	return &s
+}
+
 // DefaultConfiguration returns the default configuration for an iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
@@ -1336,6 +1363,8 @@ func DefaultConfiguration() Configuration {
 		DisableBodyConsumptionOnUnmarshal: false,
 		FireEmptyFormError:                false,
 		DisableAutoFireStatusCode:         false,
+		ResetOnFireErrorCode:              false,
+		URLParamSeparator:                 toStringPtr(","),
 		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
 		Charset:                           "utf-8",
 

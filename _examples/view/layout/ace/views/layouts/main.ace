@@ -3,6 +3,6 @@ html
   head
     title {{.Title}}
   body
-    {{ yield }}
+    {{ yield . }}
     footer
       = include partials/footer.ace .

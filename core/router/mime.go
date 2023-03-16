@@ -584,7 +584,7 @@ func TypeByExtension(ext string) (typ string) {
 	}
 
 	// mime.TypeByExtension returns as text/plain; | charset=utf-8 the static .js (not always)
-	if ext == ".js" && (typ == context.ContentJavascriptHeaderValue || typ == context.ContentTextHeaderValue) {
+	if ext == ".js" || ext == ".mjs" && (typ == context.ContentJavascriptHeaderValue || typ == context.ContentTextHeaderValue) {
 		typ = context.ContentJavascriptHeaderValue
 	}
 

@@ -50,7 +50,10 @@ func newApp(db *DB) *iris.Application {
 
 	indexHandler := func(ctx iris.Context) {
 		ctx.ViewData("URL_COUNT", db.Len())
-		ctx.View("index.html")
+		if err := ctx.View("index.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	}
 	app.Get("/", indexHandler)
 

@@ -146,7 +146,10 @@ func serveHome(ctx iris.Context) {
 		string(p),
 		strconv.FormatInt(lastMod.UnixNano(), 16),
 	}
-	ctx.View("home.html", v)
+	if err := ctx.View("home.html", v); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 // $ go get github.com/gorilla/websocket

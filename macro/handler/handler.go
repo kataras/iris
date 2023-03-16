@@ -107,6 +107,7 @@ func MakeFilter(tmpl macro.Template) context.Filter {
 			entry, found := ctx.Params().Store.GetEntryAt(p.Index)
 			if !found {
 				// should never happen.
+				ctx.StatusCode(p.ErrCode) // status code can change from an error handler, set it here.
 				return false
 			}
 

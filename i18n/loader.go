@@ -3,6 +3,8 @@ package i18n
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,9 +43,34 @@ func Glob(globPattern string, options LoaderConfig) Loader {
 // and any Loader options. Go-bindata usage.
 // It returns a valid `Loader` which loads and maps the locale files.
 //
-// See `Glob`, `Assets`, `New` and `LoaderConfig` too.
+// See `Glob`, `FS`, `New` and `LoaderConfig` too.
 func Assets(assetNames func() []string, asset func(string) ([]byte, error), options LoaderConfig) Loader {
 	return load(assetNames(), asset, options)
+}
+
+// LoadFS loads the files using embed.FS or fs.FS or
+// http.FileSystem or string (local directory).
+// The "pattern" is a classic glob pattern.
+//
+// See `Glob`, `Assets`, `New` and `LoaderConfig` too.
+func FS(fileSystem fs.FS, pattern string, options LoaderConfig) (Loader, error) {
+	pattern = strings.TrimPrefix(pattern, "./")
+
+	assetNames, err := fs.Glob(fileSystem, pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	assetFunc := func(name string) ([]byte, error) {
+		f, err := fileSystem.Open(name)
+		if err != nil {
+			return nil, err
+		}
+
+		return io.ReadAll(f)
+	}
+
+	return load(assetNames, assetFunc, options), nil
 }
 
 // DefaultLoaderConfig represents the default loader configuration.

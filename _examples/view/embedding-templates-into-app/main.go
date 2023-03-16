@@ -1,15 +1,19 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"embed"
+
+	"github.com/kataras/iris/v12"
+)
+
+//go:embed embedded/*
+var embeddedFS embed.FS
 
 func main() {
 	app := iris.New()
 
-	// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
-	// $ go-bindata -fs -prefix "templates" ./templates/...
-	// $ go run .
-	// html files are not used, you can delete the folder and run the example.
-	tmpl := iris.HTML(AssetFile(), ".html")
+	tmpl := iris.HTML(embeddedFS, ".html").RootDir("embedded/templates")
+
 	tmpl.Layout("layouts/layout.html")
 	tmpl.AddFunc("greet", func(s string) string {
 		return "Greetings " + s + "!"
@@ -19,8 +23,8 @@ func main() {
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("page1.html"); err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.Writef(err.Error())
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 
@@ -28,8 +32,8 @@ func main() {
 	app.Get("/nolayout", func(ctx iris.Context) {
 		ctx.ViewLayout(iris.NoLayout)
 		if err := ctx.View("page1.html"); err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.Writef(err.Error())
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 
@@ -37,10 +41,16 @@ func main() {
 	my := app.Party("/my").Layout("layouts/mylayout.html")
 	{ // both of these will use the layouts/mylayout.html as their layout.
 		my.Get("/", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 		my.Get("/other", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 	}
 

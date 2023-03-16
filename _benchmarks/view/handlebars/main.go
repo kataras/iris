@@ -19,5 +19,8 @@ func index(ctx iris.Context) {
 	}
 
 	ctx.ViewLayout("layouts/main")
-	ctx.View("index", data)
+	if err := ctx.View("index", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

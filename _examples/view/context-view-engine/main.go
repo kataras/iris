@@ -37,7 +37,10 @@ func index(ctx iris.Context) {
 	}
 
 	ctx.ViewLayout("main")
-	ctx.View("index", data)
+	if err := ctx.View("index", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 func admin(ctx iris.Context) {
@@ -46,7 +49,10 @@ func admin(ctx iris.Context) {
 	}
 
 	ctx.ViewLayout("main")
-	ctx.View("index", data)
+	if err := ctx.View("index", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
 
 func setViews(views iris.ViewEngine) iris.Handler {
@@ -61,5 +67,8 @@ func onFly(ctx iris.Context) {
 		"Message": "View engine changed through 'setViews' custom middleware.",
 	}
 
-	ctx.View("index", data)
+	if err := ctx.View("index", data); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

@@ -38,5 +38,8 @@ func index(ctx iris.Context) {
 		Jobs:   []*Job{&job1, &job2},
 	}
 
-	ctx.View("index.pug", person)
+	if err := ctx.View("index.pug", person); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }
