@@ -8,7 +8,7 @@ import (
 	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/middleware/jwt"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 var defaultContext = context.Background()
@@ -138,7 +138,7 @@ func (b *Blocklist) ValidateToken(token []byte, c jwt.Claims, err error) error {
 // InvalidateToken invalidates a verified JWT token.
 func (b *Blocklist) InvalidateToken(token []byte, c jwt.Claims) error {
 	key := b.GetKey(token, c)
-	return b.client.SetEX(defaultContext, key, token, c.Timeleft()).Err()
+	return b.client.SetEx(defaultContext, key, token, c.Timeleft()).Err()
 }
 
 // Del removes a token from the storage.
