@@ -36,7 +36,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.23.2
-	github.com/tdewolff/minify/v2 v2.12.4
+	github.com/tdewolff/minify/v2 v2.12.5
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.7
@@ -45,7 +45,7 @@ require (
 	golang.org/x/sys v0.6.0
 	golang.org/x/text v0.8.0
 	golang.org/x/time v0.3.0
-	google.golang.org/protobuf v1.29.1
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -60,7 +60,7 @@ require (
 	github.com/dgraph-io/ristretto v0.0.3-0.20200630154024-f66de99634de // indirect
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
@@ -91,7 +91,7 @@ require (
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
-	github.com/tdewolff/parse/v2 v2.6.4 // indirect
+	github.com/tdewolff/parse/v2 v2.6.5 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
