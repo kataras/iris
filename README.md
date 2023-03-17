@@ -187,7 +187,7 @@ Some of the features Iris offers:
 * Builtin support for ngrok to put your app on the internet, the fastest way
 * Unique Router with dynamic path as parameter with standard types like :uuid, :string, :int... and the ability to create your own
 * Compression
-* View Engines (HTML, Django, Amber, Handlebars, Pug/Jade and more)
+* View Engines (HTML, Django, Handlebars, Pug/Jade and more)
 * Create your own File Server and host your own WebDAV server
 * Cache
 * Localization (i18n, sitemap)

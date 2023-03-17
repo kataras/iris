@@ -46,7 +46,7 @@ type (
 	// Developers get request information from the client's request by a Context.
 	Context = *context.Context
 	// ViewEngine is an alias of `context.ViewEngine`.
-	// See HTML, Blocks, Django, Jet, Pug, Ace, Handlebars, Amber and e.t.c.
+	// See HTML, Blocks, Django, Jet, Pug, Ace, Handlebars and e.t.c.
 	ViewEngine = context.ViewEngine
 	// UnmarshalerFunc a shortcut, an alias for the `context#UnmarshalerFunc` type
 	// which implements the `context#Unmarshaler` interface for reading request's body
@@ -267,9 +267,6 @@ var (
 	// Pug view engine.
 	// Shortcut of the view.Pug.
 	Pug = view.Pug
-	// Amber view engine.
-	// Shortcut of the view.Amber.
-	Amber = view.Amber
 	// Jet view engine.
 	// Shortcut of the view.Jet.
 	Jet = view.Jet

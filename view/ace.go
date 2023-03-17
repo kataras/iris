@@ -1,6 +1,7 @@
 package view
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/yosssi/ace"
@@ -61,6 +62,12 @@ func Ace(fs interface{}, extension string) *AceEngine {
 			ace.NewFile("", []byte{}),
 			[]*ace.File{},
 		)
+
+		if strings.Contains(name, "layout") {
+			for k, v := range s.layoutFuncs {
+				funcs[k] = v
+			}
+		}
 
 		opts := &ace.Options{
 			Extension:  extension[1:],

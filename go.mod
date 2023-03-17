@@ -12,7 +12,6 @@ require (
 	github.com/andybalholm/brotli v1.0.5
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.4
-	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/golang/snappy v0.0.4
