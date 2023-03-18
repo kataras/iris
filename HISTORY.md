@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Change applies to `master` branch.
 
+- Add `LoadKV` method on `Iris.Application.I18N` instance. It should be used when no locale files are available. It loads locales via pure Go Map (or database decoded values).
+
 - Remove [ace](https://github.com/eknkc/amber) template parser support, as it was discontinued by its author more than five years ago.
 
 # Sa, 11 March 2023 | v12.2.0
