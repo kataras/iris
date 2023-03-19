@@ -23,6 +23,36 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Change applies to `master` branch.
 
+- Add `mvc.IgnoreEmbedded` option to handle [#2103](https://github.com/kataras/iris/issues/2103). Example Code:
+
+```go
+func configure(m *mvc.Application) {
+	m.Router.Use(cacheHandler)
+	m.Handle(&exampleController{
+		timeFormat: "Mon, Jan 02 2006 15:04:05",
+	}, mvc.IgnoreEmbedded /* BaseController.GetDoSomething will not be parsed at all */)
+}
+
+type BaseController struct {
+	Ctx iris.Context
+}
+
+func (c *BaseController) GetDoSomething(i interface{}) error {
+	return nil
+}
+
+type exampleController struct {
+	BaseController
+
+	timeFormat string
+}
+
+func (c *exampleController) Get() string {
+	now := time.Now().Format(c.timeFormat)
+	return "last time executed without cache: " + now
+}
+```
+
 - Add `LoadKV` method on `Iris.Application.I18N` instance. It should be used when no locale files are available. It loads locales via pure Go Map (or database decoded values).
 
 - Remove [ace](https://github.com/eknkc/amber) template parser support, as it was discontinued by its author more than five years ago.

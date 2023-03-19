@@ -196,6 +196,13 @@ func (opt OptionFunc) Apply(c *ControllerActivator) {
 	opt(c)
 }
 
+// IgnoreEmbedded is an Option which can be used to ignore all embedded struct's method handlers.
+//
+// For global affect, set the `IgnoreEmbeddedControllers` package-level variable to true.
+var IgnoreEmbedded OptionFunc = func(c *ControllerActivator) {
+	c.SkipEmbeddedMethods()
+}
+
 // Handle serves a controller for the current mvc application's Router.
 // It accept any custom struct which its functions will be transformed
 // to routes.
