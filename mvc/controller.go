@@ -201,10 +201,30 @@ func whatEmbeddedMethods(typ reflect.Type) []string {
 		newEmbeddedStructType := reflect.New(structField.Type).Type()
 		// let's take its methods and add to methods to ignore from the parent, the controller itself.
 		for j := 0; j < newEmbeddedStructType.NumMethod(); j++ {
-			embeddedMethodName := newEmbeddedStructType.Method(j).Name
+			embeddedMethod := newEmbeddedStructType.Method(j)
+			embeddedMethodName := embeddedMethod.Name
+			// An exception should happen if the controller itself overrides the embedded method,
+			// but Go (1.20) so far doesn't support this detection, as it handles the structure as one.
+			/*
+				shouldKeepBecauseParentOverrides := false
+
+				if v, existsOnParent := typ.MethodByName(embeddedMethodName); existsOnParent {
+
+					embeddedIndex := newEmbeddedStructType.Method(j).Index
+					controllerMethodIndex := v.Index
+
+					if v.Type.In(0) == typ && embeddedIndex == controllerMethodIndex {
+						fmt.Printf("%s exists on parent = true, receiver = %s\n", v.Name, typ.String())
+						shouldKeepBecauseParentOverrides = true
+						continue
+					}
+				}
+			*/
+
 			embeddedMethodsToIgnore = append(embeddedMethodsToIgnore, embeddedMethodName)
 		}
 	}
+
 	return embeddedMethodsToIgnore
 }
 
@@ -226,6 +246,9 @@ func (c *ControllerActivator) SkipMethods(methodNames ...string) {
 
 // SkipEmbeddedMethods should be ran before controller parsing.
 // It skips all embedded struct's methods conversation to http handlers.
+//
+// Note that even if the controller overrides the embedded methods
+// they will be still ignored because Go doesn't support this detection so far.
 //
 // See https://github.com/kataras/iris/issues/2103 for more.
 func (c *ControllerActivator) SkipEmbeddedMethods() {

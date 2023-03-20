@@ -197,7 +197,8 @@ func (opt OptionFunc) Apply(c *ControllerActivator) {
 }
 
 // IgnoreEmbedded is an Option which can be used to ignore all embedded struct's method handlers.
-//
+// Note that even if the controller overrides the embedded methods
+// they will be still ignored because Go doesn't support this detection so far.
 // For global affect, set the `IgnoreEmbeddedControllers` package-level variable to true.
 var IgnoreEmbedded OptionFunc = func(c *ControllerActivator) {
 	c.SkipEmbeddedMethods()

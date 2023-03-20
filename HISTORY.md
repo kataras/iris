@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Change applies to `master` branch.
 
+- Replace [russross/blackfriday](github.com/russross/blackfriday/v2) with [gomarkdown](https://github.com/gomarkdown/markdown) as requested at [#2098](https://github.com/kataras/iris/issues/2098).
+
 - Add `mvc.IgnoreEmbedded` option to handle [#2103](https://github.com/kataras/iris/issues/2103). Example Code:
 
 ```go

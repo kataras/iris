@@ -30,11 +30,12 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
 	"github.com/iris-contrib/schema"
 	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
@@ -4033,6 +4034,10 @@ type Markdown struct {
 	// content-specific
 	Sanitize         bool
 	OmitErrorHandler bool // See JSON.OmitErrorHandler.
+	//
+	// Library-specific.
+	// E.g. Flags: html.CommonFlags | html.HrefTargetBlank
+	RenderOptions html.RendererOptions
 }
 
 var (
@@ -4460,14 +4465,20 @@ func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) error {
 	return ctx.writeJSON(v, &options.JSON)
 }
 
+var sanitizer = bluemonday.UGCPolicy()
+
 // WriteMarkdown parses the markdown to html and writes these contents to the writer.
 var WriteMarkdown = func(ctx *Context, markdownB []byte, options *Markdown) error {
-	buf := blackfriday.Run(markdownB)
+	out := markdown.NormalizeNewlines(markdownB)
+
+	renderer := html.NewRenderer(options.RenderOptions)
+	doc := markdown.Parse(out, nil)
+	out = markdown.Render(doc, renderer)
 	if options.Sanitize {
-		buf = bluemonday.UGCPolicy().SanitizeBytes(buf)
+		out = sanitizer.SanitizeBytes(out)
 	}
 
-	_, err := ctx.Write(buf)
+	_, err := ctx.Write(out)
 	return err
 }
 
