@@ -35,7 +35,7 @@ func (r *response) Preflight(ctx iris.Context) error {
 	}
 
 	if code := r.Code; code > 0 {
-		// You can call ctx.View or mvc.Vew{...}.Dispatch
+		// You can call ctx.View or mvc.View{...}.Dispatch
 		// to render HTML on Code != 200
 		// but in order to not proceed with the response resulting
 		// as JSON you MUST return the iris.ErrStopExecution error.
