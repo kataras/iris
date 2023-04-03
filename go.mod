@@ -34,7 +34,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.23
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	github.com/shirou/gopsutil/v3 v3.23.2
+	github.com/shirou/gopsutil/v3 v3.23.3
 	github.com/tdewolff/minify/v2 v2.12.5
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
@@ -89,6 +89,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sanity-io/litter v1.5.5 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
+	github.com/shoenig/go-m1cpu v0.1.4 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/tdewolff/parse/v2 v2.6.5 // indirect
