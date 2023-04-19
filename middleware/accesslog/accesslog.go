@@ -836,20 +836,27 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 	}
 
 	if ac.shouldReadResponseBody() {
-		responseData := ctx.Recorder().Body()
-		responseBodyLength := len(responseData)
+		actualResponseData := ctx.Recorder().Body()
+		responseBodyLength := len(actualResponseData)
+
 		if ac.BytesSentBody {
 			bytesSent = responseBodyLength
 		}
 		if ac.ResponseBody && responseBodyLength > 0 {
 			if ac.BodyMinify {
+				// Copy response data as minifier now can change the back slice,
+				// fixes: https://github.com/kataras/iris-premium/issues/17.
+				responseData := make([]byte, len(actualResponseData))
+				copy(responseData, actualResponseData)
+
 				if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentType(), responseData); err == nil {
 					responseBody = string(minified)
+					responseBodyLength = len(responseBody)
 				}
 			}
 
 			if responseBody == "" {
-				responseBody = string(responseData)
+				responseBody = string(actualResponseData)
 			}
 		}
 

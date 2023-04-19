@@ -21,7 +21,9 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Next
 
-Change applies to `master` branch.
+Changes apply to `master` branch.
+
+- Fix [iris-premium#17](https://github.com/kataras/iris-premium/issues/17).
 
 - Replace [russross/blackfriday](github.com/russross/blackfriday/v2) with [gomarkdown](https://github.com/gomarkdown/markdown) as requested at [#2098](https://github.com/kataras/iris/issues/2098).
 
