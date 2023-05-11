@@ -5518,29 +5518,13 @@ func CookieAllowReclaim(cookieNames ...string) CookieOption {
 			// perform upsert on request cookies or is it too much and not worth the cost?
 			ctx.Request().AddCookie(c)
 		case OpCookieDel:
-			header := ctx.Request().Header
-
-			if cookiesLine := header.Get("Cookie"); cookiesLine != "" {
-				if cookies := strings.Split(cookiesLine, "; "); len(cookies) > 1 {
-					// more than one cookie here.
-					// select that one and remove it.
-					name := sanitizeCookieName(c.Name)
-
-					for _, nameValue := range cookies {
-						if strings.HasPrefix(nameValue, name) {
-							cookiesLine = strings.Replace(cookiesLine, "; "+nameValue, "", 1)
-							// current cookiesLine: myapp_session_id=5ccf4e89-8d0e-4ed6-9f4c-6746d7c5e2ee; key1=value1
-							// found nameValue: key1=value1
-							// new cookiesLine: myapp_session_id=5ccf4e89-8d0e-4ed6-9f4c-6746d7c5e2ee
-							header.Set("Cookie", cookiesLine)
-							break
-						}
-					}
-					return
+			cookies := ctx.Request().Cookies()
+			ctx.Request().Header.Del("Cookie")
+			for i, v := range cookies {
+				if v.Name != c.Name {
+					ctx.Request().AddCookie(cookies[i])
 				}
 			}
-
-			header.Del("Cookie")
 		}
 	}
 }
