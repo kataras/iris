@@ -65,12 +65,28 @@ var _ HTTPErrorHandler = (*routerHandler)(nil)
 // NewDefaultHandler returns the handler which is responsible
 // to map the request with a route (aka mux implementation).
 func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logger) RequestHandler {
+	var (
+		disablePathCorrection            bool
+		disablePathCorrectionRedirection bool
+		fireMethodNotAllowed             bool
+		enablePathIntelligence           bool
+		forceLowercaseRouting            bool
+	)
+
+	if config != nil { // #2147
+		disablePathCorrection = config.GetDisablePathCorrection()
+		disablePathCorrectionRedirection = config.GetDisablePathCorrectionRedirection()
+		fireMethodNotAllowed = config.GetFireMethodNotAllowed()
+		enablePathIntelligence = config.GetEnablePathIntelligence()
+		forceLowercaseRouting = config.GetForceLowercaseRouting()
+	}
+
 	return &routerHandler{
-		disablePathCorrection:            config.GetDisablePathCorrection(),
-		disablePathCorrectionRedirection: config.GetDisablePathCorrectionRedirection(),
-		fireMethodNotAllowed:             config.GetFireMethodNotAllowed(),
-		enablePathIntelligence:           config.GetEnablePathIntelligence(),
-		forceLowercaseRouting:            config.GetForceLowercaseRouting(),
+		disablePathCorrection:            disablePathCorrection,
+		disablePathCorrectionRedirection: disablePathCorrectionRedirection,
+		fireMethodNotAllowed:             fireMethodNotAllowed,
+		enablePathIntelligence:           enablePathIntelligence,
+		forceLowercaseRouting:            forceLowercaseRouting,
 		logger:                           logger,
 	}
 }
