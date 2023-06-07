@@ -5,7 +5,7 @@ go 1.20
 retract [v12.0.0, v12.1.8] // Retract older versions as only latest is to be depended upon. Please update to @latest
 
 require (
-	github.com/BurntSushi/toml v1.3.0
+	github.com/BurntSushi/toml v1.3.1
 	github.com/CloudyKit/jet/v6 v6.2.0
 	github.com/Joker/jade v1.1.3
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
