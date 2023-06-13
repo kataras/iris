@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/ulule/limiter/v3"
-	"github.com/ulule/limiter/v3/drivers/store/memory"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/kataras/iris/v12"
+
+	"github.com/ulule/limiter/v3"
+	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func main() {
