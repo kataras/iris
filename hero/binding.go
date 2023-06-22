@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 
 	"github.com/kataras/iris/v12/context"
 )
@@ -43,15 +44,14 @@ func newStructFieldInput(f reflect.StructField) *Input {
 
 // String returns the string representation of a binding.
 func (b *binding) String() string {
-	index := fmt.Sprintf("%d", b.Input.Index)
+	var index string
 	if len(b.Input.StructFieldIndex) > 0 {
-		for j, i := range b.Input.StructFieldIndex {
-			if j == 0 {
-				index = fmt.Sprintf("%d", i)
-				continue
-			}
+		index = strconv.Itoa(b.Input.StructFieldIndex[0])
+		for _, i := range b.Input.StructFieldIndex[1:] {
 			index += fmt.Sprintf(".%d", i)
 		}
+	} else {
+		index = strconv.Itoa(b.Input.Index)
 	}
 
 	return fmt.Sprintf("[%s:%s] maps to [%s]", index, b.Input.Type.String(), b.Dependency)
