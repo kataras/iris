@@ -35,7 +35,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.23.5
-	github.com/tdewolff/minify/v2 v2.12.6
+	github.com/tdewolff/minify/v2 v2.12.7
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.7
