@@ -6,6 +6,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/jwt"
+	jwtlib "github.com/kataras/jwt"
 )
 
 const (
@@ -153,7 +154,7 @@ func refreshToken(ctx iris.Context) {
 	}
 
 	// Verify the refresh token, which its subject MUST match the "currentUserID".
-	_, err := verifier.VerifyToken(refreshToken, jwt.Expected{Subject: currentUserID})
+	_, err := verifier.VerifyToken(refreshToken, jwtlib.Expected{Subject: currentUserID})
 	if err != nil {
 		ctx.Application().Logger().Errorf("verify refresh token: %v", err)
 		ctx.StatusCode(iris.StatusUnauthorized)
