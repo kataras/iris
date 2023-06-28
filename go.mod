@@ -44,7 +44,7 @@ require (
 	golang.org/x/sys v0.9.0
 	golang.org/x/text v0.10.0
 	golang.org/x/time v0.3.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.31.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 )
