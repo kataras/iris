@@ -1,18 +1,22 @@
-<h1><img width="24" height="25" src ="https://www.iris-go.com/images/logo-new-lq-45.png"/> News</h1>
+<!--<h1><img width="24" height="25" src ="https://www.iris-go.com/images/logo-new-lq-45.png"/> News</h1>
 
-Iris version **12.2.0** has been [released](HISTORY.md#sa-11-march-2023--v1220)! As always, the latest version of Iris comes with the promise of lifetime active maintenance.
+ Iris version **12.2.0** has been [released](HISTORY.md#sa-11-march-2023--v1220)! As always, the latest version of Iris comes with the promise of lifetime active maintenance.
 
-Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today!
+Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today! -->
 
-# Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a>
+# <a href="https://iris-go.com"><img src="https://iris-go.com/images/logo-new-lq-45.png"></a> Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a>
 
 [![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=master&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
-
-<!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
 
 Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
 It provides a beautifully expressive and easy to use foundation for your next website or API.
+
+Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
+
+[![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
+
+[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ```go
 package main
@@ -198,12 +202,6 @@ Some of the features Iris offers:
 * Dependency Injection (MVC, Handlers, API Routers)
 * Testing Suite
 * And the most important... you get fast answers and support from the 1st day until now - that's six full years!
-
-Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
-
-[![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
-
-[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ## 👑 <a href="https://iris-go.com/donate">Supporters</a>
 
