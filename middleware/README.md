@@ -22,6 +22,7 @@ Most of the experimental handlers are ported to work with _iris_'s handler form,
 
 | Middleware | Description | Example |
 | -----------|--------|-------------|
+| [pg](https://github.com/iris-contrib/middleware/tree/master/pg) | Middleware that provides easy and type-safe access to PostgreSQL database | [iris-contrib/middleware/pg/_examples](https://github.com/iris-contrib/middleware/tree/master/pg/_examples) |
 | [jwt](https://github.com/iris-contrib/middleware/tree/master/jwt) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it | [iris-contrib/middleware/jwt/_example](https://github.com/iris-contrib/middleware/tree/master/jwt/_example) |
 | [cors](https://github.com/iris-contrib/middleware/tree/master/cors) | HTTP Access Control | [iris-contrib/middleware/cors/_example](https://github.com/iris-contrib/middleware/tree/master/cors/_example) |
 | [secure](https://github.com/iris-contrib/middleware/tree/master/secure) | Middleware that implements a few quick security wins | [iris-contrib/middleware/secure/_example](https://github.com/iris-contrib/middleware/tree/master/secure/_example/main.go) |
