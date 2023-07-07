@@ -93,13 +93,13 @@ func testAppWithHeroHandlers(t *testing.T, h1, h2, h3 iris.Handler) {
 	e := httptest.New(t, app)
 	// 1
 	e.GET(fmt.Sprintf("/%d/%s", expectedUser.ID, expectedUser.Username)).Expect().Status(httptest.StatusOK).
-		JSON().Equal(expectedUser)
+		JSON().IsEqual(expectedUser)
 	// 2
 	e.GET("/service").Expect().Status(httptest.StatusOK).
-		Body().Equal("say something")
+		Body().IsEqual("say something")
 	// 3
 	e.GET("/param/the_param_value").Expect().Status(httptest.StatusOK).
-		Body().Equal("param is: the_param_value")
+		Body().IsEqual("param is: the_param_value")
 }
 
 // TestBindFunctionAsFunctionInputArgument tests to bind
@@ -123,7 +123,7 @@ func TestBindFunctionAsFunctionInputArgument(t *testing.T) {
 
 	expectedUsername := "kataras"
 	e.POST("/").WithFormField("username", expectedUsername).
-		Expect().Status(iris.StatusOK).Body().Equal(expectedUsername)
+		Expect().Status(iris.StatusOK).Body().IsEqual(expectedUsername)
 }
 
 func TestPayloadBinding(t *testing.T) {
@@ -155,21 +155,21 @@ func TestPayloadBinding(t *testing.T) {
 	e := httptest.New(t, app)
 
 	// JSON
-	e.POST("/").WithJSON(iris.Map{"username": "makis"}).Expect().Status(httptest.StatusOK).Body().Equal("makis")
-	e.POST("/2").WithJSON(iris.Map{"username": "kataras"}).Expect().Status(httptest.StatusOK).Body().Equal("kataras")
+	e.POST("/").WithJSON(iris.Map{"username": "makis"}).Expect().Status(httptest.StatusOK).Body().IsEqual("makis")
+	e.POST("/2").WithJSON(iris.Map{"username": "kataras"}).Expect().Status(httptest.StatusOK).Body().IsEqual("kataras")
 
 	// FORM (url-encoded)
-	e.POST("/").WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	e.POST("/").WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().IsEqual("makis")
 	// FORM (multipart)
-	e.POST("/").WithMultipart().WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	e.POST("/").WithMultipart().WithFormField("username", "makis").Expect().Status(httptest.StatusOK).Body().IsEqual("makis")
 	// FORM: test ErrorHandler skip the ErrPath.
 	e.POST("/").WithMultipart().WithFormField("username", "makis").WithFormField("unknown", "continue").
-		Expect().Status(httptest.StatusOK).Body().Equal("makis")
+		Expect().Status(httptest.StatusOK).Body().IsEqual("makis")
 
 	// POST URL query.
-	e.POST("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	e.POST("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().IsEqual("makis")
 	// GET URL query.
-	e.GET("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().Equal("makis")
+	e.GET("/").WithQuery("username", "makis").Expect().Status(httptest.StatusOK).Body().IsEqual("makis")
 }
 
 /* Author's notes:
@@ -231,9 +231,9 @@ func TestDependentDependencies(t *testing.T) {
 	app.Get("/h3", h3)
 
 	e := httptest.New(t, app)
-	e.GET("/h1").Expect().Status(httptest.StatusOK).Body().Equal("prefix: it is a deep dependency")
-	e.GET("/h2").Expect().Status(httptest.StatusOK).Body().Equal("prefix: message")
-	e.GET("/h3").Expect().Status(httptest.StatusOK).Body().Equal("value")
+	e.GET("/h1").Expect().Status(httptest.StatusOK).Body().IsEqual("prefix: it is a deep dependency")
+	e.GET("/h2").Expect().Status(httptest.StatusOK).Body().IsEqual("prefix: message")
+	e.GET("/h3").Expect().Status(httptest.StatusOK).Body().IsEqual("value")
 }
 
 func TestHandlerPathParams(t *testing.T) {
@@ -262,7 +262,7 @@ func TestHandlerPathParams(t *testing.T) {
 		e.GET("/editors/42"),
 		e.GET("/1/book/42"),
 	} {
-		testReq.Expect().Status(httptest.StatusOK).Body().Equal("42")
+		testReq.Expect().Status(httptest.StatusOK).Body().IsEqual("42")
 	}
 }
 
@@ -301,8 +301,8 @@ func TestRegisterDependenciesFromContext(t *testing.T) {
 
 	e := httptest.New(t, app)
 
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("kataras")
-	e.GET("/service").Expect().Status(httptest.StatusOK).Body().Equal("say hello")
-	e.GET("/both").Expect().Status(httptest.StatusOK).Body().Equal("say kataras")
-	e.GET("/non").Expect().Status(httptest.StatusOK).Body().Equal("nothing")
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("kataras")
+	e.GET("/service").Expect().Status(httptest.StatusOK).Body().IsEqual("say hello")
+	e.GET("/both").Expect().Status(httptest.StatusOK).Body().IsEqual("say kataras")
+	e.GET("/non").Expect().Status(httptest.StatusOK).Body().IsEqual("nothing")
 }

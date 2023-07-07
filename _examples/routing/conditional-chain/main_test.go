@@ -11,7 +11,7 @@ func TestNewConditionalHandler(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/api/v1/users").Expect().Status(httptest.StatusOK).
-		Body().Equal("requested: <b>/api/v1/users</b>")
+		Body().IsEqual("requested: <b>/api/v1/users</b>")
 	e.GET("/api/v1/users").WithQuery("admin", "true").Expect().Status(httptest.StatusOK).
-		Body().Equal("<title>Admin</title>\n<h1>Hello Admin</h1><br>requested: <b>/api/v1/users</b>")
+		Body().IsEqual("<title>Admin</title>\n<h1>Hello Admin</h1><br>requested: <b>/api/v1/users</b>")
 }

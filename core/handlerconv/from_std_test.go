@@ -32,10 +32,10 @@ func TestFromStd(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/handler").
-		Expect().Status(iris.StatusOK).Body().Equal(expected)
+		Expect().Status(iris.StatusOK).Body().IsEqual(expected)
 
 	e.GET("/func").
-		Expect().Status(iris.StatusOK).Body().Equal(expected)
+		Expect().Status(iris.StatusOK).Body().IsEqual(expected)
 }
 
 func TestFromStdWithNext(t *testing.T) {
@@ -67,5 +67,5 @@ func TestFromStdWithNext(t *testing.T) {
 		Expect().Status(iris.StatusForbidden)
 
 	e.GET("/handlerwithnext").WithBasicAuth(basicauth, basicauth).
-		Expect().Status(iris.StatusOK).Body().Equal(passed)
+		Expect().Status(iris.StatusOK).Body().IsEqual(passed)
 }

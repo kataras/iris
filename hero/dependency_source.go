@@ -35,7 +35,7 @@ func newSource(fn reflect.Value) Source {
 		fallthrough
 	default:
 		if callerFileName == "" {
-			callerFileName, callerLineNumber = getCaller()
+			callerFileName, callerLineNumber = GetCaller()
 		}
 	}
 
@@ -55,7 +55,7 @@ func newSource(fn reflect.Value) Source {
 }
 
 func getSource() Source {
-	filename, line := getCaller()
+	filename, line := GetCaller()
 	return Source{
 		File: filename,
 		Line: line,
@@ -67,7 +67,7 @@ func (s Source) String() string {
 }
 
 // https://golang.org/doc/go1.9#callersframes
-func getCaller() (string, int) {
+func GetCaller() (string, int) {
 	var pcs [32]uintptr
 	n := runtime.Callers(4, pcs[:])
 	frames := runtime.CallersFrames(pcs[:n])
@@ -76,11 +76,13 @@ func getCaller() (string, int) {
 		frame, more := frames.Next()
 		file := frame.File
 
-		if strings.HasSuffix(file, "_test.go") {
-			return file, frame.Line
+		if strings.Contains(file, "go/src/runtime/") {
+			continue
 		}
 
-		if !strings.Contains(file, "/kataras/iris") || strings.Contains(file, "/kataras/iris/_examples") || strings.Contains(file, "iris-contrib/examples") {
+		// funcName is something like "github.com/kataras/iris.SomeFunc"
+		funcName := frame.Function
+		if !strings.HasPrefix(funcName, "github.com/kataras/iris/v12") {
 			return file, frame.Line
 		}
 

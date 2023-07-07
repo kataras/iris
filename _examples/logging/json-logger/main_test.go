@@ -36,7 +36,7 @@ func TestJSONLogger(t *testing.T) {
 	wg.Add(iters)
 	for i := 0; i < iters; i++ {
 		go func() {
-			e.GET("/ping").Expect().Status(httptest.StatusOK).Body().Equal("pong")
+			e.GET("/ping").Expect().Status(httptest.StatusOK).Body().IsEqual("pong")
 			wg.Done()
 		}()
 	}

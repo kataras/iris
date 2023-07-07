@@ -20,5 +20,5 @@ comments: >
     Billsmer @ 338-4338.`
 
 	e.POST("/").WithHeader("Content-Type", "application/x-yaml").WithBytes([]byte(send)).Expect().
-		Status(httptest.StatusOK).Body().Equal(expectedResponse)
+		Status(httptest.StatusOK).Body().IsEqual(expectedResponse)
 }

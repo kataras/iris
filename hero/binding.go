@@ -253,7 +253,7 @@ func isPayloadType(in reflect.Type) bool {
 func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePayloadAutoBinding bool, paramsCount int) []*binding {
 	fnTyp := fn.Type()
 	if !isFunc(fnTyp) {
-		panic("bindings: unresolved: not a func type")
+		panic(fmt.Sprintf("bindings: unresolved: no a func type: %#+v", fn))
 	}
 
 	n := fnTyp.NumIn()
@@ -294,7 +294,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePay
 func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding bool, matchDependency DependencyMatcher, paramsCount int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
-		panic("bindings: unresolved: no struct type")
+		panic(fmt.Sprintf("bindings: unresolved: not a struct type: %#+v", v))
 	}
 
 	// get bindings from any struct's non zero values first, including unexported.

@@ -14,11 +14,11 @@ func TestApp(t *testing.T) {
 	// test our routes
 	e.GET("/").Expect().Status(httptest.StatusOK)
 	e.GET("/follower/42").Expect().Status(httptest.StatusOK).
-		Body().Equal("from /follower/{id:int64} with ID: 42")
+		Body().IsEqual("from /follower/{id:int64} with ID: 42")
 	e.GET("/following/52").Expect().Status(httptest.StatusOK).
-		Body().Equal("from /following/{id:int64} with ID: 52")
+		Body().IsEqual("from /following/{id:int64} with ID: 52")
 	e.GET("/like/64").Expect().Status(httptest.StatusOK).
-		Body().Equal("from /like/{id:int64} with ID: 64")
+		Body().IsEqual("from /like/{id:int64} with ID: 64")
 
 	// test not found
 	e.GET("/notfound").Expect().Status(httptest.StatusNotFound)
@@ -28,5 +28,5 @@ func TestApp(t *testing.T) {
 		"message": "",
 	}
 	e.GET("/anotfoundwithjson").WithQuery("json", nil).
-		Expect().Status(httptest.StatusNotFound).JSON().Equal(expectedErr)
+		Expect().Status(httptest.StatusNotFound).JSON().IsEqual(expectedErr)
 }

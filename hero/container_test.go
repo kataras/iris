@@ -55,7 +55,7 @@ func TestContainerHandler(t *testing.T) {
 
 	e := httptest.New(t, app)
 	path := fmt.Sprintf("/%d", expectedOutput.ID)
-	e.POST(path).WithJSON(input).Expect().Status(httptest.StatusOK).JSON().Equal(expectedOutput)
+	e.POST(path).WithJSON(input).Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedOutput)
 }
 
 func TestContainerInject(t *testing.T) {
@@ -127,5 +127,5 @@ func TestContainerUseResultHandler(t *testing.T) {
 	app.Get("/{id:int}", handler)
 
 	e := httptest.New(t, app)
-	e.GET("/42").Expect().Status(httptest.StatusOK).JSON().Equal(expectedResponse)
+	e.GET("/42").Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedResponse)
 }

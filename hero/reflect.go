@@ -42,6 +42,39 @@ func isFunc(kindable interface{ Kind() reflect.Kind }) bool {
 	return kindable.Kind() == reflect.Func
 }
 
+func isStructValue(v reflect.Value) bool {
+	return indirectType(v.Type()).Kind() == reflect.Struct
+}
+
+// isBuiltin reports whether a reflect.Value is a builtin type
+func isBuiltinValue(v reflect.Value) bool {
+	switch v.Type().Kind() {
+	case reflect.Bool,
+		reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64,
+		reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64,
+		reflect.Float32,
+		reflect.Float64,
+		reflect.Complex64,
+		reflect.Complex128,
+		reflect.Array,
+		reflect.Chan,
+		reflect.Map,
+		reflect.Slice,
+		reflect.String:
+		return true
+	default:
+		return false
+	}
+}
+
 var (
 	inputTyp = reflect.TypeOf((*Input)(nil))
 	errTyp   = reflect.TypeOf((*error)(nil)).Elem()

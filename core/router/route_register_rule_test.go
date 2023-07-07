@@ -57,9 +57,9 @@ func testRegisterRule(e *httptest.Expect, expectedGetBody string) {
 	for _, method := range router.AllMethods {
 		tt := e.Request(method, "/v1").Expect().Status(httptest.StatusOK).Body()
 		if method == iris.MethodGet {
-			tt.Equal(expectedGetBody)
+			tt.IsEqual(expectedGetBody)
 		} else {
-			tt.Equal("[any] " + method)
+			tt.IsEqual("[any] " + method)
 		}
 	}
 }
@@ -111,8 +111,8 @@ func TestRegisterRuleOverlap(t *testing.T) {
 
 	e := httptest.New(t, app)
 
-	e.GET("/users").Expect().Status(httptest.StatusOK).Body().Equal("data")
-	e.GET("/users/p1").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
-	e.GET("/users/p2").Expect().Status(httptest.StatusUnauthorized).Body().Equal("no access")
-	e.GET("/users/p3").Expect().Status(httptest.StatusOK).Body().Equal("p3 data")
+	e.GET("/users").Expect().Status(httptest.StatusOK).Body().IsEqual("data")
+	e.GET("/users/p1").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual("Unauthorized")
+	e.GET("/users/p2").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual("no access")
+	e.GET("/users/p3").Expect().Status(httptest.StatusOK).Body().IsEqual("p3 data")
 }

@@ -77,7 +77,7 @@ func TestSPAEmbedded(t *testing.T) {
 		e.GET(url).Expect().
 			Status(httptest.StatusOK).
 			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
-			Body().Equal(contents)
+			Body().IsEqual(contents)
 	}
 
 	e.GET("/index.html").Expect().Status(httptest.StatusNotFound) // only root is served.

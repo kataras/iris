@@ -15,6 +15,6 @@ func TestControllerHandleHTTPError(t *testing.T) {
 	app := newApp()
 
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal(expectedIndex)
-	e.GET("/a_notefound").Expect().Status(httptest.StatusNotFound).ContentType("text/html").Body().Equal(expectedNotFound)
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedIndex)
+	e.GET("/a_notefound").Expect().Status(httptest.StatusNotFound).ContentType("text/html").Body().IsEqual(expectedNotFound)
 }

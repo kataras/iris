@@ -33,9 +33,9 @@ func (h *testError) Error() string {
 }
 
 func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBodyStr string, nocache string) error {
-	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	time.Sleep(cacheDuration / 5) // lets wait for a while, cache should be saved and ready
-	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	counter := atomic.LoadUint32(counterPtr)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
@@ -44,10 +44,10 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	time.Sleep(cacheDuration)
 
 	// cache should be cleared now
-	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	time.Sleep(cacheDuration / 5)
 	// let's call again , the cache should be saved
-	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 2 {
 		return &testError{2, counter}
@@ -55,8 +55,8 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 
 	// we have cache response saved for the path, we have some time more here, but here
 	// we will make the requestS with some of the deniers options
-	e.GET(path).WithHeader("max-age", "0").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
-	e.GET(path).WithHeader("Authorization", "basic or anything").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).WithHeader("max-age", "0").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
+	e.GET(path).WithHeader("Authorization", "basic or anything").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 4 {
 		return &testError{4, counter}
@@ -69,19 +69,19 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 		time.Sleep(cacheDuration)
 
 		// cache should be cleared now, this should work because we are not in the "nocache" path
-		e.GET("/").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr) // counter = 5
+		e.GET("/").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr) // counter = 5
 		time.Sleep(cacheDuration / 5)
 
 		// let's call the "nocache", the expiration is not passed so but the "nocache"
 		// route's path has the cache.NoCache so it should be not cached and the counter should be ++
-		e.GET(nocache).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr) // counter should be 6
+		e.GET(nocache).Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr) // counter should be 6
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 { // 4 before, 5 with the first call to store the cache, and six with the no cache, again original handler executation
 			return &testError{6, counter}
 		}
 
 		// let's call again the path the expiration is not passed so  it should be cached
-		e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+		e.GET(path).Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 {
 			return &testError{6, counter}
@@ -195,17 +195,17 @@ func TestCacheValidator(t *testing.T) {
 	e := httptest.New(t, app)
 
 	// execute from cache the next time
-	e.GET("/valid").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET("/valid").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	time.Sleep(cacheDuration / 5) // lets wait for a while, cache should be saved and ready
-	e.GET("/valid").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET("/valid").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)
 	counter := atomic.LoadUint32(&n)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
 		t.Fatalf("%s: %v", t.Name(), &testError{1, counter})
 	}
 	// don't execute from cache, execute the original, counter should ++ here
-	e.GET("/invalid").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)  // counter = 2
-	e.GET("/invalid2").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr) // counter = 3
+	e.GET("/invalid").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr)  // counter = 2
+	e.GET("/invalid2").Expect().Status(http.StatusOK).Body().IsEqual(expectedBodyStr) // counter = 3
 
 	counter = atomic.LoadUint32(&n)
 	if counter != 3 {

@@ -57,6 +57,8 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 	// If static then Struct.Acquire will return the same "value" instance, otherwise it will create a new one.
 	singleton := true
 	elem := v.Elem()
+
+	// fmt.Printf("makeStruct: bindings length = %d\n", len(bindings))
 	for _, b := range bindings {
 		if b.Dependency.Static {
 			// Fill now.

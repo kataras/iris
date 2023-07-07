@@ -12,5 +12,5 @@ func TestReadParams(t *testing.T) {
 	e := httptest.New(t, app)
 
 	expectedBody := `myParams: main.myParams{Name:"kataras", Age:27, Tail:[]string{"iris", "web", "framework"}}`
-	e.GET("/kataras/27/iris/web/framework").Expect().Status(httptest.StatusOK).Body().Equal(expectedBody)
+	e.GET("/kataras/27/iris/web/framework").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedBody)
 }

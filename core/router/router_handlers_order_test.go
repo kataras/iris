@@ -68,7 +68,7 @@ var (
 		t.Helper()
 
 		e := httptest.New(t, app)
-		e.GET(path).Expect().Status(httptest.StatusOK).Body().Equal(finalResponse)
+		e.GET(path).Expect().Status(httptest.StatusOK).Body().IsEqual(finalResponse)
 	}
 )
 
@@ -169,7 +169,7 @@ func TestUseRouterStopExecution(t *testing.T) {
 	app.Get("/", writeHandler("index"))
 
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal("stop")
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual("stop")
 
 	app = iris.New()
 	app.OnErrorCode(iris.StatusForbidden, func(ctx iris.Context) {
@@ -183,7 +183,7 @@ func TestUseRouterStopExecution(t *testing.T) {
 	app.Get("/", writeHandler("index"))
 
 	e = httptest.New(t, app)
-	e.GET("/").Expect().Status(iris.StatusForbidden).Body().Equal("err: custom error")
+	e.GET("/").Expect().Status(iris.StatusForbidden).Body().IsEqual("err: custom error")
 }
 
 func TestUseRouterParentDisallow(t *testing.T) {
@@ -226,9 +226,9 @@ func TestUseRouterParentDisallow(t *testing.T) {
 	})
 
 	e := httptest.New(t, app)
-	e.GET("/index").Expect().Status(iris.StatusOK).Body().Equal(expectedResponse)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedResponse)
-	e.GET("/user").Expect().Status(iris.StatusOK).Body().Equal(expectedResponse)
+	e.GET("/index").Expect().Status(iris.StatusOK).Body().IsEqual(expectedResponse)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual(expectedResponse)
+	e.GET("/user").Expect().Status(iris.StatusOK).Body().IsEqual(expectedResponse)
 }
 
 func TestUseRouterSubdomains(t *testing.T) {
@@ -270,21 +270,21 @@ func TestUseRouterSubdomains(t *testing.T) {
 	})
 
 	e := httptest.New(t, app, httptest.URL("http://example.com"))
-	e.GET("/notfound").Expect().Status(iris.StatusOK).Body().Equal("always_")
+	e.GET("/notfound").Expect().Status(iris.StatusOK).Body().IsEqual("always_")
 
 	e.GET("/").WithURL("http://admin.example.com").Expect().Status(iris.StatusOK).Body().
-		Equal("always_admin always_admin")
+		IsEqual("always_admin always_admin")
 
 	e.GET("/").WithURL("http://control.admin.example.com").Expect().Status(iris.StatusOK).Body().
-		Equal("always_admin always_control admin always_control admin")
+		IsEqual("always_admin always_control admin always_control admin")
 
 	// It has a route, and use router just proceeds to the router.
 	e.GET("/").WithURL("http://old.example.com").Expect().Status(iris.StatusOK).Body().
-		Equal("chat")
+		IsEqual("chat")
 	// this is not a registered path, should fire 404, the UseRouter does not write
 	// anything to the response writer, so the router has control over it.
 	e.GET("/notfound").WithURL("http://old.example.com").Expect().Status(iris.StatusNotFound).Body().
-		Equal("Not Found")
+		IsEqual("Not Found")
 }
 
 func TestUseWrapOrder(t *testing.T) {
@@ -359,8 +359,8 @@ func TestUseWrapOrder(t *testing.T) {
 	app.Get("/", handler)
 
 	e := httptest.New(t, app)
-	e.GET("/NotFound").Expect().Status(iris.StatusNotFound).Body().Equal(expectedNotFoundBody)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+	e.GET("/NotFound").Expect().Status(iris.StatusNotFound).Body().IsEqual(expectedNotFoundBody)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual(expectedBody)
 }
 
 func TestResumeExecution(t *testing.T) {
@@ -414,5 +414,5 @@ func TestResumeExecution(t *testing.T) {
 	app.Get("/", before, handler, after)
 
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual(expectedBody)
 }

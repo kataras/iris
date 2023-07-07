@@ -52,6 +52,6 @@ func TestSubdomainWWW(t *testing.T) {
 
 		req.Expect().
 			Status(httptest.StatusOK).
-			Body().Equal(test.response())
+			Body().IsEqual(test.response())
 	}
 }
