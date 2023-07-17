@@ -95,6 +95,14 @@ func (api *APIContainer) EnableStrictMode(strictMode bool) *APIContainer {
 	return api
 }
 
+// EnableStructDependents sets the container's EnableStructDependents to true.
+// It's used to automatically fill the dependencies of a struct's fields
+// based on the previous registered dependencies, just like function inputs.
+func (api *APIContainer) EnableStructDependents() *APIContainer {
+	api.Container.EnableStructDependents = true
+	return api
+}
+
 // SetDependencyMatcher replaces the function that compares equality between
 // a dependency and an input (struct field or function parameter).
 //

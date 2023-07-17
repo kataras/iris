@@ -38,6 +38,13 @@ type (
 
 		// Match holds the matcher. Defaults to the Container's one.
 		Match DependencyMatchFunc
+
+		// StructDependents if true then the Container will try to resolve
+		// the fields of a struct value, if any, when it's a dependent struct value
+		// based on the previous registered dependencies.
+		//
+		// Defaults to false.
+		StructDependents bool
 	}
 )
 
@@ -47,6 +54,12 @@ type (
 // Returns itself.
 func (d *Dependency) Explicitly() *Dependency {
 	d.Explicit = true
+	return d
+}
+
+// EnableStructDependents sets StructDependents to true.
+func (d *Dependency) EnableStructDependents() *Dependency {
+	d.StructDependents = true
 	return d
 }
 
@@ -63,10 +76,16 @@ func (d *Dependency) String() string {
 //
 // See `Container.Handler` for more.
 func NewDependency(dependency interface{}, funcDependencies ...*Dependency) *Dependency { // used only on tests.
-	return newDependency(dependency, false, nil, funcDependencies...)
+	return newDependency(dependency, false, false, nil, funcDependencies...)
 }
 
-func newDependency(dependency interface{}, disablePayloadAutoBinding bool, matchDependency DependencyMatcher, funcDependencies ...*Dependency) *Dependency {
+func newDependency(
+	dependency interface{},
+	disablePayloadAutoBinding bool,
+	enableStructDependents bool,
+	matchDependency DependencyMatcher,
+	funcDependencies ...*Dependency,
+) *Dependency {
 	if dependency == nil {
 		panic(fmt.Sprintf("bad value: nil: %T", dependency))
 	}
@@ -86,8 +105,9 @@ func newDependency(dependency interface{}, disablePayloadAutoBinding bool, match
 	}
 
 	dest := &Dependency{
-		Source:        newSource(v),
-		OriginalValue: dependency,
+		Source:           newSource(v),
+		OriginalValue:    dependency,
+		StructDependents: enableStructDependents,
 	}
 	dest.Match = ToDependencyMatchFunc(dest, matchDependency)
 
@@ -171,7 +191,7 @@ func fromStructValueOrDependentStructValue(v reflect.Value, disablePayloadAutoBi
 		return false
 	}
 
-	if len(prevDependencies) == 0 { // As a non depedent struct.
+	if len(prevDependencies) == 0 || !dest.StructDependents { // As a non depedent struct.
 		// We must make this check so we can avoid the auto-filling of
 		// the dependencies from Iris builtin dependencies.
 		return fromStructValue(v, dest)
@@ -180,11 +200,13 @@ func fromStructValueOrDependentStructValue(v reflect.Value, disablePayloadAutoBi
 	// Check if it's a builtin dependency (e.g an MVC Application (see mvc.go#newApp)),
 	// if it's and registered without a Dependency wrapper, like the rest builtin dependencies,
 	// then do NOT try to resolve its fields.
+	//
+	// Although EnableStructDependents is false by default, we must check if it's a builtin dependency for any case.
 	if strings.HasPrefix(indirectType(v.Type()).PkgPath(), "github.com/kataras/iris/v12") {
 		return fromStructValue(v, dest)
 	}
 
-	bindings := getBindingsForStruct(v, prevDependencies, false, disablePayloadAutoBinding, DefaultDependencyMatcher, -1, nil)
+	bindings := getBindingsForStruct(v, prevDependencies, false, disablePayloadAutoBinding, dest.StructDependents, DefaultDependencyMatcher, -1, nil)
 	if len(bindings) == 0 {
 		return fromStructValue(v, dest) // same as above.
 	}

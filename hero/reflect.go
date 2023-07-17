@@ -154,6 +154,10 @@ func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, paren
 	// Note: embedded pointers are not supported.
 	// elem = reflect.Indirect(elem)
 	elemTyp := elem.Type()
+	if elemTyp.Kind() == reflect.Pointer {
+		return
+	}
+
 	for i, n := 0, elem.NumField(); i < n; i++ {
 		field := elemTyp.Field(i)
 		fieldValue := elem.Field(i)

@@ -142,6 +142,14 @@ func (app *Application) SetControllersNoLog(disable bool) *Application {
 	return app
 }
 
+// EnableStructDependents will try to resolve
+// the fields of a struct value, if any, when it's a dependent struct value
+// based on the previous registered dependencies.
+func (app *Application) EnableStructDependents() *Application {
+	app.container.EnableStructDependents = true
+	return app
+}
+
 // Register appends one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be

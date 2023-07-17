@@ -291,7 +291,7 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePay
 	return bindings
 }
 
-func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding bool, matchDependency DependencyMatcher, paramsCount int, sorter Sorter) (bindings []*binding) {
+func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding, enableStructDependents bool, matchDependency DependencyMatcher, paramsCount int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
 		panic(fmt.Sprintf("bindings: unresolved: not a struct type: %#+v", v))
@@ -303,7 +303,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExpor
 	for _, f := range nonZero {
 		// fmt.Printf("Controller [%s] | NonZero | Field Index: %v | Field Type: %s\n", typ, f.Index, f.Type)
 		bindings = append(bindings, &binding{
-			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding, nil),
+			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding, enableStructDependents, nil),
 			Input:      newStructFieldInput(f),
 		})
 	}
