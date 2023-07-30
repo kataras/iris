@@ -61,7 +61,7 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 					for _, ip := range ips {
 						listeningURI := netutil.ResolveURL(guessScheme, fmt.Sprintf("%s:%s", ip, port))
 
-						listeningURI = "> Network: " + listeningURI
+						listeningURI = "> Network:  " + listeningURI
 						listeningURIs = append(listeningURIs, listeningURI)
 					}
 				}
@@ -73,27 +73,20 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 		listeningURI := netutil.ResolveURL(guessScheme, addr)
 		if len(listeningURIs) > 0 {
 			listeningURIs[0] = "\n" + listeningURIs[0]
-			listeningURI = "> Local: " + listeningURI
+			listeningURI = "> Local:    " + listeningURI
 		}
 		listeningURIs = append(listeningURIs, listeningURI)
-
-		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press CTRL+C to shut down.\n",
-			strings.Join(listeningURIs, "\n"))
-
 		/*
-			When :8080 or 0.0.0.0:8080:
-				Now listening on:
-				> Network: http://192.168.1.109:8080
-				> Network: http://172.25.224.1:8080
-				> Local: http://localhost:8080
-				Application started. Press CTRL+C to shut down.
+			Now listening on:
+				> Network:  http://192.168.1.109:8080
+				> Network:  http://172.25.224.1:8080
+				> Local:    http://localhost:8080
 
 			Otherwise:
-				Iris Version: 12.2.1
-
 				Now listening on: http://192.168.1.109:8080
-				Application started. Press CTRL+C to shut down.
 		*/
+		_, _ = fmt.Fprintf(w, "Now listening on: %s\nApplication started. Press CTRL+C to shut down.\n",
+			strings.Join(listeningURIs, "\n"))
 	}
 }
 
