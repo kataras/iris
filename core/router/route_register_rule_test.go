@@ -12,6 +12,8 @@ import (
 
 func TestRegisterRule(t *testing.T) {
 	app := iris.New()
+	app.Configure(iris.WithDynamicHandler)
+
 	// collect the error on RouteError rule.
 	buf := new(bytes.Buffer)
 	app.Logger().SetTimeFormat("").DisableNewLine().SetOutput(buf)

@@ -1,10 +1,13 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -39,7 +42,17 @@ type (
 		// on the given context's response status code.
 		FireErrorCode(ctx *context.Context)
 	}
+
+	// RouteAdder is an optional interface that can be implemented by a `RequestHandler`.
+	RouteAdder interface {
+		// AddRoute should add a route to the request handler directly.
+		AddRoute(*Route) error
+	}
 )
+
+// ErrNotRouteAdder throws on `AddRouteUnsafe` when a registered `RequestHandler`
+// does not implements the optional `AddRoute(*Route) error` method.
+var ErrNotRouteAdder = errors.New("request handler does not implement AddRoute method")
 
 type routerHandler struct {
 	// Config.
@@ -59,8 +72,103 @@ type routerHandler struct {
 	errorDefaultHandlers context.Handlers // the main handler(s) for default error code handlers, when not registered directly by the end-developer.
 }
 
-var _ RequestHandler = (*routerHandler)(nil)
-var _ HTTPErrorHandler = (*routerHandler)(nil)
+var (
+	_ RequestHandler   = (*routerHandler)(nil)
+	_ HTTPErrorHandler = (*routerHandler)(nil)
+)
+
+type routerHandlerDynamic struct {
+	RequestHandler
+	rw sync.RWMutex
+
+	locked uint32
+}
+
+// RouteExists reports whether a particular route exists.
+func (h *routerHandlerDynamic) RouteExists(ctx *context.Context, method, path string) (exists bool) {
+	h.lock(false, func() error {
+		exists = h.RequestHandler.RouteExists(ctx, method, path)
+		return nil
+	})
+
+	return
+}
+
+func (h *routerHandlerDynamic) AddRoute(r *Route) error {
+	if v, ok := h.RequestHandler.(RouteAdder); ok {
+		return h.lock(true, func() error {
+			return v.AddRoute(r)
+		})
+	}
+
+	return ErrNotRouteAdder
+}
+
+func (h *routerHandlerDynamic) lock(writeAccess bool, fn func() error) error {
+	if atomic.CompareAndSwapUint32(&h.locked, 0, 1) {
+		if writeAccess {
+			h.rw.Lock()
+		} else {
+			h.rw.RLock()
+		}
+
+		err := fn()
+
+		// check agan because fn may called the unlock method.
+		if atomic.CompareAndSwapUint32(&h.locked, 1, 0) {
+			if writeAccess {
+				h.rw.Unlock()
+			} else {
+				h.rw.RUnlock()
+			}
+		}
+
+		return err
+	}
+
+	return fn()
+}
+
+func (h *routerHandlerDynamic) Build(provider RoutesProvider) error {
+	// Build can be called inside HandleRequest if the route handler
+	// calls the RefreshRouter method, and it will stuck on the rw.Lock() call,
+	// so use a custom version of it.
+	// h.rw.Lock()
+	// defer h.rw.Unlock()
+
+	return h.lock(true, func() error {
+		return h.RequestHandler.Build(provider)
+	})
+}
+
+func (h *routerHandlerDynamic) HandleRequest(ctx *context.Context) {
+	h.lock(false, func() error {
+		h.RequestHandler.HandleRequest(ctx)
+		return nil
+	})
+}
+
+func (h *routerHandlerDynamic) FireErrorCode(ctx *context.Context) {
+	h.lock(false, func() error {
+		h.RequestHandler.FireErrorCode(ctx)
+		return nil
+	})
+}
+
+// NewDynamicHandler returns a new router handler which is responsible handle each request
+// with routes that can be added in serve-time.
+// It's a wrapper of the `NewDefaultHandler`.
+// It's being used when the `ConfigurationReadOnly.GetEnableDynamicHandler` is true.
+func NewDynamicHandler(config context.ConfigurationReadOnly, logger *golog.Logger) RequestHandler /* #2167 */ {
+	handler := NewDefaultHandler(config, logger)
+	return wrapDynamicHandler(handler)
+}
+
+func wrapDynamicHandler(handler RequestHandler) RequestHandler {
+	return &routerHandlerDynamic{
+		RequestHandler: handler,
+	}
+}
 
 // NewDefaultHandler returns the handler which is responsible
 // to map the request with a route (aka mux implementation).
@@ -71,6 +179,7 @@ func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logge
 		fireMethodNotAllowed             bool
 		enablePathIntelligence           bool
 		forceLowercaseRouting            bool
+		dynamicHandlerEnabled            bool
 	)
 
 	if config != nil { // #2147
@@ -79,9 +188,10 @@ func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logge
 		fireMethodNotAllowed = config.GetFireMethodNotAllowed()
 		enablePathIntelligence = config.GetEnablePathIntelligence()
 		forceLowercaseRouting = config.GetForceLowercaseRouting()
+		dynamicHandlerEnabled = config.GetEnableDynamicHandler()
 	}
 
-	return &routerHandler{
+	handler := &routerHandler{
 		disablePathCorrection:            disablePathCorrection,
 		disablePathCorrectionRedirection: disablePathCorrectionRedirection,
 		fireMethodNotAllowed:             fireMethodNotAllowed,
@@ -89,6 +199,12 @@ func NewDefaultHandler(config context.ConfigurationReadOnly, logger *golog.Logge
 		forceLowercaseRouting:            forceLowercaseRouting,
 		logger:                           logger,
 	}
+
+	if dynamicHandlerEnabled {
+		return wrapDynamicHandler(handler)
+	}
+
+	return handler
 }
 
 func (h *routerHandler) getTree(statusCode int, method, subdomain string) *trie {
