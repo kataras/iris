@@ -1,6 +1,6 @@
 module github.com/kataras/iris/_examples/dependency-injection/jwt/contrib
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/iris-contrib/middleware/jwt v0.0.0-20230716223316-058c9deb31e2

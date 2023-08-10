@@ -1,6 +1,6 @@
 module github.com/kataras/iris/_examples/websocket/socketio
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/googollee/go-socket.io v1.7.0

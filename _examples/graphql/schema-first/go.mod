@@ -1,6 +1,6 @@
 module github.com/iris-contrib/outerbanks-api
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/99designs/gqlgen v0.17.36

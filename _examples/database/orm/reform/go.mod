@@ -1,6 +1,6 @@
 module myapp
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/kataras/golog v0.1.9

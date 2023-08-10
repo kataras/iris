@@ -1,6 +1,6 @@
 module github.com/kataras/iris/v12/_examples/bootstrapper
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/gorilla/securecookie v1.1.1
