@@ -308,6 +308,14 @@ var WithLowercaseRouting = func(app *Application) {
 	app.config.ForceLowercaseRouting = true
 }
 
+// WithDynamicHandler enables for dynamic routing by
+// setting the `EnableDynamicHandler` to true.
+//
+// See `Configuration`.
+var WithDynamicHandler = func(app *Application) {
+	app.config.EnableDynamicHandler = true
+}
+
 // WithOptimizations can force the application to optimize for the best performance where is possible.
 //
 // See `Configuration`.
@@ -737,6 +745,14 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	ForceLowercaseRouting bool `ini:"force_lowercase_routing" json:"forceLowercaseRouting,omitempty" yaml:"ForceLowercaseRouting" toml:"ForceLowercaseRouting"`
+	// EnableOptimizations enables dynamic request handler.
+	// It gives the router the feature to add routes while in serve-time,
+	// when `RefreshRouter` is called.
+	// If this setting is set to true, the request handler will use a mutex for data(trie routing) protection,
+	// hence the performance cost.
+	//
+	// Defaults to false.
+	EnableDynamicHandler bool `ini:"enable_dynamic_handler" json:"enableDynamicHandler,omitempty" yaml:"EnableDynamicHandler" toml:"EnableDynamicHandler"`
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
@@ -1006,6 +1022,11 @@ func (c *Configuration) GetEnablePathEscape() bool {
 // GetForceLowercaseRouting returns the ForceLowercaseRouting field.
 func (c *Configuration) GetForceLowercaseRouting() bool {
 	return c.ForceLowercaseRouting
+}
+
+// GetEnableDynamicHandler returns the EnableDynamicHandler field.
+func (c *Configuration) GetEnableDynamicHandler() bool {
+	return c.EnableDynamicHandler
 }
 
 // GetFireMethodNotAllowed returns the FireMethodNotAllowed field.

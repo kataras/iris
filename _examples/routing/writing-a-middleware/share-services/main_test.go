@@ -10,5 +10,5 @@ func TestShareServices(t *testing.T) {
 	app := newApp()
 	e := httptest.New(t, app)
 
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("Hello, Gophers!")
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("Hello, Gophers!")
 }

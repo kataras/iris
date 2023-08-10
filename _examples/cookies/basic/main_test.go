@@ -20,7 +20,7 @@ func TestCookiesBasic(t *testing.T) {
 
 	// Test retrieve a Cookie.
 	t2 := e.GET(fmt.Sprintf("/cookies/%s", cookieName)).Expect().Status(httptest.StatusOK)
-	t2.Body().Equal(cookieValue)
+	t2.Body().IsEqual(cookieValue)
 
 	// Test remove a Cookie.
 	t3 := e.DELETE(fmt.Sprintf("/cookies/%s", cookieName)).Expect().Status(httptest.StatusOK)
@@ -28,5 +28,5 @@ func TestCookiesBasic(t *testing.T) {
 
 	t4 := e.GET(fmt.Sprintf("/cookies/%s", cookieName)).Expect().Status(httptest.StatusOK)
 	t4.Cookies().Empty()
-	t4.Body().Empty()
+	t4.Body().IsEmpty()
 }

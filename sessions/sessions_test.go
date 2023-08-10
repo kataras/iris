@@ -114,7 +114,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 	d.JSON().Object().Empty()
 
 	d = e.GET("/after_destroy_renew").Expect().Status(iris.StatusOK)
-	d.Body().Equal("true")
+	d.Body().IsEqual("true")
 	d.Cookies().NotEmpty()
 
 	// set and clear again
@@ -123,7 +123,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 
 	// test start on the same request but more than one times
 
-	e.GET("/multi_start_set_get").Expect().Status(iris.StatusOK).Body().Equal("value")
+	e.GET("/multi_start_set_get").Expect().Status(iris.StatusOK).Body().IsEqual("value")
 }
 
 func TestFlashMessages(t *testing.T) {
@@ -211,7 +211,7 @@ func TestFlashMessages(t *testing.T) {
 
 	// set again in order to take the single one ( we don't test Cookies.NotEmpty because httpexpect default conf reads that from the request-only)
 	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK)
-	e.GET("/get_single").Expect().Status(iris.StatusOK).Body().Equal(valueSingleValue)
+	e.GET("/get_single").Expect().Status(iris.StatusOK).Body().IsEqual(valueSingleValue)
 }
 
 func TestSessionsUpdateExpiration(t *testing.T) {
@@ -268,11 +268,11 @@ func TestSessionsUpdateExpiration(t *testing.T) {
 
 	expectedResponse := response{SessionID: sessionID, Logged: true}
 	e.GET("/get").Expect().Status(httptest.StatusOK).
-		JSON().Equal(expectedResponse)
+		JSON().IsEqual(expectedResponse)
 
 	tt = e.POST("/remember_me").Expect().Status(httptest.StatusOK)
 	tt.Cookie(cookieName).MaxAge().InRange(23*time.Hour, 24*time.Hour)
-	tt.JSON().Equal(expectedResponse)
+	tt.JSON().IsEqual(expectedResponse)
 
 	// Test call `UpdateExpiration` when cookie is firstly created.
 	e.GET("/destroy").Expect().Status(httptest.StatusOK)
@@ -312,7 +312,7 @@ func TestSessionsUpdateExpirationConcurrently(t *testing.T) {
 	for i < 1000 {
 		go func() {
 			tt := e.GET("/get").Expect().Status(httptest.StatusOK)
-			tt.Body().Equal(id)
+			tt.Body().IsEqual(id)
 			tt.Cookie(cookieName).MaxAge().InRange(29*time.Minute, 30*time.Minute)
 			wg.Done()
 		}()
@@ -320,6 +320,6 @@ func TestSessionsUpdateExpirationConcurrently(t *testing.T) {
 	}
 	wg.Wait()
 	tt := e.GET("/get").Expect()
-	tt.Status(httptest.StatusOK).Body().Equal(id)
+	tt.Status(httptest.StatusOK).Body().IsEqual(id)
 	tt.Cookie(cookieName).MaxAge().InRange(29*time.Minute, 30*time.Minute)
 }

@@ -1,6 +1,6 @@
 # View
 
-Iris supports 8 template engines out-of-the-box, developers can still use any external golang template engine,
+Iris supports 7 template engines out-of-the-box, developers can still use any external golang template engine,
 as `Context.ResponseWriter()` is an `io.Writer`.
 
 All template engines share a common API i.e.
@@ -13,9 +13,8 @@ Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, 
 | 3 | Django     | [flosch/pongo2](https://github.com/flosch/pongo2) |
 | 4 | Pug        | [Joker/jade](https://github.com/Joker/jade) |
 | 5 | Handlebars | [mailgun/raymond](https://github.com/mailgun/raymond) |
-| 6 | Amber      | [eknkc/amber](https://github.com/eknkc/amber) |
-| 7 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
-| 8 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |
+| 6 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
+| 7 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |
 
 [List of Examples](https://github.com/kataras/iris/tree/master/_examples/view).
 

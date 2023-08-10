@@ -89,6 +89,6 @@ func TestEmbeddingFilesIntoApp(t *testing.T) {
 		e.GET(url).Expect().
 			Status(httptest.StatusOK).
 			ContentType(u.contentType()).
-			Body().Equal(contents)
+			Body().IsEqual(contents)
 	}
 }

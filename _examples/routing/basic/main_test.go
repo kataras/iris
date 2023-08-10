@@ -50,39 +50,39 @@ func TestRoutingBasic(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/anotfound").Expect().Status(httptest.StatusNotFound).
-		Body().Equal(expectedNotFoundResponse)
+		Body().IsEqual(expectedNotFoundResponse)
 
 	e.GET("/").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedIndexResponse)
+		Body().IsEqual(expectedIndexResponse)
 	e.GET("/home").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedHomeResponse)
+		Body().IsEqual(expectedHomeResponse)
 
 	e.GET("/u/some/path/here").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedUpathResponse)
+		Body().IsEqual(expectedUpathResponse)
 	e.GET("/u/abcd123").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedUStringResponse)
+		Body().IsEqual(expectedUStringResponse)
 	e.GET("/u/-1").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedUIntResponse)
+		Body().IsEqual(expectedUIntResponse)
 	e.GET("/u/42").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedUUintResponse)
+		Body().IsEqual(expectedUUintResponse)
 	e.GET("/u/abcd").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedUAlphabeticalResponse)
+		Body().IsEqual(expectedUAlphabeticalResponse)
 
 	e.GET("/api/users/42").Expect().Status(httptest.StatusOK).
-		JSON().Equal(expectedAPIUsersIndexResponse)
+		JSON().IsEqual(expectedAPIUsersIndexResponse)
 
 	e.GET("/admin").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedAdminIndexResponse)
+		Body().IsEqual(expectedAdminIndexResponse)
 
 	e.Request("GET", "/").WithURL("http://v1.example.com").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedSubdomainV1IndexResponse)
+		Body().IsEqual(expectedSubdomainV1IndexResponse)
 
 	e.Request("GET", "/api/users").WithURL("http://v1.example.com").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedSubdomainV1APIUsersIndexResponse)
+		Body().IsEqual(expectedSubdomainV1APIUsersIndexResponse)
 
 	e.Request("GET", "/api/users/42").WithURL("http://v1.example.com").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedSubdomainV1APIUsersIndexWithParamResponse)
+		Body().IsEqual(expectedSubdomainV1APIUsersIndexWithParamResponse)
 
 	e.Request("GET", "/").WithURL("http://any-subdomain-here.example.com").Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedSubdomainWildcardIndexResponse)
+		Body().IsEqual(expectedSubdomainWildcardIndexResponse)
 }

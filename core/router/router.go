@@ -49,13 +49,13 @@ func NewRouter() *Router {
 
 // RefreshRouter re-builds the router. Should be called when a route's state
 // changed (i.e Method changed at serve-time).
+//
+// Note that in order to use RefreshRouter while in serve-time,
+// you have to set the `EnableDynamicHandler` Iris Application setting to true,
+// e.g. `app.Listen(":8080", iris.WithEnableDynamicHandler)`
 func (router *Router) RefreshRouter() error {
 	return router.BuildRouter(router.cPool, router.requestHandler, router.routesProvider, true)
 }
-
-// ErrNotRouteAdder throws on `AddRouteUnsafe` when a registered `RequestHandler`
-// does not implements the optional `AddRoute(*Route) error` method.
-var ErrNotRouteAdder = errors.New("request handler does not implement AddRoute method")
 
 // AddRouteUnsafe adds a route directly to the router's request handler.
 // Works before or after Build state.
@@ -63,9 +63,7 @@ var ErrNotRouteAdder = errors.New("request handler does not implement AddRoute m
 // Do NOT use it on serve-time.
 func (router *Router) AddRouteUnsafe(routes ...*Route) error {
 	if h := router.requestHandler; h != nil {
-		if v, ok := h.(interface {
-			AddRoute(*Route) error
-		}); ok {
+		if v, ok := h.(RouteAdder); ok {
 			for _, r := range routes {
 				return v.AddRoute(r)
 			}

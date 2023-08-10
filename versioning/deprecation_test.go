@@ -26,7 +26,7 @@ func TestDeprecated(t *testing.T) {
 	e := httptest.New(t, app)
 
 	ex := e.GET("/").WithHeader(versioning.AcceptVersionHeaderKey, "1.0").Expect()
-	ex.Status(iris.StatusOK).Body().Equal("1.0")
+	ex.Status(iris.StatusOK).Body().IsEqual("1.0")
 	ex.Header("X-API-Warn").Equal(opts.WarnMessage)
 	expectedDateStr := opts.DeprecationDate.Format(app.ConfigurationReadOnly().GetTimeFormat())
 	ex.Header("X-API-Deprecation-Date").Equal(expectedDateStr)

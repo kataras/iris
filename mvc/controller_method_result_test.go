@@ -74,32 +74,32 @@ func TestControllerMethodResult(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("Hello World!")
+		Body().IsEqual("Hello World!")
 
 	e.GET("/with/status").Expect().Status(iris.StatusNotFound).
-		Body().Equal("This page doesn't exist")
+		Body().IsEqual("This page doesn't exist")
 
 	e.GET("/json").Expect().Status(iris.StatusOK).
-		JSON().Equal(iris.Map{
+		JSON().IsEqual(iris.Map{
 		"name": "Iris",
 		"age":  2,
 	})
 
 	e.GET("/json").WithQuery("err", true).Expect().
 		Status(iris.StatusBadRequest).
-		Body().Equal("error here")
+		Body().IsEqual("error here")
 
 	e.GET("/thing/with/try/1").Expect().
 		Status(iris.StatusOK).
-		Body().Equal("thing 1")
+		Body().IsEqual("thing 1")
 	// failure because of index exceed the slice
 	e.GET("/thing/with/try/3").Expect().
 		Status(iris.StatusNotFound).
-		Body().Equal("thing does not exist")
+		Body().IsEqual("thing does not exist")
 
 	e.GET("/thing/with/try/default/3").Expect().
 		Status(iris.StatusBadRequest).
-		Body().Equal("Bad Request")
+		Body().IsEqual("Bad Request")
 }
 
 type testControllerMethodResultTypes struct {
@@ -178,49 +178,49 @@ func TestControllerMethodResultTypes(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/text").Expect().Status(iris.StatusOK).
-		Body().Equal("text")
+		Body().IsEqual("text")
 
 	e.GET("/status").Expect().Status(iris.StatusBadGateway)
 
 	e.GET("/text/with/status/ok").Expect().Status(iris.StatusOK).
-		Body().Equal("OK")
+		Body().IsEqual("OK")
 
 	e.GET("/status/with/text/not/ok/first/second").Expect().Status(iris.StatusForbidden).
-		Body().Equal("NOT_OK_firstsecond")
+		Body().IsEqual("NOT_OK_firstsecond")
 	// Author's note: <-- if that fails means that the last binder called for both input args,
 	// see path_param_binder.go
 
 	e.GET("/text/and/content/type").Expect().Status(iris.StatusOK).
 		ContentType("text/html", "utf-8").
-		Body().Equal("<b>text</b>")
+		Body().IsEqual("<b>text</b>")
 
 	e.GET("/custom/response").Expect().Status(iris.StatusOK).
 		ContentType("text/html", "utf-8").
-		Body().Equal("<b>text</b>")
+		Body().IsEqual("<b>text</b>")
 	e.GET("/custom/response/with/status/ok").Expect().Status(iris.StatusOK).
 		ContentType("text/html", "utf-8").
-		Body().Equal("<b>OK</b>")
+		Body().IsEqual("<b>OK</b>")
 	e.GET("/custom/response/with/status/not/ok").Expect().Status(iris.StatusInternalServerError).
 		ContentType("text/html", "utf-8").
-		Body().Equal("<b>internal server error</b>")
+		Body().IsEqual("<b>internal server error</b>")
 
 	expectedResultFromCustomStruct := map[string]interface{}{
 		"name": "Iris",
 		"age":  2,
 	}
 	e.GET("/custom/struct").Expect().Status(iris.StatusOK).
-		JSON().Equal(expectedResultFromCustomStruct)
+		JSON().IsEqual(expectedResultFromCustomStruct)
 	e.GET("/custom/struct/with/status/not/ok").Expect().Status(iris.StatusInternalServerError).
-		JSON().Equal(expectedResultFromCustomStruct)
+		JSON().IsEqual(expectedResultFromCustomStruct)
 	e.GET("/custom/struct/with/content/type").Expect().Status(iris.StatusOK).
 		ContentType("text/xml", "utf-8")
 	e.GET("/custom/struct/with/error").Expect().Status(iris.StatusOK).
-		JSON().Equal(expectedResultFromCustomStruct)
+		JSON().IsEqual(expectedResultFromCustomStruct)
 	e.GET("/custom/struct/with/error").WithQuery("err", true).Expect().
 		Status(iris.StatusBadRequest). // the default status code if error is not nil
 		// the content should be not JSON it should be the status code's text
 		// it will fire the error's text
-		Body().Equal("omit return of testCustomStruct and fire error")
+		Body().IsEqual("omit return of testCustomStruct and fire error")
 }
 
 type testControllerViewResultRespectCtxViewData struct {

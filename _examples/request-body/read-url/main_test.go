@@ -12,5 +12,5 @@ func TestReadURL(t *testing.T) {
 	e := httptest.New(t, app)
 
 	expectedBody := `myURL: main.myURL{Name:"kataras", Age:27, Tail:[]string{"iris", "web", "framework"}}`
-	e.GET("/iris/web/framework").WithQuery("name", "kataras").WithQuery("age", 27).Expect().Status(httptest.StatusOK).Body().Equal(expectedBody)
+	e.GET("/iris/web/framework").WithQuery("name", "kataras").WithQuery("age", 27).Expect().Status(httptest.StatusOK).Body().IsEqual(expectedBody)
 }

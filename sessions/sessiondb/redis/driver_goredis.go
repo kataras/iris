@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 type (
@@ -17,7 +17,7 @@ type (
 )
 
 // GoRedisClient is the interface which both
-// go-redis' Client and Cluster Client implements.
+// go-redis's Client and Cluster Client implements.
 type GoRedisClient interface {
 	redis.Cmdable // Commands.
 	io.Closer     // CloseConnection.

@@ -184,7 +184,7 @@ Alguns dos recursos que o Iris Web Framework oferece:
 * Suporte integrado para ngrok para colocar seu aplicativo na internet da maneira mais rápida
 * Router único com caminho dinâmico como parametro com tipos padrões como :uuid, :string, :int... e a habilidade de criar o seu próprio router
 * Compressão
-* View Engines (HTML, Django, Amber, Handlebars, Pug/Jade e mais)
+* View Engines (HTML, Django, Handlebars, Pug/Jade e mais)
 * Cria seu próprio Servidor de Arquivo e hospeda seu próprio servidor WebDAV
 * Cache
 * Localização (i18n, sitemap)
@@ -475,7 +475,7 @@ $ go get github.com/kataras/iris/v12@latest
 **Run**
 
 ```sh
-$ go mod tidy -compat=1.19 # -compat="1.19" for windows.
+$ go mod tidy -compat=1.20 # -compat="1.20" for windows.
 $ go run .
 ```
 

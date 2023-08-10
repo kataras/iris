@@ -141,8 +141,8 @@ func (i *I18n) LoadAssets(assetNames func() []string, asset func(string) ([]byte
 	return i.Reset(Assets(assetNames, asset, i.Loader), languages...)
 }
 
-// LoadFS is a method shortcut to load files using `embed.FS` or `fs.FS` or
-// `http.FileSystem` or `string` (local directory).
+// LoadFS is a method shortcut to load files using
+// an `embed.FS` or `fs.FS` or `http.FileSystem` value.
 // The "pattern" is a classic glob pattern.
 //
 // See `New` and `FS` package-level functions for more.
@@ -153,6 +153,13 @@ func (i *I18n) LoadFS(fileSystem fs.FS, pattern string, languages ...string) err
 		return err
 	}
 
+	return i.Reset(loader, languages...)
+}
+
+// LoadKV is a method shortcut to load locales from a map of specified languages.
+// See `KV` package-level function for more.
+func (i *I18n) LoadKV(langMap LangMap, languages ...string) error {
+	loader := KV(langMap, i.Loader)
 	return i.Reset(loader, languages...)
 }
 
@@ -292,6 +299,16 @@ func (m *Matcher) ParseLanguageFiles(fileNames []string) (map[int][]string, erro
 
 func parsePath(m *Matcher, path string) int {
 	if t, ok := parseLanguage(path); ok {
+		if _, index, conf := m.MatchOrAdd(t); conf > language.Low {
+			return index
+		}
+	}
+
+	return -1
+}
+
+func parseLanguageName(m *Matcher, name string) int {
+	if t, err := language.Parse(name); err == nil {
 		if _, index, conf := m.MatchOrAdd(t); conf > language.Low {
 			return index
 		}

@@ -93,7 +93,7 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 	// http testsing and various calls
 	// no need for time sleep because the following will take some time by theirselves
 	tester := newTester(t, "http://"+addr, mux)
-	tester.Request("GET", "/").Expect().Status(http.StatusOK).Body().Equal(expectedBody)
+	tester.Request("GET", "/").Expect().Status(http.StatusOK).Body().IsEqual(expectedBody)
 
 	// WARNING: Data Race here because we try to read the logs
 	// but it's "safe" here.

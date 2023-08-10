@@ -37,20 +37,20 @@ func TestNewGroup(t *testing.T) {
 	e := httptest.New(t, app)
 
 	ex := e.GET("/api/user").WithHeader(versioning.AcceptVersionHeaderKey, "1.0.0").Expect()
-	ex.Status(iris.StatusOK).Body().Equal(v10Response)
+	ex.Status(iris.StatusOK).Body().IsEqual(v10Response)
 	ex.Header("X-API-Warn").Equal(versioning.DefaultDeprecationOptions.WarnMessage)
 
 	e.GET("/api/user").WithHeader(versioning.AcceptVersionHeaderKey, "2.0.0").Expect().
-		Status(iris.StatusOK).Body().Equal(v2Response)
+		Status(iris.StatusOK).Body().IsEqual(v2Response)
 	e.GET("/api/user").WithHeader(versioning.AcceptVersionHeaderKey, "2.1.0").Expect().
-		Status(iris.StatusOK).Body().Equal(v2Response)
+		Status(iris.StatusOK).Body().IsEqual(v2Response)
 	e.GET("/api/user").WithHeader(versioning.AcceptVersionHeaderKey, "2.9.9").Expect().
-		Status(iris.StatusOK).Body().Equal(v2Response)
+		Status(iris.StatusOK).Body().IsEqual(v2Response)
 	e.POST("/api/user").WithHeader(versioning.AcceptVersionHeaderKey, "2.0.0").Expect().
-		Status(iris.StatusOK).Body().Equal(v2Response)
+		Status(iris.StatusOK).Body().IsEqual(v2Response)
 	e.PUT("/api/user/other").WithHeader(versioning.AcceptVersionHeaderKey, "2.9.0").Expect().
-		Status(iris.StatusOK).Body().Equal(v2Response)
+		Status(iris.StatusOK).Body().IsEqual(v2Response)
 
 	e.GET("/api/user").WithHeader(versioning.AcceptVersionHeaderKey, "3.0").Expect().
-		Status(iris.StatusNotImplemented).Body().Equal("version not found")
+		Status(iris.StatusNotImplemented).Body().IsEqual("version not found")
 }

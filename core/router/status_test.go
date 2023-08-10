@@ -45,20 +45,20 @@ func TestOnAnyErrorCode(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/found").Expect().Status(iris.StatusOK).
-		Body().Equal(expectedFoundResponse)
+		Body().IsEqual(expectedFoundResponse)
 
 	e.GET("/notfound").Expect().Status(iris.StatusNotFound).
-		Body().Equal(http.StatusText(iris.StatusNotFound))
+		Body().IsEqual(http.StatusText(iris.StatusNotFound))
 
 	checkAndClearBuf(t, buff, expectedPrintBeforeExecuteErr)
 
 	e.POST("/found").Expect().Status(iris.StatusMethodNotAllowed).
-		Body().Equal(http.StatusText(iris.StatusMethodNotAllowed))
+		Body().IsEqual(http.StatusText(iris.StatusMethodNotAllowed))
 
 	checkAndClearBuf(t, buff, expectedPrintBeforeExecuteErr)
 
 	e.GET("/407").Expect().Status(iris.StatusProxyAuthRequired).
-		Body().Equal(expected407)
+		Body().IsEqual(expected407)
 
 	// Test Configuration.ResetOnFireErrorCode.
 	app2 := iris.New()
@@ -77,7 +77,7 @@ func TestOnAnyErrorCode(t *testing.T) {
 	})
 
 	httptest.New(t, app2).GET("/406").Expect().Status(iris.StatusNotAcceptable).
-		Body().Equal(http.StatusText(iris.StatusNotAcceptable))
+		Body().IsEqual(http.StatusText(iris.StatusNotAcceptable))
 
 	checkAndClearBuf(t, buff, expectedPrintBeforeExecuteErr)
 }
@@ -135,26 +135,26 @@ func TestPartyOnErrorCode(t *testing.T) {
 
 	e := httptest.New(t, app)
 
-	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(globalNotFoundResponse)
-	e.POST("/path").Expect().Status(iris.StatusMethodNotAllowed).Body().Equal(globalMethodNotAllowedResponse)
-	e.GET("/path").Expect().Status(iris.StatusOK).Body().Equal("/path")
+	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().IsEqual(globalNotFoundResponse)
+	e.POST("/path").Expect().Status(iris.StatusMethodNotAllowed).Body().IsEqual(globalMethodNotAllowedResponse)
+	e.GET("/path").Expect().Status(iris.StatusOK).Body().IsEqual("/path")
 
 	e.POST("/users").Expect().Status(iris.StatusMethodNotAllowed).
-		Body().Equal(usersResponse)
+		Body().IsEqual(usersResponse)
 
 	e.POST("/users/42").Expect().Status(iris.StatusMethodNotAllowed).
-		Body().Equal(usersuserResponse)
+		Body().IsEqual(usersuserResponse)
 
 	e.GET("/users/42").Expect().Status(iris.StatusOK).
-		Body().Equal("/users/42")
-	e.GET("/users/ab").Expect().Status(iris.StatusNotFound).Body().Equal(usersuserNotFoundResponse)
+		Body().IsEqual("/users/42")
+	e.GET("/users/ab").Expect().Status(iris.StatusNotFound).Body().IsEqual(usersuserNotFoundResponse)
 	// inherit the parent.
-	e.GET("/users/42/friends/dsa").Expect().Status(iris.StatusNotFound).Body().Equal(usersuserNotFoundResponse)
+	e.GET("/users/42/friends/dsa").Expect().Status(iris.StatusNotFound).Body().IsEqual(usersuserNotFoundResponse)
 
 	// if not registered to the party, then the root is taking action.
-	e.GET("/users/42/ab/badrequest").Expect().Status(iris.StatusBadRequest).Body().Equal(http.StatusText(iris.StatusBadRequest))
+	e.GET("/users/42/ab/badrequest").Expect().Status(iris.StatusBadRequest).Body().IsEqual(http.StatusText(iris.StatusBadRequest))
 
 	// if not registered to the party, and not in root, then just write the status text (fallback behavior)
 	e.GET("/users/badrequest").Expect().Status(iris.StatusBadRequest).
-		Body().Equal(http.StatusText(iris.StatusBadRequest))
+		Body().IsEqual(http.StatusText(iris.StatusBadRequest))
 }

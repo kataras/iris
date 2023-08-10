@@ -13,6 +13,16 @@ var embeddedFS embed.FS
 
 func main() {
 	app := newApp()
+	// http://localhost:8080
+	// http://localhost:8080?lang=el
+	// http://localhost:8080?lang=el
+	// http://localhost:8080?lang=el-GR
+	// http://localhost:8080?lang=en
+	// http://localhost:8080?lang=en-US
+	//
+	// http://localhost:8080/title
+	// http://localhost:8080/title?lang=el-GR
+	// ...
 	app.Listen(":8080")
 }
 
@@ -30,11 +40,14 @@ func newApp() *iris.Application {
 
 	// Instead of:
 	// err := app.I18n.Load("./locales/*/*.ini", "en-US", "el-GR")
-	// Apply the below in order to build with embedded locales inside your executable binary.
+	// apply the below in order to build with embedded locales inside your executable binary.
 	err := app.I18n.LoadFS(embeddedFS, "./embedded/locales/*/*.ini", "en-US", "el-GR")
 	if err != nil {
 		panic(err)
-	}
+	} // OR to load all languages by filename:
+	// app.I18n.LoadFS(embeddedFS, "./embedded/locales/*/*.ini")
+	// Then set the default language using:
+	// app.I18n.SetDefault("en-US")
 
 	app.Get("/", func(ctx iris.Context) {
 		text := ctx.Tr("forms.register") // en-US: prints "Become a MEMBER".

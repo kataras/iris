@@ -2,4 +2,6 @@
 
 h2 {{.Title}}
 
+h3 Body
+
 = include partials/footer.ace .

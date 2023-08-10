@@ -49,10 +49,10 @@ func TestJWT(t *testing.T) {
 	// Test Header.
 	headerValue := fmt.Sprintf("Bearer %s", token)
 	e.GET("/protected").WithHeader("Authorization", headerValue).Expect().
-		Status(iris.StatusOK).Body().Equal("bar")
+		Status(iris.StatusOK).Body().IsEqual("bar")
 	// Test URL query.
 	e.GET("/protected").WithQuery("token", token).Expect().
-		Status(iris.StatusOK).Body().Equal("bar")
+		Status(iris.StatusOK).Body().IsEqual("bar")
 
 	// Test unauthorized.
 	e.GET("/protected").Expect().Status(iris.StatusUnauthorized)
@@ -61,5 +61,5 @@ func TestJWT(t *testing.T) {
 	// Test expired (note checks happen based on second round).
 	time.Sleep(5 * time.Second)
 	e.GET("/protected").WithHeader("Authorization", headerValue).Expect().
-		Status(iris.StatusUnauthorized).Body().Equal("jwt: token expired")
+		Status(iris.StatusUnauthorized).Body().IsEqual("jwt: token expired")
 }

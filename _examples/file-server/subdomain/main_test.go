@@ -76,6 +76,6 @@ func TestFileServerSubdomainBasic(t *testing.T) {
 		e.GET(url).WithURL(host).Expect().
 			Status(httptest.StatusOK).
 			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
-			Body().Equal(contents)
+			Body().IsEqual(contents)
 	}
 }

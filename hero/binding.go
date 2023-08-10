@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 
 	"github.com/kataras/iris/v12/context"
 )
@@ -43,15 +44,14 @@ func newStructFieldInput(f reflect.StructField) *Input {
 
 // String returns the string representation of a binding.
 func (b *binding) String() string {
-	index := fmt.Sprintf("%d", b.Input.Index)
+	var index string
 	if len(b.Input.StructFieldIndex) > 0 {
-		for j, i := range b.Input.StructFieldIndex {
-			if j == 0 {
-				index = fmt.Sprintf("%d", i)
-				continue
-			}
+		index = strconv.Itoa(b.Input.StructFieldIndex[0])
+		for _, i := range b.Input.StructFieldIndex[1:] {
 			index += fmt.Sprintf(".%d", i)
 		}
+	} else {
+		index = strconv.Itoa(b.Input.Index)
 	}
 
 	return fmt.Sprintf("[%s:%s] maps to [%s]", index, b.Input.Type.String(), b.Dependency)
@@ -253,7 +253,7 @@ func isPayloadType(in reflect.Type) bool {
 func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePayloadAutoBinding bool, paramsCount int) []*binding {
 	fnTyp := fn.Type()
 	if !isFunc(fnTyp) {
-		panic("bindings: unresolved: not a func type")
+		panic(fmt.Sprintf("bindings: unresolved: no a func type: %#+v", fn))
 	}
 
 	n := fnTyp.NumIn()
@@ -291,10 +291,10 @@ func getBindingsForFunc(fn reflect.Value, dependencies []*Dependency, disablePay
 	return bindings
 }
 
-func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding bool, matchDependency DependencyMatcher, paramsCount int, sorter Sorter) (bindings []*binding) {
+func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExportedFieldsAsRequired bool, disablePayloadAutoBinding, enableStructDependents bool, matchDependency DependencyMatcher, paramsCount int, sorter Sorter) (bindings []*binding) {
 	typ := indirectType(v.Type())
 	if typ.Kind() != reflect.Struct {
-		panic("bindings: unresolved: no struct type")
+		panic(fmt.Sprintf("bindings: unresolved: not a struct type: %#+v", v))
 	}
 
 	// get bindings from any struct's non zero values first, including unexported.
@@ -303,7 +303,7 @@ func getBindingsForStruct(v reflect.Value, dependencies []*Dependency, markExpor
 	for _, f := range nonZero {
 		// fmt.Printf("Controller [%s] | NonZero | Field Index: %v | Field Type: %s\n", typ, f.Index, f.Type)
 		bindings = append(bindings, &binding{
-			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding, nil),
+			Dependency: newDependency(elem.FieldByIndex(f.Index).Interface(), disablePayloadAutoBinding, enableStructDependents, nil),
 			Input:      newStructFieldInput(f),
 		})
 	}

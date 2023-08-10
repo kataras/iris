@@ -33,6 +33,6 @@ func TestSetHost(t *testing.T) {
 	for _, tt := range tests {
 		ex := tt.Expect().Status(iris.StatusOK)
 		ex.Header("Server").Equal(rootApp.String())
-		ex.Body().Equal(forceHost)
+		ex.Body().IsEqual(forceHost)
 	}
 }

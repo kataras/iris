@@ -108,7 +108,7 @@ func TestSwitchHosts(t *testing.T) {
 					body = "Switcher: Bad Gateway"
 				}
 
-				e.GET(requestPath).WithURL(URL).Expect().Status(statusCode).Body().Equal(body)
+				e.GET(requestPath).WithURL(URL).Expect().Status(statusCode).Body().IsEqual(body)
 			}
 		}
 	}
@@ -204,7 +204,7 @@ func TestSwitchHostsRedirect(t *testing.T) {
 					}
 				}
 
-				e.GET(requestPath).WithURL(requestURL).Expect().Status(statusCode).Body().Equal(body)
+				e.GET(requestPath).WithURL(requestURL).Expect().Status(statusCode).Body().IsEqual(body)
 			}
 		}
 	}

@@ -33,27 +33,27 @@ func TestGetVersion(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/").WithHeader(versioning.AcceptVersionHeaderKey, "1.0.0").Expect().
-		Status(iris.StatusOK).Body().Equal("1.0.0")
+		Status(iris.StatusOK).Body().IsEqual("1.0.0")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "application/vnd.api+json; version=2.1.0").Expect().
-		Status(iris.StatusOK).Body().Equal("2.1.0")
+		Status(iris.StatusOK).Body().IsEqual("2.1.0")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "application/vnd.api+json; version=2.1.0 ;other=dsa").Expect().
-		Status(iris.StatusOK).Body().Equal("2.1.0")
+		Status(iris.StatusOK).Body().IsEqual("2.1.0")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "version=2.1.0").Expect().
-		Status(iris.StatusOK).Body().Equal("2.1.0")
+		Status(iris.StatusOK).Body().IsEqual("2.1.0")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "version=1.0.0").Expect().
-		Status(iris.StatusOK).Body().Equal("1.0.0")
+		Status(iris.StatusOK).Body().IsEqual("1.0.0")
 
 	// unknown versions.
 	e.GET("/").WithHeader(versioning.AcceptVersionHeaderKey, "").Expect().
-		Status(iris.StatusOK).Body().Equal("")
+		Status(iris.StatusOK).Body().IsEqual("")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "application/vnd.api+json; version=").Expect().
-		Status(iris.StatusOK).Body().Equal("")
+		Status(iris.StatusOK).Body().IsEqual("")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "application/vnd.api+json; version= ;other=dsa").Expect().
-		Status(iris.StatusOK).Body().Equal("")
+		Status(iris.StatusOK).Body().IsEqual("")
 	e.GET("/").WithHeader(versioning.AcceptHeaderKey, "version=").Expect().
-		Status(iris.StatusOK).Body().Equal("")
+		Status(iris.StatusOK).Body().IsEqual("")
 
-	e.GET("/manual").Expect().Status(iris.StatusOK).Body().Equal("11.0.5")
+	e.GET("/manual").Expect().Status(iris.StatusOK).Body().IsEqual("11.0.5")
 }
 
 func TestVersionAliases(t *testing.T) {
@@ -87,21 +87,21 @@ func TestVersionAliases(t *testing.T) {
 	e := httptest.New(t, app)
 
 	// Make sure the SetVersion still works.
-	e.GET("/api/manual").Expect().Status(iris.StatusOK).Body().Equal("12.0.0")
+	e.GET("/api/manual").Expect().Status(iris.StatusOK).Body().IsEqual("12.0.0")
 
 	// Test Empty default.
 	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "").Expect().
-		Status(iris.StatusOK).Body().Equal("1.0.0")
+		Status(iris.StatusOK).Body().IsEqual("1.0.0")
 	// Test NotFound error, aliases are not responsible for that.
 	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "4.0.0").Expect().
-		Status(iris.StatusNotImplemented).Body().Equal("version not found")
+		Status(iris.StatusNotImplemented).Body().IsEqual("version not found")
 	// Test "stage" alias.
 	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "stage").Expect().
-		Status(iris.StatusOK).Body().Equal("2.0.0")
+		Status(iris.StatusOK).Body().IsEqual("2.0.0")
 	// Test version 2.
 	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "2.0.0").Expect().
-		Status(iris.StatusOK).Body().Equal("2.0.0")
+		Status(iris.StatusOK).Body().IsEqual("2.0.0")
 	// Test version 3 (registered first).
 	e.GET("/api").WithHeader(versioning.AcceptVersionHeaderKey, "3.1.0").Expect().
-		Status(iris.StatusOK).Body().Equal("3.1.0")
+		Status(iris.StatusOK).Body().IsEqual("3.1.0")
 }

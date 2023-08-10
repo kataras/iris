@@ -11,11 +11,11 @@ func TestI18nLoaderFuncMap(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(httptest.StatusOK).
-		Body().Equal("Become a MEMBER")
+		Body().IsEqual("Become a MEMBER")
 	e.GET("/title").Expect().Status(httptest.StatusOK).
-		Body().Equal("Account Connections")
+		Body().IsEqual("Account Connections")
 	e.GET("/").WithHeader("Accept-Language", "el").Expect().Status(httptest.StatusOK).
-		Body().Equal("Γίνε ΜΈΛΟΣ")
+		Body().IsEqual("Γίνε ΜΈΛΟΣ")
 	e.GET("/title").WithHeader("Accept-Language", "el").Expect().Status(httptest.StatusOK).
-		Body().Equal("Λογαριασμός Συνδέσεις")
+		Body().IsEqual("Λογαριασμός Συνδέσεις")
 }

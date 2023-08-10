@@ -179,7 +179,7 @@ http://localhost:8080/books
 
 </details>
 
-[![run in the browser](https://img.shields.io/badge/Run-in%20the%20Browser-348798.svg?style=for-the-badge&logo=repl.it)](https://bit.ly/2YJeSZe)
+[![run in the browser](https://img.shields.io/badge/Run-in%20the%20Browser-348798.svg?style=for-the-badge&logo=repl.it)](https://replit.com/@kataras/Iris-Hello-World-v1220?v=1)
 
 Iris 有完整且详尽的 **[使用文档](https://www.iris-go.com/#ebookDonateForm)** ，让您可以轻松地使用此框架。
 

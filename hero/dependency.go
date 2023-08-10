@@ -2,6 +2,7 @@ package hero
 
 import (
 	"fmt"
+	"strings"
 
 	"reflect"
 
@@ -37,6 +38,13 @@ type (
 
 		// Match holds the matcher. Defaults to the Container's one.
 		Match DependencyMatchFunc
+
+		// StructDependents if true then the Container will try to resolve
+		// the fields of a struct value, if any, when it's a dependent struct value
+		// based on the previous registered dependencies.
+		//
+		// Defaults to false.
+		StructDependents bool
 	}
 )
 
@@ -46,6 +54,12 @@ type (
 // Returns itself.
 func (d *Dependency) Explicitly() *Dependency {
 	d.Explicit = true
+	return d
+}
+
+// EnableStructDependents sets StructDependents to true.
+func (d *Dependency) EnableStructDependents() *Dependency {
+	d.StructDependents = true
 	return d
 }
 
@@ -62,16 +76,22 @@ func (d *Dependency) String() string {
 //
 // See `Container.Handler` for more.
 func NewDependency(dependency interface{}, funcDependencies ...*Dependency) *Dependency { // used only on tests.
-	return newDependency(dependency, false, nil, funcDependencies...)
+	return newDependency(dependency, false, false, nil, funcDependencies...)
 }
 
-func newDependency(dependency interface{}, disablePayloadAutoBinding bool, matchDependency DependencyMatcher, funcDependencies ...*Dependency) *Dependency {
+func newDependency(
+	dependency interface{},
+	disablePayloadAutoBinding bool,
+	enableStructDependents bool,
+	matchDependency DependencyMatcher,
+	funcDependencies ...*Dependency,
+) *Dependency {
 	if dependency == nil {
 		panic(fmt.Sprintf("bad value: nil: %T", dependency))
 	}
 
 	if d, ok := dependency.(*Dependency); ok {
-		// already a *Dependency.
+		// already a *Dependency, do not continue (and most importatly do not call resolveDependency) .
 		return d
 	}
 
@@ -85,8 +105,9 @@ func newDependency(dependency interface{}, disablePayloadAutoBinding bool, match
 	}
 
 	dest := &Dependency{
-		Source:        newSource(v),
-		OriginalValue: dependency,
+		Source:           newSource(v),
+		OriginalValue:    dependency,
+		StructDependents: enableStructDependents,
 	}
 	dest.Match = ToDependencyMatchFunc(dest, matchDependency)
 
@@ -100,11 +121,12 @@ func newDependency(dependency interface{}, disablePayloadAutoBinding bool, match
 // DependencyResolver func(v reflect.Value, dest *Dependency) bool
 // Resolver     DependencyResolver
 
-func resolveDependency(v reflect.Value, disablePayloadAutoBinding bool, dest *Dependency, funcDependencies ...*Dependency) bool {
+func resolveDependency(v reflect.Value, disablePayloadAutoBinding bool, dest *Dependency, prevDependencies ...*Dependency) bool {
 	return fromDependencyHandler(v, dest) ||
-		fromStructValue(v, dest) ||
+		fromBuiltinValue(v, dest) ||
+		fromStructValueOrDependentStructValue(v, disablePayloadAutoBinding, dest, prevDependencies) ||
 		fromFunc(v, dest) ||
-		len(funcDependencies) > 0 && fromDependentFunc(v, disablePayloadAutoBinding, dest, funcDependencies)
+		len(prevDependencies) > 0 && fromDependentFunc(v, disablePayloadAutoBinding, dest, prevDependencies)
 }
 
 func fromDependencyHandler(_ reflect.Value, dest *Dependency) bool {
@@ -131,20 +153,116 @@ func fromDependencyHandler(_ reflect.Value, dest *Dependency) bool {
 	return true
 }
 
-func fromStructValue(v reflect.Value, dest *Dependency) bool {
-	if !isFunc(v) {
-		// It's just a static value.
-		handler := func(*context.Context, *Input) (reflect.Value, error) {
-			return v, nil
-		}
-
-		dest.DestType = v.Type()
-		dest.Static = true
-		dest.Handle = handler
-		return true
+func fromBuiltinValue(v reflect.Value, dest *Dependency) bool {
+	if !isBuiltinValue(v) {
+		return false
 	}
 
-	return false
+	// It's just a static builtin value.
+	handler := func(*context.Context, *Input) (reflect.Value, error) {
+		return v, nil
+	}
+
+	dest.DestType = v.Type()
+	dest.Static = true
+	dest.Handle = handler
+	return true
+}
+
+func fromStructValue(v reflect.Value, dest *Dependency) bool {
+	if !isStructValue(v) {
+		return false
+	}
+
+	// It's just a static struct value.
+	handler := func(*context.Context, *Input) (reflect.Value, error) {
+		return v, nil
+	}
+
+	dest.DestType = v.Type()
+	dest.Static = true
+	dest.Handle = handler
+	return true
+}
+
+func fromStructValueOrDependentStructValue(v reflect.Value, disablePayloadAutoBinding bool, dest *Dependency, prevDependencies []*Dependency) bool {
+	if !isStructValue(v) {
+		// It's not just a static struct value.
+		return false
+	}
+
+	if len(prevDependencies) == 0 || !dest.StructDependents { // As a non depedent struct.
+		// We must make this check so we can avoid the auto-filling of
+		// the dependencies from Iris builtin dependencies.
+		return fromStructValue(v, dest)
+	}
+
+	// Check if it's a builtin dependency (e.g an MVC Application (see mvc.go#newApp)),
+	// if it's and registered without a Dependency wrapper, like the rest builtin dependencies,
+	// then do NOT try to resolve its fields.
+	//
+	// Although EnableStructDependents is false by default, we must check if it's a builtin dependency for any case.
+	if strings.HasPrefix(indirectType(v.Type()).PkgPath(), "github.com/kataras/iris/v12") {
+		return fromStructValue(v, dest)
+	}
+
+	bindings := getBindingsForStruct(v, prevDependencies, false, disablePayloadAutoBinding, dest.StructDependents, DefaultDependencyMatcher, -1, nil)
+	if len(bindings) == 0 {
+		return fromStructValue(v, dest) // same as above.
+	}
+
+	// As a depedent struct, however we may need to resolve its dependencies first
+	// so we can decide if it's really a depedent struct or not.
+	var (
+		handler = func(*context.Context, *Input) (reflect.Value, error) {
+			return v, nil
+		}
+		isStatic = true
+	)
+
+	for _, binding := range bindings {
+		if !binding.Dependency.Static {
+			isStatic = false
+			break
+		}
+	}
+
+	handler = func(ctx *context.Context, _ *Input) (reflect.Value, error) { // Called once per dependency on build-time if the dependency is static.
+		elem := v
+		if elem.Kind() == reflect.Ptr {
+			elem = elem.Elem()
+		}
+
+		for _, binding := range bindings {
+			field := elem.FieldByIndex(binding.Input.StructFieldIndex)
+			if !field.CanSet() || !field.IsZero() {
+				continue // already set.
+			}
+			// if !binding.Dependency.Match(field.Type()) { A check already happen in getBindingsForStruct.
+			// 	continue
+			// }
+
+			input, err := binding.Dependency.Handle(ctx, binding.Input)
+			if err != nil {
+				if err == ErrSeeOther {
+					continue
+				}
+
+				return emptyValue, err
+			}
+
+			// fmt.Printf("binding %s to %#+v\n", field.String(), input)
+
+			field.Set(input)
+		}
+
+		return v, nil
+	}
+
+	dest.DestType = v.Type()
+	dest.Static = isStatic
+	dest.Handle = handler
+	return true
 }
 
 func fromFunc(v reflect.Value, dest *Dependency) bool {

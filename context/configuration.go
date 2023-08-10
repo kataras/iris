@@ -34,6 +34,8 @@ type ConfigurationReadOnly interface {
 	GetEnablePathEscape() bool
 	// GetForceLowercaseRouting returns the ForceLowercaseRouting field.
 	GetForceLowercaseRouting() bool
+	// GetEnableOptimizations returns the EnableDynamicHandler field.
+	GetEnableDynamicHandler() bool
 	// GetFireMethodNotAllowed returns the FireMethodNotAllowed field.
 	GetFireMethodNotAllowed() bool
 	// GetDisableAutoFireStatusCode returns the DisableAutoFireStatusCode field.

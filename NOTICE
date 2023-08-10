@@ -19,10 +19,10 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
                      4e134eadfa                                                   
  bbolt               a8af23b57f672fe     https://github.com/etcd-io/bbolt         
                      f05637de531bba5                                              
-                     aa00013364                                                   
- blackfriday         d3b5b032dc8e892     https://github.com/russross/blackfriday        
-                     7d31a5071b56e14                              
-                     c89f045135                                                 
+                     aa00013364                                          
+ markdown            2ced44d5b58482a     https://github.com/gomarkdown/markdown        
+                     9b77d1abad4c3d3                              
+                     4b190880fe                                                 
  bluemonday          0a75d7616912ab9     https://github.com/microcosm-cc/bluemonday         
                      beb9cc6f7283ec1                                    
                      917c61b135
