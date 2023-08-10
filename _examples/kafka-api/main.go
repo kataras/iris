@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/kataras/iris/v12"
 )
 
@@ -17,13 +17,13 @@ First of all, read about Apache Kafka, install and run it, if you didn't already
 Secondly, install your favourite Go library for Apache Kafka communication.
 I have chosen the shopify's one although I really loved the `segmentio/kafka-go` as well but it needs more to be done there
 and you will be bored to read all the necessary code required to get started with it, so:
-	$ go get -u github.com/Shopify/sarama
+	$ go get -u github.com/IBM/sarama
 
 The minimum Apache Kafka broker(s) version required is 0.10.0.0 but 0.11.x+ is recommended (tested with 2.5.0).
 
 Resources:
 	- https://github.com/apache/kafka
-	- https://github.com/Shopify/sarama/blob/master/examples/http_server/http_server.go
+	- https://github.com/IBM/sarama/blob/master/examples/http_server/http_server.go
 	- DIY
 */
 

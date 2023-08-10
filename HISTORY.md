@@ -17,11 +17,13 @@
 
 Developers are not forced to upgrade if they don't really need it. Upgrade whenever you feel ready.
 
-**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.20`.
+**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.21`.
 
 # Next
 
 Changes apply to `master` branch.
+
+# Mon, 17 July 2023 | v12.2.1
 
 - Add `mvc.Application.EnableStructDependents()` method to handle [#2158](https://github.com/kataras/iris/issues/2158).
 

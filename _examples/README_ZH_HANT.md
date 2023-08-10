@@ -105,7 +105,6 @@
     - [Root and Proxy AccessLog instances](logging/request-logger/accesslog-proxy/main.go)
     - [Slack integration example](logging/request-logger/accesslog-slack/main.go)
 - API 文件
-  - [Yaag](apidoc/yaag/main.go)
   - [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)
 - 測試
   - [Testing with httptest](testing/httptest/main_test.go)
