@@ -73,7 +73,7 @@ func TestBasicAuthUseRouter(t *testing.T) {
 	for username, password := range users {
 		// Test pass authentication and route found.
 		e.GET("/").WithBasicAuth(username, password).Expect().
-			Status(httptest.StatusOK).Body().Equal(fmt.Sprintf("Hello, %s!", username))
+			Status(httptest.StatusOK).Body().IsEqual(fmt.Sprintf("Hello, %s!", username))
 		e.GET("/user_json").WithBasicAuth(username, password).Expect().
 			Status(httptest.StatusOK).JSON().Object().ContainsMap(iris.Map{
 			"username": username,
@@ -83,7 +83,7 @@ func TestBasicAuthUseRouter(t *testing.T) {
 			Equal(fmt.Sprintf("%s\n%s\n%s", "Basic Authentication", username, password))
 
 		// Test empty auth.
-		e.GET("/").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+		e.GET("/").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual("Unauthorized")
 		// Test invalid auth.
 		e.GET("/").WithBasicAuth(username, "invalid_password").Expect().
 			Status(httptest.StatusForbidden)
@@ -93,14 +93,14 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		// Test different method, it should pass the authentication (no stop on 401)
 		// but it doesn't fire the GET route, instead it gives 405.
 		e.POST("/").WithBasicAuth(username, password).Expect().
-			Status(httptest.StatusMethodNotAllowed).Body().Equal("Method Not Allowed")
+			Status(httptest.StatusMethodNotAllowed).Body().IsEqual("Method Not Allowed")
 
 		// Test pass the authentication but route not found.
 		e.GET("/notfound").WithBasicAuth(username, password).Expect().
-			Status(httptest.StatusNotFound).Body().Equal("Not Found")
+			Status(httptest.StatusNotFound).Body().IsEqual("Not Found")
 
 		// Test empty auth.
-		e.GET("/notfound").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+		e.GET("/notfound").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual("Unauthorized")
 		// Test invalid auth.
 		e.GET("/notfound").WithBasicAuth(username, "invalid_password").Expect().
 			Status(httptest.StatusForbidden)
@@ -114,7 +114,7 @@ func TestBasicAuthUseRouter(t *testing.T) {
 
 		// Test pass and route found.
 		sub.GET("/").WithBasicAuth(username, password).Expect().
-			Status(httptest.StatusOK).Body().Equal(fmt.Sprintf("Static, %s", username))
+			Status(httptest.StatusOK).Body().IsEqual(fmt.Sprintf("Static, %s", username))
 
 		// Test empty auth.
 		sub.GET("/").Expect().Status(httptest.StatusUnauthorized)
@@ -126,10 +126,10 @@ func TestBasicAuthUseRouter(t *testing.T) {
 
 		// Test pass the authentication but route not found.
 		sub.GET("/notfound").WithBasicAuth(username, password).Expect().
-			Status(httptest.StatusNotFound).Body().Equal("Not Found")
+			Status(httptest.StatusNotFound).Body().IsEqual("Not Found")
 
 		// Test empty auth.
-		sub.GET("/notfound").Expect().Status(httptest.StatusUnauthorized).Body().Equal("Unauthorized")
+		sub.GET("/notfound").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual("Unauthorized")
 		// Test invalid auth.
 		sub.GET("/notfound").WithBasicAuth(username, "invalid_password").Expect().
 			Status(httptest.StatusForbidden)
@@ -142,16 +142,16 @@ func TestBasicAuthUseRouter(t *testing.T) {
 		sub = e.Builder(func(req *httptest.Request) {
 			req.WithURL("http://reset_with_use_router.mydomain.com")
 		})
-		sub.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("with use router\n")
-		sub.POST("/").Expect().Status(httptest.StatusMethodNotAllowed).Body().Equal("Method Not Allowed")
-		sub.GET("/notfound").Expect().Status(httptest.StatusNotFound).Body().Equal("Not Found")
+		sub.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("with use router\n")
+		sub.POST("/").Expect().Status(httptest.StatusMethodNotAllowed).Body().IsEqual("Method Not Allowed")
+		sub.GET("/notfound").Expect().Status(httptest.StatusNotFound).Body().IsEqual("Not Found")
 
 		// Test a reset-ed Party (all should pass without auth).
 		sub = e.Builder(func(req *httptest.Request) {
 			req.WithURL("http://reset.mydomain.com")
 		})
-		sub.GET("/").Expect().Status(httptest.StatusOK).Body().Empty()
-		sub.POST("/").Expect().Status(httptest.StatusMethodNotAllowed).Body().Equal("Method Not Allowed")
-		sub.GET("/notfound").Expect().Status(httptest.StatusNotFound).Body().Equal("Not Found")
+		sub.GET("/").Expect().Status(httptest.StatusOK).Body().IsEmpty()
+		sub.POST("/").Expect().Status(httptest.StatusMethodNotAllowed).Body().IsEqual("Method Not Allowed")
+		sub.GET("/notfound").Expect().Status(httptest.StatusNotFound).Body().IsEqual("Not Found")
 	}
 }

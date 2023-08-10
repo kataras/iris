@@ -17,11 +17,11 @@ func TestBasicAuth(t *testing.T) {
 
 	// with valid basic auth
 	e.GET("/admin").WithBasicAuth("myusername", "mypassword").Expect().
-		Status(httptest.StatusOK).Body().Equal("/admin myusername:mypassword")
+		Status(httptest.StatusOK).Body().IsEqual("/admin myusername:mypassword")
 	e.GET("/admin/profile").WithBasicAuth("myusername", "mypassword").Expect().
-		Status(httptest.StatusOK).Body().Equal("/admin/profile myusername:mypassword")
+		Status(httptest.StatusOK).Body().IsEqual("/admin/profile myusername:mypassword")
 	e.GET("/admin/settings").WithBasicAuth("myusername", "mypassword").Expect().
-		Status(httptest.StatusOK).Body().Equal("/admin/settings myusername:mypassword")
+		Status(httptest.StatusOK).Body().IsEqual("/admin/settings myusername:mypassword")
 
 	// with invalid basic auth
 	e.GET("/admin/settings").WithBasicAuth("invalidusername", "invalidpassword").

@@ -30,11 +30,12 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
 	"github.com/iris-contrib/schema"
 	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
@@ -4033,6 +4034,10 @@ type Markdown struct {
 	// content-specific
 	Sanitize         bool
 	OmitErrorHandler bool // See JSON.OmitErrorHandler.
+	//
+	// Library-specific.
+	// E.g. Flags: html.CommonFlags | html.HrefTargetBlank
+	RenderOptions html.RendererOptions
 }
 
 var (
@@ -4460,14 +4465,20 @@ func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) error {
 	return ctx.writeJSON(v, &options.JSON)
 }
 
+var sanitizer = bluemonday.UGCPolicy()
+
 // WriteMarkdown parses the markdown to html and writes these contents to the writer.
 var WriteMarkdown = func(ctx *Context, markdownB []byte, options *Markdown) error {
-	buf := blackfriday.Run(markdownB)
+	out := markdown.NormalizeNewlines(markdownB)
+
+	renderer := html.NewRenderer(options.RenderOptions)
+	doc := markdown.Parse(out, nil)
+	out = markdown.Render(doc, renderer)
 	if options.Sanitize {
-		buf = bluemonday.UGCPolicy().SanitizeBytes(buf)
+		out = sanitizer.SanitizeBytes(out)
 	}
 
-	_, err := ctx.Write(buf)
+	_, err := ctx.Write(out)
 	return err
 }
 
@@ -5507,29 +5518,13 @@ func CookieAllowReclaim(cookieNames ...string) CookieOption {
 			// perform upsert on request cookies or is it too much and not worth the cost?
 			ctx.Request().AddCookie(c)
 		case OpCookieDel:
-			header := ctx.Request().Header
-
-			if cookiesLine := header.Get("Cookie"); cookiesLine != "" {
-				if cookies := strings.Split(cookiesLine, "; "); len(cookies) > 1 {
-					// more than one cookie here.
-					// select that one and remove it.
-					name := sanitizeCookieName(c.Name)
-
-					for _, nameValue := range cookies {
-						if strings.HasPrefix(nameValue, name) {
-							cookiesLine = strings.Replace(cookiesLine, "; "+nameValue, "", 1)
-							// current cookiesLine: myapp_session_id=5ccf4e89-8d0e-4ed6-9f4c-6746d7c5e2ee; key1=value1
-							// found nameValue: key1=value1
-							// new cookiesLine: myapp_session_id=5ccf4e89-8d0e-4ed6-9f4c-6746d7c5e2ee
-							header.Set("Cookie", cookiesLine)
-							break
-						}
-					}
-					return
+			cookies := ctx.Request().Cookies()
+			ctx.Request().Header.Del("Cookie")
+			for i, v := range cookies {
+				if v.Name != c.Name {
+					ctx.Request().AddCookie(cookies[i])
 				}
 			}
-
-			header.Del("Cookie")
 		}
 	}
 }

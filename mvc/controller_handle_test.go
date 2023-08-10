@@ -124,7 +124,7 @@ func TestControllerHandle(t *testing.T) {
 	e := httptest.New(t, app)
 
 	// test the index, is not part of the current package's implementation but do it.
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("index")
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("index")
 
 	// the important things now.
 
@@ -133,30 +133,30 @@ func TestControllerHandle(t *testing.T) {
 	// (which is the function's receiver, if any, in this case the *testController in go).
 	expectedReqField := "this is a request field filled by this url param"
 	e.GET("/histatic").WithQuery("reqfield", expectedReqField).Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedReqField)
+		Body().IsEqual(expectedReqField)
 	// this test makes sure that the binded values of the controller is handled correctly
 	// and can be used in a user-defined, dynamic "mvc handler".
 	e.GET("/hiservice").Expect().Status(httptest.StatusOK).
-		Body().Equal("service: hi")
+		Body().IsEqual("service: hi")
 	e.GET("/hiservice/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("service: hi with param: value")
+		Body().IsEqual("service: hi with param: value")
 	// this worked with a temporary variadic on the resolvemethodfunc which is not
 	// correct design, I should split the path and params with the rest of implementation
 	// in order a simple template.Src can be given.
 	e.GET("/hiparam/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("value")
+		Body().IsEqual("value")
 	e.GET("/hiparamempyinput/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("empty in but served with ctx.Params.Get('ps')=value")
+		Body().IsEqual("empty in but served with ctx.Params.Get('ps')=value")
 	e.GET("/custom/value1").Expect().Status(httptest.StatusOK).
-		Body().Equal("value1")
+		Body().IsEqual("value1")
 	e.GET("/custom2/value2").Expect().Status(httptest.StatusOK).
-		Body().Equal("value2")
+		Body().IsEqual("value2")
 	e.GET("/custom3/value1/value2").Expect().Status(httptest.StatusOK).
-		Body().Equal("value1value2")
+		Body().IsEqual("value1value2")
 	e.GET("/custom3/value1").Expect().Status(httptest.StatusNotFound)
 
 	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")
+		Body().IsEqual("empty in but served with ctx.Params.Get('param2')= value == id == value")
 }
 
 type testControllerHandleWithDynamicPathPrefix struct {
@@ -173,7 +173,7 @@ func TestControllerHandleWithDynamicPathPrefix(t *testing.T) {
 	New(app.Party("/api/data/{model:string}/{action:string}")).Handle(new(testControllerHandleWithDynamicPathPrefix))
 	e := httptest.New(t, app)
 	e.GET("/api/data/mymodel/myaction/myid").Expect().Status(httptest.StatusOK).
-		Body().Equal("mymodelmyactionmyid")
+		Body().IsEqual("mymodelmyactionmyid")
 }
 
 type testControllerGetBy struct{}
@@ -195,7 +195,7 @@ func TestControllerGetByWithAllowMethods(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/project/42").Expect().Status(httptest.StatusOK).
-		JSON().Equal(&testCustomStruct{Age: 42, Name: "name"})
+		JSON().IsEqual(&testCustomStruct{Age: 42, Name: "name"})
 	e.POST("/project/42").Expect().Status(httptest.StatusOK)
 	e.PUT("/project/42").Expect().Status(httptest.StatusMethodNotAllowed)
 }

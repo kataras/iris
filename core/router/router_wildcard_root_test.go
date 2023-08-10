@@ -192,7 +192,7 @@ func testTheRoutes(t *testing.T, tests []testRoute, debug bool) {
 				expectedBody = staticPathPrefixBody + req.path
 			}
 
-			ex.Expect().Status(req.expectedStatusCode).Body().Equal(expectedBody)
+			ex.Expect().Status(req.expectedStatusCode).Body().IsEqual(expectedBody)
 		}
 	}
 }

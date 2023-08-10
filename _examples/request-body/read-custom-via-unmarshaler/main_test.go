@@ -13,5 +13,5 @@ func TestReadCustomViaUnmarshaler(t *testing.T) {
 	expectedResponse := `Received: main.config{Addr:"localhost:8080", ServerName:"Iris"}`
 
 	e.POST("/").WithText("addr: localhost:8080\nserverName: Iris").Expect().
-		Status(httptest.StatusOK).Body().Equal(expectedResponse)
+		Status(httptest.StatusOK).Body().IsEqual(expectedResponse)
 }

@@ -68,7 +68,7 @@ func TestProxy(t *testing.T) {
 	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutStartupLog) // nolint:errcheck
 
 	e := httptest.NewInsecure(t, httptest.URL("http://"+listener.Addr().String()))
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
-	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedAbout)
-	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual(expectedIndex)
+	e.GET("/about").Expect().Status(iris.StatusOK).Body().IsEqual(expectedAbout)
+	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().IsEqual(unexpectedRoute)
 }

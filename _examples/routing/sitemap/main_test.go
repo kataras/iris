@@ -14,5 +14,5 @@ func TestSitemap(t *testing.T) {
 	app.Configure(iris.WithSitemap(startURL))
 
 	e := httptest.New(t, app)
-	e.GET("/sitemap.xml").Expect().Status(httptest.StatusOK).Body().Equal(expectedFullSitemapXML)
+	e.GET("/sitemap.xml").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedFullSitemapXML)
 }

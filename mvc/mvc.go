@@ -142,6 +142,14 @@ func (app *Application) SetControllersNoLog(disable bool) *Application {
 	return app
 }
 
+// EnableStructDependents will try to resolve
+// the fields of a struct value, if any, when it's a dependent struct value
+// based on the previous registered dependencies.
+func (app *Application) EnableStructDependents() *Application {
+	app.container.EnableStructDependents = true
+	return app
+}
+
 // Register appends one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be
@@ -194,6 +202,14 @@ type (
 // Apply completes the `Option` interface.
 func (opt OptionFunc) Apply(c *ControllerActivator) {
 	opt(c)
+}
+
+// IgnoreEmbedded is an Option which can be used to ignore all embedded struct's method handlers.
+// Note that even if the controller overrides the embedded methods
+// they will be still ignored because Go doesn't support this detection so far.
+// For global affect, set the `IgnoreEmbeddedControllers` package-level variable to true.
+var IgnoreEmbedded OptionFunc = func(c *ControllerActivator) {
+	c.SkipEmbeddedMethods()
 }
 
 // Handle serves a controller for the current mvc application's Router.

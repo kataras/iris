@@ -1,5 +1,0 @@
-extends layouts/main.amber
-
-block content
-  h1 Index Body
-  h3 Message: #{Message}

@@ -49,28 +49,28 @@ func TestMethodOverrideWrapper(t *testing.T) {
 
 	// Test headers.
 	e.POST("/path").WithHeader("X-HTTP-Method", iris.MethodDelete).Expect().
-		Status(iris.StatusOK).Body().Equal(expectedDelResponse)
+		Status(iris.StatusOK).Body().IsEqual(expectedDelResponse)
 	e.POST("/path").WithHeader("X-HTTP-Method-Override", iris.MethodDelete).Expect().
-		Status(iris.StatusOK).Body().Equal(expectedDelResponse)
+		Status(iris.StatusOK).Body().IsEqual(expectedDelResponse)
 	e.POST("/path").WithHeader("X-Method-Override", iris.MethodDelete).Expect().
-		Status(iris.StatusOK).Body().Equal(expectedDelResponse)
+		Status(iris.StatusOK).Body().IsEqual(expectedDelResponse)
 
 	// Test form field value.
 	e.POST("/path").WithFormField("_method", iris.MethodDelete).Expect().
-		Status(iris.StatusOK).Body().Equal(expectedDelResponse)
+		Status(iris.StatusOK).Body().IsEqual(expectedDelResponse)
 
 	// Test URL Query (although it's the same as form field in this case).
 	e.POST("/path").WithQuery("_method", iris.MethodDelete).Expect().
-		Status(iris.StatusOK).Body().Equal(expectedDelResponse)
+		Status(iris.StatusOK).Body().IsEqual(expectedDelResponse)
 
 	// Test saved original method and
 	// Test without registered "POST" route.
 	e.POST("/path2").WithQuery("_method", iris.MethodDelete).Expect().
-		Status(iris.StatusOK).Body().Equal(expectedDelResponse + iris.MethodPost)
+		Status(iris.StatusOK).Body().IsEqual(expectedDelResponse + iris.MethodPost)
 
 	// Test simple POST request without method override fields.
-	e.POST("/path").Expect().Status(iris.StatusOK).Body().Equal(expectedPostResponse)
+	e.POST("/path").Expect().Status(iris.StatusOK).Body().IsEqual(expectedPostResponse)
 
 	// Test simple DELETE request.
-	e.DELETE("/path").Expect().Status(iris.StatusOK).Body().Equal(expectedDelResponse)
+	e.DELETE("/path").Expect().Status(iris.StatusOK).Body().IsEqual(expectedDelResponse)
 }

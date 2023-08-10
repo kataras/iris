@@ -195,7 +195,7 @@ Iris 提供了至少這些功能：
 - 內建 ngrok 支援，讓您可以把 app 以最快速的方式推上網際網路
 - 包含動態路徑、具唯一性的路由，支援如 :uuid、:string、:int 等等的標準類型，並且可以自己建立
 - 壓縮功能
-- 檢視 (View) 算繪引擎 (HTML、Django、Amber、Handlebars、Pug/Jade 等等）
+- 檢視 (View) 算繪引擎 (HTML、Django、Handlebars、Pug/Jade 等等）
 - 建立自己的檔案伺服器，並寄存您自己的 WebDAV 伺服器
 - 快取
 - 本地化 (i18n、sitemap）

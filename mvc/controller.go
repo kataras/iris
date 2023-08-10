@@ -60,6 +60,15 @@ var (
 	_ AfterActivation  = (*ControllerActivator)(nil)
 )
 
+// IgnoreEmbeddedControllers is a global variable which indicates whether
+// the controller's method parser should skip converting embedded struct's methods to http handlers.
+//
+// If no global use is necessary, developers can do the same for individual controllers
+// through the `IgnoreEmbedded` Controller Option on `mvc.Application.Handle` method.
+//
+// Defaults to false.
+var IgnoreEmbeddedControllers = false
+
 // ControllerActivator returns a new controller type info description.
 // Its functionality can be overridden by the end-dev.
 type ControllerActivator struct {
@@ -78,6 +87,8 @@ type ControllerActivator struct {
 	// End-devs can change some properties of the *Route on the `BeforeActivator` by using the
 	// `GetRoute/GetRoutes(functionName)`.
 	routes map[string][]*router.Route
+
+	skipMethodNames []string
 	// BeginHandlers is a slice of middleware for this controller.
 	// These handlers will be prependend to each one of
 	// the route that this controller will register(Handle/HandleMany/struct methods)
@@ -114,7 +125,6 @@ func newControllerActivator(app *Application, controller interface{}) *Controlle
 	}
 
 	typ := reflect.TypeOf(controller)
-
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
 		// i.e register done handlers.
@@ -130,6 +140,10 @@ func newControllerActivator(app *Application, controller interface{}) *Controlle
 		// if a new method is registered via `Handle` its function name
 		// is also appended to that slice.
 		routes: whatReservedMethods(typ),
+	}
+
+	if IgnoreEmbeddedControllers {
+		c.SkipEmbeddedMethods()
 	}
 
 	return c
@@ -157,6 +171,63 @@ func whatReservedMethods(typ reflect.Type) map[string][]*router.Route {
 	return routes
 }
 
+func whatEmbeddedMethods(typ reflect.Type) []string {
+	var embeddedMethodsToIgnore []string
+	controllerType := typ
+	if controllerType.Kind() == reflect.Ptr {
+		controllerType = controllerType.Elem()
+	}
+
+	for i := 0; i < controllerType.NumField(); i++ {
+		structField := controllerType.Field(i)
+		structType := structField.Type
+
+		if !structField.Anonymous {
+			continue
+		}
+
+		// var structValuePtr reflect.Value
+
+		if structType.Kind() == reflect.Ptr {
+			// keep both ptr and value instances of the struct so we can ignore all of its methods.
+			structType = structType.Elem()
+			// structValuePtr = reflect.ValueOf(reflect.ValueOf(controller).Field(i))
+		}
+
+		if structType.Kind() != reflect.Struct {
+			continue
+		}
+
+		newEmbeddedStructType := reflect.New(structField.Type).Type()
+		// let's take its methods and add to methods to ignore from the parent, the controller itself.
+		for j := 0; j < newEmbeddedStructType.NumMethod(); j++ {
+			embeddedMethod := newEmbeddedStructType.Method(j)
+			embeddedMethodName := embeddedMethod.Name
+			// An exception should happen if the controller itself overrides the embedded method,
+			// but Go (1.20) so far doesn't support this detection, as it handles the structure as one.
+			/*
+				shouldKeepBecauseParentOverrides := false
+
+				if v, existsOnParent := typ.MethodByName(embeddedMethodName); existsOnParent {
+
+					embeddedIndex := newEmbeddedStructType.Method(j).Index
+					controllerMethodIndex := v.Index
+
+					if v.Type.In(0) == typ && embeddedIndex == controllerMethodIndex {
+						fmt.Printf("%s exists on parent = true, receiver = %s\n", v.Name, typ.String())
+						shouldKeepBecauseParentOverrides = true
+						continue
+					}
+				}
+			*/
+
+			embeddedMethodsToIgnore = append(embeddedMethodsToIgnore, embeddedMethodName)
+		}
+	}
+
+	return embeddedMethodsToIgnore
+}
+
 // Name returns the full name of the controller, its package name + the type name.
 // Can used at both `BeforeActivation` and `AfterActivation`.
 func (c *ControllerActivator) Name() string {
@@ -166,6 +237,23 @@ func (c *ControllerActivator) Name() string {
 // RelName returns the path relatively to the main package.
 func (c *ControllerActivator) RelName() string {
 	return strings.TrimPrefix(c.fullName, "main.")
+}
+
+// SkipMethods can be used to individually skip one or more controller's method handlers.
+func (c *ControllerActivator) SkipMethods(methodNames ...string) {
+	c.skipMethodNames = append(c.skipMethodNames, methodNames...)
+}
+
+// SkipEmbeddedMethods should be ran before controller parsing.
+// It skips all embedded struct's methods conversation to http handlers.
+//
+// Note that even if the controller overrides the embedded methods
+// they will be still ignored because Go doesn't support this detection so far.
+//
+// See https://github.com/kataras/iris/issues/2103 for more.
+func (c *ControllerActivator) SkipEmbeddedMethods() {
+	methodsToIgnore := whatEmbeddedMethods(c.Type)
+	c.SkipMethods(methodsToIgnore...)
 }
 
 // Router is the standard Iris router's public API.
@@ -254,6 +342,12 @@ func (c *ControllerActivator) Dependencies() *hero.Container {
 // checks if a method is already registered.
 func (c *ControllerActivator) isReservedMethod(name string) bool {
 	for methodName := range c.routes {
+		if methodName == name {
+			return true
+		}
+	}
+
+	for _, methodName := range c.skipMethodNames {
 		if methodName == name {
 			return true
 		}

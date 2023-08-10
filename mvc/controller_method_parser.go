@@ -29,6 +29,13 @@ func newMethodLexer(s string) *methodLexer {
 	return l
 }
 
+/*
+var allowedCapitalWords = map[string]struct{}{
+	"ID":   {},
+	"JSON": {},
+}
+*/
+
 func (l *methodLexer) reset(s string) {
 	l.cur = -1
 	var words []string
@@ -36,14 +43,31 @@ func (l *methodLexer) reset(s string) {
 		end := len(s)
 		start := -1
 
+		// outter:
 		for i, n := 0, end; i < n; i++ {
 			c := rune(s[i])
 			if unicode.IsUpper(c) {
 				// it doesn't count the last uppercase
 				if start != -1 {
+					/*
+						for allowedCapitalWord := range allowedCapitalWords {
+							capitalWordEnd := i + len(allowedCapitalWord) // takes last char too, e.g. ReadJSON, we need the JSON.
+							if len(s) >= capitalWordEnd {
+								word := s[i:capitalWordEnd]
+								if word == allowedCapitalWord {
+									words = append(words, word)
+									i = capitalWordEnd
+									start = i
+									continue outter
+								}
+							}
+						}
+					*/
+
 					end = i
 					words = append(words, s[start:end])
 				}
+
 				start = i
 				continue
 			}

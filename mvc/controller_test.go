@@ -82,13 +82,13 @@ func TestControllerMethodFuncs(t *testing.T) {
 	for _, method := range router.AllMethods {
 
 		e.Request(method, "/").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
+			Body().IsEqual(method)
 
 		e.Request(method, "/all").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
+			Body().IsEqual(method)
 
 		e.Request(method, "/any").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
+			Body().IsEqual(method)
 	}
 }
 
@@ -137,9 +137,9 @@ func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 
 	for _, username := range usernames {
 		e.GET("/profile/" + username).Expect().Status(iris.StatusOK).
-			Body().Equal(username + doneResponse)
+			Body().IsEqual(username + doneResponse)
 		e.POST("/profile/" + username).Expect().Status(iris.StatusOK).
-			Body().Equal(username + doneResponse)
+			Body().IsEqual(username + doneResponse)
 	}
 }
 
@@ -178,17 +178,17 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		getEx := e.GET("/profile/" + username).Expect()
 		if allow {
 			getEx.Status(iris.StatusOK).
-				Body().Equal(username + doneResponse)
+				Body().IsEqual(username + doneResponse)
 		} else {
-			getEx.Status(iris.StatusForbidden).Body().Equal("forbidden")
+			getEx.Status(iris.StatusForbidden).Body().IsEqual("forbidden")
 		}
 
 		postEx := e.POST("/profile/" + username).Expect()
 		if allow {
 			postEx.Status(iris.StatusOK).
-				Body().Equal(username + doneResponse)
+				Body().IsEqual(username + doneResponse)
 		} else {
-			postEx.Status(iris.StatusForbidden).Body().Equal("forbidden")
+			postEx.Status(iris.StatusForbidden).Body().IsEqual("forbidden")
 		}
 	}
 }
@@ -251,7 +251,7 @@ func TestControllerEndRequestAwareness(t *testing.T) {
 
 	for _, username := range usernames {
 		e.GET("/era/" + username).Expect().Status(iris.StatusOK).
-			Body().Equal(username + username + "2")
+			Body().IsEqual(username + username + "2")
 	}
 }
 
@@ -315,17 +315,17 @@ func TestControllerDependencies(t *testing.T) {
 	e := httptest.New(t, app)
 	expected := t1 + t2
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal(expected)
+		Body().IsEqual(expected)
 	e.GET("/ctx").Expect().Status(iris.StatusContinue)
 
 	e.GET("/deep").Expect().Status(iris.StatusOK).
-		Body().Equal(expected)
+		Body().IsEqual(expected)
 
 	e.POST("/deep").WithJSON(iris.Map{"name": "kataras"}).Expect().Status(iris.StatusOK).
-		Body().Equal("kataras")
+		Body().IsEqual("kataras")
 
 	e.POST("/deep").Expect().Status(iris.StatusBadRequest).
-		Body().Equal("EOF")
+		Body().IsEqual("EOF")
 }
 
 type testCtrl0 struct {
@@ -381,7 +381,7 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/user/" + username).Expect().
-		Status(iris.StatusOK).Body().Equal(expected)
+		Status(iris.StatusOK).Body().IsEqual(expected)
 }
 
 type testControllerRelPathFromFunc struct{}
@@ -421,47 +421,47 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/")
+		Body().IsEqual("GET:/")
 
 	e.GET("/18446744073709551615").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/18446744073709551615")
+		Body().IsEqual("GET:/18446744073709551615")
 	e.GET("/uint8/ratio/255").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/uint8/ratio/255")
+		Body().IsEqual("GET:/uint8/ratio/255")
 	e.GET("/uint8/ratio/256").Expect().Status(iris.StatusNotFound)
 	e.GET("/int64/ratio/-42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/int64/ratio/-42")
+		Body().IsEqual("GET:/int64/ratio/-42")
 	e.GET("/something/true").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/true")
+		Body().IsEqual("GET:/something/true")
 	e.GET("/something/false").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/false")
+		Body().IsEqual("GET:/something/false")
 	e.GET("/something/truee").Expect().Status(iris.StatusNotFound)
 	e.GET("/something/falsee").Expect().Status(iris.StatusNotFound)
 	e.GET("/something/kataras/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/kataras/42")
+		Body().IsEqual("GET:/something/kataras/42")
 	e.GET("/something/new/kataras/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/new/kataras/42")
+		Body().IsEqual("GET:/something/new/kataras/42")
 	e.GET("/something/true/else/this/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/true/else/this/42")
+		Body().IsEqual("GET:/something/true/else/this/42")
 
 	e.GET("/login").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/login")
+		Body().IsEqual("GET:/login")
 	e.POST("/login").Expect().Status(iris.StatusOK).
-		Body().Equal("POST:/login")
+		Body().IsEqual("POST:/login")
 	e.GET("/admin/login").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/admin/login")
+		Body().IsEqual("GET:/admin/login")
 	e.PUT("/something/into/this").Expect().Status(iris.StatusOK).
-		Body().Equal("PUT:/something/into/this")
+		Body().IsEqual("PUT:/something/into/this")
 	e.GET("/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/42")
+		Body().IsEqual("GET:/42")
 	e.GET("/anything/here").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/anything/here")
+		Body().IsEqual("GET:/anything/here")
 
 	e.GET("/location/x").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/location/x")
+		Body().IsEqual("GET:/location/x")
 	e.GET("/location/x/y").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/location/x/y")
+		Body().IsEqual("GET:/location/x/y")
 	e.GET("/location/z/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/location/z/42")
+		Body().IsEqual("GET:/location/z/42")
 }
 
 type testControllerActivateListener struct {
@@ -502,16 +502,16 @@ func TestControllerActivateListener(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("overrides the dependency but not the field")
+		Body().IsEqual("overrides the dependency but not the field")
 	e.GET("/me/tos-read").Expect().Status(iris.StatusOK).
-		Body().Equal("MeTOSRead")
+		Body().IsEqual("MeTOSRead")
 	e.POST("/me/tos-read").Expect().Status(iris.StatusOK).
-		Body().Equal("MeTOSRead")
+		Body().IsEqual("MeTOSRead")
 
 	e.GET("/manual").Expect().Status(iris.StatusOK).
-		Body().Equal("overrides the dependency but not the field")
+		Body().IsEqual("overrides the dependency but not the field")
 	e.GET("/manual2").Expect().Status(iris.StatusOK).
-		Body().Equal("my manual title")
+		Body().IsEqual("my manual title")
 }
 
 type testControllerNotCreateNewDueManuallySettingAllFields struct {
@@ -550,7 +550,7 @@ func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("my title")
+		Body().IsEqual("my title")
 }
 
 type testControllerRequestScopedDependencies struct {
@@ -594,11 +594,11 @@ func TestControllerRequestScopedDependencies(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").WithQuery("name", "kataras").WithQuery("age", 27).
-		Expect().Status(httptest.StatusOK).JSON().Equal(&testCustomStruct{
+		Expect().Status(httptest.StatusOK).JSON().IsEqual(&testCustomStruct{
 		Name: "kataras",
 		Age:  27,
 	})
-	e.GET("/custom/context").Expect().Status(httptest.StatusOK).Body().Equal("test")
+	e.GET("/custom/context").Expect().Status(httptest.StatusOK).Body().IsEqual("test")
 }
 
 type (
@@ -637,7 +637,7 @@ func TestControllersInsideControllerDeep(t *testing.T) {
 	m.Handle(new(FinalController))
 
 	e := httptest.New(t, app)
-	e.GET("/something").Expect().Status(httptest.StatusOK).Body().Equal("foo bar")
+	e.GET("/something").Expect().Status(httptest.StatusOK).Body().IsEqual("foo bar")
 }
 
 type testApplicationDependency struct {
@@ -657,8 +657,8 @@ func TestApplicationDependency(t *testing.T) {
 	m2.Handle(new(testApplicationDependency))
 
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("app1")
-	e.GET("/other").Expect().Status(httptest.StatusOK).Body().Equal("app2")
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("app1")
+	e.GET("/other").Expect().Status(httptest.StatusOK).Body().IsEqual("app2")
 }
 
 type testControllerMethodHandlerBindStruct struct{}
@@ -701,11 +701,11 @@ func TestControllerMethodHandlerBindStruct(t *testing.T) {
 	manyData := []bindStructData{data, {"john doe"}}
 
 	e := httptest.New(t, app)
-	e.GET("/data").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
-	e.PATCH("/data").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().Equal(data)
-	e.POST("/data/42/slice").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
-	e.POST("/data/42/slicetype").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
-	e.POST("/data/42/slicetypeptr").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().Equal(manyData)
+	e.GET("/data").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().IsEqual(data)
+	e.PATCH("/data").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().IsEqual(data)
+	e.POST("/data/42/slice").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().IsEqual(manyData)
+	e.POST("/data/42/slicetype").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().IsEqual(manyData)
+	e.POST("/data/42/slicetypeptr").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().IsEqual(manyData)
 	// more tests inside the hero package itself.
 }
 
@@ -721,7 +721,7 @@ func TestErrorHandlerContinue(t *testing.T) {
 			WithFormField("username", "makis").
 			WithFormField("age", "27").
 			WithFormField("unknown", "continue").
-			Expect().Status(httptest.StatusOK).Body().Equal("makis is 27 years old\n")
+			Expect().Status(httptest.StatusOK).Body().IsEqual("makis is 27 years old\n")
 	}
 }
 

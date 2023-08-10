@@ -57,7 +57,7 @@ func TestRequestID(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/default").Expect().Status(httptest.StatusOK).Body().NotEmpty()
-	e.GET("/custom").Expect().Status(httptest.StatusOK).Body().Equal(expectedCustomID)
-	e.GET("/custom_err").Expect().Status(httptest.StatusUnauthorized).Body().Equal(expectedErrMsg)
-	e.GET("/custom_change_id").Expect().Status(httptest.StatusOK).Body().Equal(expectedCustomIDFromOtherMiddleware)
+	e.GET("/custom").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedCustomID)
+	e.GET("/custom_err").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual(expectedErrMsg)
+	e.GET("/custom_change_id").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedCustomIDFromOtherMiddleware)
 }

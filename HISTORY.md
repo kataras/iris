@@ -19,6 +19,50 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.20`.
 
+# Next
+
+Changes apply to `master` branch.
+
+- Add `mvc.Application.EnableStructDependents()` method to handle [#2158](https://github.com/kataras/iris/issues/2158).
+
+- Fix [iris-premium#17](https://github.com/kataras/iris-premium/issues/17).
+
+- Replace [russross/blackfriday](github.com/russross/blackfriday/v2) with [gomarkdown](https://github.com/gomarkdown/markdown) as requested at [#2098](https://github.com/kataras/iris/issues/2098).
+
+- Add `mvc.IgnoreEmbedded` option to handle [#2103](https://github.com/kataras/iris/issues/2103). Example Code:
+
+```go
+func configure(m *mvc.Application) {
+	m.Router.Use(cacheHandler)
+	m.Handle(&exampleController{
+		timeFormat: "Mon, Jan 02 2006 15:04:05",
+	}, mvc.IgnoreEmbedded /* BaseController.GetDoSomething will not be parsed at all */)
+}
+
+type BaseController struct {
+	Ctx iris.Context
+}
+
+func (c *BaseController) GetDoSomething(i interface{}) error {
+	return nil
+}
+
+type exampleController struct {
+	BaseController
+
+	timeFormat string
+}
+
+func (c *exampleController) Get() string {
+	now := time.Now().Format(c.timeFormat)
+	return "last time executed without cache: " + now
+}
+```
+
+- Add `LoadKV` method on `Iris.Application.I18N` instance. It should be used when no locale files are available. It loads locales via pure Go Map (or database decoded values).
+
+- Remove [ace](https://github.com/eknkc/amber) template parser support, as it was discontinued by its author more than five years ago.
+
 # Sa, 11 March 2023 | v12.2.0
 
 This release introduces new features and some breaking changes.
@@ -41,7 +85,7 @@ All new features have been tested in production and seem to work fine. Fixed all
 - Add `Context.Render` method for compatibility.
 
 - Support of embedded [locale files](https://github.com/kataras/iris/blob/master/_examples/i18n/template-embedded/main.go) using standard `embed.FS` with the new `LoadFS` function.
-- Support of direct embedded view engines (`HTML, Blocks, Django, Handlebars, Pug, Amber, Jet` and `Ace`) with `embed.FS` or `fs.FS` (in addition to `string` and `http.FileSystem` types).
+- Support of direct embedded view engines (`HTML, Blocks, Django, Handlebars, Pug, Jet` and `Ace`) with `embed.FS` or `fs.FS` (in addition to `string` and `http.FileSystem` types).
 - Add support for `embed.FS` and `fs.FS` on `app.HandleDir`.
 
 - Add `iris.Patches()` package-level function to customize Iris Request Context REST (and more to come) behavior.
@@ -306,7 +350,7 @@ func main() {
 - Fix Response Recorder `Clone` concurrent access afterwards.
 
 - Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/master/_examples/view/parse-template).
-- Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Amber`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
+- Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
 
 - Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
 

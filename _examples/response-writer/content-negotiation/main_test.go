@@ -28,33 +28,33 @@ func TestContentNegotiation(t *testing.T) {
 	e.GET("/resource").WithHeader("Accept", "application/json").
 		Expect().Status(httptest.StatusOK).
 		ContentType("application/json", "utf-8").
-		JSON().Equal(expectedJSONResponse)
+		JSON().IsEqual(expectedJSONResponse)
 	e.GET("/resource").WithHeader("Accept", "application/xml").WithHeader("Accept-Charset", "iso-8859-7").
 		Expect().Status(httptest.StatusOK).
 		ContentType("application/xml", "iso-8859-7").
-		Body().Equal(string(expectedXMLResponse))
+		Body().IsEqual(string(expectedXMLResponse))
 
 	e.GET("/resource2").WithHeader("Accept", "application/json").
 		Expect().Status(httptest.StatusOK).
 		ContentType("application/json", "utf-8").
-		JSON().Equal(expectedJSONResponse)
+		JSON().IsEqual(expectedJSONResponse)
 	e.GET("/resource2").WithHeader("Accept", "application/xml").
 		Expect().Status(httptest.StatusOK).
 		ContentType("application/xml", "utf-8").
-		Body().Equal(string(expectedXMLResponse))
+		Body().IsEqual(string(expectedXMLResponse))
 	e.GET("/resource2").WithHeader("Accept", "text/html").
 		Expect().Status(httptest.StatusOK).
 		ContentType("text/html", "utf-8").
-		Body().Equal(expectedHTMLResponse)
+		Body().IsEqual(expectedHTMLResponse)
 
 	e.GET("/resource3").WithHeader("Accept", "application/json").
 		Expect().Status(httptest.StatusOK).
 		ContentType("application/json", "utf-8").
-		JSON().Equal(expectedJSONResponse)
+		JSON().IsEqual(expectedJSONResponse)
 	e.GET("/resource3").WithHeader("Accept", "application/xml").
 		Expect().Status(httptest.StatusOK).
 		ContentType("application/xml", "utf-8").
-		Body().Equal(string(expectedXMLResponse))
+		Body().IsEqual(string(expectedXMLResponse))
 
 	// test html with "gzip" encoding algorithm.
 	rawGzipResponse := e.GET("/resource3").WithHeader("Accept", "text/html").

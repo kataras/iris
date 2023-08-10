@@ -20,6 +20,6 @@ func TestSamePatternDifferentFuncUseGlobal(t *testing.T) {
 
 	for path, mainBody := range tests {
 		result := fmt.Sprintf(expectedResultFmt, mainBody, path[1:])
-		e.GET(path).Expect().Status(httptest.StatusOK).Body().Equal(result)
+		e.GET(path).Expect().Status(httptest.StatusOK).Body().IsEqual(result)
 	}
 }

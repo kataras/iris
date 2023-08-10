@@ -10,5 +10,5 @@ func TestSimpleRouteRemoveHandler(t *testing.T) {
 	app := newApp()
 	e := httptest.New(t, app)
 
-	e.GET("/api/users").Expect().Status(httptest.StatusOK).Body().Equal("OK")
+	e.GET("/api/users").Expect().Status(httptest.StatusOK).Body().IsEqual("OK")
 }

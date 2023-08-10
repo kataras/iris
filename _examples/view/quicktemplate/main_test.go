@@ -42,6 +42,6 @@ func TestResponseWriterQuicktemplate(t *testing.T) {
 
 	e := httptest.New(t, app)
 
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal(expectedIndexRawBody)
-	e.GET("/" + name).Expect().Status(httptest.StatusOK).Body().Equal(expectedHelloRawBody)
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedIndexRawBody)
+	e.GET("/" + name).Expect().Status(httptest.StatusOK).Body().IsEqual(expectedHelloRawBody)
 }

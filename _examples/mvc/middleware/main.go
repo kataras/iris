@@ -29,7 +29,7 @@ func configure(m *mvc.Application) {
 	m.Router.Use(cacheHandler)
 	m.Handle(&exampleController{
 		timeFormat: "Mon, Jan 02 2006 15:04:05",
-	})
+	} /* ,mvc.IgnoreEmbedded --- Can be used to ignore any embedded struct method handlers */)
 }
 
 type exampleController struct {

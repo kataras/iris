@@ -28,23 +28,23 @@ func TestControllerOverlap(t *testing.T) {
 	}
 
 	e := httptest.New(t, app)
-	e.GET("/user").Expect().Status(httptest.StatusUnauthorized).Body().Equal("unauth")
+	e.GET("/user").Expect().Status(httptest.StatusUnauthorized).Body().IsEqual("unauth")
 	// Test raw stop execution with a status code sent on the controller's method.
-	e.GET("/user/with/status/on/method").Expect().Status(httptest.StatusBadRequest).Body().Equal("unauth")
+	e.GET("/user/with/status/on/method").Expect().Status(httptest.StatusBadRequest).Body().IsEqual("unauth")
 	// Test stop execution with status but last code sent through the controller's method.
-	e.GET("/user/with/status/on/method/too").Expect().Status(httptest.StatusInternalServerError).Body().Equal("unauth")
+	e.GET("/user/with/status/on/method/too").Expect().Status(httptest.StatusInternalServerError).Body().IsEqual("unauth")
 	// Test raw stop execution and no status code sent on controller's method (should be OK).
-	e.GET("/user/with/no/status").Expect().Status(httptest.StatusOK).Body().Equal("unauth")
+	e.GET("/user/with/no/status").Expect().Status(httptest.StatusOK).Body().IsEqual("unauth")
 
 	// Test authenticated request.
-	e.GET("/user").WithQuery("id", 42).Expect().Status(httptest.StatusOK).Body().Equal("auth: 42")
+	e.GET("/user").WithQuery("id", 42).Expect().Status(httptest.StatusOK).Body().IsEqual("auth: 42")
 
 	// Test HandleHTTPError method accepts a not found and returns a 404
 	// from a shared controller and overlapped, the url parameter matters because this method was overlapped.
 	e.GET("/user/notfound").Expect().Status(httptest.StatusBadRequest).
-		Body().Equal("error: *mvc_test.UnauthenticatedUserController: from: 404 to: 400")
+		Body().IsEqual("error: *mvc_test.UnauthenticatedUserController: from: 404 to: 400")
 	e.GET("/user/notfound").WithQuery("id", 42).Expect().Status(httptest.StatusBadRequest).
-		Body().Equal("error: *mvc_test.AuthenticatedUserController: from: 404 to: 400")
+		Body().IsEqual("error: *mvc_test.AuthenticatedUserController: from: 404 to: 400")
 }
 
 type AuthenticatedTest uint64

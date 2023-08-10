@@ -35,7 +35,7 @@ func TestSameParameterTypeDifferentMacroFunctions(t *testing.T) {
 		}
 	)
 
-	e.GET("/").Expect().Status(httptest.StatusOK).JSON().Equal(expectedIndex)
-	e.GET("/api/random.html").Expect().Status(httptest.StatusOK).JSON().Equal(expectedHTMLPage)
-	e.GET("/api/random.zip").Expect().Status(httptest.StatusOK).JSON().Equal(expectedZipName)
+	e.GET("/").Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedIndex)
+	e.GET("/api/random.html").Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedHTMLPage)
+	e.GET("/api/random.zip").Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedZipName)
 }

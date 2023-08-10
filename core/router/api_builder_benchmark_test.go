@@ -72,7 +72,7 @@ func genPaths(routesLength, minCharLength, maxCharLength int) []string {
 //
 // GOCACHE=off && go test -run=XXX -bench=BenchmarkAPIBuilder$ -benchtime=10s
 func BenchmarkAPIBuilder(b *testing.B) {
-	rand.Seed(time.Now().Unix())
+	rand.New(rand.NewSource(time.Now().Unix()))
 
 	noOpHandler := func(ctx *context.Context) {}
 	handlersPerRoute := make(context.Handlers, 12)

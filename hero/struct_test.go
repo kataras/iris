@@ -46,11 +46,11 @@ func TestStruct(t *testing.T) {
 	app.Get("/myHandler4", getHandler)
 
 	e := httptest.New(t, app)
-	e.POST("/" + input.Name).Expect().Status(httptest.StatusOK).JSON().Equal(expectedOutput)
+	e.POST("/" + input.Name).Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedOutput)
 	path := fmt.Sprintf("/%d", expectedOutput.ID)
-	e.POST(path).WithJSON(input).Expect().Status(httptest.StatusOK).JSON().Equal(expectedOutput)
-	e.POST("/myHandler3").WithJSON(input).Expect().Status(httptest.StatusOK).JSON().Equal(expectedOutput)
-	e.GET("/myHandler4").Expect().Status(httptest.StatusOK).Body().Equal("MyHandler4")
+	e.POST(path).WithJSON(input).Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedOutput)
+	e.POST("/myHandler3").WithJSON(input).Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedOutput)
+	e.GET("/myHandler4").Expect().Status(httptest.StatusOK).Body().IsEqual("MyHandler4")
 }
 
 type testStructErrorHandler struct{}
@@ -72,7 +72,7 @@ func TestStructErrorHandler(t *testing.T) {
 
 	expectedErrText := "an error"
 	e := httptest.New(t, app)
-	e.GET("/" + expectedErrText).Expect().Status(httptest.StatusConflict).Body().Equal(expectedErrText)
+	e.GET("/" + expectedErrText).Expect().Status(httptest.StatusConflict).Body().IsEqual(expectedErrText)
 }
 
 type (
@@ -117,5 +117,5 @@ func TestStructFieldsSorter(t *testing.T) { // see https://github.com/kataras/ir
 	e := httptest.New(t, app)
 
 	expectedBody := `&hero_test.testServiceImpl1{inner:"parser"} | &hero_test.testServiceImpl2{tf:24}`
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal(expectedBody)
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual(expectedBody)
 }

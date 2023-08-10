@@ -11,8 +11,6 @@
   Envs:
     - Name: Ace
       Dir: ./ace
-    - Name: Amber
-      Dir: ./amber
     - Name: Blocks
       Dir: ./blocks
     - Name: Django

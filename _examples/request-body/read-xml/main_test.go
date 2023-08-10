@@ -14,5 +14,5 @@ func TestReadXML(t *testing.T) {
 	send := `<person name="Winston Churchill" age="90"><description>Description of this person, the body of this inner element.</description></person>`
 
 	e.POST("/").WithText(send).Expect().
-		Status(httptest.StatusOK).Body().Equal(expectedResponse)
+		Status(httptest.StatusOK).Body().IsEqual(expectedResponse)
 }

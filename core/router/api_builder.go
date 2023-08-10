@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"time"
 
@@ -722,7 +720,7 @@ func (api *APIBuilder) createRoutes(errorCode int, methods []string, relativePat
 		}
 	}
 
-	filename, line := getCaller()
+	filename, line := hero.GetCaller()
 
 	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
 	if len(handlers) == 0 {
@@ -1705,51 +1703,4 @@ func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
 	api.UseError(handler)
 
 	return api
-}
-
-// https://golang.org/doc/go1.9#callersframes
-func getCaller() (string, int) {
-	var pcs [32]uintptr
-	n := runtime.Callers(1, pcs[:])
-	frames := runtime.CallersFrames(pcs[:n])
-	wd, _ := os.Getwd()
-
-	var (
-		frame runtime.Frame
-		more  = true
-	)
-
-	for {
-		if !more {
-			break
-		}
-
-		frame, more = frames.Next()
-		file := filepath.ToSlash(frame.File)
-		// fmt.Printf("%s:%d | %s\n", file, frame.Line, frame.Function)
-
-		if strings.Contains(file, "go/src/runtime/") {
-			continue
-		}
-
-		if !strings.Contains(file, "_test.go") {
-			if strings.Contains(file, "/kataras/iris") &&
-				!strings.Contains(file, "kataras/iris/_examples") &&
-				!strings.Contains(file, "kataras/iris/middleware") &&
-				!strings.Contains(file, "iris-contrib/examples") {
-				continue
-			}
-		}
-
-		if relFile, err := filepath.Rel(wd, file); err == nil {
-			if !strings.HasPrefix(relFile, "..") {
-				// Only if it's relative to this path, not parent.
-				file = "./" + filepath.ToSlash(relFile)
-			}
-		}
-
-		return file, frame.Line
-	}
-
-	return "???", 0
 }

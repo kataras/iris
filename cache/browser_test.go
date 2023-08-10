@@ -22,7 +22,7 @@ func TestNoCache(t *testing.T) {
 	e := httptest.New(t, app)
 
 	r := e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Body().Equal("no_cache")
+	r.Body().IsEqual("no_cache")
 	r.Header(context.CacheControlHeaderKey).Equal(cache.CacheControlHeaderValue)
 	r.Header(cache.PragmaHeaderKey).Equal(cache.PragmaNoCacheHeaderValue)
 	r.Header(cache.ExpiresHeaderKey).Equal(cache.ExpiresNeverHeaderValue)
@@ -42,7 +42,7 @@ func TestStaticCache(t *testing.T) {
 	// tests
 	e := httptest.New(t, app)
 	r := e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Body().Equal("static_cache")
+	r.Body().IsEqual("static_cache")
 
 	r.Header(cache.ExpiresHeaderKey).Equal(expectedTime.Add(cacheDur).Format(app.ConfigurationReadOnly().GetTimeFormat()))
 	cacheControlHeaderValue := "public, max-age=" + strconv.Itoa(int(cacheDur.Seconds()))
@@ -64,15 +64,15 @@ func TestCache304(t *testing.T) {
 	insideCacheTimef := time.Now().Add(-expiresEvery).UTC().Format(app.ConfigurationReadOnly().GetTimeFormat())
 	r := e.GET("/").WithHeader(context.IfModifiedSinceHeaderKey, insideCacheTimef).Expect().Status(httptest.StatusNotModified)
 	r.Headers().NotContainsKey(context.ContentTypeHeaderKey).NotContainsKey(context.ContentLengthHeaderKey).NotContainsKey("ETag")
-	r.Body().Equal("")
+	r.Body().IsEqual("")
 
 	// continue to the handler itself.
 	cacheInvalidatedTimef := time.Now().Add(expiresEvery).UTC().Format(app.ConfigurationReadOnly().GetTimeFormat()) // after ~5seconds.
 	r = e.GET("/").WithHeader(context.LastModifiedHeaderKey, cacheInvalidatedTimef).Expect().Status(httptest.StatusOK)
-	r.Body().Equal("send")
+	r.Body().IsEqual("send")
 	// now without header, it should continue to the handler itself as well.
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Body().Equal("send")
+	r.Body().IsEqual("send")
 }
 
 func TestETag(t *testing.T) {
@@ -91,12 +91,12 @@ func TestETag(t *testing.T) {
 
 	r := e.GET("/").Expect().Status(httptest.StatusOK)
 	r.Header("ETag").Equal("/") // test if header set.
-	r.Body().Equal("_")
+	r.Body().IsEqual("_")
 
 	e.GET("/").WithHeader("ETag", "/").WithHeader("If-None-Match", "/").Expect().
-		Status(httptest.StatusNotModified).Body().Equal("") // browser is responsible, no the test engine.
+		Status(httptest.StatusNotModified).Body().IsEqual("") // browser is responsible, no the test engine.
 
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
 	r.Header("ETag").Equal("/") // test if header set.
-	r.Body().Equal("__")
+	r.Body().IsEqual("__")
 }
