@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        go_version: [1.20.x]
+        go_version: [1.21.x]
     steps:
 
     - name: Set up Go 1.x
