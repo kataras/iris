@@ -23,9 +23,11 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `master` branch.
 
-# Sat, 12 Aug 2023 | v12.2.2
+# Sat, 12 Aug 2023 | v12.2.3
 
 - Add new `iris.WithDynamicHandler` option (`EnableDynamicHandler` setting) to work with `iris.Application.RefreshRouter` method. It allows to change the entire router while your server is up and running. Handles [issue #2167](https://github.com/kataras/iris/issues/2167). Example at [_examples/routing/route-state/main.go](_examples/routing/route-state/main.go).
+
+> We jumped v12.2.2.
 
 # Mon, 17 July 2023 | v12.2.1
 
