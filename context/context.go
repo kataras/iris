@@ -4178,11 +4178,11 @@ var WriteJSON = func(ctx *Context, v interface{}, options *JSON) error {
 
 // See https://golang.org/src/strings/builder.go#L45
 // func bytesToString(b []byte) string {
-// 	return *(*string)(unsafe.Pointer(&b))
+// 	return unsafe.String(unsafe.SliceData(b), len(b))
 // }
 
 func stringToBytes(s string) []byte {
-	return *(*[]byte)(unsafe.Pointer(&s))
+	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
 type (
