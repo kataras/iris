@@ -3,7 +3,7 @@
 ## Supported Versions
 
 We are focusing on fixing issues and security vulnerabilities to the latest and greatest version of Iris.
-Iris users SHOULD always update their backend code to the latest version of Iris API, there is a complete [HISTORY](https://github.com/kataras/iris/blob/master/HISTORY.md) file
+Iris users SHOULD always update their backend code to the latest version of Iris API, there is a complete [HISTORY](https://github.com/kataras/iris/blob/main/HISTORY.md) file
 which acts as a code migration assistant.
 
 ## Reporting a Vulnerability

@@ -15,7 +15,7 @@ type (
 	// User is an alias of an empty interface, it's here to declare the typeof T,
 	// which can be any custom struct type.
 	//
-	// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/user.go.
+	// Example can be found at: https://github.com/kataras/iris/tree/main/_examples/auth/auth/user.go.
 	User = any
 )
 

@@ -90,7 +90,7 @@
         * [Redirection](routing/subdomains/redirect/main.go)
             * [Multi Instances](routing/subdomains/redirect/multi-instances/main.go)
         * [HTTP Errors View](routing/subdomains/http-errors-view/main.go)
-    * [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
+    * [HTTP Method Override](https://github.com/kataras/iris/blob/main/middleware/methodoverride/methodoverride_test.go)
     * [API Versioning](routing/versioning/main.go)
     * [Sitemap](routing/sitemap/main.go)
 * Logging
@@ -175,7 +175,7 @@
     * Third-Parties
         * [Render `valyala/quicktemplate` templates](view/quicktemplate)
         * [Render `shiyanhui/hero` templates](view/herotemplate)
-* [Request ID](https://github.com/kataras/iris/blob/master/middleware/requestid/requestid_test.go)
+* [Request ID](https://github.com/kataras/iris/blob/main/middleware/requestid/requestid_test.go)
 * [Request Rate Limit](request-ratelimit/main.go)
 * [Request Referrer](request-referrer/main.go)
 * [Webassembly](webassembly/main.go)

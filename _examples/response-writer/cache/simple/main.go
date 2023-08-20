@@ -93,6 +93,6 @@ func customIndexPost(ctx iris.Context) {
 /* Note that `HandleDir` does use the browser's disk caching by-default
 therefore, register the cache handler AFTER any HandleDir calls,
 for a faster solution that server doesn't need to keep track of the response
-navigate to https://github.com/kataras/iris/blob/master/_examples/cache/client-side/main.go.
+navigate to https://github.com/kataras/iris/blob/main/_examples/cache/client-side/main.go.
 
 The `HandleDir` has its own cache mechanism, read the 'file-server' examples. */

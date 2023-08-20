@@ -119,7 +119,7 @@ type Party interface {
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
-	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
+	// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
 	// Properties returns the original Party's properties map,
@@ -285,7 +285,7 @@ type Party interface {
 	//
 	// Returns this Party.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
 	SetExecutionRules(executionRules ExecutionRules) Party
 	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
 	// Available values are:
@@ -335,7 +335,7 @@ type Party interface {
 	// HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
 	//
 	// Examples:
-	// https://github.com/kataras/iris/tree/master/_examples/file-server
+	// https://github.com/kataras/iris/tree/main/_examples/file-server
 	HandleDir(requestPath string, fileSystem interface{}, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
@@ -458,6 +458,6 @@ type Party interface {
 	//  }
 	// 	})
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+	// Examples: https://github.com/kataras/iris/tree/main/_examples/view
 	Layout(tmplLayoutFile string) Party
 }

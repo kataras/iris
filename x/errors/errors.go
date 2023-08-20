@@ -240,7 +240,7 @@ var (
 //
 // Examples can be found at:
 //
-//	https://github.com/kataras/iris/tree/master/_examples/routing/http-wire-errors.
+//	https://github.com/kataras/iris/tree/main/_examples/routing/http-wire-errors.
 type Error struct {
 	ErrorCode  ErrorCode       `json:"http_error_code" yaml:"HTTPErrorCode"`
 	Message    string          `json:"message,omitempty" yaml:"Message"`

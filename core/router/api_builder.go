@@ -496,7 +496,7 @@ func (api *APIBuilder) AllowMethods(methods ...string) Party {
 //
 // Returns this Party.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
 func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
 	api.handlerExecutionRules = executionRules
 	return api
@@ -631,7 +631,7 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // HandleDir("/public",subFilesystem, DirOptions{...})
 //
 // Examples:
-// https://github.com/kataras/iris/tree/master/_examples/file-server
+// https://github.com/kataras/iris/tree/main/_examples/file-server
 func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts ...DirOptions) (routes []*Route) {
 	options := DefaultDirOptions
 	if len(opts) > 0 {
@@ -1036,7 +1036,7 @@ func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
 // Macros returns the macro collection that is responsible
 // to register custom macros with their own parameter types and their macro functions for all routes.
 //
-// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
+// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/routing/dynamic-path
 func (api *APIBuilder) Macros() *macro.Macros {
 	return api.macros
 }
@@ -1692,7 +1692,7 @@ func (api *APIBuilder) FallbackView(provider context.FallbackViewProvider) {
 //	 }
 //		})
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+// Examples: https://github.com/kataras/iris/tree/main/_examples/view
 func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
 	handler := func(ctx *context.Context) {
 		ctx.ViewLayout(tmplLayoutFile)

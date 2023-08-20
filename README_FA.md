@@ -10,7 +10,7 @@
 
 # Iris Web Framework
     
-[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=master&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)<!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=7E18DD&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community)<!--[![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://iris-go.com/donate)--><!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)<!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=7E18DD&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community)<!--[![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://iris-go.com/donate)--><!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
     
 آیریس یک چارچوب وب پر سرعت ، ساده و در عین حال کاملاً برجسته و بسیار کارآمد برای Go است.
 </div>
@@ -56,15 +56,15 @@ func updateUser(ctx iris.Context) {
   ctx.JSON(resp)
 }
 ```
-> !برای اطلاعات بیشتر ، [مثال های مسیریابی](https://github.com/kataras/iris/blob/master/_examples/routing) را بخوانید
+> !برای اطلاعات بیشتر ، [مثال های مسیریابی](https://github.com/kataras/iris/blob/main/_examples/routing) را بخوانید
 
 </details>
 
 <details><summary>Handler with custom input and output arguments</summary>
 
-[![https://github.com/kataras/iris/blob/master/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
+[![https://github.com/kataras/iris/blob/main/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
 
-> اگر برایتان جالب بود [مثال های دیگری](https://github.com/kataras/iris/blob/master/_examples/dependency-injection) را مطالعه کنید
+> اگر برایتان جالب بود [مثال های دیگری](https://github.com/kataras/iris/blob/main/_examples/dependency-injection) را مطالعه کنید
 
 </details>
 
@@ -274,7 +274,7 @@ require github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920072528-ff81f370625a
     
 برای اطلاعات بیشتر در مورد اسناد فنی می توانید به مستندات اصلی ما مراجعه کنید. 
 
-> [مستندات اصلی](https://pkg.go.dev/github.com/kataras/iris/v12@master)
+> [مستندات اصلی](https://pkg.go.dev/github.com/kataras/iris/v12@main)
     
 ## دوست دارید در حین مسافرت کتاب بخوانید ?
     

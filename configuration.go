@@ -225,7 +225,7 @@ func WithTimeout(timeoutDur time.Duration, htmlBody ...string) Configurator {
 //
 // See `Configuration#IgnoreServerErrors []string` too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/http-server/listen-addr/omit-server-errors
+// Example: https://github.com/kataras/iris/tree/main/_examples/http-server/listen-addr/omit-server-errors
 func WithoutServerError(errors ...error) Configurator {
 	return func(app *Application) {
 		if len(errors) == 0 {
@@ -502,7 +502,7 @@ func WithOtherValue(key string, val interface{}) Configurator {
 // If the result does not complete your needs you can take control
 // and use the github.com/kataras/sitemap package to generate a customized one instead.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/sitemap.
+// Example: https://github.com/kataras/iris/tree/main/_examples/sitemap.
 func WithSitemap(startURL string) Configurator {
 	sitemaps := sitemap.New(startURL)
 	return func(app *Application) {
@@ -688,7 +688,7 @@ type Configuration struct {
 	//
 	// See `WithoutServerError(...)` function too.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/http-server/listen-addr/omit-server-errors
+	// Example: https://github.com/kataras/iris/tree/main/_examples/http-server/listen-addr/omit-server-errors
 	//
 	// Defaults to an empty slice.
 	IgnoreServerErrors []string `ini:"ignore_server_errors" json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`

@@ -23,7 +23,7 @@ type VerifiedToken = jwt.VerifiedToken
 // ErrorHandler all in once when necessary.
 // Set a provider using the AddProvider method of Auth type.
 //
-// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/user_provider.go.
+// Example can be found at: https://github.com/kataras/iris/tree/main/_examples/auth/auth/user_provider.go.
 type Provider[T User] interface {
 	// Signin accepts a username (or email) and a password and should
 	// return a valid T value or an error describing

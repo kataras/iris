@@ -1,6 +1,6 @@
 # Contributing
 
-First of all read our [Code of Conduct](https://github.com/kataras/iris/blob/master/CODE_OF_CONDUCT.md).
+First of all read our [Code of Conduct](https://github.com/kataras/iris/blob/main/CODE_OF_CONDUCT.md).
 
 ## PR
 

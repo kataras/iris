@@ -575,13 +575,13 @@ Open one or more browser tabs at: http://localhost:8080 and have fun!
 
 ### Download the Source Code
 
-The whole project, all the files you saw in this article are located at: https://github.com/kataras/iris/tree/master/_examples/mvc/vuejs-todo-mvc
+The whole project, all the files you saw in this article are located at: https://github.com/kataras/iris/tree/main/_examples/mvc/vuejs-todo-mvc
 
 ## References
 
 https://vuejs.org/v2/examples/todomvc.html (using browser's local storage)
 
-https://github.com/kataras/iris/tree/master/_examples/mvc (mvc examples and features overview repository)
+https://github.com/kataras/iris/tree/main/_examples/mvc (mvc examples and features overview repository)
 
 ## Thank you, once again
 

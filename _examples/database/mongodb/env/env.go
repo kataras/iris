@@ -37,7 +37,7 @@ func parse() {
 // After `Load` the callers can get an environment variable via `os.Getenv`.
 func Load(envFileName string) {
 	if args := os.Args; len(args) > 1 && args[1] == "help" {
-		fmt.Fprintln(os.Stderr, "https://github.com/kataras/iris/blob/master/_examples/database/mongodb/README.md")
+		fmt.Fprintln(os.Stderr, "https://github.com/kataras/iris/blob/main/_examples/database/mongodb/README.md")
 		os.Exit(-1)
 	}
 

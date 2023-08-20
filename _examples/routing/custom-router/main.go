@@ -19,7 +19,7 @@ import (
 
 For a more detailed, complete and useful example
 you can take a look at the iris' router itself which is located at:
-https://github.com/kataras/iris/tree/master/core/router/handler.go
+https://github.com/kataras/iris/tree/main/core/router/handler.go
 which completes this exact interface, the `router#RequestHandler`.
 */
 type customRouter struct {

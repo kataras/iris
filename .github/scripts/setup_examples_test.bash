@@ -4,7 +4,7 @@ for f in ../../_examples/*; do
     if [ -d "$f" ]; then
         # Will not run if no directories are available
         go mod init
-        go get -u github.com/kataras/iris/v12@master
+        go get -u github.com/kataras/iris/v12@main
         go mod download
         go run .
     fi

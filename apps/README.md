@@ -2,7 +2,7 @@
 
 Package `github.com/kataras/iris/v12/apps` provides a globally scoped control over all registered Iris Applications of the same Program.
 
-[Example Application](https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect/multi-instances)
+[Example Application](https://github.com/kataras/iris/tree/main/_examples/routing/subdomains/redirect/multi-instances)
 
 Below you will find a use case for each feature.
 

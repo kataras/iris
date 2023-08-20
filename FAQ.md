@@ -31,8 +31,8 @@ More than 280 practical examples, tutorials and articles at:
 - https://www.iris-go.com/docs
 - https://www.iris-go.com/#ebookDonateForm
 <!-- - https://github.com/kataras/iris/wiki/Starter-kits -->
-- https://github.com/kataras/iris/tree/master/_examples
-- https://pkg.go.dev/github.com/kataras/iris/v12@master
+- https://github.com/kataras/iris/tree/main/_examples
+- https://pkg.go.dev/github.com/kataras/iris/v12@main
 
 ## Active development mode
 

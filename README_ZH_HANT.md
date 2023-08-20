@@ -12,7 +12,7 @@
 
 # Iris Web 框架 <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-japan.svg" /></a>
 
-[![組建狀態](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=master&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![查看範例](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/master/_examples) [![聊天室](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![捐助](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+[![組建狀態](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![查看範例](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![聊天室](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![捐助](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.0)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
 <!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
 
@@ -81,21 +81,21 @@ func updateUser(ctx iris.Context) {
 }
 ```
 
-> Read the [routing examples](https://github.com/kataras/iris/blob/master/_examples/routing) for more!
+> Read the [routing examples](https://github.com/kataras/iris/blob/main/_examples/routing) for more!
 
 </details>
 
 <details><summary>Handler with custom input and output arguments</summary>
 
-[![https://github.com/kataras/iris/blob/master/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
+[![https://github.com/kataras/iris/blob/main/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
 
-> Interesting? Read the [examples](https://github.com/kataras/iris/blob/master/_examples/dependency-injection).
+> Interesting? Read the [examples](https://github.com/kataras/iris/blob/main/_examples/dependency-injection).
 
 </details>
 
 <details><summary>Party Controller (NEW)</summary>
 
-> Head over to the [full running example](https://github.com/kataras/iris/blob/master/_examples/routing/party-controller)!
+> Head over to the [full running example](https://github.com/kataras/iris/blob/main/_examples/routing/party-controller)!
 
 </details>
 
@@ -526,7 +526,7 @@ Iris 包含極其豐富且透徹的 **[文件](https://www.iris-go.com/docs)**�
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
-如需更為詳細的技術性文件，您可以前往我們的 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@master)。如果要可以直接執行的程式碼，可以到 [./\_examples](_examples) 儲存庫的子目錄參閱。
+如需更為詳細的技術性文件，您可以前往我們的 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@main)。如果要可以直接執行的程式碼，可以到 [./\_examples](_examples) 儲存庫的子目錄參閱。
 
 ### 想一邊旅行、一邊閱讀嗎？
 

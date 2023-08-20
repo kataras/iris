@@ -56,7 +56,7 @@ type (
 	//
 	// See 'context#UnmarshalBody` for more.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc = context.UnmarshalerFunc
 	// DecodeFunc is a generic type of decoder function.
 	// When the returned error is not nil the decode operation
@@ -64,7 +64,7 @@ type (
 	// otherwise it continues to read the next available object.
 	// Look the `Context.ReadJSONStream` method.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream.
+	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-json-stream.
 	DecodeFunc = context.DecodeFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.
@@ -99,7 +99,7 @@ type (
 	// Pass a Problem value to `context.Problem` to
 	// write an "application/problem+json" response.
 	//
-	// Read more at: https://github.com/kataras/iris/blob/master/_examples/routing/http-errors.
+	// Read more at: https://github.com/kataras/iris/blob/main/_examples/routing/http-errors.
 	//
 	// It is an alias of the `context#Problem` type.
 	Problem = context.Problem
@@ -180,7 +180,7 @@ type (
 	// })
 	//
 	// See `core/router/Party#SetExecutionRules` for more.
-	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
 	ExecutionRules = router.ExecutionRules
 	// ExecutionOptions is a set of default behaviors that can be changed in order to customize the execution flow of the routes' handlers with ease.
 	//
@@ -302,7 +302,7 @@ type (
 // All view engines have a `RootDir` method for that reason too
 // but alternatively, you can wrap the given file system with this `PrefixDir`.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/file-server/single-page-application/embedded-single-page-application/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/file-server/single-page-application/embedded-single-page-application/main.go
 func PrefixDir(prefix string, fs http.FileSystem) http.FileSystem {
 	return &prefixedDir{prefix, fs}
 }
@@ -425,7 +425,7 @@ var (
 	// The second optional parameter is any optional settings that the caller can use.
 	//
 	// See `Party#HandleDir` too.
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+	// Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/file-server
 	// A shortcut for the `router.FileServer`.
 	FileServer = router.FileServer
 	// DirList is the default `DirOptions.DirList` field.
@@ -461,7 +461,7 @@ var (
 	// It should be used after Static methods.
 	// See `iris#Cache304` for an alternative, faster way.
 	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
+	// Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/#caching
 	Cache = cache.Handler
 	// NoCache is a middleware which overrides the Cache-Control, Pragma and Expires headers
 	// in order to disable the cache during the browser's back and forward feature.
@@ -781,7 +781,7 @@ type GlobalPatches struct {
 //
 // See its `Context` method.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/response-writer/json-third-party/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/response-writer/json-third-party/main.go
 func Patches() *GlobalPatches { // singleton.
 	return globalPatches
 }

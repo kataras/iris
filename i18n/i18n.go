@@ -113,7 +113,7 @@ func makeTags(languages ...string) (tags []language.Tag) {
 }
 
 // New returns a new `I18n` instance. Use its `Load` or `LoadAssets` to load languages.
-// Examples at: https://github.com/kataras/iris/tree/master/_examples/i18n.
+// Examples at: https://github.com/kataras/iris/tree/main/_examples/i18n.
 func New() *I18n {
 	i := &I18n{
 		Loader:       DefaultLoaderConfig,
@@ -146,7 +146,7 @@ func (i *I18n) LoadAssets(assetNames func() []string, asset func(string) ([]byte
 // The "pattern" is a classic glob pattern.
 //
 // See `New` and `FS` package-level functions for more.
-// Example: https://github.com/kataras/iris/blob/master/_examples/i18n/template-embedded/main.go.
+// Example: https://github.com/kataras/iris/blob/main/_examples/i18n/template-embedded/main.go.
 func (i *I18n) LoadFS(fileSystem fs.FS, pattern string, languages ...string) error {
 	loader, err := FS(fileSystem, pattern, i.Loader)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 )
 
 // This example is equivalent to the
-// https://github.com/kataras/iris/blob/master/_examples/hello-world/main.go
+// https://github.com/kataras/iris/blob/main/_examples/hello-world/main.go
 //
 // It seems that additional code you
 // have to write doesn't worth it

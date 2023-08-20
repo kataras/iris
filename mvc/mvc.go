@@ -258,7 +258,7 @@ var IgnoreEmbedded OptionFunc = func(c *ControllerActivator) {
 // Default behavior can be changed through second, variadic, variable "options",
 // e.g. Handle(controller, GRPC {Server: grpcServer, Strict: true})
 //
-// Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
+// Examples at: https://github.com/kataras/iris/tree/main/_examples/mvc
 func (app *Application) Handle(controller interface{}, options ...Option) *Application {
 	c := app.handle(controller, options...)
 	// Note: log on register-time, so they can catch any failures before build.

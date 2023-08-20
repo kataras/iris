@@ -24,11 +24,11 @@ Wiki:
 
 Examples:
 
-	https://github.com/kataras/iris/tree/master/_examples
+	https://github.com/kataras/iris/tree/main/_examples
 
 Middleware:
 
-	https://github.com/kataras/iris/tree/master/middleware
+	https://github.com/kataras/iris/tree/main/middleware
 	https://github.com/iris-contrib/middleware
 
 Home Page:

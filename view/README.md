@@ -16,11 +16,11 @@ Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, 
 | 6 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
 | 7 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |
 
-[List of Examples](https://github.com/kataras/iris/tree/master/_examples/view).
+[List of Examples](https://github.com/kataras/iris/tree/main/_examples/view).
 
-[Benchmarks](https://github.com/kataras/iris/tree/master/_benchmarks/view).
+[Benchmarks](https://github.com/kataras/iris/tree/main/_benchmarks/view).
 
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/master/_examples/view/quicktemplate) example.
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/main/_examples/view/quicktemplate) example.
 
 ## Overview
 
@@ -162,7 +162,7 @@ func hi(ctx iris.Context) {
 }
 ```
 
-Examples can be found here: https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app and  https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app-bindata.
+Examples can be found here: https://github.com/kataras/iris/tree/main/_examples/view/embedding-templates-into-app and  https://github.com/kataras/iris/tree/main/_examples/view/embedding-templates-into-app-bindata.
 
 ## Reload
 

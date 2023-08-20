@@ -88,7 +88,7 @@
     - [Redirection](routing/subdomains/redirect/main.go)
       - [Multi Instances](routing/subdomains/redirect/multi-instances/main.go)
     - [HTTP Errors View](routing/subdomains/http-errors-view/main.go)
-  - [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
+  - [HTTP Method Override](https://github.com/kataras/iris/blob/main/middleware/methodoverride/methodoverride_test.go)
   - [API Versioning](routing/versioning/main.go)
   - [Sitemap](routing/sitemap/main.go)
 - 日誌
@@ -173,7 +173,7 @@
   - 第三方引擎
     - [Render `valyala/quicktemplate` templates](view/quicktemplate)
     - [Render `shiyanhui/hero` templates](view/herotemplate)
-- [請求 ID](https://github.com/kataras/iris/blob/master/middleware/requestid/requestid_test.go)
+- [請求 ID](https://github.com/kataras/iris/blob/main/middleware/requestid/requestid_test.go)
 - [請求速率限制](request-ratelimit/main.go)
 - [請求 Referrer](request-referrer/main.go)
 - [Webassembly](webassembly/main.go)

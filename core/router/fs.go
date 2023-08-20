@@ -161,7 +161,7 @@ var DefaultDirOptions = DirOptions{
 // The second parameter is the settings that the caller can use to customize the behavior.
 //
 // See `Party#HandleDir` too.
-// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+// Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/file-server
 func FileServer(fs http.FileSystem, options DirOptions) context.Handler {
 	if fs == nil {
 		panic("FileServer: fs is nil. The fs parameter should point to a file system of physical system directory or to an embedded one")

@@ -260,9 +260,9 @@ const (
 // See `File` package-level function too.
 //
 // Examples:
-// https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog
-// https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog-template
-// https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog-broker
+// https://github.com/kataras/iris/tree/main/_examples/logging/request-logger/accesslog
+// https://github.com/kataras/iris/tree/main/_examples/logging/request-logger/accesslog-template
+// https://github.com/kataras/iris/tree/main/_examples/logging/request-logger/accesslog-broker
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
 		Clock:              clockFunc(time.Now),

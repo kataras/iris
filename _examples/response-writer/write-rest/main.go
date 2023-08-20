@@ -35,7 +35,7 @@ func main() {
 	app.SetContextErrorHandler(new(errorHandler))
 	// Read
 	app.Post("/decode", func(ctx iris.Context) {
-		// Read https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go as well.
+		// Read https://github.com/kataras/iris/blob/main/_examples/request-body/read-json/main.go as well.
 		var user User
 		err := ctx.ReadJSON(&user)
 		if err != nil {

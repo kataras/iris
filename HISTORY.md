@@ -21,7 +21,9 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Next
 
-Changes apply to `master` branch.
+Changes apply to `main` branch.
+
+- `master` branch finally renamed to `main`. Don't worry GitHub will still navigate any `master` request to `main` automatically. Examples, Documentation and other Pages are refactored too.
 
 # Sat, 12 Aug 2023 | v12.2.4
 
@@ -88,11 +90,11 @@ All new features have been tested in production and seem to work fine. Fixed all
 
 - Add new `URLParamSeparator` to the configuration. Defaults to "," but can be set to an empty string to disable splitting query values on `Context.URLParamSlice` method.
 
-- [PR #1992](https://github.com/kataras/iris/pull/1992): Added support for third party packages on [httptest](https://github.com/kataras/iris/tree/master/httptest). An example using 3rd-party module named [Ginkgo](github.com/onsi/ginkgo) can be found [here](https://github.com/kataras/iris/blob/master/_examples/testing/ginkgotest). 
+- [PR #1992](https://github.com/kataras/iris/pull/1992): Added support for third party packages on [httptest](https://github.com/kataras/iris/tree/main/httptest). An example using 3rd-party module named [Ginkgo](github.com/onsi/ginkgo) can be found [here](https://github.com/kataras/iris/blob/main/_examples/testing/ginkgotest). 
 
 - Add `Context.Render` method for compatibility.
 
-- Support of embedded [locale files](https://github.com/kataras/iris/blob/master/_examples/i18n/template-embedded/main.go) using standard `embed.FS` with the new `LoadFS` function.
+- Support of embedded [locale files](https://github.com/kataras/iris/blob/main/_examples/i18n/template-embedded/main.go) using standard `embed.FS` with the new `LoadFS` function.
 - Support of direct embedded view engines (`HTML, Blocks, Django, Handlebars, Pug, Jet` and `Ace`) with `embed.FS` or `fs.FS` (in addition to `string` and `http.FileSystem` types).
 - Add support for `embed.FS` and `fs.FS` on `app.HandleDir`.
 
@@ -252,7 +254,7 @@ app.Get("/users/{id:uuid}", getUser)
 
 - Improve the performance and fix `:int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64` path type parameters couldn't accept a positive number written with the plus symbol or with a leading zeroes, e.g. `+42` and `021`.
 
-- The `iris.WithEmptyFormError` option is respected on `context.ReadQuery` method too, as requested at [#1727](https://github.com/kataras/iris/issues/1727). [Example comments](https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go) were updated.
+- The `iris.WithEmptyFormError` option is respected on `context.ReadQuery` method too, as requested at [#1727](https://github.com/kataras/iris/issues/1727). [Example comments](https://github.com/kataras/iris/blob/main/_examples/request-body/read-query/main.go) were updated.
 
 - New `httptest.Strict` option setter to enable the `httpexpect.RequireReporter` instead of the default `httpexpect.AssetReporter. Use that to enable complete test failure on the first error. As requested at: [#1722](https://github.com/kataras/iris/issues/1722).
 
@@ -312,11 +314,11 @@ stage := NewGroup(api, "5.0.0-alpha")
 stage.Get/Post...
 ```
 
-- New [Basic Authentication](https://github.com/kataras/iris/tree/master/middleware/basicauth) middleware. Its `Default` function has not changed, however, the rest, e.g. `New` contains breaking changes as the new middleware features new functionalities.
-- Add `iris.DirOptions.SPA bool` field to allow [Single Page Applications](https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application/basic/main.go) under a file server.
+- New [Basic Authentication](https://github.com/kataras/iris/tree/main/middleware/basicauth) middleware. Its `Default` function has not changed, however, the rest, e.g. `New` contains breaking changes as the new middleware features new functionalities.
+- Add `iris.DirOptions.SPA bool` field to allow [Single Page Applications](https://github.com/kataras/iris/tree/main/_examples/file-server/single-page-application/basic/main.go) under a file server.
 - A generic User interface, see the `Context.SetUser/User` methods in the New Context Methods section for more. In-short, the basicauth middleware's stored user can now be retrieved through `Context.User()` which provides more information than the native `ctx.Request().BasicAuth()` method one. Third-party authentication middleware creators can benefit of these two methods, plus the Logout below. 
-- A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/master/_examples/auth/basicauth/basic/main.go) or [jwt](https://github.com/kataras/iris/blob/master/_examples/auth/jwt/blocklist/main.go) client credentials.
-- Add the ability to [share functions](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
+- A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/main/_examples/auth/basicauth/basic/main.go) or [jwt](https://github.com/kataras/iris/blob/main/_examples/auth/jwt/blocklist/main.go) client credentials.
+- Add the ability to [share functions](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
 
 - Add the new `Party.UseOnce` method to the `*Route`
 - Add a new `*Route.RemoveHandler(...interface{}) int` and `Party.RemoveHandler(...interface{}) Party` methods, delete a handler based on its name or the handler pc function.
@@ -342,7 +344,7 @@ func main() {
 
 - Redis Driver is now based on the [go-redis](https://github.com/go-redis/redis/) module. Radix and redigo removed entirely. Sessions are now stored in hashes which fixes [issue #1610](https://github.com/kataras/iris/issues/1610). The only breaking change on default configuration is that the `redis.Config.Delim` option was removed. The redis sessions database driver is now defaults to the `&redis.GoRedisDriver{}`. End-developers can implement their own implementations too. The `Database#Close` is now automatically called on interrupt signals, no need to register it by yourself.
 
-- Add builtin support for **[i18n pluralization](https://github.com/kataras/iris/tree/master/_examples/i18n/plurals)**. Please check out the [following yaml locale example](https://github.com/kataras/iris/tree/master/_examples/i18n/plurals/locales/en-US/welcome.yml) to see an overview of the supported formats.
+- Add builtin support for **[i18n pluralization](https://github.com/kataras/iris/tree/main/_examples/i18n/plurals)**. Please check out the [following yaml locale example](https://github.com/kataras/iris/tree/main/_examples/i18n/plurals/locales/en-US/welcome.yml) to see an overview of the supported formats.
 - Fix [#1650](https://github.com/kataras/iris/issues/1650)
 - Fix [#1649](https://github.com/kataras/iris/issues/1649)
 - Fix [#1648](https://github.com/kataras/iris/issues/1648)
@@ -357,7 +359,7 @@ func main() {
 - Fix Response Recorder `Flush` when transfer-encoding is `chunked`.
 - Fix Response Recorder `Clone` concurrent access afterwards.
 
-- Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/master/_examples/view/parse-template).
+- Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/main/_examples/view/parse-template).
 - Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
 
 - Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
@@ -376,13 +378,13 @@ func main() {
 
 ![DBUG routes with Controllers](https://iris-go.com/images/v12.2.0-dbug3.png?v=0)
 
-- Update the [pprof middleware](https://github.com/kataras/iris/tree/master/middleware/pprof).
+- Update the [pprof middleware](https://github.com/kataras/iris/tree/main/middleware/pprof).
 
-- New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/master/_examples/mvc/error-handler-http/main.go).
+- New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/main/_examples/mvc/error-handler-http/main.go).
 
 ![MVC: HTTP Error Handler Method](https://user-images.githubusercontent.com/22900943/90948989-e04cd300-e44c-11ea-8c97-54d90fb0cbb6.png)
 
-- New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/master/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/master/_examples/routing/rewrite).
+- New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/main/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/main/_examples/routing/rewrite).
 
 ```yml
 RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
@@ -411,15 +413,15 @@ RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
 PrimarySubdomain: www
 ```
 
-- New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/master/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
+- New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/main/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
 
 ![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
 
-- Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/master/_examples/i18n/basic/main.go#L28-L50).
+- Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/main/_examples/i18n/basic/main.go#L28-L50).
 
 - Fix [#1594](https://github.com/kataras/iris/issues/1594) and add a new `PathAfterHandler` which can be set to true to enable the old behavior (not recommended though).
 
-- New [apps](https://github.com/kataras/iris/tree/master/apps) subpackage. [Example of usage](https://github.com/kataras/iris/tree/master/_examples/routing/subdomains/redirect/multi-instances).
+- New [apps](https://github.com/kataras/iris/tree/main/apps) subpackage. [Example of usage](https://github.com/kataras/iris/tree/main/_examples/routing/subdomains/redirect/multi-instances).
 
 ![apps image example](https://user-images.githubusercontent.com/22900943/90459288-8a54f400-e109-11ea-8dea-20631975c9fc.png)
 
@@ -531,33 +533,33 @@ var dirOpts = iris.DirOptions{
 - Update jet parser to v5.0.2, closes [#1551](https://github.com/kataras/iris/issues/1551). It contains two breaking changes by its author:
     - Relative paths on `extends, import, include...` tmpl functions, e.g. `{{extends "../layouts/application.jet"}}` instead of `layouts/application.jet`
     - the new [jet.Ranger](https://github.com/CloudyKit/jet/pull/165) interface now requires a `ProvidesIndex() bool` method too
-    - Example has been [updated](https://github.com/kataras/iris/tree/master/_examples/view/template_jet_0)
+    - Example has been [updated](https://github.com/kataras/iris/tree/main/_examples/view/template_jet_0)
 
 - Fix [#1552](https://github.com/kataras/iris/issues/1552).
 
 - Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
-    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/master/_examples/file-server/file-server).
+    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/main/_examples/file-server/file-server).
 
 - Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
 
-- Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/master/_examples/mvc/versioned-controller/main.go).
+- Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/main/_examples/mvc/versioned-controller/main.go).
 
 - Fix [#1539](https://github.com/kataras/iris/issues/1539).
 
-- New [rollbar example](https://github.com/kataras/iris/blob/master/_examples/logging/rollbar/main.go).
+- New [rollbar example](https://github.com/kataras/iris/blob/main/_examples/logging/rollbar/main.go).
 
-- New builtin [requestid](https://github.com/kataras/iris/tree/master/middleware/requestid) middleware.
+- New builtin [requestid](https://github.com/kataras/iris/tree/main/middleware/requestid) middleware.
 
-- New builtin [JWT](https://github.com/kataras/iris/tree/master/middleware/jwt) middleware based on the fastest JWT implementation; [kataras/jwt](https://github.com/kataras/jwt) featured with optional wire encryption to set claims with sensitive data when necessary.
+- New builtin [JWT](https://github.com/kataras/iris/tree/main/middleware/jwt) middleware based on the fastest JWT implementation; [kataras/jwt](https://github.com/kataras/jwt) featured with optional wire encryption to set claims with sensitive data when necessary.
 
-- New `iris.RouteOverlap` route registration rule. `Party.SetRegisterRule(iris.RouteOverlap)` to allow overlapping across multiple routes for the same request subdomain, method, path. See [1536#issuecomment-643719922](https://github.com/kataras/iris/issues/1536#issuecomment-643719922). This allows two or more **MVC Controllers** to listen on the same path based on one or more registered dependencies (see [_examples/mvc/authenticated-controller](https://github.com/kataras/iris/tree/master/_examples/mvc/authenticated-controller)).
+- New `iris.RouteOverlap` route registration rule. `Party.SetRegisterRule(iris.RouteOverlap)` to allow overlapping across multiple routes for the same request subdomain, method, path. See [1536#issuecomment-643719922](https://github.com/kataras/iris/issues/1536#issuecomment-643719922). This allows two or more **MVC Controllers** to listen on the same path based on one or more registered dependencies (see [_examples/mvc/authenticated-controller](https://github.com/kataras/iris/tree/main/_examples/mvc/authenticated-controller)).
 
 - `Context.ReadForm` now can return an `iris.ErrEmptyForm` instead of `nil` when the new `Configuration.FireEmptyFormError` is true  (when `iris.WithEmptyFormError` is set) on missing form body to read from.
 
-- `Configuration.EnablePathIntelligence | iris.WithPathIntelligence` to enable path intelligence automatic path redirection on the most closest path (if any), [example]((https://github.com/kataras/iris/blob/master/_examples/routing/intelligence/main.go)
+- `Configuration.EnablePathIntelligence | iris.WithPathIntelligence` to enable path intelligence automatic path redirection on the most closest path (if any), [example]((https://github.com/kataras/iris/blob/main/_examples/routing/intelligence/main.go)
 
-- Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie) example has been updated.
-- `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/master/_examples/cookies/options).
+- Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/main/_examples/cookies/securecookie) example has been updated.
+- `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/main/_examples/cookies/options).
 
 - `iris.TLS` can now accept certificates in form of raw `[]byte` contents too.
 - `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS`, e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`. There is `iris.AutoTLSNoRedirect` option for `AutoTLS` too.
@@ -588,7 +590,7 @@ var dirOpts = iris.DirOptions{
 
 - `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
 - `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
-- `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/master/_examples/file-server/http2push/main.go).
+- `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/main/_examples/file-server/http2push/main.go).
 - `iris.Compression` middleware to compress responses and decode compressed request data respectfully.
 - `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
 - `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
@@ -600,14 +602,14 @@ var dirOpts = iris.DirOptions{
 - `Context.ReadURL(ptr interface{}) error` shortcut of `ReadParams` and `ReadQuery`. Binds URL dynamic path parameters and URL query parameters to the given "ptr" pointer of a struct value.
 - `Context.SetUser(User)` and `Context.User() User` to store and retrieve an authenticated client. Read more [here](https://github.com/iris-contrib/middleware/issues/63).
 - `Context.SetLogoutFunc(fn interface{}, persistenceArgs ...interface{})` and `Logout(args ...interface{}) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
-- `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs) for more.
+- `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs) for more.
 - `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
 - `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
-- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/master/middleware/recover). Also the `Context.GetErrPublic() (bool, error)`, `Context.SetErrPrivate(err error)` methods and `iris.ErrPrivate` interface have been introduced. 
+- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/main/middleware/recover). Also the `Context.GetErrPublic() (bool, error)`, `Context.SetErrPrivate(err error)` methods and `iris.ErrPrivate` interface have been introduced. 
 - `Context.RecordRequestBody(bool)` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
 - `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
-- `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go).
-- `Context.ReadParams(ptr interface{}) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go).
+- `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/main/_examples/request-body/read-headers/main.go).
+- `Context.ReadParams(ptr interface{}) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/main/_examples/request-body/read-params/main.go).
 - `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
 - `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas. Note that it skips any empty values (e.g. https://iris-go.com?values=).
 - `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
@@ -784,8 +786,8 @@ Prior to this version the `iris.Context` was the only one dependency that has be
 | `uint, uint8, uint16, uint32, uint64`, | |
 | `float, float32, float64`, | |
 | `bool`, | |
-| `slice` | [Path Parameter](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L20) |
-| Struct | [Request Body](https://github.com/kataras/iris/tree/master/_examples/request-body) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
+| `slice` | [Path Parameter](https://github.com/kataras/iris/blob/main/_examples/routing/dynamic-path/main.go#L20) |
+| Struct | [Request Body](https://github.com/kataras/iris/tree/main/_examples/request-body) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
 
 Here is a preview of what the new Hero handlers look like:
 
@@ -991,7 +993,7 @@ Response:
 - The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
 - The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.
 - The `i18n#LoaderConfig.FuncMap template.FuncMap` field was replaced with `Funcs func(iris.Locale) template.FuncMap` in order to give current locale access to the template functions. A new `app.I18n.Loader` was introduced too, in order to make it easier for end-developers to customize the translation key values.
-- Request Logger's `Columns bool` field has been removed. Use the new [accesslog](https://github.com/kataras/iris/tree/master/_examples/logging/request-logger/accesslog/main.go) middleware instead.
+- Request Logger's `Columns bool` field has been removed. Use the new [accesslog](https://github.com/kataras/iris/tree/main/_examples/logging/request-logger/accesslog/main.go) middleware instead.
 - The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string. All examples updated.
 - `ContextUploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error)` now returns the total files uploaded too (as its first parameter) and the "before" variadic option should return a boolean, if false then the specific file is skipped.
 - `Context.PostValues(name string) ([]string, error)` now returns a second output argument of `error` type too, which reports `ErrEmptyForm` or `ErrNotFound` or `ErrEmptyFormField`. The single post value getters now returns the **last value** if multiple was given instead of the first one (this allows clients to append values on flow updates).
@@ -1068,7 +1070,7 @@ Fix [[BUG]Session works incorrectly when meets the multi-level TLDs](https://git
 
 # Mo, 16 December 2019 | v12.1.1
 
-Add [Context.FindClosest(n int) []string](https://github.com/kataras/iris/blob/master/_examples/routing/intelligence/manual/main.go#L22)
+Add [Context.FindClosest(n int) []string](https://github.com/kataras/iris/blob/main/_examples/routing/intelligence/manual/main.go#L22)
 
 ```go
 app := iris.New()
@@ -1103,7 +1105,7 @@ Minor as many of you don't even use them but, indeed, they need to be covered he
 - Community-driven i18n middleware(iris-contrib/middleware/go-i18n) has a `NewLoader` function which returns a loader which can be passed at `app.I18n.Reset(loader i18n.Loader, languages ...string)` to change the locales parser
 - The Configuration's `TranslateFunctionContextKey` was replaced by `LocaleContextKey` which Context store's value (if i18n is used) returns the current Locale which contains the translate function, the language code, the language tag and the index position of it
 - The `context.Translate` method was replaced by `context.Tr` as a shortcut for the new `context.GetLocale().GetMessage(format, args...)` method and it matches the view's function `{{tr format args}}` too
-- If you used [Iris Django](https://github.com/kataras/iris/tree/master/_examples/view/template_django_0) view engine with `import _ github.com/flosch/pongo2-addons` you **must change** the import path to `_ github.com/iris-contrib/pongo2-addons` or add a [go mod replace](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive) to your `go.mod` file, e.g. `replace github.com/flosch/pongo2-addons => github.com/iris-contrib/pongo2-addons v0.0.1`.
+- If you used [Iris Django](https://github.com/kataras/iris/tree/main/_examples/view/template_django_0) view engine with `import _ github.com/flosch/pongo2-addons` you **must change** the import path to `_ github.com/iris-contrib/pongo2-addons` or add a [go mod replace](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive) to your `go.mod` file, e.g. `replace github.com/flosch/pongo2-addons => github.com/iris-contrib/pongo2-addons v0.0.1`.
 
 ## Fixes
 
@@ -1121,13 +1123,13 @@ All known issues.
 
 ### Internationalization and localization
 
-Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/blob/master/_examples/routing/sitemap/main.go) and [views](https://github.com/kataras/iris/blob/master/_examples/i18n/basic/main.go#L50).
+Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/blob/main/_examples/routing/sitemap/main.go) and [views](https://github.com/kataras/iris/blob/main/_examples/i18n/basic/main.go#L50).
 
 ### Sitemaps
 
 Iris generates and serves one or more [sitemap.xml](https://www.sitemaps.org/protocol.html) for your static routes.
 
-Navigate through: https://github.com/kataras/iris/blob/master/_examples/routing/sitemap/main.go for more.
+Navigate through: https://github.com/kataras/iris/blob/main/_examples/routing/sitemap/main.go for more.
 
 ## New Examples
 
@@ -1219,7 +1221,7 @@ Commit log: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
 
 - [New Feature: Handle different parameter types in the same path](https://github.com/kataras/iris/issues/1315)
 - [New Feature: Content Negotiation](https://github.com/kataras/iris/issues/1319)
-- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/request-body/read-yaml)
+- [Context.ReadYAML](https://github.com/kataras/iris/tree/main/_examples/request-body/read-yaml)
 - Fixes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
 
 # We, 24 July 2019 | v11.2.2

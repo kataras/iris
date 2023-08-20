@@ -33,7 +33,7 @@ type (
 	// - SignoutHandler
 	// - SignoutAllHandler
 	//
-	// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/main.go.
+	// Example can be found at: https://github.com/kataras/iris/tree/main/_examples/auth/auth/main.go.
 	Auth[T User] struct {
 		// Holds the configuration passed through the New and MustLoad
 		// package-level functions. One or more Auth instance can share the
@@ -116,7 +116,7 @@ func Must[T User](s *Auth[T], err error) *Auth[T] {
 // MustGenerateConfiguration or MustLoadConfiguration
 // or LoadConfiguration or MustLoad package-level functions.
 //
-// Example can be found at: https://github.com/kataras/iris/tree/master/_examples/auth/auth/main.go.
+// Example can be found at: https://github.com/kataras/iris/tree/main/_examples/auth/auth/main.go.
 func New[T User](config Configuration) (*Auth[T], error) {
 	keys, err := config.validate()
 	if err != nil {

@@ -63,7 +63,10 @@ func LoadOptions(filename string) (opts Options) {
 	return
 }
 
-// Engine is the rewrite engine master structure.
+// Rewrite is a struct that represents a rewrite engine for Iris web framework.
+// It contains a slice of redirect rules, an options struct, a logger, and a domain validator function.
+// It provides methods to create, configure, and apply rewrite rules to HTTP requests and responses.
+//
 // Navigate through _examples/routing/rewrite for more.
 type Engine struct {
 	redirects []*redirectMatch

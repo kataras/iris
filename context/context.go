@@ -70,7 +70,7 @@ type (
 	// Note: This is totally optionally, the default decoders
 	// for ReadJSON is the encoding/json and for ReadXML is the encoding/xml.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-per-type/main.go
+	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-per-type/main.go
 	BodyDecoder interface {
 		Decode(data []byte) error
 	}
@@ -91,7 +91,7 @@ type (
 	//
 	// See 'Unmarshaler' and 'BodyDecoder' for more.
 	//
-	// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc func(data []byte, outPtr interface{}) error
 
 	// DecodeFunc is a generic type of decoder function.
@@ -1080,7 +1080,7 @@ func (ctx *Context) Subdomain() (subdomain string) {
 // this request based on subdomain and request path.
 //
 // Order may change.
-// Example: https://github.com/kataras/iris/tree/master/_examples/routing/intelligence/manual
+// Example: https://github.com/kataras/iris/tree/main/_examples/routing/intelligence/manual
 func (ctx *Context) FindClosest(n int) []string {
 	return ctx.app.FindClosestPaths(ctx.Subdomain(), ctx.Path(), n)
 }
@@ -1358,7 +1358,7 @@ func (ctx *Context) GetLocale() Locale {
 // Tr returns a i18n localized message based on format with optional arguments.
 // See `GetLocale` too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/i18n
+// Example: https://github.com/kataras/iris/tree/main/_examples/i18n
 func (ctx *Context) Tr(key string, args ...interface{}) string {
 	return ctx.app.I18nReadOnly().TrContext(ctx, key, args...)
 }
@@ -2327,7 +2327,7 @@ func (ctx *Context) PostValueSimpleDate(name string) (time.Time, error) {
 // The default form's memory maximum size is 32MB, it can be changed by the
 // `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-file
+// Example: https://github.com/kataras/iris/tree/main/_examples/file-server/upload-file
 func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	// we don't have access to see if the request is body stream
 	// and then the ParseMultipartForm can be useless
@@ -2406,7 +2406,7 @@ func (ctx *Context) FormFiles(key string, before ...func(*Context, *multipart.Fi
 //
 // See `FormFile` and `FormFiles` to a more controlled way to receive a file.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/upload-files
+// Example: https://github.com/kataras/iris/tree/main/_examples/file-server/upload-files
 func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error) {
 	err = ctx.request.ParseMultipartForm(ctx.app.ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
@@ -2636,7 +2636,7 @@ type Validator interface {
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-custom-via-unmarshaler/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-via-unmarshaler/main.go
 func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error {
 	if ctx.request.Body == nil {
 		return fmt.Errorf("unmarshal: empty body: %w", ErrNotFound)
@@ -2734,7 +2734,7 @@ var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error 
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-json/main.go
 func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 	return ReadJSON(ctx, outPtr, opts...)
 }
@@ -2748,7 +2748,7 @@ func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
 // It accepts a function which accepts the json Decode function and returns an error.
 // The second variadic argument is optional and can be used to customize the decoder even further.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-json-stream/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-json-stream/main.go
 func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSONReader) error {
 	decoder := json.NewDecoder(ctx.request.Body)
 
@@ -2780,14 +2780,14 @@ func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSON
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-xml/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-xml/main.go
 func (ctx *Context) ReadXML(outPtr interface{}) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(xml.Unmarshal))
 }
 
 // ReadYAML reads YAML from request's body and binds it to the "outPtr" value.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-yaml/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-yaml/main.go
 func (ctx *Context) ReadYAML(outPtr interface{}) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(yaml.Unmarshal))
 }
@@ -2900,7 +2900,7 @@ const CSRFTokenFormKey = "csrf.token"
 // As of 15 Aug 2022, ReadForm does not return an error over unknown CSRF token form key,
 // to change this behavior globally, set the `context.CSRFTokenFormKey` to an empty value.
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-form/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-form/main.go
 func (ctx *Context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if len(values) == 0 {
@@ -3057,7 +3057,7 @@ func distinctStrings(values []string) []string {
 
 // ReadQuery binds URL Query to "ptr". The struct field tag is "url".
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-query/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-query/main.go
 func (ctx *Context) ReadQuery(ptr interface{}) error {
 	values := ctx.getQuery()
 	if len(values) == 0 {
@@ -3077,7 +3077,7 @@ func (ctx *Context) ReadQuery(ptr interface{}) error {
 
 // ReadHeaders binds request headers to "ptr". The struct field tag is "header".
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-headers/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-headers/main.go
 func (ctx *Context) ReadHeaders(ptr interface{}) error {
 	err := schema.DecodeHeaders(ctx.request.Header, ptr)
 	if err != nil {
@@ -3089,7 +3089,7 @@ func (ctx *Context) ReadHeaders(ptr interface{}) error {
 
 // ReadParams binds URI Dynamic Path Parameters to "ptr". The struct field tag is "param".
 //
-// Example: https://github.com/kataras/iris/blob/master/_examples/request-body/read-params/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-params/main.go
 func (ctx *Context) ReadParams(ptr interface{}) error {
 	n := ctx.params.Len()
 	if n == 0 {
@@ -3649,7 +3649,7 @@ func (ctx *Context) ViewEngine(engine ViewEngine) {
 //
 // Look .ViewData and .View too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
+// Example: https://github.com/kataras/iris/tree/main/_examples/view/context-view-data/
 func (ctx *Context) ViewLayout(layoutTmplFile string) {
 	ctx.values.Set(ctx.app.ConfigurationReadOnly().GetViewLayoutContextKey(), layoutTmplFile)
 }
@@ -3671,7 +3671,7 @@ func (ctx *Context) ViewLayout(layoutTmplFile string) {
 //
 // Look .ViewLayout and .View too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
+// Example: https://github.com/kataras/iris/tree/main/_examples/view/context-view-data/
 func (ctx *Context) ViewData(key string, value interface{}) {
 	viewDataContextKey := ctx.app.ConfigurationReadOnly().GetViewDataContextKey()
 	if key == "" {
@@ -3869,7 +3869,7 @@ func (ctx *Context) FallbackView(providers ...FallbackViewProvider) {
 //
 // Look .ViewData and .ViewLayout too.
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+// Examples: https://github.com/kataras/iris/tree/main/_examples/view
 func (ctx *Context) View(filename string, optionalViewModel ...interface{}) error {
 	ctx.ContentType(ContentHTMLHeaderValue)
 
@@ -4428,7 +4428,7 @@ func (ctx *Context) XML(v interface{}, opts ...XML) (err error) {
 // Use the options.RenderXML and XML fields to change this behavior and
 // send a response of content type "application/problem+xml" instead.
 //
-// Read more at: https://github.com/kataras/iris/blob/master/_examples/routing/http-errors.
+// Read more at: https://github.com/kataras/iris/blob/main/_examples/routing/http-errors.
 func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) error {
 	options := DefaultProblemOptions
 	if len(opts) > 0 {
@@ -4746,7 +4746,7 @@ func parseHeader(headerValue string) []string {
 //
 // Supports the above without quality values.
 //
-// Read more at: https://github.com/kataras/iris/tree/master/_examples/response-writer/content-negotiation
+// Read more at: https://github.com/kataras/iris/tree/main/_examples/response-writer/content-negotiation
 func (ctx *Context) Negotiate(v interface{}) (int, error) {
 	contentType, charset, encoding, content := ctx.Negotiation().Build()
 	if v == nil {
@@ -5651,7 +5651,7 @@ type SecureCookie interface {
 // with that `Name` will be encoded on set and decoded on get, that way you can encrypt
 // specific cookie names (like the session id) and let the rest of the cookies "insecure".
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+// Example: https://github.com/kataras/iris/tree/main/_examples/cookies/securecookie
 func CookieEncoding(encoding SecureCookie, cookieNames ...string) CookieOption {
 	if encoding == nil {
 		return func(_ *Context, _ *http.Cookie, _ uint8) {}
@@ -5705,7 +5705,7 @@ const cookieOptionsContextKey = "iris.cookie.options"
 //   - CookieExpires
 //   - CookieEncoding
 //
-// Example at: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+// Example at: https://github.com/kataras/iris/tree/main/_examples/cookies/securecookie
 func (ctx *Context) AddCookieOptions(options ...CookieOption) {
 	if len(options) == 0 {
 		return
@@ -5745,7 +5745,7 @@ func (ctx *Context) ClearCookieOptions() {
 // SetCookie adds a cookie.
 // Use of the "options" is not required, they can be used to amend the "cookie".
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+// Example: https://github.com/kataras/iris/tree/main/_examples/cookies/basic
 func (ctx *Context) SetCookie(cookie *http.Cookie, options ...CookieOption) {
 	ctx.applyCookieOptions(cookie, OpCookieSet, options)
 	http.SetCookie(ctx.writer, cookie)
@@ -5815,7 +5815,7 @@ var SetCookieKVExpiration = 8760 * time.Hour
 //	iris.CookieExpires(time.Duration)
 //	iris.CookieHTTPOnly(false)
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+// Examples: https://github.com/kataras/iris/tree/main/_examples/cookies/basic
 func (ctx *Context) SetCookieKV(name, value string, options ...CookieOption) {
 	c := &http.Cookie{}
 	c.Path = "/"
@@ -5838,7 +5838,7 @@ func (ctx *Context) SetCookieKV(name, value string, options ...CookieOption) {
 // If you want more than the value then:
 // cookie, err := ctx.GetRequestCookie("name")
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+// Example: https://github.com/kataras/iris/tree/main/_examples/cookies/basic
 func (ctx *Context) GetCookie(name string, options ...CookieOption) string {
 	c, err := ctx.GetRequestCookie(name, options...)
 	if err != nil {
@@ -5871,7 +5871,7 @@ var (
 // RemoveCookie deletes a cookie by its name and path = "/".
 // Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+// Example: https://github.com/kataras/iris/tree/main/_examples/cookies/basic
 func (ctx *Context) RemoveCookie(name string, options ...CookieOption) {
 	c := &http.Cookie{}
 	c.Name = name
@@ -5966,7 +5966,7 @@ func (ctx *Context) IsRecording() (*ResponseRecorder, bool) {
 //
 // app.None(...) and app.GetRoutes().Offline(route)/.Online(route, method)
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/routing/route-state
+// Example: https://github.com/kataras/iris/tree/main/_examples/routing/route-state
 //
 // User can get the response by simple using rec := ctx.Recorder(); rec.Body()/rec.StatusCode()/rec.Header().
 //
@@ -6291,7 +6291,7 @@ const (
 // See its `CallFunc` to call the "fn" on the next handler.
 //
 // Example at:
-// https://github.com/kataras/iris/tree/master/_examples/routing/writing-a-middleware/share-funcs
+// https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs
 func (ctx *Context) SetFunc(name string, fn interface{}, persistenceArgs ...interface{}) {
 	f := newFunc(name, fn, persistenceArgs...)
 	ctx.values.Set(funcsContextPrefixKey+name, f)

@@ -1,5 +1,5 @@
 Examples for the Iris project can be found at
-<https://github.com/kataras/iris/tree/master/_examples>.
+<https://github.com/kataras/iris/tree/main/_examples>.
 
 Documentation for the Iris project can be found at
 <https://www.iris-go.com/docs>.
