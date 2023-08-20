@@ -216,65 +216,87 @@ import (
        return s.repos.Tests().ListTests(ctx)
    }
 */
-func NewGuide() Step1 {
+func NewGuide() Guide {
 	return &step1{}
 }
 
 type (
-	Step1 interface {
+	// Guide is the simplify API builder.
+	// It's a step-by-step builder which can be used to build an Iris Application
+	// with the most common features.
+	Guide interface {
 		// AllowOrigin defines the CORS allowed domains.
 		// Many can be splitted by comma.
 		// If "*" is provided then all origins are accepted (use it for public APIs).
-		AllowOrigin(originLine string) Step2
+		AllowOrigin(originLine string) CompressionGuide
 	}
 
-	Step2 interface {
+	// CompressionGuide is the 2nd step of the Guide.
+	// Compression (gzip or any other client requested) can be enabled or disabled.
+	CompressionGuide interface {
 		// Compression enables or disables the gzip (or any other client-preferred) compression algorithm
 		// for response writes.
-		Compression(b bool) Step3
+		Compression(b bool) HealthGuide
 	}
 
-	Step3 interface {
+	// HealthGuide is the 3rd step of the Guide.
+	// Health enables the /health route.
+	HealthGuide interface {
 		// Health enables the /health route.
 		// If "env" and "developer" are given, these fields will be populated to the client
 		// through headers and environment on health route.
-		Health(b bool, env, developer string) Step4
+		Health(b bool, env, developer string) TimeoutGuide
 	}
 
-	Step4 interface {
+	// TimeoutGuide is the 4th step of the Guide.
+	// Timeout defines the http timeout, server read & write timeouts.
+	TimeoutGuide interface {
 		// Timeout defines the http timeout, server read & write timeouts.
-		Timeout(requestResponseLife, read time.Duration, write time.Duration) Step5
+		Timeout(requestResponseLife, read time.Duration, write time.Duration) MiddlewareGuide
 	}
 
-	Step5 interface {
+	// MiddlewareGuide is the 5th step of the Guide.
+	// It registers one or more handlers to run before everything else (RouterMiddlewares) or
+	// before registered routes (Middlewares).
+	MiddlewareGuide interface {
 		// RouterMiddlewares registers one or more handlers to run before everything else.
-		RouterMiddlewares(handlers ...Handler) Step5
+		RouterMiddlewares(handlers ...Handler) MiddlewareGuide
 		// Middlewares registers one or more handlers to run before the requested route's handler.
-		Middlewares(handlers ...Handler) Step6
+		Middlewares(handlers ...Handler) ServiceGuide
 	}
 
-	Step6 interface {
+	// ServiceGuide is the 6th step of the Guide.
+	// It is used to register deferrable functions and, most importantly, dependencies that APIs can use.
+	ServiceGuide interface {
+		// Deferrables registers one or more functions to be ran when the server is terminated.
+		Deferrables(closers ...func()) ServiceGuide
 		// Services registers one or more dependencies that APIs can use.
-		Services(deps ...interface{}) Step7
+		Services(deps ...interface{}) ApplicationBuilder
 	}
 
-	Step7 interface {
+	// ApplicationBuilder is the final step of the Guide.
+	// It is used to register APIs controllers (PartyConfigurators) and
+	// its Build, Listen and Run methods configure and build the actual Iris application
+	// based on the previous steps.
+	ApplicationBuilder interface {
 		// Handle registers a simple route on specific method and (dynamic) path.
 		// It simply calls the Iris Application's Handle method.
 		// Use the "API" method instead to keep the app organized.
-		Handle(method, path string, handlers ...Handler) Step7
+		Handle(method, path string, handlers ...Handler) ApplicationBuilder
 		// API registers a router which is responsible to serve the /api group.
-		API(pathPrefix string, c ...router.PartyConfigurator) Step7
+		API(pathPrefix string, c ...router.PartyConfigurator) ApplicationBuilder
 		// Build builds the application with the prior configuration and returns the
 		// Iris Application instance for further customizations.
 		//
 		// Use "Build" before "Listen" or "Run" to apply further modifications
 		// to the framework before starting the server. Calling "Build" is optional.
 		Build() *Application // optional call.
-		// Listen calls the Application's Listen method.
+		// Listen calls the Application's Listen method which is a shortcut of Run(iris.Addr("hostPort")).
 		// Use "Run" instead if you need to customize the HTTP/2 server itself.
 		Listen(hostPort string, configurators ...Configurator) error // Listen OR Run.
 		// Run calls the Application's Run method.
+		// The 1st argument is a Runner (iris.Listener, iris.Server, iris.Addr, iris.TLS, iris.AutoTLS and iris.Raw).
+		// The 2nd argument can be used to add custom configuration right before the server is up and running.
 		Run(runner Runner, configurators ...Configurator) error
 	}
 )
@@ -283,7 +305,7 @@ type step1 struct {
 	originLine string
 }
 
-func (s *step1) AllowOrigin(originLine string) Step2 {
+func (s *step1) AllowOrigin(originLine string) CompressionGuide {
 	s.originLine = originLine
 	return &step2{
 		step1: s,
@@ -296,7 +318,7 @@ type step2 struct {
 	enableCompression bool
 }
 
-func (s *step2) Compression(b bool) Step3 {
+func (s *step2) Compression(b bool) HealthGuide {
 	s.enableCompression = b
 	return &step3{
 		step2: s,
@@ -310,7 +332,7 @@ type step3 struct {
 	env, developer string
 }
 
-func (s *step3) Health(b bool, env, developer string) Step4 {
+func (s *step3) Health(b bool, env, developer string) TimeoutGuide {
 	s.enableHealth = b
 	s.env, s.developer = env, developer
 	return &step4{
@@ -327,7 +349,7 @@ type step4 struct {
 	serverTimeoutWrite time.Duration
 }
 
-func (s *step4) Timeout(requestResponseLife, read, write time.Duration) Step5 {
+func (s *step4) Timeout(requestResponseLife, read, write time.Duration) MiddlewareGuide {
 	s.handlerTimeout = requestResponseLife
 
 	s.serverTimeoutRead = read
@@ -344,12 +366,12 @@ type step5 struct {
 	middlewares       []Handler
 }
 
-func (s *step5) RouterMiddlewares(handlers ...Handler) Step5 {
+func (s *step5) RouterMiddlewares(handlers ...Handler) MiddlewareGuide {
 	s.routerMiddlewares = append(s.routerMiddlewares, handlers...)
 	return s
 }
 
-func (s *step5) Middlewares(handlers ...Handler) Step6 {
+func (s *step5) Middlewares(handlers ...Handler) ServiceGuide {
 	s.middlewares = handlers
 
 	return &step6{
@@ -367,7 +389,12 @@ type step6 struct {
 	configuratorsAsDeps []Configurator
 }
 
-func (s *step6) Services(deps ...interface{}) Step7 {
+func (s *step6) Deferrables(closers ...func()) ServiceGuide {
+	s.closers = append(s.closers, closers...)
+	return s
+}
+
+func (s *step6) Services(deps ...interface{}) ApplicationBuilder {
 	s.deps = deps
 	for _, d := range deps {
 		if d == nil {
@@ -409,12 +436,12 @@ type step7SimpleRoute struct {
 	handlers     []Handler
 }
 
-func (s *step7) Handle(method, path string, handlers ...Handler) Step7 {
+func (s *step7) Handle(method, path string, handlers ...Handler) ApplicationBuilder {
 	s.handlers = append(s.handlers, step7SimpleRoute{method: method, path: path, handlers: handlers})
 	return s
 }
 
-func (s *step7) API(prefix string, c ...router.PartyConfigurator) Step7 {
+func (s *step7) API(prefix string, c ...router.PartyConfigurator) ApplicationBuilder {
 	if s.m == nil {
 		s.m = make(map[string][]router.PartyConfigurator)
 	}
