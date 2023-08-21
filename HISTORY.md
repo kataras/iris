@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+# Mon, 21 Aug 2023 | v12.2.5
+
 - Add optional `Singleton() bool` method to controllers to mark them as singleton, will panic with a specific error if a controller expects dynamic dependencies. This behavior is idendical to the app-driven `app.EnsureStaticBindings()`.
 
 - Non-zero fields of a controller that are marked as ignored, with `ignore:"true"` field tag, they are not included in the dependencies at all now.
