@@ -244,12 +244,10 @@ func (w *ResponseRecorder) CopyTo(res ResponseWriter) {
 		}
 
 		// append the headers
-		if w.headers != nil {
-			for k, values := range w.headers {
-				for _, v := range values {
-					if to.headers.Get(v) == "" {
-						to.headers.Add(k, v)
-					}
+		for k, values := range w.headers {
+			for _, v := range values {
+				if to.headers.Get(v) == "" {
+					to.headers.Add(k, v)
 				}
 			}
 		}

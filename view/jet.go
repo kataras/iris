@@ -282,10 +282,8 @@ func (s *JetEngine) initSet() {
 		}
 
 		s.Set = jet.NewSet(s.loader, opts...)
-		if s.vars != nil {
-			for key, value := range s.vars {
-				s.Set.AddGlobal(key, value)
-			}
+		for key, value := range s.vars {
+			s.Set.AddGlobal(key, value)
 		}
 	}
 	s.mu.Unlock()
