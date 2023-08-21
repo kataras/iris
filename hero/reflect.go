@@ -201,6 +201,9 @@ func lookupFields(elem reflect.Value, skipUnexported bool, onlyZeros bool, paren
 func lookupNonZeroFieldValues(elem reflect.Value) (nonZeroFields []reflect.StructField) {
 	fields, _ := lookupFields(elem, true, false, nil)
 	for _, f := range fields {
+		if structFieldIgnored(f) {
+			continue // re-check here for ignored struct fields so we don't include them on dependencies. Non-zeroes fields can be static, even if they are functions.
+		}
 		if fieldVal := elem.FieldByIndex(f.Index); goodVal(fieldVal) && !isZero(fieldVal) {
 			/* && f.Type.Kind() == reflect.Ptr &&*/
 			nonZeroFields = append(nonZeroFields, f)

@@ -4213,6 +4213,9 @@ func (ctx *Context) handleContextError(err error) {
 	if errHandler := ctx.app.GetContextErrorHandler(); errHandler != nil {
 		errHandler.HandleContextError(ctx, err)
 	} else {
+		if ctx.IsDebug() {
+			ctx.app.Logger().Error(err)
+		}
 		ctx.StatusCode(http.StatusInternalServerError)
 	}
 
@@ -4258,8 +4261,8 @@ func (ctx *Context) JSON(v interface{}, opts ...JSON) (err error) {
 	}
 
 	if err = ctx.writeJSON(v, options); err != nil {
-		// if no options are given or OmitErrorHandler is true
-		// then do call the error handler (which may lead to a cycle).
+		// if no options are given or OmitErrorHandler is false
+		// then call the error handler (which may lead to a cycle if the error handler fails to write JSON too).
 		if !options.OmitErrorHandler {
 			ctx.handleContextError(err)
 		}

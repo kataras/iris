@@ -23,6 +23,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- Add optional `Singleton() bool` method to controllers to mark them as singleton, will panic with a specific error if a controller expects dynamic dependencies. This behavior is idendical to the app-driven `app.EnsureStaticBindings()`.
+
+- Non-zero fields of a controller that are marked as ignored, with `ignore:"true"` field tag, they are not included in the dependencies at all now.
+
+- Re-add error log on context rich write (e.g. JSON) failures when the application is running under debug mode (with `app.Logger().SetLevel("debug")`) and there is no a registered context error handler at place.
+
 - `master` branch finally renamed to `main`. Don't worry GitHub will still navigate any `master` request to `main` automatically. Examples, Documentation and other Pages are refactored too.
 
 # Sat, 12 Aug 2023 | v12.2.4
