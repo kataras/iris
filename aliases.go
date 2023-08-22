@@ -852,3 +852,10 @@ func (cwp *ContextWriterPatches) Markdown(patchFunc func(ctx Context, v []byte, 
 func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v interface{}, indentSpace int) error) {
 	context.WriteYAML = patchFunc
 }
+
+// Singleton is a structure which can be used as an embedded field on
+// struct/controllers that should be marked as singletons on `PartyConfigure` or `MVC` Applications.
+type Singleton struct{}
+
+// Singleton returns true as this controller is a singleton.
+func (c Singleton) Singleton() bool { return true }
