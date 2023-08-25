@@ -116,7 +116,7 @@ func (t ISO8601) MarshalJSON() ([]byte, error) {
 }
 
 // Examples returns a list of example values.
-func (t ISO8601) ListExamples() []string {
+func (t ISO8601) ListExamples() any {
 	return []string{
 		"2006-01-02T15:04:05",
 		"2022-08-09T00:00:00.000000",
