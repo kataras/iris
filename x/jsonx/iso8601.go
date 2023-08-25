@@ -42,6 +42,8 @@ const (
 // ISO8601 describes a time compatible with javascript time format.
 type ISO8601 time.Time
 
+var _ Exampler = (*ISO8601)(nil)
+
 // ParseISO8601 reads from "s" and returns the ISO8601 time.
 func ParseISO8601(s string) (ISO8601, error) {
 	if s == "" || s == "null" {
@@ -111,6 +113,16 @@ func (t ISO8601) MarshalJSON() ([]byte, error) {
 	}
 
 	return nullLiteral, nil // Note: if the front-end wants an empty string instead I must change that.
+}
+
+// Examples returns a list of example values.
+func (t ISO8601) ListExamples() []string {
+	return []string{
+		"2006-01-02T15:04:05",
+		"2022-08-09T00:00:00.000000",
+		"2022-08-10T03:21:00.000000+03:00",
+		"2023-02-04T09:48:14+00:00",
+	}
 }
 
 // ToTime returns the unwrapped *t to time.Time.
