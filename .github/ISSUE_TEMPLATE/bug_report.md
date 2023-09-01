@@ -24,9 +24,9 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. ubuntu, windows]
 
 **iris.Version**
-- e.g. v12.2.0 or master
+- e.g. v12.2.5 or main
 
-Please make sure the bug is reproducible over the `master` branch:
+Please make sure the bug is reproducible over the `main` branch:
 
 ```sh
 $ cd PROJECT
