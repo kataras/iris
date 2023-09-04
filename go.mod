@@ -1,6 +1,6 @@
 module github.com/kataras/iris/v12
 
-go 1.21
+go 1.20
 
 retract [v12.0.0, v12.1.8] // Retract older versions as only latest is to be depended upon. Please update to @latest
 
