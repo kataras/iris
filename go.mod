@@ -18,7 +18,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20230716120725-531d2d74bc12
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/securecookie v1.1.1
-	github.com/iris-contrib/httpexpect/v2 v2.15.1
+	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.12
 	github.com/kataras/blocks v0.0.7
