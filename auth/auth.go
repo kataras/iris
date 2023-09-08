@@ -382,7 +382,7 @@ func (s *Auth[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaim
 		return t, StandardClaims{}, jwt.ErrMissing
 	}
 
-	verifiedToken, err := jwt.VerifyWithHeaderValidator(nil, nil, token, s.keys.ValidateHeader, jwt.Leeway(time.Minute))
+	verifiedToken, err := jwt.VerifyWithHeaderValidator(nil, nil, token, s.keys.ValidateHeader, jwt.Future(time.Minute), jwt.Leeway(time.Minute))
 	if err != nil {
 		return t, StandardClaims{}, err
 	}
