@@ -474,10 +474,7 @@ func logController(logger *golog.Logger, c *ControllerActivator) {
 				fmt.Fprint(printer, "  ╺ ")
 				pio.WriteRich(printer, childName, colorCode)
 
-				entries := report.Entries[1:] // the ctrl value is always the first input argument so 1:..
-				if len(entries) == 0 {
-					fmt.Print("()")
-				}
+				entries := report.Entries[1:] // the ctrl value is always the first input argument so 1:..			
 				fmt.Fprintln(printer)
 
 				// pio.WriteRich(printer, "      "+route.GetTitle(), colorCode)
