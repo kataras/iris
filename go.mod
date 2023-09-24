@@ -21,7 +21,7 @@ require (
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.12
-	github.com/kataras/blocks v0.0.7
+	github.com/kataras/blocks v0.0.8
 	github.com/kataras/golog v0.1.9
 	github.com/kataras/jwt v0.1.10
 	github.com/kataras/neffos v0.0.22
@@ -107,6 +107,7 @@ require (
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 )

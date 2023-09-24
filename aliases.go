@@ -336,18 +336,18 @@ func ConfigureMiddleware(handlers ...Handler) router.PartyConfigurator {
 	return &partyConfiguratorMiddleware{handlers: handlers}
 }
 
-var (
-	// Compression is a middleware which enables
-	// writing and reading using the best offered compression.
-	// Usage:
-	// app.Use (for matched routes)
-	// app.UseRouter (for both matched and 404s or other HTTP errors).
-	Compression = func(ctx Context) {
-		ctx.CompressWriter(true)
-		ctx.CompressReader(true)
-		ctx.Next()
-	}
+// Compression is a middleware which enables
+// writing and reading using the best offered compression.
+// Usage:
+// app.Use (for matched routes)
+// app.UseRouter (for both matched and 404s or other HTTP errors).
+func Compression(ctx Context) {
+	ctx.CompressWriter(true)
+	ctx.CompressReader(true)
+	ctx.Next()
+}
 
+var (
 	// AllowQuerySemicolons returns a middleware that serves requests by converting any
 	// unescaped semicolons(;) in the URL query to ampersands(&).
 	//

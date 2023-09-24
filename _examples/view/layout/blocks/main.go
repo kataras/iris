@@ -8,6 +8,7 @@ func main() {
 	// Note, in Blocks engine, layouts
 	// are used by their base names, the
 	// blocks.LayoutDir(layoutDir) defaults to "./layouts".
+	// .Blocks(...).Layout("main") for default layout for all views, it can be modified through ctx.ViewLayout though.
 
 	app.Get("/", index)
 

@@ -6,8 +6,8 @@
     <title>{{.Code}}</title>
 </head>
 <body>
-    {{ template "content" .}}
+    {{ template "content" . }}
 
-    {{block "message" .}}{{end}}
+    {{ block "message" . }}Default Error Message{{ end }}
 </body>
 </html>
