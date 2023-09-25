@@ -23,6 +23,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+# Mon, 25 Sep 2023 | v12.2.7
+
+Minor bug fixes and support of multiple `block` and `define` directives in multiple layouts and templates in the `Blocks` view engine.
+
 # Mon, 21 Aug 2023 | v12.2.5
 
 - Add optional `Singleton() bool` method to controllers to mark them as singleton, will panic with a specific error if a controller expects dynamic dependencies. This behavior is idendical to the app-driven `app.EnsureStaticBindings()`.
