@@ -544,6 +544,10 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // handle registers a full route to this Party.
 // Use Handle or Get, Post, Put, Delete and et.c. instead.
 func (api *APIBuilder) handle(errorCode int, method string, relativePath string, handlers ...context.Handler) *Route {
+	if relativePath == "" {
+		relativePath = "/"
+	}
+
 	routes := api.createRoutes(errorCode, []string{method}, relativePath, handlers...)
 
 	var route *Route // the last one is returned.
@@ -832,6 +836,10 @@ func removeDuplicates(elements []string) (result []string) {
 // use the `Subdomain` or `WildcardSubdomain` methods
 // or pass a "relativePath" of "admin." or "*." respectfully.
 func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
+	if relativePath == "" {
+		relativePath = "/"
+	}
+
 	// if app.Party("/"), root party or app.Party("/user") == app.Party("/user")
 	// then just add the middlewares and return itself.
 	// if relativePath == "" || api.relativePath == relativePath {
