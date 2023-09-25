@@ -3,8 +3,8 @@ module github.com/kataras/iris/_examples/response-writer/json-third-party
 go 1.21
 
 require (
-	github.com/bytedance/sonic v1.10.0
-	github.com/kataras/iris/v12 v12.2.4
+	github.com/bytedance/sonic v1.10.1
+	github.com/kataras/iris/v12 v12.2.5
 )
 
 require (
@@ -47,8 +47,9 @@ require (
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect

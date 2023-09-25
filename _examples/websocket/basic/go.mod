@@ -3,8 +3,8 @@ module github.com/kataras/iris/_examples/websocket/basic
 go 1.21
 
 require (
-	github.com/iris-contrib/middleware/jwt v0.0.0-20230716223316-058c9deb31e2
-	github.com/kataras/iris/v12 v12.2.4
+	github.com/iris-contrib/middleware/jwt v0.0.0-20230825090141-e9f1adcb535b
+	github.com/kataras/iris/v12 v12.2.5
 )
 
 require (
@@ -54,8 +54,9 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

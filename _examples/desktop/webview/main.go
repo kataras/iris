@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/webview/webview"
+	"github.com/webview/webview_go"
 )
 
 const addr = "127.0.0.1:8080"
@@ -22,7 +22,8 @@ $ go build -o example.app/Contents/MacOS/example
 $ open example.app # Or click on the app in Finder
 #
 # Note: if you see "use option -std=c99 or -std=gnu99 to compile your code"
-# please refer to: https://github.com/webview/webview/issues/188
+# please refer to: https://github.com/webview/webview/issues/188.
+# New repository: https://github.com/webview/webview_go.
 */
 func main() {
 	go runServer()
