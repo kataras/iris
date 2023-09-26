@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kataras/iris/v12/core/memstore"
 	"github.com/kataras/iris/v12/sessions"
 
 	"github.com/kataras/golog"
@@ -159,7 +160,7 @@ var expirationKey = []byte("exp") // it can be random.
 
 // Acquire receives a session's lifetime from the database,
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
-func (db *Database) Acquire(sid string, expires time.Duration) (lifetime sessions.LifeTime) {
+func (db *Database) Acquire(sid string, expires time.Duration) (lifetime memstore.LifeTime) {
 	bsid := []byte(sid)
 	err := db.Service.Update(func(tx *bolt.Tx) (err error) {
 		root := db.getBucket(tx)
@@ -204,7 +205,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 				return
 			}
 
-			lifetime = sessions.LifeTime{Time: expirationTime}
+			lifetime = memstore.LifeTime{Time: expirationTime}
 			return nil
 		}
 
@@ -214,7 +215,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 	})
 	if err != nil {
 		db.logger.Debugf("unable to acquire session '%s': %v", sid, err)
-		return sessions.LifeTime{}
+		return memstore.LifeTime{}
 	}
 
 	return

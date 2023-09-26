@@ -46,8 +46,25 @@ func WithKey(key string) context.Handler {
 	}
 }
 
+// DefaultMaxAge is a function which returns the
+// `context#MaxAge` as time.Duration.
+// It's the default expiration function for the cache handler.
+var DefaultMaxAge = func(ctx *context.Context) time.Duration {
+	return time.Duration(ctx.MaxAge()) * time.Second
+}
+
+// MaxAge is a shortcut to set a simple duration as a MaxAgeFunc.
+//
+// Usage:
+// app.Get("/", cache.Cache(cache.MaxAge(1*time.Minute), mainHandler)
+func MaxAge(dur time.Duration) client.MaxAgeFunc {
+	return func(*context.Context) time.Duration {
+		return dur
+	}
+}
+
 // Cache accepts the cache expiration duration.
-// If the "expiration" input argument is invalid, <=2 seconds,
+// If the "maxAgeFunc" input argument is nil,
 // then expiration is taken by the "cache-control's maxage" header.
 // Returns a Handler structure which you can use to customize cache further.
 //
@@ -57,8 +74,12 @@ func WithKey(key string) context.Handler {
 // may be more suited to your needs.
 //
 // You can add validators with this function.
-func Cache(expiration time.Duration) *client.Handler {
-	return client.NewHandler(expiration)
+func Cache(maxAgeFunc client.MaxAgeFunc) *client.Handler {
+	if maxAgeFunc == nil {
+		maxAgeFunc = DefaultMaxAge
+	}
+
+	return client.NewHandler(maxAgeFunc)
 }
 
 // Handler like `Cache` but returns an Iris Handler to be used as a middleware.
@@ -66,6 +87,10 @@ func Cache(expiration time.Duration) *client.Handler {
 //
 // Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/response-writer/cache
 func Handler(expiration time.Duration) context.Handler {
-	h := Cache(expiration).ServeHTTP
+	maxAgeFunc := func(*context.Context) time.Duration {
+		return expiration
+	}
+
+	h := Cache(maxAgeFunc).ServeHTTP
 	return h
 }

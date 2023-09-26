@@ -29,6 +29,10 @@ func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 	app.Get("/", cache.Handler(10*time.Second), writeMarkdown)
+	// To customize the cache handler:
+	// cache.Cache(nil).MaxAge(func(ctx iris.Context) time.Duration {
+	// 	return time.Duration(ctx.MaxAge()) * time.Second
+	// }).AddRule(...).Store(...)
 	// saves its content on the first request and serves it instead of re-calculating the content.
 	// After 10 seconds it will be cleared and reset.
 

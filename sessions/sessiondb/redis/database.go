@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kataras/iris/v12/core/memstore"
 	"github.com/kataras/iris/v12/sessions"
 
 	"github.com/kataras/golog"
@@ -138,7 +139,7 @@ const SessionIDKey = "session_id"
 
 // Acquire receives a session's lifetime from the database,
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
-func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
+func (db *Database) Acquire(sid string, expires time.Duration) memstore.LifeTime {
 	sidKey := db.makeSID(sid)
 	if !db.c.Driver.Exists(sidKey) {
 		if err := db.Set(sid, SessionIDKey, sid, 0, false); err != nil {
@@ -149,11 +150,11 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 			}
 		}
 
-		return sessions.LifeTime{} // session manager will handle the rest.
+		return memstore.LifeTime{} // session manager will handle the rest.
 	}
 
 	untilExpire := db.c.Driver.TTL(sidKey)
-	return sessions.LifeTime{Time: time.Now().Add(untilExpire)}
+	return memstore.LifeTime{Time: time.Now().Add(untilExpire)}
 }
 
 // OnUpdateExpiration will re-set the database's session's entry ttl.

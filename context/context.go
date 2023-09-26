@@ -5865,7 +5865,7 @@ func (ctx *Context) GetRequestCookie(name string, options ...CookieOption) (*htt
 
 var (
 	// CookieExpireDelete may be set on Cookie.Expire for expiring the given cookie.
-	CookieExpireDelete = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	CookieExpireDelete = memstore.ExpireDelete
 
 	// CookieExpireUnlimited indicates that does expires after 24 years.
 	CookieExpireUnlimited = time.Now().AddDate(24, 10, 10)

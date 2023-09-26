@@ -21,7 +21,7 @@ type (
 		mu      sync.RWMutex // for flashes.
 		// Lifetime it contains the expiration data, use it for read-only information.
 		// See `Sessions.UpdateExpiration` too.
-		Lifetime *LifeTime
+		Lifetime *memstore.LifeTime
 		// Man is the sessions manager that this session created of.
 		Man *Sessions
 

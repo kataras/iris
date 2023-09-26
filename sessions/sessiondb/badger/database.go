@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/memstore"
 	"github.com/kataras/iris/v12/sessions"
 
 	"github.com/dgraph-io/badger/v2"
@@ -82,7 +83,7 @@ func (db *Database) SetLogger(logger *golog.Logger) {
 
 // Acquire receives a session's lifetime from the database,
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
-func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
+func (db *Database) Acquire(sid string, expires time.Duration) memstore.LifeTime {
 	txn := db.Service.NewTransaction(true)
 	defer txn.Commit()
 
@@ -90,7 +91,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	item, err := txn.Get(bsid)
 	if err == nil {
 		// found, return the expiration.
-		return sessions.LifeTime{Time: time.Unix(int64(item.ExpiresAt()), 0)}
+		return memstore.LifeTime{Time: time.Unix(int64(item.ExpiresAt()), 0)}
 	}
 
 	// not found, create an entry with ttl and return an empty lifetime, session manager will do its job.
@@ -105,7 +106,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 		db.logger.Error(err)
 	}
 
-	return sessions.LifeTime{} // session manager will handle the rest.
+	return memstore.LifeTime{} // session manager will handle the rest.
 }
 
 // OnUpdateExpiration not implemented here, yet.

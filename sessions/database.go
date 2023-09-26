@@ -30,7 +30,7 @@ type Database interface {
 	SetLogger(*golog.Logger)
 	// Acquire receives a session's lifetime from the database,
 	// if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
-	Acquire(sid string, expires time.Duration) LifeTime
+	Acquire(sid string, expires time.Duration) memstore.LifeTime
 	// OnUpdateExpiration should re-set the expiration (ttl) of the session entry inside the database,
 	// it is fired on `ShiftExpiration` and `UpdateExpiration`.
 	// If the database does not support change of ttl then the session entry will be cloned to another one
@@ -81,11 +81,11 @@ func newMemDB() Database { return &mem{values: make(map[string]*memstore.Store)}
 
 func (s *mem) SetLogger(*golog.Logger) {}
 
-func (s *mem) Acquire(sid string, expires time.Duration) LifeTime {
+func (s *mem) Acquire(sid string, expires time.Duration) memstore.LifeTime {
 	s.mu.Lock()
 	s.values[sid] = new(memstore.Store)
 	s.mu.Unlock()
-	return LifeTime{}
+	return memstore.LifeTime{}
 }
 
 // Do nothing, the `LifeTime` of the Session will be managed by the callers automatically on memory-based storage.

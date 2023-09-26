@@ -23,6 +23,14 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- The `cache` sub-package has an update, after 4 years:
+
+    - Add support for custom storage on `cache` package, through the `Handler#Store` method.
+    - Add support for custom expiration duration on `cache` package, trough the `Handler#MaxAge` method.
+    - Improve the overral performance of the `cache` package.
+    - The `cache.Handler` input and output arguments remain as it is.
+    - The `cache.Cache` input argument changed from `time.Duration` to `func(iris.Context) time.Duration`.
+
 # Mon, 25 Sep 2023 | v12.2.7
 
 Minor bug fixes and support of multiple `block` and `define` directives in multiple layouts and templates in the `Blocks` view engine.

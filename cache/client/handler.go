@@ -1,8 +1,8 @@
 package client
 
 import (
+	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/kataras/iris/v12/cache/client/rule"
@@ -23,19 +23,23 @@ type Handler struct {
 	// See more at ruleset.go
 	rule rule.Rule
 	// when expires.
-	expiration time.Duration
+	maxAgeFunc MaxAgeFunc
 	// entries the memory cache stored responses.
-	entries map[string]*entry.Entry
-	mu      sync.RWMutex
+	entryPool  *entry.Pool
+	entryStore entry.Store
 }
+
+type MaxAgeFunc func(*context.Context) time.Duration
 
 // NewHandler returns a new cached handler for the "bodyHandler"
 // which expires every "expiration".
-func NewHandler(expiration time.Duration) *Handler {
+func NewHandler(maxAgeFunc MaxAgeFunc) *Handler {
 	return &Handler{
 		rule:       DefaultRuleSet,
-		expiration: expiration,
-		entries:    make(map[string]*entry.Entry),
+		maxAgeFunc: maxAgeFunc,
+
+		entryPool:  entry.NewPool(),
+		entryStore: entry.NewMemStore(),
 	}
 }
 
@@ -64,14 +68,20 @@ func (h *Handler) AddRule(r rule.Rule) *Handler {
 	return h
 }
 
-var emptyHandler = func(ctx *context.Context) {
-	ctx.StopWithText(500, "cache: empty body handler")
+// Store sets a custom store for this handler.
+func (h *Handler) Store(store entry.Store) *Handler {
+	h.entryStore = store
+	return h
 }
 
-func parseLifeChanger(ctx *context.Context) entry.LifeChanger {
-	return func() time.Duration {
-		return time.Duration(ctx.MaxAge()) * time.Second
-	}
+// MaxAge customizes the expiration duration for this handler.
+func (h *Handler) MaxAge(fn MaxAgeFunc) *Handler {
+	h.maxAgeFunc = fn
+	return h
+}
+
+var emptyHandler = func(ctx *context.Context) {
+	ctx.StopWithText(500, "cache: empty body handler")
 }
 
 const entryKeyContextKey = "iris.cache.server.entry.key"
@@ -133,33 +143,10 @@ func (h *Handler) ServeHTTP(ctx *context.Context) {
 		return
 	}
 
-	var (
-		response *entry.Response
-		valid    = false
-		// unique per subdomains and paths with different url query.
-		key = getOrSetKey(ctx)
-	)
+	key := getOrSetKey(ctx) // unique per subdomains and paths with different url query.
 
-	h.mu.RLock()
-	e, found := h.entries[key]
-	h.mu.RUnlock()
-
-	if found {
-		// the entry is here, .Response will give us
-		// if it's expired or no
-		response, valid = e.Response()
-	} else {
-		// create the entry now.
-		// fmt.Printf("create new cache entry\n")
-		// fmt.Printf("key: %s\n", key)
-
-		e = entry.NewEntry(h.expiration)
-		h.mu.Lock()
-		h.entries[key] = e
-		h.mu.Unlock()
-	}
-
-	if !valid {
+	e := h.entryStore.Get(key)
+	if e == nil {
 		// if it's expired, then execute the original handler
 		// with our custom response recorder response writer
 		// because the net/http doesn't give us
@@ -182,30 +169,61 @@ func (h *Handler) ServeHTTP(ctx *context.Context) {
 			return
 		}
 
-		// check for an expiration time if the
-		// given expiration was not valid then check for GetMaxAge &
-		// update the response & release the recorder
-		e.Reset(
-			recorder.StatusCode(),
-			recorder.Header(),
-			body,
-			parseLifeChanger(ctx),
-		)
-
 		// fmt.Printf("reset cache entry\n")
 		// fmt.Printf("key: %s\n", key)
 		// fmt.Printf("content type: %s\n", recorder.Header().Get(cfg.ContentTypeHeader))
 		// fmt.Printf("body len: %d\n", len(body))
+
+		r := entry.NewResponse(recorder.StatusCode(), recorder.Header(), body)
+		e = h.entryPool.Acquire(h.maxAgeFunc(ctx), r, func() {
+			h.entryStore.Delete(key)
+		})
+
+		h.entryStore.Set(key, e)
 		return
 	}
 
 	// if it's valid then just write the cached results
-	entry.CopyHeaders(ctx.ResponseWriter().Header(), response.Headers())
+	r := e.Response()
+	// if !ok {
+	// 	// it shouldn't be happen because if it's not valid (= expired)
+	// 	// then it shouldn't be found on the store, we return as it is, the body was written.
+	// 	return
+	// }
+
+	copyHeaders(ctx.ResponseWriter().Header(), r.Headers())
 	ctx.SetLastModified(e.LastModified)
-	ctx.StatusCode(response.StatusCode())
-	ctx.Write(response.Body())
+	ctx.StatusCode(r.StatusCode())
+	ctx.Write(r.Body())
 
 	// fmt.Printf("key: %s\n", key)
 	// fmt.Printf("write content type: %s\n", response.Headers()["ContentType"])
 	// fmt.Printf("write body len: %d\n", len(response.Body()))
+}
+
+func copyHeaders(dst, src http.Header) {
+	// Clone returns a copy of h or nil if h is nil.
+	if src == nil {
+		return
+	}
+
+	// Find total number of values.
+	nv := 0
+	for _, vv := range src {
+		nv += len(vv)
+	}
+
+	sv := make([]string, nv) // shared backing array for headers' values
+	for k, vv := range src {
+		if vv == nil {
+			// Preserve nil values. ReverseProxy distinguishes
+			// between nil and zero-length header values.
+			dst[k] = nil
+			continue
+		}
+
+		n := copy(sv, vv)
+		dst[k] = sv[:n:n]
+		sv = sv[n:]
+	}
 }

@@ -162,10 +162,10 @@ func TestCacheValidator(t *testing.T) {
 		ctx.Write([]byte(expectedBodyStr))
 	}
 
-	validCache := cache.Cache(cacheDuration)
-	app.Get("/", validCache.ServeHTTP, h)
+	validCache := cache.Handler(cacheDuration)
+	app.Get("/", validCache, h)
 
-	managedCache := cache.Cache(cacheDuration)
+	managedCache := cache.Cache(cache.MaxAge(cacheDuration))
 	managedCache.AddRule(rule.Validator([]rule.PreValidator{
 		func(ctx *context.Context) bool {
 			// should always invalid for cache, don't bother to go to try to get or set cache
@@ -173,7 +173,7 @@ func TestCacheValidator(t *testing.T) {
 		},
 	}, nil))
 
-	managedCache2 := cache.Cache(cacheDuration)
+	managedCache2 := cache.Cache(cache.MaxAge(cacheDuration))
 	managedCache2.AddRule(rule.Validator(nil,
 		[]rule.PostValidator{
 			func(ctx *context.Context) bool {
@@ -183,7 +183,7 @@ func TestCacheValidator(t *testing.T) {
 		},
 	))
 
-	app.Get("/valid", validCache.ServeHTTP, h)
+	app.Get("/valid", validCache, h)
 
 	app.Get("/invalid", managedCache.ServeHTTP, h)
 	app.Get("/invalid2", managedCache2.ServeHTTP, func(ctx *context.Context) {
