@@ -129,7 +129,7 @@ func (l *Lexer) NextDynamicToken() (t token.Token) {
 // used to skip any illegal token if inside parenthesis, used to be able to set custom regexp inside a func.
 func (l *Lexer) readIdentifierFuncArgument() string {
 	pos := l.pos
-	for resolveTokenType(l.ch) != token.RPAREN {
+	for resolveTokenType(l.ch) != token.RPAREN && l.ch != 0 {
 		l.readChar()
 	}
 
