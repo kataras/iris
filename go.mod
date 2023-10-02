@@ -36,7 +36,7 @@ require (
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.23.8
 	github.com/tdewolff/minify/v2 v2.12.9
-	github.com/vmihailenco/msgpack/v5 v5.3.5
+	github.com/vmihailenco/msgpack/v5 v5.4.0
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.7
 	golang.org/x/crypto v0.13.0
