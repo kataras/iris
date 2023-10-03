@@ -34,7 +34,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.25
 	github.com/redis/go-redis/v9 v9.2.1
 	github.com/schollz/closestmatch v2.1.0+incompatible
-	github.com/shirou/gopsutil/v3 v3.23.8
+	github.com/shirou/gopsutil/v3 v3.23.9
 	github.com/tdewolff/minify/v2 v2.12.9
 	github.com/vmihailenco/msgpack/v5 v5.4.0
 	github.com/yosssi/ace v0.0.5
