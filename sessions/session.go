@@ -44,7 +44,7 @@ type (
 //
 // Use the session's manager `Destroy(ctx)` in order to remove the cookie instead.
 func (s *Session) Destroy() {
-	s.provider.deleteSession(s)
+	s.provider.Destroy(s.sid)
 }
 
 // ID returns the session's ID.
