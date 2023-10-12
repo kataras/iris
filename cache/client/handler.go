@@ -31,7 +31,7 @@ type Handler struct {
 
 type MaxAgeFunc func(*context.Context) time.Duration
 
-// NewHandler returns a new cached handler for the "bodyHandler"
+// NewHandler returns a new Server-side cached handler for the "bodyHandler"
 // which expires every "expiration".
 func NewHandler(maxAgeFunc MaxAgeFunc) *Handler {
 	return &Handler{
