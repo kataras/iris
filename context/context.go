@@ -2428,7 +2428,32 @@ func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Contex
 						}
 					}
 
-					n0, err0 := ctx.SaveFormFile(file, filepath.Join(destDirectory, file.Filename))
+					// CWE-99.
+					// Sanitize the user input by removing any path separators.
+					sanitizedInput := strings.ReplaceAll(file.Filename, string(os.PathSeparator), "")
+
+					// Join the sanitized input with the destination directory.
+					destPath := filepath.Join(destDirectory, sanitizedInput)
+
+					// Get the canonical path of the destination.
+					canonicalDestPath, err := filepath.EvalSymlinks(destPath)
+					if err != nil {
+						return nil, 0, err
+					}
+
+					// Get the canonical path of the destination directory.
+					canonicalDestDir, err := filepath.EvalSymlinks(destDirectory)
+					if err != nil {
+						return nil, 0, err
+					}
+
+					// Check if the destination path is within the destination directory.
+					if !strings.HasPrefix(canonicalDestPath, canonicalDestDir) {
+						// Reject the input as it is a path traversal attempt.
+						continue innerLoop
+					}
+
+					n0, err0 := ctx.SaveFormFile(file, destPath)
 					if err0 != nil {
 						return nil, 0, err0
 					}
