@@ -11,7 +11,7 @@ require (
 	github.com/CloudyKit/jet/v6 v6.2.0
 	github.com/Joker/jade v1.1.3
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
-	github.com/andybalholm/brotli v1.0.5
+	github.com/andybalholm/brotli v1.0.6
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/fatih/structs v1.1.0
@@ -30,14 +30,14 @@ require (
 	github.com/kataras/pio v0.0.12
 	github.com/kataras/sitemap v0.0.6
 	github.com/kataras/tunnel v0.0.4
-	github.com/klauspost/compress v1.17.0
+	github.com/klauspost/compress v1.17.2
 	github.com/mailgun/raymond/v2 v2.0.48
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/redis/go-redis/v9 v9.2.1
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.23.9
-	github.com/tdewolff/minify/v2 v2.12.9
+	github.com/tdewolff/minify/v2 v2.19.10
 	github.com/vmihailenco/msgpack/v5 v5.4.0
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.7
