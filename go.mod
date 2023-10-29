@@ -38,7 +38,7 @@ require (
 	github.com/tdewolff/minify/v2 v2.19.10
 	github.com/vmihailenco/msgpack/v5 v5.4.0
 	github.com/yosssi/ace v0.0.5
-	go.etcd.io/bbolt v1.3.7
+	go.etcd.io/bbolt v1.3.8
 	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.17.0
 	golang.org/x/sys v0.13.0
