@@ -48,6 +48,7 @@
     * [Import from TOML](configuration/from-toml-file/main.go)
     * [Multi Environment Configuration](configuration/multi-environments) **NEW**
 * Routing
+    * [Custom Context](routing/custom-context/main.go) **HOT/NEW**
     * [Party Controller](routing/party-controller) **NEW**
     * [Overview](routing/overview/main.go)
     * [Basic](routing/basic/main.go)

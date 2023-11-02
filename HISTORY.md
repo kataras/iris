@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- A new way to customize the handler's parameter among with the `hero` and `mvc` packages. New `iris.NewContextWrapper` method and `iris.DefaultContextPool` struct were added to wrap a handler and use a custom context instead of the iris.Context directly.
+
 - The `cache` sub-package has an update, after 4 years:
 
     - Add support for custom storage on `cache` package, through the `Handler#Store` method.
