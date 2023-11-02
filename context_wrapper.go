@@ -1,5 +1,9 @@
 package iris
 
+import (
+	"github.com/kataras/iris/v12/context"
+)
+
 // ContextPool is a pool of T.
 //
 // See `NewContextWrapper` and `ContextPool` for more.
@@ -76,6 +80,11 @@ func NewContextWrapper[T any](pool ContextPool[T]) *ContextWrapper[T] {
 	}
 }
 
+// Pool returns the pool, useful when manually Acquire and Release of custom context is required.
+func (w *ContextWrapper[T]) Pool() ContextPool[T] {
+	return w.pool
+}
+
 // Handler wraps the handler with the pool's Acquire and Release methods.
 // It returns a new handler which expects a T instead of iris.Context.
 // The T is the type of the pool.
@@ -83,9 +92,23 @@ func NewContextWrapper[T any](pool ContextPool[T]) *ContextWrapper[T] {
 // The T is passed to the handler as an argument.
 // The T is not shared between requests.
 func (w *ContextWrapper[T]) Handler(handler func(T)) Handler {
+	if handler == nil {
+		return nil
+	}
+
 	return func(ctx Context) {
 		newT := w.pool.Acquire(ctx)
 		handler(newT)
 		w.pool.Release(newT)
 	}
+}
+
+// Handlers wraps the handlers with the pool's Acquire and Release methods.
+func (w *ContextWrapper[T]) Handlers(handlers ...func(T)) context.Handlers {
+	newHandlers := make(context.Handlers, len(handlers))
+	for i, handler := range handlers {
+		newHandlers[i] = w.Handler(handler)
+	}
+
+	return newHandlers
 }

@@ -53,9 +53,9 @@ func (f *Func) buildMeta() {
 	case Handler:
 		f.Meta = &FuncMeta{Handler: fn}
 		return
-	case func(*Context):
-		f.Meta = &FuncMeta{Handler: fn}
-		return
+	// case func(*Context):
+	// 	f.Meta = &FuncMeta{Handler: fn}
+	// 	return
 	case func(*Context) error:
 		f.Meta = &FuncMeta{HandlerWithErr: fn}
 		return

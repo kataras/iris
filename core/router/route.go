@@ -160,7 +160,7 @@ func (r *Route) RemoveHandler(namesOrHandlers ...interface{}) (count int) {
 		switch h := nameOrHandler.(type) {
 		case string:
 			handlerName = h
-		case context.Handler, func(*context.Context):
+		case context.Handler: //, func(*context.Context):
 			handlerName = context.HandlerName(h)
 		default:
 			panic(fmt.Sprintf("remove handler: unexpected type of %T", h))

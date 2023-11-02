@@ -18,8 +18,8 @@ func FromStd(handler interface{}) context.Handler {
 	switch h := handler.(type) {
 	case context.Handler:
 		return h
-	case func(*context.Context):
-		return h
+	// case func(*context.Context):
+	// 	return h
 	case http.Handler:
 		// handlerFunc.ServeHTTP(w,r)
 		return func(ctx *context.Context) {
