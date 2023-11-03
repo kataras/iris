@@ -1,51 +1,101 @@
 package iris
 
 import (
+	"sync"
+
 	"github.com/kataras/iris/v12/context"
 )
 
-// ContextPool is a pool of T.
+type (
+	// ContextSetter is an interface which can be implemented by a struct
+	// to set the iris.Context to the struct.
+	// The receiver must be a pointer of the struct.
+	ContextSetter interface {
+		// SetContext sets the iris.Context to the struct.
+		SetContext(Context)
+	}
+
+	// ContextSetterPtr is a pointer of T which implements the `ContextSetter` interface.
+	// The T must be a struct.
+	ContextSetterPtr[T any] interface {
+		*T
+		ContextSetter
+	}
+
+	// emptyContextSetter is an empty struct which implements the `ContextSetter` interface.
+	emptyContextSetter struct{}
+)
+
+// SetContext method implements `ContextSetter` interface.
+func (*emptyContextSetter) SetContext(Context) {}
+
+// ContextPool is a pool of T. It's used to acquire and release custom context.
+// Use of custom implementation or `NewContextPool`.
 //
-// See `NewContextWrapper` and `ContextPool` for more.
-type ContextPool[T any] interface {
-	Acquire(ctx Context) T
-	Release(T)
-}
-
-// DefaultContextPool is a pool of T.
-// It's used to acquire and release T.
-// The T is acquired from the pool and released back to the pool after the handler's execution.
-// The T is passed to the handler as an argument.
-// The T is not shared between requests.
-type DefaultContextPool[T any] struct {
-	AcquireFunc func(Context) T
-	ReleaseFunc func(T)
-}
-
-// Ensure that DefaultContextPool[T] implements ContextPool[T].
-var _ ContextPool[any] = (*DefaultContextPool[any])(nil)
-
-// Acquire returns a new T from the pool's AcquireFunc.
-func (p *DefaultContextPool[T]) Acquire(ctx Context) T {
-	acquire := p.AcquireFunc
-	if p.AcquireFunc == nil {
-		acquire = func(ctx Context) T {
-			var t T
-			return t
-		}
+// See `NewContextWrapper` and `NewContextPool` for more.
+type (
+	ContextPool[T any] interface {
+		// Acquire must return a new T from a pool.
+		Acquire(ctx Context) T
+		// Release must put the T back to the pool.
+		Release(T)
 	}
 
-	return acquire(ctx)
+	// syncContextPool is a sync pool implementation of T.
+	// It's used to acquire and release T.
+	// The contextPtr is acquired from the sync pool and released back to the sync pool after the handler's execution.
+	// The contextPtr is passed to the handler as an argument.
+	// ThecontextPtr is not shared between requests.
+	// The contextPtr must implement the `ContextSetter` interface.
+	// The T must be a struct.
+	// The contextPtr must be a pointer of T.
+	syncContextPool[T any, contextPtr ContextSetterPtr[T]] struct {
+		pool *sync.Pool
+	}
+)
+
+// Ensure that syncContextPool implements ContextPool.
+var _ ContextPool[*emptyContextSetter] = (*syncContextPool[emptyContextSetter, *emptyContextSetter])(nil)
+
+// NewContextPool returns a new ContextPool default implementation which
+// uses sync.Pool to implement its Acquire and Release methods.
+// The contextPtr is acquired from the sync pool and released back to the sync pool after the handler's execution.
+// The contextPtr is passed to the handler as an argument.
+// ThecontextPtr is not shared between requests.
+// The contextPtr must implement the `ContextSetter` interface.
+// The T must be a struct.
+// The contextPtr must be a pointer of T.
+//
+// Example:
+// w := iris.NewContextWrapper(iris.NewContextPool[myCustomContext, *myCustomContext]())
+func NewContextPool[T any, contextPtr ContextSetterPtr[T]]() ContextPool[contextPtr] {
+	return &syncContextPool[T, contextPtr]{
+		pool: &sync.Pool{
+			New: func() interface{} {
+				var t contextPtr = new(T)
+				return t
+			},
+		},
+	}
 }
 
-// Release does nothing if the pool's ReleaseFunc is nil.
-func (p *DefaultContextPool[T]) Release(t T) {
-	release := p.ReleaseFunc
-	if p.ReleaseFunc == nil {
-		release = func(t T) {}
-	}
+// Acquire returns a new T from the sync pool.
+func (p *syncContextPool[T, contextPtr]) Acquire(ctx Context) contextPtr {
+	// var t contextPtr
+	// if v := p.pool.Get(); v == nil {
+	// 	t = new(T)
+	// } else {
+	// 	t = v.(contextPtr)
+	// }
 
-	release(t)
+	t := p.pool.Get().(contextPtr)
+	t.SetContext(ctx)
+	return t
+}
+
+// Release puts the T back to the sync pool.
+func (p *syncContextPool[T, contextPtr]) Release(t contextPtr) {
+	p.pool.Put(t)
 }
 
 // ContextWrapper is a wrapper for handlers which expect a T instead of iris.Context.
@@ -60,19 +110,13 @@ type ContextWrapper[T any] struct {
 // The default pool's AcquireFunc returns a zero value of T.
 // The default pool's ReleaseFunc does nothing.
 // The default pool is used when the pool is nil.
-// Use the `&iris.DefaultContextPool{...}` to pass a simple context pool.
+// Use the `iris.NewContextPool[T, *T]()` to pass a simple context pool.
+// Then, use the `Handler` method to wrap custom handlers to iris ones.
 //
-// See the `Handler` method for more.
 // Example: https://github.com/kataras/iris/tree/main/_examples/routing/custom-context
 func NewContextWrapper[T any](pool ContextPool[T]) *ContextWrapper[T] {
 	if pool == nil {
-		pool = &DefaultContextPool[T]{
-			AcquireFunc: func(ctx Context) T {
-				var t T
-				return t
-			},
-			ReleaseFunc: func(t T) {},
-		}
+		panic("pool cannot be nil")
 	}
 
 	return &ContextWrapper[T]{
