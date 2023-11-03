@@ -49,7 +49,11 @@ func newApp() *iris.Application {
 		// it can be used to change a file's name based on the request,
 		// at this example we will showcase how to use it
 		// by prefixing the uploaded file with the current user's ip.
-		ctx.UploadFormFiles("./uploads", beforeSave)
+		_, _, err := ctx.UploadFormFiles("./uploads", beforeSave)
+		if err != nil {
+			ctx.StopWithError(iris.StatusBadRequest, err)
+			return
+		}
 	})
 
 	app.Post("/upload_manual", func(ctx iris.Context) {
@@ -96,6 +100,7 @@ func beforeSave(ctx iris.Context, file *multipart.FileHeader) bool {
 		return true // don't change the file but continue saving it.
 	}
 
-	file.Filename = ip + "-" + file.Filename
+	_ = ip
+	// file.Filename = ip + "-" + file.Filename
 	return true
 }

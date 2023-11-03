@@ -2456,22 +2456,25 @@ func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Contex
 					destPath := filepath.Join(destDirectory, filename)
 
 					// Get the canonical path of the destination
-					canonicalDestPath, err := filepath.EvalSymlinks(destPath)
-					if err != nil {
-						return nil, 0, err
-					}
+					// canonicalDestPath, err := filepath.EvalSymlinks(destPath)
+					// if err != nil {
+					// 	return nil, 0, fmt.Errorf("dest path: %s: eval symlinks: %w", destPath, err)
+					// }
+					// ^ No, it will try to find the file before uploaded.
 
 					// Get the canonical path of the destination directory.
-					canonicalDestDir, err := filepath.EvalSymlinks(destDirectory)
+					canonicalDestDir, err := filepath.EvalSymlinks(destDirectory) // the destDirectory should exists.
 					if err != nil {
-						return nil, 0, err
+						return nil, 0, fmt.Errorf("dest directory: %s: eval symlinks: %w", destDirectory, err)
 					}
 
 					// Check if the destination path is within the destination directory.
-					if !strings.HasPrefix(canonicalDestPath, canonicalDestDir) {
+					if !strings.HasPrefix(destPath, canonicalDestDir) {
 						// Reject the input as it is a path traversal attempt.
 						continue innerLoop
 					}
+
+					file.Filename = filename
 
 					n0, err0 := ctx.SaveFormFile(file, destPath)
 					if err0 != nil {
