@@ -2,6 +2,7 @@ package iris
 
 import (
 	"sync"
+	"time"
 
 	"github.com/kataras/iris/v12/context"
 )
@@ -155,4 +156,60 @@ func (w *ContextWrapper[T]) Handlers(handlers ...func(T)) context.Handlers {
 	}
 
 	return newHandlers
+}
+
+// HandlerReturnError same as `Handler` but it converts a handler which returns an error.
+func (w *ContextWrapper[T]) HandlerReturnError(handler func(T) error) func(Context) error {
+	if handler == nil {
+		return nil
+	}
+
+	return func(ctx Context) error {
+		newT := w.pool.Acquire(ctx)
+		err := handler(newT)
+		w.pool.Release(newT)
+		return err
+	}
+}
+
+// HandlerReturnDuration same as `Handler` but it converts a handler which returns a time.Duration.
+func (w *ContextWrapper[T]) HandlerReturnDuration(handler func(T) time.Duration) func(Context) time.Duration {
+	if handler == nil {
+		return nil
+	}
+
+	return func(ctx Context) time.Duration {
+		newT := w.pool.Acquire(ctx)
+		duration := handler(newT)
+		w.pool.Release(newT)
+		return duration
+	}
+}
+
+// Filter same as `Handler` but it converts a handler to Filter.
+func (w *ContextWrapper[T]) Filter(handler func(T) bool) Filter {
+	if handler == nil {
+		return nil
+	}
+
+	return func(ctx Context) bool {
+		newT := w.pool.Acquire(ctx)
+		shouldContinue := handler(newT)
+		w.pool.Release(newT)
+		return shouldContinue
+	}
+}
+
+// FallbackViewFunc same as `Handler` but it converts a handler to FallbackViewFunc.
+func (w *ContextWrapper[T]) FallbackViewFunc(handler func(ctx T, err ErrViewNotExist) error) FallbackViewFunc {
+	if handler == nil {
+		return nil
+	}
+
+	return func(ctx Context, err ErrViewNotExist) error {
+		newT := w.pool.Acquire(ctx)
+		returningErr := handler(newT, err)
+		w.pool.Release(newT)
+		return returningErr
+	}
 }

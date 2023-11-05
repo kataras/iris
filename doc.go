@@ -10,7 +10,7 @@ Source code and other details for the project are available at GitHub:
 
 # Current Version
 
-12.2.0
+12.2.8
 
 # Installation
 

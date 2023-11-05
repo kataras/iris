@@ -17,7 +17,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/gomarkdown/markdown v0.0.0-20230922112808-5421fefb8386
 	github.com/google/uuid v1.4.0
-	github.com/gorilla/securecookie v1.1.1
+	github.com/gorilla/securecookie v1.1.2
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/schema v0.0.6
 	github.com/json-iterator/go v1.1.12
@@ -41,9 +41,9 @@ require (
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.17.0
-	golang.org/x/sys v0.13.0
-	golang.org/x/text v0.13.0
-	golang.org/x/time v0.3.0
+	golang.org/x/sys v0.14.0
+	golang.org/x/text v0.14.0
+	golang.org/x/time v0.4.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1

@@ -11,6 +11,7 @@ import (
 // DefaultTag is the default struct field tag.
 var DefaultTag = "db"
 
+// ColumnNameFunc is the function which converts a struct field name to a database column name.
 type ColumnNameFunc = func(string) string
 
 func convertStructToColumns(typ reflect.Type, nameFunc ColumnNameFunc) (map[string]*Column, error) {
