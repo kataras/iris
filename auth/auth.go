@@ -430,7 +430,7 @@ func (s *Auth[T]) verify(ctx stdContext.Context, token []byte) (T, StandardClaim
 // See `Verify` method for more.
 func (s *Auth[T]) VerifyHandler(verifyFuncs ...VerifyUserFunc[T]) context.Handler {
 	return func(ctx *context.Context) {
-		accessToken := s.extractAccessToken(ctx)
+		accessToken := s.ExtractAccessToken(ctx)
 
 		if accessToken == "" { // if empty, fire 401.
 			s.errorHandler.Unauthenticated(ctx, jwt.ErrMissing)
@@ -454,7 +454,8 @@ func (s *Auth[T]) VerifyHandler(verifyFuncs ...VerifyUserFunc[T]) context.Handle
 	}
 }
 
-func (s *Auth[T]) extractAccessToken(ctx *context.Context) string {
+// ExtractAccessToken extracts the access token from the request's header or cookie.
+func (s *Auth[T]) ExtractAccessToken(ctx *context.Context) string {
 	// first try from authorization: bearer header.
 	accessToken := s.extractTokenFromHeader(ctx)
 
@@ -571,7 +572,7 @@ func (s *Auth[T]) SignoutAllHandler(ctx *context.Context) {
 }
 
 func (s *Auth[T]) signoutHandler(ctx *context.Context, all bool) {
-	accessToken := s.extractAccessToken(ctx)
+	accessToken := s.ExtractAccessToken(ctx)
 	if accessToken == "" {
 		s.errorHandler.Unauthenticated(ctx, jwt.ErrMissing)
 		return

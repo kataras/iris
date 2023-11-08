@@ -3,7 +3,7 @@ module github.com/kataras/iris/_examples/desktop/webview
 go 1.21
 
 require (
-	github.com/kataras/iris/v12 v12.2.8-0.20231101172314-22713f6b7fb1
+	github.com/kataras/iris/v12 v12.2.8
 	github.com/webview/webview_go v0.0.0-20230901181450-5a14030a9070
 )
 
@@ -24,8 +24,8 @@ require (
 	github.com/iris-contrib/schema v0.0.6 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kataras/blocks v0.0.8 // indirect
-	github.com/kataras/golog v0.1.9 // indirect
-	github.com/kataras/pio v0.0.12 // indirect
+	github.com/kataras/golog v0.1.11 // indirect
+	github.com/kataras/pio v0.0.13 // indirect
 	github.com/kataras/sitemap v0.0.6 // indirect
 	github.com/kataras/tunnel v0.0.4 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
@@ -35,8 +35,8 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/tdewolff/minify/v2 v2.20.5 // indirect
-	github.com/tdewolff/parse/v2 v2.7.3-0.20231031132452-e7c20a5d77ab // indirect
+	github.com/tdewolff/minify/v2 v2.20.6 // indirect
+	github.com/tdewolff/parse/v2 v2.7.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
@@ -44,9 +44,9 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/time v0.4.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
