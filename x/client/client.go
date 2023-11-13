@@ -19,6 +19,8 @@ import (
 
 // A Client is an HTTP client. Initialize with the New package-level function.
 type Client struct {
+	opts []Option // keep for clones.
+
 	HTTPClient *http.Client
 
 	// BaseURL prepends to all requests.
@@ -50,12 +52,14 @@ type Client struct {
 // The default content type to send and receive data is JSON.
 func New(opts ...Option) *Client {
 	c := &Client{
+		opts: opts,
+
 		HTTPClient:               &http.Client{},
 		PersistentRequestOptions: defaultRequestOptions,
 		requestHandlers:          defaultRequestHandlers,
 	}
 
-	for _, opt := range opts {
+	for _, opt := range c.opts { // c.opts in order to make with `NoOption` work.
 		opt(c)
 	}
 
@@ -64,6 +68,17 @@ func New(opts ...Option) *Client {
 	}
 
 	return c
+}
+
+// NoOption is a helper function that clears the previous options in the chain.
+// See `Client.Clone` method.
+var NoOption = func(c *Client) { c.opts = make([]Option, 0) /* clear previous options */ }
+
+// Clone returns a new Client with the same options as the original.
+// If you want to override the options from the base "c" Client,
+// use the `NoOption` variable as the 1st argument.
+func (c *Client) Clone(opts ...Option) *Client {
+	return New(append(c.opts, opts...)...)
 }
 
 // RegisterRequestHandler registers one or more request handlers
@@ -400,6 +415,10 @@ func (c *Client) ReadJSON(ctx context.Context, dest interface{}, method, urlpath
 	// b, _ := io.ReadAll(resp.Body)
 	// println(string(b))
 	// return json.Unmarshal(b, &dest)
+
+	if dest != nil {
+		return json.NewDecoder(resp.Body).Decode(&dest)
+	}
 
 	return json.NewDecoder(resp.Body).Decode(&dest)
 }
