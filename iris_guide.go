@@ -271,10 +271,10 @@ type (
 		// Deferrables registers one or more functions to be ran when the server is terminated.
 		Deferrables(closers ...func()) ServiceGuide
 		// Prefix sets the API Party prefix path.
-		// Usage: WithPrefix("/api")
+		// Usage: WithPrefix("/api").
 		WithPrefix(prefixPath string) ServiceGuide
 		// WithoutPrefix disables the API Party prefix path.
-		// Usage: WithoutPrefix()
+		// Usage: WithoutPrefix(), same as WithPrefix("").
 		WithoutPrefix() ServiceGuide
 		// Services registers one or more dependencies that APIs can use.
 		Services(deps ...interface{}) ApplicationBuilder
@@ -395,7 +395,8 @@ type step6 struct {
 	configuratorsAsDeps []Configurator
 
 	// API Party optional prefix path.
-	// If this is nil and prefix is empty then it defaults to "/api" in order to keep backwards compatibility.
+	// If this is nil then it defaults to "/api" in order to keep backwards compatibility,
+	// otherwise can be set to empty or a custom one.
 	prefix *string
 }
 
@@ -413,11 +414,15 @@ func getDefaultAPIPrefix() *string {
 // WithPrefix sets the API Party prefix path.
 // Usage: WithPrefix("/api").
 func (s *step6) WithPrefix(prefixPath string) ServiceGuide {
+	if prefixPath == "" {
+		return s.WithoutPrefix()
+	}
+
 	*s.prefix = prefixPath
 	return s
 }
 
-// WithoutPrefix disables the API Party prefix path.
+// WithoutPrefix disables the API Party prefix path, same as WithPrefix("").
 // Usage: WithoutPrefix()
 func (s *step6) WithoutPrefix() ServiceGuide {
 	s.prefix = nil
@@ -430,7 +435,7 @@ func (s *step6) getPrefix() string {
 	}
 
 	apiPrefix := *s.prefix
-	if apiPrefix == "" { // if not nil but empty then it defaults to "/api".
+	if apiPrefix == "" { // if not nil but empty (this shouldn't happen) then it defaults to "/api".
 		apiPrefix = defaultAPIPrefix
 	}
 
