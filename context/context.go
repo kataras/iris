@@ -2842,8 +2842,8 @@ func (ctx *Context) ReadYAML(outPtr interface{}) error {
 
 var (
 	// IsErrEmptyJSON reports whether the given "err" is caused by a
-	// Context.ReadJSON call when the request body
-	// didn't start with { or it was totally empty.
+	// Client.ReadJSON call when the request body was empty or
+	// didn't start with { or [.
 	IsErrEmptyJSON = func(err error) bool {
 		if err == nil {
 			return false
@@ -2858,8 +2858,9 @@ var (
 			return v.Offset == 0 && v.Error() == "unexpected end of JSON input"
 		}
 
-		// when optimization is enabled, the jsoniter will report the following error:
-		return strings.Contains(err.Error(), "readObjectStart: expect {")
+		errMsg := err.Error()
+		// 3rd party pacakges:
+		return strings.Contains(errMsg, "readObjectStart: expect {") || strings.Contains(errMsg, "readArrayStart: expect [")
 	}
 
 	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.

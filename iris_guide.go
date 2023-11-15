@@ -557,6 +557,9 @@ func (s *step7) Run(runner Runner, configurators ...Configurator) error {
 		// they will be called on interrupt signals too,
 		// because Iris has a builtin mechanism to call server's shutdown on interrupt.
 		for _, cb := range s.step6.closers {
+			if cb == nil {
+				continue
+			}
 			cb()
 		}
 	}()
