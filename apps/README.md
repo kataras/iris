@@ -121,9 +121,9 @@ Example Code:
 
 ```go
 switcher := Switch(Hosts{
-	"mydomain.com": app,
-	"test.mydomain.com": testSubdomainApp,
-	"otherdomain.com": "appName",
+	{Pattern: "mydomain.com", Target: app},
+	{Pattern: "test.mydomain.com", Target: testSubdomainApp},
+	{Pattern: "otherdomain.com", Target: "appName"},
 })
 switcher.Listen(":80")
 ```
@@ -211,7 +211,7 @@ Switch(Join{
 		App:    myapp,
 	},
 	Hosts{
-		{"^test.*$", myapp},
+		{Pattern: "^test.*$", Target: myapp},
 	},
 })
 ```

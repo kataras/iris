@@ -15,9 +15,9 @@ import (
 // Example Code:
 //
 //	switcher := Switch(Hosts{
-//		"mydomain.com": app,
-//		"test.mydomain.com": testSubdomainApp,
-//		"otherdomain.com": "appName",
+//		{ Pattern: "mydomain.com", Target: app },
+//		{ Pattern: "test.mydomain.com", Target: testSubdomainApp },
+//		{ Pattern: "otherdomain.com", "Target: appName" },
 //	})
 //	switcher.Listen(":80")
 //
@@ -35,6 +35,28 @@ import (
 //
 // Wrap with the `Join` slice to pass
 // more than one provider at the same time.
+//
+// An alternative way for manually embedding an Iris Application to another one is:
+//
+//	app := iris.New() // root app.
+//	myOtherApp := api.NewServer(otherServerConfiguration) // embedded app.
+//	// myOtherApp.Logger().SetLevel("debug")
+//
+//	if err := myOtherApp.Build(); err != nil {
+//		panic(err)
+//	}
+//
+//	app.Any("/api/identity/{p:path}", func(ctx iris.Context) {
+//		apiPath := "/" + ctx.Params().Get("p")
+//		r := ctx.Request()
+//		r.URL.Path = apiPath
+//		r.URL.RawPath = apiPath
+//		ctx.Params().Remove("p")
+//
+//		myOtherApp.ServeHTTPC(ctx)
+//	})
+//
+// app.Listen(":80")
 func Switch(provider SwitchProvider, options ...SwitchOption) *iris.Application {
 	cases := provider.GetSwitchCases()
 	if len(cases) == 0 {

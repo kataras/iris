@@ -36,6 +36,22 @@ type (
 
 var _ SwitchProvider = Hosts{}
 
+// AnyDomain is a regexp that matches any domain.
+// It can be used as the Pattern field of a Host.
+//
+// Example:
+//
+//	apps.Switch(apps.Hosts{
+//		{
+//			Pattern: "^id.*$", Target: identityApp,
+//		},
+//		{
+//			Pattern: apps.AnyDomain, Target: app,
+//		},
+//	}).Listen(":80")
+const AnyDomain = `^(([a-zA-Z]{1})|([a-zA-Z]{1}[a-zA-Z]{1})|([a-zA-Z]{1}[0-9]{1})|([0-9]{1}[a-zA-Z]{1})|([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9]))\.([a-zA-Z]{2,6}|[a-zA-Z0-9-]{2,30}\.[a-zA-Z
+	]{2,3})$`
+
 // GetSwitchCases completes the SwitchProvider.
 // It returns a slice of SwitchCase which
 // if passed on `Switch` function, they act
