@@ -15,7 +15,7 @@ The only workable thing for generic aliases is when you know the type e.g.
 type ListResponse = context.ListResponse[any] but that doesn't fit us.
 */
 
-package iris
+package pagination
 
 import (
 	"math"
