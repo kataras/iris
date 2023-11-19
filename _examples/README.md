@@ -16,6 +16,7 @@
     * [Sqlx](database/orm/sqlx/main.go)
     * [Gorm](database/orm/gorm/main.go)
     * [Reform](database/orm/reform/main.go)
+    * [prisma](database/orm/prisma/main.go) **NEW**
     * [x/sqlx](database/sqlx/main.go) **NEW**
 * GraphQL
     * [GraphQL: schema-first](graphql/schema-first) **NEW**

@@ -1,0 +1,15 @@
+datasource db {
+  // could be postgresql or mysql
+  provider = "sqlite"
+  url      = "file:dev.db"
+}
+
+generator db {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model Task {
+  id        Int      @id @default(autoincrement())
+  text      String?
+  completed Boolean? @default(false)
+}
