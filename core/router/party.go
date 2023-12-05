@@ -393,6 +393,17 @@ type Party interface {
 	// Connect
 	// Trace
 	Any(registeredPath string, handlers ...context.Handler) []*Route
+	// HandleServer registers a route for all HTTP methods which forwards the requests to the given server.
+	//
+	// Usage:
+	//
+	//	app.HandleServer("/api/identity/{first:string}/orgs/{second:string}/{p:path}", otherApp)
+	//
+	// OR
+	//
+	//	app.HandleServer("/api/identity", otherApp)
+	HandleServer(path string, server ServerHandler)
+
 	// CreateRoutes returns a list of Party-based Routes.
 	// It does NOT registers the route. Use `Handle, Get...` methods instead.
 	// This method can be used for third-parties Iris helpers packages and tools

@@ -27,6 +27,8 @@ func (t *Template) IsTrailing() bool {
 // TemplateParam is the parsed macro parameter's template
 // they are being used to describe the param's syntax result.
 type TemplateParam struct {
+	macro *Macro // keep for reference.
+
 	Src string `json:"src"` // the unparsed param'false source
 	// Type is not useful anywhere here but maybe
 	// it's useful on host to decide how to convert the path template to specific router's syntax
@@ -117,6 +119,11 @@ func (p *TemplateParam) Eval(paramValue string) (interface{}, bool) {
 	return newValue, true
 }
 
+// IsMacro reports whether this TemplateParam's underline macro matches the given one.
+func (p *TemplateParam) IsMacro(macro *Macro) bool {
+	return p.macro == macro
+}
+
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)
 // and returns a new Template.
 // It builds all the parameter functions for that template
@@ -138,6 +145,8 @@ func Parse(src string, macros Macros) (Template, error) {
 		typEval := m.Evaluator
 
 		tmplParam := TemplateParam{
+			macro: m,
+
 			Src:           p.Src,
 			Type:          p.Type,
 			Name:          p.Name,

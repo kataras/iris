@@ -1540,6 +1540,83 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 	return
 }
 
+type (
+	// ServerHandler is the interface which all server handlers should implement.
+	// The Iris Application implements it.
+	// See `Party.HandleServer` method for more.
+	ServerHandler interface {
+		ServeHTTPC(*context.Context)
+	}
+
+	serverBuilder interface {
+		Build() error
+	}
+)
+
+// HandleServer registers a route for all HTTP methods which forwards the requests to the given server.
+//
+// Usage:
+//
+//	app.HandleServer("/api/identity/{first:string}/orgs/{second:string}/{p:path}", otherApp)
+//
+// OR
+//
+//	app.HandleServer("/api/identity", otherApp)
+func (api *APIBuilder) HandleServer(path string, server ServerHandler) {
+	if app, ok := server.(serverBuilder); ok {
+		// Do an extra check for Build() error at any case
+		// the end-developer didn't call Build before.
+		if err := app.Build(); err != nil {
+			panic(err)
+		}
+	}
+
+	pathParameterName := ""
+
+	// Check and get the last parameter name if it's a wildcard one by the end-developer.
+	parsedPath, err := macro.Parse(path, *api.macros)
+	if err != nil {
+		panic(err)
+	}
+
+	if n := len(parsedPath.Params); n > 0 {
+		lastParam := parsedPath.Params[n-1]
+		if lastParam.IsMacro(macro.Path) {
+			pathParameterName = lastParam.Name
+			// path remains as it was defined by the end-developer.
+		}
+	}
+	//
+
+	if pathParameterName == "" {
+		pathParameterName = fmt.Sprintf("iris_wildcard_path_parameter%d", len(api.routes.routes))
+		path = fmt.Sprintf("%s/{%s:path}", path, pathParameterName)
+	}
+
+	handler := makeServerHandler(pathParameterName, server.ServeHTTPC)
+	api.Any(path, handler)
+}
+
+func makeServerHandler(givenPathParameter string, handler context.Handler) context.Handler {
+	return func(ctx *context.Context) {
+		pathValue := ""
+		if givenPathParameter == "" {
+			pathValue = ctx.Params().GetEntryAt(ctx.Params().Len() - 1).ValueRaw.(string)
+		} else {
+			pathValue = ctx.Params().Get(givenPathParameter)
+		}
+
+		apiPath := "/" + pathValue
+
+		r := ctx.Request()
+		r.URL.Path = apiPath
+		r.URL.RawPath = apiPath
+		ctx.Params().Reset()
+
+		handler(ctx)
+	}
+}
+
 func (api *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *Route {
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)

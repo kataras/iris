@@ -196,3 +196,24 @@ func TestNewSubdomainPartyRedirectHandler(t *testing.T) {
 	e.GET("/").WithURL("http://testold.mydomain.com/notfound").Expect().Status(iris.StatusNotFound).Body().IsEqual("test 404")
 	e.GET("/").WithURL("http://leveled.testold.mydomain.com").Expect().Status(iris.StatusOK).Body().IsEqual("leveled.testold this can be fired")
 }
+
+func TestHandleServer(t *testing.T) {
+	otherApp := iris.New()
+	otherApp.Get("/test/me/{first:string}", func(ctx iris.Context) {
+		ctx.HTML("<h1>Other App: %s</h1>", ctx.Params().Get("first"))
+	})
+	otherApp.Build()
+
+	app := iris.New()
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.HTML("<h1>Main App</h1>")
+	})
+
+	app.HandleServer("/api/identity/{first:string}/orgs/{second:string}/{p:path}", otherApp)
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual("<h1>Main App</h1>")
+	e.GET("/api/identity/first/orgs/second/test/me/kataras").Expect().Status(iris.StatusOK).Body().IsEqual("<h1>Other App: kataras</h1>")
+	e.GET("/api/identity/first/orgs/second/test/me").Expect().Status(iris.StatusNotFound)
+}

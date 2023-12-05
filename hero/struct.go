@@ -81,8 +81,9 @@ func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Stru
 	singleton := true
 	elem := v.Elem()
 
-	// fmt.Printf("makeStruct: bindings length = %d\n", len(bindings))
+	// fmt.Printf("Service: %s, Bindings(%d):\n", typ, len(bindings))
 	for _, b := range bindings {
+		// fmt.Printf("* " + b.String() + "\n")
 		if b.Dependency.Static {
 			// Fill now.
 			input, err := b.Dependency.Handle(nil, b.Input)
