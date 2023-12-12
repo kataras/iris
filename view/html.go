@@ -104,6 +104,12 @@ func (s *HTMLEngine) RootDir(root string) *HTMLEngine {
 	return s
 }
 
+// FS change templates DIR
+func (s *HTMLEngine) FS(dirOrFS interface{}) *HTMLEngine {
+	s.fs = getFS(dirOrFS)
+	return s
+}
+
 // Name returns the engine's name.
 func (s *HTMLEngine) Name() string {
 	return s.name
