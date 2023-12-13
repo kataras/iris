@@ -1563,6 +1563,10 @@ type (
 //
 //	app.HandleServer("/api/identity", otherApp)
 func (api *APIBuilder) HandleServer(path string, server ServerHandler) {
+	if server == nil {
+		return
+	}
+
 	if app, ok := server.(serverBuilder); ok {
 		// Do an extra check for Build() error at any case
 		// the end-developer didn't call Build before.

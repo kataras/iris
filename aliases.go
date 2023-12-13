@@ -293,6 +293,14 @@ type (
 	FallbackViewLayout = context.FallbackViewLayout
 )
 
+// Component returns a new Handler which can be registered as a main handler for a route.
+// It's a shortcut handler that renders the given component as HTML through Context.RenderComponent.
+func Component(component context.Component) Handler {
+	return func(ctx Context) {
+		ctx.RenderComponent(component)
+	}
+}
+
 // PrefixDir returns a new FileSystem that opens files
 // by adding the given "prefix" to the directory tree of "fs".
 //

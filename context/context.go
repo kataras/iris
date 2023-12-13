@@ -2,7 +2,7 @@ package context
 
 import (
 	"bytes"
-	stdContext "context"
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -78,7 +78,7 @@ type (
 	// BodyDecoderWithContext same as BodyDecoder but it can accept a standard context,
 	// which is binded to the HTTP request's context.
 	BodyDecoderWithContext interface {
-		DecodeContext(ctx stdContext.Context, data []byte) error
+		DecodeContext(ctx context.Context, data []byte) error
 	}
 
 	// Unmarshaler is the interface implemented by types that can unmarshal any raw data.
@@ -275,8 +275,8 @@ func IsErrCanceled(err error) bool {
 
 	var netErr net.Error
 	return (errors.As(err, &netErr) && netErr.Timeout()) ||
-		errors.Is(err, stdContext.Canceled) ||
-		errors.Is(err, stdContext.DeadlineExceeded) ||
+		errors.Is(err, context.Canceled) ||
+		errors.Is(err, context.DeadlineExceeded) ||
 		errors.Is(err, http.ErrHandlerTimeout) ||
 		err.Error() == "closed pool"
 }
@@ -437,7 +437,7 @@ var acquireGoroutines = func() interface{} {
 	return &goroutines{wg: new(sync.WaitGroup)}
 }
 
-func (ctx *Context) Go(fn func(cancelCtx stdContext.Context)) (running int) {
+func (ctx *Context) Go(fn func(cancelCtx context.Context)) (running int) {
 	g := ctx.values.GetOrSet(goroutinesContextKey, acquireGoroutines).(*goroutines)
 	if fn != nil {
 		g.wg.Add(1)
@@ -448,7 +448,7 @@ func (ctx *Context) Go(fn func(cancelCtx stdContext.Context)) (running int) {
 
 		ctx.waitFunc = g.wg.Wait
 
-		go func(reqCtx stdContext.Context) {
+		go func(reqCtx context.Context) {
 			fn(reqCtx)
 			g.wg.Done()
 
@@ -4259,6 +4259,10 @@ func (h ErrorHandlerFunc) HandleContextError(ctx *Context, err error) {
 }
 
 func (ctx *Context) handleContextError(err error) {
+	if err == nil {
+		return
+	}
+
 	if errHandler := ctx.app.GetContextErrorHandler(); errHandler != nil {
 		errHandler.HandleContextError(ctx, err)
 	} else {
@@ -4289,6 +4293,28 @@ func (ctx *Context) Render(statusCode int, r interface {
 	if err := r.Render(ctx.writer); err != nil {
 		ctx.StopWithError(http.StatusInternalServerError, err)
 	}
+}
+
+// Component is the interface which all components must implement.
+// A component is a struct which can be rendered to a writer.
+// It's being used by the `Context.RenderComponent` method.
+// An example of compatible Component is a templ.Component.
+type Component interface {
+	Render(context.Context, io.Writer) error
+}
+
+// RenderComponent renders a component to the client.
+// It sets the "Content-Type" header to "text/html; charset=utf-8".
+// It reports any component render errors back to the caller.
+// Look the Application.SetContextErrorHandler to override the
+// default status code 500 with a custom error response.
+func (ctx *Context) RenderComponent(component Component) error {
+	ctx.ContentType("text/html; charset=utf-8")
+	err := component.Render(ctx.Request().Context(), ctx.ResponseWriter())
+	if err != nil {
+		ctx.handleContextError(err)
+	}
+	return err
 }
 
 // JSON marshals the given "v" value to JSON and writes the response to the client.
@@ -5387,7 +5413,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 // represents one byte. See "golang.org/x/time/rate" package.
 type rateReadSeeker struct {
 	io.ReadSeeker
-	ctx     stdContext.Context
+	ctx     context.Context
 	limiter *rate.Limiter
 }
 
@@ -6460,7 +6486,7 @@ func (ctx *Context) User() User {
 }
 
 // Ensure Iris Context implements the standard Context package, build-time.
-var _ stdContext.Context = (*Context)(nil)
+var _ context.Context = (*Context)(nil)
 
 // Deadline returns the time when work done on behalf of this context
 // should be canceled. Deadline returns ok==false when no deadline is

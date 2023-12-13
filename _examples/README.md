@@ -176,6 +176,7 @@
     * Third-Parties
         * [Render `valyala/quicktemplate` templates](view/quicktemplate)
         * [Render `shiyanhui/hero` templates](view/herotemplate)
+        * [Render `a-h/templ` templates](view/templ) **NEW**
 * [Request ID](https://github.com/kataras/iris/blob/main/middleware/requestid/requestid_test.go)
 * [Request Rate Limit](request-ratelimit/main.go)
 * [Request Referrer](request-referrer/main.go)
