@@ -16,7 +16,7 @@ require (
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/golang/snappy v0.0.4
 	github.com/gomarkdown/markdown v0.0.0-20230922112808-5421fefb8386
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gorilla/securecookie v1.1.2
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/schema v0.0.6
