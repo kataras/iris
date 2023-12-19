@@ -4,7 +4,6 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// 1.
 // $ go install github.com/a-h/templ/cmd/templ@latest
 // $ templ generate
 // $ go run .
