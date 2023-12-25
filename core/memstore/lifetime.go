@@ -13,7 +13,7 @@ var (
 	Clock func() time.Time = time.Now
 
 	// ExpireDelete may be set on Cookie.Expire for expiring the given cookie.
-	ExpireDelete = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	ExpireDelete = time.Unix(0, 0) // time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 )
 
 // LifeTime controls the session expiration datetime.

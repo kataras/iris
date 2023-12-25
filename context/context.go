@@ -5946,23 +5946,25 @@ var (
 	CookieExpireUnlimited = time.Now().AddDate(24, 10, 10)
 )
 
-// RemoveCookie deletes a cookie by its name and path = "/".
-// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
+// RemoveCookie deletes a cookie by its name. It reads the cookie's path and domain
+// in order to delete the cookie cross-browser.
+// Reports whether the cookie was removed or not.
 //
 // Example: https://github.com/kataras/iris/tree/main/_examples/cookies/basic
-func (ctx *Context) RemoveCookie(name string, options ...CookieOption) {
-	c := &http.Cookie{}
-	c.Name = name
-	c.Value = ""
-	c.Path = "/" // if user wants to change it, use of the CookieOption `CookiePath` is required if not `ctx.SetCookie`.
-	c.HttpOnly = true
+func (ctx *Context) RemoveCookie(name string, options ...CookieOption) bool {
+	// Get the cookie from the request
+	c, err := ctx.Request().Cookie(name)
+	if err != nil {
+		return false
+	}
 
-	// RFC says 1 second, but let's do it 1  to make sure is working
-	c.Expires = CookieExpireDelete
-	c.MaxAge = -1
-
+	// Set the cookie expiration date to a past time
+	c.Expires = time.Unix(0, 0)
+	c.MaxAge = -1 // RFC says 1 second, but let's do it -1  to make sure is working.
+	// Send the cookie back to the client
 	ctx.applyCookieOptions(c, OpCookieDel, options)
 	http.SetCookie(ctx.writer, c)
+	return true
 }
 
 // VisitAllCookies takes a visitor function which is called
