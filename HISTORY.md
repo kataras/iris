@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- New `x/errors.ErrorCodeName.MapErrorFunc`, `x/errors.ErrorCodeName.MapErrors` methods and `x/errors.HandleError` package-level function.
+
 # Sun, 05 Nov 2023 | v12.2.8
 
 - A new way to customize the handler's parameter among with the `hero` and `mvc` packages. New `iris.NewContextWrapper` and

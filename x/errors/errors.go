@@ -116,6 +116,63 @@ var (
 	DataLoss           ErrorCodeName = E("DATA_LOSS", http.StatusInternalServerError)
 )
 
+// errorFuncCodeMap is a read-only map of error code names and their error functions.
+var errorFuncCodeMap = make(map[ErrorCodeName][]func(error) error)
+
+// HandleError handles an error by sending it to the client
+// based on the registered error code names and their error functions.
+// Returns true if the error was handled, otherwise false.
+// If the given "err" is nil then it returns false.
+// If the given "err" is a type of validation error then it sends it to the client
+// using the "Validation" method.
+// If the given "err" is a type of client.APIError then it sends it to the client
+// using the "HandleAPIError" function.
+//
+// See ErrorCodeName.MapErrorFunc and MapErrors methods too.
+func HandleError(ctx *context.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	for errorCodeName, errorFuncs := range errorFuncCodeMap {
+		for _, errorFunc := range errorFuncs {
+			if errToSend := errorFunc(err); errToSend != nil {
+				errorCodeName.Err(ctx, errToSend)
+				return true
+			}
+		}
+	}
+
+	Internal.LogErr(ctx, err)
+	return true
+}
+
+// MapErrorFunc registers a function which will validate the incoming error and
+// return the same error or overriden in order to be sent to the client, wrapped by this ErrorCodeName "e".
+//
+// This method MUST be called on initialization, before HTTP server starts as
+// the internal map is not protected by mutex.
+func (e ErrorCodeName) MapErrorFunc(fn func(error) error) {
+	errorFuncCodeMap[e] = append(errorFuncCodeMap[e], fn)
+}
+
+// MapError registers one or more errors which will be sent to the client wrapped by this "e" ErrorCodeName
+// when the incoming error matches to at least one of the given "targets" one.
+//
+// This method MUST be called on initialization, before HTTP server starts as
+// the internal map is not protected by mutex.
+func (e ErrorCodeName) MapErrors(targets ...error) {
+	e.MapErrorFunc(func(err error) error {
+		for _, target := range targets {
+			if Is(err, target) {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
 // Message sends an error with a simple message to the client.
 func (e ErrorCodeName) Message(ctx *context.Context, format string, args ...interface{}) {
 	fail(ctx, e, sprintf(format, args...), "", nil, nil)
@@ -156,6 +213,15 @@ func (e ErrorCodeName) Err(ctx *context.Context, err error) {
 	if validationErrors, ok := AsValidationErrors(err); ok {
 		e.validation(ctx, validationErrors)
 		return
+	}
+
+	// If it's already an Error type then send it directly.
+	if httpErr, ok := err.(*Error); ok {
+		if errorCode, ok := errorCodeMap[e]; ok {
+			httpErr.ErrorCode = errorCode
+			ctx.StopWithJSON(errorCode.Status, httpErr) // here we override the fail function and send the error as it is.
+			return
+		}
 	}
 
 	e.Message(ctx, err.Error())
