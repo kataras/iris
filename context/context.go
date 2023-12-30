@@ -5572,10 +5572,39 @@ func CookieIncluded(cookie *http.Cookie, cookieNames []string) bool {
 	return true
 }
 
-var cookieNameSanitizer = strings.NewReplacer("\n", "-", "\r", "-")
+// var cookieNameSanitizer = strings.NewReplacer("\n", "-", "\r", "-")
+//
+// func sanitizeCookieName(n string) string {
+// 	return cookieNameSanitizer.Replace(n)
+// }
 
-func sanitizeCookieName(n string) string {
-	return cookieNameSanitizer.Replace(n)
+// CookieOverride is a CookieOption which overrides the cookie explicitly to the given "cookie".
+//
+// Usage:
+// ctx.RemoveCookie("the_cookie_name", iris.CookieOverride(&http.Cookie{Domain: "example.com"}))
+func CookieOverride(cookie *http.Cookie) CookieOption { // The "Cookie" word method name is reserved as it's used as an alias.
+	return func(_ *Context, c *http.Cookie, op uint8) {
+		if op == OpCookieGet {
+			return
+		}
+
+		*cookie = *c
+	}
+}
+
+// CookieDomain is a CookieOption which sets the cookie's Domain field.
+// If empty then the current domain is used.
+//
+// Usage:
+// ctx.RemoveCookie("the_cookie_name", iris.CookieDomain("example.com"))
+func CookieDomain(domain string) CookieOption {
+	return func(_ *Context, c *http.Cookie, op uint8) {
+		if op == OpCookieGet {
+			return
+		}
+
+		c.Domain = domain
+	}
 }
 
 // CookieAllowReclaim accepts the Context itself.
@@ -5773,6 +5802,8 @@ const cookieOptionsContextKey = "iris.cookie.options"
 // cookies sent or received from the next Handler in the chain.
 //
 // Available builtin Cookie options are:
+//   - CookieOverride
+//   - CookieDomain
 //   - CookieAllowReclaim
 //   - CookieAllowSubdomains
 //   - CookieSecure
@@ -5946,25 +5977,30 @@ var (
 	CookieExpireUnlimited = time.Now().AddDate(24, 10, 10)
 )
 
-// RemoveCookie deletes a cookie by its name. It reads the cookie's path and domain
-// in order to delete the cookie cross-browser.
-// Reports whether the cookie was removed or not.
+// RemoveCookie deletes a cookie by its name and path = "/".
+// Tip: change the cookie's path to the current one by: RemoveCookie("the_cookie_name", iris.CookieCleanPath)
+//
+// If you intend to remove a cookie with a specific domain and value, please ensure to pass these values explicitly:
+//
+//	ctx.RemoveCookie("the_cookie_name", iris.CookieDomain("example.com"), iris.CookiePath("/"))
+//
+// OR use a Cookie value instead:
+//
+//	ctx.RemoveCookie("the_cookie_name", iris.CookieOverride(&http.Cookie{Domain: "example.com", Path: "/"}))
 //
 // Example: https://github.com/kataras/iris/tree/main/_examples/cookies/basic
-func (ctx *Context) RemoveCookie(name string, options ...CookieOption) bool {
-	// Get the cookie from the request
-	c, err := ctx.Request().Cookie(name)
-	if err != nil {
-		return false
-	}
-
-	// Set the cookie expiration date to a past time
-	c.Expires = time.Unix(0, 0)
-	c.MaxAge = -1 // RFC says 1 second, but let's do it -1  to make sure is working.
+func (ctx *Context) RemoveCookie(name string, options ...CookieOption) {
+	c := &http.Cookie{Path: "/"}
 	// Send the cookie back to the client
 	ctx.applyCookieOptions(c, OpCookieDel, options)
+	c.Name = name
+	c.Value = ""
+	c.HttpOnly = true
+	// Set the cookie expiration date to a past time
+	c.Expires = CookieExpireDelete
+	c.MaxAge = -1 // RFC says 1 second, but let's do it -1  to make sure is working.
+
 	http.SetCookie(ctx.writer, c)
-	return true
 }
 
 // VisitAllCookies takes a visitor function which is called

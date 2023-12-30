@@ -152,6 +152,20 @@ func HandleError(ctx *context.Context, err error) bool {
 //
 // This method MUST be called on initialization, before HTTP server starts as
 // the internal map is not protected by mutex.
+//
+// Example Code:
+//
+//	errors.InvalidArgument.MapErrorFunc(func(err error) error {
+//		stripeErr, ok := err.(*stripe.Error)
+//		if !ok {
+//			return nil
+//		}
+//
+//		return &errors.Error{
+//			Message: stripeErr.Msg,
+//			Details: stripeErr.DocURL,
+//		}
+//	})
 func (e ErrorCodeName) MapErrorFunc(fn func(error) error) {
 	errorFuncCodeMap[e] = append(errorFuncCodeMap[e], fn)
 }

@@ -23,6 +23,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- Add `iris.CookieDomain` and `iris.CookieOverride` cookie options to handle [#2309](https://github.com/kataras/iris/issues/2309).
 - New `x/errors.ErrorCodeName.MapErrorFunc`, `x/errors.ErrorCodeName.MapErrors` methods and `x/errors.HandleError` package-level function.
 
 # Sun, 05 Nov 2023 | v12.2.8
