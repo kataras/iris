@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/kataras/iris/v12/x/jsonx"
 )
 
+const ISO8601Layout = "2006-01-02T15:04:05"
+
 func TestMonthAndYearStart(t *testing.T) {
-	now, err := time.Parse(jsonx.ISO8601Layout, "2021-04-21T00:00:00")
+	now, err := time.Parse(ISO8601Layout, "2021-04-21T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,171 +23,6 @@ func TestMonthAndYearStart(t *testing.T) {
 	if expected, got := "2021-01-01 00:00:00 +0000 UTC", startYearDate.String(); expected != got {
 		t.Logf("start of the current year: expected: %s but got: %s", expected, got)
 	}
-}
-
-func TestGetWeekdays(t *testing.T) {
-	var tests = []struct {
-		Date          string
-		ExpectedDates []string
-		Start         time.Weekday
-		End           time.Weekday
-	}{
-		{ // 1.
-			Date:  "2021-02-04T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2021-02-01 00:00:00 +0000 UTC",
-				"2021-02-02 00:00:00 +0000 UTC",
-				"2021-02-03 00:00:00 +0000 UTC",
-				"2021-02-04 00:00:00 +0000 UTC",
-				"2021-02-05 00:00:00 +0000 UTC",
-				"2021-02-06 00:00:00 +0000 UTC",
-				"2021-02-07 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 2. It's monday.
-			Date:  "2022-01-17T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 3. Test all other days by order.
-			Date:  "2022-01-18T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 4.
-			Date:  "2022-01-19T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 5.
-			Date:  "2022-01-20T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 6.
-			Date:  "2022-01-21T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 7.
-			Date:  "2022-01-22T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 8. Sunday.
-			Date:  "2022-01-23T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2022-01-17 00:00:00 +0000 UTC",
-				"2022-01-18 00:00:00 +0000 UTC",
-				"2022-01-19 00:00:00 +0000 UTC",
-				"2022-01-20 00:00:00 +0000 UTC",
-				"2022-01-21 00:00:00 +0000 UTC",
-				"2022-01-22 00:00:00 +0000 UTC",
-				"2022-01-23 00:00:00 +0000 UTC",
-			},
-		},
-		{ // 9. Test 1st Jenuary (Saturday) .
-			Date:  "2022-01-01T00:00:00",
-			Start: time.Monday,
-			End:   time.Sunday,
-			ExpectedDates: []string{
-				"2021-12-27 00:00:00 +0000 UTC", // monday.
-				"2021-12-28 00:00:00 +0000 UTC",
-				"2021-12-29 00:00:00 +0000 UTC",
-				"2021-12-30 00:00:00 +0000 UTC",
-				"2021-12-31 00:00:00 +0000 UTC",
-				"2022-01-01 00:00:00 +0000 UTC",
-				"2022-01-02 00:00:00 +0000 UTC", // sunday.
-			},
-		},
-		{ // 10. Test 2021-12-31 (Friday) from sunday to saturday.
-			Date:  "2022-01-01T00:00:00",
-			Start: time.Sunday,
-			End:   time.Saturday,
-			ExpectedDates: []string{
-				"2021-12-26 00:00:00 +0000 UTC", // sunday.
-				"2021-12-27 00:00:00 +0000 UTC", // monday.
-				"2021-12-28 00:00:00 +0000 UTC",
-				"2021-12-29 00:00:00 +0000 UTC",
-				"2021-12-30 00:00:00 +0000 UTC",
-				"2021-12-31 00:00:00 +0000 UTC", // friday.
-				"2022-01-01 00:00:00 +0000 UTC", // saturday.
-			},
-		},
-	}
-
-	for i := range tests {
-		tt := tests[i]
-		t.Run(fmt.Sprintf("%s[%d]", t.Name(), i+1), func(t *testing.T) {
-			now, err := time.Parse(jsonx.ISO8601Layout, tt.Date)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			dates := GetWeekdays(now, tt.Start, tt.End)
-			checkDates(t, "", tt.ExpectedDates, dates)
-		})
-	}
-
-	// t.Logf("[%s] Current day of the week: %s", now.String(), now.Weekday().String())
 }
 
 func TestGetWeekEnd(t *testing.T) {
@@ -228,13 +63,13 @@ func TestGetWeekEnd(t *testing.T) {
 		tt := tests[i]
 		t.Run(fmt.Sprintf("%s[%d]", t.Name(), i+1), func(t *testing.T) {
 			for j, date := range tt.Dates {
-				now, err := time.Parse(jsonx.ISO8601Layout, date)
+				now, err := time.Parse(ISO8601Layout, date)
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				weekEndDate := GetWeekEnd(now, tt.End)
-				if got := weekEndDate.Format(jsonx.ISO8601Layout); got != tt.ExpectedDateEnd {
+				if got := weekEndDate.Format(ISO8601Layout); got != tt.ExpectedDateEnd {
 					t.Fatalf("[%d] expected week end date: %s but got: %s ", j+1, tt.ExpectedDateEnd, got)
 				}
 			}
@@ -243,13 +78,13 @@ func TestGetWeekEnd(t *testing.T) {
 }
 
 func TestGetWeekDate(t *testing.T) {
-	now, err := jsonx.ParseSimpleDate("2022-02-10")
+	now, err := time.Parse(ISO8601Layout, "2022-02-10T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var tests = []struct {
-		Now          jsonx.SimpleDate
+		Now          time.Time
 		Start        time.Weekday
 		End          time.Weekday
 		Weekday      time.Weekday
@@ -317,16 +152,195 @@ func TestGetWeekDate(t *testing.T) {
 	for i := range tests {
 		tt := tests[i]
 		t.Run(fmt.Sprintf("%s[%s]", t.Name(), tt.Weekday.String()), func(t *testing.T) {
-			weekDate := GetWeekDate(tt.Now.ToTime(), tt.Weekday, tt.Start, tt.End)
-			if got := weekDate.Format(jsonx.ISO8601Layout); got != tt.ExpectedDate {
+			weekDate := GetWeekDate(tt.Now, tt.Weekday, tt.Start, tt.End)
+			if got := weekDate.Format(ISO8601Layout); got != tt.ExpectedDate {
 				t.Fatalf("[%d] expected week date: %s but got: %s ", i+1, tt.ExpectedDate, got)
 			}
 		})
 	}
 }
 
+func TestGetMonthDays(t *testing.T) {
+	now, err := time.Parse(ISO8601Layout, "2023-12-12T00:00:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dates := GetMonthDays(now)
+	expectedDates := []string{
+		"2023-12-01 00:00:00 +0000 UTC",
+		"2023-12-02 00:00:00 +0000 UTC",
+		"2023-12-03 00:00:00 +0000 UTC",
+		"2023-12-04 00:00:00 +0000 UTC",
+		"2023-12-05 00:00:00 +0000 UTC",
+		"2023-12-06 00:00:00 +0000 UTC",
+		"2023-12-07 00:00:00 +0000 UTC",
+		"2023-12-08 00:00:00 +0000 UTC",
+		"2023-12-09 00:00:00 +0000 UTC",
+		"2023-12-10 00:00:00 +0000 UTC",
+		"2023-12-11 00:00:00 +0000 UTC",
+		"2023-12-12 00:00:00 +0000 UTC",
+		"2023-12-13 00:00:00 +0000 UTC",
+		"2023-12-14 00:00:00 +0000 UTC",
+		"2023-12-15 00:00:00 +0000 UTC",
+		"2023-12-16 00:00:00 +0000 UTC",
+		"2023-12-17 00:00:00 +0000 UTC",
+		"2023-12-18 00:00:00 +0000 UTC",
+		"2023-12-19 00:00:00 +0000 UTC",
+		"2023-12-20 00:00:00 +0000 UTC",
+		"2023-12-21 00:00:00 +0000 UTC",
+		"2023-12-22 00:00:00 +0000 UTC",
+		"2023-12-23 00:00:00 +0000 UTC",
+		"2023-12-24 00:00:00 +0000 UTC",
+		"2023-12-25 00:00:00 +0000 UTC",
+		"2023-12-26 00:00:00 +0000 UTC",
+		"2023-12-27 00:00:00 +0000 UTC",
+		"2023-12-28 00:00:00 +0000 UTC",
+		"2023-12-29 00:00:00 +0000 UTC",
+		"2023-12-30 00:00:00 +0000 UTC",
+		"2023-12-31 00:00:00 +0000 UTC",
+	}
+
+	for i, d := range dates {
+		if expectedDates[i] != d.String() {
+			t.Fatalf("expected: %s but got: %s", expectedDates[i], d.String())
+		}
+	}
+}
+
+func TestGetWeekdays(t *testing.T) {
+	var tests = []struct {
+		Date          string
+		ExpectedDates []string
+	}{
+		{
+			Date: "2021-02-04T00:00:00",
+			ExpectedDates: []string{
+				"2021-02-01 00:00:00 +0000 UTC",
+				"2021-02-02 00:00:00 +0000 UTC",
+				"2021-02-03 00:00:00 +0000 UTC",
+				"2021-02-04 00:00:00 +0000 UTC",
+				"2021-02-05 00:00:00 +0000 UTC",
+				"2021-02-06 00:00:00 +0000 UTC",
+				"2021-02-07 00:00:00 +0000 UTC",
+			},
+		},
+		{ // It's monday.
+			Date: "2022-01-17T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{ // Test all other days by order.
+			Date: "2022-01-18T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{
+			Date: "2022-01-19T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{
+			Date: "2022-01-20T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{
+			Date: "2022-01-21T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{
+			Date: "2022-01-22T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{ // Sunday.
+			Date: "2022-01-23T00:00:00",
+			ExpectedDates: []string{
+				"2022-01-17 00:00:00 +0000 UTC",
+				"2022-01-18 00:00:00 +0000 UTC",
+				"2022-01-19 00:00:00 +0000 UTC",
+				"2022-01-20 00:00:00 +0000 UTC",
+				"2022-01-21 00:00:00 +0000 UTC",
+				"2022-01-22 00:00:00 +0000 UTC",
+				"2022-01-23 00:00:00 +0000 UTC",
+			},
+		},
+		{ // Test 1st Jenuary (Saturday) .
+			Date: "2022-01-01T00:00:00",
+			ExpectedDates: []string{
+				"2021-12-27 00:00:00 +0000 UTC", // monday.
+				"2021-12-28 00:00:00 +0000 UTC",
+				"2021-12-29 00:00:00 +0000 UTC",
+				"2021-12-30 00:00:00 +0000 UTC",
+				"2021-12-31 00:00:00 +0000 UTC",
+				"2022-01-01 00:00:00 +0000 UTC",
+				"2022-01-02 00:00:00 +0000 UTC", // sunday.
+			},
+		},
+	}
+
+	for i := range tests {
+		tt := tests[i]
+		t.Run(fmt.Sprintf("%s[%d]", t.Name(), i+1), func(t *testing.T) {
+			now, err := time.Parse(ISO8601Layout, tt.Date)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dates := GetWeekdays(now, time.Monday, time.Sunday)
+			checkDates(t, "", tt.ExpectedDates, dates)
+		})
+	}
+
+	// t.Logf("[%s] Current day of the week: %s", now.String(), now.Weekday().String())
+}
+
 func TestBackwardsToMonday(t *testing.T) {
-	end, err := time.Parse(jsonx.ISO8601Layout, "2021-04-05T00:00:00")
+	end, err := time.Parse(ISO8601Layout, "2021-04-05T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +353,7 @@ func TestBackwardsToMonday(t *testing.T) {
 	checkDates(t, "", expected, dates)
 
 	// Test when today is tuesday.
-	end, err = time.Parse(jsonx.ISO8601Layout, "2021-04-06T00:00:00")
+	end, err = time.Parse(ISO8601Layout, "2021-04-06T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +367,7 @@ func TestBackwardsToMonday(t *testing.T) {
 	checkDates(t, "", expected, dates)
 
 	// Test when today is thursday.
-	end, err = time.Parse(jsonx.ISO8601Layout, "2021-04-08T00:00:00")
+	end, err = time.Parse(ISO8601Layout, "2021-04-08T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -369,7 +383,7 @@ func TestBackwardsToMonday(t *testing.T) {
 	checkDates(t, "", expected, dates)
 
 	// Test when today is sunday.
-	end, err = time.Parse(jsonx.ISO8601Layout, "2021-04-10T00:00:00")
+	end, err = time.Parse(ISO8601Layout, "2021-04-10T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,12 +428,12 @@ func checkDates(t *testing.T, typ DateRangeType, expected []string, dates []time
 }
 
 func TestBetweenAndBackwardsN(t *testing.T) {
-	start, err := time.Parse(jsonx.ISO8601Layout, "2021-03-26T00:00:00")
+	start, err := time.Parse(ISO8601Layout, "2021-03-26T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	end, err := time.Parse(jsonx.ISO8601Layout, "2021-04-01T00:00:00")
+	end, err := time.Parse(ISO8601Layout, "2021-04-01T00:00:00")
 	if err != nil {
 		t.Fatal(err)
 	}

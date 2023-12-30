@@ -15,7 +15,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/golang/snappy v0.0.4
-	github.com/gomarkdown/markdown v0.0.0-20231115200524-a660076da3fd
+	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/securecookie v1.1.2
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
