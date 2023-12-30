@@ -26,7 +26,7 @@ Changes apply to `main` branch.
 - Add `x/jsonx.GetSimpleDateRange(date, jsonx.WeekRange, time.Monday, time.Sunday)` which returns all dates between the given range and start/end weekday values for WeekRange.
 - Add `x/timex.GetMonthDays` and `x/timex.GetMonthEnd` functions.
 - Add `iris.CookieDomain` and `iris.CookieOverride` cookie options to handle [#2309](https://github.com/kataras/iris/issues/2309).
-- New `x/errors.ErrorCodeName.MapErrorFunc`, `x/errors.ErrorCodeName.MapErrors` methods and `x/errors.HandleError` package-level function.
+- New `x/errors.ErrorCodeName.MapErrorFunc`, `x/errors.ErrorCodeName.MapErrors`, `x/errors.ErrorCodeName.Wrap` methods and `x/errors.HandleError` package-level function.
 
 # Sun, 05 Nov 2023 | v12.2.8
 

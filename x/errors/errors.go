@@ -2,6 +2,7 @@ package errors
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -134,6 +135,28 @@ func HandleError(ctx *context.Context, err error) bool {
 		return false
 	}
 
+	// Unwrap and collect the errors slice so the error result doesn't contain the ErrorCodeName type
+	// and fire the error status code and title based on this error code name itself.
+	var asErrCode ErrorCodeName
+	if As(err, &asErrCode) {
+		if unwrapJoined, ok := err.(joinedErrors); ok {
+			errs := unwrapJoined.Unwrap()
+			errsToKeep := make([]error, 0, len(errs)-1)
+			for _, src := range errs {
+				if _, isErrorCodeName := src.(ErrorCodeName); !isErrorCodeName {
+					errsToKeep = append(errsToKeep, src)
+				}
+			}
+
+			if len(errsToKeep) > 0 {
+				err = errors.Join(errsToKeep...)
+			}
+		}
+
+		asErrCode.Err(ctx, err)
+		return true
+	}
+
 	for errorCodeName, errorFuncs := range errorFuncCodeMap {
 		for _, errorFunc := range errorFuncs {
 			if errToSend := errorFunc(err); errToSend != nil {
@@ -145,6 +168,24 @@ func HandleError(ctx *context.Context, err error) bool {
 
 	Internal.LogErr(ctx, err)
 	return true
+}
+
+// Error returns an empty string, it is only declared as a method of ErrorCodeName type in order
+// to be a compatible error to be joined within other errors:
+//
+//	err = fmt.Errorf("%w%w", errors.InvalidArgument, err) OR
+//	err = errors.InvalidArgument.Wrap(err)
+func (e ErrorCodeName) Error() string {
+	return ""
+}
+
+type joinedErrors interface{ Unwrap() []error }
+
+// Wrap wraps the given error with this ErrorCodeName.
+// It calls the standard errors.Join package-level function.
+// See HandleError function for more.
+func (e ErrorCodeName) Wrap(err error) error {
+	return errors.Join(e, err)
 }
 
 // MapErrorFunc registers a function which will validate the incoming error and
