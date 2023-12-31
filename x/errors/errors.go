@@ -59,7 +59,7 @@ var errorCodeMap = make(map[ErrorCodeName]ErrorCode)
 // Example:
 //
 //		var (
-//	   NotFound = errors.E("NOT_FOUND", http.StatusNotFound)
+//	   		NotFound = errors.E("NOT_FOUND", http.StatusNotFound)
 //		)
 //		...
 //		NotFound.Details(ctx, "resource not found", "user with id: %q was not found", userID)
@@ -118,6 +118,7 @@ var (
 )
 
 // errorFuncCodeMap is a read-only map of error code names and their error functions.
+// See HandleError package-level function.
 var errorFuncCodeMap = make(map[ErrorCodeName][]func(error) error)
 
 // HandleError handles an error by sending it to the client
