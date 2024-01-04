@@ -139,6 +139,15 @@ func HandleError(ctx *context.Context, err error) bool {
 		return false
 	}
 
+	for errorCodeName, errorFuncs := range errorFuncCodeMap {
+		for _, errorFunc := range errorFuncs {
+			if errToSend := errorFunc(err); errToSend != nil {
+				errorCodeName.Err(ctx, errToSend)
+				return true
+			}
+		}
+	}
+
 	// Unwrap and collect the errors slice so the error result doesn't contain the ErrorCodeName type
 	// and fire the error status code and title based on this error code name itself.
 	var asErrCode ErrorCodeName
@@ -161,13 +170,18 @@ func HandleError(ctx *context.Context, err error) bool {
 		return true
 	}
 
-	for errorCodeName, errorFuncs := range errorFuncCodeMap {
-		for _, errorFunc := range errorFuncs {
-			if errToSend := errorFunc(err); errToSend != nil {
-				errorCodeName.Err(ctx, errToSend)
-				return true
-			}
-		}
+	if handleJSONError(ctx, err) {
+		return true
+	}
+
+	if vErrs, ok := AsValidationErrors(err); ok {
+		InvalidArgument.Data(ctx, "validation failure", vErrs)
+		return true
+	}
+
+	if apiErr, ok := client.GetError(err); ok {
+		handleAPIError(ctx, apiErr)
+		return true
 	}
 
 	Internal.LogErr(ctx, err)
@@ -335,18 +349,43 @@ func HandleAPIError(ctx *context.Context, err error) {
 	// Error expected and came from the external server,
 	// save its body so we can forward it to the end-client.
 	if apiErr, ok := client.GetError(err); ok {
-		statusCode := apiErr.Response.StatusCode
-		if statusCode >= 400 && statusCode < 500 {
-			InvalidArgument.DataWithDetails(ctx, "remote server error", "invalid client request", apiErr.Body)
-		} else {
-			Internal.Data(ctx, "remote server error", apiErr.Body)
-		}
-
-		// Unavailable.DataWithDetails(ctx, "remote server error", "unavailable", apiErr.Body)
+		handleAPIError(ctx, apiErr)
 		return
 	}
 
 	Internal.LogErr(ctx, err)
+}
+
+func handleAPIError(ctx *context.Context, apiErr client.APIError) {
+	// Error expected and came from the external server,
+	// save its body so we can forward it to the end-client.
+	statusCode := apiErr.Response.StatusCode
+	if statusCode >= 400 && statusCode < 500 {
+		InvalidArgument.DataWithDetails(ctx, "remote server error", "invalid client request", apiErr.Body)
+	} else {
+		Internal.Data(ctx, "remote server error", apiErr.Body)
+	}
+
+	// Unavailable.DataWithDetails(ctx, "remote server error", "unavailable", apiErr.Body)
+}
+
+func handleJSONError(ctx *context.Context, err error) bool {
+	var syntaxErr *json.SyntaxError
+	if errors.As(err, &syntaxErr) {
+		InvalidArgument.Details(ctx, "unable to parse body", "syntax error at byte offset %d", syntaxErr.Offset)
+		return true
+	}
+
+	var unmarshalErr *json.UnmarshalTypeError
+	if errors.As(err, &unmarshalErr) {
+		InvalidArgument.Details(ctx, "unable to parse body", "unmarshal error for field %q", unmarshalErr.Field)
+		return true
+	}
+
+	return false
+	// else {
+	// 	InvalidArgument.Details(ctx, "unable to parse body", err.Error())
+	// }
 }
 
 var (

@@ -2,6 +2,8 @@ package errors
 
 import (
 	stdContext "context"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/kataras/iris/v12/context"
@@ -117,10 +119,11 @@ func bindResponse[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fn
 	var req T
 	switch len(fnInput) {
 	case 0:
-		err := ctx.ReadJSON(&req)
-		if err != nil {
+		var ok bool
+		req, ok = ReadPayload[T](ctx)
+		if !ok {
 			var resp R
-			return resp, !HandleError(ctx, err)
+			return resp, false
 		}
 	case 1:
 		req = fnInput[0]
@@ -200,11 +203,19 @@ func ReadPayload[T any](ctx *context.Context) (T, bool) {
 	var payload T
 	err := ctx.ReadJSON(&payload)
 	if err != nil {
-		if vErrs, ok := AsValidationErrors(err); ok {
-			InvalidArgument.Data(ctx, "validation failure", vErrs)
-		} else {
-			InvalidArgument.Details(ctx, "unable to parse body", err.Error())
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			InvalidArgument.Details(ctx, "unable to parse body", "empty body")
+			return payload, false
 		}
+
+		if !handleJSONError(ctx, err) {
+			if vErrs, ok := AsValidationErrors(err); ok {
+				InvalidArgument.Data(ctx, "validation failure", vErrs)
+			} else {
+				InvalidArgument.Details(ctx, "unable to parse body", err.Error())
+			}
+		}
+
 		return payload, false
 	}
 
