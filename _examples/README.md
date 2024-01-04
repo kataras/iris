@@ -55,6 +55,7 @@
     * [Custom HTTP Errors](routing/http-errors/main.go)
     * [HTTP Wire Errors](routing/http-wire-errors/main.go) **NEW**
         * [Custom Validation Errors](routing/http-wire-errors/custom-validation-errors/main.go)
+        * [Service](routing/http-wire-errors/service/main.go) **NEW**
     * [Not Found - Intelligence](routing/intelligence/main.go)
         * [Not Found - Suggest Closest Paths](routing/intelligence/manual/main.go)
     * [Dynamic Path](routing/dynamic-path/main.go)

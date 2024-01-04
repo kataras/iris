@@ -14,6 +14,8 @@ var (
 	New = errors.New
 	// Unwrap is an alias of the standard errors.Unwrap function.
 	Unwrap = errors.Unwrap
+	// Join is an alias of the standard errors.Join function.
+	Join = errors.Join
 )
 
 func sprintf(format string, args ...interface{}) string {

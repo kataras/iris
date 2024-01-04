@@ -23,6 +23,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- Add `x/errors.OK`, `Create`, `NoContent` and `NoContentOrNotModified` package-level generic functions as custom service method caller helpers. Example can be found [here](_examples/routing/http-wire-errors/service/main.go).
 - Add `x/errors.ReadPayload`, `ReadQuery`, `ReadPaginationOptions`, `Handle`, `HandleCreate`, `HandleCreateResponse`, `HandleUpdate` and `HandleDelete` package-level functions as helpers for common actions.
 - Add `x/jsonx.GetSimpleDateRange(date, jsonx.WeekRange, time.Monday, time.Sunday)` which returns all dates between the given range and start/end weekday values for WeekRange.
 - Add `x/timex.GetMonthDays` and `x/timex.GetMonthEnd` functions.

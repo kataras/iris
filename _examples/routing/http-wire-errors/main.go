@@ -29,7 +29,7 @@ import (
 // errors.Unavailable
 // errors.DataLoss
 var (
-	Custom = errors.E("CUSTOM_CANONICAL_ERROR_NAME", iris.StatusBadRequest)
+	Custom = errors.Register("CUSTOM_CANONICAL_ERROR_NAME", iris.StatusBadRequest)
 )
 
 func main() {
