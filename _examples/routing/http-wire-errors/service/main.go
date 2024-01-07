@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/x/errors"
 	"github.com/kataras/iris/v12/x/errors/validation"
+	"github.com/kataras/iris/v12/x/pagination"
 )
 
 func main() {
@@ -14,7 +15,8 @@ func main() {
 	service := new(myService)
 
 	app.Post("/", createHandler(service))
-	app.Get("/", listHandler(service))
+	app.Get("/", listAllHandler(service))
+	app.Post("/page", listHandler(service))
 	app.Delete("/{id:string}", deleteHandler(service))
 
 	app.Listen(":8080")
@@ -33,17 +35,23 @@ func createHandler(service *myService) iris.Handler {
 	}
 }
 
-func listHandler(service *myService) iris.Handler {
+func listAllHandler(service *myService) iris.Handler {
 	return func(ctx iris.Context) {
 		// What it does?
 		// 1. If the 3rd variadic (optional) parameter is empty (not our case here), it reads the request body and binds it to the ListRequest struct,
-		// otherwise (our case) it calls the service.List function directly with the given input parameter (empty ListRequest struct value in our case).
-		// 2. Calls the service.List function with the ListRequest value.
-		// 3. If the service.List returns an error, it sends an appropriate error response to the client.
-		// 4. If the service.List returns a response, it sets the status code to 200 (OK) and sends the response as a JSON payload to the client.
+		// otherwise (our case) it calls the service.ListAll function directly with the given input parameter (empty ListRequest struct value in our case).
+		// 2. Calls the service.ListAll function with the ListRequest value.
+		// 3. If the service.ListAll returns an error, it sends an appropriate error response to the client.
+		// 4. If the service.ListAll returns a response, it sets the status code to 200 (OK) and sends the response as a JSON payload to the client.
 		//
 		// Useful for get single, fetch multiple and search operations.
-		errors.OK(ctx, service.List, ListRequest{})
+		errors.OK(ctx, service.ListAll, ListRequest{})
+	}
+}
+
+func listHandler(service *myService) iris.Handler {
+	return func(ctx iris.Context) {
+		errors.List(ctx, service.ListPaginated)
 	}
 }
 
@@ -148,7 +156,7 @@ func (s *myService) Create(ctx context.Context, in CreateRequest) (CreateRespons
 type ListRequest struct {
 }
 
-func (s *myService) List(ctx context.Context, in ListRequest) ([]CreateResponse, error) {
+func (s *myService) ListAll(ctx context.Context, in ListRequest) ([]CreateResponse, error) {
 	resp := []CreateResponse{
 		{
 			ID:        "test-id-1",
@@ -167,7 +175,31 @@ func (s *myService) List(ctx context.Context, in ListRequest) ([]CreateResponse,
 		},
 	}
 
-	return resp, nil //, errors.New("list: test error")
+	return resp, nil //, errors.New("list all: test error")
+}
+
+type ListFilter struct {
+	Firstname string `json:"firstname"`
+}
+
+func (s *myService) ListPaginated(ctx context.Context, opts pagination.ListOptions, filter ListFilter) ([]CreateResponse, int /* any number type */, error) {
+	all, err := s.ListAll(ctx, ListRequest{})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	filteredResp := make([]CreateResponse, 0)
+	for _, v := range all {
+		if strings.Contains(v.Firstname, filter.Firstname) {
+			filteredResp = append(filteredResp, v)
+		}
+
+		if len(filteredResp) == opts.GetLimit() {
+			break
+		}
+	}
+
+	return filteredResp, len(all), nil // errors.New("list paginated: test error")
 }
 
 func (s *myService) Delete(ctx context.Context, id string) error {

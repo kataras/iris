@@ -23,6 +23,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- Add `x/errors.List` package-level function to support `ListObjects(ctx context.Context, opts pagination.ListOptions, f Filter) ([]Object, int64, error)` type of service calls.
 - Simplify how validation errors on `/x/errors` package works. A new `x/errors/validation` sub-package added to make your life easier (using the powerful Generics feature).
 - Add `x/errors.OK`, `Create`, `NoContent` and `NoContentOrNotModified` package-level generic functions as custom service method caller helpers. Example can be found [here](_examples/routing/http-wire-errors/service/main.go).
 - Add `x/errors.ReadPayload`, `ReadQuery`, `ReadPaginationOptions`, `Handle`, `HandleCreate`, `HandleCreateResponse`, `HandleUpdate` and `HandleDelete` package-level functions as helpers for common actions.

@@ -8,6 +8,8 @@ import (
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/x/pagination"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Handle handles a generic response and error from a service call and sends a JSON response to the context.
@@ -121,6 +123,19 @@ type ContextValidator interface {
 	ValidateContext(*context.Context) error
 }
 
+func validateContext(ctx *context.Context, req any) bool {
+	if contextValidator, ok := any(&req).(ContextValidator); ok {
+		err := contextValidator.ValidateContext(ctx)
+		if err != nil {
+			if HandleError(ctx, err) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 func bindResponse[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fnInput ...T) (R, bool) {
 	var req T
 	switch len(fnInput) {
@@ -137,14 +152,9 @@ func bindResponse[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fn
 		panic("invalid number of arguments")
 	}
 
-	if contextValidator, ok := any(&req).(ContextValidator); ok {
-		err := contextValidator.ValidateContext(ctx)
-		if err != nil {
-			if HandleError(ctx, err) {
-				var resp R
-				return resp, false
-			}
-		}
+	if !validateContext(ctx, req) {
+		var resp R
+		return resp, false
 	}
 
 	resp, err := fn(ctx, req)
@@ -163,6 +173,39 @@ func OK[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fnInput ...T
 		return false
 	}
 
+	return Handle(ctx, resp, nil)
+}
+
+// ListResponseFunc is a function which takes a context,
+// a pagination.ListOptions and a generic type T and returns a slice []R, total count of the items and an error.
+//
+// It's used on the List function.
+type ListResponseFunc[T, R any, C constraints.Integer | constraints.Float] interface {
+	func(stdContext.Context, pagination.ListOptions, T /* filter options */) ([]R, C, error)
+}
+
+// List handles a generic response and error from a service paginated call and sends a JSON response to the client.
+// It returns a boolean value indicating whether the handle was successful or not.
+// If the error is not nil, it calls HandleError to send an appropriate error response to the client.
+// It reads the pagination.ListOptions from the URL Query and any filter options of generic T from the request body.
+// It sets the status code to 200 (OK) and sends a *pagination.List[R] response as a JSON payload.
+func List[T, R any, C constraints.Integer | constraints.Float, F ListResponseFunc[T, R, C]](ctx *context.Context, fn F, fnInput ...T) bool {
+	listOpts, filter, ok := ReadPaginationOptions[T](ctx)
+	if !ok {
+		return false
+	}
+
+	if !validateContext(ctx, filter) {
+		return false
+	}
+
+	items, totalCount, err := fn(ctx, listOpts, filter)
+	if err != nil {
+		HandleError(ctx, err)
+		return false
+	}
+
+	resp := pagination.NewList(items, int64(totalCount), filter, listOpts)
 	return Handle(ctx, resp, nil)
 }
 
