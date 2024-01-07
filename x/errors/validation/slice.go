@@ -2,15 +2,16 @@ package validation
 
 import "fmt"
 
-type SliceValue[T any] interface {
+// SliceType is a type constraint that accepts any slice type.
+type SliceType[T any] interface {
 	~[]T
 }
 
 // SliceError describes a slice field validation error.
-type SliceError[T any, V SliceValue[T]] struct{ *FieldError[V] }
+type SliceError[T any, V SliceType[T]] struct{ *FieldError[V] }
 
 // Slice returns a new slice validation error.
-func Slice[T any, V SliceValue[T]](field string, value V) *SliceError[T, V] {
+func Slice[T any, V SliceType[T]](field string, value V) *SliceError[T, V] {
 	return &SliceError[T, V]{Field(field, value)}
 }
 
@@ -27,7 +28,7 @@ func (e *SliceError[T, V]) Length(min, max int) *SliceError[T, V] {
 }
 
 // NotEmptySlice accepts any slice and returns a message if the value is empty.
-func NotEmptySlice[T any, V SliceValue[T]](s V) string {
+func NotEmptySlice[T any, V SliceType[T]](s V) string {
 	if len(s) == 0 {
 		return "must not be empty"
 	}
@@ -36,7 +37,7 @@ func NotEmptySlice[T any, V SliceValue[T]](s V) string {
 }
 
 // SliceLength accepts any slice and returns a message if the length is not in the given range.
-func SliceLength[T any, V SliceValue[T]](min, max int) func(s V) string {
+func SliceLength[T any, V SliceType[T]](min, max int) func(s V) string {
 	return func(s V) string {
 		n := len(s)
 
