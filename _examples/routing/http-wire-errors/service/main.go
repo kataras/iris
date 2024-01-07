@@ -6,12 +6,13 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/x/errors"
+	"github.com/kataras/iris/v12/x/errors/validation"
 )
 
 func main() {
 	app := iris.New()
-
 	service := new(myService)
+
 	app.Post("/", createHandler(service))
 	app.Get("/", listHandler(service))
 	app.Delete("/{id:string}", deleteHandler(service))
@@ -70,15 +71,64 @@ type (
 	myService struct{}
 
 	CreateRequest struct {
-		Fullname string
+		Fullname string   `json:"fullname"`
+		Age      int      `json:"age"`
+		Hobbies  []string `json:"hobbies"`
 	}
 
 	CreateResponse struct {
-		ID        string
-		Firstname string
-		Lastname  string
+		ID        string   `json:"id"`
+		Firstname string   `json:"firstname"`
+		Lastname  string   `json:"lastname"`
+		Age       int      `json:"age"`
+		Hobbies   []string `json:"hobbies"`
 	}
 )
+
+// ValidateContext implements the errors.ContextValidator interface.
+// It validates the request body and returns an error if the request body is invalid.
+// You can also alter the "r" CreateRequest before calling the service method,
+// e.g. give a default value to a field if it's empty or set an ID based on a path parameter.
+func (r *CreateRequest) ValidateContext(ctx iris.Context) error {
+	// To pass custom validation functions:
+	// return validation.Join(
+	// 	validation.String("fullname", r.Fullname).Func(customStringFuncHere),
+	//   OR
+	// 	validation.Field("any_field", r.AnyFieldValue).Func(customAnyFuncHere))
+	return validation.Join(
+		validation.String("fullname", r.Fullname).NotEmpty().Fullname().Length(3, 50),
+		validation.Number("age", r.Age).InRange(18, 130),
+		validation.Slice("hobbies", r.Hobbies).Length(1, 10),
+	)
+
+	/* Example Output:
+	{
+	    "http_error_code": {
+	        "canonical_name": "INVALID_ARGUMENT",
+	        "status": 400
+	    },
+	    "message": "validation failure",
+	    "details": "fields were invalid",
+	    "validation": [
+	        {
+	            "field": "fullname",
+	            "value": "",
+	            "reason": "must not be empty, must contain first and last name, must be between 3 and 50 characters"
+	        },
+	        {
+	            "field": "age",
+	            "value": 0,
+	            "reason": "must be in range of [18, 130]"
+	        },
+	        {
+	            "field": "hobbies",
+	            "value": null,
+	            "reason": "must be between 1 and 10 elements"
+	        }
+	    ]
+	}
+	*/
+}
 
 func (s *myService) Create(ctx context.Context, in CreateRequest) (CreateResponse, error) {
 	arr := strings.Split(in.Fullname, " ")
@@ -89,6 +139,8 @@ func (s *myService) Create(ctx context.Context, in CreateRequest) (CreateRespons
 		ID:        id,
 		Firstname: firstname,
 		Lastname:  lastname,
+		Age:       in.Age,
+		Hobbies:   in.Hobbies,
 	}
 	return resp, nil // , errors.New("create: test error")
 }

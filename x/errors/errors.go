@@ -174,8 +174,21 @@ func HandleError(ctx *context.Context, err error) bool {
 		return true
 	}
 
-	if vErrs, ok := AsValidationErrors(err); ok {
-		InvalidArgument.Data(ctx, "validation failure", vErrs)
+	if vErr, ok := err.(ValidationError); ok {
+		if vErr == nil {
+			return false // consider as not error for any case, this should never happen.
+		}
+
+		InvalidArgument.Validation(ctx, vErr)
+		return true
+	}
+
+	if vErrs, ok := err.(ValidationErrors); ok {
+		if len(vErrs) == 0 {
+			return false // consider as not error for any case, this should never happen.
+		}
+
+		InvalidArgument.Validation(ctx, vErrs...)
 		return true
 	}
 
@@ -283,9 +296,20 @@ func (e ErrorCodeName) Err(ctx *context.Context, err error) {
 		return
 	}
 
-	if validationErrors, ok := AsValidationErrors(err); ok {
-		e.validation(ctx, validationErrors)
-		return
+	if vErr, ok := err.(ValidationError); ok {
+		if vErr == nil {
+			return // consider as not error for any case, this should never happen.
+		}
+
+		e.Validation(ctx, vErr)
+	}
+
+	if vErrs, ok := err.(ValidationErrors); ok {
+		if len(vErrs) == 0 {
+			return // consider as not error for any case, this should never happen.
+		}
+
+		e.Validation(ctx, vErrs...)
 	}
 
 	// If it's already an Error type then send it directly.

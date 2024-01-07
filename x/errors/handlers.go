@@ -115,6 +115,12 @@ type ResponseOnlyErrorFunc[T any] interface {
 	func(stdContext.Context, T) error
 }
 
+// ContextValidator is an interface which can be implemented by a request payload struct
+// in order to validate the context before calling a service function.
+type ContextValidator interface {
+	ValidateContext(*context.Context) error
+}
+
 func bindResponse[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fnInput ...T) (R, bool) {
 	var req T
 	switch len(fnInput) {
@@ -129,6 +135,16 @@ func bindResponse[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fn
 		req = fnInput[0]
 	default:
 		panic("invalid number of arguments")
+	}
+
+	if contextValidator, ok := any(&req).(ContextValidator); ok {
+		err := contextValidator.ValidateContext(ctx)
+		if err != nil {
+			if HandleError(ctx, err) {
+				var resp R
+				return resp, false
+			}
+		}
 	}
 
 	resp, err := fn(ctx, req)
@@ -208,14 +224,7 @@ func ReadPayload[T any](ctx *context.Context) (T, bool) {
 			return payload, false
 		}
 
-		if !handleJSONError(ctx, err) {
-			if vErrs, ok := AsValidationErrors(err); ok {
-				InvalidArgument.Data(ctx, "validation failure", vErrs)
-			} else {
-				InvalidArgument.Details(ctx, "unable to parse body", err.Error())
-			}
-		}
-
+		HandleError(ctx, err)
 		return payload, false
 	}
 
@@ -229,11 +238,7 @@ func ReadQuery[T any](ctx *context.Context) (T, bool) {
 	var payload T
 	err := ctx.ReadQuery(&payload)
 	if err != nil {
-		if vErrs, ok := AsValidationErrors(err); ok {
-			InvalidArgument.Data(ctx, "validation failure", vErrs)
-		} else {
-			InvalidArgument.Details(ctx, "unable to parse query", err.Error())
-		}
+		HandleError(ctx, err)
 		return payload, false
 	}
 
