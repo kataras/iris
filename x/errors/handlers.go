@@ -117,19 +117,90 @@ type ResponseOnlyErrorFunc[T any] interface {
 	func(stdContext.Context, T) error
 }
 
+// ContextValidatorFunc is a function which takes a context and a generic type T and returns an error.
+// It is used to validate the context before calling a service function.
+//
+// See Validation package-level function.
+type ContextValidatorFunc[T any] func(*context.Context, T) error
+
+const contextValidatorFuncKey = "iris.errors.ContextValidatorFunc"
+
+// Validation adds a context validator function to the context.
+// It returns a middleware which can be used to validate the context before calling a service function.
+// It panics if the given validators are empty or nil.
+//
+// Example:
+//
+// r.Post("/", Validation(validateCreateRequest), createHandler(service))
+//
+//	func validateCreateRequest(ctx iris.Context, r *CreateRequest) error {
+//		return validation.Join(
+//			validation.String("fullname", r.Fullname).NotEmpty().Fullname().Length(3, 50),
+//			validation.Number("age", r.Age).InRange(18, 130),
+//			validation.Slice("hobbies", r.Hobbies).Length(1, 10),
+//		)
+//	}
+func Validation[T any](validators ...ContextValidatorFunc[T]) context.Handler {
+	validator := joinContextValidators[T](validators)
+
+	return func(ctx *context.Context) {
+		ctx.Values().Set(contextValidatorFuncKey, validator)
+		ctx.Next()
+	}
+}
+
+func joinContextValidators[T any](validators []ContextValidatorFunc[T]) ContextValidatorFunc[T] {
+	if len(validators) == 0 || validators[0] == nil {
+		panic("at least one validator is required")
+	}
+
+	if len(validators) == 1 {
+		return validators[0]
+	}
+
+	return func(ctx *context.Context, req T) error {
+		for _, validator := range validators {
+			if validator == nil {
+				continue
+			}
+
+			if err := validator(ctx, req); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
 // ContextValidator is an interface which can be implemented by a request payload struct
 // in order to validate the context before calling a service function.
 type ContextValidator interface {
 	ValidateContext(*context.Context) error
 }
 
-func validateContext(ctx *context.Context, req any) bool {
+func validateContext[T any](ctx *context.Context, req T) bool {
+	var err error
+
+	// Always run the request's validator first,
+	// so dynamic validators can be customized per path and method.
 	if contextValidator, ok := any(&req).(ContextValidator); ok {
-		err := contextValidator.ValidateContext(ctx)
-		if err != nil {
-			if HandleError(ctx, err) {
-				return false
+		err = contextValidator.ValidateContext(ctx)
+	}
+
+	if err == nil {
+		if v := ctx.Values().Get(contextValidatorFuncKey); v != nil {
+			if contextValidatorFunc, ok := v.(ContextValidatorFunc[T]); ok {
+				err = contextValidatorFunc(ctx, req)
+			} else if contextValidatorFunc, ok := v.(ContextValidatorFunc[*T]); ok { // or a pointer of T.
+				err = contextValidatorFunc(ctx, &req)
 			}
+		}
+	}
+
+	if err != nil {
+		if HandleError(ctx, err) {
+			return false
 		}
 	}
 

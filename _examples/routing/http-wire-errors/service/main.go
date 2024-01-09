@@ -12,14 +12,35 @@ import (
 
 func main() {
 	app := iris.New()
+
+	/*
+		service := new(myService)
+
+		app.Post("/", createHandler(service))              // OR: errors.CreateHandler(service.Create)
+		app.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
+		app.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
+		app.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
+	*/
+
+	app.PartyConfigure("/", Party())
+	app.Listen(":8080")
+}
+
+func Party() *party {
+	return &party{}
+}
+
+type party struct{}
+
+func (p *party) Configure(r iris.Party) {
 	service := new(myService)
 
-	app.Post("/", createHandler(service))              // OR: errors.CreateHandler(service.Create)
-	app.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
-	app.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
-	app.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
+	r.Post("/", createHandler(service)) // OR: errors.CreateHandler(service.Create)
 
-	app.Listen(":8080")
+	// add a custom validation function for the CreateRequest struct.
+	r.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
+	r.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
+	r.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
 }
 
 func createHandler(service *myService) iris.Handler {
@@ -97,6 +118,18 @@ type (
 // It validates the request body and returns an error if the request body is invalid.
 // You can also alter the "r" CreateRequest before calling the service method,
 // e.g. give a default value to a field if it's empty or set an ID based on a path parameter.
+// OR
+// Custom function per route:
+//
+//	r.Post("/", errors.Validation(validateCreateRequest), createHandler(service))
+//	[more code here...]
+//	func validateCreateRequest(ctx iris.Context, r *CreateRequest) error {
+//		return validation.Join(
+//			validation.String("fullname", r.Fullname).NotEmpty().Fullname().Length(3, 50),
+//			validation.Number("age", r.Age).InRange(18, 130),
+//			validation.Slice("hobbies", r.Hobbies).Length(1, 10),
+//		)
+//	}
 func (r *CreateRequest) ValidateContext(ctx iris.Context) error {
 	// To pass custom validation functions:
 	// return validation.Join(
