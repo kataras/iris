@@ -14,10 +14,10 @@ func main() {
 	app := iris.New()
 	service := new(myService)
 
-	app.Post("/", createHandler(service))
-	app.Get("/", listAllHandler(service))
-	app.Post("/page", listHandler(service))
-	app.Delete("/{id:string}", deleteHandler(service))
+	app.Post("/", createHandler(service))              // OR: errors.CreateHandler(service.Create)
+	app.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
+	app.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
+	app.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
 
 	app.Listen(":8080")
 }
@@ -59,9 +59,9 @@ func deleteHandler(service *myService) iris.Handler {
 	return func(ctx iris.Context) {
 		id := ctx.Params().Get("id")
 		// What it does?
-		// 1. Calls the service.Delete function with the given input parameter.
-		// 2. If the service.Delete returns an error, it sends an appropriate error response to the client.
-		// 3.If the service.Delete doesn't return an error then it sets the status code to 204 (No Content) and
+		// 1. Calls the service.DeleteWithFeedback function with the given input parameter.
+		// 2. If the service.DeleteWithFeedback returns an error, it sends an appropriate error response to the client.
+		// 3.If the service.DeleteWithFeedback doesn't return an error then it sets the status code to 204 (No Content) and
 		// sends the response as a JSON payload to the client.
 		// errors.NoContent(ctx, service.Delete, id)
 		// OR:

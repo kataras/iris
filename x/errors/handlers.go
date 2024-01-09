@@ -12,7 +12,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// Handle handles a generic response and error from a service call and sends a JSON response to the context.
+// Handle handles a generic response and error from a service call and sends a JSON response to the client.
 // It returns a boolean value indicating whether the handle was successful or not.
 // If the error is not nil, it calls HandleError to send an appropriate error response to the client.
 func Handle(ctx *context.Context, resp interface{}, err error) bool {
@@ -161,7 +161,7 @@ func bindResponse[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fn
 	return resp, !HandleError(ctx, err)
 }
 
-// OK handles a generic response and error from a service call and sends a JSON response to the context.
+// OK handles a generic response and error from a service call and sends a JSON response to the client.
 // It returns a boolean value indicating whether the handle was successful or not.
 // If the error is not nil, it calls HandleError to send an appropriate error response to the client.
 // It sets the status code to 200 (OK) and sends any response as a JSON payload.
@@ -174,6 +174,88 @@ func OK[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fnInput ...T
 	}
 
 	return Handle(ctx, resp, nil)
+}
+
+// HandlerInputFunc is a function which takes a context and returns a generic type T.
+// It is used to call a service function with a generic type T.
+// It is used for functions which do not bind a request payload.
+// It is used for XHandler functions.
+// Developers can design their own HandlerInputFunc functions and use them with the XHandler functions.
+// To make a value required, stop the context execution through the context.StopExecution function and fire an error
+// or just use one of the [InvalidArgument].X methods.
+//
+// See PathParam, Query and Value package-level helpers too.
+type HandlerInputFunc[T any] interface {
+	func(ctx *context.Context) T
+}
+
+// GetRequestInputs returns a slice of generic type T from a slice of HandlerInputFunc[T].
+// It is exported so end-developers can use it to get the inputs from custom HandlerInputFunc[T] functions.
+func GetRequestInputs[T any, I HandlerInputFunc[T]](ctx *context.Context, fnInputFunc []I) ([]T, bool) {
+	inputs := make([]T, 0, len(fnInputFunc))
+	for _, callIn := range fnInputFunc {
+		if callIn == nil {
+			continue
+		}
+
+		input := callIn(ctx)
+		if ctx.IsStopped() { // if the input is required and it's not provided, then the context is stopped.
+			return nil, false
+		}
+		inputs = append(inputs, input)
+	}
+
+	return inputs, true
+}
+
+// PathParam returns a HandlerInputFunc which reads a path parameter from the context and returns it as a generic type T.
+// It is used for XHandler functions.
+func PathParam[T any, I HandlerInputFunc[T]](paramName string) I {
+	return func(ctx *context.Context) T {
+		paramValue := ctx.Params().Store.Get(paramName)
+		if paramValue == nil {
+			var t T
+			return t
+		}
+
+		return paramValue.(T)
+	}
+}
+
+// Value returns a HandlerInputFunc which returns a generic type T.
+// It is used for XHandler functions.
+func Value[T any, I HandlerInputFunc[T]](value T) I {
+	return func(ctx *context.Context) T {
+		return value
+	}
+}
+
+// Query returns a HandlerInputFunc which reads a URL query from the context and returns it as a generic type T.
+// It is used for XHandler functions.
+func Query[T any, I HandlerInputFunc[T]]() I {
+	return func(ctx *context.Context) T {
+		value, ok := ReadQuery[T](ctx)
+		if !ok {
+			var t T
+			return t
+		}
+
+		return value
+	}
+}
+
+// Handler handles a generic response and error from a service call and sends a JSON response to the client with status code of 200.
+//
+// See OK package-level function for more.
+func Handler[T, R any, F ResponseFunc[T, R], I HandlerInputFunc[T]](fn F, fnInput ...I) context.Handler {
+	return func(ctx *context.Context) {
+		inputs, ok := GetRequestInputs(ctx, fnInput)
+		if !ok {
+			return
+		}
+
+		OK(ctx, fn, inputs...)
+	}
 }
 
 // ListResponseFunc is a function which takes a context,
@@ -209,6 +291,20 @@ func List[T, R any, C constraints.Integer | constraints.Float, F ListResponseFun
 	return Handle(ctx, resp, nil)
 }
 
+// ListHandler handles a generic response and error from a service paginated call and sends a JSON response to the client.
+//
+// See List package-level function for more.
+func ListHandler[T, R any, C constraints.Integer | constraints.Float, F ListResponseFunc[T, R, C], I HandlerInputFunc[T]](fn F, fnInput ...I) context.Handler {
+	return func(ctx *context.Context) {
+		inputs, ok := GetRequestInputs(ctx, fnInput)
+		if !ok {
+			return
+		}
+
+		List(ctx, fn, inputs...)
+	}
+}
+
 // Create handles a create operation and sends a JSON response with the created resource to the client.
 // It returns a boolean value indicating whether the handle was successful or not.
 // If the error is not nil, it calls HandleError to send an appropriate error response to the client.
@@ -225,7 +321,21 @@ func Create[T, R any, F ResponseFunc[T, R]](ctx *context.Context, fn F, fnInput 
 	return HandleCreate(ctx, resp, nil)
 }
 
-// NoContent handles a generic response and error from a service call and sends a JSON response to the context.
+// CreateHandler handles a create operation and sends a JSON response with the created resource to the client with status code of 201.
+//
+// See Create package-level function for more.
+func CreateHandler[T, R any, F ResponseFunc[T, R], I HandlerInputFunc[T]](fn F, fnInput ...I) context.Handler {
+	return func(ctx *context.Context) {
+		inputs, ok := GetRequestInputs(ctx, fnInput)
+		if !ok {
+			return
+		}
+
+		Create(ctx, fn, inputs...)
+	}
+}
+
+// NoContent handles a generic response and error from a service call and sends a JSON response to the client.
 // It returns a boolean value indicating whether the handle was successful or not.
 // If the error is not nil, it calls HandleError to send an appropriate error response to the client.
 // It sets the status code to 204 (No Content).
@@ -239,7 +349,21 @@ func NoContent[T any, F ResponseOnlyErrorFunc[T]](ctx *context.Context, fn F, fn
 	return NoContentOrNotModified(ctx, toFn, fnInput...)
 }
 
-// NoContent handles a generic response and error from a service call and sends a JSON response to the context.
+// NoContentHandler handles a generic response and error from a service call and sends a JSON response to the client with status code of 204.
+//
+// See NoContent package-level function for more.
+func NoContentHandler[T any, F ResponseOnlyErrorFunc[T], I HandlerInputFunc[T]](fn F, fnInput ...I) context.Handler {
+	return func(ctx *context.Context) {
+		inputs, ok := GetRequestInputs(ctx, fnInput)
+		if !ok {
+			return
+		}
+
+		NoContent(ctx, fn, inputs...)
+	}
+}
+
+// NoContent handles a generic response and error from a service call and sends a JSON response to the client.
 // It returns a boolean value indicating whether the handle was successful or not.
 // If the error is not nil, it calls HandleError to send an appropriate error response to the client.
 // If the response is true, it sets the status code to 204 (No Content).
@@ -253,6 +377,20 @@ func NoContentOrNotModified[T any, F ResponseFunc[T, bool]](ctx *context.Context
 	}
 
 	return HandleUpdate(ctx, bool(resp), nil)
+}
+
+// NoContentOrNotModifiedHandler handles a generic response and error from a service call and sends a JSON response to the client with status code of 204 or 304.
+//
+// See NoContentOrNotModified package-level function for more.
+func NoContentOrNotModifiedHandler[T any, F ResponseFunc[T, bool], I HandlerInputFunc[T]](fn F, fnInput ...I) context.Handler {
+	return func(ctx *context.Context) {
+		inputs, ok := GetRequestInputs(ctx, fnInput)
+		if !ok {
+			return
+		}
+
+		NoContentOrNotModified(ctx, fn, inputs...)
+	}
 }
 
 // ReadPayload reads a JSON payload from the context and returns it as a generic type T.

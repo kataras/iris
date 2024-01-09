@@ -139,6 +139,10 @@ func HandleError(ctx *context.Context, err error) bool {
 		return false
 	}
 
+	if ctx.IsStopped() {
+		return false
+	}
+
 	for errorCodeName, errorFuncs := range errorFuncCodeMap {
 		for _, errorFunc := range errorFuncs {
 			if errToSend := errorFunc(err); errToSend != nil {
