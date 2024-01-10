@@ -443,10 +443,10 @@ func (app *Application) GetContextPool() *context.Pool {
 //
 //	 type contextErrorHandler struct{}
 //	 func (e *contextErrorHandler) HandleContextError(ctx iris.Context, err error) {
-//		 errors.InvalidArgument.Err(ctx, err)
+//		 errors.HandleError(ctx, err)
 //	 }
 //	 ...
-//		app.SetContextErrorHandler(new(contextErrorHandler))
+//	 app.SetContextErrorHandler(new(contextErrorHandler))
 func (app *Application) SetContextErrorHandler(errHandler context.ErrorHandler) *Application {
 	app.contextErrorHandler = errHandler
 	return app

@@ -3,6 +3,7 @@ package errors
 import (
 	stdContext "context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -11,6 +12,29 @@ import (
 
 	"golang.org/x/exp/constraints"
 )
+
+// RecoveryHandler is a middleware which recovers from panics and sends an appropriate error response
+// to the logger and the client.
+func RecoveryHandler(ctx *context.Context) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			var err error
+			switch v := rec.(type) {
+			case error:
+				err = v
+			case string:
+				err = New(v)
+			default:
+				err = fmt.Errorf("%v", v)
+			}
+
+			Internal.LogErr(ctx, err)
+			ctx.StopExecution()
+		}
+	}()
+
+	ctx.Next()
+}
 
 // Handle handles a generic response and error from a service call and sends a JSON response to the client.
 // It returns a boolean value indicating whether the handle was successful or not.

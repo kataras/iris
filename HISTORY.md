@@ -23,8 +23,9 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- Add `x/errors.RecoveryHandler` package-level function.
 - Add `x/errors.Validation` package-level function to add one or more validations for the request payload before a service call of the below methods.
-- Add `x/errors.Handler`, `CreateHandler`, `NoContentHandler`, `NoContenetOrNotModifiedHandler` and `ListHandler` ready-to-use handlers for service method calls to Iris Handler.
+- Add `x/errors.Handler`, `CreateHandler`, `NoContentHandler`, `NoContentOrNotModifiedHandler` and `ListHandler` ready-to-use handlers for service method calls to Iris Handler.
 - Add `x/errors.List` package-level function to support `ListObjects(ctx context.Context, opts pagination.ListOptions, f Filter) ([]Object, int64, error)` type of service calls.
 - Simplify how validation errors on `/x/errors` package works. A new `x/errors/validation` sub-package added to make your life easier (using the powerful Generics feature).
 - Add `x/errors.OK`, `Create`, `NoContent` and `NoContentOrNotModified` package-level generic functions as custom service method caller helpers. Example can be found [here](_examples/routing/http-wire-errors/service/main.go).
