@@ -4,8 +4,8 @@ go 1.21
 
 require (
 	github.com/google/uuid v1.5.0
-	github.com/kataras/iris/v12 v12.2.9-0.20240107204142-746b1fc0da75
-	golang.org/x/crypto v0.17.0
+	github.com/kataras/iris/v12 v12.2.9-0.20240109231132-d32eb68ed48d
+	golang.org/x/crypto v0.18.0
 )
 
 require (
@@ -43,7 +43,7 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect

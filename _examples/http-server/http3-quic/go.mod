@@ -3,7 +3,7 @@ module github.com/kataras/iris/_examples/http-server/http3-quic
 go 1.21
 
 require (
-	github.com/kataras/iris/v12 v12.2.9-0.20240107204142-746b1fc0da75
+	github.com/kataras/iris/v12 v12.2.9-0.20240109231132-d32eb68ed48d
 	github.com/quic-go/quic-go v0.40.1
 )
 
@@ -47,10 +47,10 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	go.uber.org/mock v0.3.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect

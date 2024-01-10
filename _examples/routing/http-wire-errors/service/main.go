@@ -13,34 +13,15 @@ import (
 func main() {
 	app := iris.New()
 
-	/*
-		service := new(myService)
-
-		app.Post("/", createHandler(service))              // OR: errors.CreateHandler(service.Create)
-		app.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
-		app.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
-		app.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
-	*/
-
-	app.PartyConfigure("/", Party())
-	app.Listen(":8080")
-}
-
-func Party() *party {
-	return &party{}
-}
-
-type party struct{}
-
-func (p *party) Configure(r iris.Party) {
+	// Create a new service and pass it to the handlers.
 	service := new(myService)
 
-	r.Post("/", createHandler(service)) // OR: errors.CreateHandler(service.Create)
+	app.Post("/", createHandler(service))              // OR: errors.CreateHandler(service.Create)
+	app.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
+	app.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
+	app.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
 
-	// add a custom validation function for the CreateRequest struct.
-	r.Get("/", listAllHandler(service))              // OR errors.Handler(service.ListAll, errors.Value(ListRequest{}))
-	r.Post("/page", listHandler(service))            // OR: errors.ListHandler(service.ListPaginated)
-	r.Delete("/{id:string}", deleteHandler(service)) // OR: errors.NoContentOrNotModifiedHandler(service.DeleteWithFeedback, errors.PathParam[string]("id"))
+	app.Listen(":8080")
 }
 
 func createHandler(service *myService) iris.Handler {
@@ -137,7 +118,7 @@ func (r *CreateRequest) ValidateContext(ctx iris.Context) error {
 	//   OR
 	// 	validation.Field("any_field", r.AnyFieldValue).Func(customAnyFuncHere))
 	return validation.Join(
-		validation.String("fullname", r.Fullname).NotEmpty().Fullname().Length(3, 50),
+		validation.String("fullname", r.Fullname).Fullname().Length(3, 50),
 		validation.Number("age", r.Age).InRange(18, 130),
 		validation.Slice("hobbies", r.Hobbies).Length(1, 10),
 	)
