@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+# Wed, 10 Jan 2024 | v12.2.9
+
 - Add `x/errors.RecoveryHandler` package-level function.
 - Add `x/errors.Validation` package-level function to add one or more validations for the request payload before a service call of the below methods.
 - Add `x/errors.Handler`, `CreateHandler`, `NoContentHandler`, `NoContentOrNotModifiedHandler` and `ListHandler` ready-to-use handlers for service method calls to Iris Handler.
@@ -35,7 +37,7 @@ Changes apply to `main` branch.
 - Add `iris.CookieDomain` and `iris.CookieOverride` cookie options to handle [#2309](https://github.com/kataras/iris/issues/2309).
 - New `x/errors.ErrorCodeName.MapErrorFunc`, `MapErrors`, `Wrap` methods and `x/errors.HandleError` package-level function.
 
-# Sun, 05 Nov 2023 | v12.2.9
+# Sun, 05 Nov 2023 | v12.2.8
 
 - A new way to customize the handler's parameter among with the `hero` and `mvc` packages. New `iris.NewContextWrapper` and
  `iris.NewContextPool` methods were added to wrap a handler (`.Handler`, `.Handlers`, `.HandlerReturnError`, `HandlerReturnDuration`, `Filter` and `FallbackViewFunc` methods) and use a custom context instead of the iris.Context directly. Example at: https://github.com/kataras/iris/tree/main/_examples/routing/custom-context.

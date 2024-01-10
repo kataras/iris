@@ -627,7 +627,7 @@ $ go get github.com/kataras/iris/v12@latest
 **Run**
 
 ```sh
-$ go mod tidy -compat=1.20 # -compat="1.20" for windows.
+$ go mod tidy -compat=1.21 # -compat="1.21" for windows.
 $ go run .
 ```
 
