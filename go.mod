@@ -9,7 +9,7 @@ require (
 	github.com/CloudyKit/jet/v6 v6.2.0
 	github.com/Joker/jade v1.1.3
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
-	github.com/andybalholm/brotli v1.0.6
+	github.com/andybalholm/brotli v1.1.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/fatih/structs v1.1.0
