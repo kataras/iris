@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- Add `x/mathx.RoundToInteger` math helper function.
+
 # Wed, 10 Jan 2024 | v12.2.9
 
 - Add `x/errors.RecoveryHandler` package-level function.
