@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -109,6 +110,8 @@ type Application struct {
 	// Hosts field is available after `Run` or `NewHost`.
 	Hosts             []*host.Supervisor
 	hostConfigurators []host.Configurator
+	runError          error
+	runErrorMu        sync.RWMutex
 }
 
 // New creates and returns a fresh empty iris *Application instance.
@@ -627,6 +630,10 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
+	defer func() {
+		app.setRunError(ErrServerClosed) // make sure to set the error so any .Wait calls return.
+	}()
+
 	for i, su := range app.Hosts {
 		app.logger.Debugf("Host[%d]: Shutdown now", i)
 		if err := su.Shutdown(ctx); err != nil {
@@ -1006,7 +1013,8 @@ var (
 // on the TCP network address "host:port" which
 // handles requests on incoming connections.
 //
-// Listen always returns a non-nil error.
+// Listen always returns a non-nil error except
+// when NonBlocking option is being passed, so the error goes to the Wait method.
 // Ignore specific errors by using an `iris.WithoutServerError(iris.ErrServerClosed)`
 // as a second input argument.
 //
@@ -1048,13 +1056,130 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 		app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1 /* +1 the current */)
 	}
 
-	// this will block until an error(unless supervisor's DeferFlow called from a Task).
+	if app.config.NonBlocking {
+		go func() {
+			err := app.serve(serve)
+			if err != nil {
+				app.setRunError(err)
+			}
+		}()
+
+		return nil
+	}
+
+	// this will block until an error(unless supervisor's DeferFlow called from a Task)
+	// or NonBlocking was passed (see above).
+	return app.serve(serve)
+}
+
+func (app *Application) serve(serve Runner) error {
 	err := serve(app)
 	if err != nil {
 		app.logger.Error(err)
 	}
-
 	return err
+}
+
+func (app *Application) setRunError(err error) {
+	app.runErrorMu.Lock()
+	app.runError = err
+	app.runErrorMu.Unlock()
+}
+
+func (app *Application) getRunError() error {
+	app.runErrorMu.RLock()
+	err := app.runError
+	app.runErrorMu.RUnlock()
+	return err
+}
+
+// Wait blocks the main goroutine until the server application is up and running.
+// Useful only when `Run` is called with `iris.NonBlocking()` option.
+func (app *Application) Wait(ctx stdContext.Context) error {
+	if !app.config.NonBlocking {
+		return nil
+	}
+
+	// First check if there is an error already from the app.Run.
+	if err := app.getRunError(); err != nil {
+		return err
+	}
+
+	// Set the base for exponential backoff.
+	base := 2.0
+
+	// Get the maximum number of retries by context or force to 7 retries.
+	var maxRetries int
+	// Get the deadline of the context.
+	if deadline, ok := ctx.Deadline(); ok {
+		now := time.Now()
+		timeout := deadline.Sub(now)
+
+		maxRetries = getMaxRetries(timeout, base)
+	} else {
+		maxRetries = 7 // 256 seconds max.
+	}
+
+	// Set the initial retry interval.
+	retryInterval := time.Second
+
+	return app.tryConnect(ctx, maxRetries, retryInterval, base)
+}
+
+// getMaxRetries calculates the maximum number of retries from the retry interval and the base.
+func getMaxRetries(retryInterval time.Duration, base float64) int {
+	// Convert the retry interval to seconds.
+	seconds := retryInterval.Seconds()
+	// Apply the inverse formula.
+	retries := math.Log(seconds)/math.Log(base) - 1
+	return int(math.Round(retries))
+}
+
+// tryConnect tries to connect to the server with the given context and retry parameters.
+func (app *Application) tryConnect(ctx stdContext.Context, maxRetries int, retryInterval time.Duration, base float64) error {
+	address := app.config.GetVHost() // Get this server's listening address.
+
+	// Try to connect to the server in a loop.
+	for i := 0; i < maxRetries; i++ {
+		// Check the context before each attempt.
+		select {
+		case <-ctx.Done():
+			// Context is canceled, return the context error.
+			return ctx.Err()
+		default:
+			// Context is not canceled, proceed with the attempt.
+			conn, err := net.Dial("tcp", address)
+			if err == nil {
+				// Connection successful, close the connection and return nil.
+				conn.Close()
+				return nil // exit.
+			} // ignore error.
+
+			// Connection failed, wait for the retry interval and try again.
+			time.Sleep(retryInterval)
+			// After each failed attempt, check the server Run's error again.
+			if err := app.getRunError(); err != nil {
+				return err
+			}
+
+			// Increase the retry interval by the base raised to the power of the number of attempts.
+			/*
+				0	2 seconds
+				1	4 seconds
+				2	8 seconds
+				3	~16 seconds
+				4	~32 seconds
+				5	~64 seconds
+				6	~128 seconds
+				7	~256 seconds
+				8	~512 seconds
+				...
+			*/
+			retryInterval = time.Duration(math.Pow(base, float64(i+1))) * time.Second
+		}
+	}
+	// All attempts failed, return an error.
+	return fmt.Errorf("failed to connect to the server after %d retries", maxRetries)
 }
 
 // https://ngrok.com/docs

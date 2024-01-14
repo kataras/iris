@@ -24,6 +24,8 @@ type ConfigurationReadOnly interface {
 	GetTimeout() time.Duration
 	// GetTimeoutMessage returns the TimeoutMessage field.
 	GetTimeoutMessage() string
+	// GetNonBlocking returns the NonBlocking field.
+	GetNonBlocking() bool
 	// GetDisablePathCorrection returns the DisablePathCorrection field
 	GetDisablePathCorrection() bool
 	// GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.

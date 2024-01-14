@@ -184,7 +184,7 @@ func ResolveVHost(addr string) string {
 	}
 
 	if idx := strings.IndexByte(addr, ':'); idx == 0 {
-		// only port, then return the 0.0.0.0
+		// only port, then return the 0.0.0.0:PORT
 		return /* "0.0.0.0" */ "localhost" + addr[idx:]
 	} else if idx > 0 { // if 0.0.0.0:80 let's just convert it to localhost.
 		if addr[0:idx] == "0.0.0.0" {

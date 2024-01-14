@@ -23,6 +23,28 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- New `iris.NonBlocking()` configuration option to run the server without blocking the main routine, `Application.Wait(context.Context) error` method can be used to block and wait for the server to be up and running. Example:
+
+```go
+func main() {
+    app := iris.New()
+    app.Get("/", func(ctx iris.Context) {
+        ctx.Writef("Hello, %s!", "World")
+    })
+
+    app.Listen(":8080", iris.NonBlocking())
+
+    ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+    defer cancel()
+
+    if err := app.Wait(ctx); err != nil {
+        log.Fatal(err)
+    }
+
+    // [Server is up and running now, you may continue with other functions below].
+}
+```
+
 - Add `x/mathx.RoundToInteger` math helper function.
 
 # Wed, 10 Jan 2024 | v12.2.9
