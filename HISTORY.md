@@ -32,7 +32,7 @@ func main() {
         ctx.Writef("Hello, %s!", "World")
     })
 
-    app.Listen(":8080", iris.NonBlocking())
+    app.Listen(":8080", iris.NonBlocking(), iris.WithoutServerError(iris.ErrServerClosed))
 
     ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
     defer cancel()

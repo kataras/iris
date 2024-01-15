@@ -552,17 +552,17 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	// bind the constructed server and return it
 	su := host.New(srv)
 
-	if app.config.VHost == "" { // vhost now is useful for router subdomain on wildcard subdomains,
+	if app.config.GetVHost() == "" { // vhost now is useful for router subdomain on wildcard subdomains,
 		// in order to correct decide what to do on:
 		// mydomain.com -> invalid
 		// localhost -> invalid
 		// sub.mydomain.com -> valid
 		// sub.localhost -> valid
 		// we need the host (without port if 80 or 443) in order to validate these, so:
-		app.config.VHost = netutil.ResolveVHost(srv.Addr)
+		app.config.SetVHost(netutil.ResolveVHost(srv.Addr))
 	} else {
 		context.GetDomain = func(_ string) string { // #1886
-			return app.config.VHost
+			return app.config.VHost // GetVHost: here we don't need mutex protection as it's request-time and all modifications are already made.
 		}
 	}
 
@@ -629,10 +629,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 func (app *Application) Shutdown(ctx stdContext.Context) error {
 	app.mu.Lock()
 	defer app.mu.Unlock()
-
-	defer func() {
-		app.setRunError(ErrServerClosed) // make sure to set the error so any .Wait calls return.
-	}()
+	defer app.setRunError(ErrServerClosed) // make sure to set the error so any .Wait calls return.
 
 	for i, su := range app.Hosts {
 		app.logger.Debugf("Host[%d]: Shutdown now", i)
@@ -816,7 +813,7 @@ type Runner func(*Application) error
 // See `Run` for more.
 func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
-		app.config.VHost = netutil.ResolveVHost(l.Addr().String())
+		app.config.SetVHost(netutil.ResolveVHost(l.Addr().String()))
 		return app.NewHost(&http.Server{Addr: l.Addr().String()}).
 			Configure(hostConfigs...).
 			Serve(l)
@@ -1137,8 +1134,6 @@ func getMaxRetries(retryInterval time.Duration, base float64) int {
 
 // tryConnect tries to connect to the server with the given context and retry parameters.
 func (app *Application) tryConnect(ctx stdContext.Context, maxRetries int, retryInterval time.Duration, base float64) error {
-	address := app.config.GetVHost() // Get this server's listening address.
-
 	// Try to connect to the server in a loop.
 	for i := 0; i < maxRetries; i++ {
 		// Check the context before each attempt.
@@ -1147,6 +1142,13 @@ func (app *Application) tryConnect(ctx stdContext.Context, maxRetries int, retry
 			// Context is canceled, return the context error.
 			return ctx.Err()
 		default:
+			address := app.config.GetVHost() // Get this server's listening address.
+			if address == "" {
+				i-- // Note that this may be modified at another go routine of the serve method. So it may be empty at first chance. So retry fetching the VHost every 1 second.
+				time.Sleep(time.Second)
+				continue
+			}
+
 			// Context is not canceled, proceed with the attempt.
 			conn, err := net.Dial("tcp", address)
 			if err == nil {
@@ -1198,7 +1200,7 @@ func (app *Application) tryStartTunneling() {
 
 			publicAddr := publicAddrs[0]
 			// to make subdomains resolution still based on this new remote, public addresses.
-			app.config.VHost = publicAddr[strings.Index(publicAddr, "://")+3:]
+			app.config.SetVHost(publicAddr[strings.Index(publicAddr, "://")+3:])
 
 			directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
 			app.logger.Printer.Write(directLog) // nolint:errcheck

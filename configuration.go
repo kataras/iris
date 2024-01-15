@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
@@ -976,13 +977,25 @@ type Configuration struct {
 	//
 	// Defaults to empty map.
 	Other map[string]interface{} `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
+
+	mu sync.RWMutex // mutex for some of the configuration fields that may change during parallel jobs (see Application.NonBlocking & Wait).
 }
 
 var _ context.ConfigurationReadOnly = (*Configuration)(nil)
 
-// GetVHost returns the non-exported vhost config field.
+// GetVHost returns the non-exported VHost config field.
 func (c *Configuration) GetVHost() string {
-	return c.VHost
+	c.mu.RLock()
+	vhost := c.VHost
+	c.mu.RUnlock()
+	return vhost
+}
+
+// SetVHost sets the non-exported VHost config field.
+func (c *Configuration) SetVHost(s string) {
+	c.mu.Lock()
+	c.VHost = s
+	c.mu.Unlock()
 }
 
 // GetLogLevel returns the LogLevel field.
