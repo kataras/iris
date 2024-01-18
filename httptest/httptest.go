@@ -134,7 +134,7 @@ func New(t IrisTesty, app *iris.Application, setters ...OptionSetter) *httpexpec
 		BaseURL: conf.URL,
 		Client: &http.Client{
 			Transport: httpexpect.NewBinder(app),
-			Jar:       httpexpect.NewJar(),
+			Jar:       httpexpect.NewCookieJar(),
 		},
 		Reporter: reporter,
 	}
@@ -163,7 +163,7 @@ func NewInsecure(t IrisTesty, setters ...OptionSetter) *httpexpect.Expect {
 		BaseURL: conf.URL,
 		Client: &http.Client{
 			Transport: transport,
-			Jar:       httpexpect.NewJar(),
+			Jar:       httpexpect.NewCookieJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
 	}

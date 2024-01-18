@@ -12,7 +12,7 @@ import (
 
 var (
 	// PackageName is the Iris Go module package name.
-	PackageName = strings.TrimSuffix(reflect.TypeOf(Handlers{}).PkgPath(), "/context")
+	PackageName = strings.TrimSuffix(reflect.TypeOf(Context{}).PkgPath(), "/context")
 
 	// WorkingDir is the (initial) current directory.
 	WorkingDir, _ = os.Getwd()

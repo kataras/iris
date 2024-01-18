@@ -19,10 +19,15 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.21`.
 
+
 # Next
 
 Changes apply to `main` branch.
 
+# Thu, 18 Jan 2024 | v12.2.10
+
+- Simplify the `/core/host` subpackage and remove its `DeferFlow` and `RestoreFlow` methods.
+- Fix internal `trimHandlerName` and other minor stuff.
 - New `iris.NonBlocking()` configuration option to run the server without blocking the main routine, `Application.Wait(context.Context) error` method can be used to block and wait for the server to be up and running. Example:
 
 ```go

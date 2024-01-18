@@ -25,6 +25,13 @@ import (
 // Look the `Configure` func for more.
 type Configurator func(su *Supervisor)
 
+// NonBlocking sets the server to non-blocking mode. Use its `Wait` method to wait for server to be up and running.
+func NonBlocking() Configurator {
+	return func(su *Supervisor) {
+		su.nonBlocking = true
+	}
+}
+
 // Supervisor is the wrapper and the manager for a compatible server
 // and it's relative actions, called Tasks.
 //
@@ -34,14 +41,12 @@ type Supervisor struct {
 	// FriendlyAddr can be set to customize the "Now Listening on: {FriendlyAddr}".
 	FriendlyAddr                   string // e.g mydomain.com instead of :443 when AutoTLS is used, see `WriteStartupLogOnServe` task.
 	disableHTTP1ToHTTP2Redirection bool
-	closedManually                 uint32 // future use, accessed atomically (non-zero means we've called the Shutdown)
-	closedByInterruptHandler       uint32 // non-zero means that the end-developer interrupted it by-purpose.
-	manuallyTLS                    bool   // we need that in order to determinate what to output on the console before the server begin.
-	autoTLS                        bool
-	shouldWait                     int32 // non-zero means that the host should wait for unblocking
-	unblockChan                    chan struct{}
 
-	mu sync.Mutex
+	closedByInterruptHandler uint32 // non-zero means that the end-developer interrupted it by-purpose.
+	manuallyTLS              bool   // we need that in order to determinate what to output on the console before the server begin.
+	autoTLS                  bool
+
+	mu sync.RWMutex
 
 	onServe []func(TaskHost)
 	// IgnoreErrors should contains the errors that should be ignored
@@ -73,6 +78,10 @@ type Supervisor struct {
 	// If more than zero then tcp keep alive listener is attached instead of the simple TCP listener.
 	// See `iris.Configuration.KeepAlive`
 	KeepAlive time.Duration
+
+	address     string
+	nonBlocking bool
+	waiter      *Waiter
 }
 
 // New returns a new host supervisor
@@ -83,10 +92,12 @@ type Supervisor struct {
 // It has its own flow, which means that you can prevent
 // to return and exit and restore the flow too.
 func New(srv *http.Server) *Supervisor {
-	return &Supervisor{
-		Server:      srv,
-		unblockChan: make(chan struct{}, 1),
+	su := &Supervisor{
+		Server: srv,
 	}
+
+	su.waiter = NewWaiter(7, su.getAddress)
+	return su
 }
 
 // Configure accepts one or more `Configurator`.
@@ -111,36 +122,6 @@ func (su *Supervisor) Configure(configurators ...Configurator) *Supervisor {
 // which would redirect "http://" requests to their "https://" equivalent.
 func (su *Supervisor) NoRedirect() {
 	su.disableHTTP1ToHTTP2Redirection = true
-}
-
-// DeferFlow defers the flow of the exeuction,
-// i.e: when server should return error and exit
-// from app, a DeferFlow call inside a Task
-// can wait for a `RestoreFlow` to exit or not exit if
-// host's server is "fixed".
-//
-// See `RestoreFlow` too.
-func (su *Supervisor) DeferFlow() {
-	atomic.StoreInt32(&su.shouldWait, 1)
-}
-
-// RestoreFlow restores the flow of the execution,
-// if called without a `DeferFlow` call before
-// then it does nothing.
-// See tests to understand how that can be useful on specific cases.
-//
-// See `DeferFlow` too.
-func (su *Supervisor) RestoreFlow() {
-	if su.isWaiting() {
-		atomic.StoreInt32(&su.shouldWait, 0)
-		su.mu.Lock()
-		su.unblockChan <- struct{}{}
-		su.mu.Unlock()
-	}
-}
-
-func (su *Supervisor) isWaiting() bool {
-	return atomic.LoadInt32(&su.shouldWait) != 0
 }
 
 func (su *Supervisor) newListener() (net.Listener, error) {
@@ -198,14 +179,28 @@ func (su *Supervisor) validateErr(err error) error {
 }
 
 func (su *Supervisor) notifyErr(err error) {
-	err = su.validateErr(err)
-	if err != nil {
-		su.mu.Lock()
-		for _, f := range su.onErr {
-			go f(err)
-		}
-		su.mu.Unlock()
+	if err == nil {
+		return
 	}
+
+	su.mu.Lock()
+	for _, f := range su.onErr {
+		go f(err)
+	}
+	su.mu.Unlock()
+}
+
+func (su *Supervisor) getAddress() string {
+	su.mu.RLock()
+	addr := su.address
+	su.mu.RUnlock()
+	return addr
+}
+
+func (su *Supervisor) setAddress(addr string) {
+	su.mu.Lock()
+	su.address = addr
+	su.mu.Unlock()
 }
 
 // RegisterOnServe registers a function to call on
@@ -224,27 +219,36 @@ func (su *Supervisor) notifyServe(host TaskHost) {
 	su.mu.Unlock()
 }
 
-// Remove all channels, do it with events
-// or with channels but with a different channel on each task proc
-// I don't know channels are not so safe, when go func and race risk..
-// so better with callbacks....
 func (su *Supervisor) supervise(blockFunc func() error) error {
 	host := createTaskHost(su)
 
 	su.notifyServe(host)
 	atomic.StoreUint32(&su.closedByInterruptHandler, 0)
-	atomic.StoreUint32(&su.closedManually, 0)
 
-	err := blockFunc()
-	su.notifyErr(err)
+	if su.nonBlocking {
+		go func() {
+			err := blockFunc()
+			if err != nil {
+				su.waiter.Fail(err)
+			}
 
-	if su.isWaiting() {
-		for range su.unblockChan {
-			break
-		}
+			err = su.validateErr(err)
+			su.notifyErr(err)
+		}()
+
+		return nil
 	}
 
-	return su.validateErr(err)
+	err := blockFunc()
+	err = su.validateErr(err)
+	su.notifyErr(err)
+
+	return err
+}
+
+// Wait blocks until server is up and running or a serve failure.
+func (su *Supervisor) Wait(ctx context.Context) error {
+	return su.waiter.Wait(ctx)
 }
 
 // Serve accepts incoming connections on the Listener l, creating a
@@ -259,7 +263,11 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 // Serve always returns a non-nil error. After Shutdown or Close, the
 // returned error is http.ErrServerClosed.
 func (su *Supervisor) Serve(l net.Listener) error {
-	return su.supervise(func() error { return su.Server.Serve(l) })
+	su.setAddress(l.Addr().String())
+
+	return su.supervise(func() error {
+		return su.Server.Serve(l)
+	})
 }
 
 // ListenAndServe listens on the TCP network address addr
@@ -502,7 +510,6 @@ func (su *Supervisor) RegisterOnShutdown(cb func()) {
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired.
 func (su *Supervisor) Shutdown(ctx context.Context) error {
-	atomic.StoreUint32(&su.closedManually, 1) // future-use
 	if ctx == nil {
 		ctx = context.Background()
 	}

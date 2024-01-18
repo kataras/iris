@@ -18,7 +18,7 @@ func TestConfigurationStatic(t *testing.T) {
 	afterNew := *app.config
 
 	if !reflect.DeepEqual(def, afterNew) {
-		t.Fatalf("Default configuration is not the same after NewFromConfig expected:\n %#v \ngot:\n %#v", def, afterNew)
+		t.Fatalf("Default configuration is not the same after New expected:\n %#v \ngot:\n %#v", def, afterNew)
 	}
 
 	afterNew.Charset = "changed"
@@ -37,7 +37,7 @@ func TestConfigurationStatic(t *testing.T) {
 
 	app = New() // empty , means defaults so
 	if !reflect.DeepEqual(def, *app.config) {
-		t.Fatalf("Default configuration is not the same after NewFromConfig expected:\n %#v \ngot:\n %#v", def, *app.config)
+		t.Fatalf("Default configuration is not the same after New expected:\n %#v \ngot:\n %#v", def, *app.config)
 	}
 }
 

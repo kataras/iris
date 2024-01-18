@@ -35,7 +35,7 @@ func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.E
 		BaseURL: baseURL,
 		Client: &http.Client{
 			Transport: transporter,
-			Jar:       httpexpect.NewJar(),
+			Jar:       httpexpect.NewCookieJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
 	}

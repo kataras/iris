@@ -94,10 +94,10 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 // This function should be registered on Interrupt.
 func ShutdownOnInterrupt(su *Supervisor, shutdownTimeout time.Duration) func() {
 	return func() {
-		ctx, cancel := context.WithTimeout(context.TODO(), shutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
+
 		su.shutdownOnInterrupt(ctx)
-		su.RestoreFlow()
 	}
 }
 

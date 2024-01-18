@@ -2,6 +2,7 @@
 package host_test
 
 import (
+	stdContext "context"
 	"crypto/tls"
 	"net"
 	"net/url"
@@ -30,6 +31,7 @@ func TestProxy(t *testing.T) {
 		MinVersion:         tls.VersionTLS13,
 	}
 	proxy := host.NewProxy("", u, config)
+	proxy.Configure(host.NonBlocking())
 
 	addr := &net.TCPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
@@ -41,10 +43,15 @@ func TestProxy(t *testing.T) {
 		t.Fatalf("%v while creating listener", err)
 	}
 
-	go proxy.Serve(listener) // should be localhost/127.0.0.1:80 but travis throws permission denied.
+	// non-blocking (see above).
+	proxy.Serve(listener)
 
-	t.Log(listener.Addr().String())
-	<-time.After(time.Second)
+	ctx, cancelFunc := stdContext.WithTimeout(stdContext.Background(), 15*time.Second)
+	defer cancelFunc()
+
+	// Wait for up to 15 seconds or until the proxy is ready to serve or a serve failure.
+	proxy.Wait(ctx)
+
 	t.Log(listener.Addr().String())
 
 	app := iris.New()
@@ -60,7 +67,7 @@ func TestProxy(t *testing.T) {
 		ctx.WriteString(unexpectedRoute)
 	})
 
-	l, err := net.Listen("tcp", "localhost:4444") // should be localhost/127.0.0.1:443 but travis throws permission denied.
+	l, err := net.Listen("tcp", "localhost:4444")
 	if err != nil {
 		t.Fatalf("%v while creating tcp4 listener for new tls local test listener", err)
 	}

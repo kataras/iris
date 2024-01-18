@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -30,7 +33,8 @@ func TestJSONLogger(t *testing.T) {
 
 	app.Get("/ping", ping)
 
-	const expectedLogStr = `{"level":"debug","message":"Request path: /ping","fields":{"request_id":null},"stacktrace":[{"function":"json-logger/ping","source":"/home/runner/work/iris/iris/_examples/logging/json-logger/main.go:78"}]}` // gh actions-specific.
+	expectedSourceDir := getSourceDirPath()
+	expectedLogStr := fmt.Sprintf(`{"level":"debug","message":"Request path: /ping","fields":{"request_id":null},"stacktrace":[{"function":"json-logger/ping","source":"%s/main.go:78"}]}`, expectedSourceDir) // gh actions-specific.
 	e := httptest.New(t, app, httptest.LogLevel("debug"))
 	wg := new(sync.WaitGroup)
 	wg.Add(iters)
@@ -56,4 +60,13 @@ func TestJSONLogger(t *testing.T) {
 			t.Fatalf("expected:\n%s\nbut got:\n%s", expected, got)
 		}
 	}
+}
+
+func getSourceDirPath() string {
+	_, file, _, ok := runtime.Caller(1) // get the caller's file.
+	if !ok {
+		return "unknown source"
+	}
+
+	return path.Dir(file) // get the directory of the file (delimiter: /).
 }

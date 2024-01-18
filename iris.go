@@ -39,7 +39,7 @@ import (
 )
 
 // Version is the current version of the Iris Web Framework.
-const Version = "12.2.9"
+const Version = "12.2.10"
 
 // Byte unit helpers.
 const (
@@ -95,7 +95,7 @@ type Application struct {
 	// Users can wrap it to accept more events.
 	OnBuild func() error
 
-	mu sync.Mutex
+	mu sync.RWMutex
 	// name is the application name and the log prefix for
 	// that Application instance's Logger. See `SetName` and `String`.
 	// Defaults to IRIS_APP_NAME envrinoment variable otherwise empty.
@@ -517,10 +517,38 @@ func (l *customHostServerLogger) Write(p []byte) (int, error) {
 	return l.parent.Write(p)
 }
 
+// this may change during parallel jobs (see Application.NonBlocking & Wait).
+func (app *Application) getVHost() string {
+	app.mu.RLock()
+	vhost := app.config.VHost
+	app.mu.RUnlock()
+	return vhost
+}
+
+func (app *Application) setVHost(vhost string) {
+	app.mu.Lock()
+	app.config.VHost = vhost
+	app.mu.Unlock()
+}
+
 // NewHost accepts a standard *http.Server object,
 // completes the necessary missing parts of that "srv"
 // and returns a new, ready-to-use, host (supervisor).
 func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
+	if app.getVHost() == "" { // vhost now is useful for router subdomain on wildcard subdomains,
+		// in order to correct decide what to do on:
+		// mydomain.com -> invalid
+		// localhost -> invalid
+		// sub.mydomain.com -> valid
+		// sub.localhost -> valid
+		// we need the host (without port if 80 or 443) in order to validate these, so:
+		app.setVHost(netutil.ResolveVHost(srv.Addr))
+	} else {
+		context.GetDomain = func(_ string) string { // #1886
+			return app.config.VHost // GetVHost: here we don't need mutex protection as it's request-time and all modifications are already made.
+		}
+	} // before lock.
+
 	app.mu.Lock()
 	defer app.mu.Unlock()
 
@@ -551,21 +579,6 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	// create the new host supervisor
 	// bind the constructed server and return it
 	su := host.New(srv)
-
-	if app.config.GetVHost() == "" { // vhost now is useful for router subdomain on wildcard subdomains,
-		// in order to correct decide what to do on:
-		// mydomain.com -> invalid
-		// localhost -> invalid
-		// sub.mydomain.com -> valid
-		// sub.localhost -> valid
-		// we need the host (without port if 80 or 443) in order to validate these, so:
-		app.config.SetVHost(netutil.ResolveVHost(srv.Addr))
-	} else {
-		context.GetDomain = func(_ string) string { // #1886
-			return app.config.VHost // GetVHost: here we don't need mutex protection as it's request-time and all modifications are already made.
-		}
-	}
-
 	// app.logger.Debugf("Host: virtual host is %s", app.config.VHost)
 
 	// the below schedules some tasks that will run among the server
@@ -1142,7 +1155,7 @@ func (app *Application) tryConnect(ctx stdContext.Context, maxRetries int, retry
 			// Context is canceled, return the context error.
 			return ctx.Err()
 		default:
-			address := app.config.GetVHost() // Get this server's listening address.
+			address := app.getVHost() // Get this server's listening address.
 			if address == "" {
 				i-- // Note that this may be modified at another go routine of the serve method. So it may be empty at first chance. So retry fetching the VHost every 1 second.
 				time.Sleep(time.Second)
@@ -1200,7 +1213,7 @@ func (app *Application) tryStartTunneling() {
 
 			publicAddr := publicAddrs[0]
 			// to make subdomains resolution still based on this new remote, public addresses.
-			app.config.SetVHost(publicAddr[strings.Index(publicAddr, "://")+3:])
+			app.setVHost(publicAddr[strings.Index(publicAddr, "://")+3:])
 
 			directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
 			app.logger.Printer.Write(directLog) // nolint:errcheck
