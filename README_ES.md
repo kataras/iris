@@ -49,7 +49,7 @@ $ go run ejemplo.go
 
 Iris contiene un extenso y completo **[wiki](https://www.iris-go.com/#ebookDonateForm)** que facilita comenzar con el framework.
 
-Para obtener una documentación técnica más detallada, puede dirigirse a nuestros [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v). Y para código ejecutable siempre puede visitar el subdirectorio del repositorio [\_examples](_examples/).
+Para obtener una documentación técnica más detallada, puede dirigirse a nuestros [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.10). Y para código ejecutable siempre puede visitar el subdirectorio del repositorio [\_examples](_examples/).
 
 ### ¿Te gusta leer mientras viajas?
 

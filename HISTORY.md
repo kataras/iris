@@ -26,7 +26,7 @@ Changes apply to `main` branch.
 
 # Thu, 18 Jan 2024 | v12.2.10
 
-- Simplify the `/core/host` subpackage and remove its `DeferFlow` and `RestoreFlow` methods.
+- Simplify the `/core/host` subpackage and remove its `DeferFlow` and `RestoreFlow` methods. These methods are replaced with: `Supervisor.Configure(host.NonBlocking())` before `Serve` and ` Supervisor.Wait(context.Context) error` after `Serve`.
 - Fix internal `trimHandlerName` and other minor stuff.
 - New `iris.NonBlocking()` configuration option to run the server without blocking the main routine, `Application.Wait(context.Context) error` method can be used to block and wait for the server to be up and running. Example:
 
