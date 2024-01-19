@@ -24,6 +24,28 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- New `x/errors.Intercept(func(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error{ ... })` package-level function.
+
+```go
+func main() {
+    app := iris.New()
+
+    // Create a new service and pass it to the handlers.
+    service := new(myService)
+
+    app.Post("/", errors.Intercept(responseHandler), errors.CreateHandler(service.Create))
+
+    // [...]
+}
+
+func responseHandler(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error {
+    fmt.Printf("intercept: request got: %+v\nresponse sent: %#+v\n", req, resp)
+    return nil
+}
+```
+
+- Rename `x/errors/ContextValidator.ValidateContext(iris.Context) error` to `x/errors/RequestHandler.HandleRequest(iris.Context) error`.
+
 # Thu, 18 Jan 2024 | v12.2.10
 
 - Simplify the `/core/host` subpackage and remove its `DeferFlow` and `RestoreFlow` methods. These methods are replaced with: `Supervisor.Configure(host.NonBlocking())` before `Serve` and ` Supervisor.Wait(context.Context) error` after `Serve`.
