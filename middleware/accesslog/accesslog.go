@@ -1056,7 +1056,7 @@ func (ac *AccessLog) getErrorText(err error) (text string) { // caller checks fo
 
 		switch ac.PanicLog {
 		case LogHandler:
-			text = errPanic.CurrentHandler
+			text = errPanic.CurrentHandlerFileLine
 		case LogCallers:
 			text = strings.Join(errPanic.Callers, "\n")
 		case LogStack:

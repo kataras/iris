@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12/core/router"
@@ -518,8 +519,9 @@ func (s *step7) Build() *Application {
 		ctx.Next()
 	})
 
-	if allowOrigin := s.step6.step5.step4.step3.step2.step1.originLine; allowOrigin != "" && allowOrigin != "none" {
-		app.UseRouter(cors.New().AllowOrigin(allowOrigin).Handler())
+	if allowOrigin := s.step6.step5.step4.step3.step2.step1.originLine; strings.TrimSpace(allowOrigin) != "" && allowOrigin != "none" {
+		corsMiddleware := cors.New().HandleErrorFunc(errors.FailedPrecondition.Err).AllowOrigin(allowOrigin).Handler()
+		app.UseRouter(corsMiddleware)
 	}
 
 	if s.step6.step5.step4.step3.step2.enableCompression {

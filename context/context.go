@@ -6333,11 +6333,13 @@ func (ctx *Context) GetErrPublic() (bool, error) {
 // which recovers from a manual panic.
 type ErrPanicRecovery struct {
 	ErrPrivate
-	Cause              interface{}
-	Callers            []string // file:line callers.
-	Stack              []byte   // the full debug stack.
-	RegisteredHandlers []string // file:line of all registered handlers.
-	CurrentHandler     string   // the handler panic came from.
+	Cause                  interface{}
+	Callers                []string // file:line callers.
+	Stack                  []byte   // the full debug stack.
+	RegisteredHandlers     []string // file:line of all registered handlers.
+	CurrentHandlerFileLine string   // the handler panic came from.
+	CurrentHandlerName     string   // the handler name panic came from.
+	Request                string   // the http dumped request.
 }
 
 // Error implements the Go standard error type.
@@ -6348,13 +6350,22 @@ func (e *ErrPanicRecovery) Error() string {
 		}
 	}
 
-	return fmt.Sprintf("%v\n%s", e.Cause, strings.Join(e.Callers, "\n"))
+	return fmt.Sprintf("%v\n%s\nRequest:\n%s", e.Cause, strings.Join(e.Callers, "\n"), e.Request)
 }
 
 // Is completes the internal errors.Is interface.
 func (e *ErrPanicRecovery) Is(err error) bool {
 	_, ok := IsErrPanicRecovery(err)
 	return ok
+}
+
+func (e *ErrPanicRecovery) LogMessage() string {
+	logMessage := fmt.Sprintf("Recovered from a route's Handler('%s')\n", e.CurrentHandlerName)
+	logMessage += fmt.Sprint(e.Request)
+	logMessage += fmt.Sprintf("%s\n", e.Cause)
+	logMessage += fmt.Sprintf("%s\n", strings.Join(e.Callers, "\n"))
+
+	return logMessage
 }
 
 // IsErrPanicRecovery reports whether the given "err" is a type of ErrPanicRecovery.

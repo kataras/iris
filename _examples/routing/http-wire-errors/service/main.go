@@ -105,6 +105,7 @@ type (
 //
 //	r.Post("/", errors.Validation(validateCreateRequest), createHandler(service))
 //	[more code here...]
+//
 //	func validateCreateRequest(ctx iris.Context, r *CreateRequest) error {
 //		return validation.Join(
 //			validation.String("fullname", r.Fullname).NotEmpty().Fullname().Length(3, 50),
@@ -162,7 +163,7 @@ func (r *CreateRequest) HandleResponse(ctx iris.Context, resp *CreateResponse) e
 }
 */
 
-func afterServiceCallButBeforeDataSent(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error {
+func afterServiceCallButBeforeDataSent(ctx iris.Context, req CreateRequest, resp *CreateResponse) error {
 	fmt.Printf("intercept: request got: %+v\nresponse sent: %#+v\n", req, resp)
 	return nil
 }
@@ -231,8 +232,16 @@ func (s *myService) ListPaginated(ctx context.Context, opts pagination.ListOptio
 	return filteredResp, len(all), nil // errors.New("list paginated: test error")
 }
 
+func (s *myService) GetByID(ctx context.Context, id string) (CreateResponse, error) {
+	return CreateResponse{Firstname: "Gerasimos"}, nil // errors.New("get by id: test error")
+}
+
 func (s *myService) Delete(ctx context.Context, id string) error {
 	return nil // errors.New("delete: test error")
+}
+
+func (s *myService) Update(ctx context.Context, req CreateRequest) (bool, error) {
+	return true, nil // false, errors.New("update: test error")
 }
 
 func (s *myService) DeleteWithFeedback(ctx context.Context, id string) (bool, error) {

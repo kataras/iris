@@ -111,6 +111,20 @@ type Handler = func(*Context)
 // See `Handler` for more.
 type Handlers = []Handler
 
+// CopyHandlers returns a copy of "handlers" Handlers slice.
+func CopyHandlers(handlers []Handler) Handlers {
+	handlersCp := make([]Handler, 0, len(handlers))
+	for _, handler := range handlers {
+		if handler == nil {
+			continue
+		}
+
+		handlersCp = append(handlersCp, handler)
+	}
+
+	return handlersCp
+}
+
 func valueOf(v interface{}) reflect.Value {
 	if val, ok := v.(reflect.Value); ok {
 		return val

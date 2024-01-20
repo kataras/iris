@@ -3,11 +3,11 @@ package errors
 import (
 	stdContext "context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/kataras/iris/v12/context"
+	recovery "github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/x/pagination"
 
 	"golang.org/x/exp/constraints"
@@ -17,17 +17,7 @@ import (
 // to the logger and the client.
 func RecoveryHandler(ctx *context.Context) {
 	defer func() {
-		if rec := recover(); rec != nil {
-			var err error
-			switch v := rec.(type) {
-			case error:
-				err = v
-			case string:
-				err = New(v)
-			default:
-				err = fmt.Errorf("%v", v)
-			}
-
+		if err := recovery.PanicRecoveryError(ctx, recover()); err != nil {
 			Internal.LogErr(ctx, err)
 			ctx.StopExecution()
 		}
@@ -165,6 +155,10 @@ const contextRequestHandlerFuncKey = "iris.errors.ContextRequestHandler"
 //		)
 //	}
 func Validation[T any](validators ...ContextRequestFunc[T]) context.Handler {
+	if len(validators) == 0 {
+		return nil
+	}
+
 	validator := joinContextRequestFuncs[T](validators)
 
 	return func(ctx *context.Context) {
@@ -227,27 +221,27 @@ func validateRequest[T any](ctx *context.Context, req T) bool {
 
 // ResponseHandler is an interface which can be implemented by a request payload struct
 // in order to handle a response before sending it to the client.
-type ResponseHandler[R any, RPointer *R] interface {
-	HandleResponse(ctx *context.Context, response RPointer) error
+type ResponseHandler[R any] interface {
+	HandleResponse(ctx *context.Context, response *R) error
 }
 
 // ContextResponseFunc is a function which takes a context, a generic type T and a generic type R and returns an error.
-type ContextResponseFunc[T, R any, RPointer *R] func(*context.Context, T, RPointer) error
+type ContextResponseFunc[T, R any] func(*context.Context, T, *R) error
 
 const contextResponseHandlerFuncKey = "iris.errors.ContextResponseHandler"
 
-func validateResponse[T, R any, RPointer *R](ctx *context.Context, req T, resp RPointer) bool {
+func validateResponse[T, R any](ctx *context.Context, req T, resp *R) bool {
 	var err error
 
-	if contextResponseHandler, ok := any(&req).(ResponseHandler[R, RPointer]); ok {
+	if contextResponseHandler, ok := any(&req).(ResponseHandler[R]); ok {
 		err = contextResponseHandler.HandleResponse(ctx, resp)
 	}
 
 	if err == nil {
 		if v := ctx.Values().Get(contextResponseHandlerFuncKey); v != nil {
-			if contextResponseHandlerFunc, ok := v.(ContextResponseFunc[T, R, RPointer]); ok && contextResponseHandlerFunc != nil {
+			if contextResponseHandlerFunc, ok := v.(ContextResponseFunc[T, R]); ok && contextResponseHandlerFunc != nil {
 				err = contextResponseHandlerFunc(ctx, req, resp)
-			} else if contextResponseHandlerFunc, ok := v.(ContextResponseFunc[*T, R, RPointer]); ok && contextResponseHandlerFunc != nil {
+			} else if contextResponseHandlerFunc, ok := v.(ContextResponseFunc[*T, R]); ok && contextResponseHandlerFunc != nil {
 				err = contextResponseHandlerFunc(ctx, &req, resp)
 			}
 		}
@@ -262,8 +256,12 @@ func validateResponse[T, R any, RPointer *R](ctx *context.Context, req T, resp R
 // Example Code:
 //
 //	app.Post("/", errors.Intercept(func(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error{ ... }), errors.CreateHandler(service.Create))
-func Intercept[T, R any, RPointer *R](responseHandlers ...ContextResponseFunc[T, R, RPointer]) context.Handler {
-	responseHandler := joinContextResponseFuncs[T, R, RPointer](responseHandlers)
+func Intercept[T, R any](responseHandlers ...ContextResponseFunc[T, R]) context.Handler {
+	if len(responseHandlers) == 0 {
+		return nil
+	}
+
+	responseHandler := joinContextResponseFuncs[T, R](responseHandlers)
 
 	return func(ctx *context.Context) {
 		ctx.Values().Set(contextResponseHandlerFuncKey, responseHandler)
@@ -271,7 +269,7 @@ func Intercept[T, R any, RPointer *R](responseHandlers ...ContextResponseFunc[T,
 	}
 }
 
-func joinContextResponseFuncs[T, R any, RPointer *R](responseHandlerFuncs []ContextResponseFunc[T, R, RPointer]) ContextResponseFunc[T, R, RPointer] {
+func joinContextResponseFuncs[T, R any](responseHandlerFuncs []ContextResponseFunc[T, R]) ContextResponseFunc[T, R] {
 	if len(responseHandlerFuncs) == 0 || responseHandlerFuncs[0] == nil {
 		panic("at least one context response handler function is required")
 	}
@@ -280,7 +278,7 @@ func joinContextResponseFuncs[T, R any, RPointer *R](responseHandlerFuncs []Cont
 		return responseHandlerFuncs[0]
 	}
 
-	return func(ctx *context.Context, req T, resp RPointer) error {
+	return func(ctx *context.Context, req T, resp *R) error {
 		for _, handler := range responseHandlerFuncs {
 			if handler == nil {
 				continue

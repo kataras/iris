@@ -256,6 +256,8 @@ type (
 		Evaluator   ParamEvaluator
 		handleError interface{}
 		funcs       []ParamFunc
+
+		goType reflect.Type
 	}
 
 	// ParamFuncBuilder is a func
@@ -278,12 +280,13 @@ type (
 
 // NewMacro creates and returns a Macro that can be used as a registry for
 // a new customized parameter type and its functions.
-func NewMacro(indent, alias string, master, trailing bool, evaluator ParamEvaluator) *Macro {
+func NewMacro(indent, alias string, valueType any, master, trailing bool, evaluator ParamEvaluator) *Macro {
 	return &Macro{
 		indent:   indent,
 		alias:    alias,
 		master:   master,
 		trailing: trailing,
+		goType:   reflect.TypeOf(valueType),
 
 		Evaluator: evaluator,
 	}
@@ -310,6 +313,12 @@ func (m *Macro) Master() bool {
 // A wildcard should be registered in the last path segment only.
 func (m *Macro) Trailing() bool {
 	return m.trailing
+}
+
+// GoType returns the type of the parameter type's evaluator.
+// string if it's a string evaluator, int if it's an int evaluator etc.
+func (m *Macro) GoType() reflect.Type {
+	return m.goType
 }
 
 // HandleError registers a handler which will be executed

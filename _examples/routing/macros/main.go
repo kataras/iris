@@ -17,7 +17,7 @@ func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
-	app.Macros().Register("slice", "", false, true, func(paramValue string) (interface{}, bool) {
+	app.Macros().Register("slice", "", []string{}, false, true, func(paramValue string) (interface{}, bool) {
 		return strings.Split(paramValue, "/"), true
 	}).RegisterFunc("contains", func(expectedItems []string) func(paramValue []string) bool {
 		sort.Strings(expectedItems)
