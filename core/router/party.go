@@ -234,6 +234,8 @@ type Party interface {
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
+	// MiddlewareExists reports whether the given handler exists in the middleware chain.
+	MiddlewareExists(handlerNameOrFunc any) bool
 	// RemoveHandler deletes a handler from begin and done handlers
 	// based on its name or the handler pc function.
 	//

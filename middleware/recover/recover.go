@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("iris/middleware/recover.*", "iris.recover")
+	context.SetHandlerName("iris/middleware/recover.*", "iris.recover") // this name won't work because New() is a function that returns a handler.
 }
 
 // New returns a new recovery middleware,

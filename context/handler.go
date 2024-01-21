@@ -38,6 +38,7 @@ var (
 		"iris.logger",
 		"iris.rate",
 		"iris.methodoverride",
+		"iris.errors.recover",
 	}
 )
 
@@ -110,20 +111,6 @@ type Handler = func(*Context)
 //
 // See `Handler` for more.
 type Handlers = []Handler
-
-// CopyHandlers returns a copy of "handlers" Handlers slice.
-func CopyHandlers(handlers []Handler) Handlers {
-	handlersCp := make([]Handler, 0, len(handlers))
-	for _, handler := range handlers {
-		if handler == nil {
-			continue
-		}
-
-		handlersCp = append(handlersCp, handler)
-	}
-
-	return handlersCp
-}
 
 func valueOf(v interface{}) reflect.Value {
 	if val, ok := v.(reflect.Value); ok {
@@ -377,4 +364,51 @@ reg:
 	}
 
 	return h1
+}
+
+// CopyHandlers returns a copy of "handlers" Handlers slice.
+func CopyHandlers(handlers Handlers) Handlers {
+	handlersCp := make(Handlers, 0, len(handlers))
+	for _, handler := range handlers {
+		if handler == nil {
+			continue
+		}
+
+		handlersCp = append(handlersCp, handler)
+	}
+
+	return handlersCp
+}
+
+// HandlerExists reports whether a handler exists in the "handlers" slice.
+func HandlerExists(handlers Handlers, handlerNameOrFunc any) bool {
+	if handlerNameOrFunc == nil {
+		return false
+	}
+
+	var matchHandler func(any) bool
+
+	switch v := handlerNameOrFunc.(type) {
+	case string:
+		matchHandler = func(handler any) bool {
+			return HandlerName(handler) == v
+		}
+	case Handler:
+		handlerName := HandlerName(v)
+		matchHandler = func(handler any) bool {
+			return HandlerName(handler) == handlerName
+		}
+	default:
+		matchHandler = func(handler any) bool {
+			return reflect.TypeOf(handler) == reflect.TypeOf(v)
+		}
+	}
+
+	for _, handler := range handlers {
+		if matchHandler(handler) {
+			return true
+		}
+	}
+
+	return false
 }

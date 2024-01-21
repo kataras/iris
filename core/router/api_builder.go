@@ -1370,6 +1370,26 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
 }
 
+// MiddlewareExists reports whether the given handler exists in the middleware chain.
+func (api *APIBuilder) MiddlewareExists(handlerNameOrFunc any) bool {
+	if handlerNameOrFunc == nil {
+		return false
+	}
+
+	var handlers context.Handlers
+
+	if filter, ok := api.routerFilters[api]; ok {
+		handlers = append(handlers, filter.Handlers...)
+	}
+
+	handlers = append(handlers, api.middleware...)
+	handlers = append(handlers, api.doneHandlers...)
+	handlers = append(handlers, api.beginGlobalHandlers...)
+	handlers = append(handlers, api.doneGlobalHandlers...)
+
+	return context.HandlerExists(handlers, handlerNameOrFunc)
+}
+
 // RemoveHandler deletes a handler from begin and done handlers
 // based on its name or the handler pc function.
 // Note that UseGlobal and DoneGlobal handlers cannot be removed

@@ -13,6 +13,10 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+func init() {
+	context.SetHandlerName("iris/x/errors.RecoveryHandler.*", "iris.errors.recover")
+}
+
 // RecoveryHandler is a middleware which recovers from panics and sends an appropriate error response
 // to the logger and the client.
 func RecoveryHandler(ctx *context.Context) {

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 
 	"github.com/kataras/iris/v12/middleware/cors"
@@ -508,8 +509,13 @@ func (s *step7) Build() *Application {
 	app.SetContextErrorHandler(errors.DefaultContextErrorHandler)
 	app.Macros().SetErrorHandler(errors.DefaultPathParameterTypeErrorHandler)
 
-	app.UseRouter(recover.New())
-	app.UseRouter(s.step6.step5.routerMiddlewares...)
+	routeFilters := s.step6.step5.routerMiddlewares
+	if !context.HandlerExists(routeFilters, errors.RecoveryHandler) {
+		// If not errors.RecoveryHandler registered, then use the default one.
+		app.UseRouter(recover.New())
+	}
+
+	app.UseRouter(routeFilters...)
 	app.UseRouter(func(ctx Context) {
 		ctx.Header("Server", "Iris")
 		if dev := s.step6.step5.step4.step3.developer; dev != "" {

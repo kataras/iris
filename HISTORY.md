@@ -24,6 +24,42 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Changes apply to `main` branch.
 
+- New `Application/Party.MiddlewareExists(handlerNameOrHandler)` method added, example:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/x/errors"
+)
+
+func main() {
+	app := iris.New()
+
+	app.UseRouter(errors.RecoveryHandler)
+
+	if app.MiddlewareExists(errors.RecoveryHandler) { // <- HERE.
+		fmt.Println("errors.RecoveryHandler exists")
+	}
+	// OR:
+	// if app.MiddlewareExists("iris.errors.recover") {
+	// 	fmt.Println("Iris.Errors.Recovery exists")
+	// }
+
+	app.Get("/", indexHandler)
+
+	app.Listen(":8080")
+}
+
+func indexHandler(ctx iris.Context) {
+	panic("an error here")
+	ctx.HTML("<h1>Index</h1>")
+}
+
+```
 - New `x/errors.Intercept(func(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error{ ... })` package-level function.
 
 ```go

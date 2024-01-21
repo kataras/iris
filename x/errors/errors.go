@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/kataras/iris/v12/context"
@@ -20,6 +21,11 @@ type LogErrorFunc = func(ctx *context.Context, err error)
 // LogError can be modified to customize the way an error is logged to the server (most common: internal server errors, database errors et.c.).
 // Can be used to customize the error logging, e.g. using Sentry (cloud-based error console).
 var LogError LogErrorFunc = func(ctx *context.Context, err error) {
+	if ctx == nil {
+		slog.Error(err.Error())
+		return
+	}
+
 	ctx.Application().Logger().Error(err)
 }
 
