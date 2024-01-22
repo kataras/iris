@@ -64,8 +64,9 @@ func SetHandlerName(original string, replacement string) {
 	// e.g. `iris/cache/client.(*Handler).ServeHTTP-fm`
 	regex, _ := regexp.Compile(original)
 	handlerNames[&NameExpr{
-		literal: original,
-		regex:   regex,
+		literal:           original,
+		normalizedLiteral: normalizeExpression(original),
+		regex:             regex,
 	}] = replacement
 
 	handlerNamesMu.Unlock()
@@ -73,8 +74,9 @@ func SetHandlerName(original string, replacement string) {
 
 // NameExpr regex or literal comparison through `MatchString`.
 type NameExpr struct {
-	regex   *regexp.Regexp
-	literal string
+	regex             *regexp.Regexp
+	literal           string
+	normalizedLiteral string
 }
 
 // MatchString reports whether "s" is literal of "literal"
@@ -89,6 +91,23 @@ func (expr *NameExpr) MatchString(s string) bool {
 	}
 
 	return false
+}
+
+// MatchFilename reports whether "filename" contains the "literal".
+func (expr *NameExpr) MatchFilename(filename string) bool {
+	if filename == "" {
+		return false
+	}
+
+	return strings.Contains(filename, expr.normalizedLiteral)
+}
+
+// The regular expression to match the versioning and the domain part
+var trimFileModuleNameRegex = regexp.MustCompile(`^[\w.]+/(kataras|iris-contrib)/|/v\d+|\.\*`)
+
+func normalizeExpression(str string) string {
+	// Replace all occurrences of the regular expression with the replacement string.
+	return strings.ToLower(trimFileModuleNameRegex.ReplaceAllString(str, ""))
 }
 
 // A Handler responds to an HTTP request.
@@ -125,11 +144,14 @@ func valueOf(v interface{}) reflect.Value {
 // See `SetHandlerName` too.
 func HandlerName(h interface{}) string {
 	pc := valueOf(h).Pointer()
-	name := runtime.FuncForPC(pc).Name()
+	fn := runtime.FuncForPC(pc)
+	name := fn.Name()
+	filename, _ := fn.FileLine(fn.Entry())
+	filenameLower := strings.ToLower(filename)
 
 	handlerNamesMu.RLock()
 	for expr, newName := range handlerNames {
-		if expr.MatchString(name) {
+		if expr.MatchString(name) || expr.MatchFilename(filenameLower) {
 			name = newName
 			break
 		}
