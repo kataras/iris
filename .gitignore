@@ -11,3 +11,9 @@ internalcode-*/
 _examples/**/uploads/*
 _issues/**
 .DS_STORE
+
+*sarif
+iris.*/*
+iris*
+go.sum
+go.sum
