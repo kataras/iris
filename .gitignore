@@ -12,8 +12,8 @@ _examples/**/uploads/*
 _issues/**
 .DS_STORE
 
+go.sum
+
 *sarif
 iris.*/*
 iris*
-go.sum
-go.sum
