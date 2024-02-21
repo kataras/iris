@@ -21,7 +21,7 @@ jobs:
       TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       API_URL: https://api.github.com
       REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-      ROOT_TREE: "OSS-Projects/iris-GitHub" 
+      ROOT_TREE: "OSS-Projects/Iris-GitHub" 
       PROJECT_NAME: "iris"
       BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
       CSONAR_HUB_URL: "https://duck.dyndns.org:7340" 
@@ -30,7 +30,7 @@ jobs:
       CSONAR_CSHOME: /opt/codesonar
       CS_USER_HOME: /__w/iris/iris
       COMMIT_HASH: ${{ github.sha }}
-      REPO_URL: "https://github.com/CodeSecure-SE/Iris"    # the github.repositoryUrl is not an http-link.
+      REPO_URL: "https://github.com/CodeSecure-SE/iris"    # the github.repositoryUrl is not an http-link.
       TARGET: ${{ github.base_ref }}
       IS_PR: ${{ github.event_name }}
     steps:
