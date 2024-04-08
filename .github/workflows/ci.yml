@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        go_version: [1.21.x]
+        go_version: [1.22.x]
     steps:
 
     - name: Check out code into the Go module directory
