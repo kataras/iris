@@ -75,68 +75,68 @@ func ParseISO8601(s string) (ISO8601, error) {
 		err error
 	)
 
-	// Check if the string contains a timezone offset after the 'T' character.
-	hasOffset := strings.Contains(s, "Z") || (strings.Index(s, "+") > strings.Index(s, "T")) || (strings.Index(s, "-") > strings.Index(s, "T"))
-
-	switch {
-	case strings.HasSuffix(s, "Z"):
-		tt, err = time.Parse(ISO8601LayoutWithTimezone, s)
-	case hasOffset && strings.Contains(s, "."):
-		tt, err = time.Parse(ISO8601ZUTCOffsetLayoutWithMicroseconds, s)
-	case hasOffset:
-		tt, err = parseWithOffset(s)
-	default:
-		tt, err = time.Parse(ISO8601Layout, s)
-	}
-
-	if err != nil {
-		return ISO8601{}, fmt.Errorf("ISO8601: %w", err)
-	}
-
-	return ISO8601(tt), nil
-
 	/*
-		if idx := strings.LastIndexFunc(s, startUTCOffsetIndexFunc); idx > 18 { // should have some distance, with and without milliseconds
-			length := parseSignedOffset(s[idx:])
+		// Check if the string contains a timezone offset after the 'T' character.
+		hasOffset := strings.Contains(s, "Z") || (strings.Index(s, "+") > strings.Index(s, "T")) || (strings.Index(s, "-") > strings.Index(s, "T"))
 
-			if idx+1 > idx+length || len(s) <= idx+length+1 {
-				return ISO8601{}, fmt.Errorf("ISO8601: invalid timezone format: %s", s[idx:])
-			}
-
-			offsetText := s[idx+1 : idx+length]
-			offset, parseErr := strconv.Atoi(offsetText)
-			if parseErr != nil {
-				return ISO8601{}, fmt.Errorf("ISO8601: %w", parseErr)
-			}
-
-			// E.g. offset of +0300 is returned as 10800 which is - (3 * 60 * 60).
-			secondsEastUTC := offset * 60 * 60
-
-			// fmt.Printf("parsing %s with offset %s, secondsEastUTC: %d, using time layout: %s\n", s, offsetText, secondsEastUTC, ISO8601ZUTCOffsetLayoutWithMicroseconds)
-			if loc, ok := fixedEastUTCLocations[secondsEastUTC]; ok { // Specific (fixed) zone.
-				if strings.Contains(s, ".") {
-					tt, err = time.ParseInLocation(ISO8601ZUTCOffsetLayoutWithMicroseconds, s, loc)
-				} else {
-					tt, err = time.ParseInLocation(ISO8601ZUTCOffsetLayout, s, loc)
-				}
-			} else { // Local or UTC.
-				if strings.Contains(s, ".") {
-					tt, err = time.Parse(ISO8601ZUTCOffsetLayoutWithMicroseconds, s)
-				} else {
-					tt, err = time.Parse(ISO8601ZUTCOffsetLayout, s)
-				}
-			}
-		} else if s[len(s)-1] == 'Z' {
-			tt, err = time.Parse(ISO8601ZLayout, s)
-		} else {
+		switch {
+		case strings.HasSuffix(s, "Z"):
+			tt, err = time.Parse(ISO8601LayoutWithTimezone, s)
+		case hasOffset && strings.Contains(s, "."):
+			tt, err = time.Parse(ISO8601ZUTCOffsetLayoutWithMicroseconds, s)
+		case hasOffset:
+			tt, err = parseWithOffset(s)
+		default:
 			tt, err = time.Parse(ISO8601Layout, s)
 		}
 
 		if err != nil {
 			return ISO8601{}, fmt.Errorf("ISO8601: %w", err)
 		}
+
 		return ISO8601(tt), nil
 	*/
+
+	if idx := strings.LastIndexFunc(s, startUTCOffsetIndexFunc); idx > 18 { // should have some distance, with and without milliseconds
+		length := parseSignedOffset(s[idx:])
+
+		if idx+1 > idx+length || len(s) <= idx+length+1 {
+			return ISO8601{}, fmt.Errorf("ISO8601: invalid timezone format: %s", s[idx:])
+		}
+
+		offsetText := s[idx+1 : idx+length]
+		offset, parseErr := strconv.Atoi(offsetText)
+		if parseErr != nil {
+			return ISO8601{}, fmt.Errorf("ISO8601: %w", parseErr)
+		}
+
+		// E.g. offset of +0300 is returned as 10800 which is - (3 * 60 * 60).
+		secondsEastUTC := offset * 60 * 60
+
+		// fmt.Printf("parsing %s with offset %s, secondsEastUTC: %d, using time layout: %s\n", s, offsetText, secondsEastUTC, ISO8601ZUTCOffsetLayoutWithMicroseconds)
+		if loc, ok := fixedEastUTCLocations[secondsEastUTC]; ok { // Specific (fixed) zone.
+			if strings.Contains(s, ".") {
+				tt, err = time.ParseInLocation(ISO8601ZUTCOffsetLayoutWithMicroseconds, s, loc)
+			} else {
+				tt, err = time.ParseInLocation(ISO8601ZUTCOffsetLayoutWithoutMicroseconds, s, loc)
+			}
+		} else { // Local or UTC.
+			if strings.Contains(s, ".") {
+				tt, err = time.Parse(ISO8601ZUTCOffsetLayoutWithMicroseconds, s)
+			} else {
+				tt, err = time.Parse(ISO8601ZUTCOffsetLayoutWithoutMicroseconds, s)
+			}
+		}
+	} else if s[len(s)-1] == 'Z' {
+		tt, err = time.Parse(ISO8601LayoutWithTimezone, s)
+	} else {
+		tt, err = time.Parse(ISO8601Layout, s)
+	}
+
+	if err != nil {
+		return ISO8601{}, fmt.Errorf("ISO8601: %w", err)
+	}
+	return ISO8601(tt), nil
 }
 
 func parseWithOffset(s string) (time.Time, error) {
