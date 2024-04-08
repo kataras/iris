@@ -10,11 +10,16 @@ import (
 	"github.com/kataras/iris/v12/x/timex"
 )
 
-// SimpleDateLayout represents the "year-month-day" Go time format.
-const SimpleDateLayout = "2006-01-02"
+const (
+	// SimpleDateLayout represents the "year-month-day" Go time format.
+	SimpleDateLayout         = "2006-01-02"
+	simpleDateLayoutPostgres = "2006-1-2"
+)
 
 // SimpleDate holds a json "year-month-day" time.
 type SimpleDate time.Time
+
+var _ Exampler = (*SimpleDate)(nil)
 
 // SimpleDateFromTime accepts a "t" Time and returns
 // a SimpleDate. If format fails, it returns the zero value of time.Time.
@@ -24,6 +29,10 @@ func SimpleDateFromTime(t time.Time) SimpleDate {
 }
 
 // ParseSimpleDate reads from "s" and returns the SimpleDate time.
+//
+// The function supports the following formats:
+//   - "2024-01-01"
+//   - "2024-1-1"
 func ParseSimpleDate(s string) (SimpleDate, error) {
 	if s == "" || s == "null" {
 		return SimpleDate{}, nil
@@ -36,10 +45,16 @@ func ParseSimpleDate(s string) (SimpleDate, error) {
 
 	tt, err = time.Parse(SimpleDateLayout, s)
 	if err != nil {
-		return SimpleDate{}, err
+		// After v5.0.0-alpha.3 of pgx this is coming as "1993-1-1" instead of the stored
+		// value "1993-01-01".
+		var err2 error
+		tt, err2 = time.Parse(simpleDateLayoutPostgres, s)
+		if err2 != nil {
+			return SimpleDate{}, fmt.Errorf("%s: %w", err2.Error(), err)
+		}
 	}
 
-	return SimpleDate(tt.UTC()), nil
+	return SimpleDate(tt), nil
 }
 
 // UnmarshalJSON binds the json "data" to "t" with the `SimpleDateLayout`.
@@ -49,11 +64,10 @@ func (t *SimpleDate) UnmarshalJSON(data []byte) error {
 	}
 
 	data = trimQuotes(data)
-	if len(data) == 0 {
-		return nil // as an excepption here, allow empty "" on simple dates, as the server would render it on a response.
-	}
-
 	dataStr := string(data)
+	if len(dataStr) == 0 {
+		return nil // do not allow empty "" on simple dates.
+	}
 
 	tt, err := time.Parse(SimpleDateLayout, dataStr)
 	if err != nil {
@@ -74,6 +88,14 @@ func (t SimpleDate) MarshalJSON() ([]byte, error) {
 	return emptyQuoteBytes, nil
 }
 
+// Examples returns a list of example values.
+func (t SimpleDate) ListExamples() any {
+	return []string{
+		"2024-01-01",
+		"2024-1-1",
+	}
+}
+
 // IsZero reports whether "t" is zero time.
 // It completes the pg.Zeroer interface.
 func (t SimpleDate) IsZero() bool {
@@ -85,6 +107,7 @@ func (t SimpleDate) Add(d time.Duration) SimpleDate {
 	return SimpleDateFromTime(t.ToTime().Add(d))
 }
 
+// CountPastDays returns the count of days between "t" and "pastDate".
 func (t SimpleDate) CountPastDays(pastDate SimpleDate) int {
 	t1, t2 := t.ToTime(), pastDate.ToTime()
 	return int(t1.Sub(t2).Hours() / 24)
@@ -113,6 +136,7 @@ func (t SimpleDate) ToTime() time.Time {
 	return time.Time(t)
 }
 
+// Value completes the pg and native sql driver.Valuer interface.
 func (t SimpleDate) Value() (driver.Value, error) {
 	return t.String(), nil
 }
