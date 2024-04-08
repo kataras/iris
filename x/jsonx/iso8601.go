@@ -65,6 +65,14 @@ type ISO8601 time.Time
 var _ Exampler = (*ISO8601)(nil)
 
 // ParseISO8601 reads from "s" and returns the ISO8601 time.
+//
+// The function supports the following formats:
+//   - 2024-01-02T15:04:05.999999Z
+//   - 2024-01-02T15:04:05+07:00
+//   - 2024-04-08T08:05:04.830140+00:00
+//   - 2024-01-02T15:04:05Z
+//   - 2024-04-08T08:05:04.830140
+//   - 2024-01-02T15:04:05
 func ParseISO8601(s string) (ISO8601, error) {
 	if s == "" || s == "null" {
 		return ISO8601{}, nil
@@ -216,10 +224,12 @@ func (t ISO8601) MarshalJSON() ([]byte, error) {
 // Examples returns a list of example values.
 func (t ISO8601) ListExamples() any {
 	return []string{
-		"2006-01-02T15:04:05",
-		"2022-08-09T00:00:00.000000",
-		"2022-08-10T03:21:00.000000+03:00",
-		"2023-02-04T09:48:14+00:00",
+		"2024-01-02T15:04:05.999999Z",
+		"2024-01-02T15:04:05+07:00",
+		"2024-04-08T08:05:04.830140+00:00",
+		"2024-01-02T15:04:05Z",
+		"2024-04-08T08:05:04.830140",
+		"2024-01-02T15:04:05",
 	}
 }
 
@@ -233,6 +243,26 @@ func (t *ISO8601) ToTime() time.Time {
 // It completes the pg.Zeroer interface.
 func (t ISO8601) IsZero() bool {
 	return time.Time(t).IsZero()
+}
+
+// After reports whether the time instant "t" is after "u".
+func (t ISO8601) After(u ISO8601) bool {
+	return t.ToTime().After(u.ToTime())
+}
+
+// Equal reports whether the time instant "t" is equal to "u".
+func (t ISO8601) Equal(u ISO8601) bool {
+	return t.ToTime().Equal(u.ToTime())
+}
+
+// Add returns the time "t" with the duration added.
+func (t ISO8601) Add(d time.Duration) ISO8601 {
+	return ISO8601(t.ToTime().Add(d))
+}
+
+// Sub returns the duration between "t" and "u".
+func (t ISO8601) Sub(u ISO8601) time.Duration {
+	return t.ToTime().Sub(u.ToTime())
 }
 
 // String returns the text representation of the "t" using the ISO8601 time layout.

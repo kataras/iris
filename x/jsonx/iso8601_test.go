@@ -50,6 +50,12 @@ func TestParseISO8601(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Timestamp with Zulu time with microseconds",
+			input:   "2024-04-08T08:05:04.830140",
+			want:    ISO8601(time.Date(2024, 04, 8, 8, 05, 04, 830140*1000, time.UTC)),
+			wantErr: false,
+		},
+		{
 			name:    "Basic ISO8601 layout",
 			input:   "2024-01-02T15:04:05",
 			want:    ISO8601(time.Date(2024, 01, 02, 15, 04, 05, 0, time.UTC)),
