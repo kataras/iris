@@ -28,7 +28,7 @@ require (
 	github.com/kataras/pio v0.0.13
 	github.com/kataras/sitemap v0.0.6
 	github.com/kataras/tunnel v0.0.4
-	github.com/klauspost/compress v1.17.7
+	github.com/klauspost/compress v1.17.8
 	github.com/mailgun/raymond/v2 v2.0.48
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.26
