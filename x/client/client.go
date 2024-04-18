@@ -364,6 +364,7 @@ func (u *Uploader) AddFile(key, filename string) error {
 	if err != nil {
 		return err
 	}
+	defer source.Close()
 
 	return u.AddFileSource(key, filename, source)
 }
