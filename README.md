@@ -1,3 +1,18 @@
+# Project Update: Iris is Evolving 🌱
+
+Dear Iris Community,
+
+You might have noticed a recent lull in activity on the Iris repository. I want to assure you that this silence is not without reason. For the past **3-4 months**, I've been diligently working on the next major release of Iris.
+
+This upcoming version is poised to be a significant leap forward, fully embracing the **Generics** feature introduced in Go. We're not just stopping at Generics, though. Expect a suite of **new features**, **enhancements**, and **optimizations** that will elevate your development experience to new heights.
+
+My journey with Go spans over **8 years**, and with each year, my expertise and understanding of the language deepen. This accumulated knowledge is being poured into Iris, ensuring that the framework not only evolves with the language but also with the community's growing needs.
+
+Stay tuned for more updates, and thank you for your continued support and patience. The wait will be worth it.
+
+Warm regards,<br/>
+Gerasimos (Makis) Maropoulos
+
 <!--<h1><img width="24" height="25" src ="https://www.iris-go.com/images/logo-new-lq-45.png"/> News</h1>
 
  Iris version **12.2.0** has been [released](HISTORY.md#sa-11-march-2023--v1220)! As always, the latest version of Iris comes with the promise of lifetime active maintenance.
