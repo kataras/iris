@@ -2418,19 +2418,22 @@ func SafeFilename(prefixDir string, name string) (string, string, bool, error) {
 		return prefixDir, name, false, nil
 	}
 
-	// Join the sanitized input with the destination directory.
-	destPath := filepath.Join(prefixDir, filename)
+	var destPath string
+	if prefixDir != "" {
+		// Join the sanitized input with the destination directory.
+		destPath = filepath.Join(prefixDir, filename)
 
-	// Get the canonical path of the destination directory.
-	canonicalDestDir, err := filepath.EvalSymlinks(prefixDir) // the prefix dir should exists.
-	if err != nil {
-		return prefixDir, name, false, fmt.Errorf("dest directory: %s: eval symlinks: %w", prefixDir, err)
-	}
+		// Get the canonical path of the destination directory.
+		canonicalDestDir, err := filepath.EvalSymlinks(prefixDir) // the prefix dir should exists.
+		if err != nil {
+			return prefixDir, name, false, fmt.Errorf("dest directory: %s: eval symlinks: %w", prefixDir, err)
+		}
 
-	// Check if the destination path is within the destination directory.
-	if !strings.HasPrefix(destPath, canonicalDestDir) {
-		// Reject the input as it is a path traversal attempt.
-		return prefixDir, name, false, nil
+		// Check if the destination path is within the destination directory.
+		if !strings.HasPrefix(destPath, canonicalDestDir) {
+			// Reject the input as it is a path traversal attempt.
+			return prefixDir, name, false, nil
+		}
 	}
 
 	return destPath, filename, true, nil

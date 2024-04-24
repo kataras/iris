@@ -4,7 +4,6 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -326,7 +325,7 @@ type prefixedDir struct {
 }
 
 func (p *prefixedDir) Open(name string) (http.File, error) {
-	destPath, filename, ok, err := context.SafeFilename(p.prefix, name)
+	destPath, _, ok, err := context.SafeFilename(p.prefix, name)
 	if err != nil {
 		return nil, err
 	}
@@ -334,8 +333,8 @@ func (p *prefixedDir) Open(name string) (http.File, error) {
 		return nil, http.ErrMissingFile // unsafe.
 	}
 
-	name = path.Join(destPath, filename)
-	return p.fs.Open(name)
+	//	name = path.Join(destPath, filename)
+	return p.fs.Open(destPath)
 }
 
 type partyConfiguratorMiddleware struct {
