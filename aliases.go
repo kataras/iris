@@ -326,7 +326,15 @@ type prefixedDir struct {
 }
 
 func (p *prefixedDir) Open(name string) (http.File, error) {
-	name = path.Join(p.prefix, name)
+	destPath, filename, ok, err := context.SafeFilename(p.prefix, name)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, http.ErrMissingFile // unsafe.
+	}
+
+	name = path.Join(destPath, filename)
 	return p.fs.Open(name)
 }
 

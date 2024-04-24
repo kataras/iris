@@ -2389,6 +2389,53 @@ var (
 	ValidExtensionRegexp *regexp.Regexp
 )
 
+// SafeFilename returns a safe filename based on the given name.
+//   - Using filepath.Base and filepath.ToSlash: This ensures that only the base file name is used, without any directory components,
+//     and converts all separators to slashes. This is a good practice to prevent directory traversal.
+//   - Regular Expression for Filenames: The ValidFilenameRegexp ensures that filenames are restricted to a safe character set.
+//     This helps prevent the use of special characters that could lead to path traversal or other types of injection attacks.
+//   - Extension Validation: If you have a ValidExtensionRegexp, it would further ensure that the file has an expected and safe extension, which is another good practice.
+//   - Canonical Path Check: By evaluating symlinks and ensuring that the destination path starts with the canonical destination directory, you’re adding.
+//
+// It returns the safe prefix directory (destination directory), the safe filename, a boolean indicating whether the filename is safe, and an error if any.
+func SafeFilename(prefixDir string, name string) (string, string, bool, error) {
+	// Security fix for go < 1.17.5:
+	// Reported by Kirill Efimov (snyk.io) through security reports.
+	filename := filepath.Base(filepath.ToSlash(name))
+
+	// CWE-99.
+
+	// Sanitize the user input by using a regular expression
+	// and an allowlist of valid extensions
+	isValidFilename := ValidFilenameRegexp.MatchString(filename)
+	if !isValidFilename {
+		// Reject the input as it is invalid or unsafe.
+		return prefixDir, name, false, nil
+	}
+
+	if ValidExtensionRegexp != nil && !ValidExtensionRegexp.MatchString(filename) {
+		// Reject the input as it is invalid or unsafe.
+		return prefixDir, name, false, nil
+	}
+
+	// Join the sanitized input with the destination directory.
+	destPath := filepath.Join(prefixDir, filename)
+
+	// Get the canonical path of the destination directory.
+	canonicalDestDir, err := filepath.EvalSymlinks(prefixDir) // the prefix dir should exists.
+	if err != nil {
+		return prefixDir, name, false, fmt.Errorf("dest directory: %s: eval symlinks: %w", prefixDir, err)
+	}
+
+	// Check if the destination path is within the destination directory.
+	if !strings.HasPrefix(destPath, canonicalDestDir) {
+		// Reject the input as it is a path traversal attempt.
+		return prefixDir, name, false, nil
+	}
+
+	return destPath, filename, true, nil
+}
+
 // UploadFormFiles uploads any received file(s) from the client
 // to the system physical location "destDirectory".
 //
@@ -2433,45 +2480,12 @@ func (ctx *Context) UploadFormFiles(destDirectory string, before ...func(*Contex
 						}
 					}
 
-					// Security fix for go < 1.17.5:
-					// Reported by Kirill Efimov (snyk.io) through security reports.
-					filename := filepath.Base(filepath.ToSlash(file.Filename))
-
-					// CWE-99.
-
-					// Sanitize the user input by using a regular expression
-					// and an allowlist of valid extensions
-					isValidFilename := ValidFilenameRegexp.MatchString(filename)
-					if !isValidFilename {
-						// Reject the input as it is invalid or unsafe.
-						continue innerLoop
-					}
-
-					if ValidExtensionRegexp != nil && !ValidExtensionRegexp.MatchString(filename) {
-						// Reject the input as it is invalid or unsafe.
-						continue innerLoop
-					}
-
-					// Join the sanitized input with the destination directory.
-					destPath := filepath.Join(destDirectory, filename)
-
-					// Get the canonical path of the destination
-					// canonicalDestPath, err := filepath.EvalSymlinks(destPath)
-					// if err != nil {
-					// 	return nil, 0, fmt.Errorf("dest path: %s: eval symlinks: %w", destPath, err)
-					// }
-					// ^ No, it will try to find the file before uploaded.
-
-					// Get the canonical path of the destination directory.
-					canonicalDestDir, err := filepath.EvalSymlinks(destDirectory) // the destDirectory should exists.
+					destPath, filename, ok, err := SafeFilename(destDirectory, file.Filename)
 					if err != nil {
-						return nil, 0, fmt.Errorf("dest directory: %s: eval symlinks: %w", destDirectory, err)
+						return nil, 0, err
 					}
-
-					// Check if the destination path is within the destination directory.
-					if !strings.HasPrefix(destPath, canonicalDestDir) {
-						// Reject the input as it is a path traversal attempt.
-						continue innerLoop
+					if !ok {
+						continue
 					}
 
 					file.Filename = filename
