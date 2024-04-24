@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 // ResolveFS accepts a single input argument of any type
@@ -134,15 +135,11 @@ var ResolveHTTPFS = func(fsOrDir interface{}) http.FileSystem {
 // FindNames accepts a "http.FileSystem" and a root name and returns
 // the list containing its file names.
 func FindNames(fileSystem http.FileSystem, name string) ([]string, error) {
-	_, filename, ok, err := SafeFilename("", name)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("invalid file name: %s", name)
+	if strings.Contains(name, "..") {
+		return nil, fmt.Errorf("invalid root name")
 	}
 
-	f, err := fileSystem.Open(filename)
+	f, err := fileSystem.Open(name) // it's the root dir.
 	if err != nil {
 		return nil, err
 	}
