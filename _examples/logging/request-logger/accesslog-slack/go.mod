@@ -3,7 +3,7 @@ module github.com/kataras/iris/_examples/logging/accesslog-slack
 go 1.22
 
 require (
-	github.com/kataras/iris/v12 v12.2.11-0.20240423205143-c06e14637e82
+	github.com/kataras/iris/v12 v12.2.11-0.20240424221303-df7737ed577a
 	github.com/slack-go/slack v0.12.5
 )
 

@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/kataras/golog v0.1.11
-	github.com/kataras/iris/v12 v12.2.11-0.20240423205143-c06e14637e82
+	github.com/kataras/iris/v12 v12.2.11-0.20240424221303-df7737ed577a
 	github.com/mattn/go-sqlite3 v1.14.22
 	gopkg.in/reform.v1 v1.5.1
 )

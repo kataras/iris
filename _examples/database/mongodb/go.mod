@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/kataras/iris/v12 v12.2.11-0.20240423205143-c06e14637e82
+	github.com/kataras/iris/v12 v12.2.11-0.20240424221303-df7737ed577a
 	go.mongodb.org/mongo-driver v1.15.0
 )
 

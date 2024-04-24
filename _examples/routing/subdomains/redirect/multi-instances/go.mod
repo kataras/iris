@@ -2,7 +2,7 @@ module github.com/kataras/iris/_examples/routing/subdomains/redirect/multi-insta
 
 go 1.22
 
-require github.com/kataras/iris/v12 v12.2.11-0.20240423205143-c06e14637e82
+require github.com/kataras/iris/v12 v12.2.11-0.20240424221303-df7737ed577a
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect

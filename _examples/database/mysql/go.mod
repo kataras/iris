@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/kataras/iris/v12 v12.2.11-0.20240423205143-c06e14637e82
+	github.com/kataras/iris/v12 v12.2.11-0.20240424221303-df7737ed577a
 	github.com/mailgun/groupcache/v2 v2.5.0
 )
 

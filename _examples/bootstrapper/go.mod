@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/gorilla/securecookie v1.1.2
-	github.com/kataras/iris/v12 v12.2.11-0.20240423205143-c06e14637e82
+	github.com/kataras/iris/v12 v12.2.11-0.20240424154124-4e90cd4e4dad
 )
 
 require (

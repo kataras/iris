@@ -19,10 +19,28 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.21`.
 
-
 # Next
 
 Changes apply to `main` branch.
+
+# Thu, 25 April 2024 | v12.2.11
+
+Dear Iris Community,
+
+You might have noticed a recent lull in activity on the Iris repository. I want to assure you that this silence is not without reason. For the past **3-4 months**, I've been diligently working on the next major release of Iris.
+
+This upcoming version is poised to be a significant leap forward, fully embracing the **Generics** feature introduced in Go. We're not just stopping at Generics, though. Expect a suite of **new features**, **enhancements**, and **optimizations** that will elevate your development experience to new heights.
+
+My journey with Go spans over **8 years**, and with each year, my expertise and understanding of the language deepen. This accumulated knowledge is being poured into Iris, ensuring that the framework not only evolves with the language but also with the community's growing needs.
+
+Stay tuned for more updates, and thank you for your continued support and patience. The wait will be worth it.
+
+Warm regards,<br/>
+Gerasimos (Makis) Maropoulos
+
+### This is the last release for the version 12 family.
+
+- Security improvements and dependencies upgrade.
 
 - New `Application/Party.MiddlewareExists(handlerNameOrHandler)` method added, example:
 
