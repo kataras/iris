@@ -330,11 +330,9 @@ func isNotNil(err error) bool {
 			return true
 		}
 
-		if len(g.children) > 0 {
-			for _, child := range g.children {
-				if isNotNil(child) {
-					return true
-				}
+		for _, child := range g.children {
+			if isNotNil(child) {
+				return true
 			}
 		}
 
