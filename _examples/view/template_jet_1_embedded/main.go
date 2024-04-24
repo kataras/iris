@@ -6,29 +6,32 @@ package main
 
 import (
 	"os"
-	"strings"
 
 	"github.com/kataras/iris/v12"
 )
 
-// $ go get -u github.com/go-bindata/go-bindata/...
-// $ go-bindata ./views/...
-// $ go build
+// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
+//
+// $ go-bindata -fs -prefix "views" ./views/...
+// $ go run .
+//
+// System files are not used, you can optionally delete the folder and run the example now.
 func main() {
 	app := iris.New()
-	tmpl := iris.Jet("./views", ".jet").Binary(Asset, AssetNames)
+	tmpl := iris.Jet(AssetFile(), ".jet")
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.jet")
+		if err := ctx.View("index.jet"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
-	port := os.Getenv("PORT")
-	if len(port) == 0 {
-		port = ":8080"
-	} else if !strings.HasPrefix(":", port) {
-		port = ":" + port
+	addr := ":8080"
+	if port := os.Getenv("PORT"); port != "" {
+		addr = ":" + port
 	}
 
-	app.Run(iris.Addr(port))
+	app.Listen(addr)
 }

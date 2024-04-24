@@ -1,0 +1,89 @@
+# Locale variables
+#
+# Unlike normal keys, the variables
+# have limitations of: no ">x", "zero", "two" and template functions are supported.
+# This is done to force developers to use small and easy to read variables for easier maintain process. 
+Vars:
+  - Minutes:
+      # possible keys:
+      # one
+      # "=x"  - where x is a number
+      # "<x"
+      # other
+      # format - to customize the format, which defaults to %d .
+      one: "minute"
+      other: "minutes"
+      format: "%d" # defaults to that.
+  - Dogs:
+      "=5": "dogsssss"
+      one: "dog"
+      other: "dogs"
+  - Houses:
+      one: "house"
+      other: "houses"
+  - Gender:
+      "=1": "She" # 1 for female
+      "=2": "He" # 2 for male
+
+# Using variables in raw string
+YouLate: "You are %[1]d ${Minutes} late."
+# Just a simple raw value
+Classic: "classic"
+
+# Pluralization, translate based on the plural count
+# including the variables and their counts
+FreeDay:
+  # possible keys:
+  # zero
+  # one
+  # two
+  # "=x"
+  # "<x"
+  # ">x"
+  # other
+  "=3": "You have three days and %[2]d ${Minutes} off." # "FreeDay" 3, 15 (plurals + variable pluralization)
+  one:  "You have a day off" # "FreeDay", 1
+  other: "You have %[1]d free days" # "FreeDay", 5
+
+# Sprintf-like raw translation
+HeIsHome: "%s is home"
+
+# Value without plural of its self but variables except pluralization
+HouseCount: "${Gender} (%[3]s) has %[2]d ${Houses}"
+# Same as above but with a template instead
+VarTemplate: (${Gender}) {{tr "HeIsHome" .Name}}
+# Template and non template with variables in the same plural key
+VarTemplatePlural:
+  one: "${Gender} is awesome"
+  other: "other (${Gender}) has %[3]d ${Houses}"
+  "=5": "{{call .InlineJoin .Names}} are awesome"
+TemplatePlural:
+  one: "{{.Name}} is unique"
+  "=5": "{{call .InlineJoin .Names}} are awesome"
+# Same as above but it takes the variable counting through the map argument
+TemplateVarTemplatePlural:
+  other: "These {{.PluralCount}} are wonderful, feeding {{.DogsCount}} ${Dogs} in total!"
+
+# Local variables and section.
+LocalVarsHouseCount:
+   Text: "${Gender} has %[2]d ${Houses}"
+   Vars:
+    - Gender:
+        "=3": "She"
+        "=4": "He"
+    - Houses:
+        one: "house"
+        other: "houses"
+
+# Sections:
+root:
+  user: Account
+
+nav:
+  home: Home # nav.home
+  user: '{{tr "root.user"}}' # nav.user
+  more:
+    what: "this" # nav.more.what
+    even:
+      more: "yes" # nav.more.even.more
+      aplural: "You are %[1]d ${Minutes} late." # Tr("nav.more.even.aplural", 15)

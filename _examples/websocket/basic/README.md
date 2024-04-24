@@ -16,6 +16,7 @@ This example contains only the basics, however, the library supports rooms, nati
 Open a terminal window instance and execute:
 
 ```sh
+$ go mod tidy -compat=1.17
 $ go run server.go # start the websocket server.
 ```
 
@@ -25,6 +26,7 @@ Start a new terminal instance and execute:
 
 ```sh
 $ cd ./go-client
+$ go mod tidy -compat=1.17
 $ go run client.go # start the websocket client.
 # start typing...
 ```

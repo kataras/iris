@@ -1,13 +1,10 @@
-// file: main.go
-
 package main
 
 import (
-	"github.com/kataras/iris/v12/_examples/mvc/overview/datasource"
-	"github.com/kataras/iris/v12/_examples/mvc/overview/repositories"
-	"github.com/kataras/iris/v12/_examples/mvc/overview/services"
-	"github.com/kataras/iris/v12/_examples/mvc/overview/web/controllers"
-	"github.com/kataras/iris/v12/_examples/mvc/overview/web/middleware"
+	"app/controller"
+	"app/database"
+	"app/environment"
+	"app/service"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
@@ -17,44 +14,77 @@ func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
-	// Load the template files.
-	app.RegisterView(iris.HTML("./web/views", ".html"))
+	app.Get("/ping", pong).Describe("healthcheck")
 
-	// Serve our controllers.
-	mvc.New(app.Party("/hello")).Handle(new(controllers.HelloController))
-	// You can also split the code you write to configure an mvc.Application
-	// using the `mvc.Configure` method, as shown below.
-	mvc.Configure(app.Party("/movies"), movies)
+	mvc.Configure(app.Party("/greet"), setup)
 
-	// http://localhost:8080/hello
-	// http://localhost:8080/hello/iris
-	// http://localhost:8080/movies
-	// http://localhost:8080/movies/1
-	app.Run(
-		// Start the web server at localhost:8080
-		iris.Addr("localhost:8080"),
-		// skip err server closed when CTRL/CMD+C pressed:
-		iris.WithoutServerError(iris.ErrServerClosed),
-		// enables faster json serialization and more:
-		iris.WithOptimizations,
-	)
+	// http://localhost:8080/greet?name=kataras
+	addr := ":" + environment.Getenv("PORT", "8080")
+	app.Listen(addr)
 }
 
-// note the mvc.Application, it's not iris.Application.
-func movies(app *mvc.Application) {
-	// Add the basic authentication(admin:password) middleware
-	// for the /movies based requests.
-	app.Router.Use(middleware.BasicAuth)
+func pong(ctx iris.Context) {
+	ctx.WriteString("pong")
+}
 
-	// Create our movie repository with some (memory) data from the datasource.
-	repo := repositories.NewMovieRepository(datasource.Movies)
-	// Create our movie service, we will bind it to the movie app's dependencies.
-	movieService := services.NewMovieService(repo)
-	app.Register(movieService)
+/*
+	     +-------------------+
+	     |  Env (DEV, PROD)  |
+	     +---------+---------+
+	     |         |         |
+	     |         |         |
+	     |         |         |
+	DEV  |         |         |  PROD
 
-	// serve our movies controller.
-	// Note that you can serve more than one controller
-	// you can also create child mvc apps using the `movies.Party(relativePath)` or `movies.Clone(app.Party(...))`
-	// if you want.
-	app.Handle(new(controllers.MovieController))
+-------------------+---------------------+         |         +----------------------+-------------------
+
+	               |                               |                                |
+	               |                               |                                |
+	           +---+-----+        +----------------v------------------+        +----+----+
+	           | sqlite  |        |         NewDB(Env) DB             |        |  mysql  |
+	           +---+-----+        +----------------+---+--------------+        +----+----+
+	               |                               |   |                            |
+	               |                               |   |                            |
+	               |                               |   |                            |
+	+--------------+-----+     +-------------------v---v-----------------+     +----+------+
+	| greeterWithLogging |     |  NewGreetService(Env, DB) GreetService  |     |  greeter  |
+	+--------------+-----+     +---------------------------+-------------+     +----+------+
+	               |                                       |                        |
+	               |                                       |                        |
+	               |           +-----------------------------------------+          |
+	               |           |  GreetController          |             |          |
+	               |           |                           |             |          |
+	               |           |  - Service GreetService <--             |          |
+	               |           |                                         |          |
+	               |           +-------------------+---------------------+          |
+	               |                               |                                |
+	               |                               |                                |
+	               |                               |                                |
+	               |                   +-----------+-----------+                    |
+	               |                   |      HTTP Request     |                    |
+	               |                   +-----------------------+                    |
+	               |                   |  /greet?name=kataras  |                    |
+	               |                   +-----------+-----------+                    |
+	               |                               |                                |
+
++------------------+--------+         +------------+------------+           +-------+------------------+
+|  model.Response (JSON)    |         |  Response (JSON, error) |           |  Bad Request             |
++---------------------------+         +-------------------------+           +--------------------------+
+|  {                        |                                               |  mysql: not implemented  |
+|    "msg": "Hello kataras" |                                               +--------------------------+
+|  }                        |
++---------------------------+
+*/
+func setup(app *mvc.Application) {
+	// Register Dependencies.
+	// Tip: A dependency can depend on other dependencies too.
+	env := environment.ReadEnv("ENVIRONMENT", environment.DEV)
+	app.Register(
+		env,                     // DEV, PROD
+		database.NewDB,          // sqlite, mysql
+		service.NewGreetService, // greeterWithLogging, greeter
+	)
+
+	// Register Controllers.
+	app.Handle(new(controller.GreetController))
 }

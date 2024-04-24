@@ -51,7 +51,7 @@ func (s *userService) GetByID(id int64) (datamodels.User, bool) {
 	})
 }
 
-// GetByUsernameAndPassword returns a user based on its username and passowrd,
+// GetByUsernameAndPassword returns a user based on its username and password,
 // used for authentication.
 func (s *userService) GetByUsernameAndPassword(username, userPassword string) (datamodels.User, bool) {
 	if username == "" || userPassword == "" {

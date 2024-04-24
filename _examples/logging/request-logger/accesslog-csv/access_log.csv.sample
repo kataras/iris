@@ -1,0 +1,5 @@
+Timestamp,Latency,Code,Method,Path,IP,Req Values,In,Out,Request,Response
+1599996265254,0s,200,GET,/,::1,a=1 b=2,0,5,,Index
+1599996266138,0s,200,GET,/,::1,sleep=32ms,0,5,,Index
+1599996266778,1s,200,GET,/,::1,sleep=1s,0,5,,Index
+1599996267780,1s,200,GET,/,::1,sleep=1s,0,5,,Index

@@ -1,0 +1,5 @@
+127.0.0.1	mydomain.com
+127.0.0.1	www.mydomain.com
+127.0.0.1	otherdomain.com
+
+# Windows: Drive:/Windows/system32/drivers/etc/hosts, on Linux: /etc/hosts

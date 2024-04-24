@@ -10,7 +10,7 @@ import (
 // Keep note that the tags for public-use (for our web app)
 // should be kept in other file like "web/viewmodels/user.go"
 // which could wrap by embedding the datamodels.User or
-// define completely new fields instead but for the shake
+// define completely new fields instead but for the sake
 // of the example, we will use this datamodel
 // as the only one User model in our application.
 type User struct {

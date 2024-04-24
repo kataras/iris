@@ -4,9 +4,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
-
-	// optionally, registers filters like `timesince`.
-	_ "github.com/iris-contrib/pongo2-addons"
+	// optionally, register filters like `timesince`.
+	_ "github.com/iris-contrib/pongo2-addons/v4"
 )
 
 var startTime = time.Now()
@@ -26,7 +25,7 @@ func main() {
 	app.Get("/", hi)
 
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func hi(ctx iris.Context) {
@@ -36,9 +35,12 @@ func hi(ctx iris.Context) {
 	// or if you set all view data in the same handler you can use the
 	// iris.Map/pongo2.Context/map[string]interface{}, look below:
 
-	ctx.View("hi.html", iris.Map{
+	if err := ctx.View("hi.html", iris.Map{
 		"title":           "Hi Page",
 		"name":            "iris",
 		"serverStartTime": startTime,
-	})
+	}); err != nil {
+		ctx.HTML("<h3>%s</h3>", err.Error())
+		return
+	}
 }

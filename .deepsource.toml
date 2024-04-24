@@ -1,0 +1,16 @@
+version = 1
+
+test_patterns = ["**/*_test.go"]
+
+exclude_patterns = [
+    "_examples/**",
+    "_benchmarks/**",
+    ".github/**"
+]
+
+[[analyzers]]
+name = "go"
+enabled = true
+
+  [analyzers.meta]
+  import_paths = ["github.com/kataras/iris/v12"]

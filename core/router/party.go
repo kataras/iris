@@ -2,32 +2,156 @@ package router
 
 import (
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errgroup"
 	"github.com/kataras/iris/v12/macro"
+
+	"github.com/kataras/golog"
 )
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
-// Look the "APIBuilder" for its implementation.
+// Look the `APIBuilder` structure for its implementation.
 type Party interface {
+	// Logger returns the Application Logger.
+	Logger() *golog.Logger
+
+	// IsRoot reports whether this Party is the root Application's one.
+	// It will return false on all children Parties, no exception.
+	IsRoot() bool
+
+	// ConfigureContainer accepts one or more functions that can be used
+	// to configure dependency injection features of this Party
+	// such as register dependency and register handlers that will automatically inject any valid dependency.
+	// However, if the "builder" parameter is nil or not provided then it just returns the *APIContainer,
+	// which automatically initialized on Party allocation.
+	//
+	// It returns the same `APIBuilder` featured with Dependency Injection.
+	ConfigureContainer(builder ...func(*APIContainer)) *APIContainer
+	// EnsureStaticBindings panics on struct handler (controller)
+	// if at least one input binding depends on the request and not in a static structure.
+	// Should be called before `RegisterDependency`.
+	EnsureStaticBindings() Party
+	// RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
+	// with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
+	RegisterDependency(dependencies ...interface{})
+	// HandleFunc registers a route on HTTP verb "method" and relative, to this Party, path.
+	// It is like the `Handle` method but it accepts one or more "handlersFn" functions
+	// that each one of them can accept any input arguments as the HTTP request and
+	// output a result as the HTTP response. Specifically,
+	// the input of the "handlersFn" can be any registered dependency
+	// (see ConfigureContainer().RegisterDependency)
+	// or leave the framework to parse the request and fill the values accordingly.
+	// The output of the "handlersFn" can be any output result:
+	//  custom structs <T>, string, []byte, int, error,
+	//  a combination of the above, hero.Result(hero.View | hero.Response) and more.
+	//
+	// If more than one handler function is registered
+	// then the execution happens without the nessecity of the `Context.Next` method,
+	// simply, to stop the execution and not continue to the next "handlersFn" in chain
+	// you should return an `iris.ErrStopExecution`.
+	//
+	// Example Code:
+	//
+	// The client's request body and server's response body Go types.
+	// Could be any data structure.
+	//
+	// 	type (
+	// 		request struct {
+	// 			Firstname string `json:"firstname"`
+	// 			Lastname string `json:"lastname"`
+	// 		}
+	//
+	// 		response struct {
+	// 			ID uint64 `json:"id"`
+	// 			Message string `json:"message"`
+	// 		}
+	// 	)
+	//
+	// Register the route hander.
+	//
+	//              HTTP VERB    ROUTE PATH       ROUTE HANDLER
+	//  app.HandleFunc("PUT", "/users/{id:uint64}", updateUser)
+	//
+	// Code the route handler function.
+	// Path parameters and request body are binded
+	// automatically.
+	// The "id" uint64 binds to "{id:uint64}" route path parameter and
+	// the "input" binds to client request data such as JSON.
+	//
+	// 	func updateUser(id uint64, input request) response {
+	// 		// [custom logic...]
+	//
+	// 		return response{
+	// 			ID:id,
+	// 			Message: "User updated successfully",
+	// 		}
+	// 	}
+	//
+	// Simulate a client request which sends data
+	// to the server and prints out the response.
+	//
+	// 	curl --request PUT -d '{"firstname":"John","lastname":"Doe"}' \
+	// 	-H "Content-Type: application/json" \
+	// 	http://localhost:8080/users/42
+	//
+	// 	{
+	// 		"id": 42,
+	// 		"message": "User updated successfully"
+	// 	}
+	//
+	// See the `ConfigureContainer` for more features regrading
+	// the dependency injection, mvc and function handlers.
+	//
+	// This method is just a shortcut for the `ConfigureContainer().Handle` one.
+	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+	// UseFunc registers a function which can accept one or more
+	// dependencies (see RegisterDependency) and returns an iris.Handler
+	// or a result of <T> and/or an error.
+	//
+	// This method is just a shortcut of the `ConfigureContainer().Use`.
+	UseFunc(handlersFn ...interface{})
+
 	// GetRelPath returns the current party's relative path.
 	// i.e:
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
 	// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
 	GetRelPath() string
-	// GetReporter returns the reporter for adding or receiving any errors caused when building the API.
-	GetReporter() *errgroup.Group
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
-	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
+	// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
-	// Party groups routes which may have the same prefix and share same handlers,
-	// returns that new rich subrouter.
+	// Properties returns the original Party's properties map,
+	// it can be modified before server startup but not afterwards.
+	Properties() context.Map
+
+	// SetRoutesNoLog disables (true) the verbose logging for the next registered
+	// routes under this Party and its children.
 	//
-	// You can even declare a subdomain with relativePath as "mysub." or see `Subdomain`.
+	// To disable logging for controllers under MVC Application,
+	// see `mvc/Application.SetControllersNoLog` instead.
+	//
+	// Defaults to false when log level is "debug".
+	SetRoutesNoLog(disable bool) Party
+
+	// OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
+	// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+	// Look `UseError` and `OnAnyErrorCode` too.
+	OnErrorCode(statusCode int, handlers ...context.Handler) []*Route
+	// OnAnyErrorCode registers a handlers chain for all error codes
+	// (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
+	// Look `UseError` and `OnErrorCode` too.
+	OnAnyErrorCode(handlers ...context.Handler) []*Route
+
+	// Party returns a new child Party which inherites its
+	// parent's options and middlewares.
+	// If "relativePath" matches the parent's one then it returns the current Party.
+	// A Party groups routes which may have the same prefix or subdomain and share same middlewares.
+	//
+	// To create a group of routes for subdomains
+	// use the `Subdomain` or `WildcardSubdomain` methods
+	// or pass a "relativePath" as "admin." or "*." respectfully.
 	Party(relativePath string, middleware ...context.Handler) Party
 	// PartyFunc same as `Party`, groups routes that share a base path or/and same handlers.
 	// However this function accepts a function that receives this created Party instead.
@@ -46,6 +170,32 @@ type Party interface {
 	//
 	// Look `Party` for more.
 	PartyFunc(relativePath string, partyBuilderFunc func(p Party)) Party
+	// PartyConfigure like `Party` and `PartyFunc` registers a new children Party
+	// but instead it accepts a struct value which should implement the PartyConfigurator interface.
+	//
+	// PartyConfigure accepts the relative path of the child party
+	// (As an exception, if it's empty then all configurators are applied to the current Party)
+	// and one or more Party configurators and
+	// executes the PartyConfigurator's Configure method.
+	//
+	// If the end-developer registered one or more dependencies upfront through
+	// RegisterDependencies or ConfigureContainer.RegisterDependency methods
+	// and "p" is a pointer to a struct then try to bind the unset/zero exported fields
+	// to the registered dependencies, just like we do with Controllers.
+	// Useful when the api's dependencies amount are too much to pass on a function.
+	//
+	// Usage:
+	//  app.PartyConfigure("/users", &api.UsersAPI{UserRepository: ..., ...})
+	// Where UsersAPI looks like:
+	//  type UsersAPI struct { [...] }
+	//  func(api *UsersAPI) Configure(router iris.Party) {
+	//   router.Get("/{id:uuid}", api.getUser)
+	//   [...]
+	//  }
+	// Usage with (static) dependencies:
+	//  app.RegisterDependency(userRepo, ...)
+	//  app.PartyConfigure("/users", &api.UsersAPI{})
+	PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party
 	// Subdomain returns a new party which is responsible to register routes to
 	// this specific "subdomain".
 	//
@@ -53,19 +203,60 @@ type Party interface {
 	// So if app.Subdomain("admin").Subdomain("panel") then the result is: "panel.admin.".
 	Subdomain(subdomain string, middleware ...context.Handler) Party
 
+	// UseRouter upserts one or more handlers that will be fired
+	// right before the main router's request handler.
+	//
+	// Use this method to register handlers, that can ran
+	// independently of the incoming request's values,
+	// that they will be executed ALWAYS against ALL children incoming requests.
+	// Example of use-case: CORS.
+	//
+	// Note that because these are executed before the router itself
+	// the Context should not have access to the `GetCurrentRoute`
+	// as it is not decided yet which route is responsible to handle the incoming request.
+	// It's one level higher than the `WrapRouter`.
+	// The context SHOULD call its `Next` method in order to proceed to
+	// the next handler in the chain or the main request handler one.
+	UseRouter(handlers ...context.Handler)
+	// UseError upserts one or more handlers that will be fired,
+	// as middleware, before any error handler registered through `On(Any)ErrorCode`.
+	// See `OnErrorCode` too.
+	UseError(handlers ...context.Handler)
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
+	// To register a middleware for error handlers, look `UseError` method instead.
 	Use(middleware ...context.Handler)
-
+	// UseOnce either inserts a middleware,
+	// or on the basis of the middleware already existing,
+	// replace that existing middleware instead.
+	// To register a middleware for error handlers, look `UseError` method instead.
+	UseOnce(handlers ...context.Handler)
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
+	// MiddlewareExists reports whether the given handler exists in the middleware chain.
+	MiddlewareExists(handlerNameOrFunc any) bool
+	// RemoveHandler deletes a handler from begin and done handlers
+	// based on its name or the handler pc function.
+	//
+	// As an exception, if one of the arguments is a pointer to an int,
+	// then this is used to set the total amount of removed handlers.
+	//
+	// Returns the Party itself for chain calls.
+	//
+	// Should be called before children routes regitration.
+	RemoveHandler(namesOrHandlers ...interface{}) Party
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 	// and the execution rules.
 	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
 	//
 	// Returns this Party.
 	Reset() Party
+	// ResetRouterFilters deactivates any previous registered
+	// router filters and the parents ones for this Party.
+	//
+	// Returns this Party.
+	ResetRouterFilters() Party
 
 	// AllowMethods will re-register the future routes that will be registered
 	// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Party and its children "Parties",
@@ -96,11 +287,16 @@ type Party interface {
 	//
 	// Returns this Party.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
 	SetExecutionRules(executionRules ExecutionRules) Party
 	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
-	// Available values are: RouteOverride (the default one), RouteSkip and RouteError.
+	// Available values are:
+	// * RouteOverride (the default one)
+	// * RouteSkip
+	// * RouteError
+	// * RouteOverlap.
 	SetRegisterRule(rule RouteRegisterRule) Party
+
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
@@ -127,17 +323,22 @@ type Party interface {
 	// with the contents of a file system (physical or embedded).
 	//
 	// first parameter  : the route path
-	// second parameter : the system or the embedded directory that needs to be served
-	// third parameter  : not required, the directory options, set fields is optional.
+	// second parameter : the file system needs to be served
+	// third parameter  : not required, the serve directory options.
 	//
-	// for more options look router.FileServer.
+	// Alternatively, to get just the handler for that look the FileServer function instead.
 	//
-	//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
+	//     api.HandleDir("/static", iris.Dir("./assets"), iris.DirOptions{IndexName: "/index.html", Compress: true})
 	//
-	// Returns the GET *Route.
+	// Returns all the registered routes, including GET index and path patterm and HEAD.
 	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
-	HandleDir(requestPath, directory string, opts ...DirOptions) *Route
+	// Usage:
+	// HandleDir("/public", "./assets", DirOptions{...}) or
+	// HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
+	//
+	// Examples:
+	// https://github.com/kataras/iris/tree/main/_examples/file-server
+	HandleDir(requestPath string, fileSystem interface{}, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and
@@ -147,50 +348,78 @@ type Party interface {
 	// Returns the read-only route information.
 	None(path string, handlers ...context.Handler) *Route
 
-	// Get registers a route for the Get http method.
+	// Get registers a route for the Get HTTP Method.
 	//
 	// Returns the read-only route information.
 	Get(path string, handlers ...context.Handler) *Route
-	// Post registers a route for the Post http method.
+	// Post registers a route for the Post HTTP Method.
 	//
 	// Returns the read-only route information.
 	Post(path string, handlers ...context.Handler) *Route
-	// Put registers a route for the Put http method.
+	// Put registers a route for the Put HTTP Method.
 	//
 	// Returns the read-only route information.
 	Put(path string, handlers ...context.Handler) *Route
-	// Delete registers a route for the Delete http method.
+	// Delete registers a route for the Delete HTTP Method.
 	//
 	// Returns the read-only route information.
 	Delete(path string, handlers ...context.Handler) *Route
-	// Connect registers a route for the Connect http method.
+	// Connect registers a route for the Connect HTTP Method.
 	//
 	// Returns the read-only route information.
 	Connect(path string, handlers ...context.Handler) *Route
-	// Head registers a route for the Head http method.
+	// Head registers a route for the Head HTTP Method.
 	//
 	// Returns the read-only route information.
 	Head(path string, handlers ...context.Handler) *Route
-	// Options registers a route for the Options http method.
+	// Options registers a route for the Options HTTP Method.
 	//
 	// Returns the read-only route information.
 	Options(path string, handlers ...context.Handler) *Route
-	// Patch registers a route for the Patch http method.
+	// Patch registers a route for the Patch HTTP Method.
 	//
 	// Returns the read-only route information.
 	Patch(path string, handlers ...context.Handler) *Route
-	// Trace registers a route for the Trace http method.
+	// Trace registers a route for the Trace HTTP Method.
 	//
 	// Returns the read-only route information.
 	Trace(path string, handlers ...context.Handler) *Route
-	// Any registers a route for ALL of the http methods
-	// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
+	// Any registers a route for ALL of the HTTP methods:
+	// Get
+	// Post
+	// Put
+	// Delete
+	// Head
+	// Patch
+	// Options
+	// Connect
+	// Trace
 	Any(registeredPath string, handlers ...context.Handler) []*Route
+	// HandleServer registers a route for all HTTP methods which forwards the requests to the given server.
+	//
+	// Usage:
+	//
+	//	app.HandleServer("/api/identity/{first:string}/orgs/{second:string}/{p:path}", otherApp)
+	//
+	// OR
+	//
+	//	app.HandleServer("/api/identity", otherApp)
+	HandleServer(path string, server ServerHandler)
+
 	// CreateRoutes returns a list of Party-based Routes.
 	// It does NOT registers the route. Use `Handle, Get...` methods instead.
 	// This method can be used for third-parties Iris helpers packages and tools
 	// that want a more detailed view of Party-based Routes before take the decision to register them.
 	CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route
+	// RemoveRoute deletes a registered route by its name before `Application.Listen`.
+	// The default naming for newly created routes is: method + subdomain + path.
+	// Reports whether a route with that name was found and removed successfully.
+	//
+	// Note that this method applies to all Parties (sub routers)
+	// even if each of the Parties have access to this method,
+	// as the route name is unique per Iris Application.
+	RemoveRoute(routeName string) bool
+
 	// StaticContent registers a GET and HEAD method routes to the requestPath
 	// that are ready to serve raw static bytes, memory cached.
 	//
@@ -209,6 +438,23 @@ type Party interface {
 	// Returns the GET *Route.
 	Favicon(favPath string, requestPath ...string) *Route
 
+	// RegisterView registers and loads a view engine middleware for this group of routes.
+	// It overrides any of the application's root registered view engine.
+	// To register a view engine per handler chain see the `Context.ViewEngine` instead.
+	// Read `Configuration.ViewEngineContextKey` documentation for more.
+	RegisterView(viewEngine context.ViewEngine)
+	// FallbackView registers one or more fallback views for a template or a template layout.
+	// Usage:
+	//  FallbackView(iris.FallbackView("fallback.html"))
+	//  FallbackView(iris.FallbackViewLayout("layouts/fallback.html"))
+	//  OR
+	//  FallbackView(iris.FallbackViewFunc(ctx iris.Context, err iris.ErrViewNotExist) error {
+	//    err.Name is the previous template name.
+	//    err.IsLayout reports whether the failure came from the layout template.
+	//    err.Data is the template data provided to the previous View call.
+	//    [...custom logic e.g. ctx.View("fallback", err.Data)]
+	//  })
+	FallbackView(provider context.FallbackViewProvider)
 	// Layout overrides the parent template layout with a more specific layout for this Party.
 	// It returns the current Party.
 	//
@@ -219,9 +465,12 @@ type Party interface {
 	// app.RegisterView(iris.$VIEW_ENGINE("./views", ".$extension"))
 	// my := app.Party("/my").Layout("layouts/mylayout.html")
 	// 	my.Get("/", func(ctx iris.Context) {
-	// 		ctx.View("page1.html")
+	// 	if err := ctx.View("page1.html"); err != nil {
+	//	  ctx.HTML("<h3>%s</h3>", err.Error())
+	//	  return
+	//  }
 	// 	})
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+	// Examples: https://github.com/kataras/iris/tree/main/_examples/view
 	Layout(tmplLayoutFile string) Party
 }

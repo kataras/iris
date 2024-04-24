@@ -125,6 +125,12 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 
 	numFields := typFn.NumIn()
 
+	panicIfErr := func(i int, err error) {
+		if err != nil {
+			panic(fmt.Sprintf("on field index: %d: %v", i, err))
+		}
+	}
+
 	return func(args []string) reflect.Value {
 		if len(args) != numFields {
 			// no variadics support, for now.
@@ -138,67 +144,61 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 			// try to convert the string literal as we get it from the parser.
 			var (
 				val interface{}
-
-				panicIfErr = func(err error) {
-					if err != nil {
-						panic(fmt.Sprintf("on field index: %d: %v", i, err))
-					}
-				}
 			)
 
 			// try to get the value based on the expected type.
 			switch field.Kind() {
 			case reflect.Int:
 				v, err := strconv.Atoi(arg)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Int8:
 				v, err := strconv.ParseInt(arg, 10, 8)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = int8(v)
 			case reflect.Int16:
 				v, err := strconv.ParseInt(arg, 10, 16)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = int16(v)
 			case reflect.Int32:
 				v, err := strconv.ParseInt(arg, 10, 32)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = int32(v)
 			case reflect.Int64:
 				v, err := strconv.ParseInt(arg, 10, 64)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Uint:
 				v, err := strconv.ParseUint(arg, 10, strconv.IntSize)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint(v)
 			case reflect.Uint8:
 				v, err := strconv.ParseUint(arg, 10, 8)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint8(v)
 			case reflect.Uint16:
 				v, err := strconv.ParseUint(arg, 10, 16)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint16(v)
 			case reflect.Uint32:
 				v, err := strconv.ParseUint(arg, 10, 32)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = uint32(v)
 			case reflect.Uint64:
 				v, err := strconv.ParseUint(arg, 10, 64)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Float32:
 				v, err := strconv.ParseFloat(arg, 32)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = float32(v)
 			case reflect.Float64:
 				v, err := strconv.ParseFloat(arg, 64)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Bool:
 				v, err := strconv.ParseBool(arg)
-				panicIfErr(err)
+				panicIfErr(i, err)
 				val = v
 			case reflect.Slice:
 				if len(arg) > 1 {
@@ -207,7 +207,6 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 						val = strings.Split(arg[1:len(arg)-1], ",") // only string slices.
 					}
 				}
-
 			default:
 				val = arg
 			}
@@ -254,8 +253,11 @@ type (
 		master   bool
 		trailing bool
 
-		Evaluator ParamEvaluator
-		funcs     []ParamFunc
+		Evaluator   ParamEvaluator
+		handleError interface{}
+		funcs       []ParamFunc
+
+		goType reflect.Type
 	}
 
 	// ParamFuncBuilder is a func
@@ -278,12 +280,13 @@ type (
 
 // NewMacro creates and returns a Macro that can be used as a registry for
 // a new customized parameter type and its functions.
-func NewMacro(indent, alias string, master, trailing bool, evaluator ParamEvaluator) *Macro {
+func NewMacro(indent, alias string, valueType any, master, trailing bool, evaluator ParamEvaluator) *Macro {
 	return &Macro{
 		indent:   indent,
 		alias:    alias,
 		master:   master,
 		trailing: trailing,
+		goType:   reflect.TypeOf(valueType),
 
 		Evaluator: evaluator,
 	}
@@ -310,6 +313,23 @@ func (m *Macro) Master() bool {
 // A wildcard should be registered in the last path segment only.
 func (m *Macro) Trailing() bool {
 	return m.trailing
+}
+
+// GoType returns the type of the parameter type's evaluator.
+// string if it's a string evaluator, int if it's an int evaluator etc.
+func (m *Macro) GoType() reflect.Type {
+	return m.goType
+}
+
+// HandleError registers a handler which will be executed
+// when a parameter evaluator returns false and a non nil value which is a type of `error`.
+// The "fnHandler" value MUST BE a type of `func(iris.Context, paramIndex int, err error)`,
+// otherwise the program will receive a panic before server startup.
+// The status code of the ErrCode (`else` literal) is set
+// before the error handler but it can be modified inside the handler itself.
+func (m *Macro) HandleError(fnHandler interface{}) *Macro { // See handler.MakeFilter.
+	m.handleError = fnHandler
+	return m
 }
 
 // func (m *Macro) SetParamResolver(fn func(memstore.Entry) interface{}) *Macro {

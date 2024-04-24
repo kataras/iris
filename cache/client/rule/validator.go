@@ -1,8 +1,6 @@
 package rule
 
-import (
-	"github.com/kataras/iris/v12/context"
-)
+import "github.com/kataras/iris/v12/context"
 
 // Validators are introduced to implement the RFC about cache (https://tools.ietf.org/html/rfc7234#section-1.1).
 
@@ -18,21 +16,22 @@ import (
 // One function, accepts the request and returns false if should be denied/ignore, otherwise true.
 // if at least one return false then the original handler will execute as it's
 // and the whole cache action(set & get) should be ignored, it will be never go to the step of post-cache validations.
-type PreValidator func(context.Context) bool
+type PreValidator func(*context.Context) bool
 
 // PostValidator type is is introduced to implement the second part of the RFC about cache.
 //
 // Q: What's the difference between this and a PreValidator?
 // A: PreValidator runs BEFORE trying to get the cache, it cares only for the request
-//    and if at least one PreValidator returns false then it just runs the original handler and stop there, at the other hand
-//    a PostValidator runs if all PreValidators returns true and original handler is executed but with a response recorder,
-//    also the PostValidator should return true to store the cached response.
-//    Last, a PostValidator accepts a context
-//    in order to be able to catch the original handler's response,
-//    the PreValidator checks only for request.
+//
+//	and if at least one PreValidator returns false then it just runs the original handler and stop there, at the other hand
+//	a PostValidator runs if all PreValidators returns true and original handler is executed but with a response recorder,
+//	also the PostValidator should return true to store the cached response.
+//	Last, a PostValidator accepts a context
+//	in order to be able to catch the original handler's response,
+//	the PreValidator checks only for request.
 //
 // If a function of type of PostValidator returns true then the (shared-always) cache is allowed to be stored.
-type PostValidator func(context.Context) bool
+type PostValidator func(*context.Context) bool
 
 // validatorRule is a rule witch receives PreValidators and PostValidators
 // it's a 'complete set of rules', you can call it as a Responsible Validator,
@@ -68,7 +67,7 @@ func Validator(preValidators []PreValidator, postValidators []PostValidator) Rul
 
 // Claim returns true if incoming request can claim for a cached handler
 // the original handler should run as it is and exit
-func (v *validatorRule) Claim(ctx context.Context) bool {
+func (v *validatorRule) Claim(ctx *context.Context) bool {
 	// check for pre-cache validators, if at least one of them return false
 	// for this specific request, then skip the whole cache
 	for _, shouldProcess := range v.preValidators {
@@ -82,7 +81,7 @@ func (v *validatorRule) Claim(ctx context.Context) bool {
 // Valid returns true if incoming request and post-response from the original handler
 // is valid to be store to the cache, if not(false) then the consumer should just exit
 // otherwise(true) the consumer should store the cached response
-func (v *validatorRule) Valid(ctx context.Context) bool {
+func (v *validatorRule) Valid(ctx *context.Context) bool {
 	// check if it's a valid response, if it's not then just return.
 	for _, valid := range v.postValidators {
 		if !valid(ctx) {

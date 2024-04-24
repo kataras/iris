@@ -1,4 +1,5 @@
-// Package main an example on how to naming your routes & use the custom 'url path' HTML Template Engine, same for other template engines.
+// Package main an example on how to naming your routes & use the custom
+// 'url path' HTML Template Engine, same for other template engines.
 package main
 
 import (
@@ -34,7 +35,8 @@ func main() {
 		paramsAsArray := []string{"theParam1", "theParam2", "paramThirdAfterStatic"}
 		ctx.ViewData("ParamsAsArray", paramsAsArray)
 		if err := ctx.View("page.html"); err != nil {
-			panic(err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 
@@ -58,7 +60,7 @@ func main() {
 
 	// http://localhost:8080
 	// http://localhost:8080/redirect/my-page1
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func writePathHandler(ctx iris.Context) {

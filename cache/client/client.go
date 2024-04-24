@@ -2,7 +2,7 @@ package client
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -16,9 +16,7 @@ import (
 // for each of the cached route paths's response
 // register one client handler per route.
 //
-// it's just calls a remote cache service server/handler,
-//  which lives on other, external machine.
-//
+// it's just calls a remote cache service server/handler, which may lives on other, external machine.
 type ClientHandler struct {
 	// bodyHandler the original route's handler
 	bodyHandler context.Handler
@@ -81,11 +79,6 @@ func (h *ClientHandler) AddRule(r rule.Rule) *ClientHandler {
 // this client is an exported to give you a freedom of change its Transport, Timeout and so on(in case of ssl)
 var Client = &http.Client{Timeout: cfg.RequestCacheTimeout}
 
-const (
-	methodGet  = "GET"
-	methodPost = "POST"
-)
-
 // ServeHTTP , or remote cache client whatever you like, it's the client-side function of the ServeHTTP
 // sends a request to the server-side remote cache Service and sends the cached response to the frontend client
 // it is used only when you achieved something like horizontal scaling (separate machines)
@@ -101,7 +94,7 @@ const (
 // if <=minimumAllowedCacheDuration then the server will try to parse from "cache-control" header
 //
 // client-side function
-func (h *ClientHandler) ServeHTTP(ctx context.Context) {
+func (h *ClientHandler) ServeHTTP(ctx *context.Context) {
 	// check for deniers, if at least one of them return true
 	// for this specific request, then skip the whole cache
 	if !h.rule.Claim(ctx) {
@@ -113,7 +106,7 @@ func (h *ClientHandler) ServeHTTP(ctx context.Context) {
 	uri.ServerAddr(h.remoteHandlerURL).ClientURI(ctx.Request().URL.RequestURI()).ClientMethod(ctx.Request().Method)
 
 	// set the full url here because below we have other issues, probably net/http bugs
-	request, err := http.NewRequest(methodGet, uri.String(), nil)
+	request, err := http.NewRequest(http.MethodGet, uri.String(), nil)
 	if err != nil {
 		//// println("error when requesting to the remote service: " + err.Error())
 		// somehing very bad happens, just execute the user's handler and return
@@ -145,7 +138,7 @@ func (h *ClientHandler) ServeHTTP(ctx context.Context) {
 		uri.Lifetime(h.life)
 		uri.ContentType(recorder.Header().Get(cfg.ContentTypeHeader))
 
-		request, err = http.NewRequest(methodPost, uri.String(), bytes.NewBuffer(body)) // yes new buffer every time
+		request, err = http.NewRequest(http.MethodPost, uri.String(), bytes.NewBuffer(body)) // yes new buffer every time
 
 		// println("POST Do to the remote cache service with the url: " + request.URL.String())
 		if err != nil {
@@ -153,15 +146,16 @@ func (h *ClientHandler) ServeHTTP(ctx context.Context) {
 			return
 		}
 		// go Client.Do(request)
-		_, err = Client.Do(request)
+		resp, err := Client.Do(request)
 		if err != nil {
 			return
 		}
+		resp.Body.Close()
 	} else {
 		// get the status code , content type and the write the response body
 		ctx.ContentType(response.Header.Get(cfg.ContentTypeHeader))
 		ctx.StatusCode(response.StatusCode)
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		response.Body.Close()
 		if err != nil {
 			return

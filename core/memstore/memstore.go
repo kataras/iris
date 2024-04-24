@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type (
@@ -21,9 +22,16 @@ type (
 	}
 	// Entry is the entry of the context storage Store - .Values()
 	Entry struct {
-		Key       string
-		ValueRaw  interface{}
-		immutable bool // if true then it can't change by its caller.
+		Key       string      `json:"key" msgpack:"key" yaml:"Key" toml:"Value"`
+		ValueRaw  interface{} `json:"value" msgpack:"value" yaml:"Value" toml:"Value"`
+		immutable bool        // if true then it can't change by its caller.
+	}
+
+	// StringEntry is just a key-value wrapped by a struct.
+	// See Context.URLParamsSorted method.
+	StringEntry struct {
+		Key   string `json:"key" msgpack:"key" yaml:"Key" toml:"Value"`
+		Value string `json:"value" msgpack:"value" yaml:"Value" toml:"Value"`
 	}
 
 	// Store is a collection of key-value entries with immutability capabilities.
@@ -113,10 +121,11 @@ func (e Entry) StringTrim() string {
 type ErrEntryNotFound struct {
 	Key  string       // the entry's key.
 	Kind reflect.Kind // i.e bool, int, string...
+	Type reflect.Type // i.e time.Time{} or custom struct.
 }
 
 func (e *ErrEntryNotFound) Error() string {
-	return fmt.Sprintf("not found: %s as %s", e.Key, e.Kind.String())
+	return fmt.Sprintf("not found: %s as %s (%s)", e.Key, e.Kind.String(), e.Type.String())
 }
 
 // As can be used to manually check if the error came from the memstore
@@ -144,16 +153,18 @@ func (e *ErrEntryNotFound) As(target interface{}) bool {
 	return true
 }
 
-func (e Entry) notFound(kind reflect.Kind) *ErrEntryNotFound {
-	return &ErrEntryNotFound{Key: e.Key, Kind: kind}
+func (e Entry) notFound(typ reflect.Type) *ErrEntryNotFound {
+	return &ErrEntryNotFound{Key: e.Key, Kind: typ.Kind(), Type: typ}
 }
+
+var intType = reflect.TypeOf(int(0))
 
 // IntDefault returns the entry's value as int.
 // If not found returns "def" and a non-nil error.
 func (e Entry) IntDefault(def int) (int, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Int)
+		return def, e.notFound(intType)
 	}
 
 	switch vv := v.(type) {
@@ -186,15 +197,17 @@ func (e Entry) IntDefault(def int) (int, error) {
 		return int(vv), nil
 	}
 
-	return def, e.notFound(reflect.Int)
+	return def, e.notFound(intType)
 }
+
+var int8Type = reflect.TypeOf(int8(0))
 
 // Int8Default returns the entry's value as int8.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Int8Default(def int8) (int8, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Int8)
+		return def, e.notFound(int8Type)
 	}
 
 	switch vv := v.(type) {
@@ -227,15 +240,17 @@ func (e Entry) Int8Default(def int8) (int8, error) {
 		return int8(vv), nil
 	}
 
-	return def, e.notFound(reflect.Int8)
+	return def, e.notFound(int8Type)
 }
+
+var int16Type = reflect.TypeOf(int16(0))
 
 // Int16Default returns the entry's value as int16.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Int16Default(def int16) (int16, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Int16)
+		return def, e.notFound(int16Type)
 	}
 
 	switch vv := v.(type) {
@@ -268,15 +283,17 @@ func (e Entry) Int16Default(def int16) (int16, error) {
 		return int16(vv), nil
 	}
 
-	return def, e.notFound(reflect.Int16)
+	return def, e.notFound(int16Type)
 }
+
+var int32Type = reflect.TypeOf(int32(0))
 
 // Int32Default returns the entry's value as int32.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Int32Default(def int32) (int32, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Int32)
+		return def, e.notFound(int32Type)
 	}
 
 	switch vv := v.(type) {
@@ -298,15 +315,17 @@ func (e Entry) Int32Default(def int32) (int32, error) {
 		return int32(vv), nil
 	}
 
-	return def, e.notFound(reflect.Int32)
+	return def, e.notFound(int32Type)
 }
+
+var int64Type = reflect.TypeOf(int64(0))
 
 // Int64Default returns the entry's value as int64.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Int64Default(def int64) (int64, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Int64)
+		return def, e.notFound(int64Type)
 	}
 
 	switch vv := v.(type) {
@@ -333,15 +352,17 @@ func (e Entry) Int64Default(def int64) (int64, error) {
 		return int64(vv), nil
 	}
 
-	return def, e.notFound(reflect.Int64)
+	return def, e.notFound(int64Type)
 }
+
+var uintType = reflect.TypeOf(uint(0))
 
 // UintDefault returns the entry's value as uint.
 // If not found returns "def" and a non-nil error.
 func (e Entry) UintDefault(def uint) (uint, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Uint)
+		return def, e.notFound(uintType)
 	}
 
 	x64 := strconv.IntSize == 64
@@ -356,9 +377,6 @@ func (e Entry) UintDefault(def uint) (uint, error) {
 		if err != nil {
 			return def, err
 		}
-		if val > uint64(maxValue) {
-			return def, e.notFound(reflect.Uint)
-		}
 		return uint(val), nil
 	case uint:
 		return vv, nil
@@ -370,12 +388,12 @@ func (e Entry) UintDefault(def uint) (uint, error) {
 		return uint(vv), nil
 	case uint64:
 		if vv > uint64(maxValue) {
-			return def, e.notFound(reflect.Uint)
+			return def, e.notFound(uintType)
 		}
 		return uint(vv), nil
 	case int:
 		if vv < 0 || vv > int(maxValue) {
-			return def, e.notFound(reflect.Uint)
+			return def, e.notFound(uintType)
 		}
 		return uint(vv), nil
 	case int8:
@@ -388,15 +406,17 @@ func (e Entry) UintDefault(def uint) (uint, error) {
 		return uint(vv), nil
 	}
 
-	return def, e.notFound(reflect.Uint)
+	return def, e.notFound(uintType)
 }
+
+var uint8Type = reflect.TypeOf(uint8(0))
 
 // Uint8Default returns the entry's value as uint8.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Uint8Default(def uint8) (uint8, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Uint8)
+		return def, e.notFound(uint8Type)
 	}
 
 	switch vv := v.(type) {
@@ -405,48 +425,47 @@ func (e Entry) Uint8Default(def uint8) (uint8, error) {
 		if err != nil {
 			return def, err
 		}
-		if val > math.MaxUint8 {
-			return def, e.notFound(reflect.Uint8)
-		}
 		return uint8(val), nil
 	case uint:
 		if vv > math.MaxUint8 {
-			return def, e.notFound(reflect.Uint8)
+			return def, e.notFound(uint8Type)
 		}
 		return uint8(vv), nil
 	case uint8:
 		return vv, nil
 	case uint16:
 		if vv > math.MaxUint8 {
-			return def, e.notFound(reflect.Uint8)
+			return def, e.notFound(uint8Type)
 		}
 		return uint8(vv), nil
 	case uint32:
 		if vv > math.MaxUint8 {
-			return def, e.notFound(reflect.Uint8)
+			return def, e.notFound(uint8Type)
 		}
 		return uint8(vv), nil
 	case uint64:
 		if vv > math.MaxUint8 {
-			return def, e.notFound(reflect.Uint8)
+			return def, e.notFound(uint8Type)
 		}
 		return uint8(vv), nil
 	case int:
 		if vv < 0 || vv > math.MaxUint8 {
-			return def, e.notFound(reflect.Uint8)
+			return def, e.notFound(uint8Type)
 		}
 		return uint8(vv), nil
 	}
 
-	return def, e.notFound(reflect.Uint8)
+	return def, e.notFound(uint8Type)
 }
+
+var uint16Type = reflect.TypeOf(uint16(0))
 
 // Uint16Default returns the entry's value as uint16.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Uint16Default(def uint16) (uint16, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Uint16)
+		return def, e.notFound(uint16Type)
 	}
 
 	switch vv := v.(type) {
@@ -455,13 +474,10 @@ func (e Entry) Uint16Default(def uint16) (uint16, error) {
 		if err != nil {
 			return def, err
 		}
-		if val > math.MaxUint16 {
-			return def, e.notFound(reflect.Uint16)
-		}
 		return uint16(val), nil
 	case uint:
 		if vv > math.MaxUint16 {
-			return def, e.notFound(reflect.Uint16)
+			return def, e.notFound(uint16Type)
 		}
 		return uint16(vv), nil
 	case uint8:
@@ -470,30 +486,32 @@ func (e Entry) Uint16Default(def uint16) (uint16, error) {
 		return vv, nil
 	case uint32:
 		if vv > math.MaxUint16 {
-			return def, e.notFound(reflect.Uint16)
+			return def, e.notFound(uint16Type)
 		}
 		return uint16(vv), nil
 	case uint64:
 		if vv > math.MaxUint16 {
-			return def, e.notFound(reflect.Uint16)
+			return def, e.notFound(uint16Type)
 		}
 		return uint16(vv), nil
 	case int:
 		if vv < 0 || vv > math.MaxUint16 {
-			return def, e.notFound(reflect.Uint16)
+			return def, e.notFound(uint16Type)
 		}
 		return uint16(vv), nil
 	}
 
-	return def, e.notFound(reflect.Uint16)
+	return def, e.notFound(uint16Type)
 }
+
+var uint32Type = reflect.TypeOf(uint32(0))
 
 // Uint32Default returns the entry's value as uint32.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Uint32Default(def uint32) (uint32, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Uint32)
+		return def, e.notFound(uint32Type)
 	}
 
 	switch vv := v.(type) {
@@ -502,13 +520,10 @@ func (e Entry) Uint32Default(def uint32) (uint32, error) {
 		if err != nil {
 			return def, err
 		}
-		if val > math.MaxUint32 {
-			return def, e.notFound(reflect.Uint32)
-		}
 		return uint32(val), nil
 	case uint:
 		if vv > math.MaxUint32 {
-			return def, e.notFound(reflect.Uint32)
+			return def, e.notFound(uint32Type)
 		}
 		return uint32(vv), nil
 	case uint8:
@@ -519,27 +534,29 @@ func (e Entry) Uint32Default(def uint32) (uint32, error) {
 		return vv, nil
 	case uint64:
 		if vv > math.MaxUint32 {
-			return def, e.notFound(reflect.Uint32)
+			return def, e.notFound(uint32Type)
 		}
 		return uint32(vv), nil
 	case int32:
 		return uint32(vv), nil
 	case int64:
 		if vv < 0 || vv > math.MaxUint32 {
-			return def, e.notFound(reflect.Uint32)
+			return def, e.notFound(uint32Type)
 		}
 		return uint32(vv), nil
 	}
 
-	return def, e.notFound(reflect.Uint32)
+	return def, e.notFound(uint32Type)
 }
+
+var uint64Type = reflect.TypeOf(uint64(0))
 
 // Uint64Default returns the entry's value as uint64.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Uint64Default(def uint64) (uint64, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Uint64)
+		return def, e.notFound(uint64Type)
 	}
 
 	switch vv := v.(type) {
@@ -547,9 +564,6 @@ func (e Entry) Uint64Default(def uint64) (uint64, error) {
 		val, err := strconv.ParseUint(vv, 10, 64)
 		if err != nil {
 			return def, err
-		}
-		if val > math.MaxUint64 {
-			return def, e.notFound(reflect.Uint64)
 		}
 		return uint64(val), nil
 	case uint8:
@@ -566,15 +580,17 @@ func (e Entry) Uint64Default(def uint64) (uint64, error) {
 		return uint64(vv), nil
 	}
 
-	return def, e.notFound(reflect.Uint64)
+	return def, e.notFound(uint64Type)
 }
+
+var float32Type = reflect.TypeOf(float32(0))
 
 // Float32Default returns the entry's value as float32.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Float32Default(key string, def float32) (float32, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Float32)
+		return def, e.notFound(float32Type)
 	}
 
 	switch vv := v.(type) {
@@ -583,30 +599,29 @@ func (e Entry) Float32Default(key string, def float32) (float32, error) {
 		if err != nil {
 			return def, err
 		}
-		if val > math.MaxFloat32 {
-			return def, e.notFound(reflect.Float32)
-		}
 		return float32(val), nil
 	case float32:
 		return vv, nil
 	case float64:
 		if vv > math.MaxFloat32 {
-			return def, e.notFound(reflect.Float32)
+			return def, e.notFound(float32Type)
 		}
 		return float32(vv), nil
 	case int:
 		return float32(vv), nil
 	}
 
-	return def, e.notFound(reflect.Float32)
+	return def, e.notFound(float32Type)
 }
+
+var float64Type = reflect.TypeOf(float64(0))
 
 // Float64Default returns the entry's value as float64.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Float64Default(def float64) (float64, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Float64)
+		return def, e.notFound(float64Type)
 	}
 
 	switch vv := v.(type) {
@@ -630,8 +645,10 @@ func (e Entry) Float64Default(def float64) (float64, error) {
 		return float64(vv), nil
 	}
 
-	return def, e.notFound(reflect.Float64)
+	return def, e.notFound(float64Type)
 }
+
+var boolType = reflect.TypeOf(false)
 
 // BoolDefault returns the user's value as bool.
 // a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
@@ -642,7 +659,7 @@ func (e Entry) Float64Default(def float64) (float64, error) {
 func (e Entry) BoolDefault(def bool) (bool, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, e.notFound(reflect.Bool)
+		return def, e.notFound(boolType)
 	}
 
 	switch vv := v.(type) {
@@ -661,7 +678,45 @@ func (e Entry) BoolDefault(def bool) (bool, error) {
 		return false, nil
 	}
 
-	return def, e.notFound(reflect.Bool)
+	return def, e.notFound(boolType)
+}
+
+var timeType = reflect.TypeOf(time.Time{})
+
+// TimeDefault returns the stored time.Time value based on its "key".
+// If does not exist or the stored key's value is not a time
+// it returns the "def" time value and a not found error.
+func (e Entry) TimeDefault(def time.Time) (time.Time, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, e.notFound(timeType)
+	}
+
+	vv, ok := v.(time.Time)
+	if !ok {
+		return def, nil
+	}
+
+	return vv, nil
+}
+
+var weekdayType = reflect.TypeOf(time.Weekday(0))
+
+// WeekdayDefault returns the stored time.Weekday value based on its "key".
+// If does not exist or the stored key's value is not a weekday
+// it returns the "def" weekday value and a not found error.
+func (e Entry) WeekdayDefault(def time.Weekday) (time.Weekday, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, e.notFound(weekdayType)
+	}
+
+	vv, ok := v.(time.Weekday)
+	if !ok {
+		return def, nil
+	}
+
+	return vv, nil
 }
 
 // Value returns the value of the entry,
@@ -693,7 +748,6 @@ func (e Entry) Value() interface{} {
 
 // Save same as `Set`
 // However, if "immutable" is true then saves it as immutable (same as `SetImmutable`).
-//
 //
 // Returns the entry and true if it was just inserted, meaning that
 // it will return the entry and a false boolean if the entry exists and it has been updated.
@@ -809,10 +863,32 @@ func (r *Store) GetDefault(key string, def interface{}) interface{} {
 	return vv
 }
 
+// Exists is a small helper which reports whether a key exists.
+// It's not recommended to be used outside of templates.
+// Use Get or GetEntry instead which will give you back the entry value too,
+// so you don't have to loop again the key-value storage to get its value.
+func (r *Store) Exists(key string) bool {
+	_, ok := r.GetEntry(key)
+	return ok
+}
+
 // Get returns the entry's value based on its key.
 // If not found returns nil.
 func (r *Store) Get(key string) interface{} {
 	return r.GetDefault(key, nil)
+}
+
+// GetOrSet is like `GetDefault` but it accepts a function which is
+// fired and its result is used to `Set` if
+// the "key" was not found or its value is nil.
+func (r *Store) GetOrSet(key string, setFunc func() interface{}) interface{} {
+	if v, ok := r.GetEntry(key); ok && v.ValueRaw != nil {
+		return v.Value()
+	}
+
+	value := setFunc()
+	r.Set(key, value)
+	return value
 }
 
 // Visit accepts a visitor which will be filled
@@ -851,7 +927,7 @@ func (r *Store) GetStringTrim(name string) string {
 func (r *Store) GetInt(key string) (int, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return 0, v.notFound(reflect.Int)
+		return 0, v.notFound(intType)
 	}
 	return v.IntDefault(-1)
 }
@@ -871,7 +947,7 @@ func (r *Store) GetIntDefault(key string, def int) int {
 func (r *Store) GetInt8(key string) (int8, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return -1, v.notFound(reflect.Int8)
+		return -1, v.notFound(int8Type)
 	}
 	return v.Int8Default(-1)
 }
@@ -891,7 +967,7 @@ func (r *Store) GetInt8Default(key string, def int8) int8 {
 func (r *Store) GetInt16(key string) (int16, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return -1, v.notFound(reflect.Int16)
+		return -1, v.notFound(int16Type)
 	}
 	return v.Int16Default(-1)
 }
@@ -911,7 +987,7 @@ func (r *Store) GetInt16Default(key string, def int16) int16 {
 func (r *Store) GetInt32(key string) (int32, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return -1, v.notFound(reflect.Int32)
+		return -1, v.notFound(int32Type)
 	}
 	return v.Int32Default(-1)
 }
@@ -931,7 +1007,7 @@ func (r *Store) GetInt32Default(key string, def int32) int32 {
 func (r *Store) GetInt64(key string) (int64, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return -1, v.notFound(reflect.Int64)
+		return -1, v.notFound(int64Type)
 	}
 	return v.Int64Default(-1)
 }
@@ -951,7 +1027,7 @@ func (r *Store) GetInt64Default(key string, def int64) int64 {
 func (r *Store) GetUint(key string) (uint, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return 0, v.notFound(reflect.Uint)
+		return 0, v.notFound(uintType)
 	}
 	return v.UintDefault(0)
 }
@@ -971,7 +1047,7 @@ func (r *Store) GetUintDefault(key string, def uint) uint {
 func (r *Store) GetUint8(key string) (uint8, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return 0, v.notFound(reflect.Uint8)
+		return 0, v.notFound(uint8Type)
 	}
 	return v.Uint8Default(0)
 }
@@ -991,7 +1067,7 @@ func (r *Store) GetUint8Default(key string, def uint8) uint8 {
 func (r *Store) GetUint16(key string) (uint16, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return 0, v.notFound(reflect.Uint16)
+		return 0, v.notFound(uint16Type)
 	}
 	return v.Uint16Default(0)
 }
@@ -1011,7 +1087,7 @@ func (r *Store) GetUint16Default(key string, def uint16) uint16 {
 func (r *Store) GetUint32(key string) (uint32, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return 0, v.notFound(reflect.Uint32)
+		return 0, v.notFound(uint32Type)
 	}
 	return v.Uint32Default(0)
 }
@@ -1031,7 +1107,7 @@ func (r *Store) GetUint32Default(key string, def uint32) uint32 {
 func (r *Store) GetUint64(key string) (uint64, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return 0, v.notFound(reflect.Uint64)
+		return 0, v.notFound(uint64Type)
 	}
 	return v.Uint64Default(0)
 }
@@ -1051,7 +1127,7 @@ func (r *Store) GetUint64Default(key string, def uint64) uint64 {
 func (r *Store) GetFloat64(key string) (float64, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return -1, v.notFound(reflect.Float64)
+		return -1, v.notFound(float64Type)
 	}
 	return v.Float64Default(-1)
 }
@@ -1075,7 +1151,7 @@ func (r *Store) GetFloat64Default(key string, def float64) float64 {
 func (r *Store) GetBool(key string) (bool, error) {
 	v, ok := r.GetEntry(key)
 	if !ok {
-		return false, v.notFound(reflect.Bool)
+		return false, v.notFound(boolType)
 	}
 
 	return v.BoolDefault(false)
@@ -1092,6 +1168,53 @@ func (r *Store) GetBoolDefault(key string, def bool) bool {
 	}
 
 	return def
+}
+
+var zeroTime = time.Time{}
+
+// GetTime returns the stored time.Time value based on its "key".
+// If does not exist or the stored key's value is not a time
+// it returns a zero time value and a not found error.
+func (r *Store) GetTime(key string) (time.Time, error) {
+	v, ok := r.GetEntry(key)
+	if !ok {
+		return zeroTime, v.notFound(timeType)
+	}
+
+	return v.TimeDefault(zeroTime)
+}
+
+const simpleDateLayout = "2006/01/02"
+
+// SimpleDate calls GetTime and formats the time as "yyyyy/mm/dd".
+// It returns an empty string if the key does not exist or the
+// stored value on "key" is not a time.Time type.
+func (r *Store) SimpleDate(key string) string {
+	v, ok := r.GetEntry(key)
+	if !ok {
+		return ""
+	}
+
+	tt, err := v.TimeDefault(zeroTime)
+	if err != nil {
+		return ""
+	}
+
+	return tt.Format(simpleDateLayout)
+}
+
+const zeroWeekday = time.Sunday
+
+// GetWeekday returns the stored time.Weekday value based on its "key".
+// If does not exist or the stored key's value is not a weekday
+// it returns the time.Sunday value and a not found error.
+func (r *Store) GetWeekday(key string) (time.Weekday, error) {
+	v, ok := r.GetEntry(key)
+	if !ok {
+		return zeroWeekday, v.notFound(timeType)
+	}
+
+	return v.WeekdayDefault(zeroWeekday)
 }
 
 // Remove deletes an entry linked to that "key",

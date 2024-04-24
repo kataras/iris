@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Files</title>
+</head>
+
+<body>
+    <form enctype="multipart/form-data" action="/upload" method="POST">
+        <input type="file" id="upload_files" name="upload_files" multiple /> <input type="hidden" name="token"
+            value="{{.}}" />
+
+        <input type="button" value="Upload Using Javascript" onclick="uploadFiles()" />
+        <input type="submit" value="Upload by submiting the form" />
+    </form>
+
+    <script type="text/javascript">
+        function uploadFiles() {
+            let files = document.getElementById("upload_files").files;
+            let formData = new FormData();
+            for (var i = 0; i < files.length; i++) {
+                formData.append("files[]", files[i]);
+            }
+
+            fetch('/upload',
+                {
+                    method: "POST",
+                    body: formData
+                }).
+                then(data => window.location = "/files").
+                catch(e => window.alert("upload failed: file too large"));
+        }
+    </script>
+</body>
+
+</html>

@@ -1,12 +1,14 @@
-# Iris <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a>
+# Iris Web Framework
 
-[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge&logo=travis)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![release](https://img.shields.io/badge/release%20-v11.2-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases)
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)<!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=7E18DD&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community)<!--[![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://iris-go.com/donate)--><!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
 Iris는 단순하고 빠르며 좋은 성능과 모든 기능을 갖춘 Go언어용 웹 프레임워크입니다. 당신의 웹사이트나 API를 위해서 아름답고 사용하기 쉬운 기반을 제공합니다.
 
 [여러 사람들의 의견](https://iris-go.com/testimonials/)을 둘러보세요. 그리고 이 github repository을 **star**하세요.
 
 [![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
+
+[![Benchmarks: Apr 2, 2020 at 12:13pm (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ## Iris 배우기
 
@@ -31,7 +33,7 @@ func main() {
         })
     })
 
-    app.Run(iris.Addr(":8080"))
+    app.Listen(":8080")
 }
 ```
 
@@ -45,17 +47,17 @@ $ go run example.go
 
 </details>
 
-Iris는 광범위하고 꼼꼼한 **[wiki](https://github.com/kataras/iris/wiki)** 를 가지고 있기 때문에 쉽게 프레임워크를 시작할 수 있습니다.
+Iris는 광범위하고 꼼꼼한 **[wiki](https://www.iris-go.com/#ebookDonateForm)** 를 가지고 있기 때문에 쉽게 프레임워크를 시작할 수 있습니다.
 
-더 자세한 기술문서를 보시려면 [godocs](https://godoc.org/github.com/kataras/iris)를 방문하세요. 그리고 실행가능한 예제코드는 [\_examples](_examples/) 하위 디렉토리에 있습니다.
+더 자세한 기술문서를 보시려면 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)를 방문하세요. 그리고 실행가능한 예제코드는 [\_examples](_examples/) 하위 디렉토리에 있습니다.
 
 ### 여행하면서 독서를 즐기세요?
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12"/> </a>
 
 [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 
-PDF 버전과 **E-Book** 에 대한 온라인 접근을 [요청](https://bit.ly/iris-req-book)하시고 Iris의 개발에 참가하실 수 있습니다.
+PDF 버전과 **E-Book** 에 대한 온라인 접근을 [요청](https://www.iris-go.com/#ebookDonateForm)하시고 Iris의 개발에 참가하실 수 있습니다.
 
 ## 기여하기
 

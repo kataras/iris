@@ -14,7 +14,7 @@ import (
 // Pass a Problem value to `context.Problem` to
 // write an "application/problem+json" response.
 //
-// Read more at: https://github.com/kataras/iris/wiki/Routing-error-handlers
+// Read more at: https://github.com/kataras/iris/blob/main/_examples/routing/http-errors.
 type Problem map[string]interface{}
 
 // NewProblem retruns a new Problem.
@@ -73,12 +73,12 @@ func (p Problem) getURI(key string) string {
 }
 
 // Updates "type" field to absolute URI, recursively.
-func (p Problem) updateURIsToAbs(ctx Context) {
+func (p Problem) updateURIsToAbs(ctx *Context) {
 	if p == nil {
 		return
 	}
 
-	if uriRef := p.getURI("type"); uriRef != "" {
+	if uriRef := p.getURI("type"); uriRef != "" && !strings.HasPrefix(uriRef, "http") {
 		p.Type(ctx.AbsoluteURI(uriRef))
 	}
 
@@ -127,7 +127,7 @@ func (p Problem) Key(key string, value interface{}) Problem {
 //
 // Empty URI or "about:blank", when used as a problem type,
 // indicates that the problem has no additional semantics beyond that of the HTTP status code.
-// When "about:blank" is used,
+// When "about:blank" is used and "title" was not set-ed,
 // the title is being automatically set the same as the recommended HTTP status phrase for that code
 // (e.g., "Not Found" for 404, and so on) on `Status` call.
 //
@@ -151,15 +151,16 @@ func (p Problem) Title(title string) Problem {
 func (p Problem) Status(statusCode int) Problem {
 	shouldOverrideTitle := !p.keyExists("title")
 
-	if !shouldOverrideTitle {
-		typ, found := p["type"]
-		shouldOverrideTitle = !found || isEmptyTypeURI(typ.(string))
-	}
+	// if !shouldOverrideTitle {
+	// 	typ, found := p["type"]
+	// 	shouldOverrideTitle = !found || isEmptyTypeURI(typ.(string))
+	// }
 
 	if shouldOverrideTitle {
 		// Set title by code.
 		p.Title(http.StatusText(statusCode))
 	}
+
 	return p.Key("status", statusCode)
 }
 
@@ -167,6 +168,15 @@ func (p Problem) Status(statusCode int) Problem {
 // Example: "Optional details about the error...".
 func (p Problem) Detail(detail string) Problem {
 	return p.Key("detail", detail)
+}
+
+// DetailErr calls `Detail(err.Error())`.
+func (p Problem) DetailErr(err error) Problem {
+	if err == nil {
+		return p
+	}
+
+	return p.Key("detail", err.Error())
 }
 
 // Instance sets the problem's instance field.
@@ -221,6 +231,9 @@ func (p Problem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		return err
 	}
 
+	// toTitle := cases.Title(language.English)
+	// toTitle.String(k)
+
 	for k, v := range p {
 		// convert keys like "type" to "Type", "productName" to "ProductName" and e.t.c. when xml.
 		err = e.Encode(xmlMapEntry{XMLName: xml.Name{Local: strings.Title(k)}, Value: v})
@@ -270,7 +283,7 @@ type ProblemOptions struct {
 	// Should return time.Time, time.Duration, int64, int, float64 or string.
 	//
 	// Overrides the RetryAfter field.
-	RetryAfterFunc func(Context) interface{}
+	RetryAfterFunc func(*Context) interface{}
 }
 
 func parseDurationToSeconds(dur time.Duration) int64 {
@@ -309,7 +322,7 @@ func (o *ProblemOptions) parseRetryAfter(value interface{}, timeLayout string) s
 }
 
 // Apply accepts a Context and applies specific response-time options.
-func (o *ProblemOptions) Apply(ctx Context) {
+func (o *ProblemOptions) Apply(ctx *Context) {
 	retryAfterHeaderValue := ""
 	timeLayout := ctx.Application().ConfigurationReadOnly().GetTimeFormat()
 

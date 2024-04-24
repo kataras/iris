@@ -1,0 +1,19 @@
+Host: 0.0.0.0
+Port: 80
+EnableCompression: true
+AllowOrigin: "*"
+
+# Your production's database connection configuration here...
+
+####
+
+# Iris configuration.
+Iris:
+  LogLevel: info
+  EnableOptimizations: true
+  RemoteAddrHeaders:
+  - "X-Real-Ip"
+  - "X-Forwarded-For"
+  - "CF-Connecting-IP"
+  - "True-Client-Ip"
+  - "X-Appengine-Remote-Addr"

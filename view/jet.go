@@ -3,23 +3,27 @@ package view
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/CloudyKit/jet/v3"
+	"github.com/CloudyKit/jet/v6"
 )
 
 const jetEngineName = "jet"
 
 // JetEngine is the jet template parser's view engine.
 type JetEngine struct {
-	directory string
-	extension string
-	// physical system files or app-embedded, see `Binary(..., ...)`. Defaults to file system on initialization.
+	fs          fs.FS
+	rootDir     string
+	extension   string
+	left, right string
+
 	loader jet.Loader
 
 	developmentMode bool
@@ -27,15 +31,19 @@ type JetEngine struct {
 	// The Set is the `*jet.Set`, exported to offer any custom capabilities that jet users may want.
 	// Available after `Load`.
 	Set *jet.Set
+	mu  sync.Mutex
 
 	// Note that global vars and functions are set in a single spot on the jet parser.
 	// If AddFunc or AddVar called before `Load` then these will be set here to be used via `Load` and clear.
 	vars map[string]interface{}
 
-	jetRangerRendererContextKey string
+	jetDataContextKey string
 }
 
-var _ Engine = (*JetEngine)(nil)
+var (
+	_ Engine       = (*JetEngine)(nil)
+	_ EngineFuncer = (*JetEngine)(nil)
+)
 
 // jet library does not export or give us any option to modify them via Set
 // (unless we parse the files by ourselves but this is not a smart choice).
@@ -46,11 +54,13 @@ var jetExtensions = [...]string{
 }
 
 // Jet creates and returns a new jet view engine.
-func Jet(directory, extension string) *JetEngine {
-	// if _, err := os.Stat(directory); os.IsNotExist(err) {
-	// 	panic(err)
-	// }
-
+// The given "extension" MUST begin with a dot.
+//
+// Usage:
+// Jet("./views", ".jet") or
+// Jet(iris.Dir("./views"), ".jet") or
+// Jet(embed.FS, ".jet") or Jet(AssetFile(), ".jet") for embedded data.
+func Jet(dirOrFS interface{}, extension string) *JetEngine {
 	extOK := false
 	for _, ext := range jetExtensions {
 		if ext == extension {
@@ -64,10 +74,11 @@ func Jet(directory, extension string) *JetEngine {
 	}
 
 	s := &JetEngine{
-		directory:                   directory,
-		extension:                   extension,
-		loader:                      jet.NewOSFileSystemLoader(directory),
-		jetRangerRendererContextKey: "_jet",
+		fs:                getFS(dirOrFS),
+		rootDir:           "/",
+		extension:         extension,
+		loader:            &jetLoader{fs: getFS(dirOrFS)},
+		jetDataContextKey: "_jet",
 	}
 
 	return s
@@ -78,7 +89,29 @@ func (s *JetEngine) String() string {
 	return jetEngineName
 }
 
+// RootDir sets the directory to be used as a starting point
+// to load templates from the provided file system.
+func (s *JetEngine) RootDir(root string) *JetEngine {
+	if s.fs != nil && root != "" && root != "/" && root != "." && root != s.rootDir {
+		sub, err := fs.Sub(s.fs, s.rootDir)
+		if err != nil {
+			panic(err)
+		}
+
+		s.fs = sub
+	}
+
+	s.rootDir = filepath.ToSlash(root)
+	return s
+}
+
+// Name returns the jet engine's name.
+func (s *JetEngine) Name() string {
+	return "Jet"
+}
+
 // Ext should return the final file extension which this view engine is responsible to render.
+// If the filename extension on ExecuteWriter is empty then this is appended.
 func (s *JetEngine) Ext() string {
 	return s.extension
 }
@@ -88,7 +121,8 @@ func (s *JetEngine) Ext() string {
 // corresponding default: {{ or }}.
 // Should act before `Load` or `iris.Application#RegisterView`.
 func (s *JetEngine) Delims(left, right string) *JetEngine {
-	s.Set.Delims(left, right)
+	s.left = left
+	s.right = right
 	return s
 }
 
@@ -163,149 +197,96 @@ func (s *JetEngine) AddVar(key string, value interface{}) {
 // not safe concurrent access across clients, use it only on development state.
 func (s *JetEngine) Reload(developmentMode bool) *JetEngine {
 	s.developmentMode = developmentMode
-	if s.Set != nil {
-		s.Set.SetDevelopmentMode(developmentMode)
-	}
 	return s
 }
 
 // SetLoader can be used when the caller wants to use something like
-// multi.Loader or httpfs.Loader of the jet subpackages,
-// overrides any previous loader may set by `Binary` or the default.
-// Should act before `Load` or `iris.Application#RegisterView`.
+// multi.Loader or httpfs.Loader.
 func (s *JetEngine) SetLoader(loader jet.Loader) *JetEngine {
 	s.loader = loader
 	return s
 }
 
-// Binary optionally, use it when template files are distributed
-// inside the app executable (.go generated files).
-//
-// The assetFn and namesFn can come from the go-bindata library.
-// Should act before `Load` or `iris.Application#RegisterView`.
-func (s *JetEngine) Binary(assetFn func(name string) ([]byte, error), assetNames func() []string) *JetEngine {
-	// embedded.
-	vdir := s.directory
-
-	if vdir[0] == '.' {
-		vdir = vdir[1:]
-	}
-
-	// second check for /something, (or ./something if we had dot on 0 it will be removed)
-	if vdir[0] == '/' || vdir[0] == os.PathSeparator {
-		vdir = vdir[1:]
-	}
-
-	// check for trailing slashes because new users may be do that by mistake
-	// although all examples are showing the correct way but you never know
-	// i.e "./assets/" is not correct, if was inside "./assets".
-	// remove last "/".
-	if trailingSlashIdx := len(vdir) - 1; vdir[trailingSlashIdx] == '/' {
-		vdir = vdir[0:trailingSlashIdx]
-	}
-
-	namesSlice := assetNames()
-	names := make(map[string]struct{})
-	for _, name := range namesSlice {
-		if !strings.HasPrefix(name, vdir) {
-			continue
-		}
-
-		extOK := false
-		fileExt := path.Ext(name)
-		for _, ext := range jetExtensions {
-			if ext == fileExt {
-				extOK = true
-				break
-			}
-		}
-
-		if !extOK {
-			continue
-		}
-
-		names[name] = struct{}{}
-	}
-
-	if len(names) == 0 {
-		panic("JetEngine.Binary: no embedded files found in directory: " + vdir)
-	}
-
-	s.loader = &embeddedLoader{
-		vdir:  vdir,
-		asset: assetFn,
-		names: names,
-	}
-	return s
+type jetLoader struct {
+	fs fs.FS
 }
 
-type (
-	embeddedLoader struct {
-		vdir  string
-		asset func(name string) ([]byte, error)
-		names map[string]struct{}
-	}
-	embeddedFile struct {
-		contents []byte // the contents are NOT consumed.
-		readen   int64
-	}
-)
+var _ jet.Loader = (*jetLoader)(nil)
 
-var (
-	_ jet.Loader    = (*embeddedLoader)(nil)
-	_ io.ReadCloser = (*embeddedFile)(nil)
-)
-
-func (f *embeddedFile) Close() error { return nil }
-func (f *embeddedFile) Read(p []byte) (int, error) {
-	if f.readen >= int64(len(f.contents)) {
-		return 0, io.EOF
-	}
-
-	n := copy(p, f.contents[f.readen:])
-	f.readen += int64(n)
-	return n, nil
+// Open opens a file from file system.
+func (l *jetLoader) Open(name string) (io.ReadCloser, error) {
+	name = strings.TrimPrefix(name, "/")
+	return l.fs.Open(name)
 }
 
-// Open opens a file from OS file system.
-func (l *embeddedLoader) Open(name string) (io.ReadCloser, error) {
-	// name = path.Join(l.vdir, name)
-	contents, err := l.asset(name)
-	if err != nil {
-		return nil, err
-	}
-	return &embeddedFile{
-		contents: contents,
-	}, nil
-}
-
-// Exists checks if the template name exists by walking the list of template paths
-// returns string with the full path of the template and bool true if the template file was found
-func (l *embeddedLoader) Exists(name string) (string, bool) {
-	fileName := path.Join(l.vdir, name)
-	if _, ok := l.names[fileName]; ok {
-		return fileName, true
-	}
-
-	return "", false
+// Exists checks if the template name exists by walking the list of template paths.
+func (l *jetLoader) Exists(name string) bool {
+	name = strings.TrimPrefix(name, "/")
+	_, err := l.fs.Open(name)
+	return err == nil
 }
 
 // Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 func (s *JetEngine) Load() error {
-	s.Set = jet.NewHTMLSetLoader(s.loader)
-	s.Set.SetDevelopmentMode(s.developmentMode)
+	rootDirName := getRootDirName(s.fs)
 
-	if s.vars != nil {
+	return walk(s.fs, "", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info == nil || info.IsDir() {
+			return nil
+		}
+
+		if s.extension != "" {
+			if !strings.HasSuffix(path, s.extension) {
+				return nil
+			}
+		}
+
+		if s.rootDir == rootDirName {
+			path = strings.TrimPrefix(path, rootDirName)
+			path = strings.TrimPrefix(path, "/")
+		}
+
+		buf, err := asset(s.fs, path)
+		if err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+
+		return s.ParseTemplate(path, string(buf))
+	})
+}
+
+// ParseTemplate accepts a name and contnets to parse and cache a template.
+// This parser does not support funcs per template. Use the `AddFunc` instead.
+func (s *JetEngine) ParseTemplate(name string, contents string) error {
+	s.initSet()
+
+	_, err := s.Set.Parse(name, contents)
+	return err
+}
+
+func (s *JetEngine) initSet() {
+	s.mu.Lock()
+	if s.Set == nil {
+		var opts = []jet.Option{
+			jet.WithDelims(s.left, s.right),
+		}
+		if s.developmentMode && !context.IsNoOpFS(s.fs) {
+			// this check is made to avoid jet's fs lookup on noOp fs (nil passed by the developer).
+			// This can be produced when nil fs passed
+			// and only `ParseTemplate` is used.
+			opts = append(opts, jet.InDevelopmentMode())
+		}
+
+		s.Set = jet.NewSet(s.loader, opts...)
 		for key, value := range s.vars {
 			s.Set.AddGlobal(key, value)
 		}
 	}
-
-	// Note that, unlike the rest of template engines implementations,
-	// we don't call the Set.GetTemplate to parse the templates,
-	// we let it to the jet template parser itself which does that at serve-time and caches each template by itself.
-
-	return nil
+	s.mu.Unlock()
 }
 
 type (
@@ -329,7 +310,7 @@ const JetRuntimeVarsContextKey = "iris.jetvarmap"
 //
 // Usage: view.AddJetRuntimeVars(ctx, view.JetRuntimeVars{...}).
 // See `JetEngine.AddRuntimeVars` too.
-func AddJetRuntimeVars(ctx context.Context, jetVarMap JetRuntimeVars) {
+func AddJetRuntimeVars(ctx *context.Context, jetVarMap JetRuntimeVars) {
 	if v := ctx.Values().Get(JetRuntimeVarsContextKey); v != nil {
 		if vars, ok := v.(JetRuntimeVars); ok {
 			for key, value := range jetVarMap {
@@ -348,7 +329,7 @@ func AddJetRuntimeVars(ctx context.Context, jetVarMap JetRuntimeVars) {
 //
 // Usage: view.AddJetRuntimeVars(ctx, view.JetRuntimeVars{...}).
 // See `view.AddJetRuntimeVars` if package-level access is more meanful to the code flow.
-func (s *JetEngine) AddRuntimeVars(ctx context.Context, vars JetRuntimeVars) {
+func (s *JetEngine) AddRuntimeVars(ctx *context.Context, vars JetRuntimeVars) {
 	AddJetRuntimeVars(ctx, vars)
 }
 
@@ -361,13 +342,43 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 
 	var vars JetRuntimeVars
 
-	if ctx, ok := w.(context.Context); ok {
+	if ctx, ok := w.(*context.Context); ok {
 		runtimeVars := ctx.Values().Get(JetRuntimeVarsContextKey)
 		if runtimeVars != nil {
 			if jetVars, ok := runtimeVars.(JetRuntimeVars); ok {
 				vars = jetVars
 			}
 		}
+
+		if viewContextData := ctx.GetViewData(); len(viewContextData) > 0 { // fix #1876
+			if vars == nil {
+				vars = make(JetRuntimeVars)
+			}
+
+			for k, v := range viewContextData {
+				val, ok := v.(reflect.Value)
+				if !ok {
+					val = reflect.ValueOf(v)
+				}
+				vars[k] = val
+			}
+		}
+
+		if v := ctx.Values().Get(s.jetDataContextKey); v != nil {
+			if bindingData == nil {
+				// if bindingData is nil, try to fill them by context key (a middleware can set data).
+				bindingData = v
+			} else if m, ok := bindingData.(context.Map); ok {
+				// else if bindingData are passed to App/Context.View
+				// and it's map try to fill with the new values passed from a middleware.
+				if mv, ok := v.(context.Map); ok {
+					for key, value := range mv {
+						m[key] = value
+					}
+				}
+			}
+		}
+
 	}
 
 	if bindingData == nil {
@@ -378,10 +389,11 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 		vars = make(JetRuntimeVars)
 	}
 
+	/* fixed on jet v4.0.0, so no need of this:
 	if m, ok := bindingData.(context.Map); ok {
 		var jetData interface{}
 		for k, v := range m {
-			if k == s.jetRangerRendererContextKey {
+			if k == s.jetDataContextKey {
 				jetData = v
 				continue
 			}
@@ -396,7 +408,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 		if jetData != nil {
 			bindingData = jetData
 		}
-	}
+	}*/
 
 	return tmpl.Execute(w, vars, bindingData)
 }

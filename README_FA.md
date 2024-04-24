@@ -1,103 +1,203 @@
-<div dir="rtl" align='right' >
-<!-- # Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a> -->
+<div dir="rtl">
 
-# آیریس <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a>
+## خبرها
+    
+> این شاخه تحت توسعه است. برای رفتن به شاخه نسخه بعدی [v12.2.0](HISTORY.md#Next) یا اگر به دنبال یک انتشار پایدار هستید, به جای آن به شاخه [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) مراجعه کنید.
+    
+> ![](https://iris-go.com/images/cli.png) همین امروز برنامه رسمی [Iris Command Line Interface](https://github.com/kataras/iris-cli) را امتحان کنید.
 
-<div dir="ltr" align='left' >
+> با توجه به بالا بودن حجم کار، ممکن است در پاسخ به [سوالات](https://github.com/kataras/iris/issues) شما تاخیری وجود داشته باشد.
 
-[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge&logo=travis)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![release](https://img.shields.io/badge/release%20-v11.2-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases)
-
+# Iris Web Framework
+    
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)<!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=7E18DD&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community)<!--[![donate on PayPal](https://img.shields.io/badge/support-PayPal-blue.svg?style=for-the-badge)](https://iris-go.com/donate)--><!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+    
+آیریس یک چارچوب وب پر سرعت ، ساده و در عین حال کاملاً برجسته و بسیار کارآمد برای Go است.
 </div>
 
-آیریس سریع ترین و ساده ترین و موثرترین فریمورک وب در زبان GO میباشد. آیریس ساختاری بسیار زیبا و کارآمد را فراهم کرده است تا شما از آن برای پروژه های بعدی تان استفاده کنید. .
-
-برای این که بدانید دیگران در مورد آیریس چه می گویند لطفا در این لینک کلیک کنید [دیگران در مورد آیریس چه می گویند](https://iris-go.com/testimonials/) لطفا این پروژه را در گیتاب **استار** کنید.
-
-[![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
-
-## آموزش آیریس
-
-<details>
-<summary>شروع سریع</summary>
-
-<div dir="ltr" align="left">
-
-<div dir="rtl" align="right">
-
-```sh
-
-# فرض کنید همچین کدی را در فایل example.go نوشته اید
-```
-
-</div>
-
-```sh
-$ cat example.go
-```
+<details><summary>Simple Handler</summary>
 
 ```go
 package main
 
 import "github.com/kataras/iris/v12"
 
-func main() {
-    app := iris.Default()
-    app.Get("/ping", func(ctx iris.Context) {
-        ctx.JSON(iris.Map{
-            "message": "pong",
-        })
-    })
+type (
+  request struct {
+    Firstname string `json:"firstname"`
+    Lastname  string `json:"lastname"`
+  }
 
-    app.Run(iris.Addr(":8080"))
+  response struct {
+    ID      uint64 `json:"id"`
+    Message string `json:"message"`
+  }
+)
+
+func main() {
+  app := iris.New()
+  app.Handle("PUT", "/users/{id:uint64}", updateUser)
+  app.Listen(":8080")
+}
+
+func updateUser(ctx iris.Context) {
+  id, _ := ctx.Params().GetUint64("id")
+
+  var req request
+  if err := ctx.ReadJSON(&req); err != nil {
+    ctx.StopWithError(iris.StatusBadRequest, err)
+    return
+  }
+
+  resp := response{
+    ID:      id,
+    Message: req.Firstname + " updated successfully",
+  }
+  ctx.JSON(resp)
 }
 ```
-
-```sh
-# run example.go and
-# visit http://localhost:8080/ping on browser
-$ go run example.go
-```
-
-<div>
-
-<div dir="rtl" align="right" >
-
-> ایریس از پروژه ی [muxie](https://github.com/kataras/muxie) که موثرترین و سریع ترین پروژه مسیریابی در GO می باشد استفاده می کند.
-
-<div>
+> !برای اطلاعات بیشتر ، [مثال های مسیریابی](https://github.com/kataras/iris/blob/main/_examples/routing) را بخوانید
 
 </details>
 
-آیریس داری **[wiki](https://github.com/kataras/iris/wiki)** بسیار کامل و گسترده ای میباشد که یادگیری ان را ساده می کند.
+<details><summary>Handler with custom input and output arguments</summary>
 
-شما برای مشاهده و خواندن داکیومنت های فنی میتوانید به [godocs](https://godoc.org/github.com/kataras/iris) مراجعه کنید و همچنین برای مشاهده مثال ها و کد های قابل اجرا همیشه میتوانید از [مثال ها](_examples/) استفاده کنید .
+[![https://github.com/kataras/iris/blob/main/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
 
-### آیا شما مطالعه کردن در طول سفر را دوست دارید ؟
+> اگر برایتان جالب بود [مثال های دیگری](https://github.com/kataras/iris/blob/main/_examples/dependency-injection) را مطالعه کنید
 
-<div dir="ltr" align="left">
+</details>
 
-<a href="https://bit.ly/iris-req-book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg" width="200" /> </a>
+<details><summary>MVC</summary>
+
+```go
+package main
+
+import (
+  "github.com/kataras/iris/v12"
+  "github.com/kataras/iris/v12/mvc"
+)
+
+type (
+  request struct {
+    Firstname string `json:"firstname"`
+    Lastname  string `json:"lastname"`
+  }
+
+  response struct {
+    ID      uint64 `json:"id"`
+    Message string `json:"message"`
+  }
+)
+
+func main() {
+  app := iris.New()
+  mvc.Configure(app.Party("/users"), configureMVC)
+  app.Listen(":8080")
+}
+
+func configureMVC(app *mvc.Application) {
+  app.Handle(new(userController))
+}
+
+type userController struct {
+  // [...dependencies]
+}
+
+func (c *userController) PutBy(id uint64, req request) response {
+  return response{
+    ID:      id,
+    Message: req.Firstname + " updated successfully",
+  }
+}
+```
+اگر به دنبال مثال‌های بیشتری هستید می‌توانید در [اینجا](_examples/mvc) مطالعه کنید
+</details>
+<div dir="rtl">
+    
+> دیگران درباره آیریس چه می گویند و برای پشتیبانی از پتانسیل‌های  این پروژه متن باز  می‌توانید از آن حمایت کنید
+
+[![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
+
+[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+
+## 👑 <a href="https://iris-go.com/donate">حامیان</a>
+    
+با کمک شما, ما می‌توانیم توسعه وب متن باز را برای همه بهبود ببخشیم !
+
+> کمک هایی که تا حالا دریافت شده است !
+ 
+## اموزش آیریس
+    
+### ساخت یک پروژه جدید
 
 </div>
+    
+```sh
+$ mkdir myapp
+$ cd myapp
+$ go mod init myapp
+$ go get github.com/kataras/iris/v12@latest # or @v12.2.11
+```
 
-[![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
+<div dir="rtl">
+<summary>نصب بر روی پروژه موجود</summary>
+</div>
 
-شما میتوانید در خواست یک نسخه PDF داکیومنت ر ا به صورت رایگان از اینجا بدهید [درخواست](https://bit.ly/iris-req-book)
+```sh
+$ cd myapp
+$ go get github.com/kataras/iris/v12@latest
+```
 
-## مشارکت کردن
+<div dir="rtl">
+<summary>نصب با پرونده go.mod</summary>
+</div>
 
-ما دوست داریم که شما در فریمورک آیریس مشارکت کنید و کد ها را توسعه و بهبود ببخشید ! برای اطلاع بیشتر در مورد نحوه ی مشارکت کردن در این پروژه لطفا اینجا را بررسی کنید [CONTRIBUTING.md](CONTRIBUTING.md)
+```txt
+module myapp
 
-[مشاهده ی همه ی مشارکت کننده ها](https://github.com/kataras/iris/graphs/contributors)
+go 1.20
 
-## باگ های امنیتی
+require github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920072528-ff81f370625a
+```
+![](https://www.iris-go.com/images/gifs/install-create-iris.gif)
 
-اگر شما باگ های امنیتی در آیریس پیدا کردید لطفا یک ایمیل به [iris-go@outlook.com](mailto:iris-go@outlook.com) ارسال کنید. همه ی باگ های امنیتی بلافاصله برطرف میشود.
+<div dir="rtl">
+آیریس شامل مستندات گسترده و کاملی است که کار با چارچوب را آسان می کند.
 
-## مجوز
+> [مستندات](https://www.iris-go.com/docs)
+    
+برای اطلاعات بیشتر در مورد اسناد فنی می توانید به مستندات اصلی ما مراجعه کنید. 
 
-نام پروژه آیریس ریشه ای یونانی دارد.
+> [مستندات اصلی](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)
+    
+## دوست دارید در حین مسافرت کتاب بخوانید ?
+    
+ <a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
-فریمورک آیریس رایگان و سورس باز و تحت مجوز [3-Clause BSD License](LICENSE) می باشد.
+[![follow author on twitter](https://img.shields.io/twitter/follow/makismaropoulos?color=3D8AA3&logoColor=3D8AA3&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 
-<div>
+[![follow Iris web framework on twitter](https://img.shields.io/twitter/follow/iris_framework?color=ee7506&logoColor=ee7506&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=iris_framework)
+
+[![follow Iris web framework on facebook](https://img.shields.io/badge/Follow%20%40Iris.framework-522-2D88FF.svg?style=for-the-badge&logo=facebook)](https://www.facebook.com/iris.framework)
+    
+ امروز می توانید از طریق کتاب الکترونیکی آیریس (نسخه جدید ، آینده v12.2.0 +) دسترسی PDF و دسترسی آنلاین داشته باشید و در توسعه آیریس شرکت کنید.
+    
+ ## 🙌 مشارکت
+    
+ ما خیلی دوست داریم شما سهمی در توسعه چارچوب آیریس داشته باشید! برای دریافت اطلاعات بیشتر در مورد مشارکت در پروژه آیریس لطفاً پرونده [CONTRIBUTING.md](CONTRIBUTING.md) را مطالعه کنید.  
+    
+[لیست همه شرکت کنندگان](https://github.com/kataras/iris/graphs/contributors)
+    
+## 🛡 آسیب‌پذیری‌های امنیتی
+    
+اگر آسیب‌پذیری امنیتی در درون آیریس مشاهده کردید, لطفاً ایمیلی به [iris-go@outlook.com](mailto:iris-go@outlook.com) بفرستید. کلیه ضعف‌های امنیتی بلافاصله مورد توجه قرار خواهند گرفت.
+    
+## 📝 مجوز
+    
+این پروژه تحت پروانه [BSD 3-clause license](LICENSE) مجوز دارد ، دقیقاً مانند پروژه Go.    
+    
+نام پروژه "آیریس" از اساطیر یونانی الهام‌گرفته شده است.
+
+</div>
+  

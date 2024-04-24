@@ -28,12 +28,15 @@ func main() {
 		Reload(true)
 	app.RegisterView(tmpl)
 
-	app.HandleDir("/public", "./web/public")
+	app.HandleDir("/public", iris.Dir("./web/public"))
 
 	app.OnAnyErrorCode(func(ctx iris.Context) {
 		ctx.ViewData("Message", ctx.Values().
 			GetStringDefault("message", "The page you're looking for doesn't exist"))
-		ctx.View("shared/error.html")
+		if err := ctx.View("shared/error.html"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// ---- Serve our controllers. ----
@@ -76,12 +79,8 @@ func main() {
 	// http://localhost:8080/user/me
 	// http://localhost:8080/user/logout
 	// basic auth: "admin", "password", see "./middleware/basicauth.go" source file.
-	app.Run(
-		// Starts the web server at localhost:8080
-		iris.Addr("localhost:8080"),
-		// Ignores err server closed log when CTRL/CMD+C pressed.
-		iris.WithoutServerError(iris.ErrServerClosed),
-		// Enables faster json serialization and more.
-		iris.WithOptimizations,
-	)
+
+	// Starts the web server at localhost:8080
+	// Enables faster json serialization and more.
+	app.Listen(":8080", iris.WithOptimizations)
 }

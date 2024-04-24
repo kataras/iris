@@ -9,9 +9,9 @@ import (
 
 // UsersController is our /users API controller.
 // GET				/users  | get all
-// GET				/users/{id:long} | get by id
-// PUT				/users/{id:long} | update by id
-// DELETE			/users/{id:long} | delete by id
+// GET				/users/{id:int64} | get by id
+// PUT				/users/{id:int64} | update by id
+// DELETE			/users/{id:int64} | delete by id
 // Requires basic authentication.
 type UsersController struct {
 	// Optionally: context is auto-binded by Iris on each request,
@@ -30,14 +30,16 @@ type UsersController struct {
 // curl -i -u admin:password http://localhost:8080/users
 //
 // The correct way if you have sensitive data:
-// func (c *UsersController) Get() (results []viewmodels.User) {
-// 	data := c.Service.GetAll()
 //
-// 	for _, user := range data {
-// 		results = append(results, viewmodels.User{user})
-// 	}
-// 	return
-// }
+//	func (c *UsersController) Get() (results []viewmodels.User) {
+//		data := c.Service.GetAll()
+//
+//		for _, user := range data {
+//			results = append(results, viewmodels.User{user})
+//		}
+//		return
+//	}
+//
 // otherwise just return the datamodels.
 func (c *UsersController) Get() (results []datamodels.User) {
 	return c.Service.GetAll()

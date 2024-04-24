@@ -12,24 +12,24 @@ import (
 
 // service
 type (
-	// these TestService and TestServiceImpl could be in lowercase, unexported
+	// these testService and testServiceImpl could be in lowercase, unexported
 	// but the `Say` method should be exported however we have those exported
 	// because of the controller handler test.
-	TestService interface {
+	testService interface {
 		Say(string) string
 	}
-	TestServiceImpl struct {
+	testServiceImpl struct {
 		prefix string
 	}
 )
 
-func (s *TestServiceImpl) Say(message string) string {
+func (s *testServiceImpl) Say(message string) string {
 	return s.prefix + " " + message
 }
 
 type testControllerHandle struct {
-	Ctx     context.Context
-	Service TestService
+	Ctx     *context.Context
+	Service testService
 
 	reqField string
 }
@@ -41,12 +41,7 @@ func (c *testControllerHandle) BeforeActivation(b BeforeActivation) {
 	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
 	b.HandleMany("GET", "/custom/{ps:string} /custom2/{ps:string}", "CustomWithParameter")
-	// if dynamic path exist
-	// then longest path should be registered first
-	// and the controller's method if wants to add path parameters
-	// dependency injection then they should accept the longest path parameters.
-	// See `testControllerHandle.CustomWithParameters`.
-	b.HandleMany("GET", "/custom3/{ps:string}/{pssecond:string} /custom3/{ps:string}", "CustomWithParameters")
+	b.HandleMany("GET", "/custom3/{ps:string}/{pssecond:string}", "CustomWithParameters")
 }
 
 // test `GetRoute` for custom routes.
@@ -109,29 +104,27 @@ func (c *testControllerHandle) CustomWithParameter(param1 string) string {
 }
 
 func (c *testControllerHandle) CustomWithParameters(param1, param2 string) string {
-	// it returns empty string for requested path: /custom3/value1,
-	// see BeforeActivation.
 	return param1 + param2
 }
 
 type testSmallController struct{}
 
 // test ctx + id in the same time.
-func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx context.Context, id string) string {
+func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx *context.Context, id string) string {
 	return "empty in but served with ctx.Params.Get('param2')= " + ctx.Params().Get("param2") + " == id == " + id
 }
 
 func TestControllerHandle(t *testing.T) {
 	app := iris.New()
 	m := New(app)
-	m.Register(&TestServiceImpl{prefix: "service:"})
+	m.Register(&testServiceImpl{prefix: "service:"})
 	m.Handle(new(testControllerHandle))
 	m.Handle(new(testSmallController))
 
 	e := httptest.New(t, app)
 
 	// test the index, is not part of the current package's implementation but do it.
-	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("index")
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("index")
 
 	// the important things now.
 
@@ -140,31 +133,30 @@ func TestControllerHandle(t *testing.T) {
 	// (which is the function's receiver, if any, in this case the *testController in go).
 	expectedReqField := "this is a request field filled by this url param"
 	e.GET("/histatic").WithQuery("reqfield", expectedReqField).Expect().Status(httptest.StatusOK).
-		Body().Equal(expectedReqField)
+		Body().IsEqual(expectedReqField)
 	// this test makes sure that the binded values of the controller is handled correctly
 	// and can be used in a user-defined, dynamic "mvc handler".
 	e.GET("/hiservice").Expect().Status(httptest.StatusOK).
-		Body().Equal("service: hi")
+		Body().IsEqual("service: hi")
 	e.GET("/hiservice/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("service: hi with param: value")
+		Body().IsEqual("service: hi with param: value")
 	// this worked with a temporary variadic on the resolvemethodfunc which is not
 	// correct design, I should split the path and params with the rest of implementation
 	// in order a simple template.Src can be given.
 	e.GET("/hiparam/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("value")
+		Body().IsEqual("value")
 	e.GET("/hiparamempyinput/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("empty in but served with ctx.Params.Get('ps')=value")
+		Body().IsEqual("empty in but served with ctx.Params.Get('ps')=value")
 	e.GET("/custom/value1").Expect().Status(httptest.StatusOK).
-		Body().Equal("value1")
+		Body().IsEqual("value1")
 	e.GET("/custom2/value2").Expect().Status(httptest.StatusOK).
-		Body().Equal("value2")
+		Body().IsEqual("value2")
 	e.GET("/custom3/value1/value2").Expect().Status(httptest.StatusOK).
-		Body().Equal("value1value2")
-	e.GET("/custom3/value1").Expect().Status(httptest.StatusOK).
-		Body().Equal("value1")
+		Body().IsEqual("value1value2")
+	e.GET("/custom3/value1").Expect().Status(httptest.StatusNotFound)
 
 	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
-		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")
+		Body().IsEqual("empty in but served with ctx.Params.Get('param2')= value == id == value")
 }
 
 type testControllerHandleWithDynamicPathPrefix struct {
@@ -181,5 +173,29 @@ func TestControllerHandleWithDynamicPathPrefix(t *testing.T) {
 	New(app.Party("/api/data/{model:string}/{action:string}")).Handle(new(testControllerHandleWithDynamicPathPrefix))
 	e := httptest.New(t, app)
 	e.GET("/api/data/mymodel/myaction/myid").Expect().Status(httptest.StatusOK).
-		Body().Equal("mymodelmyactionmyid")
+		Body().IsEqual("mymodelmyactionmyid")
+}
+
+type testControllerGetBy struct{}
+
+func (c *testControllerGetBy) GetBy(age int64) *testCustomStruct {
+	return &testCustomStruct{
+		Age:  int(age),
+		Name: "name",
+	}
+}
+
+func TestControllerGetByWithAllowMethods(t *testing.T) {
+	app := iris.New()
+	app.Configure(iris.WithFireMethodNotAllowed)
+	// ^ this 405 status will not be fired on POST: project/... because of
+	// .AllowMethods, but it will on PUT.
+
+	New(app.Party("/project").AllowMethods(iris.MethodGet, iris.MethodPost)).Handle(new(testControllerGetBy))
+
+	e := httptest.New(t, app)
+	e.GET("/project/42").Expect().Status(httptest.StatusOK).
+		JSON().IsEqual(&testCustomStruct{Age: 42, Name: "name"})
+	e.POST("/project/42").Expect().Status(httptest.StatusOK)
+	e.PUT("/project/42").Expect().Status(httptest.StatusMethodNotAllowed)
 }

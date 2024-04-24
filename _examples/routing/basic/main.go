@@ -18,8 +18,6 @@ func newApp() *iris.Application {
 	//
 	// Third receiver should contains the route's handler(s), they are executed by order.
 	app.Handle("GET", "/", func(ctx iris.Context) {
-		// navigate to the https://github.com/kataras/iris/wiki/Routing-context-methods
-		// to overview all context's method.
 		ctx.HTML("Hello from " + ctx.Path()) // Hello from /
 	})
 
@@ -28,6 +26,8 @@ func newApp() *iris.Application {
 	})
 
 	// Different path parameters types in the same path.
+	// Note that: fallback should registered first e.g. {path} {string},
+	// because the handler on this case is executing from last to top.
 	app.Get("/u/{p:path}", func(ctx iris.Context) {
 		ctx.Writef(":string, :int, :uint, :alphabetical and :path in the same path pattern.")
 	})
@@ -37,6 +37,13 @@ func newApp() *iris.Application {
 		ctx.Next()
 	}, func(ctx iris.Context) {
 		ctx.Writef("username (string): %s", ctx.Params().Get("username"))
+	})
+
+	app.Get("/u/{firstname:alphabetical}", func(ctx iris.Context) {
+		ctx.Writef("before firstname (alphabetical), current route name: %s\n", ctx.RouteName())
+		ctx.Next()
+	}, func(ctx iris.Context) {
+		ctx.Writef("firstname (alphabetical): %s", ctx.Params().Get("firstname"))
 	})
 
 	app.Get("/u/{id:int}", func(ctx iris.Context) {
@@ -51,13 +58,6 @@ func newApp() *iris.Application {
 		ctx.Next()
 	}, func(ctx iris.Context) {
 		ctx.Writef("uid (uint): %d", ctx.Params().GetUintDefault("uid", 0))
-	})
-
-	app.Get("/u/{firstname:alphabetical}", func(ctx iris.Context) {
-		ctx.Writef("before firstname (alphabetical), current route name: %s\n", ctx.RouteName())
-		ctx.Next()
-	}, func(ctx iris.Context) {
-		ctx.Writef("firstname (alphabetical): %s", ctx.Params().Get("firstname"))
 	})
 
 	/*
@@ -131,7 +131,7 @@ func newApp() *iris.Application {
 	{ // braces are optional, it's just type of style, to group the routes visually.
 
 		// http://v1.localhost:8080
-		// Note: for versioning-specific features checkout the _examples/versioning instead.
+		// Note: for versioning-specific features checkout the _examples/routing/versioning instead.
 		v1.Get("/", func(ctx iris.Context) {
 			ctx.HTML(`Version 1 API. go to <a href="/api/users">/api/users</a>`)
 		})
@@ -144,13 +144,13 @@ func newApp() *iris.Application {
 			})
 			// http://v1.localhost:8080/api/users/42
 			usersAPI.Get("/{userid:int}", func(ctx iris.Context) {
-				ctx.Writef("user with id: %s", ctx.Params().Get("userid"))
+				ctx.Writef("user with id: %d", ctx.Params().GetIntDefault("userid", 0))
 			})
 		}
 	}
 
 	// wildcard subdomains.
-	wildcardSubdomain := app.Party("*.")
+	wildcardSubdomain := app.WildcardSubdomain()
 	{
 		wildcardSubdomain.Get("/", func(ctx iris.Context) {
 			ctx.Writef("Subdomain can be anything, now you're here from: %s", ctx.Subdomain())
@@ -184,7 +184,7 @@ func main() {
 	//  http://v1.localhost:8080/api/users
 	//  http://v1.localhost:8080/api/users/42
 	//  http://anything.localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func adminMiddleware(ctx iris.Context) {

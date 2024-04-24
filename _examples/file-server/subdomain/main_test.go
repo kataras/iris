@@ -1,8 +1,8 @@
 package main
 
 import (
-	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -14,7 +14,7 @@ type resource string
 func (r resource) contentType() string {
 	switch filepath.Ext(r.String()) {
 	case ".js":
-		return "application/javascript"
+		return "text/javascript"
 	case ".css":
 		return "text/css"
 	case ".ico":
@@ -40,7 +40,7 @@ func (r resource) loadFromBase(dir string) string {
 
 	fullpath := filepath.Join(dir, filename)
 
-	b, err := ioutil.ReadFile(fullpath)
+	b, err := os.ReadFile(fullpath)
 	if err != nil {
 		panic(fullpath + " failed with error: " + err.Error())
 	}
@@ -76,6 +76,6 @@ func TestFileServerSubdomainBasic(t *testing.T) {
 		e.GET(url).WithURL(host).Expect().
 			Status(httptest.StatusOK).
 			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
-			Body().Equal(contents)
+			Body().IsEqual(contents)
 	}
 }

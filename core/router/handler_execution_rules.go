@@ -6,9 +6,10 @@ import (
 
 // ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
 // Usage:
-// Party#SetExecutionRules(ExecutionRules {
-//   Done: ExecutionOptions{Force: true},
-// })
+//
+//	Party#SetExecutionRules(ExecutionRules {
+//	  Done: ExecutionOptions{Force: true},
+//	})
 //
 // See `Party#SetExecutionRules` for more.
 type ExecutionRules struct {
@@ -72,10 +73,12 @@ func (e ExecutionOptions) buildHandler(h context.Handler) context.Handler {
 		return h
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		// Proceed will fire the handler and return false here if it doesn't contain a `ctx.Next()`,
 		// so we add the `ctx.Next()` wherever is necessary in order to eliminate any dev's misuse.
-		if !ctx.Proceed(h) {
+		//
+		// 26 Feb 2022: check if manually stopped, and if it's then don't call ctx.Next.
+		if hasStopped, hasNext := ctx.ProceedAndReportIfStopped(h); !hasStopped && !hasNext {
 			// `ctx.Next()` always checks for `ctx.IsStopped()` and handler(s) positions by-design.
 			ctx.Next()
 		}

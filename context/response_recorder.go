@@ -1,13 +1,18 @@
 package context
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/textproto"
+	"strconv"
 	"sync"
 )
 
 // Recorder the middleware to enable response writer recording ( ResponseWriter -> ResponseRecorder)
-var Recorder = func(ctx Context) {
+var Recorder = func(ctx *Context) {
 	ctx.Record()
 	ctx.Next()
 }
@@ -24,19 +29,19 @@ func releaseResponseRecorder(w *ResponseRecorder) {
 	rrpool.Put(w)
 }
 
-// A ResponseRecorder is used mostly by context's transactions
-// in order to record and change if needed the body, status code and headers.
+// A ResponseRecorder is used mostly for testing
+// in order to record and modify, if necessary, the body and status code and headers.
 //
-// Developers are not limited to manually ask to record a response.
-// To turn on the recorder from a Handler,
-// rec := context.Recorder()
+// See `context.Recorder“ method too.
 type ResponseRecorder struct {
 	ResponseWriter
-	// keep track of the body in order to be
-	// resetable and useful inside custom transactions
+
+	// keep track of the body written.
 	chunks []byte
 	// the saved headers
 	headers http.Header
+
+	result *http.Response
 }
 
 var _ ResponseWriter = (*ResponseRecorder)(nil)
@@ -51,15 +56,16 @@ func (w *ResponseRecorder) Naive() http.ResponseWriter {
 // prepares itself, the response recorder, to record and send response to the client.
 func (w *ResponseRecorder) BeginRecord(underline ResponseWriter) {
 	w.ResponseWriter = underline
-	w.headers = underline.Header()
+	w.headers = underline.Header().Clone()
+	w.result = nil
 	w.ResetBody()
 }
 
 // EndResponse is auto-called when the whole client's request is done,
 // releases the response recorder and its underline ResponseWriter.
 func (w *ResponseRecorder) EndResponse() {
-	releaseResponseRecorder(w)
 	w.ResponseWriter.EndResponse()
+	releaseResponseRecorder(w)
 }
 
 // Write Adds the contents to the body reply, it writes the contents temporarily
@@ -90,18 +96,10 @@ func (w *ResponseRecorder) Write(contents []byte) (int, error) {
 	return len(contents), nil
 }
 
-// Writef formats according to a format specifier and writes to the response.
-//
-// Returns the number of bytes written and any write error encountered.
-func (w *ResponseRecorder) Writef(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(w, format, a...)
-}
-
-// WriteString writes a simple string to the response.
-//
-// Returns the number of bytes written and any write error encountered
-func (w *ResponseRecorder) WriteString(s string) (n int, err error) {
-	return w.Write([]byte(s))
+// Header returns the temporary header map that, on flush response,
+// will be sent by the underline's ResponseWriter's WriteHeader method.
+func (w *ResponseRecorder) Header() http.Header {
+	return w.headers
 }
 
 // SetBody overrides the body and sets it to a slice of bytes value.
@@ -114,7 +112,7 @@ func (w *ResponseRecorder) SetBodyString(s string) {
 	w.SetBody([]byte(s))
 }
 
-// Body returns the body tracked from the writer so far
+// Body returns the body tracked from the writer so far,
 // do not use this for edit.
 func (w *ResponseRecorder) Body() []byte {
 	return w.chunks
@@ -127,7 +125,7 @@ func (w *ResponseRecorder) ResetBody() {
 
 // ResetHeaders sets the headers to the underline's response writer's headers, may empty.
 func (w *ResponseRecorder) ResetHeaders() {
-	w.headers = w.ResponseWriter.Header()
+	w.headers = w.ResponseWriter.Header().Clone()
 }
 
 // ClearHeaders clears all headers, both temp and underline's response writer.
@@ -135,15 +133,24 @@ func (w *ResponseRecorder) ClearHeaders() {
 	w.headers = http.Header{}
 	h := w.ResponseWriter.Header()
 	for k := range h {
-		h[k] = nil
+		delete(h, k)
 	}
 }
 
-// Reset resets the response body, headers and the status code header.
-func (w *ResponseRecorder) Reset() {
+// Reset clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// - Use ResetBody() and ResetHeaders() instead to keep compression after reseting.
+//
+// - Use Reset() & ResponseRecorder.ResponseWriter.(*context.CompressResponseWriter).Disabled = true
+// to set a new body without compression when the previous handler was iris.Compression.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *ResponseRecorder) Reset() bool {
 	w.ClearHeaders()
 	w.WriteHeader(defaultStatusCode)
 	w.ResetBody()
+	return true
 }
 
 // FlushResponse the full body, headers and status code to the underline response writer
@@ -152,22 +159,29 @@ func (w *ResponseRecorder) FlushResponse() {
 	// copy the headers to the underline response writer
 	if w.headers != nil {
 		h := w.ResponseWriter.Header()
-
-		for k, values := range w.headers {
-			h[k] = nil
-			for i := range values {
-				h.Add(k, values[i])
-			}
+		// note: we don't reset the current underline's headers.
+		for k, v := range w.headers {
+			h[k] = v
 		}
 	}
 
-	// NOTE: before the ResponseWriter.Write in order to:
-	// set the given status code even if the body is empty.
-	w.ResponseWriter.FlushResponse()
+	cw, mustWriteToClose := w.ResponseWriter.(*CompressResponseWriter)
+	if mustWriteToClose { // see #1569#issuecomment-664003098
+		cw.FlushHeaders()
+	} else {
+		// NOTE: before the ResponseWriter.Write in order to:
+		// set the given status code even if the body is empty.
+		w.ResponseWriter.FlushResponse()
+	}
 
 	if len(w.chunks) > 0 {
 		// ignore error
 		w.ResponseWriter.Write(w.chunks)
+	}
+
+	if mustWriteToClose {
+		cw.ResponseWriter.FlushResponse()
+		cw.CompressWriter.Close()
 	}
 }
 
@@ -175,10 +189,22 @@ func (w *ResponseRecorder) FlushResponse() {
 // it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseRecorder
 func (w *ResponseRecorder) Clone() ResponseWriter {
 	wc := &ResponseRecorder{}
-	wc.headers = w.headers
-	wc.chunks = w.chunks[0:]
+
+	// copy headers.
+	wc.headers = w.headers.Clone()
+
+	// copy body.
+	chunksCopy := make([]byte, len(w.chunks))
+	copy(chunksCopy, w.chunks)
+	wc.chunks = chunksCopy
+
 	if resW, ok := w.ResponseWriter.(*responseWriter); ok {
-		wc.ResponseWriter = &(*resW) // clone it
+		wc.ResponseWriter = &responseWriter{
+			ResponseWriter: resW.ResponseWriter,
+			statusCode:     resW.statusCode,
+			written:        resW.written,
+			beforeFlush:    resW.beforeFlush,
+		} // clone it
 	} else { // else just copy, may pointer, developer can change its behavior
 		wc.ResponseWriter = w.ResponseWriter
 	}
@@ -186,11 +212,11 @@ func (w *ResponseRecorder) Clone() ResponseWriter {
 	return wc
 }
 
-// WriteTo writes a response writer (temp: status code, headers and body) to another response writer
-func (w *ResponseRecorder) WriteTo(res ResponseWriter) {
+// CopyTo writes a response writer (temp: status code, headers and body) to another response writer
+func (w *ResponseRecorder) CopyTo(res ResponseWriter) {
 	if to, ok := res.(*ResponseRecorder); ok {
 
-		// set the status code, to is first ( probably an error? (context.StatusCodeNotSuccessful, defaults to < 200 || >= 400).
+		// set the status code, to is first ( probably an error? (context.StatusCodeNotSuccessful, defaults to >=400).
 		if statusCode := w.ResponseWriter.StatusCode(); statusCode == defaultStatusCode {
 			to.WriteHeader(statusCode)
 		}
@@ -218,12 +244,10 @@ func (w *ResponseRecorder) WriteTo(res ResponseWriter) {
 		}
 
 		// append the headers
-		if w.headers != nil {
-			for k, values := range w.headers {
-				for _, v := range values {
-					if to.headers.Get(v) == "" {
-						to.headers.Add(k, v)
-					}
+		for k, values := range w.headers {
+			for _, v := range values {
+				if to.headers.Get(v) == "" {
+					to.headers.Add(k, v)
 				}
 			}
 		}
@@ -238,9 +262,30 @@ func (w *ResponseRecorder) WriteTo(res ResponseWriter) {
 
 // Flush sends any buffered data to the client.
 func (w *ResponseRecorder) Flush() {
+	// This fixes response recorder when chunked + Flush is used.
+	if w.headers.Get("Transfer-Encoding") == "chunked" {
+		if w.Written() == NoWritten {
+			if len(w.headers) > 0 {
+				h := w.ResponseWriter.Header()
+				// note: we don't reset the current underline's headers.
+				for k, v := range w.headers {
+					h[k] = v
+				}
+			}
+		}
+
+		if len(w.chunks) > 0 {
+			w.ResponseWriter.Write(w.chunks)
+		}
+	}
+
 	w.ResponseWriter.Flush()
 	w.ResetBody()
 }
+
+// ErrPushNotSupported is returned by the Push method to
+// indicate that HTTP/2 Push support is not available.
+var ErrPushNotSupported = errors.New("push feature is not supported by this ResponseWriter")
 
 // Push initiates an HTTP/2 server push. This constructs a synthetic
 // request using the given target and options, serializes that request
@@ -262,12 +307,82 @@ func (w *ResponseRecorder) Flush() {
 //
 // Push returns ErrPushNotSupported if the client has disabled push or if push
 // is not supported on the underlying connection.
-func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) error {
+func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) (err error) {
 	w.FlushResponse()
-	err := w.ResponseWriter.Push(target, opts)
+
+	if pusher, ok := w.ResponseWriter.Naive().(http.Pusher); ok {
+		err = pusher.Push(target, opts)
+		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
+			return ErrPushNotSupported
+		}
+	}
+
 	// NOTE: we have to reset them even if the push failed.
 	w.ResetBody()
 	w.ResetHeaders()
 
-	return err
+	return ErrPushNotSupported
+}
+
+// Result returns the response generated by the handler.
+// It does set all provided headers.
+//
+// Result must only be called after the handler has finished running.
+func (w *ResponseRecorder) Result() *http.Response { // a modified copy of net/http/httptest
+	if w.result != nil {
+		return w.result
+	}
+
+	headers := w.headers.Clone()
+
+	// for k, v := range w.ResponseWriter.Header() {
+	// 	headers[k] = v
+	// }
+	/*
+		dateFound := false
+		for k := range headers {
+			if strings.ToLower(k) == "date" {
+				dateFound = true
+				break
+			}
+		}
+
+		if !dateFound {
+			headers["Date"] = []string{time.Now().Format(http.TimeFormat)}
+		}
+	*/
+
+	res := &http.Response{
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		StatusCode: w.StatusCode(),
+		Header:     headers,
+	}
+	if res.StatusCode == 0 {
+		res.StatusCode = 200
+	}
+	res.Status = fmt.Sprintf("%03d %s", res.StatusCode, http.StatusText(res.StatusCode))
+	if w.chunks != nil {
+		res.Body = io.NopCloser(bytes.NewReader(w.chunks))
+	} else {
+		res.Body = http.NoBody
+	}
+	res.ContentLength = parseContentLength(res.Header.Get("Content-Length"))
+
+	w.result = res
+	return res
+}
+
+// copy of net/http/httptest
+func parseContentLength(cl string) int64 {
+	cl = textproto.TrimString(cl)
+	if cl == "" {
+		return -1
+	}
+	n, err := strconv.ParseUint(cl, 10, 63)
+	if err != nil {
+		return -1
+	}
+	return int64(n)
 }

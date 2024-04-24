@@ -1,0 +1,18 @@
+version: "3.1"
+
+services:
+  app:
+    build: .
+    environment: 
+      Port: 8080
+      DSN: db:27017
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+  db:
+    image: mongo
+    environment:
+      MONGO_INITDB_DATABASE: store
+    ports:
+      - 27017:27017

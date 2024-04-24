@@ -1,0 +1,13 @@
+<h3>Test translate current locale template function <i>[dynamic]</i> ("word", arguments...) <br/> <code>call .tr "hi" "iris"</code></h3>
+
+{{call .tr "hi" "iris"}}
+
+<hr/>
+
+<h3>Test translate of any language template function <i>[static]</i> ("language", "word", arguments...) <br/> <code>tr "zh-CN" "hi" "iris"</code></h3>
+
+{{tr "zh-CN" "hi" "iris"}}
+
+<h3>Test HTML link ("word", arguments...) <br/> <code>call .trUnsafe "trUnsafe" "userProfilePublicDescription" "https://iris-go.com"</code></h3>
+
+{{call .trUnsafe "userProfilePublicDescription" "https://iris-go.com"}}

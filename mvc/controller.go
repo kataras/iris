@@ -8,18 +8,15 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/hero"
-	"github.com/kataras/iris/v12/hero/di"
 	"github.com/kataras/iris/v12/macro"
-
-	"github.com/kataras/golog"
 )
 
 // BaseController is the optional controller interface, if it's
 // completed by the end controller then the BeginRequest and EndRequest
 // are called between the controller's method responsible for the incoming request.
 type BaseController interface {
-	BeginRequest(context.Context)
-	EndRequest(context.Context)
+	BeginRequest(*context.Context)
+	EndRequest(*context.Context)
 }
 
 type shared interface {
@@ -41,7 +38,7 @@ type shared interface {
 // it's called once per application.
 type BeforeActivation interface {
 	shared
-	Dependencies() *di.Values
+	Dependencies() *hero.Container
 }
 
 // AfterActivation is being used as the only one input argument of a
@@ -54,8 +51,8 @@ type BeforeActivation interface {
 // it's called once per application.
 type AfterActivation interface {
 	shared
-	DependenciesReadOnly() ValuesReadOnly
 	Singleton() bool
+	DependenciesReadOnly() []*hero.Dependency
 }
 
 var (
@@ -63,15 +60,21 @@ var (
 	_ AfterActivation  = (*ControllerActivator)(nil)
 )
 
+// IgnoreEmbeddedControllers is a global variable which indicates whether
+// the controller's method parser should skip converting embedded struct's methods to http handlers.
+//
+// If no global use is necessary, developers can do the same for individual controllers
+// through the `IgnoreEmbedded` Controller Option on `mvc.Application.Handle` method.
+//
+// Defaults to false.
+var IgnoreEmbeddedControllers = false
+
 // ControllerActivator returns a new controller type info description.
 // Its functionality can be overridden by the end-dev.
 type ControllerActivator struct {
-	// the router is used on the `Activate` and can be used by end-dev on the `BeforeActivation`
-	// to register any custom controller's methods as handlers.
-	router router.Party
+	app *Application
 
-	macros              macro.Macros
-	tmplParamStartIndex int
+	injector *hero.Struct
 
 	// initRef BaseController // the BaseController as it's passed from the end-dev.
 	Value reflect.Value // the BaseController's Value.
@@ -85,25 +88,25 @@ type ControllerActivator struct {
 	// `GetRoute/GetRoutes(functionName)`.
 	routes map[string][]*router.Route
 
-	// the bindings that comes from the Engine and the controller's filled fields if any.
-	// Can be bind-ed to the the new controller's fields and method that is fired
-	// on incoming requests.
-	dependencies di.Values
-	sorter       di.Sorter
-
-	errorHandler di.ErrorHandler
-
-	// initialized on the first `Handle` or immediately when "servesWebsocket" is true.
-	injector *di.StructInjector
+	skipMethodNames []string
+	// BeginHandlers is a slice of middleware for this controller.
+	// These handlers will be prependend to each one of
+	// the route that this controller will register(Handle/HandleMany/struct methods)
+	// to the targeted Party.
+	// Look the `Use` method too.
+	BeginHandlers context.Handlers
 
 	// true if this controller listens and serves to websocket events.
 	servesWebsocket bool
+
+	// true to skip the internal "activate".
+	activated bool
 }
 
 // NameOf returns the package name + the struct type's name,
 // it's used to take the full name of an Controller, the `ControllerActivator#Name`.
 func NameOf(v interface{}) string {
-	elemTyp := di.IndirectType(di.ValueOf(v).Type())
+	elemTyp := indirectType(reflect.ValueOf(v).Type())
 
 	typName := elemTyp.Name()
 	pkgPath := elemTyp.PkgPath()
@@ -112,16 +115,22 @@ func NameOf(v interface{}) string {
 	return fullname
 }
 
-func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value, sorter di.Sorter, errorHandler di.ErrorHandler) *ControllerActivator {
-	typ := reflect.TypeOf(controller)
+func newControllerActivator(app *Application, controller interface{}) *ControllerActivator {
+	if controller == nil {
+		return nil
+	}
 
+	if c, ok := controller.(*ControllerActivator); ok {
+		return c
+	}
+
+	typ := reflect.TypeOf(controller)
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
 		// i.e register done handlers.
-		router: router,
-		macros: *router.Macros(),
-		Value:  reflect.ValueOf(controller),
-		Type:   typ,
+		app:   app,
+		Value: reflect.ValueOf(controller),
+		Type:  typ,
 		// the full name of the controller: its type including the package path.
 		fullName: NameOf(controller),
 		// set some methods that end-dev cann't use accidentally
@@ -131,19 +140,23 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		// if a new method is registered via `Handle` its function name
 		// is also appended to that slice.
 		routes: whatReservedMethods(typ),
-		// CloneWithFieldsOf: include the manual fill-ed controller struct's fields to the dependencies.
-		dependencies: di.Values(dependencies).CloneWithFieldsOf(controller),
-		sorter:       sorter,
-		errorHandler: errorHandler,
 	}
 
-	fpath, _ := macro.Parse(c.router.GetRelPath(), c.macros)
-	c.tmplParamStartIndex = len(fpath.Params)
+	if IgnoreEmbeddedControllers {
+		c.SkipEmbeddedMethods()
+	}
+
 	return c
 }
 
+// It's a dynamic method, can be exist or not, it can accept input arguments
+// and can write through output values like any other dev-designed method.
+// See 'parseHTTPErrorMethod'.
+// Example at: _examples/mvc/error-handler-http
+const handleHTTPErrorMethodName = "HandleHTTPError"
+
 func whatReservedMethods(typ reflect.Type) map[string][]*router.Route {
-	methods := []string{"BeforeActivation", "AfterActivation"}
+	methods := []string{"BeforeActivation", "AfterActivation", handleHTTPErrorMethodName}
 	//  BeforeActivatior/AfterActivation are not routes but they are
 	// reserved names*
 	if isBaseController(typ) {
@@ -158,43 +171,89 @@ func whatReservedMethods(typ reflect.Type) map[string][]*router.Route {
 	return routes
 }
 
-func (c *ControllerActivator) markAsWebsocket() {
-	c.servesWebsocket = true
-	c.attachInjector()
-}
+func whatEmbeddedMethods(typ reflect.Type) []string {
+	var embeddedMethodsToIgnore []string
+	controllerType := typ
+	if controllerType.Kind() == reflect.Ptr {
+		controllerType = controllerType.Elem()
+	}
 
-// Dependencies returns the write and read access of the dependencies that are
-// came from the parent MVC Application, with this you can customize
-// the dependencies per controller, used at the `BeforeActivation`.
-func (c *ControllerActivator) Dependencies() *di.Values {
-	return &c.dependencies
-}
+	for i := 0; i < controllerType.NumField(); i++ {
+		structField := controllerType.Field(i)
+		structType := structField.Type
 
-// ValuesReadOnly returns the read-only access type of the controller's dependencies.
-// Used at `AfterActivation`.
-type ValuesReadOnly interface {
-	// Has returns true if a binder responsible to
-	// bind and return a type of "typ" is already registered to this controller.
-	Has(value interface{}) bool
-	// Len returns the length of the values.
-	Len() int
-	// Clone returns a copy of the current values.
-	Clone() di.Values
-	// CloneWithFieldsOf will return a copy of the current values
-	// plus the "s" struct's fields that are filled(non-zero) by the caller.
-	CloneWithFieldsOf(s interface{}) di.Values
-}
+		if !structField.Anonymous {
+			continue
+		}
 
-// DependenciesReadOnly returns the read-only access type of the controller's dependencies.
-// Used at `AfterActivation`.
-func (c *ControllerActivator) DependenciesReadOnly() ValuesReadOnly {
-	return c.dependencies
+		// var structValuePtr reflect.Value
+
+		if structType.Kind() == reflect.Ptr {
+			// keep both ptr and value instances of the struct so we can ignore all of its methods.
+			structType = structType.Elem()
+			// structValuePtr = reflect.ValueOf(reflect.ValueOf(controller).Field(i))
+		}
+
+		if structType.Kind() != reflect.Struct {
+			continue
+		}
+
+		newEmbeddedStructType := reflect.New(structField.Type).Type()
+		// let's take its methods and add to methods to ignore from the parent, the controller itself.
+		for j := 0; j < newEmbeddedStructType.NumMethod(); j++ {
+			embeddedMethod := newEmbeddedStructType.Method(j)
+			embeddedMethodName := embeddedMethod.Name
+			// An exception should happen if the controller itself overrides the embedded method,
+			// but Go (1.20) so far doesn't support this detection, as it handles the structure as one.
+			/*
+				shouldKeepBecauseParentOverrides := false
+
+				if v, existsOnParent := typ.MethodByName(embeddedMethodName); existsOnParent {
+
+					embeddedIndex := newEmbeddedStructType.Method(j).Index
+					controllerMethodIndex := v.Index
+
+					if v.Type.In(0) == typ && embeddedIndex == controllerMethodIndex {
+						fmt.Printf("%s exists on parent = true, receiver = %s\n", v.Name, typ.String())
+						shouldKeepBecauseParentOverrides = true
+						continue
+					}
+				}
+			*/
+
+			embeddedMethodsToIgnore = append(embeddedMethodsToIgnore, embeddedMethodName)
+		}
+	}
+
+	return embeddedMethodsToIgnore
 }
 
 // Name returns the full name of the controller, its package name + the type name.
 // Can used at both `BeforeActivation` and `AfterActivation`.
 func (c *ControllerActivator) Name() string {
 	return c.fullName
+}
+
+// RelName returns the path relatively to the main package.
+func (c *ControllerActivator) RelName() string {
+	return strings.TrimPrefix(c.fullName, "main.")
+}
+
+// SkipMethods can be used to individually skip one or more controller's method handlers.
+func (c *ControllerActivator) SkipMethods(methodNames ...string) {
+	c.skipMethodNames = append(c.skipMethodNames, methodNames...)
+}
+
+// SkipEmbeddedMethods should be ran before controller parsing.
+// It skips all embedded struct's methods conversation to http handlers.
+//
+// Note that even if the controller overrides the embedded methods
+// they will be still ignored because Go doesn't support this detection so far.
+//
+// See https://github.com/kataras/iris/issues/2103 for more.
+func (c *ControllerActivator) SkipEmbeddedMethods() {
+	methodsToIgnore := whatEmbeddedMethods(c.Type)
+	c.SkipMethods(methodsToIgnore...)
 }
 
 // Router is the standard Iris router's public API.
@@ -206,7 +265,7 @@ func (c *ControllerActivator) Name() string {
 //
 // Can used at both `BeforeActivation` and `AfterActivation`.
 func (c *ControllerActivator) Router() router.Party {
-	return c.router
+	return c.app.Router
 }
 
 // GetRoute returns the first registered route based on the controller's method name.
@@ -245,6 +304,15 @@ func (c *ControllerActivator) GetRoutes(methodName string) []*router.Route {
 	return nil
 }
 
+// Use registers a middleware for this Controller.
+// It appends one or more handlers to the `BeginHandlers`.
+// It's like the `Party.Use` but specifically
+// for the routes that this controller will register to the targeted `Party`.
+func (c *ControllerActivator) Use(handlers ...context.Handler) *ControllerActivator {
+	c.BeginHandlers = append(c.BeginHandlers, handlers...)
+	return c
+}
+
 // Singleton returns new if all incoming clients' requests
 // have the same controller instance.
 // This is done automatically by iris to reduce the creation
@@ -252,9 +320,23 @@ func (c *ControllerActivator) GetRoutes(methodName string) []*router.Route {
 // any unexported fields and all fields are services-like, static.
 func (c *ControllerActivator) Singleton() bool {
 	if c.injector == nil {
-		panic("MVC: Singleton used on an invalid state the API gives access to it only `AfterActivation`, report this as bug")
+		panic("MVC: Singleton called from wrong state the API gives access to it only `AfterActivation`, report this as bug")
 	}
-	return c.injector.Scope == di.Singleton
+	return c.injector.Singleton
+}
+
+// DependenciesReadOnly returns a list of dependencies, including the controller's one.
+func (c *ControllerActivator) DependenciesReadOnly() []*hero.Dependency {
+	if c.injector == nil {
+		panic("MVC: DependenciesReadOnly called from wrong state the API gives access to it only `AfterActivation`, report this as bug")
+	}
+
+	return c.injector.Container.Dependencies
+}
+
+// Dependencies returns a value which can manage the controller's dependencies.
+func (c *ControllerActivator) Dependencies() *hero.Container {
+	return c.app.container // although the controller's one are: c.injector.Container
 }
 
 // checks if a method is already registered.
@@ -265,15 +347,59 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 		}
 	}
 
+	for _, methodName := range c.skipMethodNames {
+		if methodName == name {
+			return true
+		}
+	}
+
 	return false
 }
 
-func (c *ControllerActivator) activate() {
-	c.parseMethods()
+func (c *ControllerActivator) isReservedMethodHandler(method, path string) bool {
+	for _, routes := range c.routes {
+		for _, r := range routes {
+			if r.Method == method && r.Path == path {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
-func (c *ControllerActivator) addErr(err error) bool {
-	return c.router.GetReporter().Err(err) != nil
+func (c *ControllerActivator) markAsWebsocket() {
+	c.servesWebsocket = true
+	c.attachInjector()
+}
+
+func (c *ControllerActivator) attachInjector() {
+	if c.injector == nil {
+		partyCountParams := macro.CountParams(c.app.Router.GetRelPath(), *c.app.Router.Macros())
+		c.injector = c.app.container.Struct(c.Value, partyCountParams)
+	}
+}
+
+// Activated can be called to skip the internal method parsing.
+func (c *ControllerActivator) Activated() bool {
+	b := c.activated
+	c.activated = true
+	return b
+}
+
+func (c *ControllerActivator) activate() {
+	if c.Activated() {
+		return
+	}
+
+	c.parseMethods()
+	c.parseHTTPErrorHandler()
+}
+
+func (c *ControllerActivator) parseHTTPErrorHandler() {
+	if m, ok := c.Type.MethodByName(handleHTTPErrorMethodName); ok {
+		c.handleHTTPError(m.Name)
+	}
 }
 
 // register all available, exported methods to handlers if possible.
@@ -286,16 +412,20 @@ func (c *ControllerActivator) parseMethods() {
 }
 
 func (c *ControllerActivator) parseMethod(m reflect.Method) {
-	httpMethod, httpPath, err := parseMethod(*c.router.Macros(), m, c.isReservedMethod)
+	httpMethod, httpPath, err := parseMethod(c.app.Router.Macros(), m, c.isReservedMethod, c.app.customPathWordFunc)
 	if err != nil {
 		if err != errSkip {
-			c.addErr(fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err))
+			c.logErrorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err)
 		}
 
 		return
 	}
 
 	c.Handle(httpMethod, httpPath, m.Name)
+}
+
+func (c *ControllerActivator) logErrorf(format string, args ...interface{}) {
+	c.Router().Logger().Errorf(format, args...)
 }
 
 // Handle registers a route based on a http method, the route's path
@@ -305,12 +435,39 @@ func (c *ControllerActivator) parseMethod(m reflect.Method) {
 // Just like `Party#Handle`, it returns the `*router.Route`, if failed
 // then it logs the errors and it returns nil, you can check the errors
 // programmatically by the `Party#GetReporter`.
+//
+// Handle will add a route to the "funcName".
 func (c *ControllerActivator) Handle(method, path, funcName string, middleware ...context.Handler) *router.Route {
-	routes := c.HandleMany(method, path, funcName, middleware...)
+	routes := c.handleMany(method, path, funcName, false, middleware...)
 	if len(routes) == 0 {
 		return nil
 	}
 
+	return routes[0]
+}
+
+// handleHTTPError is called when a controller's method
+// with the "HandleHTTPError" is found. That method
+// can accept dependencies like the rest but if it's not called manually
+// then any dynamic dependencies depending on successful requests
+// may fail - this is end-developer's job;
+// to register the correct dependencies or not do it all on that method.
+//
+// Note that if more than one controller in the same Party
+// tries to register an http error handler then the
+// overlap route rule should be used and a dependency
+// on the controller (or method) level that will select
+// between the two should exist (see mvc/authenticated-controller example).
+func (c *ControllerActivator) handleHTTPError(funcName string) *router.Route {
+	handler := c.handlerOf("/", funcName)
+
+	routes := c.app.Router.OnAnyErrorCode(handler)
+	if len(routes) == 0 {
+		c.logErrorf("MVC: unable to register an HTTP error code handler for '%s.%s'", c.fullName, funcName)
+		return nil
+	}
+
+	c.saveRoutes(funcName, routes, true)
 	return routes[0]
 }
 
@@ -321,148 +478,87 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 //
 // Just like `Party#HandleMany`:, it returns the `[]*router.Routes`.
 // Usage:
-// func (*Controller) BeforeActivation(b mvc.BeforeActivation) {
-// 	b.HandleMany("GET", "/path /path1" /path2", "HandlePath")
-// }
+//
+//	func (*Controller) BeforeActivation(b mvc.BeforeActivation) {
+//		b.HandleMany("GET", "/path /path1" /path2", "HandlePath")
+//	}
+//
+// HandleMany will override any routes of this "funcName".
 func (c *ControllerActivator) HandleMany(method, path, funcName string, middleware ...context.Handler) []*router.Route {
 	return c.handleMany(method, path, funcName, true, middleware...)
 }
 
 func (c *ControllerActivator) handleMany(method, path, funcName string, override bool, middleware ...context.Handler) []*router.Route {
 	if method == "" || path == "" || funcName == "" ||
-		c.isReservedMethod(funcName) {
+		(c.isReservedMethod(funcName) && c.isReservedMethodHandler(method, path)) {
 		// isReservedMethod -> if it's already registered
 		// by a previous Handle or analyze methods internally.
 		return nil
 	}
 
-	// get the method from the controller type.
-	m, ok := c.Type.MethodByName(funcName)
-	if !ok {
-		c.addErr(fmt.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
-			funcName, c.fullName))
-		return nil
-	}
-
-	// parse a route template which contains the parameters organised.
-	tmpl, err := macro.Parse(path, c.macros)
-	if err != nil {
-		c.addErr(fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.fullName, funcName, err))
-		return nil
-	}
-
-	// get the function's input.
-	funcIn := getInputArgsFromFunc(m.Type)
-	// get the path parameters bindings from the template,
-	// use the function's input except the receiver which is the
-	// end-dev's controller pointer.
-	pathParams := getPathParamsForInput(c.tmplParamStartIndex, tmpl.Params, funcIn[1:]...)
-	// get the function's input arguments' bindings.
-	funcDependencies := c.dependencies.Clone()
-	funcDependencies.AddValues(pathParams...)
-
-	handler := c.handlerOf(m, funcDependencies)
+	handler := c.handlerOf(path, funcName)
+	middleware = context.JoinHandlers(c.BeginHandlers, middleware)
 
 	// register the handler now.
-	routes := c.router.HandleMany(method, path, append(middleware, handler)...)
+	routes := c.app.Router.HandleMany(method, path, append(middleware, handler)...)
 	if routes == nil {
-		c.addErr(fmt.Errorf("MVC: unable to register a route for the path for '%s.%s'", c.fullName, funcName))
+		c.logErrorf("MVC: unable to register a route for the path for '%s.%s'", c.fullName, funcName)
 		return nil
 	}
 
+	c.saveRoutes(funcName, routes, override)
+	return routes
+}
+
+func (c *ControllerActivator) saveRoutes(funcName string, routes []*router.Route, override bool) {
+	m, ok := c.Type.MethodByName(funcName)
+	if !ok {
+		return
+	}
+
+	sourceFileName, sourceLineNumber := getSourceFileLine(c.Type, m)
+
+	relName := c.RelName()
 	for _, r := range routes {
-		// change the main handler's name in order to respect the controller's and give
-		// a proper debug message.
-		r.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
+		r.Description = relName
+		r.MainHandlerName = fmt.Sprintf("%s.%s", relName, funcName)
+
+		r.SourceFileName, r.SourceLineNumber = sourceFileName, sourceLineNumber
 	}
 
 	// add this as a reserved method name in order to
 	// be sure that the same route
 	// (method is allowed to be registered more than one on different routes - v11.2).
-
 	existingRoutes, exist := c.routes[funcName]
 	if override || !exist {
 		c.routes[funcName] = routes
 	} else {
 		c.routes[funcName] = append(existingRoutes, routes...)
 	}
-
-	return routes
 }
 
-var emptyIn = []reflect.Value{}
-
-func (c *ControllerActivator) attachInjector() {
-	if c.injector == nil {
-		c.injector = di.MakeStructInjector(
-			di.ValueOf(c.Value),
-			c.sorter,
-			di.Values(c.dependencies).CloneWithFieldsOf(c.Value)...,
-		)
-		// c.injector = di.Struct(c.Value, c.dependencies...)
-		if !c.servesWebsocket {
-			golog.Debugf("MVC Controller [%s] [Scope=%s]", c.fullName, c.injector.Scope)
-		} else {
-			golog.Debugf("MVC Websocket Controller [%s]", c.fullName)
-		}
-
-		if c.injector.Has {
-			golog.Debugf("Dependencies:\n%s", c.injector.String())
-		}
-	}
-}
-
-func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []reflect.Value) context.Handler {
-	// Remember:
-	// The `Handle->handlerOf` can be called from `BeforeActivation` event
-	// then, the c.injector is nil because
-	// we may not have the dependencies bind-ed yet.
-	// To solve this we're doing a check on the FIRST `Handle`,
-	// if c.injector is nil, then set it with the current bindings,
-	// these bindings can change after, so first add dependencies and after register routes.
+func (c *ControllerActivator) handlerOf(relPath, methodName string) context.Handler {
 	c.attachInjector()
 
-	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
-	funcInjector := di.Func(m.Func, funcDependencies...)
-	funcInjector.ErrorHandler = c.errorHandler
+	fullpath := c.app.Router.GetRelPath() + relPath
+	paramsCount := macro.CountParams(fullpath, *c.app.Router.Macros())
+	handler := c.injector.MethodHandler(methodName, paramsCount)
 
-	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
-	if funcInjector.Has {
-		golog.Debugf("MVC dependencies of method '%s.%s':\n%s", c.fullName, m.Name, funcInjector.String())
-	}
+	if isBaseController(c.Type) {
+		return func(ctx *context.Context) {
+			ctrl, err := c.injector.Acquire(ctx)
+			if err != nil {
+				// if err != hero.ErrStopExecution {
+				// 	c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
+				// }
+				c.injector.Container.GetErrorHandler(ctx).HandleError(ctx, err)
+				// allow skipping struct field bindings
+				// errors by a custom error handler.
+				if ctx.IsStopped() {
+					return
+				}
+			}
 
-	var (
-		implementsBase         = isBaseController(c.Type)
-		implementsErrorHandler = isErrorHandler(c.Type)
-		hasBindableFields      = c.injector.CanInject
-		hasBindableFuncInputs  = funcInjector.Has
-		funcHasErrorOut        = hasErrorOutArgs(m)
-
-		call = m.Func.Call
-	)
-
-	if !implementsBase && !hasBindableFields && !hasBindableFuncInputs && !implementsErrorHandler {
-		return func(ctx context.Context) {
-			hero.DispatchFuncResult(ctx, c.errorHandler, call(c.injector.AcquireSlice()))
-		}
-	}
-
-	n := m.Type.NumIn()
-	return func(ctx context.Context) {
-		var (
-			ctrl         = c.injector.Acquire()
-			errorHandler = c.errorHandler
-		)
-
-		// inject struct fields first before the BeginRequest and EndRequest, if any,
-		// in order to be able to have access there.
-		if hasBindableFields {
-			c.injector.InjectElem(ctx, ctrl.Elem())
-		}
-
-		// check if has BeginRequest & EndRequest, before try to bind the method's inputs.
-		if implementsBase {
-			// the Interface(). is faster than MethodByName or pre-selected methods.
 			b := ctrl.Interface().(BaseController)
 			// init the request.
 			b.BeginRequest(ctx)
@@ -472,28 +568,11 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 				return
 			}
 
-			defer b.EndRequest(ctx)
+			handler(ctx)
+
+			b.EndRequest(ctx)
 		}
-
-		if funcHasErrorOut && implementsErrorHandler {
-			errorHandler = ctrl.Interface().(di.ErrorHandler)
-		}
-
-		if hasBindableFuncInputs {
-			// means that ctxValue is not initialized before by the controller's struct injector.
-
-			in := make([]reflect.Value, n)
-			in[0] = ctrl
-			funcInjector.Inject(ctx, &in)
-
-			if ctx.IsStopped() {
-				return // stop as soon as possible, although it would stop later on if `ctx.StopExecution` called.
-			}
-
-			hero.DispatchFuncResult(ctx, errorHandler, call(in))
-			return
-		}
-
-		hero.DispatchFuncResult(ctx, errorHandler, ctrl.Method(m.Index).Call(emptyIn))
 	}
+
+	return handler
 }

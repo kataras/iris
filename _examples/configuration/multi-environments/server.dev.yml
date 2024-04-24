@@ -1,0 +1,22 @@
+ServerName: "my-iris-app"
+
+Host: 0.0.0.0
+Port: 8080
+EnableCompression: false
+AllowOrigin: "*"
+
+# Your development environment's 
+# database connection configuration here...
+
+####
+
+# Iris configuration.
+Iris:
+  LogLevel: info
+  EnableOptimizations: true
+  RemoteAddrHeaders:
+  - "X-Real-Ip"
+  - "X-Forwarded-For"
+  - "CF-Connecting-IP"
+  - "True-Client-Ip"
+  - "X-Appengine-Remote-Addr"

@@ -8,20 +8,20 @@ import (
 )
 
 var (
-	loopbackRegex    *regexp.Regexp
-	loopbackSubRegex *regexp.Regexp
+	// LoopbackRegex the regex if matched a host:port is a loopback.
+	LoopbackRegex    = regexp.MustCompile(`^localhost$|^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
+	loopbackSubRegex = regexp.MustCompile(`^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
 	machineHostname  string
 )
 
 func init() {
-	loopbackRegex, _ = regexp.Compile(`^localhost$|^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
-	loopbackSubRegex, _ = regexp.Compile(`^127(?:\.[0-9]+){0,2}\.[0-9]+$|^(?:0*\:)*?:?0*1$`)
 	machineHostname, _ = os.Hostname()
 }
 
 // IsLoopbackSubdomain checks if a string is a subdomain or a hostname.
 var IsLoopbackSubdomain = func(s string) bool {
-	if strings.HasPrefix(s, "127.0.0.1:") || s == "127.0.0.1" {
+	if strings.HasPrefix(s, "127.0.0.1:") || s == "127.0.0.1" ||
+		strings.HasPrefix(s, "0.0.0.0:") || s == "0.0.0.0" /* let's resolve that without regex (see below)*/ {
 		return true
 	}
 
@@ -34,10 +34,20 @@ var IsLoopbackSubdomain = func(s string) bool {
 	return valid
 }
 
+// GetLoopbackSubdomain returns the part of the loopback subdomain.
+func GetLoopbackSubdomain(s string) string {
+	if strings.HasPrefix(s, "127.0.0.1:") || s == "127.0.0.1" ||
+		strings.HasPrefix(s, "0.0.0.0:") || s == "0.0.0.0" {
+		return s
+	}
+
+	return loopbackSubRegex.FindString(s)
+}
+
 // IsLoopbackHost tries to catch the local addresses when a developer
-// navigates to a subdomain that its hostname differs from Application.Config.Addr.
+// navigates to a subdomain that its hostname differs from Application.Configuration.VHost.
 // Developer may want to override this function to return always false
-// in order to not allow different hostname from Application.Config.Addr in local environment (remote is not reached).
+// in order to not allow different hostname from Application.Configuration.VHost in local environment (remote is not reached).
 var IsLoopbackHost = func(requestHost string) bool {
 	// this func will be called if we have a subdomain actually, not otherwise, so we are
 	// safe to do some hacks.
@@ -49,7 +59,7 @@ var IsLoopbackHost = func(requestHost string) bool {
 
 	// find the first index of [:]8080 or [/]mypath or nothing(root with loopback address like 127.0.0.1)
 	// remember: we are not looking for .com or these things, if is up and running then the developer
-	// would probably not want to reach the server with different Application.Config.Addr than
+	// would probably not want to reach the server with different Application.Configuration.VHost than
 	// he/she declared.
 	portOrPathIdx := strings.LastIndexByte(requestHost, ':')
 
@@ -81,12 +91,35 @@ var IsLoopbackHost = func(requestHost string) bool {
 	// so it shouldn't hurt so much, but we don't care a lot because it's a special case here
 	// because this function will be called only if developer him/herself can reach the server
 	// with a loopback/local address, so we are totally safe.
-	valid := loopbackRegex.MatchString(hostname)
+	valid := LoopbackRegex.MatchString(hostname)
 	if !valid { // if regex failed to match it, then try with the pc's name.
 		valid = hostname == machineHostname
 	}
 	return valid
 }
+
+/*
+func isLoopbackHostGoVersion(host string) bool {
+	ip := net.ParseIP(host)
+	if ip != nil {
+		return ip.IsLoopback()
+	}
+
+	// Host is not an ip, perform lookup.
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return false
+	}
+
+	for _, addr := range addrs {
+		if !net.ParseIP(addr).IsLoopback() {
+			return false
+		}
+	}
+
+	return true
+}
+*/
 
 const (
 	// defaultServerHostname returns the default hostname which is "localhost"
@@ -151,8 +184,15 @@ func ResolveVHost(addr string) string {
 	}
 
 	if idx := strings.IndexByte(addr, ':'); idx == 0 {
-		// only port, then return the 0.0.0.0
+		// only port, then return the 0.0.0.0:PORT
 		return /* "0.0.0.0" */ "localhost" + addr[idx:]
+	} else if idx > 0 { // if 0.0.0.0:80 let's just convert it to localhost.
+		if addr[0:idx] == "0.0.0.0" {
+			if addr[idx:] == ":80" {
+				return "localhost"
+			}
+			return "localhost" + addr[idx:]
+		}
 	}
 
 	// with ':' in order to not replace the ipv6 loopback addresses

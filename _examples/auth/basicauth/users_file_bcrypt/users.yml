@@ -1,0 +1,12 @@
+# The file cannot be modified during the serve time.
+# To support real-time users changes please use the Options.Allow instead,
+# (see the database example for that).
+#
+# Again, the username and password (or capitalized) fields are required,
+# the rest are optional, depending on your application needs.
+- username: kataras
+  password: $2a$10$Irg8k8HWkDlvL0YDBKLCYee6j6zzIFTplJcvZYKA.B8/clHPZn2Ey # encrypted of kataras_pass
+  age: 27
+  role: admin
+- username: makis
+  password: $2a$10$3GXzp3J5GhHThGisbpvpZuftbmzPivDMo94XPnkTnDe7254x7sJ3O # encrypted of makis_pass

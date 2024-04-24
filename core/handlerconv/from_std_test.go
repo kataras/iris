@@ -32,20 +32,21 @@ func TestFromStd(t *testing.T) {
 	e := httptest.New(t, app)
 
 	e.GET("/handler").
-		Expect().Status(iris.StatusOK).Body().Equal(expected)
+		Expect().Status(iris.StatusOK).Body().IsEqual(expected)
 
 	e.GET("/func").
-		Expect().Status(iris.StatusOK).Body().Equal(expected)
+		Expect().Status(iris.StatusOK).Body().IsEqual(expected)
 }
 
 func TestFromStdWithNext(t *testing.T) {
 	basicauth := "secret"
 	passed := "ok"
 
+	type contextKey string
 	stdWNext := func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		if username, password, ok := r.BasicAuth(); ok &&
 			username == basicauth && password == basicauth {
-			ctx := stdContext.WithValue(r.Context(), "key", "ok")
+			ctx := stdContext.WithValue(r.Context(), contextKey("key"), "ok")
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -53,8 +54,8 @@ func TestFromStdWithNext(t *testing.T) {
 	}
 
 	h := handlerconv.FromStdWithNext(stdWNext)
-	next := func(ctx context.Context) {
-		ctx.WriteString(ctx.Request().Context().Value("key").(string))
+	next := func(ctx *context.Context) {
+		ctx.WriteString(ctx.Request().Context().Value(contextKey("key")).(string))
 	}
 
 	app := iris.New()
@@ -66,5 +67,5 @@ func TestFromStdWithNext(t *testing.T) {
 		Expect().Status(iris.StatusForbidden)
 
 	e.GET("/handlerwithnext").WithBasicAuth(basicauth, basicauth).
-		Expect().Status(iris.StatusOK).Body().Equal(passed)
+		Expect().Status(iris.StatusOK).Body().IsEqual(passed)
 }

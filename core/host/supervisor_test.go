@@ -10,13 +10,14 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 
-	"github.com/gavv/httpexpect"
+	"github.com/iris-contrib/httpexpect/v2"
 )
 
 const (
-	debug = false
+	debugMode = false
 )
 
 func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.Expect {
@@ -24,7 +25,7 @@ func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.E
 
 	if strings.HasPrefix(baseURL, "http") { // means we are testing real serve time
 		transporter = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS13},
 		}
 	} else { // means we are testing the handler itself
 		transporter = httpexpect.NewBinder(handler)
@@ -34,12 +35,12 @@ func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.E
 		BaseURL: baseURL,
 		Client: &http.Client{
 			Transport: transporter,
-			Jar:       httpexpect.NewJar(),
+			Jar:       httpexpect.NewCookieJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
 	}
 
-	if debug {
+	if debugMode {
 		testConfiguration.Printers = []httpexpect.Printer{
 			httpexpect.NewDebugPrinter(t, true),
 		}
@@ -51,6 +52,7 @@ func newTester(t *testing.T, baseURL string, handler http.Handler) *httpexpect.E
 func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *Supervisor) {
 	loggerOutput := &bytes.Buffer{}
 	logger := log.New(loggerOutput, "", 0)
+	mu := new(sync.RWMutex)
 	const (
 		expectedHelloMessage = "Hello\n"
 	)
@@ -78,7 +80,9 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 	}
 
 	helloMe := func(_ TaskHost) {
+		mu.Lock()
 		logger.Print(expectedHelloMessage)
+		mu.Unlock()
 	}
 
 	host := creator(srv, []func(TaskHost){helloMe})
@@ -89,13 +93,16 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 	// http testsing and various calls
 	// no need for time sleep because the following will take some time by theirselves
 	tester := newTester(t, "http://"+addr, mux)
-	tester.Request("GET", "/").Expect().Status(http.StatusOK).Body().Equal(expectedBody)
+	tester.Request("GET", "/").Expect().Status(http.StatusOK).Body().IsEqual(expectedBody)
 
 	// WARNING: Data Race here because we try to read the logs
 	// but it's "safe" here.
 
 	// testing Task (recorded) message:
-	if got := loggerOutput.String(); expectedHelloMessage != got {
+	mu.RLock()
+	got := loggerOutput.String()
+	mu.RUnlock()
+	if expectedHelloMessage != got {
 		t.Fatalf("expected hello Task's message to be '%s' but got '%s'", expectedHelloMessage, got)
 	}
 }

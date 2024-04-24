@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
+
+	"github.com/kataras/golog"
 )
 
-//
 // randStringBytesMaskImprSrc helps us to generate random paths for the test,
 // the below piece of code is external, as an answer to a stackoverflow question.
 //
@@ -71,9 +72,9 @@ func genPaths(routesLength, minCharLength, maxCharLength int) []string {
 //
 // GOCACHE=off && go test -run=XXX -bench=BenchmarkAPIBuilder$ -benchtime=10s
 func BenchmarkAPIBuilder(b *testing.B) {
-	rand.Seed(time.Now().Unix())
+	rand.New(rand.NewSource(time.Now().Unix()))
 
-	noOpHandler := func(ctx context.Context) {}
+	noOpHandler := func(ctx *context.Context) {}
 	handlersPerRoute := make(context.Handlers, 12)
 	for i := 0; i < cap(handlersPerRoute); i++ {
 		handlersPerRoute[i] = noOpHandler
@@ -83,8 +84,8 @@ func BenchmarkAPIBuilder(b *testing.B) {
 	// i.e /gzhyweumidvelqewrvoyqmzopvuxli/{name:string}/bibrkratnrrhvsjwsxygfwmqwhcstc/{age:int}/end
 	paths := genPaths(routesLength, 15, 42)
 
-	api := NewAPIBuilder()
-	requestHandler := NewDefaultHandler()
+	api := NewAPIBuilder(golog.Default)
+	requestHandler := NewDefaultHandler(nil, nil)
 
 	b.ReportAllocs()
 	b.ResetTimer()

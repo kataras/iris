@@ -1,1 +1,1 @@
-window.alert("app.js loaded from \"/");
+window.alert("app.js loaded from static page of \"/");

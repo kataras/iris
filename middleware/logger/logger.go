@@ -1,4 +1,4 @@
-// Package logger provides request logging via middleware. See _examples/http_request/request-logger
+// Package logger provides request logging via middleware. See _examples/logging/request-logger
 package logger
 
 import (
@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12/context"
-
-	"github.com/ryanuber/columnize"
 )
+
+func init() {
+	context.SetHandlerName("iris/middleware/logger.*", "iris.logger")
+}
 
 type requestLoggerMiddleware struct {
 	config Config
@@ -20,6 +22,7 @@ type requestLoggerMiddleware struct {
 // This is for the http requests.
 //
 // Receives an optional configuation.
+// Usage: app.UseRouter(logger.New()).
 func New(cfg ...Config) context.Handler {
 	c := DefaultConfig()
 	if len(cfg) > 0 {
@@ -31,8 +34,15 @@ func New(cfg ...Config) context.Handler {
 	return l.ServeHTTP
 }
 
+func (l *requestLoggerMiddleware) getPath(ctx *context.Context) string {
+	if l.config.Query {
+		return ctx.Request().URL.RequestURI()
+	}
+	return ctx.Path()
+}
+
 // Serve serves the middleware
-func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
+func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 	// skip logs and serve the main request immediately
 	if l.config.skip != nil {
 		if l.config.skip(ctx) {
@@ -47,16 +57,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	var startTime, endTime time.Time
 	startTime = time.Now()
 
-	ctx.Next()
-
-	// no time.Since in order to format it well after
-	endTime = time.Now()
-	latency = endTime.Sub(startTime)
-
-	if l.config.Status {
-		status = strconv.Itoa(ctx.GetStatusCode())
-	}
-
+	// Before Next.
 	if l.config.IP {
 		ip = ctx.RemoteAddr()
 	}
@@ -66,11 +67,23 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	}
 
 	if l.config.Path {
-		if l.config.Query {
-			path = ctx.Request().URL.RequestURI()
-		} else {
-			path = ctx.Path()
-		}
+		path = l.getPath(ctx)
+	}
+
+	ctx.Next()
+
+	// no time.Since in order to format it well after
+	endTime = time.Now()
+	latency = endTime.Sub(startTime)
+
+	if l.config.PathAfterHandler /* we don't care if Path is disabled */ {
+		path = l.getPath(ctx)
+		// note: we could just use the r.RequestURI which is the original one,
+		// but some users may need the stripped one (on HandleDir).
+	}
+
+	if l.config.Status {
+		status = strconv.Itoa(ctx.GetStatusCode())
 	}
 
 	var message interface{}
@@ -105,12 +118,6 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 		return
 	}
 
-	if l.config.Columns {
-		endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
-		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message, headerMessage)
-		_, _ = ctx.Application().Logger().Printer.Output.Write([]byte(output))
-		return
-	}
 	// no new line, the framework's logger is responsible how to render each log.
 	line := fmt.Sprintf("%v %4v %s %s %s", status, latency, ip, method, path)
 	if message != nil {
@@ -121,33 +128,25 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 		line += fmt.Sprintf(" %v", headerMessage)
 	}
 
-	// if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
-	// 	ctx.Application().Logger().Warn(line)
-	// } else {
-	ctx.Application().Logger().Info(line)
-	// }
-
-}
-
-// Columnize formats the given arguments as columns and returns the formatted output,
-// note that it appends a new line to the end.
-func Columnize(nowFormatted string, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{}) string {
-	titles := "Time | Status | Latency | IP | Method | Path"
-	line := fmt.Sprintf("%s | %v | %4v | %s | %s | %s", nowFormatted, status, latency, ip, method, path)
-	if message != nil {
-		titles += " | Message"
-		line += fmt.Sprintf(" | %v", message)
+	if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
+		ctx.Application().Logger().Warn(line)
+	} else {
+		ctx.Application().Logger().Info(line)
 	}
 
-	if headerMessage != nil {
-		titles += " | HeaderMessage"
-		line += fmt.Sprintf(" | %v", headerMessage)
+	if l.config.TraceRoute && ctx.GetCurrentRoute() != nil /* it is nil on unhandled error codes */ {
+		// Get the total length of handlers and see if all are executed.
+		// Note(@kataras): we get those after handler executed, because
+		// filters (and overlap) feature will set the handlers on router build
+		// state to fullfil their needs. And we need to respect
+		// any dev's custom SetHandlers&Do actions too so we don't give false info.
+		// if n, idx := len(ctx.Handlers()), ctx.HandlerIndex(-1); idx < n-1 {
+		//
+		// }
+		// Let's pass it into the Trace function itself which will "mark"
+		// every handler that is eventually executed.
+		// Note that if StopExecution is called, the index is always -1,
+		// so no "mark" signs will be printed at all <- this can be fixed by introducing a new ctx field.
+		ctx.GetCurrentRoute().Trace(ctx.Application().Logger().Printer, ctx.HandlerIndex(-1))
 	}
-
-	outputC := []string{
-		titles,
-		line,
-	}
-	output := columnize.SimpleFormat(outputC) + "\n"
-	return output
 }

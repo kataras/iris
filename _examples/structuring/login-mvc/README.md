@@ -1,1 +1,0 @@
-# Please navigate to the [_examples/mvc/login](https://github.com/kataras/iris/tree/master/_examples/mvc/login)

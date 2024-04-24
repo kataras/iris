@@ -2,10 +2,9 @@ package main
 
 import "github.com/kataras/iris/v12"
 
-// $ go get -u github.com/go-bindata/go-bindata/...
-// $ go-bindata ./public/...
-// $ go build
-// $ ./embedded-single-page-application-with-other-routes
+// $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
+// $ go-bindata -fs -prefix "public" ./public/...
+// $ go run .
 
 func newApp() *iris.Application {
 	app := iris.New()
@@ -13,17 +12,7 @@ func newApp() *iris.Application {
 		ctx.Writef("404 not found here")
 	})
 
-	app.HandleDir("/", "./public", iris.DirOptions{
-		Asset:      Asset,
-		AssetInfo:  AssetInfo,
-		AssetNames: AssetNames,
-		// IndexName:  "index.html", // default.
-		// If you want to show a list of embedded files when inside a directory without an index file:
-		// ShowList:   true,
-		// DirList: func(ctx iris.Context, dirName string, f http.File) error {
-		// 	// [Optional, custom code to show the html list].
-		// }
-	})
+	app.HandleDir("/", AssetFile())
 
 	// Note:
 	// if you want a dynamic index page then see the file-server/embedded-single-page-application
@@ -61,5 +50,5 @@ func main() {
 	// http://localhost:8080/.well-known/metrics
 	//
 	// Remember: we could use the root wildcard `app.Get("/{param:path}")` and serve the files manually as well.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

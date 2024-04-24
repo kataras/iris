@@ -37,7 +37,7 @@ var (
 	New = neffos.New
 	// DefaultIDGenerator returns a universal unique identifier for a new connection.
 	// It's the default `IDGenerator` if missing.
-	DefaultIDGenerator = func(ctx context.Context) string {
+	DefaultIDGenerator = func(ctx *context.Context) string {
 		return neffos.DefaultIDGenerator(ctx.ResponseWriter(), ctx.Request())
 	}
 
@@ -138,10 +138,10 @@ func SetDefaultUnmarshaler(fn func(data []byte, v interface{}) error) {
 }
 
 // IDGenerator is an iris-specific IDGenerator for new connections.
-type IDGenerator func(context.Context) string
+type IDGenerator func(*context.Context) string
 
-func wrapIDGenerator(idGen IDGenerator) func(ctx context.Context) neffos.IDGenerator {
-	return func(ctx context.Context) neffos.IDGenerator {
+func wrapIDGenerator(idGen IDGenerator) func(ctx *context.Context) neffos.IDGenerator {
+	return func(ctx *context.Context) neffos.IDGenerator {
 		return func(w http.ResponseWriter, r *http.Request) string {
 			return idGen(ctx)
 		}
@@ -151,40 +151,74 @@ func wrapIDGenerator(idGen IDGenerator) func(ctx context.Context) neffos.IDGener
 // Handler returns an Iris handler to be served in a route of an Iris application.
 // Accepts the neffos websocket server as its first input argument
 // and optionally an Iris-specific `IDGenerator` as its second one.
-func Handler(s *neffos.Server, IDGenerator ...IDGenerator) context.Handler {
+//
+// This SHOULD be the last handler in the route's chain as it hijacks the connection and the context.
+func Handler(s *neffos.Server, idGenerator ...IDGenerator) context.Handler {
 	idGen := DefaultIDGenerator
-	if len(IDGenerator) > 0 {
-		idGen = IDGenerator[0]
+	if len(idGenerator) > 0 {
+		idGen = idGenerator[0]
 	}
 
-	return func(ctx context.Context) {
+	if cb := s.OnDisconnect; cb != nil {
+		s.OnDisconnect = func(c *neffos.Conn) {
+			cb(c)
+			manualReleaseWithoutResp(GetContext(c))
+		}
+	} else {
+		s.OnDisconnect = func(c *neffos.Conn) {
+			manualReleaseWithoutResp(GetContext(c))
+		}
+	}
+
+	return func(ctx *context.Context) {
 		if ctx.IsStopped() {
+			// let the framework release it as always;
+			// socket was not created so disconnect event will not called and the
+			// DisablePoolRelease was not even called yet.
 			return
 		}
+
 		Upgrade(ctx, idGen, s)
 	}
 }
 
 // Upgrade upgrades the request and returns a new websocket Conn.
 // Use `Handler` for higher-level implementation instead.
-func Upgrade(ctx context.Context, idGen IDGenerator, s *neffos.Server) *neffos.Conn {
-	conn, _ := s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
+func Upgrade(ctx *context.Context, idGen IDGenerator, s *neffos.Server) *neffos.Conn {
+	/* Do NOT return the error as it is captured on the OnUpgradeError listener,
+	the end-developer should not be able to write to this http client directly. */
+	ctx.DisablePoolRelease()
+
+	conn, upgradeErr := s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
 		return &socketWrapper{
 			Socket: socket,
 			ctx:    ctx,
 		}
 	}, wrapIDGenerator(idGen)(ctx))
 
+	if upgradeErr != nil {
+		manualReleaseWithoutResp(ctx)
+	}
+
 	return conn
+}
+
+func manualReleaseWithoutResp(ctx *context.Context) {
+	ctx.ResponseWriter().EndResponse()                   // relases the response writer (common, recorder & compress).
+	ctx.Application().GetContextPool().ReleaseLight(ctx) // just releases the context.
 }
 
 type socketWrapper struct {
 	neffos.Socket
-	ctx context.Context
+	ctx *context.Context
 }
 
 // GetContext returns the Iris Context from a websocket connection.
-func GetContext(c *neffos.Conn) context.Context {
+//
+// Note that writing to the client connection through this Context is not allowed
+// from a websocket event because the connection is hijacked.
+// If used, you are limited for read-only access of the request e.g. read the request headers.
+func GetContext(c *neffos.Conn) *context.Context {
 	if sw, ok := c.Socket().(*socketWrapper); ok {
 		return sw.ctx
 	}

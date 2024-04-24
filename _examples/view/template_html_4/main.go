@@ -27,7 +27,7 @@ func main() {
 	// wildcard subdomain, will catch username1.... username2.... username3... username4.... username5...
 	// that our below links are providing via page.html's first argument which is the subdomain.
 
-	subdomain := app.Party("*.")
+	subdomain := app.WildcardSubdomain()
 
 	mypathRoute := subdomain.Get("/mypath", emptyHandler)
 	mypathRoute.Name = "my-page1"
@@ -52,7 +52,8 @@ func main() {
 		paramsAsArray := []string{"username5", "theParam1", "theParam2", "paramThirdAfterStatic"}
 		ctx.ViewData("ParamsAsArray", paramsAsArray)
 		if err := ctx.View("page.html"); err != nil {
-			panic(err)
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 
@@ -63,7 +64,7 @@ func main() {
 	app.Get("/mypath7/{paramfirst}/{paramsecond}/static/{paramthird}", emptyHandler).Name = "my-page7"
 
 	// http://127.0.0.1:8080
-	app.Run(iris.Addr(host))
+	app.Listen(host)
 }
 
 func emptyHandler(ctx iris.Context) {

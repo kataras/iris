@@ -29,6 +29,13 @@ func newMethodLexer(s string) *methodLexer {
 	return l
 }
 
+/*
+var allowedCapitalWords = map[string]struct{}{
+	"ID":   {},
+	"JSON": {},
+}
+*/
+
 func (l *methodLexer) reset(s string) {
 	l.cur = -1
 	var words []string
@@ -36,14 +43,31 @@ func (l *methodLexer) reset(s string) {
 		end := len(s)
 		start := -1
 
+		// outter:
 		for i, n := 0, end; i < n; i++ {
 			c := rune(s[i])
 			if unicode.IsUpper(c) {
 				// it doesn't count the last uppercase
 				if start != -1 {
+					/*
+						for allowedCapitalWord := range allowedCapitalWords {
+							capitalWordEnd := i + len(allowedCapitalWord) // takes last char too, e.g. ReadJSON, we need the JSON.
+							if len(s) >= capitalWordEnd {
+								word := s[i:capitalWordEnd]
+								if word == allowedCapitalWord {
+									words = append(words, word)
+									i = capitalWordEnd
+									start = i
+									continue outter
+								}
+							}
+						}
+					*/
+
 					end = i
 					words = append(words, s[start:end])
 				}
+
 				start = i
 				continue
 			}
@@ -92,20 +116,22 @@ func genParamKey(argIdx int) string {
 }
 
 type methodParser struct {
-	lexer  *methodLexer
-	fn     reflect.Method
-	macros macro.Macros
+	lexer              *methodLexer
+	fn                 reflect.Method
+	macros             *macro.Macros
+	customPathWordFunc CustomPathWordFunc
 }
 
-func parseMethod(macros macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
+func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) bool, wordFunc CustomPathWordFunc) (method, path string, err error) {
 	if skipper(fn.Name) {
 		return "", "", errSkip
 	}
 
 	p := &methodParser{
-		fn:     fn,
-		lexer:  newMethodLexer(fn.Name),
-		macros: macros,
+		fn:                 fn,
+		lexer:              newMethodLexer(fn.Name),
+		macros:             macros,
+		customPathWordFunc: wordFunc,
 	}
 	return p.parse()
 }
@@ -118,6 +144,11 @@ func methodTitle(httpMethod string) string {
 var errSkip = errors.New("skip")
 
 var allMethods = append(router.AllMethods[0:], []string{"ALL", "ANY"}...)
+
+// CustomPathWordFunc describes the function which can be passed
+// through `Application.SetCustomPathWordFunc` to customize
+// the controllers method parsing.
+type CustomPathWordFunc func(path, w string, wordIndex int) string
 
 func addPathWord(path, w string) string {
 	if path[len(path)-1] != '/' {
@@ -147,6 +178,7 @@ func (p *methodParser) parse() (method, path string, err error) {
 		return "", "", errSkip
 	}
 
+	wordIndex := 0
 	for {
 		w := p.lexer.next()
 		if w == "" {
@@ -171,8 +203,15 @@ func (p *methodParser) parse() (method, path string, err error) {
 
 			continue
 		}
-		// static path.
-		path = addPathWord(path, w)
+
+		// custom static path.
+		if p.customPathWordFunc != nil {
+			path = p.customPathWordFunc(path, w, wordIndex)
+		} else {
+			// default static path.
+			path = addPathWord(path, w)
+		}
+		wordIndex++
 	}
 	return
 }
@@ -226,7 +265,7 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 		}
 	}
 
-	// /{argfirst:path}, /{argfirst:long}...
+	// /{argfirst:path}, /{argfirst:int64}...
 	if path[len(path)-1] != '/' {
 		path += "/"
 	}

@@ -33,11 +33,11 @@ func Conditional(claimPredicate func() bool, validPredicate func() bool) Rule {
 }
 
 // Claim validator
-func (c *conditionalRule) Claim(ctx context.Context) bool {
+func (c *conditionalRule) Claim(ctx *context.Context) bool {
 	return c.claimPredicate()
 }
 
 // Valid validator
-func (c *conditionalRule) Valid(ctx context.Context) bool {
+func (c *conditionalRule) Valid(ctx *context.Context) bool {
 	return c.validPredicate()
 }

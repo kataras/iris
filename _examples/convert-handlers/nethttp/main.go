@@ -23,12 +23,9 @@ func main() {
 
 	// http://localhost:8080
 	// http://localhost:8080/ok
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func nativeTestMiddleware(w http.ResponseWriter, r *http.Request) {
 	println("Request path: " + r.URL.Path)
 }
-
-// Look "routing/custom-context" if you want to convert a custom handler with a custom Context
-// to a context.Handler.

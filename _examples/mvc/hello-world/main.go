@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
+	"strings"
 
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 // This example is equivalent to the
-// https://github.com/kataras/iris/blob/master/_examples/hello-world/main.go
+// https://github.com/kataras/iris/blob/main/_examples/hello-world/main.go
 //
 // It seems that additional code you
 // have to write doesn't worth it
@@ -40,6 +41,16 @@ func newApp() *iris.Application {
 
 	// Serve a controller based on the root Router, "/".
 	mvc.New(app).Handle(new(ExampleController))
+	// Add custom path func
+	mvc.New(app).SetCustomPathWordFunc(func(path, w string, wordIndex int) string {
+
+		if wordIndex == 0 {
+			w = strings.ToLower(w)
+		}
+		path += w
+		return path
+
+	}).Handle(new(ExampleControllerCustomPath))
 	return app
 }
 
@@ -50,7 +61,7 @@ func main() {
 	// http://localhost:8080/ping
 	// http://localhost:8080/hello
 	// http://localhost:8080/custom_path
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 // ExampleController serves the "/", "/ping" and "/hello".
@@ -80,6 +91,13 @@ func (c *ExampleController) GetHello() interface{} {
 	return map[string]string{"message": "Hello Iris!"}
 }
 
+// GetHelloWorld serves
+// Method:   GET
+// Resource: http://localhost:8080/hello/world
+func (c *ExampleController) GetHelloWorld() interface{} {
+	return map[string]string{"message": "Hello Iris! DefaultPath"}
+}
+
 // BeforeActivation called once, before the controller adapted to the main application
 // and of course before the server ran.
 // After version 9 you can also add custom routes for a specific controller's methods.
@@ -103,6 +121,15 @@ func (c *ExampleController) BeforeActivation(b mvc.BeforeActivation) {
 // Resource: http://localhost:8080/custom_path
 func (c *ExampleController) CustomHandlerWithoutFollowingTheNamingGuide() string {
 	return "hello from the custom handler without following the naming guide"
+}
+
+type ExampleControllerCustomPath struct{}
+
+// GetHelloWorld serves
+// Method:   GET
+// Resource: http://localhost:8080/helloWorld
+func (c *ExampleControllerCustomPath) GetHelloWorld() interface{} {
+	return map[string]string{"message": "Hello Iris! CustomPath"}
 }
 
 // GetUserBy serves

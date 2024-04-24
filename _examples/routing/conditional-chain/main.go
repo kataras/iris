@@ -52,5 +52,5 @@ func main() {
 
 	// http://localhost:8080/api/v1/users
 	// http://localhost:8080/api/v1/users?admin=true
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

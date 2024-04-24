@@ -1,8 +1,9 @@
-version: 2
+version: 3
 cli:
   server: https://app.fossa.com
-  fetcher: custom
-  project: https://github.com/kataras/iris.git
+  fetcher: git
+  package: github.com/kataras/iris
+  project: github.com/kataras/iris
 analyze:
   modules:
     - name: iris

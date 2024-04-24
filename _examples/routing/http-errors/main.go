@@ -4,6 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// See _examples/routing/http-wire-errors as well.
 func main() {
 	app := iris.New()
 
@@ -38,7 +39,7 @@ func main() {
 	// http://localhost:8080/my500
 	// http://localhost:8080/u/gerasimos
 	// http://localhost:8080/product-problem
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func newProductProblem(productName, detail string) iris.Problem {

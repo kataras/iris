@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 )
 
 // Most important tests to look:
@@ -66,6 +67,8 @@ func TestGoodParamFuncName(t *testing.T) {
 }
 
 func testEvaluatorRaw(t *testing.T, macroEvaluator *Macro, input string, expectedType reflect.Kind, pass bool, i int) {
+	t.Helper()
+
 	if macroEvaluator.Evaluator == nil && pass {
 		return // if not evaluator defined then it should allow everything.
 	}
@@ -120,13 +123,22 @@ func TestIntEvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 5
 		{false, "42 18446744073709551615"},                 // 6
 		{false, "--42"},                                    // 7
-		{false, "+42"},                                     // 8
+		{true, "+42"},                                      // 8
 		{false, "main.css"},                                // 9
 		{false, "/assets/main.css"},                        // 10
 	}
 
 	for i, tt := range tests {
 		testEvaluatorRaw(t, Int, tt.input, reflect.Int, tt.pass, i)
+	}
+}
+
+func BenchmarkIntEvaluatorRaw(b *testing.B) {
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		Int.Evaluator("1234568320")
+		Int.Evaluator("-12345678999321")
 	}
 }
 
@@ -145,7 +157,7 @@ func TestInt8EvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 7
 		{false, "42 18446744073709551615"},                 // 8
 		{false, "--42"},                                    // 9
-		{false, "+42"},                                     // 10
+		{true, "+42"},                                      // 10
 		{false, "main.css"},                                // 11
 		{false, "/assets/main.css"},                        // 12
 	}
@@ -170,7 +182,7 @@ func TestInt16EvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 7
 		{false, "42 18446744073709551615"},                 // 8
 		{false, "--42"},                                    // 9
-		{false, "+42"},                                     // 10
+		{true, "+42"},                                      // 10
 		{false, "main.css"},                                // 11
 		{false, "/assets/main.css"},                        // 12
 	}
@@ -197,7 +209,7 @@ func TestInt32EvaluatorRaw(t *testing.T) {
 		{false, "-18446744073709553213213213213213121615"}, // 9
 		{false, "42 18446744073709551615"},                 // 10
 		{false, "--42"},                                    // 11
-		{false, "+42"},                                     // 12
+		{true, "+42"},                                      // 12
 		{false, "main.css"},                                // 13
 		{false, "/assets/main.css"},                        // 14
 	}
@@ -278,7 +290,7 @@ func TestUint8EvaluatorRaw(t *testing.T) {
 		{false, "+1"},                                      // 9
 		{false, "18446744073709551615"},                    // 10
 		{false, "9223372036854775807"},                     // 11
-		{false, "021"},                                     // 12 - no leading zeroes are allowed.
+		{true, "021"},                                      // 12 - leading zeroes are allowed.
 		{false, "300"},                                     // 13
 		{true, "0"},                                        // 14
 		{true, "255"},                                      // 15
@@ -416,6 +428,119 @@ func TestPathEvaluatorRaw(t *testing.T) {
 
 	for i, tt := range pathTests {
 		testEvaluatorRaw(t, Path, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
+func TestUUIDEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{true, "978ad967-5fad-4c82-af99-580097ace662"}, // v4
+		{true, "c7067f9c-6d43-11eb-9439-0242ac130002"}, // v1
+		{false, "astring"},                         // 2
+		{false, "astringwith_numb3rS_and_symbol$"}, // 3
+		{false, "32321"},                           // 4
+		{false, "main.css"},                        // 5
+		{false, "/assets/main.css"},                // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, UUID, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
+func TestMailEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{true, "kataras2006@hotmail.com"}, // 0
+		{true, "iris-go@outlook.com"},     // 1
+		{true, "iris-go@mail"},            // 2
+		{true, "kataras@k.c"},             // 3
+		{false, "www.kataras@"},           // 4
+		{false, "name"},                   // 5
+		{false, "b-c@"},                   // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Mail, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
+func TestEmailEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{true, "kataras2006@hotmail.com"}, // 0
+		{true, "iris-go@outlook.com"},     // 1
+		{false, "iris-go@mail"},           // 2
+		{false, "kataras@k.c"},            // 3
+		{false, "www.kataras@"},           // 4
+		{false, "name"},                   // 5
+		{false, "b-c@"},                   // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Email, tt.input, reflect.String, tt.pass, i)
+	}
+}
+
+func TestDateEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass            bool
+		input           string
+		timeStringValue string
+	}{
+		{true, "2022/04/21", "2022-04-21 00:00:00 +0000 UTC"}, // 0
+		{true, "2022/12/05", "2022-12-05 00:00:00 +0000 UTC"}, // 1
+		{false, "2022/4", ""},      // 2
+		{false, "1/4/1", ""},       // 3
+		{false, "2022/4/", ""},     // 4
+		{false, "2022/4/21/0", ""}, // 5
+		{false, "1993", ""},        // 6
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Date, tt.input, reflect.TypeOf(time.Time{}).Kind(), tt.pass, i)
+
+		if v, ok := Date.Evaluator(tt.input); ok {
+			if value, ok := v.(time.Time); ok {
+				if expected, got := tt.timeStringValue, value.String(); expected != got {
+					t.Fatalf("[%d] expected: %s but got: %s", i, expected, got)
+				}
+			} else {
+				t.Fatalf("[%d] expected to be able to cast as time.Time directly", i)
+			}
+		}
+	}
+}
+
+func TestWeekdayEvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass     bool
+		input    string
+		expected time.Weekday
+	}{
+		{true, "Monday", time.Monday},        // 0
+		{true, "monday", time.Monday},        // 1
+		{false, "Sundays", time.Weekday(-1)}, // 2
+		{false, "sundays", time.Weekday(-1)}, // 3
+		{false, "-1", time.Weekday(-1)},      // 4
+		{true, "0000002", time.Tuesday},      // 5
+		{true, "3", time.Wednesday},          // 6
+		{true, "6", time.Saturday},           // 7
+	}
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Weekday, tt.input, reflect.TypeOf(time.Weekday(0)).Kind(), tt.pass, i)
+
+		if v, ok := Weekday.Evaluator(tt.input); ok {
+			if value, ok := v.(time.Weekday); ok {
+				if expected, got := tt.expected, value; expected != got {
+					t.Fatalf("[%d] expected: %s but got: %s", i, expected, got)
+				}
+			} else {
+				t.Fatalf("[%d] expected to be able to cast as time.Weekday directly", i)
+			}
+		}
 	}
 }
 

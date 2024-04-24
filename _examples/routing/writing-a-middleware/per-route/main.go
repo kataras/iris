@@ -38,7 +38,7 @@ are applied here as well.`)
 		ctx.Next() // call the done handlers.
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func before(ctx iris.Context) {

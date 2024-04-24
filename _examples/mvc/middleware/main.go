@@ -14,20 +14,22 @@ var cacheHandler = cache.Handler(10 * time.Second)
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	mvc.Configure(app, configure)
 
 	// http://localhost:8080
 	// http://localhost:8080/other
 	//
 	// refresh every 10 seconds and you'll see different time output.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 func configure(m *mvc.Application) {
 	m.Router.Use(cacheHandler)
 	m.Handle(&exampleController{
 		timeFormat: "Mon, Jan 02 2006 15:04:05",
-	})
+	} /* ,mvc.IgnoreEmbedded --- Can be used to ignore any embedded struct method handlers */)
 }
 
 type exampleController struct {

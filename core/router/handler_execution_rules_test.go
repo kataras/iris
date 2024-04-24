@@ -14,12 +14,12 @@ var (
 
 	testExecutionResponse = func(t *testing.T, app *iris.Application, path string) {
 		e := httptest.New(t, app)
-		e.GET(path).Expect().Status(httptest.StatusOK).Body().Equal(finalExecutionRulesResponse)
+		e.GET(path).Expect().Status(httptest.StatusOK).Body().IsEqual(finalExecutionRulesResponse)
 	}
 )
 
 func writeStringHandler(text string, withNext bool) context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		ctx.WriteString(text)
 		if withNext {
 			ctx.Next()
@@ -87,5 +87,5 @@ func TestRouterExecutionRulesShouldNotModifyTheCallersHandlerAndChildrenCanReset
 	testExecutionResponse(t, app, "/")
 
 	e := httptest.New(t, app)
-	e.GET("/c").Expect().Status(httptest.StatusOK).Body().Equal("4") // the "should not" should not be written.
+	e.GET("/c").Expect().Status(httptest.StatusOK).Body().IsEqual("4") // the "should not" should not be written.
 }

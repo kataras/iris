@@ -14,10 +14,10 @@ func main() {
 	app.Logger().SetLevel("debug")
 
 	// load templates.
-	app.RegisterView(iris.HTML("./views", ".html"))
+	// app.RegisterView(iris.HTML("./views", ".html"))
 
 	// render the ./browser/index.html.
-	app.HandleDir("/", "./browser")
+	app.HandleDir("/", iris.Dir("./browser"))
 
 	websocketAPI := app.Party("/websocket")
 
@@ -31,7 +31,7 @@ func main() {
 
 	websocketAPI.Get("/", websocket.Handler(websocketServer))
 	// http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 var visits uint64

@@ -82,17 +82,18 @@ func registerGamesRoutes(app *iris.Application) {
 }
 
 func registerSubdomains(app *iris.Application) {
-	mysubdomain := app.Party("mysubdomain.")
+	mysubdomain := app.Subdomain("mysubdomain")
 	// http://mysubdomain.myhost.com
 	mysubdomain.Get("/", h)
 
-	willdcardSubdomain := app.Party("*.")
+	willdcardSubdomain := app.WildcardSubdomain()
 	willdcardSubdomain.Get("/", h)
 	willdcardSubdomain.Party("/party").Get("/", h)
 }
 
 func newApp() *iris.Application {
 	app := iris.New()
+
 	registerErrors(app)
 	registerGamesRoutes(app)
 	registerSubdomains(app)
@@ -177,5 +178,5 @@ func main() {
 		// FIRE NOT FOUND
 		http://localhost:8080/coudlntfound
 	*/
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

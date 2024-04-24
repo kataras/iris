@@ -2,21 +2,23 @@
 package mvc_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v12/hero"
 	"github.com/kataras/iris/v12/httptest"
 
 	. "github.com/kataras/iris/v12/mvc"
 )
 
 type testController struct {
-	Ctx context.Context
+	Ctx *context.Context
 }
 
-var writeMethod = func(ctx context.Context) {
+var writeMethod = func(ctx *context.Context) {
 	ctx.Writef(ctx.Method())
 }
 
@@ -57,8 +59,8 @@ func (c *testController) Trace() {
 }
 
 type (
-	testControllerAll struct{ Ctx context.Context }
-	testControllerAny struct{ Ctx context.Context } // exactly the same as All.
+	testControllerAll struct{ Ctx *context.Context }
+	testControllerAny struct{ Ctx *context.Context } // exactly the same as All.
 )
 
 func (c *testControllerAll) All() {
@@ -80,18 +82,18 @@ func TestControllerMethodFuncs(t *testing.T) {
 	for _, method := range router.AllMethods {
 
 		e.Request(method, "/").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
+			Body().IsEqual(method)
 
 		e.Request(method, "/all").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
+			Body().IsEqual(method)
 
 		e.Request(method, "/any").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
+			Body().IsEqual(method)
 	}
 }
 
 type testControllerBeginAndEndRequestFunc struct {
-	Ctx context.Context
+	Ctx *context.Context
 
 	Username string
 }
@@ -100,12 +102,12 @@ type testControllerBeginAndEndRequestFunc struct {
 //
 // useful when more than one methods using the
 // same request values or context's function calls.
-func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
+func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx *context.Context) {
 	c.Username = ctx.Params().Get("username")
 }
 
 // called after every method (Get() or Post()).
-func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
+func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx *context.Context) {
 	ctx.Writef("done") // append "done" to the response
 }
 
@@ -135,9 +137,9 @@ func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 
 	for _, username := range usernames {
 		e.GET("/profile/" + username).Expect().Status(iris.StatusOK).
-			Body().Equal(username + doneResponse)
+			Body().IsEqual(username + doneResponse)
 		e.POST("/profile/" + username).Expect().Status(iris.StatusOK).
-			Body().Equal(username + doneResponse)
+			Body().IsEqual(username + doneResponse)
 	}
 }
 
@@ -151,7 +153,7 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		"bill":           true,
 		"whoisyourdaddy": false,
 	}
-	middlewareCheck := func(ctx context.Context) {
+	middlewareCheck := func(ctx *context.Context) {
 		for username, allow := range usernames {
 			if ctx.Params().Get("username") == username && allow {
 				ctx.Next()
@@ -176,17 +178,17 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		getEx := e.GET("/profile/" + username).Expect()
 		if allow {
 			getEx.Status(iris.StatusOK).
-				Body().Equal(username + doneResponse)
+				Body().IsEqual(username + doneResponse)
 		} else {
-			getEx.Status(iris.StatusForbidden).Body().Equal("forbidden")
+			getEx.Status(iris.StatusForbidden).Body().IsEqual("forbidden")
 		}
 
 		postEx := e.POST("/profile/" + username).Expect()
 		if allow {
 			postEx.Status(iris.StatusOK).
-				Body().Equal(username + doneResponse)
+				Body().IsEqual(username + doneResponse)
 		} else {
-			postEx.Status(iris.StatusForbidden).Body().Equal("forbidden")
+			postEx.Status(iris.StatusForbidden).Body().IsEqual("forbidden")
 		}
 	}
 }
@@ -196,7 +198,7 @@ type Model struct {
 }
 
 type testControllerEndRequestAwareness struct {
-	Ctx context.Context
+	Ctx *context.Context
 }
 
 func (c *testControllerEndRequestAwareness) Get() {
@@ -208,7 +210,7 @@ func (c *testControllerEndRequestAwareness) Get() {
 		})
 }
 
-func writeModels(ctx context.Context, names ...string) {
+func writeModels(ctx *context.Context, names ...string) {
 	if expected, got := len(names), len(ctx.GetViewData()); expected != got {
 		ctx.Writef("expected view data length: %d but got: %d for names: %s", expected, got, names)
 		return
@@ -232,8 +234,8 @@ func writeModels(ctx context.Context, names ...string) {
 	}
 }
 
-func (c *testControllerEndRequestAwareness) BeginRequest(ctx context.Context) {}
-func (c *testControllerEndRequestAwareness) EndRequest(ctx context.Context) {
+func (c *testControllerEndRequestAwareness) BeginRequest(ctx *context.Context) {}
+func (c *testControllerEndRequestAwareness) EndRequest(ctx *context.Context) {
 	writeModels(ctx, "TestModel", "myModel")
 }
 
@@ -249,7 +251,7 @@ func TestControllerEndRequestAwareness(t *testing.T) {
 
 	for _, username := range usernames {
 		e.GET("/era/" + username).Expect().Status(iris.StatusOK).
-			Body().Equal(username + username + "2")
+			Body().IsEqual(username + username + "2")
 	}
 }
 
@@ -258,7 +260,7 @@ type testBindType struct {
 }
 
 type testControllerBindStruct struct {
-	Ctx context.Context
+	Ctx *context.Context
 
 	//  should start with upper letter of course
 	TitlePointer *testBindType // should have the value of the "myTitlePtr" on test
@@ -281,7 +283,7 @@ type testControllerBindDeep struct {
 }
 
 func (t *testControllerBindDeep) BeforeActivation(b BeforeActivation) {
-	b.Dependencies().Add(func(ctx iris.Context) (v testCustomStruct, err error) {
+	b.Dependencies().Register(func(ctx iris.Context) (v testCustomStruct, err error) {
 		err = ctx.ReadJSON(&v)
 		return
 	})
@@ -313,17 +315,17 @@ func TestControllerDependencies(t *testing.T) {
 	e := httptest.New(t, app)
 	expected := t1 + t2
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal(expected)
+		Body().IsEqual(expected)
 	e.GET("/ctx").Expect().Status(iris.StatusContinue)
 
 	e.GET("/deep").Expect().Status(iris.StatusOK).
-		Body().Equal(expected)
+		Body().IsEqual(expected)
 
 	e.POST("/deep").WithJSON(iris.Map{"name": "kataras"}).Expect().Status(iris.StatusOK).
-		Body().Equal("kataras")
+		Body().IsEqual("kataras")
 
 	e.POST("/deep").Expect().Status(iris.StatusBadRequest).
-		Body().Equal("unexpected end of JSON input")
+		Body().IsEqual("EOF")
 }
 
 type testCtrl0 struct {
@@ -334,7 +336,7 @@ func (c *testCtrl0) Get() string {
 	return c.Ctx.Params().Get("username")
 }
 
-func (c *testCtrl0) EndRequest(ctx context.Context) {
+func (c *testCtrl0) EndRequest(ctx *context.Context) {
 	if c.TitlePointer == nil {
 		ctx.Writef("\nTitlePointer is nil!\n")
 	} else {
@@ -346,7 +348,7 @@ func (c *testCtrl0) EndRequest(ctx context.Context) {
 }
 
 type testCtrl00 struct {
-	Ctx context.Context
+	Ctx *context.Context
 
 	testCtrl000
 }
@@ -360,8 +362,8 @@ type testCtrl000 struct {
 type testCtrl0000 struct {
 }
 
-func (c *testCtrl0000) BeginRequest(ctx context.Context) {}
-func (c *testCtrl0000) EndRequest(ctx context.Context) {
+func (c *testCtrl0000) BeginRequest(ctx *context.Context) {}
+func (c *testCtrl0000) EndRequest(ctx *context.Context) {
 	ctx.Writef("finish")
 }
 
@@ -379,13 +381,13 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/user/" + username).Expect().
-		Status(iris.StatusOK).Body().Equal(expected)
+		Status(iris.StatusOK).Body().IsEqual(expected)
 }
 
 type testControllerRelPathFromFunc struct{}
 
-func (c *testControllerRelPathFromFunc) BeginRequest(ctx context.Context) {}
-func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
+func (c *testControllerRelPathFromFunc) BeginRequest(ctx *context.Context) {}
+func (c *testControllerRelPathFromFunc) EndRequest(ctx *context.Context) {
 	ctx.Writef("%s:%s", ctx.Method(), ctx.Path())
 }
 
@@ -419,47 +421,47 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/")
+		Body().IsEqual("GET:/")
 
 	e.GET("/18446744073709551615").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/18446744073709551615")
+		Body().IsEqual("GET:/18446744073709551615")
 	e.GET("/uint8/ratio/255").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/uint8/ratio/255")
+		Body().IsEqual("GET:/uint8/ratio/255")
 	e.GET("/uint8/ratio/256").Expect().Status(iris.StatusNotFound)
 	e.GET("/int64/ratio/-42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/int64/ratio/-42")
+		Body().IsEqual("GET:/int64/ratio/-42")
 	e.GET("/something/true").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/true")
+		Body().IsEqual("GET:/something/true")
 	e.GET("/something/false").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/false")
+		Body().IsEqual("GET:/something/false")
 	e.GET("/something/truee").Expect().Status(iris.StatusNotFound)
 	e.GET("/something/falsee").Expect().Status(iris.StatusNotFound)
 	e.GET("/something/kataras/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/kataras/42")
+		Body().IsEqual("GET:/something/kataras/42")
 	e.GET("/something/new/kataras/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/new/kataras/42")
+		Body().IsEqual("GET:/something/new/kataras/42")
 	e.GET("/something/true/else/this/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/something/true/else/this/42")
+		Body().IsEqual("GET:/something/true/else/this/42")
 
 	e.GET("/login").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/login")
+		Body().IsEqual("GET:/login")
 	e.POST("/login").Expect().Status(iris.StatusOK).
-		Body().Equal("POST:/login")
+		Body().IsEqual("POST:/login")
 	e.GET("/admin/login").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/admin/login")
+		Body().IsEqual("GET:/admin/login")
 	e.PUT("/something/into/this").Expect().Status(iris.StatusOK).
-		Body().Equal("PUT:/something/into/this")
+		Body().IsEqual("PUT:/something/into/this")
 	e.GET("/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/42")
+		Body().IsEqual("GET:/42")
 	e.GET("/anything/here").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/anything/here")
+		Body().IsEqual("GET:/anything/here")
 
 	e.GET("/location/x").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/location/x")
+		Body().IsEqual("GET:/location/x")
 	e.GET("/location/x/y").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/location/x/y")
+		Body().IsEqual("GET:/location/x/y")
 	e.GET("/location/z/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/location/z/42")
+		Body().IsEqual("GET:/location/z/42")
 }
 
 type testControllerActivateListener struct {
@@ -467,11 +469,20 @@ type testControllerActivateListener struct {
 }
 
 func (c *testControllerActivateListener) BeforeActivation(b BeforeActivation) {
-	b.Dependencies().AddOnce(&testBindType{title: "default title"})
+	b.Dependencies().Register(&testBindType{title: "overrides the dependency but not the field"}) // overrides the `Register` previous calls.
+
+	// b.Handle("POST", "/me/tos-read", "MeTOSRead")
+	// b.Handle("GET", "/me/tos-read", "MeTOSRead")
+	// OR:
+	b.HandleMany("GET POST", "/me/tos-read", "MeTOSRead")
 }
 
 func (c *testControllerActivateListener) Get() string {
 	return c.TitlePointer.title
+}
+
+func (c *testControllerActivateListener) MeTOSRead() string {
+	return "MeTOSRead"
 }
 
 func TestControllerActivateListener(t *testing.T) {
@@ -485,17 +496,22 @@ func TestControllerActivateListener(t *testing.T) {
 	// or
 	m.Party("/manual2").Handle(&testControllerActivateListener{
 		TitlePointer: &testBindType{
-			title: "my title",
+			title: "my manual title",
 		},
 	})
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("default title")
+		Body().IsEqual("overrides the dependency but not the field")
+	e.GET("/me/tos-read").Expect().Status(iris.StatusOK).
+		Body().IsEqual("MeTOSRead")
+	e.POST("/me/tos-read").Expect().Status(iris.StatusOK).
+		Body().IsEqual("MeTOSRead")
+
 	e.GET("/manual").Expect().Status(iris.StatusOK).
-		Body().Equal("my title")
+		Body().IsEqual("overrides the dependency but not the field")
 	e.GET("/manual2").Expect().Status(iris.StatusOK).
-		Body().Equal("my title")
+		Body().IsEqual("my manual title")
 }
 
 type testControllerNotCreateNewDueManuallySettingAllFields struct {
@@ -505,13 +521,12 @@ type testControllerNotCreateNewDueManuallySettingAllFields struct {
 }
 
 func (c *testControllerNotCreateNewDueManuallySettingAllFields) AfterActivation(a AfterActivation) {
-	if n := a.DependenciesReadOnly().Len(); n != 2 {
-		c.T.Fatalf(`expecting 2 dependency, the 'T' and the 'TitlePointer' that we manually insert
-			and the fields total length is 2 so it will not create a new controller on each request
-			however the dependencies are available here
-			although the struct injector is being ignored when
-			creating the controller's handlers because we set it to invalidate state at "newControllerActivator"
-			--  got dependencies length: %d`, n)
+	if n := len(a.DependenciesReadOnly()) - len(hero.BuiltinDependencies) - 1; /* Application */ n != 1 {
+		c.T.Fatalf(`expecting 1 dependency;
+- the 'T' and the 'TitlePointer' are manually binded (nonzero fields on initilization)
+- controller has no more than these two fields, it's a singleton
+- however, the dependencies length here should be 1 because the injector's options handler dependencies contains the controller's value dependency itself
+--  got dependencies length: %d`, n)
 	}
 
 	if !a.Singleton() {
@@ -535,7 +550,7 @@ func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal("my title")
+		Body().IsEqual("my title")
 }
 
 type testControllerRequestScopedDependencies struct {
@@ -551,7 +566,7 @@ func (c *testControllerRequestScopedDependencies) GetCustomContext() string {
 	return c.MyContext.OtherField
 }
 
-func newRequestDep1(ctx context.Context) *testCustomStruct {
+func newRequestDep1(ctx *context.Context) *testCustomStruct {
 	return &testCustomStruct{
 		Name: ctx.URLParam("name"),
 		Age:  ctx.URLParamIntDefault("age", 0),
@@ -559,11 +574,11 @@ func newRequestDep1(ctx context.Context) *testCustomStruct {
 }
 
 type testMyContext struct {
-	Context    context.Context
+	Context    *context.Context
 	OtherField string
 }
 
-func newRequestDep2(ctx context.Context) *testMyContext {
+func newRequestDep2(ctx *context.Context) *testMyContext {
 	return &testMyContext{
 		Context:    ctx,
 		OtherField: "test",
@@ -579,9 +594,168 @@ func TestControllerRequestScopedDependencies(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/").WithQuery("name", "kataras").WithQuery("age", 27).
-		Expect().Status(httptest.StatusOK).JSON().Equal(&testCustomStruct{
+		Expect().Status(httptest.StatusOK).JSON().IsEqual(&testCustomStruct{
 		Name: "kataras",
 		Age:  27,
 	})
-	e.GET("/custom/context").Expect().Status(httptest.StatusOK).Body().Equal("test")
+	e.GET("/custom/context").Expect().Status(httptest.StatusOK).Body().IsEqual("test")
+}
+
+type (
+	testServiceDoSomething struct{}
+
+	TestControllerAsDeepDep struct {
+		Ctx     iris.Context
+		Service *testServiceDoSomething
+	}
+
+	FooController struct {
+		TestControllerAsDeepDep
+	}
+
+	BarController struct {
+		FooController
+	}
+
+	FinalController struct {
+		BarController
+	}
+)
+
+func (s *testServiceDoSomething) DoSomething(ctx iris.Context) {
+	ctx.WriteString("foo bar")
+}
+
+func (c *FinalController) GetSomething() {
+	c.Service.DoSomething(c.Ctx)
+}
+
+func TestControllersInsideControllerDeep(t *testing.T) {
+	app := iris.New()
+	m := New(app)
+	m.Register(new(testServiceDoSomething))
+	m.Handle(new(FinalController))
+
+	e := httptest.New(t, app)
+	e.GET("/something").Expect().Status(httptest.StatusOK).Body().IsEqual("foo bar")
+}
+
+type testApplicationDependency struct {
+	App *Application
+}
+
+func (c *testApplicationDependency) Get() string {
+	return c.App.Name
+}
+
+func TestApplicationDependency(t *testing.T) {
+	app := iris.New()
+	m := New(app).SetName("app1")
+	m.Handle(new(testApplicationDependency))
+
+	m2 := m.Clone(app.Party("/other")).SetName("app2")
+	m2.Handle(new(testApplicationDependency))
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(httptest.StatusOK).Body().IsEqual("app1")
+	e.GET("/other").Expect().Status(httptest.StatusOK).Body().IsEqual("app2")
+}
+
+type testControllerMethodHandlerBindStruct struct{}
+
+type bindStructData struct {
+	Name string `json:"name" url:"name"`
+}
+
+func (*testControllerMethodHandlerBindStruct) Any(data bindStructData) bindStructData {
+	return data
+}
+
+func (*testControllerMethodHandlerBindStruct) PostBySlice(id uint64, manyData []bindStructData) []bindStructData {
+	return manyData
+}
+
+type dataSlice []bindStructData
+
+func (*testControllerMethodHandlerBindStruct) PostBySlicetype(id uint64, manyData dataSlice) dataSlice {
+	return manyData
+}
+
+type dataSlicePtr []*bindStructData
+
+func (*testControllerMethodHandlerBindStruct) PostBySlicetypeptr(id uint64, manyData dataSlicePtr) dataSlicePtr {
+	return manyData
+}
+
+func TestControllerMethodHandlerBindStruct(t *testing.T) {
+	app := iris.New()
+
+	m := New(app.Party("/data"))
+	m.HandleError(func(ctx iris.Context, err error) {
+		t.Fatalf("Path: %s, Error: %v", ctx.Path(), err)
+	})
+
+	m.Handle(new(testControllerMethodHandlerBindStruct))
+
+	data := bindStructData{Name: "kataras"}
+	manyData := []bindStructData{data, {"john doe"}}
+
+	e := httptest.New(t, app)
+	e.GET("/data").WithQueryObject(data).Expect().Status(httptest.StatusOK).JSON().IsEqual(data)
+	e.PATCH("/data").WithJSON(data).Expect().Status(httptest.StatusOK).JSON().IsEqual(data)
+	e.POST("/data/42/slice").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().IsEqual(manyData)
+	e.POST("/data/42/slicetype").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().IsEqual(manyData)
+	e.POST("/data/42/slicetypeptr").WithJSON(manyData).Expect().Status(httptest.StatusOK).JSON().IsEqual(manyData)
+	// more tests inside the hero package itself.
+}
+
+func TestErrorHandlerContinue(t *testing.T) {
+	app := iris.New()
+	m := New(app)
+	m.Handle(new(testControllerErrorHandlerContinue))
+	m.Handle(new(testControllerFieldErrorHandlerContinue))
+	e := httptest.New(t, app)
+
+	for _, path := range []string{"/test", "/test/field"} {
+		e.POST(path).WithMultipart().
+			WithFormField("username", "makis").
+			WithFormField("age", "27").
+			WithFormField("unknown", "continue").
+			Expect().Status(httptest.StatusOK).Body().IsEqual("makis is 27 years old\n")
+	}
+}
+
+type testControllerErrorHandlerContinue struct{}
+
+type registerForm struct {
+	Username string `form:"username"`
+	Age      int    `form:"age"`
+}
+
+func (c *testControllerErrorHandlerContinue) HandleError(ctx iris.Context, err error) {
+	if iris.IsErrPath(err) {
+		return // continue.
+	}
+
+	ctx.StopWithError(iris.StatusBadRequest, err)
+}
+
+func (c *testControllerErrorHandlerContinue) PostTest(form registerForm) string {
+	return fmt.Sprintf("%s is %d years old\n", form.Username, form.Age)
+}
+
+type testControllerFieldErrorHandlerContinue struct {
+	Form *registerForm
+}
+
+func (c *testControllerFieldErrorHandlerContinue) HandleError(ctx iris.Context, err error) {
+	if iris.IsErrPath(err) {
+		return // continue.
+	}
+
+	ctx.StopWithError(iris.StatusBadRequest, err)
+}
+
+func (c *testControllerFieldErrorHandlerContinue) PostTestField() string {
+	return fmt.Sprintf("%s is %d years old\n", c.Form.Username, c.Form.Age)
 }

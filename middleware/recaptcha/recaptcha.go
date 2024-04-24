@@ -3,13 +3,17 @@ package recaptcha
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/netutil"
 )
+
+func init() {
+	context.SetHandlerName("iris/middleware/recaptcha.*", "iris.reCAPTCHA")
+}
 
 const (
 	// responseFormValue = "g-recaptcha-response"
@@ -38,19 +42,18 @@ var Client = netutil.Client(time.Duration(20 * time.Second))
 //
 // Use `SiteVerify` to verify a request inside another handler if needed.
 func New(secret string) context.Handler {
-	return func(ctx context.Context) {
-		if SiteFerify(ctx, secret).Success {
+	return func(ctx *context.Context) {
+		if SiteVerify(ctx, secret).Success {
 			ctx.Next()
 		}
 	}
 }
 
-// SiteFerify accepts  context and the secret key(https://www.google.com/recaptcha)
-//  and returns the google's recaptcha response, if `response.Success` is true
-// then validation passed.
+// SiteVerify accepts  context and the secret key(https://www.google.com/recaptcha) and
+// returns the google's recaptcha response, if `response.Success` is true then validation passed.
 //
 // Use `New` for middleware use instead.
-func SiteFerify(ctx context.Context, secret string) (response Response) {
+func SiteVerify(ctx *context.Context, secret string) (response Response) {
 	generatedResponseID := ctx.FormValue("g-recaptcha-response")
 	if generatedResponseID == "" {
 		response.ErrorCodes = append(response.ErrorCodes,
@@ -70,7 +73,7 @@ func SiteFerify(ctx context.Context, secret string) (response Response) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	r.Body.Close()
 	if err != nil {
 		response.ErrorCodes = append(response.ErrorCodes, err.Error())
@@ -109,22 +112,24 @@ var recaptchaForm = `<form action="%s" method="POST">
 // Example Code:
 //
 // Method: "POST" | Path: "/contact"
-// func postContact(ctx context.Context) {
-// 	// [...]
-// 	response := recaptcha.SiteFerify(ctx, recaptchaSecret)
 //
-// 	if response.Success {
-// 		// [your action here, i.e sendEmail(...)]
-// 	}
+//	func postContact(ctx *context.Context) {
+//		// [...]
+//		response := recaptcha.SiteVerify(ctx, recaptchaSecret)
 //
-// 	ctx.JSON(response)
-// }
+//		if response.Success {
+//			// [your action here, i.e sendEmail(...)]
+//		}
+//
+//		ctx.JSON(response)
+//	}
 //
 // Method: "GET" | Path: "/contact"
-// func getContact(ctx context.Context) {
-// 	// render the recaptcha form
-// 	ctx.HTML(recaptcha.GetFormHTML(recaptchaPublic, "/contact"))
-// }
+//
+//	func getContact(ctx *context.Context) {
+//		// render the recaptcha form
+//		ctx.HTML(recaptcha.GetFormHTML(recaptchaPublic, "/contact"))
+//	}
 func GetFormHTML(dataSiteKey string, postActionRelativePath string) string {
 	return fmt.Sprintf(recaptchaForm, postActionRelativePath, dataSiteKey)
 }

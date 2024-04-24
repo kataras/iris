@@ -49,8 +49,11 @@ func (dt *doneTODOs) Range() (reflect.Value, reflect.Value, bool) {
 	return reflect.Value{}, reflect.Value{}, true
 }
 
+// Note: jet version 4 requires this.
+func (dt *doneTODOs) ProvidesIndex() bool { return true }
+
 func (dt *doneTODOs) Render(r *view.JetRuntime) {
-	r.Write([]byte(fmt.Sprintf("custom renderer")))
+	r.Write([]byte("custom renderer"))
 }
 
 // Render implements jet.Renderer interface
@@ -73,11 +76,6 @@ func main() {
 	// from middlewares as well, by:
 	// view.AddJetRuntimeVars(ctx, vars)
 	// or tmpl.AddRuntimeVars(ctx, vars)
-	//
-	// The Iris Jet fixes the issue when custom jet.Ranger and custom jet.Renderer are not actually work at all,
-	// hope that this is a temp issue on the jet parser itself and authors will fix it soon
-	// so we can remove the "hacks" we've putted for those to work as expected.
-
 	app := iris.New()
 	tmpl := iris.Jet("./views", ".jet") // <--
 	tmpl.Reload(true)                   // remove in production.
@@ -99,8 +97,11 @@ func main() {
 	}
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("todos/index.jet", todos) // <--
+		err := ctx.View("todos/index.jet", todos) // <--
 		// Note that the `ctx.View` already logs the error if logger level is allowing it and returns the error.
+		if err != nil {
+			ctx.StopWithText(iris.StatusInternalServerError, "Templates not rendered!")
+		}
 	})
 
 	app.Get("/todo", func(ctx iris.Context) {
@@ -111,7 +112,11 @@ func main() {
 			return
 		}
 
-		ctx.View("todos/show.jet", todo)
+		ctx.ViewData("title", "Show TODO")
+		if err := ctx.View("todos/show.jet", todo); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 	app.Get("/all-done", func(ctx iris.Context) {
 		// vars := make(view.JetRuntimeVars)
@@ -121,7 +126,6 @@ func main() {
 		// ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
 		//
 		// OR
-
 		ctx.ViewData("showingAllDone", true)
 		ctx.ViewData("title", "Todos - All Done")
 
@@ -131,7 +135,10 @@ func main() {
 		// ctx.ViewData("_jet", (&doneTODOs{}).New(todos))
 		// and ctx.View("todos/index.jet")
 		// OR
-		ctx.View("todos/index.jet", (&doneTODOs{}).New(todos))
+		if err := ctx.View("todos/index.jet", (&doneTODOs{}).New(todos)); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	port := os.Getenv("PORT")
@@ -141,5 +148,5 @@ func main() {
 		port = ":" + port
 	}
 
-	app.Run(iris.Addr(port))
+	app.Listen(port)
 }

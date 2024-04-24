@@ -20,5 +20,5 @@ func main() {
 		  so iris serves your favicon in that path too (you can change it).`)
 	}) // if favicon doesn't show to you, try to clear your browser's cache.
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

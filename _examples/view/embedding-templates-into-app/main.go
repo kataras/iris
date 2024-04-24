@@ -1,31 +1,30 @@
 package main
 
 import (
+	"embed"
+
 	"github.com/kataras/iris/v12"
 )
+
+//go:embed embedded/*
+var embeddedFS embed.FS
 
 func main() {
 	app := iris.New()
 
-	tmpl := iris.HTML("./templates", ".html")
+	tmpl := iris.HTML(embeddedFS, ".html").RootDir("embedded/templates")
+
 	tmpl.Layout("layouts/layout.html")
 	tmpl.AddFunc("greet", func(s string) string {
 		return "Greetings " + s + "!"
 	})
 
-	// $ go get -u github.com/go-bindata/go-bindata/...
-	// $ go-bindata ./templates/...
-	// $ go build
-	// $ ./embedding-templates-into-app
-	// html files are not used, you can delete the folder and run the example.
-	tmpl.Binary(Asset, AssetNames) // <-- IMPORTANT
-
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("page1.html"); err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.Writef(err.Error())
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 
@@ -33,8 +32,8 @@ func main() {
 	app.Get("/nolayout", func(ctx iris.Context) {
 		ctx.ViewLayout(iris.NoLayout)
 		if err := ctx.View("page1.html"); err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.Writef(err.Error())
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
 		}
 	})
 
@@ -42,10 +41,16 @@ func main() {
 	my := app.Party("/my").Layout("layouts/mylayout.html")
 	{ // both of these will use the layouts/mylayout.html as their layout.
 		my.Get("/", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 		my.Get("/other", func(ctx iris.Context) {
-			ctx.View("page1.html")
+			if err := ctx.View("page1.html"); err != nil {
+				ctx.HTML("<h3>%s</h3>", err.Error())
+				return
+			}
 		})
 	}
 
@@ -53,10 +58,5 @@ func main() {
 	// http://localhost:8080/nolayout
 	// http://localhost:8080/my
 	// http://localhost:8080/my/other
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
-
-// Note for new Gophers:
-// `go build` is used instead of `go run main.go` as the example comments says
-// otherwise you will get compile errors, this is a Go thing;
-// because you have multiple files in the `package main`.

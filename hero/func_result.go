@@ -5,19 +5,75 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/hero/di"
 
 	"github.com/fatih/structs"
+	"google.golang.org/protobuf/proto"
 )
+
+// ResultHandler describes the function type which should serve the "v" struct value.
+type ResultHandler func(ctx *context.Context, v interface{}) error
+
+func defaultResultHandler(ctx *context.Context, v interface{}) error {
+	if p, ok := v.(PreflightResult); ok {
+		if err := p.Preflight(ctx); err != nil {
+			return err
+		}
+	}
+
+	if d, ok := v.(Result); ok {
+		d.Dispatch(ctx)
+		return nil
+	}
+
+	switch context.TrimHeaderValue(ctx.GetContentType()) {
+	case context.ContentXMLHeaderValue, context.ContentXMLUnreadableHeaderValue:
+		return ctx.XML(v)
+	case context.ContentYAMLHeaderValue:
+		return ctx.YAML(v)
+	case context.ContentProtobufHeaderValue:
+		msg, ok := v.(proto.Message)
+		if !ok {
+			return context.ErrContentNotSupported
+		}
+
+		_, err := ctx.Protobuf(msg)
+		return err
+	case context.ContentMsgPackHeaderValue, context.ContentMsgPack2HeaderValue:
+		_, err := ctx.MsgPack(v)
+		return err
+	default:
+		// otherwise default to JSON.
+		return ctx.JSON(v)
+	}
+}
 
 // Result is a response dispatcher.
 // All types that complete this interface
 // can be returned as values from the method functions.
 //
-// Example at: https://github.com/kataras/iris/tree/master/_examples/hero/overview.
+// Example at: https://github.com/kataras/iris/tree/main/_examples/dependency-injection/overview.
 type Result interface {
-	// Dispatch should sends the response to the context's response writer.
-	Dispatch(ctx context.Context)
+	// Dispatch should send a response to the client.
+	Dispatch(*context.Context)
+}
+
+// PreflightResult is an interface which implementers
+// should be responsible to perform preflight checks of a <T> resource (or Result) before sent to the client.
+//
+// If a non-nil error returned from the `Preflight` method then the JSON result
+// will be not sent to the client and an ErrorHandler will be responsible to render the error.
+//
+// Usage: a custom struct value will be a JSON body response (by-default) but it contains
+// "Code int" and `ID string` fields, the "Code" should be the status code of the response
+// and the "ID" should be sent as a Header of "X-Request-ID: $ID".
+//
+// The caller can manage it at the handler itself. However,
+// to reduce thoese type of duplications it's preferable to use such a standard interface instead.
+//
+// The Preflight method can return `iris.ErrStopExecution` to render
+// and override any interface that the structure value may implement, e.g. mvc.Result.
+type PreflightResult interface {
+	Preflight(*context.Context) error
 }
 
 var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
@@ -28,7 +84,7 @@ var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
 // otherwise it returns the "failure" response if any,
 // if not then a 400 bad request is being sent.
 //
-// Example usage at: https://github.com/kataras/iris/blob/master/hero/func_result_test.go.
+// Example usage at: https://github.com/kataras/iris/blob/main/hero/func_result_test.go.
 func Try(fn func() Result, failure ...Result) Result {
 	var failed bool
 	var actionResponse Result
@@ -58,80 +114,24 @@ type compatibleErr interface {
 	Error() string
 }
 
-// DefaultErrStatusCode is the default error status code (400)
-// when the response contains an error which is not nil.
-var DefaultErrStatusCode = 400
-
-// DispatchErr writes the error to the response.
-func DispatchErr(ctx context.Context, status int, err error) {
-	if status < 400 {
-		status = DefaultErrStatusCode
-	}
-	ctx.StatusCode(status)
-	if text := err.Error(); text != "" {
-		ctx.WriteString(text)
-		ctx.StopExecution()
-	}
-}
-
-// DispatchCommon is being used internally to send
-// commonly used data to the response writer with a smart way.
-func DispatchCommon(ctx context.Context,
-	statusCode int, contentType string, content []byte, v interface{}, err error, found bool) {
-	// if we have a false boolean as a return value
-	// then skip everything and fire a not found,
-	// we even don't care about the given status code or the object or the content.
-	if !found {
-		ctx.NotFound()
-		return
+// dispatchErr sets the error status code
+// and the error value to the context.
+// The APIBuilder's On(Any)ErrorCode is responsible to render this error code.
+func dispatchErr(ctx *context.Context, status int, err error) bool {
+	if err == nil {
+		return false
 	}
 
-	status := statusCode
-	if status == 0 {
-		status = 200
-	}
-
-	if err != nil {
-		DispatchErr(ctx, status, err)
-		return
-	}
-
-	// write the status code, the rest will need that before any write ofc.
-	ctx.StatusCode(status)
-	if contentType == "" {
-		// to respect any ctx.ContentType(...) call
-		// especially if v is not nil.
-		contentType = ctx.GetContentType()
-	}
-
-	if v != nil {
-		if d, ok := v.(Result); ok {
-			// write the content type now (internal check for empty value)
-			ctx.ContentType(contentType)
-			d.Dispatch(ctx)
-			return
+	if err != ErrStopExecution {
+		if status == 0 || !context.StatusCodeNotSuccessful(status) {
+			status = DefaultErrStatusCode
 		}
 
-		if strings.HasPrefix(contentType, context.ContentJavascriptHeaderValue) {
-			_, err = ctx.JSONP(v)
-		} else if strings.HasPrefix(contentType, context.ContentXMLHeaderValue) {
-			_, err = ctx.XML(v, context.XML{Indent: " "})
-		} else {
-			// defaults to json if content type is missing or its application/json.
-			_, err = ctx.JSON(v, context.JSON{Indent: " "})
-		}
-
-		if err != nil {
-			DispatchErr(ctx, status, err)
-		}
-
-		return
+		ctx.StatusCode(status)
 	}
 
-	ctx.ContentType(contentType)
-	// .Write even len(content) == 0 , this should be called in order to call the internal tryWriteHeader,
-	// it will not cost anything.
-	ctx.Write(content)
+	ctx.SetErr(err)
+	return true
 }
 
 // DispatchFuncResult is being used internally to resolve
@@ -163,9 +163,9 @@ func DispatchCommon(ctx context.Context,
 // Result or (Result, error) and so on...
 //
 // where Get is an HTTP METHOD.
-func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, values []reflect.Value) {
+func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler ResultHandler) error {
 	if len(values) == 0 {
-		return
+		return nil
 	}
 
 	var (
@@ -173,7 +173,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 		// Except when err != nil then check if status code is < 400 and
 		// if it's set it as DefaultErrStatusCode.
 		// Except when found == false, then the status code is 404.
-		statusCode int
+		statusCode = ctx.GetStatusCode() // Get the current status code given by any previous middleware.
 		// if not empty then use that as content type,
 		// if empty and custom != nil then set it to application/json.
 		contentType string
@@ -184,10 +184,6 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 		// for content type (or json default) and send the custom data object
 		// except when found == false or err != nil.
 		custom interface{}
-		// if not nil then check for its status code,
-		// if not status code or < 400 then set it as DefaultErrStatusCode
-		// and fire the error's text.
-		err error
 		// if false then skip everything and fire 404.
 		found = true // defaults to true of course, otherwise will break :)
 	)
@@ -284,6 +280,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 				contentType = value
 			} else {
 				// otherwise is content
+				contentType = context.ContentTextHeaderValue
 				content = []byte(value)
 			}
 
@@ -291,23 +288,16 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 			// it's raw content, get the latest
 			content = value
 		case compatibleErr:
-			if value == nil || di.IsNil(v) {
+			if value == nil || isNil(v) {
 				continue
 			}
 
-			if errorHandler != nil {
-				errorHandler.HandleError(ctx, value)
-				return
-			}
-
-			err = value
-			if statusCode < 400 {
+			if statusCode < 400 && value != ErrStopExecution {
 				statusCode = DefaultErrStatusCode
 			}
-			// break on first error, error should be in the end but we
-			// need to know break the dispatcher if any error.
-			// at the end; we don't want to write anything to the response if error is not nil.
 
+			ctx.StatusCode(statusCode)
+			return value
 		default:
 			// else it's a custom struct or a dispatcher, we'll decide later
 			// because content type and status code matters
@@ -316,7 +306,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 			if custom == nil {
 				// if it's a pointer to struct/map.
 
-				if di.IsNil(v) {
+				if isNil(v) {
 					// if just a ptr to struct with no content type given
 					// then try to get the previous response writer's content type,
 					// and if that is empty too then force-it to application/json
@@ -338,7 +328,49 @@ func DispatchFuncResult(ctx context.Context, errorHandler di.ErrorHandler, value
 		}
 	}
 
-	DispatchCommon(ctx, statusCode, contentType, content, custom, err, found)
+	return dispatchCommon(ctx, statusCode, contentType, content, custom, handler, found)
+}
+
+// dispatchCommon is being used internally to send
+// commonly used data to the response writer with a smart way.
+func dispatchCommon(ctx *context.Context,
+	statusCode int, contentType string, content []byte, v interface{}, handler ResultHandler, found bool) error {
+	// if we have a false boolean as a return value
+	// then skip everything and fire a not found,
+	// we even don't care about the given status code or the object or the content.
+	if !found {
+		ctx.NotFound()
+		return nil
+	}
+
+	status := statusCode
+	if status == 0 {
+		status = 200
+	}
+
+	// write the status code, the rest will need that before any write ofc.
+	ctx.StatusCode(status)
+	if contentType == "" {
+		// to respect any ctx.ContentType(...) call
+		// especially if v is not nil.
+		if contentType = ctx.GetContentType(); contentType == "" {
+			// if it's still empty set to JSON. (useful for dynamic middlewares that returns an int status code and the next handler dispatches the JSON,
+			// see dependency-injection/basic/middleware example)
+			contentType = context.ContentJSONHeaderValue
+		}
+	}
+
+	// write the content type now (internal check for empty value)
+	ctx.ContentType(contentType)
+
+	if v != nil {
+		return handler(ctx, v)
+	}
+
+	// .Write even len(content) == 0 , this should be called in order to call the internal tryWriteHeader,
+	// it will not cost anything.
+	_, err := ctx.Write(content)
+	return err
 }
 
 // Response completes the `methodfunc.Result` interface.
@@ -350,11 +382,20 @@ type Response struct {
 	ContentType string
 	Content     []byte
 
-	// if not empty then content type is the text/plain
-	// and content is the text as []byte.
+	// If not empty then content type is the "text/plain"
+	// and content is the text as []byte. If not empty and
+	// the "Lang" field is not empty then this "Text" field
+	// becomes the current locale file's key.
 	Text string
-	// If not nil then it will fire that as "application/json" or the
-	// "ContentType" if not empty.
+	// If not empty then "Text" field becomes the locale file's key that should point
+	// to a translation file's unique key. See `Object` for locale template data.
+	// The "Lang" field is the language code
+	// that should render the text inside the locale file's key.
+	Lang string
+	// If not nil then it will fire that as "application/json" or any
+	// previously set "ContentType". If "Lang" and "Text" are not empty
+	// then this "Object" field becomes the template data that the
+	// locale text should use to be rendered.
 	Object interface{}
 
 	// If Path is not empty then it will redirect
@@ -384,8 +425,12 @@ type Response struct {
 var _ Result = Response{}
 
 // Dispatch writes the response result to the context's response writer.
-func (r Response) Dispatch(ctx context.Context) {
-	if r.Path != "" && r.Err == nil {
+func (r Response) Dispatch(ctx *context.Context) {
+	if dispatchErr(ctx, r.Code, r.Err) {
+		return
+	}
+
+	if r.Path != "" {
 		// it's not a redirect valid status
 		if r.Code < 300 || r.Code >= 400 {
 			if ctx.Method() == "POST" {
@@ -397,11 +442,22 @@ func (r Response) Dispatch(ctx context.Context) {
 		return
 	}
 
-	if s := r.Text; s != "" {
-		r.Content = []byte(s)
+	if r.Text != "" {
+		if r.Lang != "" {
+			if r.Code > 0 {
+				ctx.StatusCode(r.Code)
+			}
+			ctx.ContentType(r.ContentType)
+
+			ctx.SetLanguage(r.Lang)
+			r.Content = []byte(ctx.Tr(r.Text, r.Object))
+		} else {
+			r.Content = []byte(r.Text)
+		}
 	}
 
-	DispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, r.Err, true)
+	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, defaultResultHandler, true)
+	dispatchErr(ctx, r.Code, err)
 }
 
 // View completes the `hero.Result` interface.
@@ -409,7 +465,7 @@ func (r Response) Dispatch(ctx context.Context) {
 // wraps the template file name, layout, (any) view data, status code and error.
 // It's smart enough to complete the request and send the correct response to the client.
 //
-// Example at: https://github.com/kataras/iris/blob/master/_examples/hero/overview/web/routes/hello.go.
+// Example at: https://github.com/kataras/iris/blob/main/_examples/dependency-injection/overview/web/routes/hello.go.
 type View struct {
 	Name   string
 	Layout string
@@ -420,38 +476,10 @@ type View struct {
 
 var _ Result = View{}
 
-const dotB = byte('.')
-
-// DefaultViewExt is the default extension if `view.Name `is missing,
-// but note that it doesn't care about
-// the app.RegisterView(iris.$VIEW_ENGINE("./$dir", "$ext"))'s $ext.
-// so if you don't use the ".html" as extension for your files
-// you have to append the extension manually into the `view.Name`
-// or change this global variable.
-var DefaultViewExt = ".html"
-
-func ensureExt(s string) string {
-	if len(s) == 0 {
-		return "index" + DefaultViewExt
-	}
-
-	if strings.IndexByte(s, dotB) < 1 {
-		s += DefaultViewExt
-	}
-
-	return s
-}
-
 // Dispatch writes the template filename, template layout and (any) data to the  client.
 // Completes the `Result` interface.
-func (r View) Dispatch(ctx context.Context) { // r as Response view.
-	if r.Err != nil {
-		if r.Code < 400 {
-			r.Code = DefaultErrStatusCode
-		}
-		ctx.StatusCode(r.Code)
-		ctx.WriteString(r.Err.Error())
-		ctx.StopExecution()
+func (r View) Dispatch(ctx *context.Context) { // r as Response view.
+	if dispatchErr(ctx, r.Code, r.Err) {
 		return
 	}
 
@@ -460,10 +488,7 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 	}
 
 	if r.Name != "" {
-		r.Name = ensureExt(r.Name)
-
 		if r.Layout != "" {
-			r.Layout = ensureExt(r.Layout)
 			ctx.ViewLayout(r.Layout)
 		}
 
@@ -478,11 +503,9 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 				// else check if r.Data is map or struct, if struct convert it to map,
 				// do a range loop and modify the data one by one.
 				// context.Map is actually a map[string]interface{} but we have to make that check:
-				if m, ok := r.Data.(map[string]interface{}); ok {
+				if m, ok := r.Data.(context.Map); ok {
 					setViewData(ctx, m)
-				} else if m, ok := r.Data.(context.Map); ok {
-					setViewData(ctx, m)
-				} else if di.IndirectValue(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
+				} else if reflect.Indirect(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
 					setViewData(ctx, structs.Map(r))
 				}
 			}
@@ -492,7 +515,7 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 	}
 }
 
-func setViewData(ctx context.Context, data map[string]interface{}) {
+func setViewData(ctx *context.Context, data map[string]interface{}) {
 	for k, v := range data {
 		ctx.ViewData(k, v)
 	}

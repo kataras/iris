@@ -1,4 +1,5 @@
 // Package main shows how you can register a custom parameter type and macro functions that belongs to it.
+// See _examples/routing/dynamic-path/main.go first.
 package main
 
 import (
@@ -16,7 +17,7 @@ func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
-	app.Macros().Register("slice", "", false, true, func(paramValue string) (interface{}, bool) {
+	app.Macros().Register("slice", "", []string{}, false, true, func(paramValue string) (interface{}, bool) {
 		return strings.Split(paramValue, "/"), true
 	}).RegisterFunc("contains", func(expectedItems []string) func(paramValue []string) bool {
 		sort.Strings(expectedItems)
@@ -72,5 +73,5 @@ func main() {
 		ctx.Writef("myparam's value (a trailing path parameter type) is: %#v\n", myparam)
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

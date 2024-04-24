@@ -1,0 +1,32 @@
+version: '3.1'
+
+services:
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: dbpassword
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: user_myapp
+      MYSQL_PASSWORD: dbpassword
+    tty: true
+    volumes:
+    - ./migration:/docker-entrypoint-initdb.d
+  app:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      PORT: 8080
+      MYSQL_USER: user_myapp
+      MYSQL_PASSWORD: dbpassword
+      MYSQL_DATABASE: myapp
+      MYSQL_HOST: db
+    restart: on-failure
+    healthcheck:
+        test: ["CMD", "curl", "-f", "tcp://db:3306"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+    depends_on:
+      - db

@@ -42,18 +42,21 @@ func main() {
 		log.Printf("[%s] Disconnected from server", c.ID())
 	}
 
-	app.HandleDir("/js", "./static/js") // serve our custom javascript code.
+	app.HandleDir("/js", iris.Dir("./static/js")) // serve our custom javascript code.
 
 	// register the server on an endpoint.
 	// see the inline javascript code i the websockets.html, this endpoint is used to connect to the server.
 	app.Get("/my_endpoint", websocket.Handler(ws))
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("client.html", clientPage{"Client Page", "localhost:8080"})
+		if err := ctx.View("client.html", clientPage{"Client Page", "localhost:8080"}); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
 	// Target some browser windows/tabs to http://localhost:8080 and send some messages,
 	// see the static/js/chat.js,
 	// note that the client is using only the browser's native WebSocket API instead of the neffos one.
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }

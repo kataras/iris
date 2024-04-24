@@ -3,7 +3,6 @@ package context
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -15,28 +14,23 @@ import (
 //
 // Note: Only this ResponseWriter is an interface in order to be able
 // for developers to change the response writer of the Context via `context.ResetResponseWriter`.
-// The rest of the response writers implementations (ResponseRecorder & GzipResponseWriter) are coupled to the internal
-// ResponseWriter implementation(*responseWriter).
+// The rest of the response writers implementations (ResponseRecorder & CompressResponseWriter)
+// are coupled to the internal ResponseWriter implementation(*responseWriter).
 //
 // A ResponseWriter may not be used after the Handler
 // has returned.
 type ResponseWriter interface {
 	http.ResponseWriter
-	http.Flusher
-	http.Hijacker
-	// Note:
-	// The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
-	http.CloseNotifier
-	http.Pusher
 
 	// Naive returns the simple, underline and original http.ResponseWriter
 	// that backends this response writer.
 	Naive() http.ResponseWriter
-
+	// SetWriter sets the underline http.ResponseWriter
+	// that this responseWriter should write on.
+	SetWriter(underline http.ResponseWriter)
 	// BeginResponse receives an http.ResponseWriter
 	// and initialize or reset the response writer's field's values.
 	BeginResponse(http.ResponseWriter)
-
 	// EndResponse is the last function which is called right before the server sent the final response.
 	//
 	// Here is the place which we can make the last checks or do a cleanup.
@@ -44,16 +38,6 @@ type ResponseWriter interface {
 
 	// IsHijacked reports whether this response writer's connection is hijacked.
 	IsHijacked() bool
-
-	// Writef formats according to a format specifier and writes to the response.
-	//
-	// Returns the number of bytes written and any write error encountered.
-	Writef(format string, a ...interface{}) (n int, err error)
-
-	// WriteString writes a simple string to the response.
-	//
-	// Returns the number of bytes written and any write error encountered.
-	WriteString(s string) (n int, err error)
 
 	// StatusCode returns the status code header value.
 	StatusCode() int
@@ -85,8 +69,8 @@ type ResponseWriter interface {
 	// it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseRecorder.
 	Clone() ResponseWriter
 
-	// WiteTo writes a response writer (temp: status code, headers and body) to another response writer
-	WriteTo(ResponseWriter)
+	// CopyTo writes a response writer (temp: status code, headers and body) to another response writer
+	CopyTo(ResponseWriter)
 
 	// Flusher indicates if `Flush` is supported by the client.
 	//
@@ -99,10 +83,44 @@ type ResponseWriter interface {
 	// the buffered data may not reach the client until the response
 	// completes.
 	Flusher() (http.Flusher, bool)
+	// Flush sends any buffered data to the client.
+	Flush() // required by compress writer.
+}
 
-	// CloseNotifier indicates if the protocol supports the underline connection closure notification.
-	// Warning: The http.CloseNotifier interface is deprecated. New code should use Request.Context instead.
-	CloseNotifier() (http.CloseNotifier, bool)
+// ResponseWriterBodyReseter can be implemented by
+// response writers that supports response body overriding
+// (e.g. recorder and compressed).
+type ResponseWriterBodyReseter interface {
+	// ResetBody should reset the body and reports back if it could reset successfully.
+	ResetBody()
+}
+
+// ResponseWriterDisabler can be implemented
+// by response writers that can be disabled and restored to their previous state
+// (e.g. compressed).
+type ResponseWriterDisabler interface {
+	// Disable should disable this type of response writer and fallback to the default one.
+	Disable()
+}
+
+// ResponseWriterReseter can be implemented
+// by response writers that can clear the whole response
+// so a new handler can write into this from the beginning.
+// E.g. recorder, compressed (full) and common writer (status code and headers).
+type ResponseWriterReseter interface {
+	// Reset should reset the whole response and reports
+	// whether it could reset successfully.
+	Reset() bool
+}
+
+// ResponseWriterWriteTo can be implemented
+// by response writers that needs a special
+// encoding before writing to their buffers.
+// E.g. a custom recorder that wraps a custom compressed one.
+//
+// Not used by the framework itself.
+type ResponseWriterWriteTo interface {
+	WriteTo(dest io.Writer, p []byte)
 }
 
 //  +------------------------------------------------------------+
@@ -125,6 +143,7 @@ func releaseResponseWriter(w ResponseWriter) {
 // it writes directly to the underline http.ResponseWriter
 type responseWriter struct {
 	http.ResponseWriter
+
 	statusCode int // the saved status code which will be used from the cache service
 	// statusCodeSent bool // reply header has been (logically) written | no needed any more as we have a variable to catch total len of written bytes
 	written int // the total size of bytes were written
@@ -157,6 +176,12 @@ func (w *responseWriter) BeginResponse(underline http.ResponseWriter) {
 	w.beforeFlush = nil
 	w.written = NoWritten
 	w.statusCode = defaultStatusCode
+	w.SetWriter(underline)
+}
+
+// SetWriter sets the underline http.ResponseWriter
+// that this responseWriter should write on.
+func (w *responseWriter) SetWriter(underline http.ResponseWriter) {
 	w.ResponseWriter = underline
 }
 
@@ -165,6 +190,25 @@ func (w *responseWriter) BeginResponse(underline http.ResponseWriter) {
 // Here is the place which we can make the last checks or do a cleanup.
 func (w *responseWriter) EndResponse() {
 	releaseResponseWriter(w)
+}
+
+// Reset clears headers, sets the status code to 200
+// and clears the cached body.
+//
+// Implements the `ResponseWriterReseter`.
+func (w *responseWriter) Reset() bool {
+	if w.written > 0 {
+		return false // if already written we can't reset this type of response writer.
+	}
+
+	h := w.Header()
+	for k := range h {
+		h[k] = nil
+	}
+
+	w.written = NoWritten
+	w.statusCode = defaultStatusCode
+	return true
 }
 
 // SetWritten sets manually a value for written, it can be
@@ -234,23 +278,6 @@ func (w *responseWriter) Write(contents []byte) (int, error) {
 	return n, err
 }
 
-// Writef formats according to a format specifier and writes to the response.
-//
-// Returns the number of bytes written and any write error encountered.
-func (w *responseWriter) Writef(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(w, format, a...)
-}
-
-// WriteString writes a simple string to the response.
-//
-// Returns the number of bytes written and any write error encountered.
-func (w *responseWriter) WriteString(s string) (int, error) {
-	w.tryWriteHeader()
-	n, err := io.WriteString(w.ResponseWriter, s)
-	w.written += n
-	return n, err
-}
-
 // StatusCode returns the status code header value
 func (w *responseWriter) StatusCode() int {
 	return w.statusCode
@@ -284,25 +311,27 @@ func (w *responseWriter) Clone() ResponseWriter {
 	return wc
 }
 
-// WriteTo writes a response writer (temp: status code, headers and body) to another response writer.
-func (w *responseWriter) WriteTo(to ResponseWriter) {
+// CopyTo writes a response writer (temp: status code, headers and body) to another response writer.
+func (w *responseWriter) CopyTo(to ResponseWriter) {
 	// set the status code, failure status code are first class
 	if w.statusCode >= 400 {
 		to.WriteHeader(w.statusCode)
 	}
 
 	// append the headers
-	if w.Header() != nil {
-		for k, values := range w.Header() {
-			for _, v := range values {
-				if to.Header().Get(v) == "" {
-					to.Header().Add(k, v)
-				}
+	for k, values := range w.Header() {
+		for _, v := range values {
+			if to.Header().Get(v) == "" {
+				to.Header().Add(k, v)
 			}
 		}
 	}
 	// the body is not copied, this writer doesn't support recording
 }
+
+// ErrHijackNotSupported is returned by the Hijack method to
+// indicate that Hijack feature is not available.
+var ErrHijackNotSupported = errors.New("hijack is not supported by this ResponseWriter")
 
 // Hijack lets the caller take over the connection.
 // After a call to Hijack(), the HTTP server library
@@ -321,7 +350,7 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return h.Hijack()
 	}
 
-	return nil, nil, errors.New("hijack is not supported by this ResponseWriter")
+	return nil, nil, ErrHijackNotSupported
 }
 
 // Flusher indicates if `Flush` is supported by the client.
@@ -342,74 +371,9 @@ func (w *responseWriter) Flusher() (http.Flusher, bool) {
 // Flush sends any buffered data to the client.
 func (w *responseWriter) Flush() {
 	if flusher, ok := w.Flusher(); ok {
+		// Flow: WriteHeader -> Flush -> Write -> Write -> Write....
+		w.tryWriteHeader()
+
 		flusher.Flush()
 	}
-}
-
-// ErrPushNotSupported is returned by the Push method to
-// indicate that HTTP/2 Push support is not available.
-var ErrPushNotSupported = errors.New("push feature is not supported by this ResponseWriter")
-
-// Push initiates an HTTP/2 server push. This constructs a synthetic
-// request using the given target and options, serializes that request
-// into a PUSH_PROMISE frame, then dispatches that request using the
-// server's request handler. If opts is nil, default options are used.
-//
-// The target must either be an absolute path (like "/path") or an absolute
-// URL that contains a valid host and the same scheme as the parent request.
-// If the target is a path, it will inherit the scheme and host of the
-// parent request.
-//
-// The HTTP/2 spec disallows recursive pushes and cross-authority pushes.
-// Push may or may not detect these invalid pushes; however, invalid
-// pushes will be detected and canceled by conforming clients.
-//
-// Handlers that wish to push URL X should call Push before sending any
-// data that may trigger a request for URL X. This avoids a race where the
-// client issues requests for X before receiving the PUSH_PROMISE for X.
-//
-// Push returns ErrPushNotSupported if the client has disabled push or if push
-// is not supported on the underlying connection.
-func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, isPusher := w.ResponseWriter.(http.Pusher); isPusher {
-		err := pusher.Push(target, opts)
-		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
-			return ErrPushNotSupported
-		}
-		return err
-	}
-	return ErrPushNotSupported
-}
-
-// CloseNotifier indicates if the protocol supports the underline connection closure notification.
-func (w *responseWriter) CloseNotifier() (http.CloseNotifier, bool) {
-	notifier, supportsCloseNotify := w.ResponseWriter.(http.CloseNotifier)
-	return notifier, supportsCloseNotify
-}
-
-// CloseNotify returns a channel that receives at most a
-// single value (true) when the client connection has gone
-// away.
-//
-// CloseNotify may wait to notify until Request.Body has been
-// fully read.
-//
-// After the Handler has returned, there is no guarantee
-// that the channel receives a value.
-//
-// If the protocol is HTTP/1.1 and CloseNotify is called while
-// processing an idempotent request (such a GET) while
-// HTTP/1.1 pipelining is in use, the arrival of a subsequent
-// pipelined request may cause a value to be sent on the
-// returned channel. In practice HTTP/1.1 pipelining is not
-// enabled in browsers and not seen often in the wild. If this
-// is a problem, use HTTP/2 or only use CloseNotify on methods
-// such as POST.
-func (w *responseWriter) CloseNotify() <-chan bool {
-	if notifier, ok := w.CloseNotifier(); ok {
-		return notifier.CloseNotify()
-	}
-
-	ch := make(chan bool, 1)
-	return ch
 }

@@ -8,8 +8,6 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 [![iris](https://img.shields.io/badge/iris-powered-2196f3.svg?style=for-the-badge)](https://github.com/kataras/iris)
 ```
 
-> The badge is optionally, of course, it is just a simple and fast way to support Iris. The badge is work of a third-party, taken from https://github.com/blob-go/blob-go which was published by our friend @clover113 and we loved it<3
-
 ## Editors & IDEs Extensions
 
 ### Visual Studio Code <a href="https://marketplace.visualstudio.com/items?itemName=kataras2006.iris"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Visual_Studio_Code_1.18_icon.svg/2000px-Visual_Studio_Code_1.18_icon.svg.png" height="20px" width="20px" /></a>
@@ -21,20 +19,20 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 ## How to upgrade
 
 ```sh
-go get -u github.com/kataras/iris/v12@latest
+go get github.com/kataras/iris/v12@latest
 ```
 
-Go version 1.13 and above is required.
+Go version 1.20 and above is required.
 
 ## Learning
 
-More than 100 practical examples, tutorials and articles at:
+More than 280 practical examples, tutorials and articles at:
 
-- https://iris-go.com/start
-- https://github.com/kataras/iris/wiki/Starter-kits
-- https://github.com/iris-contrib/examples
-- https://godoc.org/github.com/kataras/iris
-- https://bit.ly/iris-req-book
+- https://www.iris-go.com/docs
+- https://www.iris-go.com/#ebookDonateForm
+<!-- - https://github.com/kataras/iris/wiki/Starter-kits -->
+- https://github.com/kataras/iris/tree/main/_examples
+- https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11
 
 ## Active development mode
 
@@ -47,12 +45,12 @@ open for Iris-specific developers the time we speak.
 
 Go to our facebook page, like it and receive notifications about new job offers, we already have couple of them stay at the top of the page: https://www.facebook.com/iris.framework
 
-## Do we have a community Chat?
+## Do we have a Community chat?
 
 Yes, https://chat.iris-go.com
 
-## How is the development of Iris supported?
+## How is the development of Iris economically supported?
 
-By normal people, like you, who help us by donating small or large amounts of money.
+By people like you, who help us by donating small or large amounts of money.
 
-Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://www.paypal.me/kataras). Your name will be published [here](https://iris-go.com) after your approval via e-mail.
+Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal or Stripe](https://iris-go.com/donate). Your name will be published [here](https://www.iris-go.com/#review) after your approval via e-mail.

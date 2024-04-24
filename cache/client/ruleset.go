@@ -28,6 +28,6 @@ var DefaultRuleSet = rule.Chained(
 
 // NoCache disables the cache for a particular request,
 // can be used as a middleware or called manually from the handler.
-func NoCache(ctx context.Context) {
+func NoCache(ctx *context.Context) {
 	ctx.Header(cfg.NoCacheHeader, "true")
 }

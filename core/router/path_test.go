@@ -47,6 +47,18 @@ func TestCleanPath(t *testing.T) {
 			"/single/{id:uint64}",
 			"/single/{id:uint64}",
 		},
+		{
+			"0\\\\\\0",
+			"/0/0",
+		},
+		{
+			"*\\*\\*",
+			"/*/*/*",
+		},
+		{
+			"\\",
+			"/",
+		},
 	}
 
 	for i, tt := range tests {

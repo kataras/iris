@@ -1,364 +1,306 @@
-# Examples
-
-Please do learn how [net/http](https://golang.org/pkg/net/http/) std package works, first.
-
-This folder provides easy to understand code snippets on how to get started with [iris](https://github.com/kataras/iris) web framework.
-
-It doesn't always contain the "best ways" but it does cover each important feature that will make you so excited to GO with iris!
-
-## Running the examples
-
-1. Install the Go Programming Language, version 1.12+ from https://golang.org/dl.
-2. [Install Iris](https://github.com/kataras/iris/wiki/installation)
-3. Install any external packages that required by the examples
-
-<details>
-<summary>External packages</summary>
-
-```sh
-cd _examples && go get ./...
-```
-
-</details>
-
-And run each example you wanna see, e.g.
-
-```sh
-$ cd $GOPATH/src/github.com/kataras/iris/_examples/overview
-$ go run main.go
-```
-
-> Test the examples by opening a terminal window and execute: `go test -v ./...`
-
-### Overview
-
-- [Hello world!](hello-world/main.go)
-- [Docker](docker/README.md)
-- [Hello WebAssembly!](webassembly/basic/main.go)
-- [Glimpse](overview/main.go)
-- [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
-- [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
-- [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-- [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
-- [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
-- [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
-- [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
-- [Tutorial: Caddy](tutorial/caddy)
-- [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-- [Tutorial: API for Apache Kafka](tutorial/api-for-apache-kafka)
-
-### Structuring
-
-Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
-
-Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app;
-
-- [Bootstrapper](structuring/bootstrap)
-- [MVC with Repository and Service layer Overview](structuring/mvc-plus-repository-and-service-layers)
-- [Login (MVC with Single Responsibility package)](structuring/login-mvc-single-responsibility-package)
-- [Login (MVC with Datamodels, Datasource, Repository and Service layer)](structuring/login-mvc)
-
-### HTTP Listening
-
-- [Common, with address](http-listening/listen-addr/main.go)
-    * [public domain address](http-listening/listen-addr-public/main.go)
-    * [omit server errors](http-listening/listen-addr/omit-server-errors/main.go)
-- [UNIX socket file](http-listening/listen-unix/main.go)
-- [TLS](http-listening/listen-tls/main.go)
-- [Letsencrypt (Automatic Certifications)](http-listening/listen-letsencrypt/main.go)
-- [Notify on shutdown](http-listening/notify-on-shutdown/main.go)
-- Custom TCP Listener
-    * [common net.Listener](http-listening/custom-listener/main.go)
-    * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
-- Custom HTTP Server
-    * [HTTP/3 Quic](http-listening/http3-quic)
-    * [easy way](http-listening/custom-httpserver/easy-way/main.go)
-    * [std way](http-listening/custom-httpserver/std-way/main.go)
-    * [multi server instances](http-listening/custom-httpserver/multi/main.go)
-- Graceful Shutdown
-    * [using the `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
-    * [using a custom notifier](http-listening/graceful-shutdown/custom-notifier/main.go)
-
-### Configuration
-
-- [Functional](configuration/functional/main.go)
-- [From Configuration Struct](configuration/from-configuration-structure/main.go)
-- [Import from YAML file](configuration/from-yaml-file/main.go)
-    * [Share Configuration between multiple instances](configuration/from-yaml-file/shared-configuration/main.go)
-- [Import from TOML file](configuration/from-toml-file/main.go)
-
-### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
-
-* `app.Get("{userid:int min(1)}", myHandler)`
-* `app.Post("{asset:path}", myHandler)`
-* `app.Put("{custom:string regexp([a-z]+)}", myHandler)`
-
-Note: unlike other routers you'd seen, iris' router can handle things like these:
-```go
-// Matches all GET requests prefixed with "/assets/"
-app.Get("/assets/{asset:path}", assetsWildcardHandler)
-
-// Matches only GET "/"
-app.Get("/", indexHandler)
-// Matches only GET "/about"
-app.Get("/about", aboutHandler)
-
-// Matches all GET requests prefixed with "/profile/"
-// and followed by a single path part
-app.Get("/profile/{username:string}", userHandler)
-// Matches only GET "/profile/me" because 
-// it does not conflict with /profile/{username:string}
-// or the root wildcard {root:path}
-app.Get("/profile/me", userHandler)
-
-// Matches all GET requests prefixed with /users/
-// and followed by a number which should be equal or bigger than 1
-app.Get("/user/{userid:int min(1)}", getUserHandler)
-// Matches all requests DELETE prefixed with /users/
-// and following by a number which should be equal or bigger than 1
-app.Delete("/user/{userid:int min(1)}", deleteUserHandler)
-
-// Matches all GET requests except "/", "/about", anything starts with "/assets/" etc...
-// because it does not conflict with the rest of the routes.
-app.Get("{root:path}", rootWildcardHandler)
-```
-
-Navigate through examples for a better understanding.
-
-- [Overview](routing/overview/main.go)
-- [Basic](routing/basic/main.go)
-- [Controllers](mvc)
-- [Custom HTTP Errors](routing/http-errors/main.go)
-- [Not Found - Suggest Closest Paths](routing/not-found-suggests/main.go) **NEW**
-- [Dynamic Path](routing/dynamic-path/main.go)
-    * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
-- [Write your own custom parameter types](routing/macros/main.go)
-- [Reverse routing](routing/reverse/main.go)
-- [Custom Router (high-level)](routing/custom-high-level-router/main.go)
-- [Custom Wrapper](routing/custom-wrapper/main.go)
-- Custom Context
-    * [method overriding](routing/custom-context/method-overriding/main.go)
-    * [new implementation](routing/custom-context/new-implementation/main.go)
-- [Route State](routing/route-state/main.go)
-- [Writing a middleware](routing/writing-a-middleware)
-    * [per-route](routing/writing-a-middleware/per-route/main.go)
-    * [globally](routing/writing-a-middleware/globally/main.go)
-- [Route Register Rule](routing/route-register-rule/main.go) **NEW**
-
-### Versioning
-
-- [How it works](https://github.com/kataras/iris/blob/master/versioning/README.md)
-- [Example](versioning/main.go)
-
-### Dependency Injection
-
-- [Basic](hero/basic/main.go)
-- [Overview](hero/overview)
-- [Sessions](hero/sessions)
-- [Yet another dependency injection example and good practises at general](hero/smart-contract/main.go)
-
-### MVC
-
-- [Hello world](mvc/hello-world/main.go)
-- [Regexp](mvc/regexp/main.go)
-- [Session Controller](mvc/session-controller/main.go)
-- [Overview - Plus Repository and Service layers](mvc/overview)
-- [Login showcase - Plus Repository and Service layers](mvc/login)
-- [Singleton](mvc/singleton)
-- [Websocket Controller](mvc/websocket)
-- [Register Middleware](mvc/middleware)
-- [Vue.js Todo MVC](tutorial/vuejs-todo-mvc)
-- [gRPC-compatible controller](mvc/grpc-compatible/main.go) **NEW**
-
-### Subdomains
-
-- [Single](subdomains/single/main.go)
-- [Multi](subdomains/multi/main.go)
-- [Wildcard](subdomains/wildcard/main.go)
-- [WWW](subdomains/www/main.go)
-- [Redirect fast](subdomains/redirect/main.go)
-
-### Convert `http.Handler/HandlerFunc`
-
-- [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
-- [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
-- [From func(http.HandlerFunc) http.HandlerFunc](convert-handlers/real-usecase-raven/writing-middleware/main.go)
-
-### View
-
-- [Overview](view/overview/main.go)
-- [Hi](view/template_html_0/main.go)
-- [A simple Layout](view/template_html_1/main.go)
-- [Layouts: `yield` and `render` tmpl funcs](view/template_html_2/main.go)
-- [The `urlpath` tmpl func](view/template_html_3/main.go)
-- [The `url` tmpl func](view/template_html_4/main.go)
-- [Inject Data Between Handlers](view/context-view-data/main.go)
-- [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
-- [Write to a custom `io.Writer`](view/write-to)
-- [Greeting with Pug (Jade)`](view/template_pug_0)
-- [Pug (Jade) Actions`](view/template_pug_1)
-- [Pug (Jade) Includes`](view/template_pug_2)
-- [Pug (Jade) Extends`](view/template_pug_3)
-- [Jet](/view/template_jet_0)
-- [Jet Embedded](view/template_jet_1_embedded)
-- [Jet 'urlpath' tmpl func](/view/template_jet_2)
-- [Jet template funcs from structure](/view/template_jet_3)
-
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
-
-### Localization and Internationalization
-
-- [I18n](i18n/main.go) **NEW**
-
-### Sitemap
-
-- [Sitemap](sitemap/main.go) **NEW**
-
-### Desktop App
-
-- [Using blink package](desktop-app/blink) **NEW**
-- [Using lorca package](desktop-app/lorca) **NEW**
-- [Using webview package](desktop-app/webview) **NEW**
-
-### Authentication
-
-- [Basic Authentication](authentication/basicauth/main.go)
-- [OAUth2](authentication/oauth2/main.go)
-- [Request Auth(JWT)](experimental-handlers/jwt/main.go)
-- [Sessions](#sessions)
-
-### File Server
-
-- [Favicon](file-server/favicon/main.go)
-- [Basic](file-server/basic/main.go)
-- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
-- [Send/Force-Download Files](file-server/send-files/main.go)
-- Single Page Applications
-    * [single Page Application](file-server/single-page-application/basic/main.go)
-    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
-    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
-
-### How to Read from `context.Request() *http.Request`
-
-- [Read JSON](http_request/read-json/main.go)
-    * [Struct Validation](http_request/read-json-struct-validation/main.go)
-- [Read XML](http_request/read-xml/main.go)
-- [Read YAML](http_request/read-yaml/main.go)
-- [Read Form](http_request/read-form/main.go)
-- [Read Query](http_request/read-query/main.go)
-- [Read Custom per type](http_request/read-custom-per-type/main.go)
-- [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
-- [Read Many times](http_request/read-many/main.go)
-- [Upload/Read File](http_request/upload-file/main.go)
-- [Upload multiple files with an easy way](http_request/upload-files/main.go)
-- [Extract referrer from "referer" header or URL query parameter](http_request/extract-referer/main.go)
-
-> The `context.Request()` returns the same *http.Request you already know, these examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.
-
-### How to Write to `context.ResponseWriter() http.ResponseWriter`
-
-- [Content Negotiation](http_responsewriter/content-negotiation)
-- [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
-- [Write `shiyanhui/hero` templates](http_responsewriter/herotemplate)
-- [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
-- [Write Gzip](http_responsewriter/write-gzip/main.go)
-- [Stream Writer](http_responsewriter/stream-writer/main.go)
-- [Transactions](http_responsewriter/transactions/main.go)
-- [SSE](http_responsewriter/sse/main.go)
-- [SSE (third-party package usage for server sent events)](http_responsewriter/sse-third-party/main.go)
-
-> The `context/context#ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
-
-### ORM
-
-- [Using xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
-- [Using gorm](orm/gorm/main.go)
-
-### Miscellaneous
-
-- [HTTP Method Override](https://github.com/kataras/iris/blob/master/middleware/methodoverride/methodoverride_test.go)
-- [Request Logger](http_request/request-logger/main.go)
-    * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
-- [Recovery](miscellaneous/recover/main.go)
-- [Profiling (pprof)](miscellaneous/pprof/main.go)
-- [Internal Application File Logger](miscellaneous/file-logger/main.go)
-- [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
-
-### Community-based Handlers
-
-- [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
-- [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
-- [Cloudwatch](experimental-handlers/cloudwatch/simple/main.go)
-- [CORS](experimental-handlers/cors/simple/main.go)
-- [JWT](experimental-handlers/jwt/main.go)
-- [Newrelic](experimental-handlers/newrelic/simple/main.go)
-- [Prometheus](experimental-handlers/prometheus/simple/main.go)
-- [Secure](experimental-handlers/secure/simple/main.go)
-- [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
-- [Cross-Site Request Forgery Protection](experimental-handlers/csrf/main.go)
-
-#### More
-
-https://github.com/kataras/iris/tree/master/middleware#third-party-handlers
-
-### Automated API Documentation
-
-- [yaag](apidoc/yaag/main.go)
-
-### Testing
-
-The `httptest` package is your way for end-to-end HTTP testing, it uses the httpexpect library created by our friend, [gavv](https://github.com/gavv).
-
-[Example](testing/httptest/main_test.go)
-
-### Caching
-
-iris cache library lives on its own [package](https://github.com/kataras/iris/tree/master/cache).
-
-- [Simple](cache/simple/main.go)
-- [Client-Side (304)](cache/client-side/main.go) - part of the iris context core
-
-> You're free to use your own favourite caching package if you'd like so.
-
-### Cookies
-
-- [Basic](cookies/basic/main.go)
-- [Encode/Decode (securecookie)](cookies/securecookie/main.go)
-
-### Sessions
-
-iris session manager lives on its own [package](https://github.com/kataras/iris/tree/master/sessions).
-
-- [Overview](sessions/overview/main.go)
-- [Middleware](sessions/middleware/main.go)
-- [Secure Cookie](sessions/securecookie/main.go)
-- [Flash Messages](sessions/flash-messages/main.go)
-- [Databases](sessions/database)
-    * [Badger](sessions/database/badger/main.go)
-    * [BoltDB](sessions/database/boltdb/main.go)
-    * [Redis](sessions/database/redis/main.go)
-
-> You're free to use your own favourite sessions package if you'd like so.
-
-### Websockets
-
-- [Basic](websocket/basic)
-    * [Server](websocket/basic/server.go)
-    * [Go Client](websocket/basic/go-client/client.go)
-    * [Browser Client](websocket/basic/browser/index.html)
-    * [Browser NPM Client (browserify)](websocket/basic/browserify/app.js)
-- [Native Messages](websocket/native-messages/main.go)
-- [TLS Enabled](websocket/secure/README.md)
-
-### Typescript Automation Tools
-
-typescript automation tools have their own repository: [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **it contains examples**
-
-> I'd like to tell you that you can use your favourite but I don't think you will find such a thing anywhere else.
-
-### Hey, You
-
-Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) and https://docs.iris-go.com for a better understanding.
-
-Psst, I almost forgot; do not forget to [star or watch](https://github.com/kataras/iris/stargazers) the project in order to stay updated with the latest tech trends, it never takes more than a second!
+# Table of Contents <a href="./README_ZH_HANT.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /> </a>
+
+* [Serverless](https://github.com/iris-contrib/gateway#netlify)
+* [REST API for Apache Kafka](kafka-api)
+* [URL Shortener](url-shortener)
+* [Dropzone.js](dropzonejs)
+* [Caddy](caddy)
+* [Bootstrapper](bootstrapper)
+* [Project Structure](project) :fire:
+* Monitor
+    * [Simple Process Monitor (includes UI)](monitor/monitor-middleware/main.go) **NEW**
+    * [Heap, MSpan/MCache, Size Classes, Objects, Goroutines, GC/CPU fraction (includes UI)](monitor/statsviz/main.go) **NEW**
+* Database
+    * [MySQL, Groupcache & Docker](database/mysql)
+    * [MongoDB](database/mongodb)
+    * [Sqlx](database/orm/sqlx/main.go)
+    * [Gorm](database/orm/gorm/main.go)
+    * [Reform](database/orm/reform/main.go)
+    * [x/sqlx](database/sqlx/main.go) **NEW**
+* GraphQL
+    * [GraphQL: schema-first](graphql/schema-first) **NEW**
+* HTTP Server
+    * [HOST:PORT](http-server/listen-addr/main.go)
+    * [Public Test Domain](http-server/listen-addr-public/main.go)
+    * [UNIX socket file](http-server/listen-unix/main.go)
+    * [TLS](http-server/listen-tls/main.go)
+    * [Letsencrypt (Automatic Certifications)](http-server/listen-letsencrypt/main.go)
+    * [Socket Sharding (SO_REUSEPORT)](http-server/socket-sharding/main.go)
+    * [Graceful Shutdown](http-server/graceful-shutdown/default-notifier/main.go)
+    * [Notify on shutdown](http-server/notify-on-shutdown/main.go)
+    * Custom TCP Listener
+        * [Common net.Listener](http-server/custom-listener/main.go)
+    * Custom HTTP Server
+        * [Pass a custom Server](http-server/custom-httpserver/easy-way/main.go)
+        * [Use Iris as a single http.Handler](http-server/custom-httpserver/std-way/main.go)
+        * [Multi Instances](http-server/custom-httpserver/multi/main.go)
+        * [HTTP/3 Quic](http-server/http3-quic)
+        * [H2C](http-server/h2c/main.go) **NEW**
+    * [Timeout](http-server/timeout/main.go)
+* HTTP Client
+    * [Weather Client](http-client/weatherapi)
+* Configuration
+    * [Functional](configuration/functional/main.go)
+    * [Configuration Struct](configuration/from-configuration-structure/main.go)
+    * [Using Viper](configuration/viper)
+    * [Import from YAML](configuration/from-yaml-file/main.go)
+        * [Share Configuration across instances](configuration/from-yaml-file/shared-configuration/main.go)
+    * [Import from TOML](configuration/from-toml-file/main.go)
+    * [Multi Environment Configuration](configuration/multi-environments) **NEW**
+* Routing
+    * [Custom Context](routing/custom-context/main.go) **HOT/NEW**
+    * [Party Controller](routing/party-controller) **NEW**
+    * [Overview](routing/overview/main.go)
+    * [Basic](routing/basic/main.go)
+    * [Custom HTTP Errors](routing/http-errors/main.go)
+    * [HTTP Wire Errors](routing/http-wire-errors/main.go) **NEW**
+        * [Service and Validation](routing/http-wire-errors/service/main.go) **NEW**
+    * [Not Found - Intelligence](routing/intelligence/main.go)
+        * [Not Found - Suggest Closest Paths](routing/intelligence/manual/main.go)
+    * [Dynamic Path](routing/dynamic-path/main.go)
+        * [At-username](routing/dynamic-path/at-username/main.go)
+        * [Root Wildcard](routing/dynamic-path/root-wildcard/main.go)
+        * [Implement a Parameter Type](routing/macros/main.go)
+        * [Same Path Pattern but Func](routing/dynamic-path/same-pattern-different-func/main.go)
+    * Middleware
+        * [Per Route](routing/writing-a-middleware/per-route/main.go)
+        * [Globally](routing/writing-a-middleware/globally/main.go)
+        * [Remove a Handler](routing/remove-handler/main.go)
+        * Share Values
+            * [Share Services](routing/writing-a-middleware/share-services/main.go)
+            * [Share Functions](routing/writing-a-middleware/share-funcs/main.go)
+        * [Handlers Execution Rule](routing/route-handlers-execution-rules/main.go)
+        * [Route Register Rule](routing/route-register-rule/main.go)
+        * Convert net/http Handlers
+            * [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
+            * [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
+            * [From func(http.Handler) http.Handler](convert-handlers/wrapper/main.go)
+            * [Convert by your own: sentry/raven middleware](convert-handlers/real-usecase-raven/writing-middleware/main.go)
+    * [Rewrite Middleware](routing/rewrite/main.go)
+    * [Route State](routing/route-state/main.go)
+    * [Remove Route](routing/remove-route/main.go)
+    * [Reverse Routing](routing/reverse/main.go)
+    * [Router Wrapper](routing/custom-wrapper/main.go)
+    * [Custom Router](routing/custom-router/main.go)
+    * Subdomains
+        * [Single](routing/subdomains/single/main.go)
+        * [Multi](routing/subdomains/multi/main.go)
+        * [Wildcard](routing/subdomains/wildcard/main.go)
+        * [WWW](routing/subdomains/www/main.go)
+            * [WWW Method](routing/subdomains/www/www-method/main.go)
+        * [Redirection](routing/subdomains/redirect/main.go)
+            * [Multi Instances](routing/subdomains/redirect/multi-instances/main.go)
+        * [HTTP Errors View](routing/subdomains/http-errors-view/main.go)
+    * [HTTP Method Override](https://github.com/kataras/iris/blob/main/middleware/methodoverride/methodoverride_test.go)
+    * [API Versioning](routing/versioning/main.go)
+    * [Sitemap](routing/sitemap/main.go)
+* Logging
+    * [Application File Logger](logging/file-logger/main.go)
+    * [Application JSON Logger](logging/json-logger/main.go)
+    * [Rollbar](logging/rollbar/main.go)
+    * AccessLog
+        * [Log Requests to a JSON File](logging/request-logger/accesslog-simple/main.go)
+        * [Using Log Rotation and more](logging/request-logger/accesslog)
+        * [Custom Fields and Template](logging/request-logger/accesslog-template/main.go)
+        * [Listen and render Logs to a Client](logging/request-logger/accesslog-broker/main.go)
+        * [The CSV Formatter](logging/request-logger/accesslog-csv/main.go)
+        * [Create your own Formatter](logging/request-logger/accesslog-formatter/main.go)
+        * [Root and Proxy AccessLog instances](logging/request-logger/accesslog-proxy/main.go)
+        * [Slack integration example](logging/request-logger/accesslog-slack/main.go)
+* API Documentation
+    * [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)
+* Testing
+    * [Testing with httptest](testing/httptest/main_test.go)
+    * [Testing with ginkgo](testing/ginkgotest)
+* [Recovery](recover/main.go)
+    * [Panic and custom Error Handler with Compression](recover/panic-and-custom-error-handler-with-compression/main.go)
+* [Profiling](pprof/main.go)
+* File Server
+    * [File Server](file-server/file-server/main.go)
+    * [HTTP/2 Push Targets](file-server/http2push/main.go)
+    * [HTTP/2 Push Targets (Embedded)](file-server/http2push-embedded/main.go)
+    * [HTTP/2 Push Targets (Gzipped Embedded)](file-server/http2push-embedded-gzipped/main.go)
+    * [Favicon](file-server/favicon/main.go)
+    * [Basic](file-server/basic/main.go)
+    * [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
+    * [Embedding Files Into App Executable File (Bindata)](file-server/embedding-files-into-app-bindata/main.go)
+    * [Embedding Gzipped Files Into App Executable File (Bindata)](file-server/embedding-gzipped-files-into-app-bindata/main.go)
+    * [Send Files (rate limiter included)](file-server/send-files/main.go)
+    * Single Page Applications
+        * [Vue Router](file-server/spa-vue-router)
+        * [Basic SPA](file-server/single-page-application/basic/main.go)
+        * [Embedded Single Page Application and `iris.PrefixDir`](file-server/single-page-application/embedded-single-page-application/main.go)
+        * [Embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
+    * [Upload File](file-server/upload-file/main.go)
+    * [Upload Multiple Files](file-server/upload-files/main.go)
+    * [WebDAV](file-server/webdav/main.go)
+* View
+    * [Overview](view/overview/main.go)
+    * [Layout](view/layout)
+        * [Ace](view/layout/ace)
+        * [Blocks](view/layout/blocks)
+        * [Django](view/layout/django)
+        * [Handlebars](view/layout/handlebars)
+        * [HTML](view/layout/html)
+        * [Jet](view/layout/jet)
+        * [Pug](view/layout/pug)
+    * [Basic](view/template_html_0/main.go)
+    * [A simple Layout](view/template_html_1/main.go)
+    * [Layouts: `yield` and `render` tmpl funcs](view/template_html_2/main.go)
+    * The `urlpath` template func
+        * [HTML](view/template_html_3/main.go)
+        * [Django](view/template_django_1/main.go)
+    * [The `url` template func](view/template_html_4/main.go)
+    * [Inject Data Between Handlers](view/context-view-data/main.go)
+    * [Inject Engine Between Handlers](view/context-view-engine/main.go)
+    * [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
+    * [Embedding Templates Into App Executable File (Bindata)](view/embedding-templates-into-app-bindata/main.go)
+    * [Write to a custom `io.Writer`](view/write-to)
+    * Parse a Template from Text
+        * [HTML, Pug and Ace](view/parse-parse/main.go)
+        * [Django](view/parse-parse/django/main.go)
+        * [Jet](view/parse-parse/jet/main.go)
+        * [Handlebars](view/parse-parse/handlebars/main.go)
+    * [Blocks](view/template_blocks_0)
+    * [Blocks Embedded](view/template_blocks_1_embedded)
+    * [Pug: `Actions`](view/template_pug_0)
+    * [Pug: `Includes`](view/template_pug_1)
+    * [Pug Embedded`](view/template_pug_2_embedded)
+    * [Ace](view/template_ace_0)
+    * [Django](view/template_django_0)
+    * [Jet](view/template_jet_0)
+    * [Jet Embedded](view/template_jet_1_embedded)
+    * [Jet 'urlpath' tmpl func](view/template_jet_2)
+    * [Jet Template Funcs from Struct](view/template_jet_3)
+    * [Handlebars](view/template_handlebars_0)
+    * Third-Parties
+        * [Render `valyala/quicktemplate` templates](view/quicktemplate)
+        * [Render `shiyanhui/hero` templates](view/herotemplate)
+        * [Render `a-h/templ` templates](view/templ) **NEW**
+* [Request ID](https://github.com/kataras/iris/blob/main/middleware/requestid/requestid_test.go)
+* [Request Rate Limit](request-ratelimit/main.go)
+* [Request Referrer](request-referrer/main.go)
+* [Webassembly](webassembly/main.go)
+* Request Body
+    * [Bind JSON](request-body/read-json/main.go)
+    *   * [JSON Stream and disable unknown fields](request-body/read-json-stream/main.go)
+    *   * [Struct Validation](request-body/read-json-struct-validation/main.go)
+    * [Bind XML](request-body/read-xml/main.go)
+    * [Bind MsgPack](request-body/read-msgpack/main.go)
+    * [Bind YAML](request-body/read-yaml/main.go)
+    * [Bind Form](request-body/read-form/main.go)
+        * [Checkboxes](request-body/read-form/checkboxes/main.go)
+    * [Bind Query](request-body/read-query/main.go)
+    * [Bind Params](request-body/read-params/main.go)
+    * [Bind URL](request-body/read-url/main.go)
+    * [Bind Headers](request-body/read-headers/main.go)
+    * [Bind Body](request-body/read-body/main.go)
+    * [Add Converter](request-body/form-query-headers-params-decoder/main.go)
+    * [Bind Custom per type](request-body/read-custom-per-type/main.go)
+    * [Bind Custom via Unmarshaler](request-body/read-custom-via-unmarshaler/main.go)
+    * [Bind Many times](request-body/read-many/main.go)
+* Response Writer
+    * [Content Negotiation](response-writer/content-negotiation)
+    * [Text, Markdown, YAML, HTML, JSON, JSONP, Msgpack, XML and Binary](response-writer/write-rest/main.go)
+    * [Third-party JSON Encoder](response-writer/json-third-party/main.go)
+    * [Protocol Buffers](response-writer/protobuf/main.go)
+    * [HTTP/2 Server Push](response-writer/http2push/main.go)
+    * [Stream Writer](response-writer/stream-writer/main.go)
+    * [Server-Sent Events](response-writer/sse/main.go)
+        * [SSE 3rd-party (r3labs/sse)](response-writer/sse-third-party/main.go)
+        * [SSE 3rd-party (alexandrevicenzi/go-sse)](response-writer/sse-third-party-2/main.go)
+    * Cache
+        * [Simple](response-writer/cache/simple/main.go)
+        * [Client-Side (304)](response-writer/cache/client-side/main.go)
+* Compression
+    * [Server-Side](compression/main.go)
+    * [Client-Side](compression/client/main.go)
+    * [Client-Side (using Iris)](compress/client-using-iris/main.go)
+* Localization and Internationalization
+    * [Basic](i18n/basic)
+    * [Ttemplates and Functions](i18n/template)
+    * [Ttemplates and Functions (Embedded)](i18n/template-embedded)
+    * [Pluralization and Variables](i18n/plurals)
+* Authentication, Authorization & Bot Detection
+    * [Recommended: Auth package and Single-Sign-On](auth/auth) **NEW (GO 1.18 Generics required)**
+    * Basic Authentication
+        * [Basic](auth/basicauth/basic)
+        * [Load from a slice of Users](auth/basicauth/users_list)
+        * [Load from a file & encrypted passwords](auth/basicauth/users_file_bcrypt)
+        * [Fetch & validate a User from a Database (MySQL)](auth/basicauth/database)
+    * [CORS](auth/cors)
+    * JSON Web Tokens
+        * [Basic](auth/jwt/basic/main.go)
+        * [Middleware](auth/jwt/midleware/main.go)
+        * [Blocklist](auth/jwt/blocklist/main.go)
+        * [Refresh Token](auth/jwt/refresh-token/main.go)
+        * [Tutorial](auth/jwt/tutorial)
+    * [JWT (community edition)](https://github.com/iris-contrib/middleware/tree/v12/jwt/_example/main.go)
+    * [OAUth2](auth/goth/main.go)
+    * [Manage Permissions](auth/permissions/main.go)
+    * [Google reCAPTCHA](auth/recaptcha/main.go)
+    * [hCaptcha](auth/hcaptcha/main.go)
+* Cookies
+    * [Basic](cookies/basic/main.go)
+    * [Options](cookies/options/main.go)
+    * [Encode/Decode (with `securecookie`)](cookies/securecookie/main.go)
+* Sessions
+    * [Overview: Config](sessions/overview/main.go)
+        * [Overview: Routes](sessions/overview/example/example.go)
+    * [Basic](sessions/basic/main.go)
+    * [Secure Cookie](sessions/securecookie/main.go)
+    * [Flash Messages](sessions/flash-messages/main.go)
+    * [Databases](sessions/database)
+        * [Badger](sessions/database/badger/main.go)
+        * [BoltDB](sessions/database/boltdb/main.go)
+        * [Redis](sessions/database/redis/main.go)
+    * [View Data](sessions/viewdata)
+* Websocket
+    * [Gorilla FileWatch (3rd-party)](websocket/gorilla-filewatch/main.go)
+    * [Basic](websocket/basic)
+        * [Server](websocket/basic/server.go)
+        * [Go Client](websocket/basic/go-client/client.go)
+        * [Browser Client](websocket/basic/browser/index.html)
+        * [Browser NPM Client (browserify)](websocket/basic/browserify/app.js)
+    * [Native Messages](websocket/native-messages/main.go)
+    * [TLS](websocket/secure/README.md)
+    * [Online Visitors](websocket/online-visitors/main.go)
+* Dependency Injection
+    * [Overview (Movies Service)](ependency-injection/overview/main.go)
+    * [Basic](dependency-injection/basic/main.go)
+        * [Middleware](dependency-injection/basic/middleware/main.go)
+    * [Sessions](dependency-injection/sessions/main.go)
+    * [Smart Contract](dependency-injection/smart-contract/main.go)
+    * [JWT](dependency-injection/jwt/main.go)
+        * [JWT (iris-contrib)](dependency-injection/jwt/contrib/main.go)
+    * [Register Dependency from Context](dependency-injection/context-register-dependency/main.go)
+* MVC
+    * [Overview](mvc/overview)
+    * [Repository and Service layers](mvc/repository)
+    * [Hello world](mvc/hello-world/main.go)
+    * [Basic](mvc/basic/main.go)
+        * [Wildcard](mvc/basic/wildcard/main.go)
+    * [Default request values](mvc/request-default-values/main.go)
+    * [Singleton](mvc/singleton)
+    * [Regexp](mvc/regexp/main.go)
+    * [Session Controller](mvc/session-controller/main.go)
+    * [Authenticated Controller](mvc/authenticated-controller/main.go)
+    * [Versioned Controller](mvc/versioned-controller/main.go)
+    * [Websocket Controller](mvc/websocket)
+        * [Websocket + Authentication (Single-Sign-On)](mvc/websocket-auth) **NEW (GO 1.18 Generics required)**
+    * [Register Middleware](mvc/middleware)
+    * [gRPC](mvc/grpc-compatible)
+    * [gRPC Bidirectional Stream](mvc/grpc-compatible-bidirectional-stream)
+    * [Login (Repository and Service layers)](mvc/login)
+    * [Login (Single Responsibility)](mvc/login-mvc-single-responsibility)
+    * [Vue.js Todo App](mvc/vuejs-todo-mvc)
+    * [HTTP Error Handler](mvc/error-handler-http)
+    * [Error Handler](mvc/error-handler)
+    * [Handle errors using mvc.Result](mvc/error-handler-custom-result)
+    * [Handle errors using PreflightResult](mvc/error-handler-preflight)
+    * [Handle errors by hijacking the result](mvc/error-handler-hijack)
+* Desktop Applications
+    * [The blink package](desktop/blink)
+    * [The lorca package](desktop/lorca)
+    * [The webview package](desktop/webview)
+* Middlewares [(Community)](https://github.com/iris-contrib/middleware)

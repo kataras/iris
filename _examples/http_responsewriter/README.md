@@ -1,1 +1,0 @@
-The `context.ResponseWriter()` returns an enchament version of a http.ResponseWriter, the examples show some places where the Context uses this object. Besides that you can use it as you did before iris.

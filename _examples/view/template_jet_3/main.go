@@ -9,10 +9,7 @@ import (
 	"github.com/kataras/iris/v12/view"
 )
 
-// https://github.com/kataras/iris/issues/1443
-
 func main() {
-
 	tmpl := iris.Jet("./views", ".jet")
 	tmpl.Reload(true)
 
@@ -27,10 +24,13 @@ func main() {
 	app.RegisterView(tmpl)
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.View("index.jet")
+		if err := ctx.View("index.jet"); err != nil {
+			ctx.HTML("<h3>%s</h3>", err.Error())
+			return
+		}
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
 
 type ViewBuiler struct {
@@ -44,12 +44,12 @@ func (ViewBuiler) Asset(a view.JetArguments) reflect.Value {
 
 func (ViewBuiler) Style(a view.JetArguments) reflect.Value {
 	path := a.Get(0).String()
-	s := fmt.Sprintf(`<link href="%v" rel="stylesheet"> `, path)
+	s := fmt.Sprintf(`<link href="%v" rel="stylesheet">`, path)
 	return reflect.ValueOf(s)
 }
 
 func (ViewBuiler) Script(a view.JetArguments) reflect.Value {
 	path := a.Get(0).String()
-	s := fmt.Sprintf(`<script src="%v" ></script>`, path)
+	s := fmt.Sprintf(`<script src="%v"></script>`, path)
 	return reflect.ValueOf(s)
 }

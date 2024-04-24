@@ -1,24 +1,21 @@
 package iris
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/netutil"
 
 	"github.com/BurntSushi/toml"
+	"github.com/kataras/golog"
 	"github.com/kataras/sitemap"
+	"github.com/kataras/tunnel"
 	"gopkg.in/yaml.v3"
 )
 
@@ -67,7 +64,7 @@ func parseYAML(filename string) (Configuration, error) {
 	}
 
 	// read the raw contents of the file
-	data, err := ioutil.ReadFile(yamlAbsPath)
+	data, err := os.ReadFile(yamlAbsPath)
 	if err != nil {
 		return c, fmt.Errorf("parse yaml: %w", err)
 	}
@@ -83,7 +80,7 @@ func parseYAML(filename string) (Configuration, error) {
 //
 // Accepts the absolute path of the cfg.yml.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the cfg.yml doesn't exists or is not formatted correctly.
+// Error may occur when the cfg.yml does not exist or is not formatted correctly.
 //
 // Note: if the char '~' passed as "filename" then it tries to load and return
 // the configuration from the $home_directory + iris.yml,
@@ -114,10 +111,9 @@ func YAML(filename string) Configuration {
 // Read more about toml's implementation at:
 // https://github.com/toml-lang/toml
 //
-//
 // Accepts the absolute path of the configuration file.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the file doesn't exists or is not formatted correctly.
+// Error may occur when the file does not exist or is not formatted correctly.
 //
 // Note: if the char '~' passed as "filename" then it tries to load and return
 // the configuration from the $home_directory + iris.tml,
@@ -146,7 +142,7 @@ func TOML(filename string) Configuration {
 	}
 
 	// read the raw contents of the file
-	data, err := ioutil.ReadFile(tomlAbsPath)
+	data, err := os.ReadFile(tomlAbsPath)
 	if err != nil {
 		panic(fmt.Errorf("toml :%w", err))
 	}
@@ -184,19 +180,59 @@ var WithGlobalConfiguration = func(app *Application) {
 	app.Configure(WithConfiguration(YAML(globalConfigurationKeyword)))
 }
 
-// variables for configurators don't need any receivers, functions
-// for them that need (helps code editors to recognise as variables without parenthesis completion).
+// WithLogLevel sets the `Configuration.LogLevel` field.
+func WithLogLevel(level string) Configurator {
+	return func(app *Application) {
+		if app.logger == nil {
+			app.logger = golog.Default
+		}
+		app.logger.SetLevel(level) // can be fired through app.Configure.
+
+		app.config.LogLevel = level
+	}
+}
+
+// WithSocketSharding sets the `Configuration.SocketSharding` field to true.
+func WithSocketSharding(app *Application) {
+	// Note(@kataras): It could be a host Configurator but it's an application setting in order
+	// to configure it through yaml/toml files as well.
+	app.config.SocketSharding = true
+}
+
+// WithKeepAlive sets the `Configuration.KeepAlive` field to the given duration.
+func WithKeepAlive(keepAliveDur time.Duration) Configurator {
+	return func(app *Application) {
+		app.config.KeepAlive = keepAliveDur
+	}
+}
+
+// WithTimeout sets the `Configuration.Timeout` field to the given duration.
+func WithTimeout(timeoutDur time.Duration, htmlBody ...string) Configurator {
+	return func(app *Application) {
+		app.config.Timeout = timeoutDur
+		if len(htmlBody) > 0 {
+			app.config.TimeoutMessage = htmlBody[0]
+		}
+	}
+}
+
+// NonBlocking sets the `Configuration.NonBlocking` field to true.
+func NonBlocking() Configurator {
+	return func(app *Application) {
+		app.config.NonBlocking = true
+	}
+}
 
 // WithoutServerError will cause to ignore the matched "errors"
-// from the main application's `Run` function.
+// from the main application's `Run/Listen` function.
 //
 // Usage:
-// err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+// err := app.Listen(":8080", iris.WithoutServerError(iris.ErrServerClosed))
 // will return `nil` if the server's error was `http/iris#ErrServerClosed`.
 //
 // See `Configuration#IgnoreServerErrors []string` too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
+// Example: https://github.com/kataras/iris/tree/main/_examples/http-server/listen-addr/omit-server-errors
 func WithoutServerError(errors ...error) Configurator {
 	return func(app *Application) {
 		if len(errors) == 0 {
@@ -235,6 +271,13 @@ var WithoutPathCorrection = func(app *Application) {
 	app.config.DisablePathCorrection = true
 }
 
+// WithPathIntelligence enables the EnablePathIntelligence setting.
+//
+// See `Configuration`.
+var WithPathIntelligence = func(app *Application) {
+	app.config.EnablePathIntelligence = true
+}
+
 // WithoutPathCorrectionRedirection disables the PathCorrectionRedirection setting.
 //
 // See `Configuration`.
@@ -250,18 +293,34 @@ var WithoutBodyConsumptionOnUnmarshal = func(app *Application) {
 	app.config.DisableBodyConsumptionOnUnmarshal = true
 }
 
-// WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
+// WithEmptyFormError enables the setting `FireEmptyFormError`.
 //
 // See `Configuration`.
-var WithoutAutoFireStatusCode = func(app *Application) {
-	app.config.DisableAutoFireStatusCode = true
+var WithEmptyFormError = func(app *Application) {
+	app.config.FireEmptyFormError = true
 }
 
-// WithPathEscape enables the PathEscape setting.
+// WithPathEscape sets the EnablePathEscape setting to true.
 //
 // See `Configuration`.
 var WithPathEscape = func(app *Application) {
 	app.config.EnablePathEscape = true
+}
+
+// WithLowercaseRouting enables for lowercase routing by
+// setting the `ForceLowercaseRoutes` to true.
+//
+// See `Configuration`.
+var WithLowercaseRouting = func(app *Application) {
+	app.config.ForceLowercaseRouting = true
+}
+
+// WithDynamicHandler enables for dynamic routing by
+// setting the `EnableDynamicHandler` to true.
+//
+// See `Configuration`.
+var WithDynamicHandler = func(app *Application) {
+	app.config.EnableDynamicHandler = true
 }
 
 // WithOptimizations can force the application to optimize for the best performance where is possible.
@@ -271,11 +330,48 @@ var WithOptimizations = func(app *Application) {
 	app.config.EnableOptimizations = true
 }
 
+// WithProtoJSON enables the proto marshaler on Context.JSON method.
+//
+// See `Configuration` for more.
+var WithProtoJSON = func(app *Application) {
+	app.config.EnableProtoJSON = true
+}
+
+// WithEasyJSON enables the fast easy json marshaler on Context.JSON method.
+//
+// See `Configuration` for more.
+var WithEasyJSON = func(app *Application) {
+	app.config.EnableEasyJSON = true
+}
+
 // WithFireMethodNotAllowed enables the FireMethodNotAllowed setting.
 //
 // See `Configuration`.
 var WithFireMethodNotAllowed = func(app *Application) {
 	app.config.FireMethodNotAllowed = true
+}
+
+// WithoutAutoFireStatusCode sets the DisableAutoFireStatusCode setting to true.
+//
+// See `Configuration`.
+var WithoutAutoFireStatusCode = func(app *Application) {
+	app.config.DisableAutoFireStatusCode = true
+}
+
+// WithResetOnFireErrorCode sets the ResetOnFireErrorCode setting to true.
+//
+// See `Configuration`.
+var WithResetOnFireErrorCode = func(app *Application) {
+	app.config.ResetOnFireErrorCode = true
+}
+
+// WithURLParamSeparator sets the URLParamSeparator setting to "sep".
+//
+// See `Configuration`.
+var WithURLParamSeparator = func(sep string) Configurator {
+	return func(app *Application) {
+		app.config.URLParamSeparator = &sep
+	}
 }
 
 // WithTimeFormat sets the TimeFormat setting.
@@ -298,55 +394,86 @@ func WithCharset(charset string) Configurator {
 
 // WithPostMaxMemory sets the maximum post data size
 // that a client can send to the server, this differs
-// from the overral request body size which can be modified
+// from the overall request body size which can be modified
 // by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 //
-// Defaults to 32MB or 32 << 20 if you prefer.
+// Defaults to 32MB or 32 << 20 or 32*iris.MB if you prefer.
 func WithPostMaxMemory(limit int64) Configurator {
 	return func(app *Application) {
 		app.config.PostMaxMemory = limit
 	}
 }
 
-// WithRemoteAddrHeader enables or adds a new or existing request header name
+// WithRemoteAddrHeader adds a new request header name
 // that can be used to validate the client's real IP.
-//
-// By-default no "X-" header is consired safe to be used for retrieving the
-// client's IP address, because those headers can manually change by
-// the client. But sometimes are useful e.g., when behind a proxy
-// you want to enable the "X-Forwarded-For" or when cloudflare
-// you want to enable the "CF-Connecting-IP", inneed you
-// can allow the `ctx.RemoteAddr()` to use any header
-// that the client may sent.
-//
-// Defaults to an empty map but an example usage is:
-// WithRemoteAddrHeader("X-Forwarded-For")
-//
-// Look `context.RemoteAddr()` for more.
-func WithRemoteAddrHeader(headerName string) Configurator {
+func WithRemoteAddrHeader(header ...string) Configurator {
 	return func(app *Application) {
-		if app.config.RemoteAddrHeaders == nil {
-			app.config.RemoteAddrHeaders = make(map[string]bool)
+		for _, h := range header {
+			exists := false
+			for _, v := range app.config.RemoteAddrHeaders {
+				if v == h {
+					exists = true
+				}
+			}
+
+			if !exists {
+				app.config.RemoteAddrHeaders = append(app.config.RemoteAddrHeaders, h)
+			}
 		}
-		app.config.RemoteAddrHeaders[headerName] = true
 	}
 }
 
-// WithoutRemoteAddrHeader disables an existing request header name
+// WithoutRemoteAddrHeader removes an existing request header name
 // that can be used to validate and parse the client's real IP.
-//
-//
-// Keep note that RemoteAddrHeaders is already defaults to an empty map
-// so you don't have to call this Configurator if you didn't
-// add allowed headers via configuration or via `WithRemoteAddrHeader` before.
 //
 // Look `context.RemoteAddr()` for more.
 func WithoutRemoteAddrHeader(headerName string) Configurator {
 	return func(app *Application) {
-		if app.config.RemoteAddrHeaders == nil {
-			app.config.RemoteAddrHeaders = make(map[string]bool)
+		tmp := app.config.RemoteAddrHeaders[:0]
+		for _, v := range app.config.RemoteAddrHeaders {
+			if v != headerName {
+				tmp = append(tmp, v)
+			}
 		}
-		app.config.RemoteAddrHeaders[headerName] = false
+		app.config.RemoteAddrHeaders = tmp
+	}
+}
+
+// WithRemoteAddrPrivateSubnet adds a new private sub-net to be excluded from `context.RemoteAddr`.
+// See `WithRemoteAddrHeader` too.
+func WithRemoteAddrPrivateSubnet(startIP, endIP string) Configurator {
+	return func(app *Application) {
+		app.config.RemoteAddrPrivateSubnets = append(app.config.RemoteAddrPrivateSubnets, netutil.IPRange{
+			Start: startIP,
+			End:   endIP,
+		})
+	}
+}
+
+// WithSSLProxyHeader sets a SSLProxyHeaders key value pair.
+// Example: WithSSLProxyHeader("X-Forwarded-Proto", "https").
+// See `Context.IsSSL` for more.
+func WithSSLProxyHeader(headerKey, headerValue string) Configurator {
+	return func(app *Application) {
+		if app.config.SSLProxyHeaders == nil {
+			app.config.SSLProxyHeaders = make(map[string]string)
+		}
+
+		app.config.SSLProxyHeaders[headerKey] = headerValue
+	}
+}
+
+// WithHostProxyHeader sets a HostProxyHeaders key value pair.
+// Example: WithHostProxyHeader("X-Host").
+// See `Context.Host` for more.
+func WithHostProxyHeader(headers ...string) Configurator {
+	return func(app *Application) {
+		if app.config.HostProxyHeaders == nil {
+			app.config.HostProxyHeaders = make(map[string]bool)
+		}
+		for _, k := range headers {
+			app.config.HostProxyHeaders[k] = true
+		}
 	}
 }
 
@@ -365,6 +492,11 @@ func WithOtherValue(key string, val interface{}) Configurator {
 // WithSitemap enables the sitemap generator.
 // Use the Route's `SetLastMod`, `SetChangeFreq` and `SetPriority` to modify
 // the sitemap's URL child element properties.
+// Excluded routes:
+// - dynamic
+// - subdomain
+// - offline
+// - ExcludeSitemap method called
 //
 // It accepts a "startURL" input argument which
 // is the prefix for the registered routes that will be included in the sitemap.
@@ -377,7 +509,7 @@ func WithOtherValue(key string, val interface{}) Configurator {
 // If the result does not complete your needs you can take control
 // and use the github.com/kataras/sitemap package to generate a customized one instead.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/sitemap.
+// Example: https://github.com/kataras/iris/tree/main/_examples/sitemap.
 func WithSitemap(startURL string) Configurator {
 	sitemaps := sitemap.New(startURL)
 	return func(app *Application) {
@@ -388,7 +520,7 @@ func WithSitemap(startURL string) Configurator {
 		}
 
 		for _, r := range app.GetRoutes() {
-			if !r.IsStatic() || r.Subdomain != "" {
+			if !r.IsStatic() || r.Subdomain != "" || !r.IsOnline() || r.NoSitemap {
 				continue
 			}
 
@@ -412,7 +544,6 @@ func WithSitemap(startURL string) Configurator {
 					} else {
 						href = "/" + langPath + loc
 					}
-
 				} else if app.I18n.Subdomain {
 					// then use the subdomain.
 					// e.g. http://el.domain.com/path
@@ -455,7 +586,7 @@ func WithSitemap(startURL string) Configurator {
 
 			handler := func(ctx Context) {
 				ctx.ContentType(context.ContentXMLHeaderValue)
-				ctx.Write(contentCopy)
+				ctx.Write(contentCopy) // nolint:errcheck
 			}
 			if app.builded {
 				routes := app.CreateRoutes([]string{MethodGet, MethodHead, MethodOptions}, s.Path, handler)
@@ -485,229 +616,81 @@ var WithTunneling = func(app *Application) {
 	app.config.Tunneling = conf
 }
 
-// Tunnel is the Tunnels field of the TunnelingConfiguration structure.
-type Tunnel struct {
-	// Name is the only one required field,
-	// it is used to create and close tunnels, e.g. "MyApp".
-	// If this field is not empty then ngrok tunnels will be created
-	// when the iris app is up and running.
-	Name string `json:"name" yaml:"Name" toml:"Name"`
-	// Addr is basically optionally as it will be set through
-	// Iris built-in Runners, however, if `iris.Raw` is used
-	// then this field should be set of form 'hostname:port'
-	// because framework cannot be aware
-	// of the address you used to run the server on this custom runner.
-	Addr string `json:"addr,omitempty" yaml:"Addr" toml:"Addr"`
-}
+type (
+	// TunnelingConfiguration contains configuration
+	// for the optional tunneling through ngrok feature.
+	// Note that the ngrok should be already installed at the host machine.
+	TunnelingConfiguration = tunnel.Configuration
+	// Tunnel is the Tunnels field of the TunnelingConfiguration structure.
+	Tunnel = tunnel.Tunnel
+)
 
-// TunnelingConfiguration contains configuration
-// for the optional tunneling through ngrok feature.
-// Note that the ngrok should be already installed at the host machine.
-type TunnelingConfiguration struct {
-	// AuthToken field is optionally and can be used
-	// to authenticate the ngrok access.
-	// ngrok authtoken <YOUR_AUTHTOKEN>
-	AuthToken string `json:"authToken,omitempty" yaml:"AuthToken" toml:"AuthToken"`
-
-	// No...
-	// Config is optionally and can be used
-	// to load ngrok configuration from file system path.
-	//
-	// If you don't specify a location for a configuration file,
-	// ngrok tries to read one from the default location $HOME/.ngrok2/ngrok.yml.
-	// The configuration file is optional; no error is emitted if that path does not exist.
-	// Config string `json:"config,omitempty" yaml:"Config" toml:"Config"`
-
-	// Bin is the system binary path of the ngrok executable file.
-	// If it's empty then the framework will try to find it through system env variables.
-	Bin string `json:"bin,omitempty" yaml:"Bin" toml:"Bin"`
-
-	// WebUIAddr is the web interface address of an already-running ngrok instance.
-	// Iris will try to fetch the default web interface address(http://127.0.0.1:4040)
-	// to determinate if a ngrok instance is running before try to start it manually.
-	// However if a custom web interface address is used,
-	// this field must be set e.g. http://127.0.0.1:5050.
-	WebInterface string `json:"webInterface,omitempty" yaml:"WebInterface" toml:"WebInterface"`
-
-	// Region is optionally, can be used to set the region which defaults to "us".
-	// Available values are:
-	// "us" for United States
-	// "eu" for Europe
-	// "ap" for Asia/Pacific
-	// "au" for Australia
-	// "sa" for South America
-	// "jp" forJapan
-	// "in" for India
-	Region string `json:"region,omitempty" yaml:"Region" toml:"Region"`
-
-	// Tunnels the collection of the tunnels.
-	// One tunnel per Iris Host per Application, usually you only need one.
-	Tunnels []Tunnel `json:"tunnels" yaml:"Tunnels" toml:"Tunnels"`
-}
-
-func (tc *TunnelingConfiguration) isEnabled() bool {
-	return tc != nil && len(tc.Tunnels) > 0
-}
-
-func (tc *TunnelingConfiguration) isNgrokRunning() bool {
-	_, err := http.Get(tc.WebInterface)
-	return err == nil
-}
-
-// https://ngrok.com/docs
-type ngrokTunnel struct {
-	Name    string `json:"name"`
-	Addr    string `json:"addr"`
-	Proto   string `json:"proto"`
-	Auth    string `json:"auth"`
-	BindTLS bool   `json:"bind_tls"`
-}
-
-func (tc TunnelingConfiguration) startTunnel(t Tunnel, publicAddr *string) error {
-	tunnelAPIRequest := ngrokTunnel{
-		Name:    t.Name,
-		Addr:    t.Addr,
-		Proto:   "http",
-		BindTLS: true,
-	}
-
-	if !tc.isNgrokRunning() {
-		ngrokBin := "ngrok" // environment binary.
-
-		if tc.Bin == "" {
-			_, err := exec.LookPath(ngrokBin)
-			if err != nil {
-				ngrokEnvVar, found := os.LookupEnv("NGROK")
-				if !found {
-					return fmt.Errorf(`"ngrok" executable not found, please install it from: https://ngrok.com/download`)
-				}
-
-				ngrokBin = ngrokEnvVar
-			}
-		} else {
-			ngrokBin = tc.Bin
-		}
-
-		if tc.AuthToken != "" {
-			cmd := exec.Command(ngrokBin, "authtoken", tc.AuthToken)
-			err := cmd.Run()
-			if err != nil {
-				return err
-			}
-		}
-
-		// start -none, start without tunnels.
-		//  and finally the -log stdout logs to the stdout otherwise the pipe will never be able to read from, spent a lot of time on this lol.
-		cmd := exec.Command(ngrokBin, "start", "-none", "-log", "stdout")
-
-		// if tc.Config != "" {
-		// 	cmd.Args = append(cmd.Args, []string{"-config", tc.Config}...)
-		// }
-		if tc.Region != "" {
-			cmd.Args = append(cmd.Args, []string{"-region", tc.Region}...)
-		}
-
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return err
-		}
-
-		if err = cmd.Start(); err != nil {
-			return err
-		}
-
-		p := make([]byte, 256)
-		okText := []byte("client session established")
-		for {
-			n, err := stdout.Read(p)
-			if err != nil {
-				return err
-			}
-
-			// we need this one:
-			// msg="client session established"
-			// note that this will block if something terrible happens
-			// but ngrok's errors are strong so the error is easy to be resolved without any logs.
-			if bytes.Contains(p[:n], okText) {
-				break
-			}
-		}
-	}
-
-	return tc.createTunnel(tunnelAPIRequest, publicAddr)
-}
-
-func (tc TunnelingConfiguration) stopTunnel(t Tunnel) error {
-	url := fmt.Sprintf("%s/api/tunnels/%s", tc.WebInterface, t.Name)
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != StatusNoContent {
-		return fmt.Errorf("stop return an unexpected status code: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func (tc TunnelingConfiguration) createTunnel(tunnelAPIRequest ngrokTunnel, publicAddr *string) error {
-	url := fmt.Sprintf("%s/api/tunnels", tc.WebInterface)
-	requestData, err := json.Marshal(tunnelAPIRequest)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Post(url, context.ContentJSONHeaderValue, bytes.NewBuffer(requestData))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	type publicAddrOrErrResp struct {
-		PublicAddr string `json:"public_url"`
-		Details    struct {
-			ErrorText string `json:"err"` // when can't bind more addresses, status code was successful.
-		} `json:"details"`
-		ErrMsg string `json:"msg"` // when ngrok is not yet ready, status code was unsuccessful.
-	}
-
-	var apiResponse publicAddrOrErrResp
-
-	err = json.NewDecoder(resp.Body).Decode(&apiResponse)
-	if err != nil {
-		return err
-	}
-
-	if errText := apiResponse.ErrMsg; errText != "" {
-		return errors.New(errText)
-	}
-
-	if errText := apiResponse.Details.ErrorText; errText != "" {
-		return errors.New(errText)
-	}
-
-	*publicAddr = apiResponse.PublicAddr
-	return nil
-}
-
-// Configuration the whole configuration for an iris instance
-// these can be passed via options also, look at the top of this file(configuration.go).
-// Configuration is a valid OptionSetter.
+// Configuration holds the necessary settings for an Iris Application instance.
+// All fields are optionally, the default values will work for a common web application.
+//
+// A Configuration value can be passed through `WithConfiguration` Configurator.
+// Usage:
+// conf := iris.Configuration{ ... }
+// app := iris.New()
+// app.Configure(iris.WithConfiguration(conf)) OR
+// app.Run/Listen(..., iris.WithConfiguration(conf)).
 type Configuration struct {
-	// vhost is private and set only with .Run method, it cannot be changed after the first set.
+	// VHost lets you customize the trusted domain this server should run on.
+	// Its value will be used as the return value of Context.Domain() too.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
-	vhost string
+	VHost string `ini:"v_host" json:"vHost" yaml:"VHost" toml:"VHost" env:"V_HOST"`
+
+	// LogLevel is the log level the application should use to output messages.
+	// Logger, by default, is mostly used on Build state but it is also possible
+	// that debug error messages could be thrown when the app is running, e.g.
+	// when malformed data structures try to be sent on Client (i.e Context.JSON/JSONP/XML...).
+	//
+	// Defaults to "info". Possible values are:
+	// * "disable"
+	// * "fatal"
+	// * "error"
+	// * "warn"
+	// * "info"
+	// * "debug"
+	LogLevel string `ini:"log_level" json:"logLevel" yaml:"LogLevel" toml:"LogLevel" env:"LOG_LEVEL"`
+
+	// SocketSharding enables SO_REUSEPORT (or SO_REUSEADDR for windows)
+	// on all registered Hosts.
+	// This option allows linear scaling server performance on multi-CPU servers.
+	//
+	// Please read the following:
+	// 1. https://stackoverflow.com/a/14388707
+	// 2. https://stackoverflow.com/a/59692868
+	// 3. https://www.nginx.com/blog/socket-sharding-nginx-release-1-9-1/
+	// 4. (BOOK) Learning HTTP/2: A Practical Guide for Beginners:
+	//	  Page 37, To Shard or Not to Shard?
+	//
+	// Defaults to false.
+	SocketSharding bool `ini:"socket_sharding" json:"socketSharding" yaml:"SocketSharding" toml:"SocketSharding" env:"SOCKET_SHARDING"`
+	// KeepAlive sets the TCP connection's keep-alive duration.
+	// If set to greater than zero then a tcp listener featured keep alive
+	// will be used instead of the simple tcp one.
+	//
+	// Defaults to 0.
+	KeepAlive time.Duration `ini:"keepalive" json:"keepAlive" yaml:"KeepAlive" toml:"KeepAlive" env:"KEEP_ALIVE"`
+	// Timeout wraps the application's router with an http timeout handler
+	// if the value is greater than zero.
+	//
+	// The underline response writer supports the Pusher interface but does not support
+	// the Hijacker or Flusher interfaces when Timeout handler is registered.
+	//
+	// Read more at: https://pkg.go.dev/net/http#TimeoutHandler.
+	Timeout time.Duration `ini:"timeout" json:"timeout" yaml:"Timeout" toml:"Timeout"`
+	// TimeoutMessage specifies the HTML body when a handler hits its life time based
+	// on the Timeout configuration field.
+	TimeoutMessage string `ini:"timeout_message" json:"timeoutMessage" yaml:"TimeoutMessage" toml:"TimeoutMessage"`
+	// NonBlocking, if set to true then the server will start listening for incoming connections
+	// without blocking the main goroutine. Use the Application.Wait method to block and wait for the server to be up and running.
+	NonBlocking bool `ini:"non_blocking" json:"nonBlocking" yaml:"NonBlocking" toml:"NonBlocking"`
 
 	// Tunneling can be optionally set to enable ngrok http(s) tunneling for this Iris app instance.
 	// See the `WithTunneling` Configurator too.
-	Tunneling TunnelingConfiguration `json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
-
+	Tunneling TunnelingConfiguration `ini:"tunneling" json:"tunneling,omitempty" yaml:"Tunneling" toml:"Tunneling"`
 	// IgnoreServerErrors will cause to ignore the matched "errors"
 	// from the main application's `Run` function.
 	// This is a slice of string, not a slice of error
@@ -716,23 +699,24 @@ type Configuration struct {
 	//
 	// See `WithoutServerError(...)` function too.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
+	// Example: https://github.com/kataras/iris/tree/main/_examples/http-server/listen-addr/omit-server-errors
 	//
 	// Defaults to an empty slice.
-	IgnoreServerErrors []string `json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
+	IgnoreServerErrors []string `ini:"ignore_server_errors" json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
 
 	// DisableStartupLog if set to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
-	DisableStartupLog bool `json:"disableStartupLog,omitempty" yaml:"DisableStartupLog" toml:"DisableStartupLog"`
+	DisableStartupLog bool `ini:"disable_startup_log" json:"disableStartupLog,omitempty" yaml:"DisableStartupLog" toml:"DisableStartupLog"`
 	// DisableInterruptHandler if set to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
 	//
 	// Defaults to false.
-	DisableInterruptHandler bool `json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
+	DisableInterruptHandler bool `ini:"disable_interrupt_handler" json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
 
-	// DisablePathCorrection corrects and redirects or executes directly the handler of
+	// DisablePathCorrection disables the correcting
+	// and redirecting or executing directly the handler of
 	// the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
@@ -741,18 +725,23 @@ type Configuration struct {
 	// See `DisablePathCorrectionRedirection` to enable direct handler execution instead of redirection.
 	//
 	// Defaults to false.
-	DisablePathCorrection bool `json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
-
+	DisablePathCorrection bool `ini:"disable_path_correction" json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
 	// DisablePathCorrectionRedirection works whenever configuration.DisablePathCorrection is set to false
 	// and if DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
 	// the trailing slash ("/") instead of send a redirection status.
 	//
 	// Defaults to false.
-	DisablePathCorrectionRedirection bool `json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
-
-	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
-	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
+	DisablePathCorrectionRedirection bool `ini:"disable_path_correction_redirection" json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
+	// EnablePathIntelligence if set to true,
+	// the router will redirect HTTP "GET" not found pages to the most closest one path(if any). For example
+	// you register a route at "/contact" path -
+	// a client tries to reach it by "/cont", the path will be automatic fixed
+	// and the client will be redirected to the "/contact" path
+	// instead of getting a 404 not found response back.
 	//
+	// Defaults to false.
+	EnablePathIntelligence bool `ini:"enable_path_intelligence" json:"enablePathIntelligence,omitempty" yaml:"EnablePathIntelligence" toml:"EnablePathIntelligence"`
+	// EnablePathEscape when is true then its escapes the path and the named parameters (if any).
 	// When do you need to Disable(false) it:
 	// accepts parameters with slash '/'
 	// Request: http://localhost:8080/details/Project%2FDelta
@@ -761,17 +750,61 @@ type Configuration struct {
 	// projectName, _ := url.QueryUnescape(c.Param("project").
 	//
 	// Defaults to false.
-	EnablePathEscape bool `json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
+	EnablePathEscape bool `ini:"enable_path_escape" json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
+	// ForceLowercaseRouting if enabled, converts all registered routes paths to lowercase
+	// and it does lowercase the request path too for matching.
+	//
+	// Defaults to false.
+	ForceLowercaseRouting bool `ini:"force_lowercase_routing" json:"forceLowercaseRouting,omitempty" yaml:"ForceLowercaseRouting" toml:"ForceLowercaseRouting"`
+	// EnableOptimizations enables dynamic request handler.
+	// It gives the router the feature to add routes while in serve-time,
+	// when `RefreshRouter` is called.
+	// If this setting is set to true, the request handler will use a mutex for data(trie routing) protection,
+	// hence the performance cost.
+	//
+	// Defaults to false.
+	EnableDynamicHandler bool `ini:"enable_dynamic_handler" json:"enableDynamicHandler,omitempty" yaml:"EnableDynamicHandler" toml:"EnableDynamicHandler"`
+	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
+	//  fires the 405 error instead of 404
+	// Defaults to false.
+	FireMethodNotAllowed bool `ini:"fire_method_not_allowed" json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
+	// DisableAutoFireStatusCode if true then it turns off the http error status code
+	// handler automatic execution on error code from a `Context.StatusCode` call.
+	// By-default a custom http error handler will be fired when "Context.StatusCode(errorCode)" called.
+	//
+	// Defaults to false.
+	DisableAutoFireStatusCode bool `ini:"disable_auto_fire_status_code" json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
+	// ResetOnFireErrorCode if true then any previously response body or headers through
+	// response recorder will be ignored and the router
+	// will fire the registered (or default) HTTP error handler instead.
+	// See `core/router/handler#FireErrorCode` and `Context.EndRequest` for more details.
+	//
+	// Read more at: https://github.com/kataras/iris/issues/1531
+	//
+	// Defaults to false.
+	ResetOnFireErrorCode bool `ini:"reset_on_fire_error_code" json:"resetOnFireErrorCode,omitempty" yaml:"ResetOnFireErrorCode" toml:"ResetOnFireErrorCode"`
 
+	// URLParamSeparator defines the character(s) separator for Context.URLParamSlice.
+	// If empty or null then request url parameters with comma separated values will be retrieved as one.
+	//
+	// Defaults to comma ",".
+	URLParamSeparator *string `ini:"url_param_separator" json:"urlParamSeparator,omitempty" yaml:"URLParamSeparator" toml:"URLParamSeparator"`
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
 	//
 	// Defaults to false.
-	EnableOptimizations bool `json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
-	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
-	//  fires the 405 error instead of 404
+	// Deprecated. As of version 12.2.x this field does nothing.
+	EnableOptimizations bool `ini:"enable_optimizations" json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
+	// EnableProtoJSON when this field is true
+	// enables the proto marshaler on given proto messages when calling the Context.JSON method.
+	//
 	// Defaults to false.
-	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
+	EnableProtoJSON bool `ini:"enable_proto_json" json:"enableProtoJSON,omitempty" yaml:"EnableProtoJSON" toml:"EnableProtoJSON"`
+	// EnableEasyJSON when this field is true
+	// enables the fast easy json marshaler on compatible struct values when calling the Context.JSON method.
+	//
+	// Defaults to false.
+	EnableEasyJSON bool `ini:"enable_easy_json" json:"enableEasyJSON,omitempty" yaml:"EnableEasyJSON" toml:"EnableEasyJSON"`
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If set to true then it
@@ -781,38 +814,29 @@ type Configuration struct {
 	// if this field set to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
-
-	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
-	// from (`context.StatusCodeNotSuccessful`, defaults to < 200 || >= 400).
-	// If that is false then for a direct error firing, then call the "context#FireStatusCode(statusCode)" manually.
 	//
-	// By-default a custom http error handler will be fired when "context.StatusCode(code)" called,
-	// code should be equal with the result of the the `context.StatusCodeNotSuccessful` in order to be received as an "http error handler".
-	//
-	// Developer may want this option to set as true in order to manually call the
-	// error handlers when needed via "context#FireStatusCode(< 200 || >= 400)".
-	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
-	//
-	// Defaults to false.
-	DisableAutoFireStatusCode bool `json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
+	// See `Context.RecordRequestBody` method for the same feature, per-request.
+	DisableBodyConsumptionOnUnmarshal bool `ini:"disable_body_consumption" json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
+	// FireEmptyFormError returns if set to tue true then the `context.ReadForm/ReadQuery/ReadBody`
+	// will return an `iris.ErrEmptyForm` on empty request form data.
+	FireEmptyFormError bool `ini:"fire_empty_form_error" json:"fireEmptyFormError,omitempty" yaml:"FireEmptyFormError" toml:"FireEmptyFormError"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	TimeFormat string `json:"timeFormat,omitempty" yaml:"TimeFormat" toml:"TimeFormat"`
+	TimeFormat string `ini:"time_format" json:"timeFormat,omitempty" yaml:"TimeFormat" toml:"TimeFormat"`
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
-	// Defaults to "UTF-8".
-	Charset string `json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
+	// Defaults to "utf-8".
+	Charset string `ini:"charset" json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
 
 	// PostMaxMemory sets the maximum post data size
 	// that a client can send to the server, this differs
-	// from the overral request body size which can be modified
+	// from the overall request body size which can be modified
 	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 	//
 	// Defaults to 32MB or 32 << 20 if you prefer.
-	PostMaxMemory int64 `json:"postMaxMemory" yaml:"PostMaxMemory" toml:"PostMaxMemory"`
+	PostMaxMemory int64 `ini:"post_max_memory" json:"postMaxMemory" yaml:"PostMaxMemory" toml:"PostMaxMemory"`
 	//  +----------------------------------------------------+
 	//  | Context's keys for values used on various featuers |
 	//  +----------------------------------------------------+
@@ -822,186 +846,350 @@ type Configuration struct {
 	// LocaleContextKey is used by i18n to get the current request's locale, which contains a translate function too.
 	//
 	// Defaults to "iris.locale".
-	LocaleContextKey string `json:"localeContextKey,omitempty" yaml:"LocaleContextKey" toml:"LocaleContextKey"`
-
-	// GetViewLayoutContextKey is the key of the context's user values' key
-	// which is being used to set the template
-	// layout from a middleware or the main handler.
-	// Overrides the parent's or the configuration's.
+	LocaleContextKey string `ini:"locale_context_key" json:"localeContextKey,omitempty" yaml:"LocaleContextKey" toml:"LocaleContextKey"`
+	// LanguageContextKey is the context key which a language can be modified by a middleware.
+	// It has the highest priority over the rest and if it is empty then it is ignored,
+	// if it set to a static string of "default" or to the default language's code
+	// then the rest of the language extractors will not be called at all and
+	// the default language will be set instead.
 	//
-	// Defaults to "iris.ViewLayout"
-	ViewLayoutContextKey string `json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
-	// GetViewDataContextKey is the key of the context's user values' key
-	// which is being used to set the template
-	// binding data from a middleware or the main handler.
+	// Use with `Context.SetLanguage("el-GR")`.
 	//
-	// Defaults to "iris.viewData"
-	ViewDataContextKey string `json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
+	// See `i18n.ExtractFunc` for a more organised way of the same feature.
+	// Defaults to "iris.locale.language".
+	LanguageContextKey string `ini:"language_context_key" json:"languageContextKey,omitempty" yaml:"LanguageContextKey" toml:"LanguageContextKey"`
+	// LanguageInputContextKey is the context key of a language that is given by the end-user.
+	// It's the real user input of the language string, matched or not.
+	//
+	// Defaults to "iris.locale.language.input".
+	LanguageInputContextKey string `ini:"language_input_context_key" json:"languageInputContextKey,omitempty" yaml:"LanguageInputContextKey" toml:"LanguageInputContextKey"`
+	// VersionContextKey is the context key which an API Version can be modified
+	// via a middleware through `SetVersion` method, e.g. `versioning.SetVersion(ctx, ">=1.0.0 <2.0.0")`.
+	// Defaults to "iris.api.version".
+	VersionContextKey string `ini:"version_context_key" json:"versionContextKey" yaml:"VersionContextKey" toml:"VersionContextKey"`
+	// VersionAliasesContextKey is the context key which the versioning feature
+	// can look up for alternative values of a version and fallback to that.
+	// Head over to the versioning package for more.
+	// Defaults to "iris.api.version.aliases"
+	VersionAliasesContextKey string `ini:"version_aliases_context_key" json:"versionAliasesContextKey" yaml:"VersionAliasesContextKey" toml:"VersionAliasesContextKey"`
+	// ViewEngineContextKey is the context's values key
+	// responsible to store and retrieve(view.Engine) the current view engine.
+	// A middleware or a Party can modify its associated value to change
+	// a view engine that `ctx.View` will render through.
+	// If not an engine is registered by the end-developer
+	// then its associated value is always nil,
+	// meaning that the default value is nil.
+	// See `Party.RegisterView` and `Context.ViewEngine` methods as well.
+	//
+	// Defaults to "iris.view.engine".
+	ViewEngineContextKey string `ini:"view_engine_context_key" json:"viewEngineContextKey,omitempty" yaml:"ViewEngineContextKey" toml:"ViewEngineContextKey"`
+	// ViewLayoutContextKey is the context's values key
+	// responsible to store and retrieve(string) the current view layout.
+	// A middleware can modify its associated value to change
+	// the layout that `ctx.View` will use to render a template.
+	//
+	// Defaults to "iris.view.layout".
+	ViewLayoutContextKey string `ini:"view_layout_context_key" json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
+	// ViewDataContextKey is the context's values key
+	// responsible to store and retrieve(interface{}) the current view binding data.
+	// A middleware can modify its associated value to change
+	// the template's data on-fly.
+	//
+	// Defaults to "iris.view.data".
+	ViewDataContextKey string `ini:"view_data_context_key" json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
+	// FallbackViewContextKey is the context's values key
+	// responsible to store the view fallback information.
+	//
+	// Defaults to "iris.view.fallback".
+	FallbackViewContextKey string `ini:"fallback_view_context_key" json:"fallbackViewContextKey,omitempty" yaml:"FallbackViewContextKey" toml:"FallbackViewContextKey"`
 	// RemoteAddrHeaders are the allowed request headers names
 	// that can be valid to parse the client's IP based on.
 	// By-default no "X-" header is consired safe to be used for retrieving the
 	// client's IP address, because those headers can manually change by
-	// the client. But sometimes are useful e.g., when behind a proxy
+	// the client. But sometimes are useful e.g. when behind a proxy
 	// you want to enable the "X-Forwarded-For" or when cloudflare
-	// you want to enable the "CF-Connecting-IP", inneed you
+	// you want to enable the "CF-Connecting-IP", indeed you
 	// can allow the `ctx.RemoteAddr()` to use any header
 	// that the client may sent.
 	//
-	// Defaults to an empty map but an example usage is:
+	// Defaults to an empty slice but an example usage is:
 	// RemoteAddrHeaders {
-	//	"X-Real-Ip":             true,
-	//  "X-Forwarded-For":       true,
-	// 	"CF-Connecting-IP": 	 true,
+	//    "X-Real-Ip",
+	//    "X-Forwarded-For",
+	//    "CF-Connecting-IP",
+	//    "True-Client-Ip",
+	//    "X-Appengine-Remote-Addr",
 	//	}
 	//
 	// Look `context.RemoteAddr()` for more.
-	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
-
+	RemoteAddrHeaders []string `ini:"remote_addr_headers" json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
+	// RemoteAddrHeadersForce forces the `Context.RemoteAddr()` method
+	// to return the first entry of a request header as a fallback,
+	// even if that IP is a part of the `RemoteAddrPrivateSubnets` list.
+	// The default behavior, if a remote address is part of the `RemoteAddrPrivateSubnets`,
+	// is to retrieve the IP from the `Request.RemoteAddr` field instead.
+	RemoteAddrHeadersForce bool `ini:"remote_addr_headers_force" json:"remoteAddrHeadersForce,omitempty" yaml:"RemoteAddrHeadersForce" toml:"RemoteAddrHeadersForce"`
+	// RemoteAddrPrivateSubnets defines the private sub-networks.
+	// They are used to be compared against
+	// IP Addresses fetched through `RemoteAddrHeaders` or `Context.Request.RemoteAddr`.
+	// For details please navigate through: https://github.com/kataras/iris/issues/1453
+	// Defaults to:
+	// {
+	// 	Start: "10.0.0.0",
+	// 	End:   "10.255.255.255",
+	// },
+	// {
+	// 	Start: "100.64.0.0",
+	// 	End:   "100.127.255.255",
+	// },
+	// {
+	// 	Start: "172.16.0.0",
+	// 	End:   "172.31.255.255",
+	// },
+	// {
+	// 	Start: "192.0.0.0",
+	// 	End:   "192.0.0.255",
+	// },
+	// {
+	// 	Start: "192.168.0.0",
+	// 	End:   "192.168.255.255",
+	// },
+	// {
+	// 	Start: "198.18.0.0",
+	// 	End:   "198.19.255.255",
+	// }
+	//
+	// Look `Context.RemoteAddr()` for more.
+	RemoteAddrPrivateSubnets []netutil.IPRange `ini:"remote_addr_private_subnets" json:"remoteAddrPrivateSubnets" yaml:"RemoteAddrPrivateSubnets" toml:"RemoteAddrPrivateSubnets"`
+	// SSLProxyHeaders defines the set of header key values
+	// that would indicate a valid https Request (look `Context.IsSSL()`).
+	// Example: `map[string]string{"X-Forwarded-Proto": "https"}`.
+	//
+	// Defaults to empty map.
+	SSLProxyHeaders map[string]string `ini:"ssl_proxy_headers" json:"sslProxyHeaders" yaml:"SSLProxyHeaders" toml:"SSLProxyHeaders"`
+	// HostProxyHeaders defines the set of headers that may hold a proxied hostname value for the clients.
+	// Look `Context.Host()` for more.
+	// Defaults to empty map.
+	HostProxyHeaders map[string]bool `ini:"host_proxy_headers" json:"hostProxyHeaders" yaml:"HostProxyHeaders" toml:"HostProxyHeaders"`
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want.
 	//
-	// Defaults to a non-nil empty map.
-	Other map[string]interface{} `json:"other,omitempty" yaml:"Other" toml:"Other"`
+	// Defaults to empty map.
+	Other map[string]interface{} `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
 
-var _ context.ConfigurationReadOnly = &Configuration{}
+var _ context.ConfigurationReadOnly = (*Configuration)(nil)
 
-// GetVHost returns the non-exported vhost config field.
-//
-// If original addr ended with :443 or :80, it will return the host without the port.
-// If original addr was :https or :http, it will return localhost.
-// If original addr was 0.0.0.0, it will return localhost.
-func (c Configuration) GetVHost() string {
-	return c.vhost
+// GetVHost returns the VHost config field.
+func (c *Configuration) GetVHost() string {
+	vhost := c.VHost
+	return vhost
 }
 
-// GetDisablePathCorrection returns the Configuration#DisablePathCorrection,
-// DisablePathCorrection corrects and redirects the requested path to the registered path
-// for example, if /home/ path is requested but no handler for this Route found,
-// then the Router checks if /home handler exists, if yes,
-// (permanent)redirects the client to the correct path /home.
-func (c Configuration) GetDisablePathCorrection() bool {
+// SetVHost sets the VHost config field.
+func (c *Configuration) SetVHost(s string) {
+	c.VHost = s
+}
+
+// GetLogLevel returns the LogLevel field.
+func (c *Configuration) GetLogLevel() string {
+	return c.LogLevel
+}
+
+// GetSocketSharding returns the SocketSharding field.
+func (c *Configuration) GetSocketSharding() bool {
+	return c.SocketSharding
+}
+
+// GetKeepAlive returns the KeepAlive field.
+func (c *Configuration) GetKeepAlive() time.Duration {
+	return c.KeepAlive
+}
+
+// GetTimeout returns the Timeout field.
+func (c *Configuration) GetTimeout() time.Duration {
+	return c.Timeout
+}
+
+// GetNonBlocking returns the NonBlocking field.
+func (c *Configuration) GetNonBlocking() bool {
+	return c.NonBlocking
+}
+
+// GetTimeoutMessage returns the TimeoutMessage field.
+func (c *Configuration) GetTimeoutMessage() string {
+	return c.TimeoutMessage
+}
+
+// GetDisablePathCorrection returns the DisablePathCorrection field.
+func (c *Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
 
-// GetDisablePathCorrectionRedirection returns the Configuration#DisablePathCorrectionRedirection field.
-// If DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
-// the last slash ("/") instead of send a redirection status.
-func (c Configuration) GetDisablePathCorrectionRedirection() bool {
+// GetDisablePathCorrectionRedirection returns the DisablePathCorrectionRedirection field.
+func (c *Configuration) GetDisablePathCorrectionRedirection() bool {
 	return c.DisablePathCorrectionRedirection
 }
 
-// GetEnablePathEscape is the Configuration#EnablePathEscape,
-// returns true when its escapes the path, the named parameters (if any).
-func (c Configuration) GetEnablePathEscape() bool {
+// GetEnablePathIntelligence returns the EnablePathIntelligence field.
+func (c *Configuration) GetEnablePathIntelligence() bool {
+	return c.EnablePathIntelligence
+}
+
+// GetEnablePathEscape returns the EnablePathEscape field.
+func (c *Configuration) GetEnablePathEscape() bool {
 	return c.EnablePathEscape
 }
 
-// GetEnableOptimizations returns whether
-// the application has performance optimizations enabled.
-func (c Configuration) GetEnableOptimizations() bool {
-	return c.EnableOptimizations
+// GetForceLowercaseRouting returns the ForceLowercaseRouting field.
+func (c *Configuration) GetForceLowercaseRouting() bool {
+	return c.ForceLowercaseRouting
 }
 
-// GetFireMethodNotAllowed returns the Configuration#FireMethodNotAllowed.
-func (c Configuration) GetFireMethodNotAllowed() bool {
+// GetEnableDynamicHandler returns the EnableDynamicHandler field.
+func (c *Configuration) GetEnableDynamicHandler() bool {
+	return c.EnableDynamicHandler
+}
+
+// GetFireMethodNotAllowed returns the FireMethodNotAllowed field.
+func (c *Configuration) GetFireMethodNotAllowed() bool {
 	return c.FireMethodNotAllowed
 }
 
-// GetDisableBodyConsumptionOnUnmarshal returns the Configuration#GetDisableBodyConsumptionOnUnmarshal,
-// manages the reading behavior of the context's body readers/binders.
-// If returns true then the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`
-// is disabled.
-//
-// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
-// if this field set to true then a new buffer will be created to read from and the request body.
-// The body will not be changed and existing data before the
-// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
+// GetEnableOptimizations returns the EnableOptimizations.
+func (c *Configuration) GetEnableOptimizations() bool {
+	return c.EnableOptimizations
+}
+
+// GetEnableProtoJSON returns the EnableProtoJSON field.
+func (c *Configuration) GetEnableProtoJSON() bool {
+	return c.EnableProtoJSON
+}
+
+// GetEnableEasyJSON returns the EnableEasyJSON field.
+func (c *Configuration) GetEnableEasyJSON() bool {
+	return c.EnableEasyJSON
+}
+
+// GetDisableBodyConsumptionOnUnmarshal returns the DisableBodyConsumptionOnUnmarshal field.
+func (c *Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
 	return c.DisableBodyConsumptionOnUnmarshal
 }
 
-// GetDisableAutoFireStatusCode returns the Configuration#DisableAutoFireStatusCode.
-// Returns true when the http error status code handler automatic execution turned off.
-func (c Configuration) GetDisableAutoFireStatusCode() bool {
+// GetFireEmptyFormError returns the DisableBodyConsumptionOnUnmarshal field.
+func (c *Configuration) GetFireEmptyFormError() bool {
+	return c.FireEmptyFormError
+}
+
+// GetDisableAutoFireStatusCode returns the DisableAutoFireStatusCode field.
+func (c *Configuration) GetDisableAutoFireStatusCode() bool {
 	return c.DisableAutoFireStatusCode
 }
 
-// GetTimeFormat returns the Configuration#TimeFormat,
-// format for any kind of datetime parsing.
-func (c Configuration) GetTimeFormat() string {
+// GetResetOnFireErrorCode returns ResetOnFireErrorCode field.
+func (c *Configuration) GetResetOnFireErrorCode() bool {
+	return c.ResetOnFireErrorCode
+}
+
+// GetURLParamSeparator returns URLParamSeparator field.
+func (c *Configuration) GetURLParamSeparator() *string {
+	return c.URLParamSeparator
+}
+
+// GetTimeFormat returns the TimeFormat field.
+func (c *Configuration) GetTimeFormat() string {
 	return c.TimeFormat
 }
 
-// GetCharset returns the Configuration#Charset,
-// the character encoding for various rendering
-// used for templates and the rest of the responses.
-func (c Configuration) GetCharset() string {
+// GetCharset returns the Charset field.
+func (c *Configuration) GetCharset() string {
 	return c.Charset
 }
 
-// GetPostMaxMemory returns the maximum configured post data size
-// that a client can send to the server, this differs
-// from the overral request body size which can be modified
-// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
-//
-// Defaults to 32MB or 32 << 20 if you prefer.
-func (c Configuration) GetPostMaxMemory() int64 {
+// GetPostMaxMemory returns the PostMaxMemory field.
+func (c *Configuration) GetPostMaxMemory() int64 {
 	return c.PostMaxMemory
 }
 
-// GetLocaleContextKey returns the configuration's LocaleContextKey value,
-// used for i18n.
-func (c Configuration) GetLocaleContextKey() string {
+// GetLocaleContextKey returns the LocaleContextKey field.
+func (c *Configuration) GetLocaleContextKey() string {
 	return c.LocaleContextKey
 }
 
-// GetViewLayoutContextKey returns the key of the context's user values' key
-// which is being used to set the template
-// layout from a middleware or the main handler.
-// Overrides the parent's or the configuration's.
-func (c Configuration) GetViewLayoutContextKey() string {
+// GetLanguageContextKey returns the LanguageContextKey field.
+func (c *Configuration) GetLanguageContextKey() string {
+	return c.LanguageContextKey
+}
+
+// GetLanguageInputContextKey returns the LanguageInputContextKey field.
+func (c *Configuration) GetLanguageInputContextKey() string {
+	return c.LanguageInputContextKey
+}
+
+// GetVersionContextKey returns the VersionContextKey field.
+func (c *Configuration) GetVersionContextKey() string {
+	return c.VersionContextKey
+}
+
+// GetVersionAliasesContextKey returns the VersionAliasesContextKey field.
+func (c *Configuration) GetVersionAliasesContextKey() string {
+	return c.VersionAliasesContextKey
+}
+
+// GetViewEngineContextKey returns the ViewEngineContextKey field.
+func (c *Configuration) GetViewEngineContextKey() string {
+	return c.ViewEngineContextKey
+}
+
+// GetViewLayoutContextKey returns the ViewLayoutContextKey field.
+func (c *Configuration) GetViewLayoutContextKey() string {
 	return c.ViewLayoutContextKey
 }
 
-// GetViewDataContextKey returns the key of the context's user values' key
-// which is being used to set the template
-// binding data from a middleware or the main handler.
-func (c Configuration) GetViewDataContextKey() string {
+// GetViewDataContextKey returns the ViewDataContextKey field.
+func (c *Configuration) GetViewDataContextKey() string {
 	return c.ViewDataContextKey
 }
 
-// GetRemoteAddrHeaders returns the allowed request headers names
-// that can be valid to parse the client's IP based on.
-// By-default no "X-" header is consired safe to be used for retrieving the
-// client's IP address, because those headers can manually change by
-// the client. But sometimes are useful e.g., when behind a proxy
-// you want to enable the "X-Forwarded-For" or when cloudflare
-// you want to enable the "CF-Connecting-IP", inneed you
-// can allow the `ctx.RemoteAddr()` to use any header
-// that the client may sent.
-//
-// Defaults to an empty map but an example usage is:
-// RemoteAddrHeaders {
-//	"X-Real-Ip":             true,
-//  "X-Forwarded-For":       true,
-// 	"CF-Connecting-IP": 	 true,
-//	}
-//
-// Look `context.RemoteAddr()` for more.
-func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
+// GetFallbackViewContextKey returns the FallbackViewContextKey field.
+func (c *Configuration) GetFallbackViewContextKey() string {
+	return c.FallbackViewContextKey
+}
+
+// GetRemoteAddrHeaders returns the RemoteAddrHeaders field.
+func (c *Configuration) GetRemoteAddrHeaders() []string {
 	return c.RemoteAddrHeaders
 }
 
-// GetOther returns the Configuration#Other map.
-func (c Configuration) GetOther() map[string]interface{} {
+// GetRemoteAddrHeadersForce returns RemoteAddrHeadersForce field.
+func (c *Configuration) GetRemoteAddrHeadersForce() bool {
+	return c.RemoteAddrHeadersForce
+}
+
+// GetSSLProxyHeaders returns the SSLProxyHeaders field.
+func (c *Configuration) GetSSLProxyHeaders() map[string]string {
+	return c.SSLProxyHeaders
+}
+
+// GetRemoteAddrPrivateSubnets returns the RemoteAddrPrivateSubnets field.
+func (c *Configuration) GetRemoteAddrPrivateSubnets() []netutil.IPRange {
+	return c.RemoteAddrPrivateSubnets
+}
+
+// GetHostProxyHeaders returns the HostProxyHeaders field.
+func (c *Configuration) GetHostProxyHeaders() map[string]bool {
+	return c.HostProxyHeaders
+}
+
+// GetOther returns the Other field.
+func (c *Configuration) GetOther() map[string]interface{} {
 	return c.Other
 }
 
 // WithConfiguration sets the "c" values to the framework's configurations.
 //
 // Usage:
-// app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.Configuration{/* fields here */ }))
+// app.Listen(":8080", iris.WithConfiguration(iris.Configuration{/* fields here */ }))
 // or
 // iris.WithConfiguration(iris.YAML("./cfg/iris.yml"))
 // or
@@ -1010,7 +1198,36 @@ func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
 
-		if c.Tunneling.isEnabled() {
+		if main == nil {
+			app.config = &c
+			return
+		}
+
+		if v := c.LogLevel; v != "" {
+			main.LogLevel = v
+		}
+
+		if v := c.SocketSharding; v {
+			main.SocketSharding = v
+		}
+
+		if v := c.KeepAlive; v > 0 {
+			main.KeepAlive = v
+		}
+
+		if v := c.Timeout; v > 0 {
+			main.Timeout = v
+		}
+
+		if v := c.TimeoutMessage; v != "" {
+			main.TimeoutMessage = v
+		}
+
+		if v := c.NonBlocking; v {
+			main.NonBlocking = v
+		}
+
+		if len(c.Tunneling.Tunnels) > 0 {
 			main.Tunneling = c.Tunneling
 		}
 
@@ -1034,24 +1251,52 @@ func WithConfiguration(c Configuration) Configurator {
 			main.DisablePathCorrectionRedirection = v
 		}
 
+		if v := c.EnablePathIntelligence; v {
+			main.EnablePathIntelligence = v
+		}
+
 		if v := c.EnablePathEscape; v {
 			main.EnablePathEscape = v
+		}
+
+		if v := c.ForceLowercaseRouting; v {
+			main.ForceLowercaseRouting = v
 		}
 
 		if v := c.EnableOptimizations; v {
 			main.EnableOptimizations = v
 		}
 
+		if v := c.EnableProtoJSON; v {
+			main.EnableProtoJSON = v
+		}
+
+		if v := c.EnableEasyJSON; v {
+			main.EnableEasyJSON = v
+		}
+
 		if v := c.FireMethodNotAllowed; v {
 			main.FireMethodNotAllowed = v
+		}
+
+		if v := c.DisableAutoFireStatusCode; v {
+			main.DisableAutoFireStatusCode = v
+		}
+
+		if v := c.ResetOnFireErrorCode; v {
+			main.ResetOnFireErrorCode = v
+		}
+
+		if v := c.URLParamSeparator; v != nil {
+			main.URLParamSeparator = v
 		}
 
 		if v := c.DisableBodyConsumptionOnUnmarshal; v {
 			main.DisableBodyConsumptionOnUnmarshal = v
 		}
 
-		if v := c.DisableAutoFireStatusCode; v {
-			main.DisableAutoFireStatusCode = v
+		if v := c.FireEmptyFormError; v {
+			main.FireEmptyFormError = v
 		}
 
 		if v := c.TimeFormat; v != "" {
@@ -1070,20 +1315,62 @@ func WithConfiguration(c Configuration) Configurator {
 			main.LocaleContextKey = v
 		}
 
+		if v := c.LanguageContextKey; v != "" {
+			main.LanguageContextKey = v
+		}
+
+		if v := c.LanguageInputContextKey; v != "" {
+			main.LanguageInputContextKey = v
+		}
+
+		if v := c.VersionContextKey; v != "" {
+			main.VersionContextKey = v
+		}
+
+		if v := c.VersionAliasesContextKey; v != "" {
+			main.VersionAliasesContextKey = v
+		}
+
+		if v := c.ViewEngineContextKey; v != "" {
+			main.ViewEngineContextKey = v
+		}
 		if v := c.ViewLayoutContextKey; v != "" {
 			main.ViewLayoutContextKey = v
 		}
-
 		if v := c.ViewDataContextKey; v != "" {
 			main.ViewDataContextKey = v
 		}
+		if v := c.FallbackViewContextKey; v != "" {
+			main.FallbackViewContextKey = v
+		}
 
 		if v := c.RemoteAddrHeaders; len(v) > 0 {
-			if main.RemoteAddrHeaders == nil {
-				main.RemoteAddrHeaders = make(map[string]bool, len(v))
+			main.RemoteAddrHeaders = v
+		}
+
+		if v := c.RemoteAddrHeadersForce; v {
+			main.RemoteAddrHeadersForce = v
+		}
+
+		if v := c.RemoteAddrPrivateSubnets; len(v) > 0 {
+			main.RemoteAddrPrivateSubnets = v
+		}
+
+		if v := c.SSLProxyHeaders; len(v) > 0 {
+			if main.SSLProxyHeaders == nil {
+				main.SSLProxyHeaders = make(map[string]string, len(v))
 			}
 			for key, value := range v {
-				main.RemoteAddrHeaders[key] = value
+				main.SSLProxyHeaders[key] = value
+			}
+		}
+
+		if v := c.HostProxyHeaders; len(v) > 0 {
+			if main.HostProxyHeaders == nil {
+				main.HostProxyHeaders = make(map[string]bool, len(v))
+			}
+			for key, value := range v {
+				main.HostProxyHeaders[key] = value
 			}
 		}
 
@@ -1098,30 +1385,85 @@ func WithConfiguration(c Configuration) Configurator {
 	}
 }
 
+// DefaultTimeoutMessage is the default timeout message which is rendered
+// on expired handlers when timeout handler is registered (see Timeout configuration field).
+var DefaultTimeoutMessage = `<html><head><title>Timeout</title></head><body><h1>Timeout</h1>Looks like the server is taking too long to respond, this can be caused by either poor connectivity or an error with our servers. Please try again in a while.</body></html>`
+
+func toStringPtr(s string) *string {
+	return &s
+}
+
 // DefaultConfiguration returns the default configuration for an iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
+		LogLevel:                          "info",
+		SocketSharding:                    false,
+		KeepAlive:                         0,
+		Timeout:                           0,
+		TimeoutMessage:                    DefaultTimeoutMessage,
+		NonBlocking:                       false,
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,
+		ForceLowercaseRouting:             false,
 		FireMethodNotAllowed:              false,
 		DisableBodyConsumptionOnUnmarshal: false,
+		FireEmptyFormError:                false,
 		DisableAutoFireStatusCode:         false,
+		ResetOnFireErrorCode:              false,
+		URLParamSeparator:                 toStringPtr(","),
 		TimeFormat:                        "Mon, 02 Jan 2006 15:04:05 GMT",
-		Charset:                           "UTF-8",
+		Charset:                           "utf-8",
 
 		// PostMaxMemory is for post body max memory.
 		//
 		// The request body the size limit
 		// can be set by the middleware `LimitRequestBodySize`
 		// or `context#SetMaxRequestBodySize`.
-		PostMaxMemory:        32 << 20, // 32MB
-		LocaleContextKey:     "iris.locale",
-		ViewLayoutContextKey: "iris.viewLayout",
-		ViewDataContextKey:   "iris.viewData",
-		RemoteAddrHeaders:    make(map[string]bool),
-		EnableOptimizations:  false,
-		Other:                make(map[string]interface{}),
+		PostMaxMemory:            32 << 20, // 32MB
+		LocaleContextKey:         "iris.locale",
+		LanguageContextKey:       "iris.locale.language",
+		LanguageInputContextKey:  "iris.locale.language.input",
+		VersionContextKey:        "iris.api.version",
+		VersionAliasesContextKey: "iris.api.version.aliases",
+		ViewEngineContextKey:     "iris.view.engine",
+		ViewLayoutContextKey:     "iris.view.layout",
+		ViewDataContextKey:       "iris.view.data",
+		FallbackViewContextKey:   "iris.view.fallback",
+		RemoteAddrHeaders:        nil,
+		RemoteAddrHeadersForce:   false,
+		RemoteAddrPrivateSubnets: []netutil.IPRange{
+			{
+				Start: "10.0.0.0",
+				End:   "10.255.255.255",
+			},
+			{
+				Start: "100.64.0.0",
+				End:   "100.127.255.255",
+			},
+			{
+				Start: "172.16.0.0",
+				End:   "172.31.255.255",
+			},
+			{
+				Start: "192.0.0.0",
+				End:   "192.0.0.255",
+			},
+			{
+				Start: "192.168.0.0",
+				End:   "192.168.255.255",
+			},
+			{
+				Start: "198.18.0.0",
+				End:   "198.19.255.255",
+			},
+		},
+		SSLProxyHeaders:     make(map[string]string),
+		HostProxyHeaders:    make(map[string]bool),
+		EnableOptimizations: false,
+		EnableProtoJSON:     false,
+		EnableEasyJSON:      false,
+		Other:               make(map[string]interface{}),
 	}
 }

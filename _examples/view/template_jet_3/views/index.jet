@@ -1,5 +1,16 @@
 {{ asset("./myasset.mp3")}}
 <br/>
-{{ style("my-stle.css")}}
+{{ style("my-stle.css") | raw}}
 <br/>
-{{ script("my-script.js")}}
+{{ script("my-script.js") | raw}}
+
+<!-- view page source: can't add a link as chrome blocks loading local source, instead
+do that: -->
+
+<code>
+    ./myasset.mp3
+    <br/>
+    &lt;link href="my-stle.css" rel="stylesheet"&gt;
+    <br/>
+    &lt;script src="my-script.js">&lt;/script&gt;
+</code>

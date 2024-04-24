@@ -147,7 +147,7 @@ func (e *Error) As(target interface{}) bool {
 			}
 		}
 
-		return errors.As(e.Err, &te.Err)
+		return errors.As(te.Err, &e)
 	}
 
 	return ok
@@ -210,7 +210,7 @@ func (g *Group) Error() (s string) {
 }
 
 func (g *Group) getAllErrors() []error {
-	list := g.Errors[:]
+	list := g.Errors
 
 	if len(g.children) > 0 {
 		// return with order of definition.
@@ -240,6 +240,10 @@ func (g *Group) getAllChildren() []*Group {
 
 // Unwrap implements the dynamic std errors interface and it returns the parent Group.
 func (g *Group) Unwrap() error {
+	if g == nil {
+		return nil
+	}
+
 	return g.parent
 }
 
@@ -326,11 +330,9 @@ func isNotNil(err error) bool {
 			return true
 		}
 
-		if len(g.children) > 0 {
-			for _, child := range g.children {
-				if isNotNil(child) {
-					return true
-				}
+		for _, child := range g.children {
+			if isNotNil(child) {
+				return true
 			}
 		}
 

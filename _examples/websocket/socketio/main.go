@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/kataras/iris/v12"
@@ -13,10 +12,7 @@ import (
 
 func main() {
 	app := iris.New()
-	server, err := socketio.NewServer(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	server := socketio.NewServer(nil)
 	server.OnConnect("/", func(s socketio.Conn) error {
 		s.SetContext("")
 		fmt.Println("connected:", s.ID())
@@ -46,9 +42,12 @@ func main() {
 	defer server.Close()
 
 	app.HandleMany("GET POST", "/socket.io/{any:path}", iris.FromStd(server))
-	app.HandleDir("/", "./asset")
-	app.Run(iris.Addr(":8000"),
-		iris.WithoutPathCorrection,
-		iris.WithoutServerError(iris.ErrServerClosed),
-	)
+	app.HandleDir("/", iris.Dir("./asset"))
+
+	app.Listen(":8000", iris.WithoutPathCorrection)
 }
+
+/*
+If you want to enable CORS in your websocket handler,
+please follow this post: https://github.com/googollee/go-socket.io/issues/242
+*/

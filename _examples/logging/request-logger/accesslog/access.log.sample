@@ -1,0 +1,10 @@
+2020-09-13 13:37:42 2.0057ms 200 POST /read_body ::1 61 B 94 B {"name":"John","email":"example@example.com"} 
+2020-09-13 13:37:50 0s 400 POST /read_body ::1 0 B 0 B error(invalid character '\r' in string literal)
+2020-09-13 13:38:03 0s 404 GET /favicon.ico ::1 0 B 9 B
+2020-09-13 13:38:07 0s 404 GET /public ::1 0 B 9 B
+2020-09-13 13:38:09 1.0021ms 200 GET /user/kataras ::1 username=kataras 0 B 15 B
+2020-09-13 13:38:14 0s 200 GET /user/kataras ::1 username=kataras a_query_parameter=name 0 B 15 B
+2020-09-13 13:38:18 0s 401 GET /admin ::1 0 B 0 B
+2020-09-13 13:38:19 0s 200 GET /admin ::1 auth=admin:admin 0 B 48 B
+2020-09-13 13:38:22 0s 200 GET /session ::1 session_id=23fe763f-c9d5-4d65-9e1a-2cc8d23d1aa3 session_test_key=session_test_value auth=admin:admin 0 B 2 B
+2020-09-13 13:38:25 2.0001204s 200 GET /fields ::1 job_latency=2s auth=admin:admin user=user-id:user-name 0 B 2 B

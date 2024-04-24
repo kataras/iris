@@ -5,23 +5,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12/core/netutil"
 )
-
-func singleJoiningSlash(a, b string) string {
-	aslash := strings.HasSuffix(a, "/")
-	bslash := strings.HasPrefix(b, "/")
-	switch {
-	case aslash && bslash:
-		return a + b[1:]
-	case !aslash && !bslash:
-		return a + "/" + b
-	}
-	return a + b
-}
 
 // ProxyHandler returns a new ReverseProxy that rewrites
 // URLs to the scheme, host, and base path provided in target. If the
@@ -29,33 +18,112 @@ func singleJoiningSlash(a, b string) string {
 // the target request will be for /base/dir.
 //
 // Relative to httputil.NewSingleHostReverseProxy with some additions.
-func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
-	targetQuery := target.RawQuery
-	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.Host = target.Host
-		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
-
-		if _, ok := req.Header["User-Agent"]; !ok {
-			// explicitly disable User-Agent so it's not set to default value
-			req.Header.Set("User-Agent", "")
-		}
+//
+// Look `ProxyHandlerRemote` too.
+func ProxyHandler(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
+	if config == nil {
+		config = &tls.Config{MinVersion: tls.VersionTLS13}
 	}
-	p := &httputil.ReverseProxy{Director: director}
+
+	director := func(req *http.Request) {
+		modifyProxiedRequest(req, target)
+		req.Host = target.Host
+		req.URL.Path = path.Join(target.Path, req.URL.Path)
+	}
+
+	// TODO: when go 1.20 released:
+	/*
+		rewrite := func(r *httputil.ProxyRequest) {
+			r.SetURL(target)  // Forward request to outboundURL.
+			r.SetXForwarded() // Set X-Forwarded-* headers.
+			// r.Out.Header.Set("X-Additional-Header", "header set by the proxy")
+			// To preserve the inbound request's Host header (the default behavior of NewSingleHostReverseProxy):
+			// r.Out.Host = r.In.Host
+		}
+	*/
+
+	p := &httputil.ReverseProxy{Director: director /*, Rewrite: rewrite */}
 
 	if netutil.IsLoopbackHost(target.Host) {
 		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: config, // lint:ignore
 		}
 		p.Transport = transport
 	}
 
+	return p
+}
+
+// mergeQuery return a query string that combines targetQuery and reqQuery
+// and remove the duplicated query parameters of them.
+func mergeQuery(targetQuery, reqQuery string) string {
+	var paramSlice []string
+	if targetQuery != "" {
+		paramSlice = strings.Split(targetQuery, "&")
+	}
+
+	if reqQuery != "" {
+		paramSlice = append(paramSlice, strings.Split(reqQuery, "&")...)
+	}
+
+	var mergedSlice []string
+	queryMap := make(map[string]bool)
+	for _, param := range paramSlice {
+		size := len(queryMap)
+		queryMap[param] = true
+		if size != len(queryMap) {
+			mergedSlice = append(mergedSlice, param)
+		}
+	}
+	return strings.Join(mergedSlice, "&")
+}
+
+func modifyProxiedRequest(req *http.Request, target *url.URL) {
+	req.URL.Scheme = target.Scheme
+	req.URL.Host = target.Host
+	req.URL.RawQuery = mergeQuery(target.RawQuery, req.URL.RawQuery)
+
+	if _, ok := req.Header["User-Agent"]; !ok {
+		// explicitly disable User-Agent so it's not set to default value
+		req.Header.Set("User-Agent", "")
+	}
+}
+
+// ProxyHandlerRemote returns a new ReverseProxy that rewrites
+// URLs to the scheme, host, and path provided in target.
+// Case 1: req.Host == target.Host
+// behavior same as ProxyHandler
+// Case 2: req.Host != target.Host
+// the target request will be forwarded to the target's url
+// insecureSkipVerify indicates enable ssl certificate verification or not.
+//
+// Look `ProxyHandler` too.
+func ProxyHandlerRemote(target *url.URL, config *tls.Config) *httputil.ReverseProxy {
+	if config == nil {
+		config = &tls.Config{MinVersion: tls.VersionTLS13}
+	}
+
+	director := func(req *http.Request) {
+		modifyProxiedRequest(req, target)
+
+		if req.Host != target.Host {
+			req.URL.Path = target.Path
+		} else {
+			req.URL.Path = path.Join(target.Path, req.URL.Path)
+		}
+
+		req.Host = target.Host
+	}
+	p := &httputil.ReverseProxy{Director: director}
+
+	if netutil.IsLoopbackHost(target.Host) {
+		config.InsecureSkipVerify = true
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: config, // lint:ignore
+	}
+	p.Transport = transport
 	return p
 }
 
@@ -67,8 +135,26 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 // target, _ := url.Parse("https://mydomain.com")
 // proxy := NewProxy("mydomain.com:80", target)
 // proxy.ListenAndServe() // use of `proxy.Shutdown` to close the proxy server.
-func NewProxy(hostAddr string, target *url.URL) *Supervisor {
-	proxyHandler := ProxyHandler(target)
+func NewProxy(hostAddr string, target *url.URL, config *tls.Config) *Supervisor {
+	proxyHandler := ProxyHandler(target, config)
+	proxy := New(&http.Server{
+		Addr:    hostAddr,
+		Handler: proxyHandler,
+	})
+
+	return proxy
+}
+
+// NewProxyRemote returns a new host (server supervisor) which
+// proxies all requests to the target.
+// It uses the httputil.NewSingleHostReverseProxy.
+//
+// Usage:
+// target, _ := url.Parse("https://anotherdomain.com/abc")
+// proxy := NewProxyRemote("mydomain.com", target, false)
+// proxy.ListenAndServe() // use of `proxy.Shutdown` to close the proxy server.
+func NewProxyRemote(hostAddr string, target *url.URL, config *tls.Config) *Supervisor {
+	proxyHandler := ProxyHandlerRemote(target, config)
 	proxy := New(&http.Server{
 		Addr:    hostAddr,
 		Handler: proxyHandler,
@@ -84,6 +170,19 @@ func NewProxy(hostAddr string, target *url.URL) *Supervisor {
 // r := NewRedirection(":80", target, 307)
 // r.ListenAndServe() // use of `r.Shutdown` to close this server.
 func NewRedirection(hostAddr string, target *url.URL, redirectStatus int) *Supervisor {
+	redirectSrv := &http.Server{
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		Addr:         hostAddr,
+		Handler:      RedirectHandler(target, redirectStatus),
+	}
+
+	return New(redirectSrv)
+}
+
+// RedirectHandler returns a simple redirect handler.
+// See `NewProxy` or `ProxyHandler` for more features.
+func RedirectHandler(target *url.URL, redirectStatus int) http.Handler {
 	targetURI := target.String()
 	if redirectStatus <= 300 {
 		// here we should use StatusPermanentRedirect but
@@ -96,18 +195,11 @@ func NewRedirection(hostAddr string, target *url.URL, redirectStatus int) *Super
 		redirectStatus = http.StatusTemporaryRedirect
 	}
 
-	redirectSrv := &http.Server{
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		Addr:         hostAddr,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			redirectTo := singleJoiningSlash(targetURI, r.URL.Path)
-			if len(r.URL.RawQuery) > 0 {
-				redirectTo += "?" + r.URL.RawQuery
-			}
-			http.Redirect(w, r, redirectTo, redirectStatus)
-		}),
-	}
-
-	return New(redirectSrv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		redirectTo := path.Join(targetURI, r.URL.Path)
+		if len(r.URL.RawQuery) > 0 {
+			redirectTo += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, redirectTo, redirectStatus)
+	})
 }

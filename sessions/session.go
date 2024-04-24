@@ -15,11 +15,16 @@ type (
 	//
 	// This is what will be returned when sess := sessions.Start().
 	Session struct {
-		sid      string
-		isNew    bool
-		flashes  map[string]*flashMessage
-		mu       sync.RWMutex // for flashes.
-		Lifetime LifeTime
+		sid     string
+		isNew   bool
+		flashes map[string]*flashMessage
+		mu      sync.RWMutex // for flashes.
+		// Lifetime it contains the expiration data, use it for read-only information.
+		// See `Sessions.UpdateExpiration` too.
+		Lifetime *memstore.LifeTime
+		// Man is the sessions manager that this session created of.
+		Man *Sessions
+
 		provider *provider
 	}
 
@@ -37,9 +42,9 @@ type (
 // Note that this method does NOT remove the client's cookie, although
 // it should be reseted if new session is attached to that (client).
 //
-// Use the session's manager `Destroy(ctx)` in order to remove the cookie as well.
+// Use the session's manager `Destroy(ctx)` in order to remove the cookie instead.
 func (s *Session) Destroy() {
-	s.provider.deleteSession(s)
+	s.provider.Destroy(s.sid)
 }
 
 // ID returns the session's ID.
@@ -47,7 +52,7 @@ func (s *Session) ID() string {
 	return s.sid
 }
 
-// IsNew returns true if this session is
+// IsNew returns true if this session is just
 // created by the current application's process.
 func (s *Session) IsNew() bool {
 	return s.isNew
@@ -58,6 +63,11 @@ func (s *Session) Get(key string) interface{} {
 	return s.provider.db.Get(s.sid, key)
 }
 
+// Decode binds the given "outPtr" to the value associated to the provided "key".
+func (s *Session) Decode(key string, outPtr interface{}) error {
+	return s.provider.db.Decode(s.sid, key, outPtr)
+}
+
 // when running on the session manager removes any 'old' flash messages.
 func (s *Session) runFlashGC() {
 	s.mu.Lock()
@@ -66,6 +76,7 @@ func (s *Session) runFlashGC() {
 			delete(s.flashes, key)
 		}
 	}
+
 	s.mu.Unlock()
 }
 
@@ -220,20 +231,22 @@ func newErrEntryNotFound(key string, kind reflect.Kind, value interface{}) *ErrE
 func (s *Session) GetInt(key string) (int, error) {
 	v := s.Get(key)
 
-	if vint, ok := v.(int); ok {
-		return vint, nil
-	}
+	if v != nil {
+		if vint, ok := v.(int); ok {
+			return vint, nil
+		}
 
-	if vfloat64, ok := v.(float64); ok {
-		return int(vfloat64), nil
-	}
+		if vfloat64, ok := v.(float64); ok {
+			return int(vfloat64), nil
+		}
 
-	if vint64, ok := v.(int64); ok {
-		return int(vint64), nil
-	}
+		if vint64, ok := v.(int64); ok {
+			return int(vint64), nil
+		}
 
-	if vstring, sok := v.(string); sok {
-		return strconv.Atoi(vstring)
+		if vstring, sok := v.(string); sok {
+			return strconv.Atoi(vstring)
+		}
 	}
 
 	return -1, newErrEntryNotFound(key, reflect.Int, v)
@@ -272,21 +285,22 @@ func (s *Session) Decrement(key string, n int) (newValue int) {
 // if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetInt64(key string) (int64, error) {
 	v := s.Get(key)
+	if v != nil {
+		if vint64, ok := v.(int64); ok {
+			return vint64, nil
+		}
 
-	if vint64, ok := v.(int64); ok {
-		return vint64, nil
-	}
+		if vfloat64, ok := v.(float64); ok {
+			return int64(vfloat64), nil
+		}
 
-	if vfloat64, ok := v.(float64); ok {
-		return int64(vfloat64), nil
-	}
+		if vint, ok := v.(int); ok {
+			return int64(vint), nil
+		}
 
-	if vint, ok := v.(int); ok {
-		return int64(vint), nil
-	}
-
-	if vstring, sok := v.(string); sok {
-		return strconv.ParseInt(vstring, 10, 64)
+		if vstring, sok := v.(string); sok {
+			return strconv.ParseInt(vstring, 10, 64)
+		}
 	}
 
 	return -1, newErrEntryNotFound(key, reflect.Int64, v)
@@ -296,6 +310,46 @@ func (s *Session) GetInt64(key string) (int64, error) {
 // if key doesn't exist it returns the "defaultValue".
 func (s *Session) GetInt64Default(key string, defaultValue int64) int64 {
 	if v, err := s.GetInt64(key); err == nil {
+		return v
+	}
+
+	return defaultValue
+}
+
+// GetUint64 same as `Get` but returns as uint64,
+// if key doesn't exist then it returns 0 and a non-nil error.
+func (s *Session) GetUint64(key string) (uint64, error) {
+	v := s.Get(key)
+	if v != nil {
+		switch vv := v.(type) {
+		case string:
+			val, err := strconv.ParseUint(vv, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+			return uint64(val), nil
+		case uint8:
+			return uint64(vv), nil
+		case uint16:
+			return uint64(vv), nil
+		case uint32:
+			return uint64(vv), nil
+		case uint64:
+			return vv, nil
+		case int64:
+			return uint64(vv), nil
+		case int:
+			return uint64(vv), nil
+		}
+	}
+
+	return 0, newErrEntryNotFound(key, reflect.Uint64, v)
+}
+
+// GetUint64Default same as `Get` but returns as uint64,
+// if key doesn't exist it returns the "defaultValue".
+func (s *Session) GetUint64Default(key string, defaultValue uint64) uint64 {
+	if v, err := s.GetUint64(key); err == nil {
 		return v
 	}
 
@@ -465,11 +519,7 @@ func (s *Session) Len() int {
 }
 
 func (s *Session) set(key string, value interface{}, immutable bool) {
-	s.provider.db.Set(s.sid, s.Lifetime, key, value, immutable)
-
-	s.mu.Lock()
-	s.isNew = false
-	s.mu.Unlock()
+	s.provider.db.Set(s.sid, key, value, s.Lifetime.DurationUntilExpiration(), immutable)
 }
 
 // Set fills the session with an entry "value", based on its "key".
@@ -509,6 +559,10 @@ func (s *Session) SetImmutable(key string, value interface{}) {
 // If you want to define more than one flash messages, you will have to use different keys.
 func (s *Session) SetFlash(key string, value interface{}) {
 	s.mu.Lock()
+	if s.flashes == nil {
+		s.flashes = make(map[string]*flashMessage)
+	}
+
 	s.flashes[key] = &flashMessage{value: value}
 	s.mu.Unlock()
 }
@@ -517,12 +571,6 @@ func (s *Session) SetFlash(key string, value interface{}) {
 // returns true if actually something was removed.
 func (s *Session) Delete(key string) bool {
 	removed := s.provider.db.Delete(s.sid, key)
-	if removed {
-		s.mu.Lock()
-		s.isNew = false
-		s.mu.Unlock()
-	}
-
 	return removed
 }
 
@@ -535,10 +583,7 @@ func (s *Session) DeleteFlash(key string) {
 
 // Clear removes all entries.
 func (s *Session) Clear() {
-	s.mu.Lock()
 	s.provider.db.Clear(s.sid)
-	s.isNew = false
-	s.mu.Unlock()
 }
 
 // ClearFlashes removes all flash messages.

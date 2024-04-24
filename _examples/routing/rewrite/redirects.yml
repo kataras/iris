@@ -1,0 +1,24 @@
+RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
+  # Redirects /seo/* to /*
+  - 301 /seo/(.*) /$1
+
+  # Redirects /docs/v12* to /docs
+  - 301 /docs/v12(.*) /docs
+
+  # Redirects /old(.*) to /
+  - 301 /old(.*) /
+
+  # Redirects http or https://test.* to http or https://newtest.*
+  - 301 ^(http|https)://test.(.*) $1://newtest.$2
+
+  # Handles /*.json or .xml as *?format=json or xml,
+  # WITHOUT redirect. See /users route.
+  # When Code is 0 then it does not redirect the request,
+  # instead it changes the request URL
+  # and leaves a route handle the request.
+  - 0 /(.*).(json|xml) /$1?format=$2
+
+# Redirects root domain to www.
+# Creation of a www subdomain inside the Application is unnecessary,
+# all requests are handled by the root Application itself.
+PrimarySubdomain: www

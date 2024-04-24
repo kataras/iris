@@ -19,7 +19,7 @@ func Param(name string) string {
 
 // WildcardParam receives a parameter name prefixed with the WildcardParamStart symbol.
 func WildcardParam(name string) string {
-	if len(name) == 0 {
+	if name == "" {
 		return ""
 	}
 	return prefix(name, WildcardParamStart)
@@ -43,7 +43,8 @@ func convertMacroTmplToNodePath(tmpl macro.Template) string {
 	// if it has started with {} and it's valid
 	// then the tmpl.Params will be filled,
 	// so no any further check needed.
-	for _, p := range tmpl.Params {
+	for i := range tmpl.Params {
+		p := tmpl.Params[i]
 		if ast.IsTrailing(p.Type) {
 			routePath = strings.Replace(routePath, p.Src, WildcardParam(p.Name), 1)
 		} else {
@@ -97,19 +98,22 @@ func joinPath(path1 string, path2 string) string {
 //  6. Remove trailing '/'.
 //
 // The returned path ends in a slash only if it is the root "/".
-func cleanPath(s string) string {
+// The function does not modify the dynamic path parts.
+func cleanPath(path string) string {
 	// note that we don't care about the performance here, it's before the server ran.
-	if s == "" || s == "." {
+	if path == "" || path == "." {
 		return "/"
 	}
 
 	// remove suffix "/", if it's root "/" then it will add it as a prefix below.
-	if lidx := len(s) - 1; s[lidx] == '/' {
-		s = s[:lidx]
+	if lidx := len(path) - 1; path[lidx] == '/' {
+		path = path[:lidx]
 	}
 
 	// prefix with "/".
-	s = prefix(s, "/")
+	path = prefix(path, "/")
+
+	s := []rune(path)
 
 	// If you're learning go through Iris I will ask you to ignore the
 	// following part, it's not the recommending way to do that,
@@ -137,46 +141,34 @@ func cleanPath(s string) string {
 
 		// when inside {} then don't try to clean it.
 		if !insideMacro {
-			if s[i] == '/' {
-				if len(s)-1 >= i+1 && s[i+1] == '/' { // we have "//".
-					bckp := s
-					s = bckp[:i] + "/"
-					// forward two, we ignore the second "/" in the raw.
-					i = i + 2
-					if len(bckp)-1 >= i {
-						s += bckp[i:]
-					}
+			if s[i] == '\\' {
+				s[i] = '/'
+
+				if len(s)-1 > i+1 && s[i+1] == '\\' {
+					s = deleteCharacter(s, i+1)
+				} else {
+					i-- // set to minus in order for the next check to be applied for prev tokens too.
 				}
-				// if we have just a single slash then continue.
-				continue
 			}
 
-			if s[i] == '\\' { // this will catch "\\" and "\".
-				bckp := s
-				s = bckp[:i] + "/"
-
-				if len(bckp)-1 >= i+1 {
-					s += bckp[i+1:]
-					i++
-				}
-
-				if len(s)-1 > i && s[i] == '\\' {
-					bckp := s
-					s = bckp[:i]
-					if len(bckp)-1 >= i+2 {
-						s = bckp[:i-1] + bckp[i+1:]
-						i++
-					}
-				}
-
+			if s[i] == '/' && len(s)-1 > i+1 && s[i+1] == '/' {
+				s[i] = '/'
+				s = deleteCharacter(s, i+1)
+				i--
 				continue
 			}
-
 		}
-
 	}
 
-	return s
+	if len(s) > 1 && s[len(s)-1] == '/' { // remove any last //.
+		s = s[:len(s)-1]
+	}
+
+	return string(s)
+}
+
+func deleteCharacter(s []rune, index int) []rune {
+	return append(s[0:index], s[index+1:]...)
 }
 
 const (
@@ -235,6 +227,14 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 		subdomain = s[0:slashIdx]
 	}
 
+	if slashIdx == -1 {
+		// this will only happen when this function
+		// is called to Party's relative path (e.g. control.admin.),
+		// and not a route's one (the route's one always contains a slash).
+		// return all as subdomain and "/" as path.
+		return s, "/"
+	}
+
 	path = s[slashIdx:]
 	if !strings.Contains(path, "{") {
 		path = strings.ReplaceAll(path, "//", "/")
@@ -256,6 +256,19 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 	// no cleanPath(path) in order
 	// to be able to parse macro function regexp(\\).
 	return // return subdomain without slash, path with slash
+}
+
+func staticPath(src string) string {
+	bidx := strings.IndexByte(src, '{')
+	if bidx == -1 || len(src) <= bidx {
+		return src // no dynamic part found
+	}
+	if bidx <= 1 { // found at first{...} or second index (/{...}),
+		// although first index should never happen because of the prepended slash.
+		return "/"
+	}
+
+	return src[:bidx-1] // (/static/{...} -> /static)
 }
 
 // RoutePathReverserOption option signature for the RoutePathReverser.

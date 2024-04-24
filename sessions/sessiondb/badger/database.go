@@ -4,22 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"os"
-	"runtime"
 	"sync/atomic"
 	"time"
 
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/memstore"
 	"github.com/kataras/iris/v12/sessions"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/kataras/golog"
 )
-
-/*
-	Badger has been updated to 1.6.0 - 2019-07-01
-	which contains a lot of breaking changes
-	that are adapted correctly here.
-	2019-07-14
-*/
 
 // DefaultFileMode used as the default database's "fileMode"
 // for creating the sessions directory path, opening and write the session file.
@@ -33,6 +27,7 @@ type Database struct {
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
 	Service *badger.DB
+	logger  *golog.Logger
 
 	closed uint32 // if 1 is closed.
 }
@@ -60,10 +55,12 @@ func New(directoryPath string) (*Database, error) {
 	}
 
 	opts := badger.DefaultOptions(directoryPath)
+	badgerLogger := context.DefaultLogger("sessionsdb.badger").DisableNewLine()
+	opts.Logger = badgerLogger
 
 	service, err := badger.Open(opts)
 	if err != nil {
-		golog.Errorf("unable to initialize the badger-based session database: %v", err)
+		badgerLogger.Errorf("unable to initialize the badger-based session database: %v\n", err)
 		return nil, err
 	}
 
@@ -74,13 +71,19 @@ func New(directoryPath string) (*Database, error) {
 func NewFromDB(service *badger.DB) *Database {
 	db := &Database{Service: service}
 
-	runtime.SetFinalizer(db, closeDB)
+	// runtime.SetFinalizer(db, closeDB)
 	return db
+}
+
+// SetLogger sets the logger once before server ran.
+// By default the Iris one is injected.
+func (db *Database) SetLogger(logger *golog.Logger) {
+	db.logger = logger
 }
 
 // Acquire receives a session's lifetime from the database,
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
-func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
+func (db *Database) Acquire(sid string, expires time.Duration) memstore.LifeTime {
 	txn := db.Service.NewTransaction(true)
 	defer txn.Commit()
 
@@ -88,7 +91,7 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	item, err := txn.Get(bsid)
 	if err == nil {
 		// found, return the expiration.
-		return sessions.LifeTime{Time: time.Unix(int64(item.ExpiresAt()), 0)}
+		return memstore.LifeTime{Time: time.Unix(int64(item.ExpiresAt()), 0)}
 	}
 
 	// not found, create an entry with ttl and return an empty lifetime, session manager will do its job.
@@ -100,10 +103,10 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	}
 
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 	}
 
-	return sessions.LifeTime{} // session manager will handle the rest.
+	return memstore.LifeTime{} // session manager will handle the rest.
 }
 
 // OnUpdateExpiration not implemented here, yet.
@@ -124,25 +127,35 @@ func makeKey(sid, key string) []byte {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, value interface{}, immutable bool) {
+func (db *Database) Set(sid string, key string, value interface{}, ttl time.Duration, immutable bool) error {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
-		golog.Error(err)
-		return
+		db.logger.Error(err)
+		return err
 	}
 
 	err = db.Service.Update(func(txn *badger.Txn) error {
-		dur := lifetime.DurationUntilExpiration()
-		return txn.SetEntry(badger.NewEntry(makeKey(sid, key), valueBytes).WithTTL(dur))
+		return txn.SetEntry(badger.NewEntry(makeKey(sid, key), valueBytes).WithTTL(ttl))
 	})
 
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 	}
+
+	return err
 }
 
 // Get retrieves a session value based on the key.
 func (db *Database) Get(sid string, key string) (value interface{}) {
+	if err := db.Decode(sid, key, &value); err == nil {
+		return value
+	}
+
+	return nil
+}
+
+// Decode binds the "outPtr" to the value associated to the provided "key".
+func (db *Database) Decode(sid, key string, outPtr interface{}) error {
 	err := db.Service.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(makeKey(sid, key))
 		if err != nil {
@@ -150,20 +163,25 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 		}
 
 		return item.Value(func(valueBytes []byte) error {
-			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
+			return sessions.DefaultTranscoder.Unmarshal(valueBytes, outPtr)
 		})
 	})
 
 	if err != nil && err != badger.ErrKeyNotFound {
-		golog.Error(err)
-		return nil
+		db.logger.Error(err)
 	}
 
-	return
+	return err
+}
+
+// validSessionItem reports whether the current iterator's item key
+// is a value of the session id "prefix".
+func validSessionItem(key, prefix []byte) bool {
+	return len(key) > len(prefix) && bytes.Equal(key[0:len(prefix)], prefix)
 }
 
 // Visit loops through all session keys and values.
-func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
+func (db *Database) Visit(sid string, cb func(key string, value interface{})) error {
 	prefix := makePrefix(sid)
 
 	txn := db.Service.NewTransaction(false)
@@ -172,31 +190,31 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 	iter := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer iter.Close()
 
-	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
+	for iter.Rewind(); ; iter.Next() {
+		if !iter.Valid() {
+			break
+		}
+
 		item := iter.Item()
+		key := item.Key()
+		if !validSessionItem(key, prefix) {
+			continue
+		}
+
 		var value interface{}
-
-		// err := item.Value(func(valueBytes []byte) {
-		// 	if err := sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
-		// 		golog.Error(err)
-		// 	}
-		// })
-
-		// if err != nil {
-		// 	golog.Error(err)
-		// 	continue
-		// }
 
 		err := item.Value(func(valueBytes []byte) error {
 			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
 		})
 		if err != nil {
-			golog.Error(err)
-			continue
+			db.logger.Errorf("[sessionsdb.badger.Visit] %v", err)
+			return err
 		}
 
-		cb(string(bytes.TrimPrefix(item.Key(), prefix)), value)
+		cb(string(bytes.TrimPrefix(key, prefix)), value)
 	}
+
+	return nil
 }
 
 var iterOptionsNoValues = badger.IteratorOptions{
@@ -213,8 +231,14 @@ func (db *Database) Len(sid string) (n int) {
 	txn := db.Service.NewTransaction(false)
 	iter := txn.NewIterator(iterOptionsNoValues)
 
-	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
-		n++
+	for iter.Rewind(); ; iter.Next() {
+		if !iter.Valid() {
+			break
+		}
+
+		if validSessionItem(iter.Item().Key(), prefix) {
+			n++
+		}
 	}
 
 	iter.Close()
@@ -227,14 +251,14 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 	txn := db.Service.NewTransaction(true)
 	err := txn.Delete(makeKey(sid, key))
 	if err != nil {
-		golog.Error(err)
+		db.logger.Error(err)
 		return false
 	}
 	return txn.Commit() == nil
 }
 
 // Clear removes all session key values but it keeps the session entry.
-func (db *Database) Clear(sid string) {
+func (db *Database) Clear(sid string) error {
 	prefix := makePrefix(sid)
 
 	txn := db.Service.NewTransaction(true)
@@ -246,25 +270,34 @@ func (db *Database) Clear(sid string) {
 	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
 		key := iter.Item().Key()
 		if err := txn.Delete(key); err != nil {
-			golog.Warnf("Database.Clear: %s: %v", key, err)
-			continue
+			db.logger.Warnf("Database.Clear: %s: %v", key, err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 // Release destroys the session, it clears and removes the session entry,
 // session manager will create a new session ID on the next request after this call.
-func (db *Database) Release(sid string) {
+func (db *Database) Release(sid string) error {
 	// clear all $sid-$key.
-	db.Clear(sid)
+	err := db.Clear(sid)
+	if err != nil {
+		return err
+	}
 	// and remove the $sid.
 	txn := db.Service.NewTransaction(true)
-	if err := txn.Delete([]byte(sid)); err != nil {
-		golog.Warnf("Database.Release.Delete: %s: %v", sid, err)
+	if err = txn.Delete([]byte(sid)); err != nil {
+		db.logger.Warnf("Database.Release.Delete: %s: %v", sid, err)
+		return err
 	}
-	if err := txn.Commit(); err != nil {
-		golog.Debugf("Database.Release.Commit: %s: %v", sid, err)
+	if err = txn.Commit(); err != nil {
+		db.logger.Debugf("Database.Release.Commit: %s: %v", sid, err)
+		return err
 	}
+
+	return nil
 }
 
 // Close shutdowns the badger connection.
@@ -278,7 +311,7 @@ func closeDB(db *Database) error {
 	}
 	err := db.Service.Close()
 	if err != nil {
-		golog.Warnf("closing the badger connection: %v", err)
+		db.logger.Warnf("closing the badger connection: %v", err)
 	} else {
 		atomic.StoreUint32(&db.closed, 1)
 	}

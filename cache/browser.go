@@ -31,7 +31,7 @@ const (
 // A good use of this middleware is on HTML routes; to refresh the page even on "back" and "forward" browser's arrow buttons.
 //
 // See `cache#StaticCache` for the opposite behavior.
-var NoCache = func(ctx context.Context) {
+var NoCache = func(ctx *context.Context) {
 	ctx.Header(context.CacheControlHeaderKey, CacheControlHeaderValue)
 	ctx.Header(PragmaHeaderKey, PragmaNoCacheHeaderValue)
 	ctx.Header(ExpiresHeaderKey, ExpiresNeverHeaderValue)
@@ -49,17 +49,18 @@ var NoCache = func(ctx context.Context) {
 // Usage: `app.Use(cache.StaticCache(24 * time.Hour))` or `app.Use(cache.Staticcache(-1))`.
 // A middleware, which is a simple Handler can be called inside another handler as well, example:
 // cacheMiddleware := cache.StaticCache(...)
-// func(ctx iris.Context){
-//  cacheMiddleware(ctx)
-//  [...]
-// }
+//
+//	func(ctx iris.Context){
+//	 cacheMiddleware(ctx)
+//	 [...]
+//	}
 var StaticCache = func(cacheDur time.Duration) context.Handler {
 	if int64(cacheDur) <= 0 {
 		return NoCache
 	}
 
 	cacheControlHeaderValue := "public, max-age=" + strconv.Itoa(int(cacheDur.Seconds()))
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		cacheUntil := time.Now().Add(cacheDur).Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
 		ctx.Header(ExpiresHeaderKey, cacheUntil)
 		ctx.Header(context.CacheControlHeaderKey, cacheControlHeaderValue)
@@ -92,13 +93,13 @@ const ifNoneMatchHeaderKey = "If-None-Match"
 //
 // Usage with combination of `StaticCache`:
 // assets := app.Party("/assets", cache.StaticCache(24 * time.Hour), ETag)
-// assets.HandleDir("/", "./assets")
+// assets.HandleDir("/", iris.Dir("./assets"))
 //
 // Similar to `Cache304` but it doesn't depends on any "modified date", it uses just the ETag and If-None-Match headers.
 //
 // Read more at: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching and
 // https://en.wikipedia.org/wiki/HTTP_ETag
-var ETag = func(ctx context.Context) {
+var ETag = func(ctx *context.Context) {
 	key := ctx.Request().URL.Path
 	ctx.Header(context.ETagHeaderKey, key)
 	if match := ctx.GetHeader(ifNoneMatchHeaderKey); match == key {
@@ -126,7 +127,7 @@ var ETag = func(ctx context.Context) {
 // can be used on Party's that contains a static handler,
 // i.e `HandleDir`.
 var Cache304 = func(expiresEvery time.Duration) context.Handler {
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		now := time.Now()
 		if modified, err := ctx.CheckIfModifiedSince(now.Add(-expiresEvery)); !modified && err == nil {
 			ctx.WriteNotModified()

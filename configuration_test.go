@@ -1,7 +1,6 @@
 package iris
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -19,7 +18,7 @@ func TestConfigurationStatic(t *testing.T) {
 	afterNew := *app.config
 
 	if !reflect.DeepEqual(def, afterNew) {
-		t.Fatalf("Default configuration is not the same after NewFromConfig expected:\n %#v \ngot:\n %#v", def, afterNew)
+		t.Fatalf("Default configuration is not the same after New expected:\n %#v \ngot:\n %#v", def, afterNew)
 	}
 
 	afterNew.Charset = "changed"
@@ -38,7 +37,7 @@ func TestConfigurationStatic(t *testing.T) {
 
 	app = New() // empty , means defaults so
 	if !reflect.DeepEqual(def, *app.config) {
-		t.Fatalf("Default configuration is not the same after NewFromConfig expected:\n %#v \ngot:\n %#v", def, *app.config)
+		t.Fatalf("Default configuration is not the same after New expected:\n %#v \ngot:\n %#v", def, *app.config)
 	}
 }
 
@@ -103,7 +102,7 @@ func createGlobalConfiguration(t *testing.T) {
 		out, err := yaml.Marshal(&c)
 
 		if err == nil {
-			err = ioutil.WriteFile(filename, out, os.FileMode(0666))
+			err = os.WriteFile(filename, out, os.FileMode(0666))
 		}
 		if err != nil {
 			t.Fatalf("error while writing the global configuration field at: %s. Trace: %v\n", filename, err)
@@ -112,10 +111,13 @@ func createGlobalConfiguration(t *testing.T) {
 }
 
 func TestConfigurationGlobal(t *testing.T) {
+	t.Cleanup(func() {
+		os.Remove(homeConfigurationFilename(".yml"))
+	})
+
 	createGlobalConfiguration(t)
 
 	testConfigurationGlobal(t, WithGlobalConfiguration)
-	// globalConfigurationKeyword = "~""
 	testConfigurationGlobal(t, WithConfiguration(YAML(globalConfigurationKeyword)))
 }
 
@@ -128,7 +130,7 @@ func testConfigurationGlobal(t *testing.T, c Configurator) {
 }
 
 func TestConfigurationYAML(t *testing.T) {
-	yamlFile, ferr := ioutil.TempFile("", "configuration.yml")
+	yamlFile, ferr := os.CreateTemp("", "configuration.yml")
 
 	if ferr != nil {
 		t.Fatal(ferr)
@@ -143,18 +145,21 @@ func TestConfigurationYAML(t *testing.T) {
 	yamlConfigurationContents := `
 DisablePathCorrection: false
 DisablePathCorrectionRedirection: true
+EnablePathIntelligence: true
 EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
 DisableBodyConsumptionOnUnmarshal: true
 TimeFormat: "Mon, 02 Jan 2006 15:04:05 GMT"
-Charset: "UTF-8"
-
+Charset: "utf-8"
 RemoteAddrHeaders:
-  X-Real-Ip: true
-  X-Forwarded-For: true
-  CF-Connecting-IP: true
-
+  - X-Real-Ip
+  - X-Forwarded-For
+  - CF-Connecting-IP
+HostProxyHeaders:
+  X-Host: true
+SSLProxyHeaders:
+  X-Forwarded-Proto: https
 Other:
   MyServerName: "Iris: https://github.com/kataras/iris"
 `
@@ -170,6 +175,10 @@ Other:
 
 	if expected := true; c.DisablePathCorrectionRedirection != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
+	}
+
+	if expected := true; c.EnablePathIntelligence != expected {
+		t.Fatalf("error on TestConfigurationYAML: Expected EnablePathIntelligence %v but got %v", expected, c.EnablePathIntelligence)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {
@@ -192,7 +201,7 @@ Other:
 		t.Fatalf("error on TestConfigurationYAML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
-	if expected := "UTF-8"; c.Charset != expected {
+	if expected := "utf-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected Charset %s but got %s", expected, c.Charset)
 	}
 
@@ -200,19 +209,47 @@ Other:
 		t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders to be filled")
 	}
 
-	expectedRemoteAddrHeaders := map[string]bool{
-		"X-Real-Ip":        true,
-		"X-Forwarded-For":  true,
-		"CF-Connecting-IP": true,
+	expectedRemoteAddrHeaders := []string{
+		"X-Real-Ip",
+		"X-Forwarded-For",
+		"CF-Connecting-IP",
 	}
 
 	if expected, got := len(c.RemoteAddrHeaders), len(expectedRemoteAddrHeaders); expected != got {
 		t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders' len(%d) and got(%d), len is not the same", expected, got)
 	}
 
-	for k, v := range c.RemoteAddrHeaders {
-		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
-			t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+	for i, v := range c.RemoteAddrHeaders {
+		if expected, got := expectedRemoteAddrHeaders[i], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders[%d] = %s but got %s", i, expected, got)
+		}
+	}
+
+	expectedHostProxyHeaders := map[string]bool{
+		"X-Host": true,
+	}
+
+	if expected, got := len(c.HostProxyHeaders), len(expectedHostProxyHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected HostProxyHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.HostProxyHeaders {
+		if expected, got := expectedHostProxyHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected HostProxyHeaders[%s] = %t but got %t", k, expected, got)
+		}
+	}
+
+	expectedSSLProxyHeaders := map[string]string{
+		"X-Forwarded-Proto": "https",
+	}
+
+	if expected, got := len(c.SSLProxyHeaders), len(c.SSLProxyHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected SSLProxyHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.SSLProxyHeaders {
+		if expected, got := expectedSSLProxyHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected SSLProxyHeaders[%s] = %s but got %s", k, expected, got)
 		}
 	}
 
@@ -226,7 +263,7 @@ Other:
 }
 
 func TestConfigurationTOML(t *testing.T) {
-	tomlFile, ferr := ioutil.TempFile("", "configuration.toml")
+	tomlFile, ferr := os.CreateTemp("", "configuration.toml")
 
 	if ferr != nil {
 		t.Fatal(ferr)
@@ -245,12 +282,9 @@ FireMethodNotAllowed = true
 EnableOptimizations = true
 DisableBodyConsumptionOnUnmarshal = true
 TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
-Charset = "UTF-8"
+Charset = "utf-8"
 
-[RemoteAddrHeaders]
-    X-Real-Ip = true
-    X-Forwarded-For = true
-    CF-Connecting-IP = true
+RemoteAddrHeaders = ["X-Real-Ip", "X-Forwarded-For", "CF-Connecting-IP"]
 
 [Other]
 	# Indentation (tabs and/or spaces) is allowed but not required
@@ -291,7 +325,7 @@ Charset = "UTF-8"
 		t.Fatalf("error on TestConfigurationTOML: Expected TimeFormat %s but got %s", expected, c.TimeFormat)
 	}
 
-	if expected := "UTF-8"; c.Charset != expected {
+	if expected := "utf-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected Charset %s but got %s", expected, c.Charset)
 	}
 
@@ -299,19 +333,19 @@ Charset = "UTF-8"
 		t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders to be filled")
 	}
 
-	expectedRemoteAddrHeaders := map[string]bool{
-		"X-Real-Ip":        true,
-		"X-Forwarded-For":  true,
-		"CF-Connecting-IP": true,
+	expectedRemoteAddrHeaders := []string{
+		"X-Real-Ip",
+		"X-Forwarded-For",
+		"CF-Connecting-IP",
 	}
 
 	if expected, got := len(c.RemoteAddrHeaders), len(expectedRemoteAddrHeaders); expected != got {
 		t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders' len(%d) and got(%d), len is not the same", expected, got)
 	}
 
-	for k, v := range c.RemoteAddrHeaders {
-		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
-			t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+	for i, got := range c.RemoteAddrHeaders {
+		if expected := expectedRemoteAddrHeaders[i]; expected != got {
+			t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders[%d] = %s but got %s", i, expected, got)
 		}
 	}
 

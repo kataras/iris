@@ -116,26 +116,26 @@ func TestRouting(t *testing.T) {
 		if tt.subdomain != "" {
 			et.WithURL("http://" + tt.subdomain + ".localhost:8080")
 		}
-		et.Expect().Status(tt.status).Body().Equal(tt.expectedBody)
+		et.Expect().Status(tt.status).Body().IsEqual(tt.expectedBody)
 	}
 
 	// test POST "/" limit data and post data return
 
 	// test with small body
-	e.POST("/").WithBytes([]byte("ok")).Expect().Status(httptest.StatusOK).Body().Equal("ok")
+	e.POST("/").WithBytes([]byte("ok")).Expect().Status(httptest.StatusOK).Body().IsEqual("ok")
 	// test with equal to max body size limit
 	bsent := make([]byte, maxBodySize, maxBodySize)
 	e.POST("/").WithBytes(bsent).Expect().Status(httptest.StatusOK).Body().Length().Equal(len(bsent))
 	// test with larger body sent and wait for the custom response
 	largerBSent := make([]byte, maxBodySize+1, maxBodySize+1)
-	e.POST("/").WithBytes(largerBSent).Expect().Status(httptest.StatusBadRequest).Body().Equal("http: request body too large")
+	e.POST("/").WithBytes(largerBSent).Expect().Status(httptest.StatusBadRequest).Body().IsEqual("http: request body too large")
 
 	// test the post value (both post and put) and headers.
 	e.PUT("/postvalue").WithFormField("name", "test_put").
 		WithHeader("headername", "headervalue_put").Expect().
-		Status(httptest.StatusOK).Body().Equal("Hello test_put | headervalue_put")
+		Status(httptest.StatusOK).Body().IsEqual("Hello test_put | headervalue_put")
 
 	e.POST("/postvalue").WithFormField("name", "test_post").
 		WithHeader("headername", "headervalue_post").Expect().
-		Status(httptest.StatusOK).Body().Equal("Hello test_post | headervalue_post")
+		Status(httptest.StatusOK).Body().IsEqual("Hello test_post | headervalue_post")
 }

@@ -1,0 +1,137 @@
+{
+	"info": {
+		"_postman_id": "8b135d95-ea8c-4dd5-a127-4b83cb735504",
+		"name": "iris-kafka-postman",
+		"description": "Postman API Requests for Iris + Kafka example",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Topic",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"topic\":\"mytopic\",\r\n    \"partitions\": 1,\r\n    \"replication\":1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/topics",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"topics"
+					]
+				},
+				"description": "Create a new kafka topic"
+			},
+			"response": []
+		},
+		{
+			"name": "List all Topics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/topics",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"topics"
+					]
+				},
+				"description": "List all topics"
+			},
+			"response": []
+		},
+		{
+			"name": "Store data to Topic",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\":\"kataras\",\r\n    \"repo\":\"iris\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/topics/mytopic/produce?key=mykey",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"topics",
+						"mytopic",
+						"produce"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "mykey"
+						}
+					]
+				},
+				"description": "Produce some data to a Topic"
+			},
+			"response": []
+		},
+		{
+			"name": "(Open in Browser) Consume data from a Topic",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/topics/mytopic/consume?partition=0&offset=0",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"topics",
+						"mytopic",
+						"consume"
+					],
+					"query": [
+						{
+							"key": "partition",
+							"value": "0"
+						},
+						{
+							"key": "offset",
+							"value": "0"
+						}
+					]
+				},
+				"description": "Note that, you have to open this one at your browser. Postman does not support SSE testing, see: https://github.com/postmanlabs/postman-app-support/issues/6682"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
