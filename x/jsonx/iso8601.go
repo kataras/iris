@@ -57,6 +57,10 @@ const (
 		The second layout is used when you’re directly specifying the offset without any reference to UTC.
 		Both layouts can parse the timestamp "2024-04-08T04:47:10+03:00" correctly, as they include placeholders for the timezone offset.
 	*/
+
+	// ISO8601UnconventionalOffsetLayout is the layout for the unconventional offset.
+	// Custom offset layout, e.g., 2024-05-21T18:06:07.000000-04:01:19.
+	ISO8601UnconventionalOffsetLayout = "2006-01-02T15:04:05.000000"
 )
 
 // ISO8601 describes a time compatible with javascript time format.
@@ -73,6 +77,7 @@ var _ Exampler = (*ISO8601)(nil)
 //   - 2024-01-02T15:04:05Z
 //   - 2024-04-08T08:05:04.830140
 //   - 2024-01-02T15:04:05
+//   - 2024-05-21T18:06:07.000000-04:01:19
 func ParseISO8601(s string) (ISO8601, error) {
 	if s == "" || s == "null" {
 		return ISO8601{}, nil
@@ -107,6 +112,21 @@ func ParseISO8601(s string) (ISO8601, error) {
 
 	if idx := strings.LastIndexFunc(s, startUTCOffsetIndexFunc); idx > 18 { // should have some distance, with and without milliseconds
 		length := parseSignedOffset(s[idx:])
+
+		// Check if the offset is unconventional, e.g., -04:01:19
+		if offset := s[idx:]; isUnconventionalOffset(offset) {
+			mainPart := s[:idx]
+			tt, err = time.Parse("2006-01-02T15:04:05.000000", mainPart)
+			if err != nil {
+				return ISO8601{}, fmt.Errorf("ISO8601: %w", err)
+			}
+
+			adjustedTime, parseErr := adjustForUnconventionalOffset(tt, offset)
+			if parseErr != nil {
+				return ISO8601{}, fmt.Errorf("ISO8601: %w", parseErr)
+			}
+			return ISO8601(adjustedTime), nil
+		}
 
 		if idx+1 > idx+length || len(s) <= idx+length+1 {
 			return ISO8601{}, fmt.Errorf("ISO8601: invalid timezone format: %s", s[idx:])
@@ -195,6 +215,53 @@ func parseOffsetToSeconds(offsetText string) (int, error) {
 	return secondsEastUTC, nil
 }
 
+func isUnconventionalOffset(offset string) bool {
+	parts := strings.Split(offset, ":")
+	return len(parts) == 3
+}
+
+func adjustForUnconventionalOffset(t time.Time, offset string) (time.Time, error) {
+	sign := 1
+	if offset[0] == '-' {
+		sign = -1
+	}
+	offset = offset[1:]
+
+	offsetParts := strings.Split(offset, ":")
+	if len(offsetParts) != 3 {
+		return time.Time{}, fmt.Errorf("invalid offset format: %s", offset)
+	}
+
+	hours, err := strconv.Atoi(offsetParts[0])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("error parsing offset hours: %s: %w", offset, err)
+	}
+
+	if hours > 24 {
+		return time.Time{}, fmt.Errorf("invalid offset hours: %d: %s", hours, offset)
+	}
+
+	minutes, err := strconv.Atoi(offsetParts[1])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("error parsing offset minutes: %s: %w", offset, err)
+	}
+	if minutes > 60 {
+		return time.Time{}, fmt.Errorf("invalid offset minutes: %d: %s", minutes, offset)
+	}
+
+	seconds, err := strconv.Atoi(offsetParts[2])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("error parsing offset seconds: %s: %w", offset, err)
+	}
+
+	if seconds > 60 {
+		return time.Time{}, fmt.Errorf("invalid offset seconds: %d: %s", seconds, offset)
+	}
+
+	totalOffset := time.Duration(sign) * (time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second)
+	return t.Add(-totalOffset), nil
+}
+
 // UnmarshalJSON parses the "b" into ISO8601 time.
 func (t *ISO8601) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
@@ -234,9 +301,8 @@ func (t ISO8601) ListExamples() any {
 }
 
 // ToTime returns the unwrapped *t to time.Time.
-func (t *ISO8601) ToTime() time.Time {
-	tt := time.Time(*t)
-	return tt
+func (t ISO8601) ToTime() time.Time {
+	return time.Time(t)
 }
 
 // IsZero reports whether "t" is zero time.
@@ -275,13 +341,33 @@ func (t ISO8601) String() string {
 	return tt.Format(ISO8601Layout)
 }
 
-// ToSimpleDate converts the current ISO8601 "t" to SimpleDate in specific location.
-func (t ISO8601) ToSimpleDate(in *time.Location) SimpleDate {
+// To24Hour returns the 24-hour representation of the time.
+func (t ISO8601) To24Hour() string {
+	tt := t.ToTime()
+	if tt.IsZero() {
+		return ""
+	}
+
+	return tt.Format("15:04")
+}
+
+// ToSimpleDate converts the current ISO8601 "t" to SimpleDate.
+func (t ISO8601) ToSimpleDate() SimpleDate {
+	return SimpleDateFromTime(t.ToTime())
+}
+
+// ToSimpleDateIn converts the current ISO8601 "t" to SimpleDate in specific location.
+func (t ISO8601) ToSimpleDateIn(in *time.Location) SimpleDate {
 	if in == nil {
 		in = time.UTC
 	}
 
 	return SimpleDateFromTime(t.ToTime().In(in))
+}
+
+// ToDayTime converts the current ISO8601 "t" to DayTime.
+func (t ISO8601) ToDayTime() DayTime {
+	return DayTime(t.ToTime())
 }
 
 // Value returns the database value of time.Time.

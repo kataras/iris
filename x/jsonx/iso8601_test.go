@@ -198,3 +198,86 @@ func TestISO8601WithZoneUTCOffsetWithoutMilliseconds(t *testing.T) {
 		t.Fatalf("expected 'end' to be: %v but got: %v", expected, got)
 	}
 }
+
+func TestParseISO8601_StandardLayouts(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected time.Time
+		hasError bool
+	}{
+		{
+			input:    "2024-05-21T18:06:07Z",
+			expected: time.Date(2024, 5, 21, 18, 6, 7, 0, time.UTC),
+			hasError: false,
+		},
+		{
+			input:    "2024-05-21T18:06:07-04:00",
+			expected: time.Date(2024, 5, 21, 22, 6, 7, 0, time.UTC),
+			hasError: false,
+		},
+		{
+			input:    "2024-05-21T18:06:07",
+			expected: time.Date(2024, 5, 21, 18, 6, 7, 0, time.UTC), // no time local.
+			hasError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			parsedTime, err := ParseISO8601(tt.input)
+			if (err != nil) != tt.hasError {
+				t.Errorf("ParseISO8601() error = %v, wantErr %v", err, tt.hasError)
+				return
+			}
+			if !tt.hasError && !parsedTime.ToTime().Equal(tt.expected) {
+				t.Errorf("ParseISO8601() = %v, want %v", parsedTime, tt.expected)
+			}
+		})
+	}
+}
+func TestParseISO8601_UnconventionalOffset(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected time.Time
+		hasError bool
+	}{
+		{
+			input:    "2024-05-21T18:06:07.000000-04:01:19",
+			expected: time.Date(2024, 5, 21, 22, 7, 26, 0, time.UTC),
+			hasError: false,
+		},
+		{
+			input:    "2024-12-31T23:59:59.000000-00:00:59",
+			expected: time.Date(2025, 1, 1, 0, 0, 58, 0, time.UTC),
+			hasError: false,
+		},
+		{
+			input:    "2024-05-21T18:06:07.000000+03:30:15",
+			expected: time.Date(2024, 5, 21, 14, 35, 52, 0, time.UTC),
+			hasError: false,
+		},
+		{
+			input:    "2024-05-21T18:06:07.000000-24:00:00",
+			expected: time.Date(2024, 5, 22, 18, 6, 7, 0, time.UTC),
+			hasError: false,
+		},
+		{
+			input:    "2024-05-21T18:06:07.000000-04:61:19", // Invalid minute part in offset
+			expected: time.Time{},
+			hasError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			parsedTime, err := ParseISO8601(tt.input)
+			if (err != nil) != tt.hasError {
+				t.Errorf("ParseISO8601() error = %v, wantErr %v", err, tt.hasError)
+				return
+			}
+			if !tt.hasError && !parsedTime.ToTime().Equal(tt.expected) {
+				t.Errorf("ParseISO8601() = %v, want %v", parsedTime, tt.expected)
+			}
+		})
+	}
+}
