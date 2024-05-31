@@ -32,7 +32,7 @@ require (
 	github.com/mailgun/raymond/v2 v2.0.48
 	github.com/mailru/easyjson v0.7.7
 	github.com/microcosm-cc/bluemonday v1.0.26
-	github.com/redis/go-redis/v9 v9.5.1
+	github.com/redis/go-redis/v9 v9.5.2
 	github.com/schollz/closestmatch v2.1.0+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.4
 	github.com/tdewolff/minify/v2 v2.20.30
