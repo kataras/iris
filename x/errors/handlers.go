@@ -2,9 +2,13 @@ package errors
 
 import (
 	stdContext "context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"reflect"
 
 	"github.com/kataras/iris/v12/context"
 	recovery "github.com/kataras/iris/v12/middleware/recover"
@@ -33,7 +37,7 @@ func RecoveryHandler(ctx *context.Context) {
 // Handle handles a generic response and error from a service call and sends a JSON response to the client.
 // It returns a boolean value indicating whether the handle was successful or not.
 // If the error is not nil, it calls HandleError to send an appropriate error response to the client.
-func Handle(ctx *context.Context, resp interface{}, err error) bool {
+func Handle(ctx *context.Context, resp any, err error) bool {
 	if HandleError(ctx, err) {
 		return false
 	}
@@ -41,12 +45,65 @@ func Handle(ctx *context.Context, resp interface{}, err error) bool {
 	ctx.StatusCode(http.StatusOK)
 
 	if resp != nil {
-		if ctx.JSON(resp) != nil {
+		if jsonErr := ctx.JSON(resp); jsonErr != nil { // this returns the original error as it's, even if it's handled by the HandleJSONError function.
+			if unsupportedValueErr, ok := jsonErr.(*json.UnsupportedValueError); ok {
+				if unsupportedValueErr.Str == "NaN" {
+					if nanErr := checkNaN(resp); nanErr != nil {
+						newErr := fmt.Errorf("unable to parse response body: json: unspported value: %w", nanErr)
+						LogError(ctx, newErr)
+						return false
+					}
+				}
+			}
+
 			return false
 		}
 	}
 
 	return true
+}
+
+// checkNaN checks if any exported field in the struct is NaN and returns an error if it is.
+func checkNaN(v interface{}) error {
+	val := reflect.ValueOf(v)
+	return checkNaNRecursive(val, val.Type().Name())
+}
+
+func checkNaNRecursive(val reflect.Value, path string) error {
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			return nil
+		}
+		val = val.Elem()
+	}
+
+	switch val.Kind() {
+	case reflect.Struct:
+		for i := 0; i < val.NumField(); i++ {
+			field := val.Field(i)
+			fieldType := val.Type().Field(i)
+			fieldPath := fmt.Sprintf("%s.%s", path, fieldType.Name)
+
+			if err := checkNaNRecursive(field, fieldPath); err != nil {
+				return err
+			}
+		}
+	case reflect.Slice:
+		for i := 0; i < val.Len(); i++ {
+			elem := val.Index(i)
+			elemPath := fmt.Sprintf("%s[%d]", path, i)
+
+			if err := checkNaNRecursive(elem, elemPath); err != nil {
+				return err
+			}
+		}
+	case reflect.Float64:
+		if math.IsNaN(val.Float()) {
+			return fmt.Errorf("NaN value found in field: %s", path)
+		}
+	}
+
+	return nil
 }
 
 // IDPayload is a simple struct which describes a json id value.
