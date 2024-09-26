@@ -33,8 +33,8 @@ github.com/davecgh/go-spew v0.0.0-20161028175848-04cdfd42973b/go.mod h1:J7Y8YcW2
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dgraph-io/badger/v4 v4.3.0 h1:JZ8tapVYg+6sFQqg+BOokAxX+t09UeVPsPoXIq7jlNg=
-github.com/dgraph-io/badger/v4 v4.3.0/go.mod h1:gB8OBW82mDhOZ/1Fv1j5FZJyDo37KQWZL3BT4QpHBZ8=
+github.com/dgraph-io/badger/v4 v4.3.1-0.20240925183814-93b5d4ee842b h1:p0VAOtxH/gQlMCwaBCi/HQ3CAKdr3Q7YuiJzzvzUqSA=
+github.com/dgraph-io/badger/v4 v4.3.1-0.20240925183814-93b5d4ee842b/go.mod h1:t/f4BAbUnD8ZOigs1MDiLc7rlTs70k1ihyflpTKh7Zs=
 github.com/dgraph-io/ristretto v1.0.0 h1:SYG07bONKMlFDUYu5pEu3DGAh8c2OFNzKm6G9J4Si84=
 github.com/dgraph-io/ristretto v1.0.0/go.mod h1:jTi2FiYEhQ1NsMmA7DeBykizjOuY88NhKBkepyu1jPc=
 github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 h1:fAjc9m62+UWV/WAFKLNi6ZS0675eEUC9y3AlwSbQu1Y=
