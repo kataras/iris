@@ -11,7 +11,7 @@ import (
 	"github.com/kataras/iris/v12/core/memstore"
 	"github.com/kataras/iris/v12/sessions"
 
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/kataras/golog"
 )
 
