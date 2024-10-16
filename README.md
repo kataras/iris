@@ -2,7 +2,7 @@
 
 Dear Iris Community,
 
-You might have noticed a recent lull in activity on the Iris repository. I want to assure you that this silence is not without reason. For the past **3-4 months**, I've been diligently working on the next major release of Iris.
+You might have noticed a recent lull in activity on the Iris repository. I want to assure you that this silence is not without reason. For the past **4-5 months**, I've been diligently working on the next major release of Iris.
 
 This upcoming version is poised to be a significant leap forward, fully embracing the **Generics** feature introduced in Go. We're not just stopping at Generics, though. Expect a suite of **new features**, **enhancements**, and **optimizations** that will elevate your development experience to new heights.
 
