@@ -174,7 +174,7 @@ func (r *RequestParams) GetTrimFileUint64(key string) uint64 {
 	return v
 }
 
-// GetTrimFileUint64 same as GetTrimFile but it returns the value as uint.
+// GetTrimFileUint same as GetTrimFile but it returns the value as uint.
 func (r *RequestParams) GetTrimFileUint(key string) uint {
 	return uint(r.GetTrimFileUint64(key))
 }
