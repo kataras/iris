@@ -39,9 +39,9 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.30.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sys v0.28.0
 	golang.org/x/text v0.21.0
 	golang.org/x/time v0.8.0
