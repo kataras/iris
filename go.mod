@@ -15,7 +15,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/flosch/pongo2/v4 v4.0.2
 	github.com/golang/snappy v0.0.4
-	github.com/gomarkdown/markdown v0.0.0-20241204215513-7786913245e6
+	github.com/gomarkdown/markdown v0.0.0-20241205020045-f7e15b2f3e62
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/securecookie v1.1.2
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
@@ -30,7 +30,7 @@ require (
 	github.com/kataras/tunnel v0.0.4
 	github.com/klauspost/compress v1.17.11
 	github.com/mailgun/raymond/v2 v2.0.48
-	github.com/mailru/easyjson v0.7.7
+	github.com/mailru/easyjson v0.9.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/schollz/closestmatch v2.1.0+incompatible
@@ -39,13 +39,13 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.30.0
-	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
-	golang.org/x/net v0.32.0
+	golang.org/x/crypto v0.31.0
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
+	golang.org/x/net v0.33.0
 	golang.org/x/sys v0.28.0
 	golang.org/x/text v0.21.0
 	golang.org/x/time v0.8.0
-	google.golang.org/protobuf v1.35.2
+	google.golang.org/protobuf v1.36.1
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -56,7 +56,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgraph-io/ristretto/v2 v2.0.0 // indirect
+	github.com/dgraph-io/ristretto/v2 v2.0.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
@@ -66,7 +66,7 @@ require (
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/google/flatbuffers v24.3.25+incompatible // indirect
+	github.com/google/flatbuffers v24.12.23+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -79,8 +79,8 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nats-io/nats.go v1.37.0 // indirect
-	github.com/nats-io/nkeys v0.4.8 // indirect
+	github.com/nats-io/nats.go v1.38.0 // indirect
+	github.com/nats-io/nkeys v0.4.9 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
