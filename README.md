@@ -1,14 +1,10 @@
-# Project Update: Iris is Evolving 🌱
+# Happy New Year 🎅
 
 Dear Iris Community,
 
-You might have noticed a recent lull in activity on the Iris repository. I want to assure you that this silence is not without reason. For the past **5-6 months**, I've been diligently working on the next major release of Iris.
+You might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose. For the past **6-7 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations**. My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs.
 
-This upcoming version is poised to be a significant leap forward, fully embracing the **Generics** feature introduced in Go. We're not just stopping at Generics, though. Expect a suite of **new features**, **enhancements**, and **optimizations** that will elevate your development experience to new heights.
-
-My journey with Go spans over **8 years**, and with each year, my expertise and understanding of the language deepen. This accumulated knowledge is being poured into Iris, ensuring that the framework not only evolves with the language but also with the community's growing needs.
-
-Stay tuned for more updates, and thank you for your continued support and patience. The wait will be worth it.
+As we welcome **2025**, let's unite in peace, celebrate good health, and look forward to brighter horizons. Thank you for your continued support and patience. May this year bring new beginnings for us all.
 
 Warm regards,<br/>
 Gerasimos (Makis) Maropoulos
