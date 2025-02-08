@@ -1,10 +1,6 @@
-# Happy New Year 🎅
-
 Dear Iris Community,
 
-You might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose. For the past **6-7 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations**. My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs.
-
-As we welcome **2025**, let's unite in peace, celebrate good health, and look forward to brighter horizons. Thank you for your continued support and patience. May this year bring new beginnings for us all.
+You might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose. For the past **7-8 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations**. My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs.
 
 Warm regards,<br/>
 Gerasimos (Makis) Maropoulos
