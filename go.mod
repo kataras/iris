@@ -1,7 +1,6 @@
 module github.com/kataras/iris/v12
 
 go 1.23
-
 retract [v12.0.0, v12.1.8] // Retract older versions as only latest is to be depended upon. Please update to @latest
 
 require (
@@ -39,7 +38,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/yosssi/ace v0.0.5
 	go.etcd.io/bbolt v1.4.0
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.34.0
 	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3
 	golang.org/x/net v0.34.0
 	golang.org/x/sys v0.30.0
