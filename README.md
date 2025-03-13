@@ -1,6 +1,6 @@
 Dear Iris Community,
 
-You might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose. For the past **7-8 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations**. My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs.
+You might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose. For the past **8-9 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations**. My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs.
 
 Warm regards,<br/>
 Gerasimos (Makis) Maropoulos
