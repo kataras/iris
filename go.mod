@@ -23,7 +23,7 @@ require (
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/schema v0.0.7-0.20250208085038-f68827b0bbfa
 	github.com/json-iterator/go v1.1.12
-	github.com/kataras/blocks v0.0.8
+	github.com/kataras/blocks v0.0.11
 	github.com/kataras/golog v0.1.12
 	github.com/kataras/jwt v0.1.14
 	github.com/kataras/neffos v0.0.24-0.20241114125147-07c1e09b1919
