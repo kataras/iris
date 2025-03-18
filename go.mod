@@ -7,7 +7,7 @@ toolchain go1.24.1
 retract [v12.0.0, v12.1.8] // Retract older versions as only latest is to be depended upon. Please update to @latest
 
 require (
-	github.com/BurntSushi/toml v1.4.0
+	github.com/BurntSushi/toml v1.5.0
 	github.com/CloudyKit/jet/v6 v6.3.1
 	github.com/Joker/jade v1.1.3
 	github.com/Shopify/goreferrer v0.0.0-20240724165105-aceaa0259138
