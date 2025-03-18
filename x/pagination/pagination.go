@@ -59,7 +59,7 @@ func (opts ListOptions) GetLimit() int {
 	return DefaultSize
 }
 
-// GetLimit returns the OFFSET value of a query.
+// GetOffset returns the OFFSET value of a query.
 func (opts ListOptions) GetOffset() int {
 	if opts.Page > 1 {
 		return (opts.Page - 1) * opts.GetLimit()
