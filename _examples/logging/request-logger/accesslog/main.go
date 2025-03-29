@@ -2,6 +2,7 @@ package main // See https://github.com/kataras/iris/issues/1601
 
 import (
 	"bufio"
+	"fmt"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -149,7 +150,7 @@ func htmlResponse(ctx iris.Context) {
 func adminHandler(ctx iris.Context) {
 	username, password, _ := ctx.Request().BasicAuth()
 	// of course you don't want that in production:
-	ctx.HTML("<h2>Username: %s</h2><h3>Password: %s</h3>", username, password)
+	ctx.HTML(fmt.Sprintf("<h2>Username: %s</h2><h3>Password: %s</h3>", username, password))
 }
 
 func sessionHandler(ctx iris.Context) {
