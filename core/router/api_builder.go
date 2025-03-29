@@ -1804,7 +1804,7 @@ func (api *APIBuilder) FallbackView(provider context.FallbackViewProvider) {
 //
 //		my.Get("/", func(ctx iris.Context) {
 //		if err := ctx.View("page1.html"); err != nil {
-//		  ctx.HTML("<h3>%s</h3>", err.Error())
+//		  ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 //		  return
 //	 }
 //		})

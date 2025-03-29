@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/sessions"
 )
@@ -30,7 +32,7 @@ func index(ctx iris.Context) {
 	session := sessions.Get(ctx)
 	session.Set("username", "kataras")
 	if err := ctx.View("index"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 	/* OR without middleware:

@@ -21,6 +21,7 @@ package main
 // are fixed in the time I wrote that example, have fun!
 import (
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 
@@ -380,7 +381,7 @@ func main() {
 		if err := ctx.View("user.html", iris.Map{
 			"user": user,
 		}); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -399,14 +400,14 @@ func main() {
 		}
 
 		if err := ctx.View("user.html", gothUser); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("index.html", providerIndex); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

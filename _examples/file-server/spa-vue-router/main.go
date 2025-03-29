@@ -28,7 +28,7 @@ func fullVueRouter() {
 
 func index(ctx iris.Context) {
 	if err := ctx.View("index.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

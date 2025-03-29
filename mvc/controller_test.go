@@ -19,7 +19,7 @@ type testController struct {
 }
 
 var writeMethod = func(ctx *context.Context) {
-	ctx.Writef(ctx.Method())
+	ctx.WriteString(ctx.Method())
 }
 
 func (c *testController) Get() {
@@ -108,15 +108,15 @@ func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx *context.Context
 
 // called after every method (Get() or Post()).
 func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx *context.Context) {
-	ctx.Writef("done") // append "done" to the response
+	ctx.WriteString("done") // append "done" to the response
 }
 
 func (c *testControllerBeginAndEndRequestFunc) Get() {
-	c.Ctx.Writef(c.Username)
+	c.Ctx.WriteString(c.Username)
 }
 
 func (c *testControllerBeginAndEndRequestFunc) Post() {
-	c.Ctx.Writef(c.Username)
+	c.Ctx.WriteString(c.Username)
 }
 
 func TestControllerBeginAndEndRequestFunc(t *testing.T) {
@@ -230,7 +230,7 @@ func writeModels(ctx *context.Context, names ...string) {
 			return
 		}
 
-		ctx.Writef(model.Username)
+		ctx.WriteString(model.Username)
 	}
 }
 
@@ -269,7 +269,7 @@ type testControllerBindStruct struct {
 }
 
 func (t *testControllerBindStruct) Get() {
-	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
+	t.Ctx.WriteString(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
 
 // test if context can be binded to the controller's function
@@ -291,7 +291,7 @@ func (t *testControllerBindDeep) BeforeActivation(b BeforeActivation) {
 
 func (t *testControllerBindDeep) Get() {
 	// 	t.testControllerBindStruct.Get()
-	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
+	t.Ctx.WriteString(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
 
 func (t *testControllerBindDeep) Post(v testCustomStruct) string {
@@ -338,9 +338,9 @@ func (c *testCtrl0) Get() string {
 
 func (c *testCtrl0) EndRequest(ctx *context.Context) {
 	if c.TitlePointer == nil {
-		ctx.Writef("\nTitlePointer is nil!\n")
+		ctx.WriteString("\nTitlePointer is nil!\n")
 	} else {
-		ctx.Writef(c.TitlePointer.title)
+		ctx.WriteString(c.TitlePointer.title)
 	}
 
 	// should be the same as `.testCtrl000.testCtrl0000.EndRequest(ctx)`

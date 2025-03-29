@@ -1,6 +1,7 @@
 package hero_test
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -111,9 +112,9 @@ func TestDependentDependency(t *testing.T) {
 		},
 		{ // 3
 			Dependency: func(msg testMessage) error {
-				return fmt.Errorf(msg.Body)
+				return errors.New(msg.Body)
 			},
-			Expected: fmt.Errorf(msgBody),
+			Expected: errors.New(msgBody),
 		},
 		// Test depend on more than one previous registered dependencies and require a before-previous one.
 		{ // 4

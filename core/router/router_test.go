@@ -1,6 +1,7 @@
 package router_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -200,7 +201,7 @@ func TestNewSubdomainPartyRedirectHandler(t *testing.T) {
 func TestHandleServer(t *testing.T) {
 	otherApp := iris.New()
 	otherApp.Get("/test/me/{first:string}", func(ctx iris.Context) {
-		ctx.HTML("<h1>Other App: %s</h1>", ctx.Params().Get("first"))
+		ctx.HTML(fmt.Sprintf("<h1>Other App: %s</h1>", ctx.Params().Get("first")))
 	})
 	otherApp.Build()
 

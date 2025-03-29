@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 	// IMPORTANT, import this sub-package.
 	// Note tht it does NOT break compatibility with the
@@ -49,7 +51,7 @@ func main() {
 }
 
 func fireCustomErrorCodeName(ctx iris.Context) {
-	Custom.Details(ctx, "message", "details with arguments: %s", "an argument")
+	Custom.Details(ctx, "message", fmt.Sprintf("details with arguments: %s", "an argument"))
 }
 
 func fireInvalidArgument(ctx iris.Context) {

@@ -1,6 +1,10 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	app := iris.New()
@@ -21,7 +25,7 @@ func index(ctx iris.Context) {
 
 	ctx.ViewLayout("layouts/main")
 	if err := ctx.View("index", data); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

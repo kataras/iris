@@ -220,7 +220,7 @@ func Validation[T any](validators ...ContextRequestFunc[T]) context.Handler {
 		return nil
 	}
 
-	validator := joinContextRequestFuncs[T](validators)
+	validator := joinContextRequestFuncs(validators)
 
 	return func(ctx *context.Context) {
 		ctx.Values().Set(contextRequestHandlerFuncKey, validator)
@@ -322,7 +322,7 @@ func Intercept[T, R any](responseHandlers ...ContextResponseFunc[T, R]) context.
 		return nil
 	}
 
-	responseHandler := joinContextResponseFuncs[T, R](responseHandlers)
+	responseHandler := joinContextResponseFuncs(responseHandlers)
 
 	return func(ctx *context.Context) {
 		ctx.Values().Set(contextResponseHandlerFuncKey, responseHandler)

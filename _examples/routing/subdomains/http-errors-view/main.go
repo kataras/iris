@@ -1,6 +1,10 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	newApp().Listen("mydomain.com:80", iris.WithLogLevel("debug"))
@@ -31,7 +35,7 @@ func handleNotFoundTestSubdomain(ctx iris.Context) {
 	if err := ctx.View("error.html", iris.Map{
 		"ErrorCode": ctx.GetStatusCode(),
 	}); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

@@ -48,7 +48,7 @@ var h2 = func(ctx *context.Context) {
 }
 
 func h3(ctx *context.Context) {
-	ctx.Writef(staticPathPrefixBody + ctx.Path())
+	ctx.WriteString(staticPathPrefixBody + ctx.Path())
 }
 
 func TestRouterWildcardDifferentPrefixPath(t *testing.T) {

@@ -271,13 +271,13 @@ func (e ErrorCodeName) MapErrors(targets ...error) {
 }
 
 // Message sends an error with a simple message to the client.
-func (e ErrorCodeName) Message(ctx *context.Context, format string, args ...interface{}) {
-	fail(ctx, e, sprintf(format, args...), "", nil, nil)
+func (e ErrorCodeName) Message(ctx *context.Context, msg string) {
+	fail(ctx, e, msg, "", nil, nil)
 }
 
 // Details sends an error with a message and details to the client.
-func (e ErrorCodeName) Details(ctx *context.Context, msg, details string, detailsArgs ...interface{}) {
-	fail(ctx, e, msg, sprintf(details, detailsArgs...), nil, nil)
+func (e ErrorCodeName) Details(ctx *context.Context, msg, details string) {
+	fail(ctx, e, msg, msg, nil, nil)
 }
 
 // Data sends an error with a message and json data to the client.
@@ -419,7 +419,7 @@ func handleJSONError(ctx *context.Context, err error) bool {
 
 	var syntaxErr *json.SyntaxError
 	if errors.As(err, &syntaxErr) {
-		wireError.Details(ctx, messageText, "json: syntax error at byte offset %d", syntaxErr.Offset)
+		wireError.Details(ctx, messageText, fmt.Sprintf("json: syntax error at byte offset %d", syntaxErr.Offset))
 		return true
 	}
 

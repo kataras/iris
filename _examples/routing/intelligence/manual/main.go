@@ -1,6 +1,10 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	app := iris.New()
@@ -27,7 +31,7 @@ func notFound(ctx iris.Context) {
 
 	ctx.HTML("Did you mean?<ul>")
 	for _, s := range suggestPaths {
-		ctx.HTML(`<li><a href="%s">%s</a></li>`, s, s)
+		ctx.HTML(fmt.Sprintf(`<li><a href="%s">%s</a></li>`, s, s))
 	}
 	ctx.HTML("</ul>")
 }
