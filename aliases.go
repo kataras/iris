@@ -839,7 +839,7 @@ func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir interface{}) http
 	context.ResolveHTTPFS = patchFunc
 }
 
-// ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
+// ResolveFS modifies the default way to resolve a filesystem by any type of value.
 // It affects the view engine's filesystem resolver.
 func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) fs.FS) {
 	context.ResolveFS = patchFunc

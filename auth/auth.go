@@ -307,7 +307,7 @@ func (s *Auth[T]) sign(t T) ([]byte, []byte, error) {
 	return accessToken, refreshToken, nil
 }
 
-// SignHandler generates and sends a pair of access and refresh token to the client
+// SigninHandler generates and sends a pair of access and refresh token to the client
 // as JSON body of `SigninResponse` and cookie (if cookie setting was provided).
 // See `Signin` method for more.
 func (s *Auth[T]) SigninHandler(ctx *context.Context) {
