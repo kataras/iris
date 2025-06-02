@@ -512,15 +512,15 @@ func main() {
 
 #### DBUG Routes (1)
 
-![DBUG routes 1](https://iris-go.com/images/v12.2.0-dbug.png?v=0)
+![DBUG routes 1](https://iris-go.com/static/images/v12.2.0-dbug.png?v=0)
 
 #### DBUG Routes (2)
 
-![DBUG routes 2](https://iris-go.com/images/v12.2.0-dbug2.png?v=0)
+![DBUG routes 2](https://iris-go.com/static/images/v12.2.0-dbug2.png?v=0)
 
 #### DBUG Routes (3)
 
-![DBUG routes with Controllers](https://iris-go.com/images/v12.2.0-dbug3.png?v=0)
+![DBUG routes with Controllers](https://iris-go.com/static/images/v12.2.0-dbug3.png?v=0)
 
 - Update the [pprof middleware](https://github.com/kataras/iris/tree/main/middleware/pprof).
 
@@ -559,7 +559,7 @@ PrimarySubdomain: www
 
 - New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/main/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
 
-![logger middleware: TraceRoute screenshot](https://iris-go.com/images/github/logger-trace-route.png)
+![logger middleware: TraceRoute screenshot](https://iris-go.com/static/images/github/logger-trace-route.png)
 
 - Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/main/_examples/i18n/basic/main.go#L28-L50).
 
@@ -571,7 +571,7 @@ PrimarySubdomain: www
 
 - Fix `AutoTLS` when used with `iris.TLSNoRedirect` [*](https://github.com/kataras/iris/issues/1577). The `AutoTLS` runner can be customized through the new `iris.AutoTLSNoRedirect` instead, read its go documentation. Example of having both TLS and non-TLS versions of the same application without conflicts with letsencrypt `./well-known` path:
 
-![](https://iris-go.com/images/github/autotls-1.png)
+![](https://iris-go.com/static/images/github/autotls-1.png)
 
 ```go
 package main
@@ -1237,7 +1237,7 @@ func notFound(ctx iris.Context) {
 }
 ```
 
-![](https://iris-go.com/images/iris-not-found-suggests.png)
+![](https://iris-go.com/static/images/iris-not-found-suggests.png)
 
 # Fr, 13 December 2019 | v12.1.0
 
@@ -1287,7 +1287,7 @@ Navigate through: https://github.com/kataras/iris/blob/main/_examples/routing/si
 
 - Add version suffix of the **import path**, learn why and see what people voted at [issue #1370](https://github.com/kataras/iris/issues/1370)
 
-![](https://iris-go.com/images/vote-v12-version-suffix_26_oct_2019.png)
+![](https://iris-go.com/static/images/vote-v12-version-suffix_26_oct_2019.png)
 
 - All errors are now compatible with go1.13 `errors.Is`, `errors.As` and `fmt.Errorf` and a new `core/errgroup` package created
 - Fix [#1383](https://github.com/kataras/iris/issues/1383)

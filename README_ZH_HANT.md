@@ -1,20 +1,20 @@
-<!-- [![黑人的命也是命](https://iris-go.com/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
+<!-- [![黑人的命也是命](https://iris-go.com/static/images/blacklivesmatter_banner.png)](https://support.eji.org/give/153413/#!/donation/checkout)
 
 # 新聞
 
 > 此為 **開發中** 分支——功能不僅最新，而且最好。敬請期待接下來的發行版本 [v12.2.0](HISTORY.md#Next)。若需比較穩定的分支，請改前往 [v12.1.8 分支](https://github.com/kataras/iris/tree/v12.1.8)。
 >
-> ![](https://iris-go.com/images/cli.png) 立刻試試看官方的 [Iris 命令列介面 (CLI)](https://github.com/kataras/iris-cli)！
+> ![](https://iris-go.com/static/images/cli.png) 立刻試試看官方的 [Iris 命令列介面 (CLI)](https://github.com/kataras/iris-cli)！
 
 > 因為工作量過大，[問題](https://github.com/kataras/iris/issues) 解答的速度可能會有所延宕。 -->
 
-<!-- ![](https://iris-go.com/images/release.png) Iris 的 **12.1.8** 版本已經 [釋出](HISTORY.md#su-16-february-2020--v1218)! -->
+<!-- ![](https://iris-go.com/static/images/release.png) Iris 的 **12.1.8** 版本已經 [釋出](HISTORY.md#su-16-february-2020--v1218)! -->
 
-# Iris Web 框架 <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-japan.svg" /></a>
+# Iris Web 框架 <a href="README_GR.md"><img width="20px" src="https://iris-go.com/static/images/flag-greece.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/static/images/flag-france.svg" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/static/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/static/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/static/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/static/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/static/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-brazil.svg" /></a> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-japan.svg" /></a>
 
 [![組建狀態](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![查看範例](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![聊天室](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![捐助](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
-<!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/images/logo-w169.png"></a> -->
+<!-- <a href="https://iris-go.com"> <img align="right" src="https://iris-go.com/static/images/logo-w169.png"></a> -->
 
 Iris 是款不僅迅速、簡捷，並且功能完善、高效率的 Go 語言 Web 框架。**與 Go 生態系統中其它人提供的免費軟體套件不同，這個軟體保證終身主動維護。**
 
@@ -209,9 +209,9 @@ Iris 提供了至少這些功能：
 
 看看別人 [是如何評價 Iris 的](https://www.iris-go.com/#review)，並且 **[給這個開放原始碼專案一顆小星星](https://github.com/kataras/iris/stargazers)**，支持專案的潛力。
 
-[![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
+[![](https://iris-go.com/static/images/reviews.gif)](https://iris-go.com/testimonials/)
 
-[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/static/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ## 👑 <a href="https://iris-go.com/donate">支援者</a>
 
@@ -268,7 +268,7 @@ Iris 包含極其豐富且透徹的 **[文件](https://www.iris-go.com/docs)**�
 
 ### 想一邊旅行、一邊閱讀嗎？
 
-<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/static/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 [![在 Twitter 上追蹤作者](https://img.shields.io/twitter/follow/makismaropoulos?color=3D8AA3&logoColor=3D8AA3&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 

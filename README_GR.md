@@ -8,7 +8,7 @@
 
 [![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
 
-[![Benchmarks: Apr 2, 2020 at 12:13pm (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+[![Benchmarks: Apr 2, 2020 at 12:13pm (UTC)](https://iris-go.com/static/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ## Μαθαίνοντας το Iris
 
@@ -59,7 +59,7 @@ $ go run example.go
 
 Μπορείτε να [ζητήσετε](https://www.iris-go.com/#ebookDonateForm) σήμερα την PDF έκδοση και την online πρόσβαση στο Ηλεκτρονικό μας **Βιβλίο(E-Book)** και να συμμετάσχετε στην ανάπτυξη του Iris.
 
-[![https://iris-go.com/images/iris-book-cover-sm.jpg](https://iris-go.com/images/iris-book-cover-sm.jpg)](https://www.iris-go.com/#ebookDonateForm)
+[![https://iris-go.com/static/images/iris-book-cover-sm.jpg](https://iris-go.com/static/images/iris-book-cover-sm.jpg)](https://www.iris-go.com/#ebookDonateForm)
 
 [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 
