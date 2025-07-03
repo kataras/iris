@@ -223,6 +223,13 @@ func NonBlocking() Configurator {
 	}
 }
 
+// IgnoreViewLoadError Server Runing, When View load has error will be ignore.
+func IgnoreViewLoadError() Configurator {
+	return func(app *Application) {
+		app.config.IgnoreViewLoadError = true
+	}
+}
+
 // WithoutServerError will cause to ignore the matched "errors"
 // from the main application's `Run/Listen` function.
 //
@@ -976,6 +983,9 @@ type Configuration struct {
 	//
 	// Defaults to empty map.
 	Other map[string]interface{} `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
+
+	// IgnoreViewLoadError Server Runing, When View load has error will be ignore
+	IgnoreViewLoadError bool
 }
 
 var _ context.ConfigurationReadOnly = (*Configuration)(nil)
@@ -1184,6 +1194,11 @@ func (c *Configuration) GetHostProxyHeaders() map[string]bool {
 // GetOther returns the Other field.
 func (c *Configuration) GetOther() map[string]interface{} {
 	return c.Other
+}
+
+// GetIgnoreViewLoadError returns the IgnoreViewLoadError field.
+func (c *Configuration) GetIgnoreViewLoadError() bool {
+	return c.IgnoreViewLoadError
 }
 
 // WithConfiguration sets the "c" values to the framework's configurations.

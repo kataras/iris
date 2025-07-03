@@ -740,7 +740,11 @@ func (app *Application) Build() error {
 		app.view.AddFunc("urlpath", rv.Path)
 		// app.view.AddFunc("url", rv.URL)
 		if err := app.view.Load(); err != nil {
-			return fmt.Errorf("build: view engine: %v", err)
+			if app.config.IgnoreViewLoadError {
+				app.logger.Errorf("build: view engine: %v", err)
+			} else {
+				return fmt.Errorf("build: view engine: %v", err)
+			}
 		}
 	}
 
