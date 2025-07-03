@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -13,7 +15,7 @@ func main() {
 	app.Get("/home", func(ctx iris.Context) {
 		ctx.ViewData("title", "Home page")
 		if err := ctx.View("home.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 
@@ -24,14 +26,14 @@ func main() {
 
 	app.Get("/about", func(ctx iris.Context) {
 		if err := ctx.View("about.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
 
 	app.Get("/user/index", func(ctx iris.Context) {
 		if err := ctx.View("user/index.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -270,13 +271,13 @@ func (e ErrorCodeName) MapErrors(targets ...error) {
 }
 
 // Message sends an error with a simple message to the client.
-func (e ErrorCodeName) Message(ctx *context.Context, format string, args ...interface{}) {
-	fail(ctx, e, sprintf(format, args...), "", nil, nil)
+func (e ErrorCodeName) Message(ctx *context.Context, msg string) {
+	fail(ctx, e, msg, "", nil, nil)
 }
 
 // Details sends an error with a message and details to the client.
-func (e ErrorCodeName) Details(ctx *context.Context, msg, details string, detailsArgs ...interface{}) {
-	fail(ctx, e, msg, sprintf(details, detailsArgs...), nil, nil)
+func (e ErrorCodeName) Details(ctx *context.Context, msg, details string) {
+	fail(ctx, e, msg, msg, nil, nil)
 }
 
 // Data sends an error with a message and json data to the client.
@@ -404,22 +405,49 @@ func handleAPIError(ctx *context.Context, apiErr client.APIError) {
 }
 
 func handleJSONError(ctx *context.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	messageText := "unable to parse request body"
+	wireError := InvalidArgument
+
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		wireError.Details(ctx, messageText, "empty body")
+		return true
+	}
+
 	var syntaxErr *json.SyntaxError
 	if errors.As(err, &syntaxErr) {
-		InvalidArgument.Details(ctx, "unable to parse body", "syntax error at byte offset %d", syntaxErr.Offset)
+		wireError.Details(ctx, messageText, fmt.Sprintf("json: syntax error at byte offset %d", syntaxErr.Offset))
 		return true
 	}
 
 	var unmarshalErr *json.UnmarshalTypeError
 	if errors.As(err, &unmarshalErr) {
-		InvalidArgument.Details(ctx, "unable to parse body", "unmarshal error for field %q", unmarshalErr.Field)
+		wireError.Details(ctx, messageText, unmarshalErr.Error())
+		return true
+	}
+
+	var unsupportedValueErr *json.UnsupportedValueError
+	if errors.As(err, &unsupportedValueErr) {
+		wireError.Details(ctx, messageText, err.Error())
+		return true
+	}
+
+	var unsupportedTypeErr *json.UnsupportedTypeError
+	if errors.As(err, &unsupportedTypeErr) {
+		wireError.Details(ctx, messageText, err.Error())
+		return true
+	}
+
+	var invalidUnmarshalErr *json.InvalidUnmarshalError
+	if errors.As(err, &invalidUnmarshalErr) {
+		wireError.Details(ctx, messageText, err.Error())
 		return true
 	}
 
 	return false
-	// else {
-	// 	InvalidArgument.Details(ctx, "unable to parse body", err.Error())
-	// }
 }
 
 var (

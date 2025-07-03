@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"time"
 
@@ -36,7 +37,7 @@ func main() {
 		// render the template with the file name relative to the './templates'.
 		// file extension is OPTIONAL.
 		if err := ctx.View("hi.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -51,7 +52,7 @@ func main() {
 		}
 
 		if err := ctx.View("example.html", examplePage); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -80,7 +81,7 @@ func main() {
 		}
 
 		if err := ctx.View("example.html", examplePage); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -97,7 +98,7 @@ func main() {
 		}
 
 		if err := ctx.View("functions.html", functionsPage); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/kataras/iris/v12"
@@ -62,7 +63,7 @@ func notFoundHandler(ctx iris.Context) {
 
 	ctx.HTML("Did you mean?<ul>")
 	for _, s := range suggestPaths {
-		ctx.HTML(`<li><a href="%s">%s</a></li>`, s, s)
+		ctx.HTML(fmt.Sprintf(`<li><a href="%s">%s</a></li>`, s, s))
 	}
 	ctx.HTML("</ul>")
 }
@@ -73,7 +74,7 @@ func indexHandler(ctx iris.Context) {
 
 func profileHandler(ctx iris.Context) {
 	username := ctx.Params().Get("username")
-	ctx.HTML("Hello, <strong>%s</strong>!", username)
+	ctx.HTML(fmt.Sprintf("Hello, <strong>%s</strong>!", username))
 }
 
 func readBodyHandler(ctx iris.Context) {

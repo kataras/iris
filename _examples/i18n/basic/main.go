@@ -87,7 +87,7 @@ func newApp() *iris.Application {
 				return template.HTML(ctx.Tr(message, args...))
 			},
 		}); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 

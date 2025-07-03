@@ -111,7 +111,7 @@ func newApp() *iris.Application {
 		// if is larger then send a bad request status
 		if err != nil {
 			ctx.StatusCode(iris.StatusBadRequest)
-			ctx.Writef(err.Error())
+			ctx.WriteString(err.Error())
 			return
 		}
 		// send back the post body

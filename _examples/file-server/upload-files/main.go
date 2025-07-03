@@ -33,7 +33,7 @@ func newApp() *iris.Application {
 
 		// render the form with the token for any use you'd like.
 		if err := ctx.View("upload_form.html", token); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

@@ -8,7 +8,7 @@ Descubra lo que [otros dicen sobre Iris](https://iris-go.com/testimonials/) y **
 
 [![](https://media.giphy.com/media/j5WLmtvwn98VPrm7li/giphy.gif)](https://iris-go.com/testimonials/)
 
-[![Benchmarks: Apr 2, 2020 at 12:13pm (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+[![Benchmarks: Apr 2, 2020 at 12:13pm (UTC)](https://iris-go.com/static/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ## Aprende Iris
 
@@ -53,7 +53,7 @@ Para obtener una documentación técnica más detallada, puede dirigirse a nuest
 
 ### ¿Te gusta leer mientras viajas?
 
-<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+<a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/static/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 [![follow author](https://img.shields.io/twitter/follow/makismaropoulos.svg?style=for-the-badge)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 

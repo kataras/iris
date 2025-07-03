@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/kataras/iris/v12"
@@ -43,7 +44,7 @@ func register(ctx iris.Context) {
 func registerForm(ctx iris.Context) {
 	ctx.ViewData("SiteKey", siteKey)
 	if err := ctx.View("register_form.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

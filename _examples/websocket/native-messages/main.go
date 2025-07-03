@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/kataras/iris/v12"
@@ -50,7 +51,7 @@ func main() {
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("client.html", clientPage{"Client Page", "localhost:8080"}); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

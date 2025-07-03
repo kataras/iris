@@ -52,7 +52,7 @@ func newApp() *iris.Application {
 
 func renderSigninForm(ctx iris.Context) {
 	if err := ctx.View("signin", iris.Map{"Title": "Signin Page"}); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

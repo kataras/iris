@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -101,7 +102,7 @@ const (
 
 func (p ParamParser) Error() error {
 	if len(p.errors) > 0 {
-		return fmt.Errorf(strings.Join(p.errors, "\n"))
+		return errors.New(strings.Join(p.errors, "\n"))
 	}
 	return nil
 }

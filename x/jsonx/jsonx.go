@@ -1,11 +1,17 @@
 package jsonx
 
-import "bytes"
+import (
+	"bytes"
+	"errors"
+)
 
 var (
 	quoteLiteral    = '"'
 	emptyQuoteBytes = []byte(`""`)
 	nullLiteral     = []byte("null")
+
+	// ErrInvalid is returned when the value is invalid.
+	ErrInvalid = errors.New("invalid")
 )
 
 func isNull(b []byte) bool {

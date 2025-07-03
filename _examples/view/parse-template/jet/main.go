@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/kataras/iris/v12"
@@ -30,7 +31,7 @@ func index(ctx iris.Context) {
 	if err := ctx.View("program.jet", iris.Map{
 		"Name": "Gerasimos",
 	}); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

@@ -44,7 +44,7 @@ func main() {
         ctx.ViewData("message", "Hello world!")
         // Render template file: ./views/hello.html
         if err := ctx.View("hello.html"); err != nil {
-		    ctx.HTML("<h3>%s</h3>", err.Error())
+		    ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		    return
 	    }
     })
@@ -109,7 +109,7 @@ func main() {
 func hi(ctx iris.Context) {
     // render the template file "./templates/hi.html"
     if err := ctx.View("hi.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }
@@ -156,7 +156,7 @@ func hi(ctx iris.Context) {
     //                      {{.Page.Title}} and {{Page.Name}}
     ctx.ViewData("Page", page{Title: "Hi Page", Name: "iris"})
     if err := ctx.View("hi.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

@@ -4,7 +4,7 @@
     
 > این شاخه تحت توسعه است. برای رفتن به شاخه نسخه بعدی [v12.2.0](HISTORY.md#Next) یا اگر به دنبال یک انتشار پایدار هستید, به جای آن به شاخه [v12.1.8 branch](https://github.com/kataras/iris/tree/v12.1.8) مراجعه کنید.
     
-> ![](https://iris-go.com/images/cli.png) همین امروز برنامه رسمی [Iris Command Line Interface](https://github.com/kataras/iris-cli) را امتحان کنید.
+> ![](https://iris-go.com/static/images/cli.png) همین امروز برنامه رسمی [Iris Command Line Interface](https://github.com/kataras/iris-cli) را امتحان کنید.
 
 > با توجه به بالا بودن حجم کار، ممکن است در پاسخ به [سوالات](https://github.com/kataras/iris/issues) شما تاخیری وجود داشته باشد.
 
@@ -117,9 +117,9 @@ func (c *userController) PutBy(id uint64, req request) response {
     
 > دیگران درباره آیریس چه می گویند و برای پشتیبانی از پتانسیل‌های  این پروژه متن باز  می‌توانید از آن حمایت کنید
 
-[![](https://iris-go.com/images/reviews.gif)](https://iris-go.com/testimonials/)
+[![](https://iris-go.com/static/images/reviews.gif)](https://iris-go.com/testimonials/)
 
-[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
+[![Benchmarks: Jul 18, 2020 at 10:46am (UTC)](https://iris-go.com/static/images/benchmarks.svg)](https://github.com/kataras/server-benchmarks)
 
 ## 👑 <a href="https://iris-go.com/donate">حامیان</a>
     
@@ -173,7 +173,7 @@ require github.com/kataras/iris/v12 v12.2.0-beta4.0.20220920072528-ff81f370625a
     
 ## دوست دارید در حین مسافرت کتاب بخوانید ?
     
- <a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/images/iris-book-cover-sm.jpg?v=12" /> </a>
+ <a href="https://iris-go.com/#book"> <img alt="Book cover" src="https://iris-go.com/static/images/iris-book-cover-sm.jpg?v=12" /> </a>
 
 [![follow author on twitter](https://img.shields.io/twitter/follow/makismaropoulos?color=3D8AA3&logoColor=3D8AA3&style=for-the-badge&logo=twitter)](https://twitter.com/intent/follow?screen_name=makismaropoulos)
 

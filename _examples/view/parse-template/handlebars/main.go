@@ -1,6 +1,10 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	e := iris.Handlebars(nil, ".html") // You can still use a file system though.
@@ -22,7 +26,7 @@ func index(ctx iris.Context) {
 	if err := ctx.View("program.html", iris.Map{
 		"Name": "Gerasimos",
 	}); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

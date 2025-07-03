@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -40,7 +41,7 @@ func hi(ctx iris.Context) {
 		"name":            "iris",
 		"serverStartTime": startTime,
 	}); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

@@ -93,7 +93,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 		ctx.Next()
 	}, func(ctx *context.Context) {
 		s := sessions.Get(ctx)
-		_, err := ctx.Writef(s.GetString("key"))
+		_, err := ctx.WriteString(s.GetString("key"))
 		if err != nil {
 			t.Fatal(err)
 		}

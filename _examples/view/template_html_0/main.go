@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -32,7 +34,7 @@ func hi(ctx iris.Context) {
 	ctx.ViewData("Name", "iris") // {{.Name}} will render: iris
 	// ctx.ViewData("", myCcustomStruct{})
 	if err := ctx.View("hi.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

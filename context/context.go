@@ -792,9 +792,9 @@ func (ctx *Context) StopWithStatus(statusCode int) {
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
-func (ctx *Context) StopWithText(statusCode int, format string, args ...interface{}) {
+func (ctx *Context) StopWithText(statusCode int, text string) {
 	ctx.StopWithStatus(statusCode)
-	ctx.WriteString(fmt.Sprintf(format, args...))
+	ctx.WriteString(text)
 }
 
 // StopWithError stops the handlers chain and writes the "statusCode"
@@ -4034,15 +4034,15 @@ func (ctx *Context) Binary(data []byte) (int, error) {
 }
 
 // Text writes out a string as plain text.
-func (ctx *Context) Text(format string, args ...interface{}) (int, error) {
+func (ctx *Context) Text(text string) (int, error) {
 	ctx.ContentType(ContentTextHeaderValue)
-	return ctx.Writef(format, args...)
+	return ctx.WriteString(text)
 }
 
 // HTML writes out a string as text/html.
-func (ctx *Context) HTML(format string, args ...interface{}) (int, error) {
+func (ctx *Context) HTML(text string) (int, error) {
 	ctx.ContentType(ContentHTMLHeaderValue)
-	return ctx.Writef(format, args...)
+	return ctx.WriteString(text)
 }
 
 // ProtoMarshalOptions is a type alias for protojson.MarshalOptions.
