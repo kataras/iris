@@ -281,10 +281,10 @@ func New(w io.Writer) *AccessLog {
 		BodyMinify:         true,
 		KeepMultiLineError: true,
 		PanicLog:           LogHandler,
-		logsPool: &sync.Pool{New: func() interface{} {
+		logsPool: &sync.Pool{New: func() any {
 			return new(Log)
 		}},
-		bufPool: &sync.Pool{New: func() interface{} {
+		bufPool: &sync.Pool{New: func() any {
 			return new(bytes.Buffer)
 		}},
 	}

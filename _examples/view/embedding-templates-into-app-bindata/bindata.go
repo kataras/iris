@@ -77,7 +77,7 @@ func (fi bindataFileInfo) IsDir() bool {
 }
 
 // Sys return file is sys mode
-func (fi bindataFileInfo) Sys() interface{} {
+func (fi bindataFileInfo) Sys() any {
 	return nil
 }
 

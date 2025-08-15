@@ -1,6 +1,6 @@
 module github.com/kataras/iris/v12/_examples/view/templ
 
-go 1.24.3
+go 1.25
 
 require (
 	github.com/a-h/templ v0.3.887

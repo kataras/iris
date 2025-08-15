@@ -44,7 +44,7 @@ func main() {
 	//
 	// And then register it:
 	verifier.Blocklist = blocklist
-	verifyMiddleware := verifier.Verify(func() interface{} {
+	verifyMiddleware := verifier.Verify(func() any {
 		return new(userClaims)
 	})
 

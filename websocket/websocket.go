@@ -127,13 +127,13 @@ var (
 
 // SetDefaultMarshaler changes the default json marshaler.
 // See `Marshal` package-level function and `Message.Unmarshal` method for more.
-func SetDefaultMarshaler(fn func(v interface{}) ([]byte, error)) {
+func SetDefaultMarshaler(fn func(v any) ([]byte, error)) {
 	neffos.DefaultMarshaler = fn
 }
 
 // SetDefaultUnmarshaler changes the default json unmarshaler.
 // See `Message.Unmarshal` method and package-level `Marshal` function for more.
-func SetDefaultUnmarshaler(fn func(data []byte, v interface{}) error) {
+func SetDefaultUnmarshaler(fn func(data []byte, v any) error) {
 	neffos.DefaultUnmarshaler = fn
 }
 

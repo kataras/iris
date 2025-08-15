@@ -281,12 +281,12 @@ func (e ErrorCodeName) Details(ctx *context.Context, msg, details string) {
 }
 
 // Data sends an error with a message and json data to the client.
-func (e ErrorCodeName) Data(ctx *context.Context, msg string, data interface{}) {
+func (e ErrorCodeName) Data(ctx *context.Context, msg string, data any) {
 	fail(ctx, e, msg, "", nil, data)
 }
 
 // DataWithDetails sends an error with a message, details and json data to the client.
-func (e ErrorCodeName) DataWithDetails(ctx *context.Context, msg, details string, data interface{}) {
+func (e ErrorCodeName) DataWithDetails(ctx *context.Context, msg, details string, data any) {
 	fail(ctx, e, msg, details, nil, data)
 }
 
@@ -295,7 +295,7 @@ func (e ErrorCodeName) Validation(ctx *context.Context, validationErrors ...Vali
 	e.validation(ctx, validationErrors)
 }
 
-func (e ErrorCodeName) validation(ctx *context.Context, validationErrors interface{}) {
+func (e ErrorCodeName) validation(ctx *context.Context, validationErrors any) {
 	fail(ctx, e, "validation failure", "fields were invalid", validationErrors, nil)
 }
 
@@ -339,7 +339,7 @@ func (e ErrorCodeName) Err(ctx *context.Context, err error) {
 // error using the "LogError" package-level function, which can be customized.
 //
 // See "LogErr" too.
-func (e ErrorCodeName) Log(ctx *context.Context, format string, args ...interface{}) {
+func (e ErrorCodeName) Log(ctx *context.Context, format string, args ...any) {
 	if SkipCanceled {
 		if ctx.IsCanceled() {
 			return
@@ -471,7 +471,7 @@ type Error struct {
 	ErrorCode  ErrorCode       `json:"http_error_code" yaml:"HTTPErrorCode"`
 	Message    string          `json:"message,omitempty" yaml:"Message"`
 	Details    string          `json:"details,omitempty" yaml:"Details"`
-	Validation interface{}     `json:"validation,omitempty" yaml:"Validation,omitempty"`
+	Validation any             `json:"validation,omitempty" yaml:"Validation,omitempty"`
 	Data       json.RawMessage `json:"data,omitempty" yaml:"Data,omitempty"` // any other custom json data.
 }
 
@@ -496,7 +496,7 @@ func (err *Error) Error() string {
 	return sprintf("iris http wire error: canonical name: %s, http status code: %d, message: %s, details: %s", err.ErrorCode.CanonicalName, err.ErrorCode.Status, err.Message, err.Details)
 }
 
-func fail(ctx *context.Context, codeName ErrorCodeName, msg, details string, validationErrors interface{}, dataValue interface{}) {
+func fail(ctx *context.Context, codeName ErrorCodeName, msg, details string, validationErrors any, dataValue any) {
 	errorCode, ok := errorCodeMap[codeName]
 	if !ok {
 		// This SHOULD NEVER happen, all ErrorCodeNames MUST be registered.

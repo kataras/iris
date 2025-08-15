@@ -204,7 +204,7 @@ type testControllerEndRequestAwareness struct {
 func (c *testControllerEndRequestAwareness) Get() {
 	username := c.Ctx.Params().Get("username")
 	c.Ctx.Values().Set(c.Ctx.Application().ConfigurationReadOnly().GetViewDataContextKey(),
-		map[string]interface{}{
+		map[string]any{
 			"TestModel": Model{Username: username},
 			"myModel":   Model{Username: username + "2"},
 		})

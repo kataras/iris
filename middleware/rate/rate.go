@@ -35,7 +35,7 @@ func ExceedHandler(handler context.Handler) Option {
 // ClientData is an `Option` that can be passed at the `Limit` package-level function.
 // It accepts a function which provides the Iris Context and should return custom data
 // that will be stored to the Client and be retrieved as `Get(ctx).Client.Data` later on.
-func ClientData(clientDataFunc func(ctx *context.Context) interface{}) Option {
+func ClientData(clientDataFunc func(ctx *context.Context) any) Option {
 	return func(l *Limiter) {
 		l.clientDataFunc = clientDataFunc
 	}
@@ -79,8 +79,8 @@ type (
 	// old clients from the memory. Limiter is not exposed by a function,
 	// callers should use it inside an `Option` for the `Limit` package-level function.
 	Limiter struct {
-		clientDataFunc func(ctx *context.Context) interface{} // fill the Client's Data field.
-		exceedHandler  context.Handler                        // when too many requests.
+		clientDataFunc func(ctx *context.Context) any // fill the Client's Data field.
+		exceedHandler  context.Handler                // when too many requests.
 
 		limit     rate.Limit
 		burstSize int
@@ -94,7 +94,7 @@ type (
 	// It can be used to manually add RateLimit response headers.
 	Client struct {
 		ID      string
-		Data    interface{}
+		Data    any
 		Limiter *rate.Limiter
 
 		lastSeen time.Time

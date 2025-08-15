@@ -127,7 +127,7 @@ func makeKey(sid, key string) []byte {
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, key string, value interface{}, ttl time.Duration, immutable bool) error {
+func (db *Database) Set(sid string, key string, value any, ttl time.Duration, immutable bool) error {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
 		db.logger.Error(err)
@@ -146,7 +146,7 @@ func (db *Database) Set(sid string, key string, value interface{}, ttl time.Dura
 }
 
 // Get retrieves a session value based on the key.
-func (db *Database) Get(sid string, key string) (value interface{}) {
+func (db *Database) Get(sid string, key string) (value any) {
 	if err := db.Decode(sid, key, &value); err == nil {
 		return value
 	}
@@ -155,7 +155,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 }
 
 // Decode binds the "outPtr" to the value associated to the provided "key".
-func (db *Database) Decode(sid, key string, outPtr interface{}) error {
+func (db *Database) Decode(sid, key string, outPtr any) error {
 	err := db.Service.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(makeKey(sid, key))
 		if err != nil {
@@ -181,7 +181,7 @@ func validSessionItem(key, prefix []byte) bool {
 }
 
 // Visit loops through all session keys and values.
-func (db *Database) Visit(sid string, cb func(key string, value interface{})) error {
+func (db *Database) Visit(sid string, cb func(key string, value any)) error {
 	prefix := makePrefix(sid)
 
 	txn := db.Service.NewTransaction(false)
@@ -201,7 +201,7 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) er
 			continue
 		}
 
-		var value interface{}
+		var value any
 
 		err := item.Value(func(valueBytes []byte) error {
 			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)

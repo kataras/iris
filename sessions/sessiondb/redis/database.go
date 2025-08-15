@@ -165,7 +165,7 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 
 // Set sets a key value of a specific session.
 // Ignore the "immutable".
-func (db *Database) Set(sid string, key string, value interface{}, _ time.Duration, _ bool) error {
+func (db *Database) Set(sid string, key string, value any, _ time.Duration, _ bool) error {
 	valueBytes, err := sessions.DefaultTranscoder.Marshal(value)
 	if err != nil {
 		db.logger.Error(err)
@@ -181,7 +181,7 @@ func (db *Database) Set(sid string, key string, value interface{}, _ time.Durati
 }
 
 // Get retrieves a session value based on the key.
-func (db *Database) Get(sid string, key string) (value interface{}) {
+func (db *Database) Get(sid string, key string) (value any) {
 	if err := db.Decode(sid, key, &value); err == nil {
 		return value
 	}
@@ -190,7 +190,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 }
 
 // Decode binds the "outPtr" to the value associated to the provided "key".
-func (db *Database) Decode(sid, key string, outPtr interface{}) error {
+func (db *Database) Decode(sid, key string, outPtr any) error {
 	sidKey := db.makeSID(sid)
 	data, err := db.c.Driver.Get(sidKey, key)
 	if err != nil {
@@ -206,7 +206,7 @@ func (db *Database) Decode(sid, key string, outPtr interface{}) error {
 	return nil
 }
 
-func (db *Database) decodeValue(val interface{}, outPtr interface{}) error {
+func (db *Database) decodeValue(val any, outPtr any) error {
 	if val == nil {
 		return nil
 	}
@@ -234,14 +234,14 @@ func (db *Database) keys(fullSID string) []string {
 }
 
 // Visit loops through all session keys and values.
-func (db *Database) Visit(sid string, cb func(key string, value interface{})) error {
+func (db *Database) Visit(sid string, cb func(key string, value any)) error {
 	kv, err := db.c.Driver.GetAll(db.makeSID(sid))
 	if err != nil {
 		return err
 	}
 
 	for k, v := range kv {
-		var value interface{} // new value each time, we don't know what user will do in "cb".
+		var value any // new value each time, we don't know what user will do in "cb".
 		if err = db.decodeValue(v, &value); err != nil {
 			db.logger.Debugf("unable to decode %s:%s: %v", sid, k, err)
 			return err

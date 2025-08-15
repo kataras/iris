@@ -51,22 +51,22 @@ func NewSchema() *Schema {
 var DefaultSchema = NewSchema()
 
 // Register caches a struct value to the default schema.
-func Register(tableName string, value interface{}) *Schema {
+func Register(tableName string, value any) *Schema {
 	return DefaultSchema.Register(tableName, value)
 }
 
 // Query is a shortcut of executing a query and bind the result to "dst".
-func Query(ctx context.Context, db *sql.DB, dst interface{}, query string, args ...interface{}) error {
+func Query(ctx context.Context, db *sql.DB, dst any, query string, args ...any) error {
 	return DefaultSchema.Query(ctx, db, dst, query, args...)
 }
 
 // Bind sets "dst" to the result of "src" and reports any errors.
-func Bind(dst interface{}, src *sql.Rows) error {
+func Bind(dst any, src *sql.Rows) error {
 	return DefaultSchema.Bind(dst, src)
 }
 
 // Register caches a struct value to the schema.
-func (s *Schema) Register(tableName string, value interface{}) *Schema {
+func (s *Schema) Register(tableName string, value any) *Schema {
 	typ := reflect.TypeOf(value)
 	for typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
@@ -97,7 +97,7 @@ func (s *Schema) Register(tableName string, value interface{}) *Schema {
 }
 
 // Query is a shortcut of executing a query and bind the result to "dst".
-func (s *Schema) Query(ctx context.Context, db *sql.DB, dst interface{}, query string, args ...interface{}) error {
+func (s *Schema) Query(ctx context.Context, db *sql.DB, dst any, query string, args ...any) error {
 	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func (s *Schema) Query(ctx context.Context, db *sql.DB, dst interface{}, query s
 }
 
 // Bind sets "dst" to the result of "src" and reports any errors.
-func (s *Schema) Bind(dst interface{}, src *sql.Rows) error {
+func (s *Schema) Bind(dst any, src *sql.Rows) error {
 	typ := reflect.TypeOf(dst)
 	if typ.Kind() != reflect.Ptr {
 		return fmt.Errorf("sqlx: bind: destination not a pointer")
@@ -176,7 +176,7 @@ func (s *Schema) Bind(dst interface{}, src *sql.Rows) error {
 	}
 }
 
-func (r *Row) bindSingle(typ reflect.Type, val reflect.Value, columnTypes []*sql.ColumnType, scanner interface{ Scan(...interface{}) error }) error {
+func (r *Row) bindSingle(typ reflect.Type, val reflect.Value, columnTypes []*sql.ColumnType, scanner interface{ Scan(...any) error }) error {
 	fieldPtrs, err := r.lookupStructFieldPtrs(typ, val, columnTypes)
 	if err != nil {
 		return fmt.Errorf("sqlx: bind: table: %q: %w", r.Name, err)
@@ -185,8 +185,8 @@ func (r *Row) bindSingle(typ reflect.Type, val reflect.Value, columnTypes []*sql
 	return scanner.Scan(fieldPtrs...)
 }
 
-func (r *Row) lookupStructFieldPtrs(typ reflect.Type, val reflect.Value, columnTypes []*sql.ColumnType) ([]interface{}, error) {
-	fieldPtrs := make([]interface{}, 0, len(columnTypes))
+func (r *Row) lookupStructFieldPtrs(typ reflect.Type, val reflect.Value, columnTypes []*sql.ColumnType) ([]any, error) {
+	fieldPtrs := make([]any, 0, len(columnTypes))
 
 	for _, columnType := range columnTypes {
 		columnName := columnType.Name()

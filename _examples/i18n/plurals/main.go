@@ -169,7 +169,7 @@ func main() {
 	app.Listen(":8080")
 }
 
-func tr(ctx iris.Context, key string, args ...interface{}) {
+func tr(ctx iris.Context, key string, args ...any) {
 	translation := ctx.Tr(key, args...)
 	ctx.Writef("<tr><td>%s</td><td>%s</td><td>%v</td></tr>\n", key, translation, args)
 }

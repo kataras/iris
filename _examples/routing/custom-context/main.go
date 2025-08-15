@@ -80,7 +80,7 @@ func (c *myCustomContext) SetContext(ctx iris.Context) {
 	c.Context = ctx
 }
 
-func (c *myCustomContext) HTML(format string, args ...interface{}) (int, error) {
+func (c *myCustomContext) HTML(format string, args ...any) (int, error) {
 	c.Application().Logger().Info("HTML was called from custom Context")
 
 	return c.Context.HTML(fmt.Sprintf(format, args...))

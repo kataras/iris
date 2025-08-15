@@ -12,7 +12,7 @@ import (
 
 type personTableType struct {
 	s parse.StructInfo
-	z []interface{}
+	z []any
 }
 
 // Schema returns a schema name in SQL database ("").
@@ -63,9 +63,9 @@ func (s Person) String() string {
 }
 
 // Values returns a slice of struct or record field values.
-// Returned interface{} values are never untyped nils.
-func (s *Person) Values() []interface{} {
-	return []interface{}{
+// Returned any values are never untyped nils.
+func (s *Person) Values() []any {
+	return []any{
 		s.ID,
 		s.Name,
 		s.Email,
@@ -75,9 +75,9 @@ func (s *Person) Values() []interface{} {
 }
 
 // Pointers returns a slice of pointers to struct or record fields.
-// Returned interface{} values are never untyped nils.
-func (s *Person) Pointers() []interface{} {
-	return []interface{}{
+// Returned any values are never untyped nils.
+func (s *Person) Pointers() []any {
+	return []any{
 		&s.ID,
 		&s.Name,
 		&s.Email,
@@ -97,14 +97,14 @@ func (s *Person) Table() reform.Table {
 }
 
 // PKValue returns a value of primary key for that record.
-// Returned interface{} value is never untyped nil.
-func (s *Person) PKValue() interface{} {
+// Returned any value is never untyped nil.
+func (s *Person) PKValue() any {
 	return s.ID
 }
 
 // PKPointer returns a pointer to primary key field for that record.
-// Returned interface{} value is never untyped nil.
-func (s *Person) PKPointer() interface{} {
+// Returned any value is never untyped nil.
+func (s *Person) PKPointer() any {
 	return &s.ID
 }
 
@@ -114,7 +114,7 @@ func (s *Person) HasPK() bool {
 }
 
 // SetPK sets record primary key.
-func (s *Person) SetPK(pk interface{}) {
+func (s *Person) SetPK(pk any) {
 	if i64, ok := pk.(int64); ok {
 		s.ID = int32(i64)
 	} else {

@@ -35,7 +35,7 @@ func newApp() *iris.Application {
 	// This is why this one accepts both input and matched languages,
 	// so the caller can be more expressful knowing those.
 	// Defaults to nil.
-	app.I18n.DefaultMessageFunc = func(langInput, langMatched, key string, args ...interface{}) string {
+	app.I18n.DefaultMessageFunc = func(langInput, langMatched, key string, args ...any) string {
 		msg := fmt.Sprintf("user language input: %s: matched as: %s: not found key: %s: args: %v", langInput, langMatched, key, args)
 		app.Logger().Warn(msg)
 		return msg
@@ -83,7 +83,7 @@ func newApp() *iris.Application {
 	app.Get("/templates", func(ctx iris.Context) {
 		if err := ctx.View("index.html", iris.Map{
 			"tr": ctx.Tr, // word, arguments... {call .tr "hi" "iris"}}
-			"trUnsafe": func(message string, args ...interface{}) template.HTML {
+			"trUnsafe": func(message string, args ...any) template.HTML {
 				return template.HTML(ctx.Tr(message, args...))
 			},
 		}); err != nil {

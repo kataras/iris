@@ -87,7 +87,7 @@ type (
 	// See `NewConditionalHandler` for more.
 	// An alias for the `context/Filter`.
 	Filter = context.Filter
-	// A Map is an alias of map[string]interface{}.
+	// A Map is an alias of map[string]any.
 	Map = context.Map
 	// User is a generic view of an authorized client.
 	// See `Context.User` and `SetUser` methods for more.
@@ -614,10 +614,10 @@ var (
 	//
 	// A shortcut for the `context#NewProblem`.
 	NewProblem = context.NewProblem
-	// XMLMap wraps a map[string]interface{} to compatible xml marshaler,
+	// XMLMap wraps a map[string]any to compatible xml marshaler,
 	// in order to be able to render maps as XML on the `Context.XML` method.
 	//
-	// Example: `Context.XML(XMLMap("Root", map[string]interface{}{...})`.
+	// Example: `Context.XML(XMLMap("Root", map[string]any{...})`.
 	//
 	// A shortcut for the `context#XMLMap`.
 	XMLMap = context.XMLMap
@@ -835,13 +835,13 @@ func (cp *ContextPatches) SetCookieKVExpiration(patch time.Duration) {
 
 // ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
 // It affects the Application's API Builder's `HandleDir` method.
-func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir interface{}) http.FileSystem) {
+func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir any) http.FileSystem) {
 	context.ResolveHTTPFS = patchFunc
 }
 
 // ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
 // It affects the view engine's filesystem resolver.
-func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) fs.FS) {
+func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir any) fs.FS) {
 	context.ResolveFS = patchFunc
 }
 
@@ -849,17 +849,17 @@ func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) fs.FS) {
 type ContextWriterPatches struct{}
 
 // JSON sets a custom function which runs and overrides the default behavior of the `Context#JSON` method.
-func (cwp *ContextWriterPatches) JSON(patchFunc func(ctx Context, v interface{}, options *JSON) error) {
+func (cwp *ContextWriterPatches) JSON(patchFunc func(ctx Context, v any, options *JSON) error) {
 	context.WriteJSON = patchFunc
 }
 
 // JSONP sets a custom function which runs and overrides the default behavior of the `Context#JSONP` method.
-func (cwp *ContextWriterPatches) JSONP(patchFunc func(ctx Context, v interface{}, options *JSONP) error) {
+func (cwp *ContextWriterPatches) JSONP(patchFunc func(ctx Context, v any, options *JSONP) error) {
 	context.WriteJSONP = patchFunc
 }
 
 // XML sets a custom function which runs and overrides the default behavior of the `Context#XML` method.
-func (cwp *ContextWriterPatches) XML(patchFunc func(ctx Context, v interface{}, options *XML) error) {
+func (cwp *ContextWriterPatches) XML(patchFunc func(ctx Context, v any, options *XML) error) {
 	context.WriteXML = patchFunc
 }
 
@@ -869,7 +869,7 @@ func (cwp *ContextWriterPatches) Markdown(patchFunc func(ctx Context, v []byte, 
 }
 
 // YAML sets a custom function which runs and overrides the default behavior of the `Context#YAML` method.
-func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v interface{}, indentSpace int) error) {
+func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v any, indentSpace int) error) {
 	context.WriteYAML = patchFunc
 }
 

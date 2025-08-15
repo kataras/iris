@@ -55,7 +55,7 @@ func newApp(subRouter router.Party, container *hero.Container) *Application {
 }
 
 // See `hero.BuiltinDependencies` too, here we are registering dependencies per MVC Application.
-func registerBuiltinDependencies(container *hero.Container, deps ...interface{}) {
+func registerBuiltinDependencies(container *hero.Container, deps ...any) {
 	for _, dep := range deps {
 		depTyp := reflect.TypeOf(dep)
 		for i, dependency := range container.Dependencies {
@@ -164,7 +164,7 @@ func (app *Application) EnableStructDependents() *Application {
 // It returns this Application.
 //
 // Example: `.Register(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
-func (app *Application) Register(dependencies ...interface{}) *Application {
+func (app *Application) Register(dependencies ...any) *Application {
 	if len(dependencies) > 0 && len(app.container.Dependencies) == len(hero.BuiltinDependencies) && len(app.Controllers) > 0 {
 		allControllerNamesSoFar := make([]string, len(app.Controllers))
 		for i := range app.Controllers {
@@ -259,7 +259,7 @@ var IgnoreEmbedded OptionFunc = func(c *ControllerActivator) {
 // e.g. Handle(controller, GRPC {Server: grpcServer, Strict: true})
 //
 // Examples at: https://github.com/kataras/iris/tree/main/_examples/mvc
-func (app *Application) Handle(controller interface{}, options ...Option) *Application {
+func (app *Application) Handle(controller any, options ...Option) *Application {
 	c := app.handle(controller, options...)
 	// Note: log on register-time, so they can catch any failures before build.
 	if !app.controllersNoLog {
@@ -276,7 +276,7 @@ func (app *Application) Handle(controller interface{}, options ...Option) *Appli
 // Note that a websocket controller is registered and ran under a specific connection connected to a namespace
 // and it cannot send HTTP responses on that state.
 // However all static and dynamic dependency injection features are working, as expected, like any regular MVC Controller.
-func (app *Application) HandleWebsocket(controller interface{}) *websocket.Struct {
+func (app *Application) HandleWebsocket(controller any) *websocket.Struct {
 	c := app.handle(controller)
 	c.markAsWebsocket()
 
@@ -305,7 +305,7 @@ func (app *Application) GetNamespaces() websocket.Namespaces {
 	return websocket.JoinConnHandlers(app.websocketControllers...).GetNamespaces()
 }
 
-func (app *Application) handle(controller interface{}, options ...Option) *ControllerActivator {
+func (app *Application) handle(controller any, options ...Option) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
 	c := newControllerActivator(app, controller)
 

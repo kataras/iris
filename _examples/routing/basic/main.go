@@ -78,7 +78,7 @@ func newApp() *iris.Application {
 			return
 		}
 
-		ctx.JSON(map[string]interface{}{
+		ctx.JSON(map[string]any{
 			// you can pass any custom structured go value of course.
 			"user_id": userID,
 		})

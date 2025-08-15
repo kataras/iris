@@ -31,7 +31,7 @@ type (
 	flashMessage struct {
 		// if true then this flash message is removed on the flash gc
 		shouldRemove bool
-		value        interface{}
+		value        any
 	}
 )
 
@@ -59,12 +59,12 @@ func (s *Session) IsNew() bool {
 }
 
 // Get returns a value based on its "key".
-func (s *Session) Get(key string) interface{} {
+func (s *Session) Get(key string) any {
 	return s.provider.db.Get(s.sid, key)
 }
 
 // Decode binds the given "outPtr" to the value associated to the provided "key".
-func (s *Session) Decode(key string, outPtr interface{}) error {
+func (s *Session) Decode(key string, outPtr any) error {
 	return s.provider.db.Decode(s.sid, key, outPtr)
 }
 
@@ -97,7 +97,7 @@ func (s *Session) HasFlash() bool {
 //
 // Fetching a message deletes it from the session.
 // This means that a message is meant to be displayed only on the first page served to the user.
-func (s *Session) GetFlash(key string) interface{} {
+func (s *Session) GetFlash(key string) any {
 	fv, ok := s.peekFlashMessage(key)
 	if !ok {
 		return nil
@@ -109,7 +109,7 @@ func (s *Session) GetFlash(key string) interface{} {
 // PeekFlash returns a stored flash message based on its "key".
 // Unlike GetFlash, this will keep the message valid for the next requests,
 // until GetFlashes or GetFlash("key").
-func (s *Session) PeekFlash(key string) interface{} {
+func (s *Session) PeekFlash(key string) any {
 	fv, ok := s.peekFlashMessage(key)
 	if !ok {
 		return nil
@@ -181,7 +181,7 @@ func (s *Session) GetFlashStringDefault(key string, defaultValue string) string 
 // the value (if found) matched to the requested key-value pair of the session's memory storage.
 type ErrEntryNotFound struct {
 	Err   *memstore.ErrEntryNotFound
-	Value interface{}
+	Value any
 }
 
 func (e *ErrEntryNotFound) Error() string {
@@ -195,7 +195,7 @@ func (e *ErrEntryNotFound) Unwrap() error {
 
 // As method implements the dynamic As interface of the std errors package.
 // As should be NOT used directly, use `errors.As` instead.
-func (e *ErrEntryNotFound) As(target interface{}) bool {
+func (e *ErrEntryNotFound) As(target any) bool {
 	if v, ok := target.(*memstore.ErrEntryNotFound); ok && e.Err != nil {
 		return e.Err.As(v)
 	}
@@ -222,7 +222,7 @@ func (e *ErrEntryNotFound) As(target interface{}) bool {
 	return true
 }
 
-func newErrEntryNotFound(key string, kind reflect.Kind, value interface{}) *ErrEntryNotFound {
+func newErrEntryNotFound(key string, kind reflect.Kind, value any) *ErrEntryNotFound {
 	return &ErrEntryNotFound{Err: &memstore.ErrEntryNotFound{Key: key, Kind: kind}, Value: value}
 }
 
@@ -485,20 +485,20 @@ func (s *Session) GetBooleanDefault(key string, defaultValue bool) bool {
 }
 
 // GetAll returns a copy of all session's values.
-func (s *Session) GetAll() map[string]interface{} {
-	items := make(map[string]interface{}, s.provider.db.Len(s.sid))
+func (s *Session) GetAll() map[string]any {
+	items := make(map[string]any, s.provider.db.Len(s.sid))
 	s.mu.RLock()
-	s.provider.db.Visit(s.sid, func(key string, value interface{}) {
+	s.provider.db.Visit(s.sid, func(key string, value any) {
 		items[key] = value
 	})
 	s.mu.RUnlock()
 	return items
 }
 
-// GetFlashes returns all flash messages as map[string](key) and interface{} value
+// GetFlashes returns all flash messages as map[string](key) and any value
 // NOTE: this will cause at remove all current flash messages on the next request of the same user.
-func (s *Session) GetFlashes() map[string]interface{} {
-	flashes := make(map[string]interface{}, len(s.flashes))
+func (s *Session) GetFlashes() map[string]any {
+	flashes := make(map[string]any, len(s.flashes))
 	s.mu.Lock()
 	for key, v := range s.flashes {
 		flashes[key] = v.value
@@ -509,7 +509,7 @@ func (s *Session) GetFlashes() map[string]interface{} {
 }
 
 // Visit loops each of the entries and calls the callback function func(key, value).
-func (s *Session) Visit(cb func(k string, v interface{})) {
+func (s *Session) Visit(cb func(k string, v any)) {
 	s.provider.db.Visit(s.sid, cb)
 }
 
@@ -518,12 +518,12 @@ func (s *Session) Len() int {
 	return s.provider.db.Len(s.sid)
 }
 
-func (s *Session) set(key string, value interface{}, immutable bool) {
+func (s *Session) set(key string, value any, immutable bool) {
 	s.provider.db.Set(s.sid, key, value, s.Lifetime.DurationUntilExpiration(), immutable)
 }
 
 // Set fills the session with an entry "value", based on its "key".
-func (s *Session) Set(key string, value interface{}) {
+func (s *Session) Set(key string, value any) {
 	s.set(key, value, false)
 }
 
@@ -533,7 +533,7 @@ func (s *Session) Set(key string, value interface{}) {
 // if the entry was immutable, for your own safety.
 // Use it consistently, it's far slower than `Set`.
 // Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-func (s *Session) SetImmutable(key string, value interface{}) {
+func (s *Session) SetImmutable(key string, value any) {
 	s.set(key, value, true)
 }
 
@@ -557,7 +557,7 @@ func (s *Session) SetImmutable(key string, value interface{}) {
 //
 // In this example we used the key 'success'.
 // If you want to define more than one flash messages, you will have to use different keys.
-func (s *Session) SetFlash(key string, value interface{}) {
+func (s *Session) SetFlash(key string, value any) {
 	s.mu.Lock()
 	if s.flashes == nil {
 		s.flashes = make(map[string]*flashMessage)

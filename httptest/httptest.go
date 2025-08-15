@@ -195,7 +195,7 @@ func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfig
 	app.Configure(irisConfigurators...)
 
 	app.HTTPErrorHandler = router.NewDefaultHandler(app.ConfigurationReadOnly(), app.Logger())
-	app.ContextPool = context.New(func() interface{} {
+	app.ContextPool = context.New(func() any {
 		return context.NewContext(app)
 	})
 

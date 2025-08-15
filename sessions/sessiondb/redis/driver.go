@@ -8,8 +8,8 @@ type Driver interface {
 	Connect(c Config) error
 	PingPong() (bool, error)
 	CloseConnection() error
-	Set(sid, key string, value interface{}) error
-	Get(sid, key string) (interface{}, error)
+	Set(sid, key string, value any) error
+	Get(sid, key string) (any, error)
 	Exists(sid string) bool
 	TTL(sid string) time.Duration
 	UpdateTTL(sid string, newLifetime time.Duration) error

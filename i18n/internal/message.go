@@ -8,7 +8,7 @@ import (
 // Renderer is responsible to render a translation based
 // on the given "args".
 type Renderer interface {
-	Render(args ...interface{}) (string, error)
+	Render(args ...any) (string, error)
 }
 
 // Message is the default Renderer for translation messages.
@@ -60,7 +60,7 @@ func (m *Message) AddPlural(form PluralForm, r Renderer) {
 // of the message is the "PluralCount". And for variables the user
 // should set a message key which looks like: %VAR_NAME%Count, e.g. "DogsCount"
 // to set plural count for the "Dogs" variable, case-sensitive.
-func (m *Message) Render(args ...interface{}) (string, error) {
+func (m *Message) Render(args ...any) (string, error) {
 	if m.Plural {
 		if len(args) > 0 {
 			if pluralCount, ok := findPluralCount(args[0]); ok {

@@ -16,8 +16,8 @@ import (
 // Service that cache will use to retrieve data.
 type Service interface {
 	RecordInfo() sql.Record
-	GetByID(ctx context.Context, dest interface{}, id int64) error
-	List(ctx context.Context, dest interface{}, opts sql.ListOptions) error
+	GetByID(ctx context.Context, dest any, id int64) error
+	List(ctx context.Context, dest any, opts sql.ListOptions) error
 }
 
 // Cache is a simple structure which holds the groupcache and the database service, exposes
@@ -53,7 +53,7 @@ func (c *Cache) Get(ctx context.Context, key string, dest groupcache.Sink) error
 		return sql.ErrUnprocessable
 	}
 
-	var v interface{}
+	var v any
 
 	prefix := key[0:1]
 	key = key[1:]

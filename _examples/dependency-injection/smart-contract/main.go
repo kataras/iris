@@ -124,7 +124,7 @@ func (h httpError) Error() string {
 	return fmt.Sprintf("Status Code: %d\nReason: %s", h.Code, h.Reason)
 }
 
-func fail(ctx iris.Context, statusCode int, format string, a ...interface{}) {
+func fail(ctx iris.Context, statusCode int, format string, a ...any) {
 	err := httpError{
 		Code:   statusCode,
 		Reason: fmt.Sprintf(format, a...),
@@ -141,7 +141,7 @@ func fail(ctx iris.Context, statusCode int, format string, a ...interface{}) {
 
 // JSON helper to give end-user the ability to put indention chars or filtering the response, you can do that, optionally.
 // If you'd like to see that function inside the Iris' Context itself raise a [Feature Request] issue and link this example.
-func sendJSON(ctx iris.Context, resp interface{}) (err error) {
+func sendJSON(ctx iris.Context, resp any) (err error) {
 	indent := ctx.URLParamDefault("indent", "  ")
 	// i.e [?Name == 'John Doe'].Age # to output the [age] of a user which his name is "John Doe".
 	if query := ctx.URLParam("query"); query != "" && query != "[]" {

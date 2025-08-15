@@ -279,7 +279,7 @@ type (
 		// Usage: WithoutPrefix(), same as WithPrefix("").
 		WithoutPrefix() ServiceGuide
 		// Services registers one or more dependencies that APIs can use.
-		Services(deps ...interface{}) ApplicationBuilder
+		Services(deps ...any) ApplicationBuilder
 	}
 	// ApplicationBuilder is the final step of the Guide.
 	// It is used to register APIs controllers (PartyConfigurators) and
@@ -390,7 +390,7 @@ func (s *step5) Middlewares(handlers ...Handler) ServiceGuide {
 type step6 struct {
 	step5 *step5
 
-	deps []interface{}
+	deps []any
 	// derives from "deps".
 	closers []func()
 	// derives from "deps".
@@ -444,7 +444,7 @@ func (s *step6) getPrefix() string {
 	return apiPrefix
 }
 
-func (s *step6) Services(deps ...interface{}) ApplicationBuilder {
+func (s *step6) Services(deps ...any) ApplicationBuilder {
 	s.deps = deps
 	for _, d := range deps {
 		if d == nil {

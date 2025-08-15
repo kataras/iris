@@ -17,7 +17,7 @@ func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
-	app.Macros().Register("slice", "", []string{}, false, true, func(paramValue string) (interface{}, bool) {
+	app.Macros().Register("slice", "", []string{}, false, true, func(paramValue string) (any, bool) {
 		return strings.Split(paramValue, "/"), true
 	}).RegisterFunc("contains", func(expectedItems []string) func(paramValue []string) bool {
 		sort.Strings(expectedItems)
@@ -39,10 +39,10 @@ func main() {
 
 	// In order to use your new param type inside MVC controller's function input argument or a hero function input argument
 	// you have to tell the Iris what type it is, the `ValueRaw` of the parameter is the same type
-	// as you defined it above with the func(paramValue string) (interface{}, bool).
+	// as you defined it above with the func(paramValue string) (any, bool).
 	// The new value and its type(from string to your new custom type) it is stored only once now,
 	// you don't have to do any conversions for simple cases like this.
-	context.ParamResolvers[reflect.TypeOf([]string{})] = func(paramIndex int) interface{} {
+	context.ParamResolvers[reflect.TypeOf([]string{})] = func(paramIndex int) any {
 		return func(ctx iris.Context) []string {
 			// When you want to retrieve a parameter with a value type that it is not supported by-default, such as ctx.Params().GetInt
 			// then you can use the `GetEntry` or `GetEntryAt` and cast its underline `ValueRaw` to the desired type.

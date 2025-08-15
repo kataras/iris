@@ -35,7 +35,7 @@ func TestRoutingBasic(t *testing.T) {
 		expectedUUintResponse         = expectedUResponse("uid", "uint", "42")
 		expectedUAlphabeticalResponse = expectedUResponse("firstname", "alphabetical", "abcd")
 
-		expectedAPIUsersIndexResponse = map[string]interface{}{"user_id": 42}
+		expectedAPIUsersIndexResponse = map[string]any{"user_id": 42}
 
 		expectedAdminIndexResponse = "<h1>Hello from admin/</h1>"
 

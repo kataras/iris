@@ -15,7 +15,7 @@ type Zeroer interface {
 // IsZero reports whether "v" is zero value or no.
 // The given "v" value can complete the Zeroer interface
 // which can be used to customize the behavior for each type of "v".
-func IsZero(v interface{}) bool {
+func IsZero(v any) bool {
 	switch t := v.(type) {
 	case Zeroer: // completes the time.Time as well.
 		return t.IsZero()

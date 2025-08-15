@@ -54,7 +54,7 @@ func main() {
 		// so the client should dial with ws://localhost:8080/echo?token=$token
 		Extractor: jwt.FromParameter("token"),
 
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+		ValidationKeyGetter: func(token *jwt.Token) (any, error) {
 			return []byte("My Secret"), nil
 		},
 

@@ -77,11 +77,11 @@ func (c *UsersController) PutBy(id int64) (datamodels.User, error) {
 // DeleteBy deletes a user.
 // Demo:
 // curl -i -X DELETE -u admin:password http://localhost:8080/users/1
-func (c *UsersController) DeleteBy(id int64) interface{} {
+func (c *UsersController) DeleteBy(id int64) any {
 	wasDel := c.Service.DeleteByID(id)
 	if wasDel {
 		// return the deleted user's ID
-		return map[string]interface{}{"deleted": id}
+		return map[string]any{"deleted": id}
 	}
 	// right here we can see that a method function
 	// can return any of those two types(map or int),

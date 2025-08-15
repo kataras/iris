@@ -77,7 +77,7 @@ func (t DayTime) String() string {
 }
 
 // Scan completes the sql driver.Scanner interface.
-func (t *DayTime) Scan(src interface{}) error {
+func (t *DayTime) Scan(src any) error {
 	switch v := src.(type) {
 	case time.Time: // type was set to timestamp
 		if v.IsZero() {

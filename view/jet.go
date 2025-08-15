@@ -35,7 +35,7 @@ type JetEngine struct {
 
 	// Note that global vars and functions are set in a single spot on the jet parser.
 	// If AddFunc or AddVar called before `Load` then these will be set here to be used via `Load` and clear.
-	vars map[string]interface{}
+	vars map[string]any
 
 	jetDataContextKey string
 }
@@ -60,7 +60,7 @@ var jetExtensions = [...]string{
 // Jet("./views", ".jet") or
 // Jet(iris.Dir("./views"), ".jet") or
 // Jet(embed.FS, ".jet") or Jet(AssetFile(), ".jet") for embedded data.
-func Jet(dirOrFS interface{}, extension string) *JetEngine {
+func Jet(dirOrFS any, extension string) *JetEngine {
 	extOK := false
 	for _, ext := range jetExtensions {
 		if ext == extension {
@@ -131,10 +131,10 @@ func (s *JetEngine) Delims(left, right string) *JetEngine {
 type JetArguments = jet.Arguments
 
 // AddFunc should adds a global function to the jet template set.
-func (s *JetEngine) AddFunc(funcName string, funcBody interface{}) {
+func (s *JetEngine) AddFunc(funcName string, funcBody any) {
 	// if something like "urlpath" is registered.
-	if generalFunc, ok := funcBody.(func(string, ...interface{}) string); ok {
-		// jet, unlike others does not accept a func(string, ...interface{}) string,
+	if generalFunc, ok := funcBody.(func(string, ...any) string); ok {
+		// jet, unlike others does not accept a func(string, ...any) string,
 		// instead it wants:
 		// func(JetArguments) reflect.Value.
 
@@ -153,7 +153,7 @@ func (s *JetEngine) AddFunc(funcName string, funcBody interface{}) {
 			// if has variadic.
 
 			variadicN := n - 1
-			variadicInputs := make([]interface{}, variadicN) // except the first one.
+			variadicInputs := make([]any, variadicN) // except the first one.
 
 			for i := 0; i < variadicN; i++ {
 				variadicInputs[i] = args.Get(i + 1).Interface()
@@ -178,12 +178,12 @@ func (s *JetEngine) AddFunc(funcName string, funcBody interface{}) {
 }
 
 // AddVar adds a global variable to the jet template set.
-func (s *JetEngine) AddVar(key string, value interface{}) {
+func (s *JetEngine) AddVar(key string, value any) {
 	if s.Set != nil {
 		s.Set.AddGlobal(key, value)
 	} else {
 		if s.vars == nil {
-			s.vars = make(map[string]interface{})
+			s.vars = make(map[string]any)
 		}
 		s.vars[key] = value
 	}
@@ -334,7 +334,7 @@ func (s *JetEngine) AddRuntimeVars(ctx *context.Context, vars JetRuntimeVars) {
 }
 
 // ExecuteWriter should execute a template by its filename with an optional layout and bindingData.
-func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
+func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData any) error {
 	tmpl, err := s.Set.GetTemplate(filename)
 	if err != nil {
 		return err
@@ -391,7 +391,7 @@ func (s *JetEngine) ExecuteWriter(w io.Writer, filename string, layout string, b
 
 	/* fixed on jet v4.0.0, so no need of this:
 	if m, ok := bindingData.(context.Map); ok {
-		var jetData interface{}
+		var jetData any
 		for k, v := range m {
 			if k == s.jetDataContextKey {
 				jetData = v

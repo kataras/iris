@@ -125,7 +125,7 @@ LocalVarsHouseCount.Text=She has 4 houses
 	}
 }
 
-func tr(ctx iris.Context, key string, args ...interface{}) {
+func tr(ctx iris.Context, key string, args ...any) {
 	translation := ctx.Tr(key, args...)
 	ctx.Writef("%s=%s\n", key, translation)
 }

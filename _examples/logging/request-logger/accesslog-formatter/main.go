@@ -64,7 +64,7 @@ func newCustomFormatter(delim byte, blank string) *customFormatter {
 func (f *customFormatter) SetOutput(dest io.Writer) {
 	f.w = dest
 	f.bufPool = &sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return new(bytes.Buffer)
 		},
 	}

@@ -197,7 +197,7 @@ type BaseController struct {
 	Ctx iris.Context
 }
 
-func (c *BaseController) GetDoSomething(i interface{}) error {
+func (c *BaseController) GetDoSomething(i any) error {
 	return nil
 }
 
@@ -465,7 +465,7 @@ stage.Get/Post...
 - Add the ability to [share functions](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
 
 - Add the new `Party.UseOnce` method to the `*Route`
-- Add a new `*Route.RemoveHandler(...interface{}) int` and `Party.RemoveHandler(...interface{}) Party` methods, delete a handler based on its name or the handler pc function.
+- Add a new `*Route.RemoveHandler(...any) int` and `Party.RemoveHandler(...any) Party` methods, delete a handler based on its name or the handler pc function.
 
 ```go
 func middleware(ctx iris.Context) {
@@ -716,7 +716,7 @@ var dirOpts = iris.DirOptions{
 
 - New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
 
-- New `app.Validator { Struct(interface{}) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/request-body/read-json-struct-validation) example was updated.
+- New `app.Validator { Struct(any) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/request-body/read-json-struct-validation) example was updated.
 
 - A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
 
@@ -743,17 +743,17 @@ var dirOpts = iris.DirOptions{
 ## New Context Methods
 
 - `Context.FormFiles(key string, before ...func(*Context, *multipart.FileHeader) bool) (files []multipart.File, headers []*multipart.FileHeader, err error)` method.
-- `Context.ReadURL(ptr interface{}) error` shortcut of `ReadParams` and `ReadQuery`. Binds URL dynamic path parameters and URL query parameters to the given "ptr" pointer of a struct value.
+- `Context.ReadURL(ptr any) error` shortcut of `ReadParams` and `ReadQuery`. Binds URL dynamic path parameters and URL query parameters to the given "ptr" pointer of a struct value.
 - `Context.SetUser(User)` and `Context.User() User` to store and retrieve an authenticated client. Read more [here](https://github.com/iris-contrib/middleware/issues/63).
-- `Context.SetLogoutFunc(fn interface{}, persistenceArgs ...interface{})` and `Logout(args ...interface{}) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
-- `Context.SetFunc(name string, fn interface{}, persistenceArgs ...interface{})` and `Context.CallFunc(name string, args ...interface{}) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs) for more.
-- `Context.TextYAML(interface{}) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
+- `Context.SetLogoutFunc(fn any, persistenceArgs ...any)` and `Logout(args ...any) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
+- `Context.SetFunc(name string, fn any, persistenceArgs ...any)` and `Context.CallFunc(name string, args ...any) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs) for more.
+- `Context.TextYAML(any) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
 - `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
 - `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/main/middleware/recover). Also the `Context.GetErrPublic() (bool, error)`, `Context.SetErrPrivate(err error)` methods and `iris.ErrPrivate` interface have been introduced. 
 - `Context.RecordRequestBody(bool)` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
 - `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
-- `Context.ReadHeaders(ptr interface{}) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/main/_examples/request-body/read-headers/main.go).
-- `Context.ReadParams(ptr interface{}) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/main/_examples/request-body/read-params/main.go).
+- `Context.ReadHeaders(ptr any) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/main/_examples/request-body/read-headers/main.go).
+- `Context.ReadParams(ptr any) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/main/_examples/request-body/read-params/main.go).
 - `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
 - `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas. Note that it skips any empty values (e.g. https://iris-go.com?values=).
 - `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
@@ -765,8 +765,8 @@ var dirOpts = iris.DirOptions{
 - `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
 - `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
 - `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).
-- `Context.RegisterDependency(v interface{})` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
-- `Context.SetID(id interface{})` and `Context.GetID() interface{}` added to register a custom unique indetifier to the Context, if necessary.
+- `Context.RegisterDependency(v any)` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
+- `Context.SetID(id any)` and `Context.GetID() any` added to register a custom unique indetifier to the Context, if necessary.
 - `Context.Scheme() string` returns the full scheme of the request URL.
 - `Context.SubdomainFull() string` returns the full subdomain(s) part of the host (`host[0:rootLevelDomain]`).
 - `Context.Domain() string` returns the root level domain.
@@ -778,12 +778,12 @@ var dirOpts = iris.DirOptions{
 - `Context.IsGRPC() bool` reports whether the request came from a gRPC client
 - `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
 - `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
-- `StopWithText(statusCode int, format string, args ...interface{})` stops the handlers chain, writes thre status code and a plain text message
+- `StopWithText(statusCode int, format string, args ...any)` stops the handlers chain, writes thre status code and a plain text message
 - `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
-- `Context.StopWithJSON(int, interface{})` stops the handlers chain, writes the status code and sends a JSON response
+- `Context.StopWithJSON(int, any)` stops the handlers chain, writes the status code and sends a JSON response
 - `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
 - `Context.Protobuf(proto.Message)` sends protobuf to the client (note that the `Context.JSON` is able to send protobuf as JSON)
-- `Context.MsgPack(interface{})` sends msgpack format data to the client
+- `Context.MsgPack(any)` sends msgpack format data to the client
 - `Context.ReadProtobuf(ptr)` binds request body to a proto message
 - `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
 - `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
@@ -801,7 +801,7 @@ The most common scenario from a route to handle is to:
 - accept one or more path parameters and request data, a payload
 - send back a response, a payload (JSON, XML,...)
 
-The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.ConfigureContainer(builder ...func(*iris.APIContainer)) *APIContainer` method which returns methods such as `Handle(method, relativePath string, handlersFn ...interface{}) *Route` and `RegisterDependency`.
+The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.ConfigureContainer(builder ...func(*iris.APIContainer)) *APIContainer` method which returns methods such as `Handle(method, relativePath string, handlersFn ...any) *Route` and `RegisterDependency`.
 
 Look how clean your codebase can be when using Iris':
 
@@ -869,7 +869,7 @@ OnError(errorHandler func(iris.Context, error))
 // - RegisterDependency(loggerService{prefix: "dev"})
 // - RegisterDependency(func(ctx iris.Context) User {...})
 // - RegisterDependency(func(User) OtherResponse {...})
-RegisterDependency(dependency interface{})
+RegisterDependency(dependency any)
 
 // UseResultHandler adds a result handler to the Container.
 // A result handler can be used to inject the returned struct value
@@ -880,15 +880,15 @@ UseResultHandler(handler func(next iris.ResultHandler) iris.ResultHandler)
 <details><summary>ResultHandler</summary>
 
 ```go
-type ResultHandler func(ctx iris.Context, v interface{}) error
+type ResultHandler func(ctx iris.Context, v any) error
 ```
 </details>
 
 ```go
 // Use same as a common Party's "Use" but it accepts dynamic functions as its "handlersFn" input.
-Use(handlersFn ...interface{})
+Use(handlersFn ...any)
 // Done same as a common Party's but it accepts dynamic functions as its "handlersFn" input.
-Done(handlersFn ...interface{})
+Done(handlersFn ...any)
 ```
 
 ```go
@@ -901,10 +901,10 @@ Done(handlersFn ...interface{})
 // the "handlersFn" will call `ctx.Next()` automatically when not called manually.
 // To stop the execution and not continue to the next "handlersFn"
 // the end-developer should output an error and return `iris.ErrStopExecution`.
-Handle(method, relativePath string, handlersFn ...interface{}) *Route
+Handle(method, relativePath string, handlersFn ...any) *Route
 
 // Get registers a GET route, same as `Handle("GET", relativePath, handlersFn....)`.
-Get(relativePath string, handlersFn ...interface{}) *Route
+Get(relativePath string, handlersFn ...any) *Route
 // and so on...
 ```
 
@@ -1163,7 +1163,7 @@ Response:
 - `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
 - `route.Trace() string` changed to `route.Trace(w io.Writer)`, to achieve the same result just pass a `bytes.Buffer`
 - `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)).
-- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `interface{}` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
+- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `any` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
 - `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
 - **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
 
@@ -1312,7 +1312,7 @@ The iris-contrib/middleare and examples are updated to use the new `github.com/k
 
 - Set `Cookie.SameSite` to `Lax` when subdomains sessions share is enabled[*](https://github.com/kataras/iris/commit/6bbdd3db9139f9038641ce6f00f7b4bab6e62550)
 - Add and update all [experimental handlers](https://github.com/iris-contrib/middleware) 
-- New `XMLMap` function which wraps a `map[string]interface{}` and converts it to a valid xml content to render through `Context.XML` method
+- New `XMLMap` function which wraps a `map[string]any` and converts it to a valid xml content to render through `Context.XML` method
 - Add new `ProblemOptions.XML` and `RenderXML` fields to render the `Problem` as XML(application/problem+xml) instead of JSON("application/problem+json) and enrich the `Negotiate` to easily accept the `application/problem+xml` mime.
 
 Commit log: https://github.com/kataras/iris/compare/v11.2.7...v11.2.8
@@ -1386,7 +1386,7 @@ app.Get("/path", func(ctx iris.Context){
 ```
 
 - Add `Session.Len() int` to return the total number of stored values/entries.
-- Make `Context.HTML` and `Context.Text` to accept an optional, variadic, `args ...interface{}` input arg(s) too.
+- Make `Context.HTML` and `Context.Text` to accept an optional, variadic, `args ...any` input arg(s) too.
 
 ## v11.1.1
 

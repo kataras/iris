@@ -62,7 +62,7 @@ func GetError(err error) (APIError, bool) {
 }
 
 // DecodeError binds a json error to the "destPtr".
-func DecodeError(err error, destPtr interface{}) error {
+func DecodeError(err error, destPtr any) error {
 	apiErr, ok := GetError(err)
 	if !ok {
 		return err

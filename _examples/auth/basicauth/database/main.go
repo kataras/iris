@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// Validate a user from database.
-	allowFunc := func(ctx iris.Context, username, password string) (interface{}, bool) {
+	allowFunc := func(ctx iris.Context, username, password string) (any, bool) {
 		user, err := db.getUserByUsernameAndPassword(context.Background(), username, password)
 		return user, err == nil
 	}

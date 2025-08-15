@@ -22,11 +22,11 @@ type controller struct{}
 
 // Generic response type for JSON results.
 type response struct {
-	ID        uint64      `json:"id,omitempty"`
-	Data      interface{} `json:"data,omitempty"` // {data: result } on fetch actions.
-	Code      int         `json:"code,omitempty"`
-	Message   string      `json:"message,omitempty"`
-	Timestamp int64       `json:"timestamp,omitempty"`
+	ID        uint64 `json:"id,omitempty"`
+	Data      any    `json:"data,omitempty"` // {data: result } on fetch actions.
+	Code      int    `json:"code,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Timestamp int64  `json:"timestamp,omitempty"`
 }
 
 func (r *response) Preflight(ctx iris.Context) error {

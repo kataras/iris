@@ -15,14 +15,14 @@ import (
 // This package requires the golang.org/x/text/message capabilities
 // only for the variables feature, the message itself's pluralization is managed by the package.
 type Var struct {
-	Name    string        // Variable name, e.g. Name
-	Literal string        // Its literal is ${Name}
-	Cases   []interface{} // one:...,few:...,...
-	Format  string        // defaults to "%d".
-	Argth   int           // 1, 2, 3...
+	Name    string // Variable name, e.g. Name
+	Literal string // Its literal is ${Name}
+	Cases   []any  // one:...,few:...,...
+	Format  string // defaults to "%d".
+	Argth   int    // 1, 2, 3...
 }
 
-func getVars(loc *Locale, key string, src map[string]interface{}) []Var {
+func getVars(loc *Locale, key string, src map[string]any) []Var {
 	if len(src) == 0 {
 		return nil
 	}
@@ -32,7 +32,7 @@ func getVars(loc *Locale, key string, src map[string]interface{}) []Var {
 		return nil
 	}
 
-	varValue, ok := varsKey.([]interface{})
+	varValue, ok := varsKey.([]any)
 	if !ok {
 		return nil
 	}
@@ -40,7 +40,7 @@ func getVars(loc *Locale, key string, src map[string]interface{}) []Var {
 	vars := make([]Var, 0, len(varValue))
 
 	for _, v := range varValue {
-		m, ok := v.(map[string]interface{})
+		m, ok := v.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -48,7 +48,7 @@ func getVars(loc *Locale, key string, src map[string]interface{}) []Var {
 		for k, inner := range m {
 			varFormat := "%d"
 
-			innerMap, ok := inner.(map[string]interface{})
+			innerMap, ok := inner.(map[string]any)
 			if !ok {
 				continue
 			}
@@ -141,10 +141,10 @@ func removeMsgVarsDuplicates(elements []catalog.Message) (result []catalog.Messa
 }
 */
 
-func getCases(loc *Locale, src map[string]interface{}) []interface{} {
+func getCases(loc *Locale, src map[string]any) []any {
 	type PluralCase struct {
 		Form  PluralForm
-		Value interface{}
+		Value any
 	}
 
 	pluralCases := make([]PluralCase, 0, len(src))
@@ -170,7 +170,7 @@ func getCases(loc *Locale, src map[string]interface{}) []interface{} {
 		return left.Less(right)
 	})
 
-	cases := make([]interface{}, 0, len(pluralCases)*2)
+	cases := make([]any, 0, len(pluralCases)*2)
 	for _, pluralCase := range pluralCases {
 		// fmt.Printf("%s=%v\n", pluralCase.Form, pluralCase.Value)
 		cases = append(cases, pluralCase.Form.String(), pluralCase.Value)

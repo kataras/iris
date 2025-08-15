@@ -15,11 +15,11 @@ func init() {
 type (
 	// Marshaler is the common marshaler interface, used by transcoder.
 	Marshaler interface {
-		Marshal(interface{}) ([]byte, error)
+		Marshal(any) ([]byte, error)
 	}
 	// Unmarshaler is the common unmarshaler interface, used by transcoder.
 	Unmarshaler interface {
-		Unmarshal([]byte, interface{}) error
+		Unmarshal([]byte, any) error
 	}
 	// Transcoder is the interface that transcoders should implement, it includes just the `Marshaler` and the `Unmarshaler`.
 	Transcoder interface {
@@ -64,7 +64,7 @@ var (
 	DefaultTranscoder Transcoder = defaultTranscoder{}
 )
 
-func (defaultTranscoder) Marshal(value interface{}) ([]byte, error) {
+func (defaultTranscoder) Marshal(value any) ([]byte, error) {
 	if tr, ok := value.(Marshaler); ok {
 		return tr.Marshal(value)
 	}
@@ -76,7 +76,7 @@ func (defaultTranscoder) Marshal(value interface{}) ([]byte, error) {
 	return json.Marshal(value)
 }
 
-func (defaultTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
+func (defaultTranscoder) Unmarshal(b []byte, outPtr any) error {
 	if tr, ok := outPtr.(Unmarshaler); ok {
 		return tr.Unmarshal(b, outPtr)
 	}
@@ -89,7 +89,7 @@ func (defaultTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
 }
 
 // Marshal returns the gob encoding of "value".
-func (GobTranscoder) Marshal(value interface{}) ([]byte, error) {
+func (GobTranscoder) Marshal(value any) ([]byte, error) {
 	var (
 		w   = new(bytes.Buffer)
 		enc = gob.NewEncoder(w)
@@ -111,7 +111,7 @@ func (GobTranscoder) Marshal(value interface{}) ([]byte, error) {
 
 // Unmarshal parses the gob-encoded data "b" and stores the result
 // in the value pointed to by "outPtr".
-func (GobTranscoder) Unmarshal(b []byte, outPtr interface{}) error {
+func (GobTranscoder) Unmarshal(b []byte, outPtr any) error {
 	dec := gob.NewDecoder(bytes.NewBuffer(b))
 
 	if v, ok := outPtr.(reflect.Value); ok {

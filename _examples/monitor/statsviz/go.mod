@@ -1,6 +1,6 @@
 module github.com/kataras/iris/_examples/statsviz
 
-go 1.24.3
+go 1.25
 
 require (
 	github.com/arl/statsviz v0.6.0

@@ -41,7 +41,7 @@ func TestClientJSON(t *testing.T) {
 	client.DrainResponseBody(resp)
 }
 
-func sendJSON(t *testing.T, v interface{}) http.HandlerFunc {
+func sendJSON(t *testing.T, v any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err := json.NewEncoder(w).Encode(v); err != nil {
@@ -50,7 +50,7 @@ func sendJSON(t *testing.T, v interface{}) http.HandlerFunc {
 	}
 }
 
-func readJSON(t *testing.T, ptr interface{}, expected interface{}) http.HandlerFunc {
+func readJSON(t *testing.T, ptr any, expected any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(ptr); err != nil {
 			t.Fatal(err)

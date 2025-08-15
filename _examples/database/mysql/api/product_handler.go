@@ -127,7 +127,7 @@ func (h *ProductHandler) Update(ctx iris.Context) {
 func (h *ProductHandler) PartialUpdate(ctx iris.Context) {
 	id := ctx.Params().GetInt64Default("id", 0)
 
-	var attrs map[string]interface{}
+	var attrs map[string]any
 	if err := ctx.ReadJSON(&attrs); err != nil {
 		return
 	}

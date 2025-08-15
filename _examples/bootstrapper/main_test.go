@@ -22,7 +22,7 @@ func TestApp(t *testing.T) {
 
 	// test not found
 	e.GET("/notfound").Expect().Status(httptest.StatusNotFound)
-	expectedErr := map[string]interface{}{
+	expectedErr := map[string]any{
 		"app":     app.AppName,
 		"status":  httptest.StatusNotFound,
 		"message": "",

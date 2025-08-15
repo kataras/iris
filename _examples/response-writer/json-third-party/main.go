@@ -16,7 +16,7 @@ func applyIrisGlobalPatches() {
 
 	// Apply global modifications to the context REST writers
 	// without modifications to your web server's handlers code.
-	iris.Patches().Context().Writers().JSON(func(ctx iris.Context, v interface{}, options *iris.JSON) error {
+	iris.Patches().Context().Writers().JSON(func(ctx iris.Context, v any, options *iris.JSON) error {
 		enc := json.NewEncoder(ctx.ResponseWriter())
 		enc.SetEscapeHTML(!options.UnescapeHTML)
 		enc.SetIndent("", options.Indent)

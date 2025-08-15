@@ -46,7 +46,7 @@ func Verify() iris.Handler {
 
 	verifier := jwt.NewVerifier(jwt.HS256, []byte(secret), jwt.Expected{Issuer: util.AppName})
 	verifier.Extractors = []jwt.TokenExtractor{jwt.FromHeader} // extract token only from Authorization: Bearer $token
-	return verifier.Verify(func() interface{} {
+	return verifier.Verify(func() any {
 		return new(UserClaims)
 	})
 }

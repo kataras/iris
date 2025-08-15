@@ -144,7 +144,7 @@ func (h httpError) Error() string {
 	return fmt.Sprintf("Status Code: %d\nReason: %s", h.Code, h.Reason)
 }
 
-func fail(ctx iris.Context, statusCode int, format string, a ...interface{}) {
+func fail(ctx iris.Context, statusCode int, format string, a ...any) {
 	reason := "unspecified"
 	if format != "" {
 		reason = fmt.Sprintf(format, a...)

@@ -72,7 +72,7 @@ var _ ContextPool[*emptyContextSetter] = (*syncContextPool[emptyContextSetter, *
 func NewContextPool[T any, contextPtr ContextSetterPtr[T]]() ContextPool[contextPtr] {
 	return &syncContextPool[T, contextPtr]{
 		pool: &sync.Pool{
-			New: func() interface{} {
+			New: func() any {
 				var t contextPtr = new(T)
 				return t
 			},

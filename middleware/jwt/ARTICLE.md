@@ -352,7 +352,7 @@ func main() {
     // You can also register the pre-defined jwt middleware for all protected routes
     // which performs verification automatically and set the custom Claims to the Context
     // for next handlers to use through: claims := jwt.Get(ctx).(*Claims).
-    app.Use(accessVerifier.Verify(func() interface{} {
+    app.Use(accessVerifier.Verify(func() any {
 		return new(Claims)
 	}))
 

@@ -12,7 +12,7 @@ func main() {
 	// Hijack each output value of a method (can be used per-party too).
 	app.ConfigureContainer().
 		UseResultHandler(func(next iris.ResultHandler) iris.ResultHandler {
-			return func(ctx iris.Context, v interface{}) error {
+			return func(ctx iris.Context, v any) error {
 				switch val := v.(type) {
 				case errorResponse:
 					return next(ctx, errorView(val))
@@ -48,7 +48,7 @@ type user struct {
 	ID uint64 `json:"id"`
 }
 
-func (c *controller) GetBy(userid uint64) interface{} {
+func (c *controller) GetBy(userid uint64) any {
 	if userid != 1 {
 		return errorResponse{
 			Code:    iris.StatusNotFound,

@@ -165,7 +165,7 @@ func (s *Sessions) Start(ctx *context.Context, cookieOptions ...context.CookieOp
 	// n := s.provider.db.Len(sid)
 	// fmt.Printf("db.Len(%s) = %d\n", sid, n)
 	// if n > 0 {
-	// 	s.provider.db.Visit(sid, func(key string, value interface{}) {
+	// 	s.provider.db.Visit(sid, func(key string, value any) {
 	// 		fmt.Printf("%s=%s\n", key, value)
 	// 	})
 	// }

@@ -44,7 +44,7 @@ var (
 // Handlebars("./views", ".html") or
 // Handlebars(iris.Dir("./views"), ".html") or
 // Handlebars(embed.FS, ".html") or Handlebars(AssetFile(), ".html") for embedded data.
-func Handlebars(fs interface{}, extension string) *HandlebarsEngine {
+func Handlebars(fs any, extension string) *HandlebarsEngine {
 	s := &HandlebarsEngine{
 		fs:            getFS(fs),
 		rootDir:       "/",
@@ -54,7 +54,7 @@ func Handlebars(fs interface{}, extension string) *HandlebarsEngine {
 	}
 
 	// register the render helper here
-	raymond.RegisterHelper("render", func(partial string, binding interface{}) raymond.SafeString {
+	raymond.RegisterHelper("render", func(partial string, binding any) raymond.SafeString {
 		contents, err := s.executeTemplateBuf(partial, binding)
 		if err != nil {
 			return raymond.SafeString("template with name: " + partial + " couldn't not be found.")
@@ -118,14 +118,14 @@ func (s *HandlebarsEngine) Layout(layoutFile string) *HandlebarsEngine {
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (raymond.HTML, error).
-func (s *HandlebarsEngine) AddFunc(funcName string, funcBody interface{}) {
+func (s *HandlebarsEngine) AddFunc(funcName string, funcBody any) {
 	s.rmu.Lock()
 	s.funcs[funcName] = funcBody
 	s.rmu.Unlock()
 }
 
 // AddGlobalFunc registers a global template function for all Handlebars view engines.
-func (s *HandlebarsEngine) AddGlobalFunc(funcName string, funcBody interface{}) {
+func (s *HandlebarsEngine) AddGlobalFunc(funcName string, funcBody any) {
 	s.rmu.Lock()
 	raymond.RegisterHelper(funcName, funcBody)
 	s.rmu.Unlock()
@@ -203,7 +203,7 @@ func (s *HandlebarsEngine) fromCache(relativeName string) *raymond.Template {
 	return nil
 }
 
-func (s *HandlebarsEngine) executeTemplateBuf(name string, binding interface{}) (string, error) {
+func (s *HandlebarsEngine) executeTemplateBuf(name string, binding any) (string, error) {
 	if tmpl := s.fromCache(name); tmpl != nil {
 		return tmpl.Exec(binding)
 	}
@@ -211,7 +211,7 @@ func (s *HandlebarsEngine) executeTemplateBuf(name string, binding interface{}) 
 }
 
 // ExecuteWriter executes a template and writes its result to the w writer.
-func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
+func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData any) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
 		if err := s.Load(); err != nil {
@@ -231,11 +231,11 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 	if tmpl := s.fromCache(renderFilename); tmpl != nil {
 		binding := bindingData
 		if isLayout {
-			var context map[string]interface{}
-			if m, is := binding.(map[string]interface{}); is { // handlebars accepts maps,
+			var context map[string]any
+			if m, is := binding.(map[string]any); is { // handlebars accepts maps,
 				context = m
 			} else {
-				return fmt.Errorf("please provide a map[string]interface{} type as the binding instead of the %#v", binding)
+				return fmt.Errorf("please provide a map[string]any type as the binding instead of the %#v", binding)
 			}
 
 			contents, err := s.executeTemplateBuf(filename, binding)
@@ -243,7 +243,7 @@ func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout st
 				return err
 			}
 			if context == nil {
-				context = make(map[string]interface{}, 1)
+				context = make(map[string]any, 1)
 			}
 			// I'm implemented the {{ yield . }} as with the rest of template engines, so this is not inneed for iris, but the user can do that manually if want
 			// there is no performance cost: raymond.RegisterPartialTemplate(name, tmpl)

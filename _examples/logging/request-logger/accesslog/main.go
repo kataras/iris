@@ -45,7 +45,7 @@ func makeAccessLog() *accesslog.AccessLog {
 		if sess := sessions.Get(ctx); sess != nil {
 			fields.Set("session_id", sess.ID())
 
-			sess.Visit(func(k string, v interface{}) {
+			sess.Visit(func(k string, v any) {
 				fields.Set(k, v)
 			})
 		}
@@ -130,7 +130,7 @@ func main() {
 }
 
 func readBodyHandler(ctx iris.Context) {
-	var request interface{}
+	var request any
 	if err := ctx.ReadBody(&request); err != nil {
 		ctx.StopWithPlainError(iris.StatusBadRequest, err)
 		return

@@ -38,7 +38,7 @@ func main() {
 		},
 		// The users can be a slice of custom users structure
 		// or a map[string]string (username:password)
-		// or []map[string]interface{} with username and passwords required fields,
+		// or []map[string]any with username and passwords required fields,
 		// read the godocs for more.
 		Allow: basicauth.AllowUsers(users),
 	}

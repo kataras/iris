@@ -66,7 +66,7 @@ func main() {
 
 	protectedAPI := app.Party("/protected")
 	{
-		verifyMiddleware := verifier.Verify(func() interface{} {
+		verifyMiddleware := verifier.Verify(func() any {
 			return new(UserClaims)
 		})
 

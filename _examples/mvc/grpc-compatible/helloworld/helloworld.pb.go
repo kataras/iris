@@ -167,7 +167,7 @@ func file_helloworld_proto_rawDescGZIP() []byte {
 }
 
 var file_helloworld_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_helloworld_proto_goTypes = []interface{}{
+var file_helloworld_proto_goTypes = []any{
 	(*HelloRequest)(nil), // 0: helloworld.HelloRequest
 	(*HelloReply)(nil),   // 1: helloworld.HelloReply
 }
@@ -187,7 +187,7 @@ func file_helloworld_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_helloworld_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_helloworld_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*HelloRequest); i {
 			case 0:
 				return &v.state
@@ -199,7 +199,7 @@ func file_helloworld_proto_init() {
 				return nil
 			}
 		}
-		file_helloworld_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_helloworld_proto_msgTypes[1].Exporter = func(v any, i int) any {
 			switch v := v.(*HelloReply); i {
 			case 0:
 				return &v.state
@@ -283,7 +283,7 @@ func RegisterGreeterServer(s *grpc.Server, srv GreeterServer) {
 	s.RegisterService(&_Greeter_serviceDesc, srv)
 }
 
-func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Greeter_SayHello_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(HelloRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -295,7 +295,7 @@ func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(in
 		Server:     srv,
 		FullMethod: "/helloworld.Greeter/SayHello",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GreeterServer).SayHello(ctx, req.(*HelloRequest))
 	}
 	return interceptor(ctx, in, info, handler)

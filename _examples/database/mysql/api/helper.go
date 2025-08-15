@@ -8,7 +8,7 @@ import (
 
 const debug = true
 
-func debugf(format string, args ...interface{}) {
+func debugf(format string, args ...any) {
 	if !debug {
 		return
 	}

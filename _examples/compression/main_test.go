@@ -55,7 +55,7 @@ func TestCompressionBeforeRecorder(t *testing.T) {
 	testBody(t, e.GET("/"), expectedReply)
 }
 
-func testBody(t *testing.T, req *httptest.Request, expectedReply interface{}) {
+func testBody(t *testing.T, req *httptest.Request, expectedReply any) {
 	t.Helper()
 
 	body := req.WithHeader(context.AcceptEncodingHeaderKey, context.GZIP).Expect().

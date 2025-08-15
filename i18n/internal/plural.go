@@ -42,7 +42,7 @@ func newIndependentPluralRenderer(c *Catalog, loc *Locale, key string, msgs ...c
 	return &independentPluralRenderer{key, printer}, nil
 }
 
-func (m *independentPluralRenderer) Render(args ...interface{}) (string, error) {
+func (m *independentPluralRenderer) Render(args ...any) (string, error) {
 	return m.printer.Sprintf(m.key, args...), nil
 }
 

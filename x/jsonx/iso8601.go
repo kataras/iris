@@ -376,7 +376,7 @@ func (t ISO8601) Value() (driver.Value, error) {
 }
 
 // Scan completes the sql driver.Scanner interface.
-func (t *ISO8601) Scan(src interface{}) error {
+func (t *ISO8601) Scan(src any) error {
 	switch v := src.(type) {
 	case time.Time: // type was set to timestamp
 		if v.IsZero() {

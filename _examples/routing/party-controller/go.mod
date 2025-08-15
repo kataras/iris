@@ -1,6 +1,6 @@
 module github.com/kataras/iris/_examples/routing/party-controller
 
-go 1.24.3
+go 1.25
 
 require github.com/kataras/iris/v12 v12.2.11-0.20250430051100-af9c8213980c
 

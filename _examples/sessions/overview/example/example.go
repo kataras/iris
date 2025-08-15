@@ -27,7 +27,7 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 		}
 
 		ctx.HTML("<ul>")
-		session.Visit(func(key string, value interface{}) {
+		session.Visit(func(key string, value any) {
 			ctx.HTML(fmt.Sprintf("<li> %s = %v </li>", key, value))
 		})
 
@@ -96,7 +96,7 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 		session := sessions.Get(ctx)
 
 		key := ctx.Params().Get("key")
-		var value interface{}
+		var value any
 
 		switch ctx.Params().Get("type") {
 		case "int":

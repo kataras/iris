@@ -67,7 +67,7 @@ func main() {
 			Name   string
 			Age    int
 			Items  []string
-			Map    map[string]interface{}
+			Map    map[string]any
 			Nested book
 		}{
 			"Example Name",

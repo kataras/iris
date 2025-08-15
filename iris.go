@@ -128,7 +128,7 @@ func New() *Application {
 	logger := newLogger(app)
 	app.logger = logger
 	app.APIBuilder = router.NewAPIBuilder(logger)
-	app.ContextPool = context.New(func() interface{} {
+	app.ContextPool = context.New(func() any {
 		return context.NewContext(app)
 	})
 
@@ -339,7 +339,7 @@ func (app *Application) I18nReadOnly() context.I18nReadOnly {
 
 // Validate validates a value and returns nil if passed or
 // the failure reason if does not.
-func (app *Application) Validate(v interface{}) error {
+func (app *Application) Validate(v any) error {
 	if app.Validator == nil {
 		return nil
 	}
@@ -421,7 +421,7 @@ func (app *Application) RegisterView(viewEngine view.Engine) {
 //
 // Use context.View to render templates to the client instead.
 // Returns an error on failure, otherwise nil.
-func (app *Application) View(writer io.Writer, filename string, layout string, bindingData interface{}) error {
+func (app *Application) View(writer io.Writer, filename string, layout string, bindingData any) error {
 	if !app.view.Registered() {
 		err := errors.New("view engine is missing, use `RegisterView`")
 		app.logger.Error(err)
@@ -674,7 +674,7 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 //
 // import "github.com/kataras/iris/v12/core/errgroup"
 //
-//	errgroup.Walk(app.Build(), func(typ interface{}, err error) {
+//	errgroup.Walk(app.Build(), func(typ any, err error) {
 //		app.Logger().Errorf("%s: %s", typ, err)
 //	})
 func (app *Application) Build() error {

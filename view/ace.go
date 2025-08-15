@@ -36,11 +36,11 @@ func (s *AceEngine) SetIndent(indent string) *AceEngine {
 // Ace("./views", ".ace") or
 // Ace(iris.Dir("./views"), ".ace") or
 // Ace(embed.FS, ".ace") or Ace(AssetFile(), ".ace") for embedded data.
-func Ace(fs interface{}, extension string) *AceEngine {
+func Ace(fs any, extension string) *AceEngine {
 	s := &AceEngine{HTMLEngine: HTML(fs, extension), indent: ""}
 	s.name = "Ace"
 
-	funcs := make(map[string]interface{})
+	funcs := make(map[string]any)
 
 	once := new(sync.Once)
 

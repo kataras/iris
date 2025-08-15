@@ -18,7 +18,7 @@ var (
 	Join = errors.Join
 )
 
-func sprintf(format string, args ...interface{}) string {
+func sprintf(format string, args ...any) string {
 	if len(args) > 0 {
 		return fmt.Sprintf(format, args...)
 	}

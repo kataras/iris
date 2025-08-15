@@ -30,8 +30,8 @@ func main() {
 	// * bool, for booleans
 	// * float64, for numbers
 	// * string, for strings
-	// * []interface{}, for arrays
-	// * map[string]interface{}, for objects.
+	// * []any, for arrays
+	// * map[string]any, for objects.
 	// If you want to save the data per go-specific types
 	// you should change the DefaultTranscoder to the GobTranscoder one:
 	// sessions.DefaultTranscoder = sessions.GobTranscoder{}

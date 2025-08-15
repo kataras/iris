@@ -16,7 +16,7 @@ func init() {
 type options struct {
 	getters                      []GetterFunc
 	methods                      []string
-	saveOriginalMethodContextKey interface{} // if not nil original value will be saved.
+	saveOriginalMethodContextKey any // if not nil original value will be saved.
 }
 
 func (o *options) configure(opts ...Option) {
@@ -65,7 +65,7 @@ func Methods(methods ...string) Option {
 // on Context.Request().Context().Value(requestContextKey).
 //
 // Defaults to nil, don't save it.
-func SaveOriginalMethod(requestContextKey interface{}) Option {
+func SaveOriginalMethod(requestContextKey any) Option {
 	return func(opts *options) {
 		if requestContextKey == nil {
 			opts.saveOriginalMethodContextKey = nil

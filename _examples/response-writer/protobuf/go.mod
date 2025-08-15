@@ -1,6 +1,6 @@
 module app
 
-go 1.24.3
+go 1.25
 
 require (
 	github.com/golang/protobuf v1.5.3

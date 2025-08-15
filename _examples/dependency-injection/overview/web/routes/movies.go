@@ -47,7 +47,7 @@ func UpdateMovieByID(ctx iris.Context, service services.MovieService, id uint64)
 // DeleteMovieByID deletes a movie.
 // Demo:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
-func DeleteMovieByID(service services.MovieService, id uint64) interface{} {
+func DeleteMovieByID(service services.MovieService, id uint64) any {
 	wasDel := service.DeleteByID(id)
 	if wasDel {
 		// return the deleted movie's ID

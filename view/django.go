@@ -101,7 +101,7 @@ type DjangoEngine struct {
 	// filters for pongo2, map[name of the filter] the filter function . The filters are auto register
 	filters map[string]FilterFunction
 	// globals share context fields between templates.
-	globals       map[string]interface{}
+	globals       map[string]any
 	Set           *pongo2.TemplateSet
 	templateCache map[string]*pongo2.Template
 }
@@ -118,12 +118,12 @@ var (
 // Django("./views", ".html") or
 // Django(iris.Dir("./views"), ".html") or
 // Django(embed.FS, ".html") or Django(AssetFile(), ".html") for embedded data.
-func Django(fs interface{}, extension string) *DjangoEngine {
+func Django(fs any, extension string) *DjangoEngine {
 	s := &DjangoEngine{
 		fs:            getFS(fs),
 		rootDir:       "/",
 		extension:     extension,
-		globals:       make(map[string]interface{}),
+		globals:       make(map[string]any),
 		filters:       make(map[string]FilterFunction),
 		templateCache: make(map[string]*pongo2.Template),
 	}
@@ -175,7 +175,7 @@ func (s *DjangoEngine) Reload(developmentMode bool) *DjangoEngine {
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (template.HTML, error).
-func (s *DjangoEngine) AddFunc(funcName string, funcBody interface{}) {
+func (s *DjangoEngine) AddFunc(funcName string, funcBody any) {
 	s.rmu.Lock()
 	s.globals[funcName] = funcBody
 	s.rmu.Unlock()
@@ -282,8 +282,8 @@ func (s *DjangoEngine) initSet() { // protected by the caller.
 	}
 }
 
-// getPongoContext returns the pongo2.Context from map[string]interface{} or from pongo2.Context, used internaly
-func getPongoContext(templateData interface{}) pongo2.Context {
+// getPongoContext returns the pongo2.Context from map[string]any or from pongo2.Context, used internaly
+func getPongoContext(templateData any) pongo2.Context {
 	if templateData == nil {
 		return nil
 	}
@@ -294,7 +294,7 @@ func getPongoContext(templateData interface{}) pongo2.Context {
 	case context.Map:
 		return pongo2.Context(data)
 	default:
-		// if struct, convert it to map[string]interface{}
+		// if struct, convert it to map[string]any
 		if structs.IsStruct(data) {
 			return pongo2.Context(structs.Map(data))
 		}
@@ -317,7 +317,7 @@ func (s *DjangoEngine) fromCache(relativeName string) *pongo2.Template {
 
 // ExecuteWriter executes a templates and write its results to the w writer
 // layout here is useless.
-func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, _ string, bindingData interface{}) error {
+func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, _ string, bindingData any) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
 		if err := s.Load(); err != nil {

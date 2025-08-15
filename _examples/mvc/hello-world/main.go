@@ -87,14 +87,14 @@ func (c *ExampleController) GetPing() string {
 // GetHello serves
 // Method:   GET
 // Resource: http://localhost:8080/hello
-func (c *ExampleController) GetHello() interface{} {
+func (c *ExampleController) GetHello() any {
 	return map[string]string{"message": "Hello Iris!"}
 }
 
 // GetHelloWorld serves
 // Method:   GET
 // Resource: http://localhost:8080/hello/world
-func (c *ExampleController) GetHelloWorld() interface{} {
+func (c *ExampleController) GetHelloWorld() any {
 	return map[string]string{"message": "Hello Iris! DefaultPath"}
 }
 
@@ -128,7 +128,7 @@ type ExampleControllerCustomPath struct{}
 // GetHelloWorld serves
 // Method:   GET
 // Resource: http://localhost:8080/helloWorld
-func (c *ExampleControllerCustomPath) GetHelloWorld() interface{} {
+func (c *ExampleControllerCustomPath) GetHelloWorld() any {
 	return map[string]string{"message": "Hello Iris! CustomPath"}
 }
 

@@ -25,7 +25,7 @@ const (
 )
 
 func testSessions(t *testing.T, app *iris.Application) {
-	values := map[string]interface{}{
+	values := map[string]any{
 		"Name":   "iris",
 		"Months": "4",
 		"Secret": "dsads£2132215£%%Ssdsa",
@@ -47,7 +47,7 @@ func testSessions(t *testing.T, app *iris.Application) {
 
 	app.Post("/set", func(ctx *context.Context) {
 		s := sessions.Get(ctx)
-		vals := make(map[string]interface{})
+		vals := make(map[string]any)
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot read JSON. Trace %s", err.Error())
 		}
@@ -134,18 +134,18 @@ func TestFlashMessages(t *testing.T) {
 	valueSingleKey := "Name"
 	valueSingleValue := "iris-sessions"
 
-	values := map[string]interface{}{
+	values := map[string]any{
 		valueSingleKey: valueSingleValue,
 		"Days":         "1",
 		"Secret":       "dsads£2132215£%%Ssdsa",
 	}
 
-	writeValues := func(ctx *context.Context, values map[string]interface{}) error {
+	writeValues := func(ctx *context.Context, values map[string]any) error {
 		return ctx.JSON(values)
 	}
 
 	app.Post("/set", func(ctx *context.Context) {
-		vals := make(map[string]interface{})
+		vals := make(map[string]any)
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot readjson. Trace %s", err.Error())
 		}

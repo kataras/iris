@@ -15,7 +15,7 @@ const (
 )
 
 // Get returns the claims decoded by a verifier.
-func Get(ctx *context.Context) interface{} {
+func Get(ctx *context.Context) any {
 	if v := ctx.Values().Get(claimsContextKey); v != nil {
 		return v
 	}
@@ -42,7 +42,7 @@ func GetVerifiedToken(ctx *context.Context) *VerifiedToken {
 // It does not support JWE, JWK.
 type Verifier struct {
 	Alg Alg
-	Key interface{}
+	Key any
 
 	Decrypt func([]byte) ([]byte, error)
 
@@ -67,7 +67,7 @@ type Verifier struct {
 //
 //	verifier := NewVerifier(HS256, secret, Expected{Issuer: "my-app"})
 //
-//	claimsGetter := func() interface{} { return new(userClaims) }
+//	claimsGetter := func() any { return new(userClaims) }
 //	middleware := verifier.Verify(claimsGetter)
 //
 // OR
@@ -86,7 +86,7 @@ type Verifier struct {
 // Get the context user:
 //
 //	username, err := ctx.User().GetUsername()
-func NewVerifier(signatureAlg Alg, signatureKey interface{}, validators ...TokenValidator) *Verifier {
+func NewVerifier(signatureAlg Alg, signatureKey any, validators ...TokenValidator) *Verifier {
 	if signatureAlg == HS256 {
 		// A tiny helper if the end-developer uses string instead of []byte for hmac keys.
 		if k, ok := signatureKey.(string); ok {
@@ -183,7 +183,7 @@ func (v *Verifier) VerifyToken(token []byte, validators ...TokenValidator) (*Ver
 //
 // If the "claimsType" is nil then only the jwt.GetVerifiedToken is available
 // and the handler should unmarshal the payload to extract the claims by itself.
-func (v *Verifier) Verify(claimsType func() interface{}, validators ...TokenValidator) context.Handler {
+func (v *Verifier) Verify(claimsType func() any, validators ...TokenValidator) context.Handler {
 	unmarshal := jwt.Unmarshal
 	if claimsType != nil {
 		c := claimsType()
@@ -252,7 +252,7 @@ func (v *Verifier) Verify(claimsType func() interface{}, validators ...TokenVali
 	}
 }
 
-func hasRequired(i interface{}) bool {
+func hasRequired(i any) bool {
 	val := reflect.Indirect(reflect.ValueOf(i))
 	typ := val.Type()
 	if typ.Kind() != reflect.Struct {

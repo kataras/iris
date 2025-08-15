@@ -89,7 +89,7 @@ func (p *ParamParser) Reset(src string) {
 	p.errors = []string{}
 }
 
-func (p *ParamParser) appendErr(format string, a ...interface{}) {
+func (p *ParamParser) appendErr(format string, a ...any) {
 	p.errors = append(p.errors, fmt.Sprintf(format, a...))
 }
 

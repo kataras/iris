@@ -78,7 +78,7 @@ func profileHandler(ctx iris.Context) {
 }
 
 func readBodyHandler(ctx iris.Context) {
-	var request interface{}
+	var request any
 	if err := ctx.ReadBody(&request); err != nil {
 		ctx.StopWithPlainError(iris.StatusBadRequest, err)
 		return

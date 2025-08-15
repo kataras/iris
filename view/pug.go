@@ -24,7 +24,7 @@ import (
 // https://github.com/kataras/iris/tree/main/_examples/view/template_pug_1
 // https://github.com/kataras/iris/tree/main/_examples/view/template_pug_2
 // https://github.com/kataras/iris/tree/main/_examples/view/template_pug_3
-func Pug(fs interface{}, extension string) *HTMLEngine {
+func Pug(fs any, extension string) *HTMLEngine {
 	s := HTML(fs, extension)
 	s.name = "Pug"
 	s.middleware = func(name string, text []byte) (contents string, err error) {

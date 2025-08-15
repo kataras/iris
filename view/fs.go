@@ -59,7 +59,7 @@ func asset(fileSystem fs.FS, name string) ([]byte, error) {
 	return data, nil
 }
 
-func getFS(fsOrDir interface{}) fs.FS {
+func getFS(fsOrDir any) fs.FS {
 	return context.ResolveFS(fsOrDir)
 }
 

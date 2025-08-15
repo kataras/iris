@@ -69,7 +69,7 @@ type Config struct {
 	// LogFunc is the writer which logs are written to,
 	// if missing the logger middleware uses the app.Logger().Infof instead.
 	// Note that message argument can be empty.
-	LogFunc func(endTime time.Time, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{})
+	LogFunc func(endTime time.Time, latency time.Duration, status, ip, method, path string, message any, headerMessage any)
 	// LogFuncCtx can be used instead of `LogFunc` if handlers need to customize the output based on
 	// custom request-time information that the LogFunc isn't aware of.
 	LogFuncCtx func(ctx *context.Context, latency time.Duration)

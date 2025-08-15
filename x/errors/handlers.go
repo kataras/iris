@@ -64,7 +64,7 @@ func Handle(ctx *context.Context, resp any, err error) bool {
 }
 
 // checkNaN checks if any exported field in the struct is NaN and returns an error if it is.
-func checkNaN(v interface{}) error {
+func checkNaN(v any) error {
 	val := reflect.ValueOf(v)
 	return checkNaNRecursive(val, val.Type().Name())
 }

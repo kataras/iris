@@ -366,7 +366,7 @@ func (i *I18n) TryMatchString(s string) (language.Tag, int, bool) {
 //
 // It returns an empty string if "lang" not matched, unless DefaultMessageFunc.
 // It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
-func (i *I18n) Tr(lang, key string, args ...interface{}) string {
+func (i *I18n) Tr(lang, key string, args ...any) string {
 	_, index, ok := i.TryMatchString(lang)
 	if !ok {
 		index = 0
@@ -378,13 +378,13 @@ func (i *I18n) Tr(lang, key string, args ...interface{}) string {
 // TrContext returns the localized text message for this Context.
 // It returns an empty string if context's locale not matched, unless DefaultMessageFunc.
 // It returns the default language's translation if "key" not matched, unless DefaultMessageFunc.
-func (i *I18n) TrContext(ctx *context.Context, key string, args ...interface{}) string {
+func (i *I18n) TrContext(ctx *context.Context, key string, args ...any) string {
 	loc := ctx.GetLocale()
 	langInput := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetLanguageInputContextKey())
 	return i.getLocaleMessage(loc, langInput, key, args...)
 }
 
-func (i *I18n) getLocaleMessage(loc context.Locale, langInput string, key string, args ...interface{}) (msg string) {
+func (i *I18n) getLocaleMessage(loc context.Locale, langInput string, key string, args ...any) (msg string) {
 	langMatched := ""
 
 	if loc != nil {
