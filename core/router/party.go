@@ -33,7 +33,7 @@ type Party interface {
 	EnsureStaticBindings() Party
 	// RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
 	// with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
-	RegisterDependency(dependencies ...interface{})
+	RegisterDependency(dependencies ...any)
 	// HandleFunc registers a route on HTTP verb "method" and relative, to this Party, path.
 	// It is like the `Handle` method but it accepts one or more "handlersFn" functions
 	// that each one of them can accept any input arguments as the HTTP request and
@@ -103,13 +103,13 @@ type Party interface {
 	// the dependency injection, mvc and function handlers.
 	//
 	// This method is just a shortcut for the `ConfigureContainer().Handle` one.
-	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+	HandleFunc(method, relativePath string, handlersFn ...any) *Route
 	// UseFunc registers a function which can accept one or more
 	// dependencies (see RegisterDependency) and returns an iris.Handler
 	// or a result of <T> and/or an error.
 	//
 	// This method is just a shortcut of the `ConfigureContainer().Use`.
-	UseFunc(handlersFn ...interface{})
+	UseFunc(handlersFn ...any)
 
 	// GetRelPath returns the current party's relative path.
 	// i.e:
@@ -245,7 +245,7 @@ type Party interface {
 	// Returns the Party itself for chain calls.
 	//
 	// Should be called before children routes regitration.
-	RemoveHandler(namesOrHandlers ...interface{}) Party
+	RemoveHandler(namesOrHandlers ...any) Party
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 	// and the execution rules.
 	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
@@ -338,7 +338,7 @@ type Party interface {
 	//
 	// Examples:
 	// https://github.com/kataras/iris/tree/main/_examples/file-server
-	HandleDir(requestPath string, fileSystem interface{}, opts ...DirOptions) []*Route
+	HandleDir(requestPath string, fileSystem any, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and

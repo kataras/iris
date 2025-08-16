@@ -150,7 +150,7 @@ func TestJSON(t *testing.T) {
 		expected, got := p.Get(v.Key), v.ValueRaw
 
 		if ex, g := fmt.Sprintf("%v", expected), fmt.Sprintf("%v", got); ex != g {
-			if _, isMap := got.(map[string]interface{}); isMap {
+			if _, isMap := got.(map[string]any); isMap {
 				// was struct but converted into map (as expected).
 				b1, _ := json.Marshal(expected)
 				b2, _ := json.Marshal(got)

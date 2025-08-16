@@ -84,7 +84,7 @@ type (
 	// Unmarshaler is the interface implemented by types that can unmarshal any raw data.
 	// TIP INFO: Any pointer to a value which implements the BodyDecoder can be override the unmarshaler.
 	Unmarshaler interface {
-		Unmarshal(data []byte, outPtr interface{}) error
+		Unmarshal(data []byte, outPtr any) error
 	}
 
 	// UnmarshalerFunc a shortcut for the Unmarshaler interface
@@ -92,20 +92,20 @@ type (
 	// See 'Unmarshaler' and 'BodyDecoder' for more.
 	//
 	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-via-unmarshaler/main.go
-	UnmarshalerFunc func(data []byte, outPtr interface{}) error
+	UnmarshalerFunc func(data []byte, outPtr any) error
 
 	// DecodeFunc is a generic type of decoder function.
 	// When the returned error is not nil the decode operation
 	// is terminated and the error is received by the ReadJSONStream method,
 	// otherwise it continues to read the next available object.
 	// Look the `Context.ReadJSONStream` method.
-	DecodeFunc func(outPtr interface{}) error
+	DecodeFunc func(outPtr any) error
 )
 
 // Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
 // Unmarshal uses the inverse of the encodings that Marshal uses, allocating maps,
 // slices, and pointers as necessary.
-func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
+func (u UnmarshalerFunc) Unmarshal(data []byte, v any) error {
 	return u(data, v)
 }
 
@@ -118,8 +118,8 @@ var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 	}
 }
 
-// Map is just a type alias of the map[string]interface{} type.
-type Map = map[string]interface{}
+// Map is just a type alias of the map[string]any type.
+type Map = map[string]any
 
 // Context is the midle-man server's "object" dealing with incoming requests.
 //
@@ -433,7 +433,7 @@ type goroutines struct {
 	mu     sync.RWMutex
 }
 
-var acquireGoroutines = func() interface{} {
+var acquireGoroutines = func() any {
 	return &goroutines{wg: new(sync.WaitGroup)}
 }
 
@@ -840,7 +840,7 @@ func (ctx *Context) StopWithPlainError(statusCode int, err error) {
 //
 // If the status code is a failure one then
 // it will also fire the specified error code handler.
-func (ctx *Context) StopWithJSON(statusCode int, jsonObject interface{}) error {
+func (ctx *Context) StopWithJSON(statusCode int, jsonObject any) error {
 	ctx.StopWithStatus(statusCode)
 	return ctx.writeJSON(jsonObject, &DefaultJSONOptions) // do not modify - see errors.DefaultContextErrorHandler.
 }
@@ -1359,7 +1359,7 @@ func (ctx *Context) GetLocale() Locale {
 // See `GetLocale` too.
 //
 // Example: https://github.com/kataras/iris/tree/main/_examples/i18n
-func (ctx *Context) Tr(key string, args ...interface{}) string {
+func (ctx *Context) Tr(key string, args ...any) string {
 	return ctx.app.I18nReadOnly().TrContext(ctx, key, args...)
 }
 
@@ -2692,17 +2692,17 @@ func (ctx *Context) GetBody() ([]byte, error) {
 // Validator is the validator for request body on Context methods such as
 // ReadJSON, ReadMsgPack, ReadXML, ReadYAML, ReadForm, ReadQuery, ReadBody and e.t.c.
 type Validator interface {
-	Struct(interface{}) error
+	Struct(any) error
 	// If community asks for more than a struct validation on JSON, XML, MsgPack, Form, Query and e.t.c
 	// then we should add more methods here, alternative approach would be to have a
-	// `Validator:Validate(interface{}) error` and a map[reflect.Kind]Validator instead.
+	// `Validator:Validate(any) error` and a map[reflect.Kind]Validator instead.
 }
 
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-via-unmarshaler/main.go
-func (ctx *Context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error {
+func (ctx *Context) UnmarshalBody(outPtr any, unmarshaler Unmarshaler) error {
 	if ctx.request.Body == nil {
 		return fmt.Errorf("unmarshal: empty body: %w", ErrNotFound)
 	}
@@ -2766,7 +2766,7 @@ type JSONReader struct { // Note(@kataras): struct instead of optional funcs to 
 	ArrayStream bool
 }
 
-var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error {
+var ReadJSON = func(ctx *Context, outPtr any, opts ...JSONReader) error {
 	var body io.Reader
 
 	if ctx.IsRecordingBody() {
@@ -2800,7 +2800,7 @@ var ReadJSON = func(ctx *Context, outPtr interface{}, opts ...JSONReader) error 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-json/main.go
-func (ctx *Context) ReadJSON(outPtr interface{}, opts ...JSONReader) error {
+func (ctx *Context) ReadJSON(outPtr any, opts ...JSONReader) error {
 	return ReadJSON(ctx, outPtr, opts...)
 }
 
@@ -2846,14 +2846,14 @@ func (ctx *Context) ReadJSONStream(onDecode func(DecodeFunc) error, opts ...JSON
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-xml/main.go
-func (ctx *Context) ReadXML(outPtr interface{}) error {
+func (ctx *Context) ReadXML(outPtr any) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(xml.Unmarshal))
 }
 
 // ReadYAML reads YAML from request's body and binds it to the "outPtr" value.
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-yaml/main.go
-func (ctx *Context) ReadYAML(outPtr interface{}) error {
+func (ctx *Context) ReadYAML(outPtr any) error {
 	return ctx.UnmarshalBody(outPtr, UnmarshalerFunc(yaml.Unmarshal))
 }
 
@@ -2967,7 +2967,7 @@ const CSRFTokenFormKey = "csrf.token"
 // to change this behavior globally, set the `context.CSRFTokenFormKey` to an empty value.
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-form/main.go
-func (ctx *Context) ReadForm(formObject interface{}) error {
+func (ctx *Context) ReadForm(formObject any) error {
 	values := ctx.FormValues()
 	if len(values) == 0 {
 		if ctx.app.ConfigurationReadOnly().GetFireEmptyFormError() {
@@ -3124,7 +3124,7 @@ func distinctStrings(values []string) []string {
 // ReadQuery binds URL Query to "ptr". The struct field tag is "url".
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-query/main.go
-func (ctx *Context) ReadQuery(ptr interface{}) error {
+func (ctx *Context) ReadQuery(ptr any) error {
 	values := ctx.getQuery()
 	if len(values) == 0 {
 		if ctx.app.ConfigurationReadOnly().GetFireEmptyFormError() {
@@ -3144,7 +3144,7 @@ func (ctx *Context) ReadQuery(ptr interface{}) error {
 // ReadHeaders binds request headers to "ptr". The struct field tag is "header".
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-headers/main.go
-func (ctx *Context) ReadHeaders(ptr interface{}) error {
+func (ctx *Context) ReadHeaders(ptr any) error {
 	err := schema.DecodeHeaders(ctx.request.Header, ptr)
 	if err != nil {
 		return err
@@ -3156,7 +3156,7 @@ func (ctx *Context) ReadHeaders(ptr interface{}) error {
 // ReadParams binds URI Dynamic Path Parameters to "ptr". The struct field tag is "param".
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-params/main.go
-func (ctx *Context) ReadParams(ptr interface{}) error {
+func (ctx *Context) ReadParams(ptr any) error {
 	n := ctx.params.Len()
 	if n == 0 {
 		return nil
@@ -3183,7 +3183,7 @@ func (ctx *Context) ReadParams(ptr interface{}) error {
 // to the "ptr" pointer struct value.
 // The struct fields may contain "url" or "param" binding tags.
 // If a validator exists then it validates the result too.
-func (ctx *Context) ReadURL(ptr interface{}) error {
+func (ctx *Context) ReadURL(ptr any) error {
 	values := make(map[string][]string, ctx.params.Len())
 	ctx.params.Visit(func(key string, value string) {
 		values[key] = strings.Split(value, "/")
@@ -3235,7 +3235,7 @@ func (ctx *Context) ReadJSONProtobuf(ptr proto.Message, opts ...ProtoUnmarshalOp
 }
 
 // ReadMsgPack binds the request body of msgpack format to the "ptr" and returns any error.
-func (ctx *Context) ReadMsgPack(ptr interface{}) error {
+func (ctx *Context) ReadMsgPack(ptr any) error {
 	rawData, err := ctx.GetBody()
 	if err != nil {
 		return err
@@ -3255,7 +3255,7 @@ func (ctx *Context) ReadMsgPack(ptr interface{}) error {
 // JSON, Protobuf, MsgPack, XML, YAML, MultipartForm and binds the result to the "ptr".
 // As a special case if the "ptr" was a pointer to string or []byte
 // then it will bind it to the request body as it is.
-func (ctx *Context) ReadBody(ptr interface{}) error {
+func (ctx *Context) ReadBody(ptr any) error {
 	// If the ptr is string or byte, read the body as it's.
 	switch v := ptr.(type) {
 	case *string:
@@ -3353,7 +3353,7 @@ func (ctx *Context) Write(rawBody []byte) (int, error) {
 // Writef formats according to a format specifier and writes to the response.
 //
 // Returns the number of bytes written and any write error encountered.
-func (ctx *Context) Writef(format string, a ...interface{}) (n int, err error) {
+func (ctx *Context) Writef(format string, a ...any) (n int, err error) {
 	/* if len(a) == 0 {
 	 	return ctx.WriteString(format)
 	} ^ No, let it complain about arguments, because go test will do even if the app is running.
@@ -3738,7 +3738,7 @@ func (ctx *Context) ViewLayout(layoutTmplFile string) {
 // Look .ViewLayout and .View too.
 //
 // Example: https://github.com/kataras/iris/tree/main/_examples/view/context-view-data/
-func (ctx *Context) ViewData(key string, value interface{}) {
+func (ctx *Context) ViewData(key string, value any) {
 	viewDataContextKey := ctx.app.ConfigurationReadOnly().GetViewDataContextKey()
 	if key == "" {
 		ctx.values.Set(viewDataContextKey, value)
@@ -3757,7 +3757,7 @@ func (ctx *Context) ViewData(key string, value interface{}) {
 }
 
 // GetViewData returns the values registered by `context#ViewData`.
-// The return value is `map[string]interface{}`, this means that
+// The return value is `map[string]any`, this means that
 // if a custom struct registered to ViewData then this function
 // will try to parse it to map, if failed then the return value is nil
 // A check for nil is always a good practise if different
@@ -3765,14 +3765,14 @@ func (ctx *Context) ViewData(key string, value interface{}) {
 //
 // Similarly to `viewData := ctx.Values().Get("iris.view.data")` or
 // `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
-func (ctx *Context) GetViewData() map[string]interface{} {
+func (ctx *Context) GetViewData() map[string]any {
 	if v := ctx.values.Get(ctx.app.ConfigurationReadOnly().GetViewDataContextKey()); v != nil {
-		// if pure map[string]interface{}
+		// if pure map[string]any
 		if viewData, ok := v.(Map); ok {
 			return viewData
 		}
 
-		// if struct, convert it to map[string]interface{}
+		// if struct, convert it to map[string]any
 		if structs.IsStruct(v) {
 			return structs.Map(v)
 		}
@@ -3936,7 +3936,7 @@ func (ctx *Context) FallbackView(providers ...FallbackViewProvider) {
 // Look .ViewData and .ViewLayout too.
 //
 // Examples: https://github.com/kataras/iris/tree/main/_examples/view
-func (ctx *Context) View(filename string, optionalViewModel ...interface{}) error {
+func (ctx *Context) View(filename string, optionalViewModel ...any) error {
 	ctx.ContentType(ContentHTMLHeaderValue)
 
 	err := ctx.renderView(filename, optionalViewModel...)
@@ -3959,11 +3959,11 @@ func (ctx *Context) View(filename string, optionalViewModel ...interface{}) erro
 	return err
 }
 
-func (ctx *Context) renderView(filename string, optionalViewModel ...interface{}) error {
+func (ctx *Context) renderView(filename string, optionalViewModel ...any) error {
 	cfg := ctx.app.ConfigurationReadOnly()
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
 
-	var bindingData interface{}
+	var bindingData any
 	if len(optionalViewModel) > 0 /* Don't do it: can break a lot of servers: && optionalViewModel[0] != nil */ {
 		// a nil can override the existing data or model sent by `ViewData`.
 		bindingData = optionalViewModel[0]
@@ -4124,7 +4124,7 @@ var (
 	secureJSONPrefix = []byte("while(1);")
 )
 
-func (ctx *Context) handleSpecialJSONResponseValue(v interface{}, options *JSON) (bool, int, error) {
+func (ctx *Context) handleSpecialJSONResponseValue(v any, options *JSON) (bool, int, error) {
 	if ctx.app.ConfigurationReadOnly().GetEnableProtoJSON() {
 		if m, ok := v.(proto.Message); ok {
 			protoJSON := ProtoMarshalOptions{}
@@ -4160,7 +4160,7 @@ func (ctx *Context) handleSpecialJSONResponseValue(v interface{}, options *JSON)
 }
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
-var WriteJSON = func(ctx *Context, v interface{}, options *JSON) error {
+var WriteJSON = func(ctx *Context, v any, options *JSON) error {
 	if !options.Secure && !options.ASCII && options.Prefix == "" {
 		// jsoniterConfig := jsoniter.Config{
 		// 	EscapeHTML:    !options.UnescapeHTML,
@@ -4343,7 +4343,7 @@ func (ctx *Context) RenderComponent(component Component) error {
 //
 // Customize the behavior of every `Context.JSON“ can be achieved
 // by modifying the package-level `WriteJSON` function on program initilization.
-func (ctx *Context) JSON(v interface{}, opts ...JSON) (err error) {
+func (ctx *Context) JSON(v any, opts ...JSON) (err error) {
 	var options *JSON
 	if len(opts) > 0 {
 		options = &opts[0]
@@ -4363,7 +4363,7 @@ func (ctx *Context) JSON(v interface{}, opts ...JSON) (err error) {
 	return
 }
 
-func (ctx *Context) writeJSON(v interface{}, options *JSON) error {
+func (ctx *Context) writeJSON(v any, options *JSON) error {
 	ctx.ContentType(ContentJSONHeaderValue)
 
 	// After content type given and before everything else, try handle proto or easyjson, no matter the performance mode.
@@ -4377,7 +4377,7 @@ func (ctx *Context) writeJSON(v interface{}, options *JSON) error {
 var finishCallbackB = []byte(");")
 
 // WriteJSONP marshals the given interface object and writes the JSONP response to the writer.
-var WriteJSONP = func(ctx *Context, v interface{}, options *JSONP) (err error) {
+var WriteJSONP = func(ctx *Context, v any, options *JSONP) (err error) {
 	if callback := options.Callback; callback != "" {
 		_, err = ctx.Write(stringToBytes(callback + "("))
 		if err != nil {
@@ -4406,7 +4406,7 @@ var DefaultJSONPOptions = JSONP{}
 // It reports any JSON parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (err error) {
+func (ctx *Context) JSONP(v any, opts ...JSONP) (err error) {
 	var options *JSONP
 	if len(opts) > 0 {
 		options = &opts[0]
@@ -4426,13 +4426,13 @@ func (ctx *Context) JSONP(v interface{}, opts ...JSONP) (err error) {
 
 type xmlMapEntry struct {
 	XMLName xml.Name
-	Value   interface{} `xml:",chardata"`
+	Value   any `xml:",chardata"`
 }
 
-// XMLMap wraps a map[string]interface{} to compatible xml marshaler,
+// XMLMap wraps a map[string]any to compatible xml marshaler,
 // in order to be able to render maps as XML on the `Context.XML` method.
 //
-// Example: `Context.XML(XMLMap("Root", map[string]interface{}{...})`.
+// Example: `Context.XML(XMLMap("Root", map[string]any{...})`.
 func XMLMap(elementName string, v Map) xml.Marshaler {
 	return xmlMap{
 		entries:     v,
@@ -4468,7 +4468,7 @@ func (m xmlMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 }
 
 // WriteXML marshals the given interface object and writes the XML response to the writer.
-var WriteXML = func(ctx *Context, v interface{}, options *XML) error {
+var WriteXML = func(ctx *Context, v any, options *XML) error {
 	if prefix := options.Prefix; prefix != "" {
 		_, err := ctx.Write(stringToBytes(prefix))
 		if err != nil {
@@ -4495,7 +4495,7 @@ var DefaultXMLOptions = XML{}
 // It reports any XML parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) XML(v interface{}, opts ...XML) (err error) {
+func (ctx *Context) XML(v any, opts ...XML) (err error) {
 	var options *XML
 	if len(opts) > 0 {
 		options = &opts[0]
@@ -4524,7 +4524,7 @@ func (ctx *Context) XML(v interface{}, opts ...XML) (err error) {
 // send a response of content type "application/problem+xml" instead.
 //
 // Read more at: https://github.com/kataras/iris/blob/main/_examples/routing/http-errors.
-func (ctx *Context) Problem(v interface{}, opts ...ProblemOptions) error {
+func (ctx *Context) Problem(v any, opts ...ProblemOptions) error {
 	options := DefaultProblemOptions
 	if len(opts) > 0 {
 		options = opts[0]
@@ -4605,7 +4605,7 @@ func (ctx *Context) Markdown(markdownB []byte, opts ...Markdown) (err error) {
 }
 
 // WriteYAML sends YAML response to the client.
-var WriteYAML = func(ctx *Context, v interface{}, indentSpace int) error {
+var WriteYAML = func(ctx *Context, v any, indentSpace int) error {
 	encoder := yaml.NewEncoder(ctx.writer)
 	encoder.SetIndent(indentSpace)
 
@@ -4621,7 +4621,7 @@ var WriteYAML = func(ctx *Context, v interface{}, indentSpace int) error {
 // It reports any YAML parser or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) YAML(v interface{}) error {
+func (ctx *Context) YAML(v any) error {
 	ctx.ContentType(ContentYAMLHeaderValue)
 
 	err := WriteYAML(ctx, v, 0)
@@ -4634,7 +4634,7 @@ func (ctx *Context) YAML(v interface{}) error {
 }
 
 // TextYAML calls the Context.YAML method but with the text/yaml content type instead.
-func (ctx *Context) TextYAML(v interface{}) error {
+func (ctx *Context) TextYAML(v any) error {
 	ctx.ContentType(ContentYAMLTextHeaderValue)
 
 	err := WriteYAML(ctx, v, 4)
@@ -4672,7 +4672,7 @@ func (ctx *Context) Protobuf(v proto.Message) (int, error) {
 // It reports any message pack or write errors back to the caller.
 // Look the Application.SetContextErrorHandler to override the
 // default status code 500 with a custom error response.
-func (ctx *Context) MsgPack(v interface{}) (int, error) {
+func (ctx *Context) MsgPack(v any) (int, error) {
 	out, err := msgpack.Marshal(v)
 	if err != nil {
 		ctx.handleContextError(err)
@@ -4702,7 +4702,7 @@ var ErrContentNotSupported = errors.New("unsupported content")
 //
 // See the `N` struct too.
 type ContentSelector interface {
-	SelectContent(mime string) interface{}
+	SelectContent(mime string) any
 }
 
 // ContentNegotiator is the interface which structs can implement
@@ -4732,13 +4732,13 @@ type N struct {
 	Markdown   []byte
 	Binary     []byte
 
-	JSON     interface{}
+	JSON     any
 	Problem  Problem
-	JSONP    interface{}
-	XML      interface{}
-	YAML     interface{}
-	Protobuf interface{}
-	MsgPack  interface{}
+	JSONP    any
+	XML      any
+	YAML     any
+	Protobuf any
+	MsgPack  any
 
 	Other []byte // custom content types.
 }
@@ -4746,7 +4746,7 @@ type N struct {
 var _ ContentSelector = N{}
 
 // SelectContent returns a content based on the matched negotiated "mime".
-func (n N) SelectContent(mime string) interface{} {
+func (n N) SelectContent(mime string) any {
 	switch mime {
 	case ContentTextHeaderValue:
 		return n.Text
@@ -4842,7 +4842,7 @@ func parseHeader(headerValue string) []string {
 // Supports the above without quality values.
 //
 // Read more at: https://github.com/kataras/iris/tree/main/_examples/response-writer/content-negotiation
-func (ctx *Context) Negotiate(v interface{}) (int, error) {
+func (ctx *Context) Negotiate(v any) (int, error) {
 	contentType, charset, encoding, content := ctx.Negotiation().Build()
 	if v == nil {
 		v = content
@@ -4977,8 +4977,8 @@ func (ctx *Context) Negotiate(v interface{}) (int, error) {
 type NegotiationBuilder struct {
 	Accept NegotiationAcceptBuilder
 
-	mime     []string               // we need order.
-	contents map[string]interface{} // map to the "mime" and content should be rendered if that mime requested.
+	mime     []string       // we need order.
+	contents map[string]any // map to the "mime" and content should be rendered if that mime requested.
 	charset  []string
 	encoding []string
 }
@@ -4987,7 +4987,7 @@ type NegotiationBuilder struct {
 // through `Context.Negotiate` when this mime type is accepted by client.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) MIME(mime string, content interface{}) *NegotiationBuilder {
+func (n *NegotiationBuilder) MIME(mime string, content any) *NegotiationBuilder {
 	mimes := parseHeader(mime) // if contains more than one sep by commas ",".
 	if content == nil {
 		n.mime = append(n.mime, mimes...)
@@ -4995,7 +4995,7 @@ func (n *NegotiationBuilder) MIME(mime string, content interface{}) *Negotiation
 	}
 
 	if n.contents == nil {
-		n.contents = make(map[string]interface{})
+		n.contents = make(map[string]any)
 	}
 
 	for _, m := range mimes {
@@ -5012,7 +5012,7 @@ func (n *NegotiationBuilder) MIME(mime string, content interface{}) *Negotiation
 //
 // Returns itself for recursive calls.
 func (n *NegotiationBuilder) Text(v ...string) *NegotiationBuilder {
-	var content interface{}
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5025,7 +5025,7 @@ func (n *NegotiationBuilder) Text(v ...string) *NegotiationBuilder {
 //
 // Returns itself for recursive calls.
 func (n *NegotiationBuilder) HTML(v ...string) *NegotiationBuilder {
-	var content interface{}
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5038,7 +5038,7 @@ func (n *NegotiationBuilder) HTML(v ...string) *NegotiationBuilder {
 //
 // Returns itself for recursive calls.
 func (n *NegotiationBuilder) Markdown(v ...[]byte) *NegotiationBuilder {
-	var content interface{}
+	var content any
 	if len(v) > 0 {
 		content = v
 	}
@@ -5051,7 +5051,7 @@ func (n *NegotiationBuilder) Markdown(v ...[]byte) *NegotiationBuilder {
 //
 // Returns itself for recursive calls.
 func (n *NegotiationBuilder) Binary(v ...[]byte) *NegotiationBuilder {
-	var content interface{}
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5063,8 +5063,8 @@ func (n *NegotiationBuilder) Binary(v ...[]byte) *NegotiationBuilder {
 // when a client accepts the "application/json" content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) JSON(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) JSON(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5076,8 +5076,8 @@ func (n *NegotiationBuilder) JSON(v ...interface{}) *NegotiationBuilder {
 // when a client accepts the "application/problem+json" or the "application/problem+xml" content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) Problem(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) Problem(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5089,8 +5089,8 @@ func (n *NegotiationBuilder) Problem(v ...interface{}) *NegotiationBuilder {
 // when a client accepts the "javascript/javascript" content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) JSONP(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) JSONP(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5102,8 +5102,8 @@ func (n *NegotiationBuilder) JSONP(v ...interface{}) *NegotiationBuilder {
 // when a client accepts one of the "text/xml" or "application/xml" content types.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) XML(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) XML(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5115,8 +5115,8 @@ func (n *NegotiationBuilder) XML(v ...interface{}) *NegotiationBuilder {
 // when a client accepts the "application/x-yaml" content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) YAML(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) YAML(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5128,8 +5128,8 @@ func (n *NegotiationBuilder) YAML(v ...interface{}) *NegotiationBuilder {
 // when a client accepts the "application/x-yaml" content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) TextYAML(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) TextYAML(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5141,8 +5141,8 @@ func (n *NegotiationBuilder) TextYAML(v ...interface{}) *NegotiationBuilder {
 // when a client accepts the "application/x-protobuf" content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) Protobuf(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) Protobuf(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5154,8 +5154,8 @@ func (n *NegotiationBuilder) Protobuf(v ...interface{}) *NegotiationBuilder {
 // when a client accepts one of the "application/x-msgpack" or "application/msgpack" content types.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) MsgPack(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) MsgPack(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5165,8 +5165,8 @@ func (n *NegotiationBuilder) MsgPack(v ...interface{}) *NegotiationBuilder {
 // Any registers a wildcard that can match any client's accept content type.
 //
 // Returns itself for recursive calls.
-func (n *NegotiationBuilder) Any(v ...interface{}) *NegotiationBuilder {
-	var content interface{}
+func (n *NegotiationBuilder) Any(v ...any) *NegotiationBuilder {
+	var content any
 	if len(v) > 0 {
 		content = v[0]
 	}
@@ -5209,7 +5209,7 @@ func (n *NegotiationBuilder) EncodingGzip() *NegotiationBuilder {
 //
 // The returned "content" can be nil if the matched "contentType" does not provide any value,
 // in that case the `Context.Negotiate(v)` must be called with a non-nil value.
-func (n *NegotiationBuilder) Build() (contentType, charset, encoding string, content interface{}) {
+func (n *NegotiationBuilder) Build() (contentType, charset, encoding string, content any) {
 	contentType = negotiationMatch(n.Accept.accept, n.mime)
 	charset = negotiationMatch(n.Accept.charset, n.charset)
 	encoding = negotiationMatch(n.Accept.encoding, n.encoding)
@@ -5753,7 +5753,7 @@ type SecureCookie interface {
 	// You either need to provide exactly that amount or you derive the key from what you type in.
 	//
 	// See `Decode` too.
-	Encode(cookieName string, cookieValue interface{}) (string, error)
+	Encode(cookieName string, cookieValue any) (string, error)
 	// Decode should decode the cookie value.
 	// Should accept the cookie's name as its first argument,
 	// as second argument the encoded cookie value and as third argument the decoded value ptr.
@@ -5765,7 +5765,7 @@ type SecureCookie interface {
 	// You either need to provide exactly that amount or you derive the key from what you type in.
 	//
 	// See `Encode` too.
-	Decode(cookieName string, cookieValue string, cookieValuePtr interface{}) error
+	Decode(cookieName string, cookieValue string, cookieValuePtr any) error
 }
 
 // CookieEncoding accepts a value which implements `Encode` and `Decode` methods.
@@ -6202,7 +6202,7 @@ type DependenciesMap map[reflect.Type]reflect.Value
 // in sake of minimum performance cost.
 //
 // See `UnregisterDependency` too.
-func (ctx *Context) RegisterDependency(v interface{}) {
+func (ctx *Context) RegisterDependency(v any) {
 	if v == nil {
 		return
 	}
@@ -6350,7 +6350,7 @@ func (ctx *Context) GetErrPublic() (bool, error) {
 // which recovers from a manual panic.
 type ErrPanicRecovery struct {
 	ErrPrivate
-	Cause                  interface{}
+	Cause                  any
 	Callers                []string // file:line callers.
 	Stack                  []byte   // the full debug stack.
 	RegisteredHandlers     []string // file:line of all registered handlers.
@@ -6436,7 +6436,7 @@ const (
 //
 // Example at:
 // https://github.com/kataras/iris/tree/main/_examples/routing/writing-a-middleware/share-funcs
-func (ctx *Context) SetFunc(name string, fn interface{}, persistenceArgs ...interface{}) {
+func (ctx *Context) SetFunc(name string, fn any, persistenceArgs ...any) {
 	f := newFunc(name, fn, persistenceArgs...)
 	ctx.values.Set(funcsContextPrefixKey+name, f)
 }
@@ -6467,7 +6467,7 @@ func (ctx *Context) GetFunc(name string) (*Func, bool) {
 //
 // For a more complete solution without limiations navigate through
 // the Iris Dependency Injection feature instead.
-func (ctx *Context) CallFunc(name string, args ...interface{}) ([]reflect.Value, error) {
+func (ctx *Context) CallFunc(name string, args ...any) ([]reflect.Value, error) {
 	fn, ok := ctx.GetFunc(name)
 	if !ok || fn == nil {
 		return nil, ErrNotFound
@@ -6484,14 +6484,14 @@ func (ctx *Context) CallFunc(name string, args ...interface{}) ([]reflect.Value,
 // This method uses the `SetFunc` method under the hoods.
 //
 // See `Logout` method too.
-func (ctx *Context) SetLogoutFunc(fn interface{}, persistenceArgs ...interface{}) {
+func (ctx *Context) SetLogoutFunc(fn any, persistenceArgs ...any) {
 	ctx.SetFunc(funcLogoutContextKey, fn, persistenceArgs...)
 }
 
 // Logout calls the registered logout function.
 // Returns ErrNotFound if a logout function was not specified
 // by a prior call of `SetLogoutFunc`.
-func (ctx *Context) Logout(args ...interface{}) error {
+func (ctx *Context) Logout(args ...any) error {
 	_, err := ctx.CallFunc(funcLogoutContextKey, args...)
 	return err
 }
@@ -6505,13 +6505,13 @@ const userContextKey = "iris.user"
 //
 // The "i" input argument can be:
 //   - A value which completes the User interface
-//   - A map[string]interface{}.
+//   - A map[string]any.
 //   - A value which does not complete the whole User interface
 //   - A value which does not complete the User interface at all
 //     (only its `User().GetRaw` method is available).
 //
 // Look the `User` method to retrieve it.
-func (ctx *Context) SetUser(i interface{}) error {
+func (ctx *Context) SetUser(i any) error {
 	if i == nil {
 		ctx.values.Remove(userContextKey)
 		return nil
@@ -6615,8 +6615,8 @@ func (ctx *Context) Err() error {
 // if no value is associated with key. Successive calls to Value with
 // the same key returns the same result.
 //
-// Shortcut of Request().Context().Value(key interface{}) interface{}.
-func (ctx *Context) Value(key interface{}) interface{} {
+// Shortcut of Request().Context().Value(key any) any.
+func (ctx *Context) Value(key any) any {
 	if keyStr, ok := key.(string); ok { // check if the key is a type of string, which can be retrieved by the mem store.
 		if entry, exists := ctx.values.GetEntry(keyStr); exists {
 			return entry.ValueRaw
@@ -6633,14 +6633,14 @@ const idContextKey = "iris.context.id"
 // so it can be rendered on `Context.String` method.
 //
 // See `GetID` and `middleware/requestid` too.
-func (ctx *Context) SetID(id interface{}) {
+func (ctx *Context) SetID(id any) {
 	ctx.values.Set(idContextKey, id)
 }
 
 // GetID returns the Request Context's ID.
 // It returns nil if not given by a prior `SetID` call.
 // See `middleware/requestid` too.
-func (ctx *Context) GetID() interface{} {
+func (ctx *Context) GetID() any {
 	return ctx.values.Get(idContextKey)
 }
 

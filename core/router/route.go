@@ -154,7 +154,7 @@ func (r *Route) UseOnce(handlers ...context.Handler) {
 // Returns the total amount of handlers removed.
 //
 // Should be called before Application Build.
-func (r *Route) RemoveHandler(namesOrHandlers ...interface{}) (count int) {
+func (r *Route) RemoveHandler(namesOrHandlers ...any) (count int) {
 	for _, nameOrHandler := range namesOrHandlers {
 		handlerName := ""
 		switch h := nameOrHandler.(type) {
@@ -644,7 +644,7 @@ func (rd routeReadOnlyWrapper) MainHandlerIndex() int {
 	return rd.Route.MainHandlerIndex
 }
 
-func (rd routeReadOnlyWrapper) Property(key string) (interface{}, bool) {
+func (rd routeReadOnlyWrapper) Property(key string) (any, bool) {
 	properties := rd.Route.Party.Properties()
 	if properties != nil {
 		if property, ok := properties[key]; ok {

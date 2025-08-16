@@ -70,7 +70,7 @@ func (r *RequestParams) GetEntry(key string) memstore.Entry {
 // Visit accepts a visitor which will be filled
 // by the key-value params.
 func (r *RequestParams) Visit(visitor func(key string, value string)) {
-	r.Store.Visit(func(k string, v interface{}) {
+	r.Store.Visit(func(k string, v any) {
 		visitor(k, fmt.Sprintf("%v", v)) // always string here.
 	})
 }
@@ -227,7 +227,7 @@ func (r *RequestParams) GetIntUnslashed(key string) (int, bool) {
 // The value is a function which accepts the parameter index
 // and it should return the value as the parameter type evaluator expects it.
 //
-//	i.e [reflect.TypeOf("string")] = func(paramIndex int) interface{} {
+//	i.e [reflect.TypeOf("string")] = func(paramIndex int) any {
 //	    return func(ctx *Context) <T> {
 //	        return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(<T>)
 //	    }
@@ -238,8 +238,8 @@ func (r *RequestParams) GetIntUnslashed(key string) (int, bool) {
 // and parameter index based on the hero/mvc function added
 // in order to support the MVC.HandleMany("GET", "/path/{ps}/{pssecond} /path/{ps}")
 // when on the second requested path, the 'pssecond' should be empty.
-var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
-	reflect.TypeOf(""): func(paramIndex int) interface{} {
+var ParamResolvers = map[reflect.Type]func(paramIndex int) any{
+	reflect.TypeOf(""): func(paramIndex int) any {
 		return func(ctx *Context) string {
 			if ctx.Params().Len() <= paramIndex {
 				return ""
@@ -247,7 +247,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(string)
 		}
 	},
-	reflect.TypeOf(int(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(int(1)): func(paramIndex int) any {
 		return func(ctx *Context) int {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -257,7 +257,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int)
 		}
 	},
-	reflect.TypeOf(int8(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(int8(1)): func(paramIndex int) any {
 		return func(ctx *Context) int8 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -265,7 +265,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int8)
 		}
 	},
-	reflect.TypeOf(int16(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(int16(1)): func(paramIndex int) any {
 		return func(ctx *Context) int16 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -273,7 +273,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int16)
 		}
 	},
-	reflect.TypeOf(int32(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(int32(1)): func(paramIndex int) any {
 		return func(ctx *Context) int32 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -281,7 +281,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int32)
 		}
 	},
-	reflect.TypeOf(int64(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(int64(1)): func(paramIndex int) any {
 		return func(ctx *Context) int64 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -289,7 +289,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int64)
 		}
 	},
-	reflect.TypeOf(uint(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(uint(1)): func(paramIndex int) any {
 		return func(ctx *Context) uint {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -297,7 +297,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint)
 		}
 	},
-	reflect.TypeOf(uint8(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(uint8(1)): func(paramIndex int) any {
 		return func(ctx *Context) uint8 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -305,7 +305,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint8)
 		}
 	},
-	reflect.TypeOf(uint16(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(uint16(1)): func(paramIndex int) any {
 		return func(ctx *Context) uint16 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -313,7 +313,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint16)
 		}
 	},
-	reflect.TypeOf(uint32(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(uint32(1)): func(paramIndex int) any {
 		return func(ctx *Context) uint32 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -321,7 +321,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
 		}
 	},
-	reflect.TypeOf(uint64(1)): func(paramIndex int) interface{} {
+	reflect.TypeOf(uint64(1)): func(paramIndex int) any {
 		return func(ctx *Context) uint64 {
 			if ctx.Params().Len() <= paramIndex {
 				return 0
@@ -329,7 +329,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint64)
 		}
 	},
-	reflect.TypeOf(true): func(paramIndex int) interface{} {
+	reflect.TypeOf(true): func(paramIndex int) any {
 		return func(ctx *Context) bool {
 			if ctx.Params().Len() <= paramIndex {
 				return false
@@ -337,7 +337,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
 		}
 	},
-	reflect.TypeOf(time.Time{}): func(paramIndex int) interface{} {
+	reflect.TypeOf(time.Time{}): func(paramIndex int) any {
 		return func(ctx *Context) time.Time {
 			if ctx.Params().Len() <= paramIndex {
 				return unixEpochTime
@@ -351,7 +351,7 @@ var ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 			return v
 		}
 	},
-	reflect.TypeOf(time.Weekday(0)): func(paramIndex int) interface{} {
+	reflect.TypeOf(time.Weekday(0)): func(paramIndex int) any {
 		return func(ctx *Context) time.Weekday {
 			if ctx.Params().Len() <= paramIndex {
 				return time.Sunday
@@ -382,7 +382,7 @@ func ParamResolverByTypeAndIndex(typ reflect.Type, paramIndex int) (reflect.Valu
 	/* NO:
 	// This could work but its result is not exact type, so direct binding is not possible.
 	resolver := m.ParamResolver
-	fn := func(ctx *context.Context) interface{} {
+	fn := func(ctx *context.Context) any {
 		entry, _ := ctx.Params().GetEntry(paramName)
 		return resolver(entry)
 	}

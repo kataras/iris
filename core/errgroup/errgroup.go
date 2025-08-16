@@ -21,7 +21,7 @@ func Check(err error) error {
 // If "err" is *Group then it fires the "visitor" for each of its errors, including children.
 // if "err" is *Error then it fires the "visitor" with its type and wrapped error.
 // Otherwise it fires the "visitor" once with typ of nil and err as "err".
-func Walk(err error, visitor func(typ interface{}, err error)) error {
+func Walk(err error, visitor func(typ any, err error)) error {
 	if err == nil {
 		return nil
 	}
@@ -66,7 +66,7 @@ func Errors(err error, conv bool) []error {
 	return []error{err}
 }
 
-func Type(err error) interface{} {
+func Type(err error) any {
 	if err == nil {
 		return nil
 	}
@@ -95,8 +95,8 @@ func Fill(parent *Group, errors []*Error) {
 // It is a special error type which keep the "Type" of the
 // Group that it's created through Group's `Err` and `Errf` methods.
 type Error struct {
-	Err  error       `json:"error" xml:"Error" yaml:"Error" toml:"Error" sql:"error"`
-	Type interface{} `json:"type" xml:"Type" yaml:"Type" toml:"Type" sql:"type"`
+	Err  error `json:"error" xml:"Error" yaml:"Error" toml:"Error" sql:"error"`
+	Type any   `json:"type" xml:"Type" yaml:"Type" toml:"Type" sql:"type"`
 }
 
 // Error returns the error message of the "Err".
@@ -129,7 +129,7 @@ func (e *Error) Is(err error) bool {
 }
 
 // As reports whether the "target" can be used as &Error{target.Type: ?}.
-func (e *Error) As(target interface{}) bool {
+func (e *Error) As(target any) bool {
 	if target == nil {
 		return target == e
 	}
@@ -157,10 +157,10 @@ func (e *Error) As(target interface{}) bool {
 type Group struct {
 	parent *Group
 	// a list of children groups, used to get or create new group through Group method.
-	children map[interface{}]*Group
+	children map[any]*Group
 	depth    int
 
-	Type   interface{}
+	Type   any
 	Errors []error // []*Error
 
 	// if true then this Group's Error method will return the messages of the errors made by this Group's Group method.
@@ -171,7 +171,7 @@ type Group struct {
 }
 
 // New returns a new empty Group.
-func New(typ interface{}) *Group {
+func New(typ any) *Group {
 	return &Group{
 		Type:            typ,
 		IncludeChildren: true,
@@ -248,9 +248,9 @@ func (g *Group) Unwrap() error {
 }
 
 // Group creates a new group of "typ" type, if does not exist, and returns it.
-func (g *Group) Group(typ interface{}) *Group {
+func (g *Group) Group(typ any) *Group {
 	if g.children == nil {
-		g.children = make(map[interface{}]*Group)
+		g.children = make(map[any]*Group)
 	} else {
 		for _, child := range g.children {
 			if child.Type == typ {
@@ -282,7 +282,7 @@ func (g *Group) Add(err error) {
 }
 
 // Addf adds an error to the group like `fmt.Errorf` and returns it.
-func (g *Group) Addf(format string, args ...interface{}) error {
+func (g *Group) Addf(format string, args ...any) error {
 	err := fmt.Errorf(format, args...)
 	g.Add(err)
 	return err
@@ -298,7 +298,7 @@ func (g *Group) Err(err error) error {
 	if !ok {
 		if ge, ok := err.(*Group); ok {
 			if g.children == nil {
-				g.children = make(map[interface{}]*Group)
+				g.children = make(map[any]*Group)
 			}
 
 			g.children[ge.Type] = ge
@@ -314,7 +314,7 @@ func (g *Group) Err(err error) error {
 }
 
 // Errf adds an error like `fmt.Errorf` and returns it.
-func (g *Group) Errf(format string, args ...interface{}) error {
+func (g *Group) Errf(format string, args ...any) error {
 	return g.Err(fmt.Errorf(format, args...))
 }
 

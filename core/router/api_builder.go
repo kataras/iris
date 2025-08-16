@@ -360,7 +360,7 @@ func (api *APIBuilder) EnsureStaticBindings() Party {
 
 // RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
 // with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
-func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {
+func (api *APIBuilder) RegisterDependency(dependencies ...any) {
 	diContainer := api.ConfigureContainer()
 	for i, dependency := range dependencies {
 		if dependency == nil {
@@ -442,7 +442,7 @@ func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {
 // the dependency injection, mvc and function handlers.
 //
 // This method is just a shortcut of the `ConfigureContainer().Handle`.
-func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...any) *Route {
 	return api.ConfigureContainer().Handle(method, relativePath, handlersFn...)
 }
 
@@ -451,7 +451,7 @@ func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...int
 // or a result of <T> and/or an error.
 //
 // This method is just a shortcut of the `ConfigureContainer().Use`.
-func (api *APIBuilder) UseFunc(handlersFn ...interface{}) {
+func (api *APIBuilder) UseFunc(handlersFn ...any) {
 	api.ConfigureContainer().Use(handlersFn...)
 }
 
@@ -636,7 +636,7 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 //
 // Examples:
 // https://github.com/kataras/iris/tree/main/_examples/file-server
-func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts ...DirOptions) (routes []*Route) {
+func (api *APIBuilder) HandleDir(requestPath string, fsOrDir any, opts ...DirOptions) (routes []*Route) {
 	options := DefaultDirOptions
 	if len(opts) > 0 {
 		options = opts[0]
@@ -1401,7 +1401,7 @@ func (api *APIBuilder) MiddlewareExists(handlerNameOrFunc any) bool {
 // Returns the Party itself for chain calls.
 //
 // Should be called before children routes regitration.
-func (api *APIBuilder) RemoveHandler(namesOrHandlers ...interface{}) Party {
+func (api *APIBuilder) RemoveHandler(namesOrHandlers ...any) Party {
 	var counter *int
 
 	for _, nameOrHandler := range namesOrHandlers {

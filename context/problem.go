@@ -15,7 +15,7 @@ import (
 // write an "application/problem+json" response.
 //
 // Read more at: https://github.com/kataras/iris/blob/main/_examples/routing/http-errors.
-type Problem map[string]interface{}
+type Problem map[string]any
 
 // NewProblem retruns a new Problem.
 // Head over to the `Problem` type godoc for more.
@@ -99,12 +99,12 @@ const (
 
 // TempKey sets a temporary key-value pair, which is being removed
 // on the its first get.
-func (p Problem) TempKey(key string, value interface{}) Problem {
+func (p Problem) TempKey(key string, value any) Problem {
 	return p.Key(problemTempKeyPrefix+key, value)
 }
 
 // GetTempKey returns the temp value based on "key" and removes it.
-func (p Problem) GetTempKey(key string) interface{} {
+func (p Problem) GetTempKey(key string) any {
 	key = problemTempKeyPrefix + key
 	v, ok := p[key]
 	if ok {
@@ -116,7 +116,7 @@ func (p Problem) GetTempKey(key string) interface{} {
 }
 
 // Key sets a custom key-value pair.
-func (p Problem) Key(key string, value interface{}) Problem {
+func (p Problem) Key(key string, value any) Problem {
 	p[key] = value
 	return p
 }
@@ -277,20 +277,20 @@ type ProblemOptions struct {
 	// 300 * time.Second,
 	// "5m",
 	// 300
-	RetryAfter interface{}
+	RetryAfter any
 	// A function that, if specified, can dynamically set
 	// retry-after based on the request. Useful for ProblemOptions reusability.
 	// Should return time.Time, time.Duration, int64, int, float64 or string.
 	//
 	// Overrides the RetryAfter field.
-	RetryAfterFunc func(*Context) interface{}
+	RetryAfterFunc func(*Context) any
 }
 
 func parseDurationToSeconds(dur time.Duration) int64 {
 	return int64(math.Round(dur.Seconds()))
 }
 
-func (o *ProblemOptions) parseRetryAfter(value interface{}, timeLayout string) string {
+func (o *ProblemOptions) parseRetryAfter(value any, timeLayout string) string {
 	// https://tools.ietf.org/html/rfc7231#section-7.1.3
 	// Retry-After = HTTP-date / delay-seconds
 	switch v := value.(type) {

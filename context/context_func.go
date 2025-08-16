@@ -13,16 +13,16 @@ var ErrInvalidArgs = errors.New("invalid arguments")
 // Func represents a function registered by the Context.
 // See its `buildMeta` and `call` internal methods.
 type Func struct {
-	RegisterName    string        // the name of which this function is registered, for information only.
-	Raw             interface{}   // the Raw function, can be used for custom casting.
-	PersistenceArgs []interface{} // the persistence input arguments given on registration.
+	RegisterName    string // the name of which this function is registered, for information only.
+	Raw             any    // the Raw function, can be used for custom casting.
+	PersistenceArgs []any  // the persistence input arguments given on registration.
 
 	once sync.Once // guards build once, on first call.
 	// Available after the first call.
 	Meta *FuncMeta
 }
 
-func newFunc(name string, fn interface{}, persistenceArgs ...interface{}) *Func {
+func newFunc(name string, fn any, persistenceArgs ...any) *Func {
 	return &Func{
 		RegisterName:    name,
 		Raw:             fn,
@@ -37,8 +37,8 @@ type FuncMeta struct {
 	HandlerWithErr     func(*Context) error // when it's just a handler which returns an error.
 	RawFunc            func()               // when it's just a func.
 	RawFuncWithErr     func() error         // when it's just a func which returns an error.
-	RawFuncArgs        func(...interface{})
-	RawFuncArgsWithErr func(...interface{}) error
+	RawFuncArgs        func(...any)
+	RawFuncArgsWithErr func(...any) error
 
 	Value                   reflect.Value
 	Type                    reflect.Type
@@ -65,10 +65,10 @@ func (f *Func) buildMeta() {
 	case func() error:
 		f.Meta = &FuncMeta{RawFuncWithErr: fn}
 		return
-	case func(...interface{}):
+	case func(...any):
 		f.Meta = &FuncMeta{RawFuncArgs: fn}
 		return
-	case func(...interface{}) error:
+	case func(...any) error:
 		f.Meta = &FuncMeta{RawFuncArgsWithErr: fn}
 		return
 	}
@@ -119,7 +119,7 @@ func (f *Func) buildMeta() {
 	f.Meta = &meta
 }
 
-func (f *Func) call(ctx *Context, args ...interface{}) ([]reflect.Value, error) {
+func (f *Func) call(ctx *Context, args ...any) ([]reflect.Value, error) {
 	f.once.Do(f.buildMeta)
 	meta := f.Meta
 

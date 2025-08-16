@@ -10,7 +10,7 @@ import (
 type ErrViewNotExist struct {
 	Name     string
 	IsLayout bool
-	Data     interface{}
+	Data     any
 }
 
 // Error completes the `error` interface.
@@ -29,7 +29,7 @@ type ViewEngine interface {
 	// Load should load the templates from the given FileSystem.
 	Load() error
 	// ExecuteWriter should execute a template by its filename with an optional layout and bindingData.
-	ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error
+	ExecuteWriter(w io.Writer, filename string, layout string, bindingData any) error
 	// Ext should return the final file extension (including the dot)
 	// which this view engine is responsible to render.
 	// If the filename extension on ExecuteWriter is empty then this is appended.
@@ -42,5 +42,5 @@ type ViewEngine interface {
 // like {{ url }}, {{ urlpath }} and {{ tr }}.
 type ViewEngineFuncer interface {
 	// AddFunc should adds a function to the template's function map.
-	AddFunc(funcName string, funcBody interface{})
+	AddFunc(funcName string, funcBody any)
 }

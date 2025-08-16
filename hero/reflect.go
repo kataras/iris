@@ -7,7 +7,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
-func valueOf(v interface{}) reflect.Value {
+func valueOf(v any) reflect.Value {
 	if val, ok := v.(reflect.Value); ok {
 		// check if it's already a reflect.Value.
 		return val
@@ -124,7 +124,7 @@ func equalTypes(binding reflect.Type, input reflect.Type) bool {
 		return binding.AssignableTo(input)
 	}
 
-	// dependency: func(...) interface{} { return "string" }
+	// dependency: func(...) any { return "string" }
 	// expected input: string.
 	if binding.Kind() == reflect.Interface {
 		return input.AssignableTo(binding)

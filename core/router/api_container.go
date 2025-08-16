@@ -20,7 +20,7 @@ type APIContainer struct {
 
 // Party returns a child of this `APIContainer` featured with Dependency Injection.
 // Like the `Self.Party` method does for the common Router Groups.
-func (api *APIContainer) Party(relativePath string, handlersFn ...interface{}) *APIContainer {
+func (api *APIContainer) Party(relativePath string, handlersFn ...any) *APIContainer {
 	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
 	p := api.Self.Party(relativePath, handlers...)
 	return p.ConfigureContainer()
@@ -67,7 +67,7 @@ func (api *APIContainer) OnError(errorHandler func(*context.Context, error)) {
 // - RegisterDependency(func(User) OtherResponse {...})
 //
 // See `OnError`, `Use`, `Done` and `Handle` too.
-func (api *APIContainer) RegisterDependency(dependency interface{}) *hero.Dependency {
+func (api *APIContainer) RegisterDependency(dependency any) *hero.Dependency {
 	return api.Container.Register(dependency)
 }
 
@@ -117,7 +117,7 @@ func (api *APIContainer) SetDependencyMatcher(fn hero.DependencyMatcher) *APICon
 }
 
 // convertHandlerFuncs accepts Iris hero handlers and returns a slice of native Iris handlers.
-func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...interface{}) context.Handlers {
+func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...any) context.Handlers {
 	fullpath := api.Self.GetRelPath() + relativePath
 	paramsCount := macro.CountParams(fullpath, *api.Self.Macros())
 
@@ -136,7 +136,7 @@ func (api *APIContainer) convertHandlerFuncs(relativePath string, handlersFn ...
 	return handlers
 }
 
-func fixRouteInfo(route *Route, handlersFn []interface{}) {
+func fixRouteInfo(route *Route, handlersFn []any) {
 	// Fix main handler name and source modified by execution rules wrapper.
 	route.MainHandlerName, route.MainHandlerIndex = context.MainHandlerName(handlersFn...)
 	if len(handlersFn) > route.MainHandlerIndex {
@@ -147,7 +147,7 @@ func fixRouteInfo(route *Route, handlersFn []interface{}) {
 // Handler receives a function which can receive dependencies and output result
 // and returns a common Iris Handler, useful for Versioning API integration otherwise
 // the `Handle/Get/Post...` methods are preferable.
-func (api *APIContainer) Handler(handlerFn interface{}, handlerParamsCount int) context.Handler {
+func (api *APIContainer) Handler(handlerFn any, handlerParamsCount int) context.Handler {
 	paramsCount := macro.CountParams(api.Self.GetRelPath(), *api.Self.Macros()) + handlerParamsCount
 	return api.Container.HandlerWithParams(handlerFn, paramsCount)
 }
@@ -155,14 +155,14 @@ func (api *APIContainer) Handler(handlerFn interface{}, handlerParamsCount int) 
 // Use same as `Self.Use` but it accepts dynamic functions as its "handlersFn" input.
 //
 // See `OnError`, `RegisterDependency`, `Done` and `Handle` for more.
-func (api *APIContainer) Use(handlersFn ...interface{}) {
+func (api *APIContainer) Use(handlersFn ...any) {
 	handlers := api.convertHandlerFuncs("/", handlersFn...)
 	api.Self.Use(handlers...)
 }
 
 // Done same as `Self.Done` but it accepts dynamic functions as its "handlersFn" input.
 // See `OnError`, `RegisterDependency`, `Use` and `Handle` for more.
-func (api *APIContainer) Done(handlersFn ...interface{}) {
+func (api *APIContainer) Done(handlersFn ...any) {
 	handlers := api.convertHandlerFuncs("/", handlersFn...)
 	api.Self.Done(handlers...)
 }
@@ -178,7 +178,7 @@ func (api *APIContainer) Done(handlersFn ...interface{}) {
 // the end-developer should output an error and return `iris.ErrStopExecution`.
 //
 // See `OnError`, `RegisterDependency`, `Use`, `Done`, `Get`, `Post`, `Put`, `Patch` and `Delete` too.
-func (api *APIContainer) Handle(method, relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Handle(method, relativePath string, handlersFn ...any) *Route {
 	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
 	route := api.Self.Handle(method, relativePath, handlers...)
 	fixRouteInfo(route, handlersFn)
@@ -188,63 +188,63 @@ func (api *APIContainer) Handle(method, relativePath string, handlersFn ...inter
 // Get registers a route for the Get HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Get(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Get(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodGet, relativePath, handlersFn...)
 }
 
 // Post registers a route for the Post HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Post(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Post(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodPost, relativePath, handlersFn...)
 }
 
 // Put registers a route for the Put HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Put(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Put(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodPut, relativePath, handlersFn...)
 }
 
 // Delete registers a route for the Delete HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Delete(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Delete(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodDelete, relativePath, handlersFn...)
 }
 
 // Connect registers a route for the Connect HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Connect(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Connect(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodConnect, relativePath, handlersFn...)
 }
 
 // Head registers a route for the Head HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Head(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Head(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodHead, relativePath, handlersFn...)
 }
 
 // Options registers a route for the Options HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Options(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Options(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodOptions, relativePath, handlersFn...)
 }
 
 // Patch registers a route for the Patch HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Patch(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Patch(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodPatch, relativePath, handlersFn...)
 }
 
 // Trace registers a route for the Trace HTTP Method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (api *APIContainer) Trace(relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIContainer) Trace(relativePath string, handlersFn ...any) *Route {
 	return api.Handle(http.MethodTrace, relativePath, handlersFn...)
 }
 
@@ -258,7 +258,7 @@ func (api *APIContainer) Trace(relativePath string, handlersFn ...interface{}) *
 // Options
 // Connect
 // Trace
-func (api *APIContainer) Any(relativePath string, handlersFn ...interface{}) (routes []*Route) {
+func (api *APIContainer) Any(relativePath string, handlersFn ...any) (routes []*Route) {
 	handlers := api.convertHandlerFuncs(relativePath, handlersFn...)
 
 	for _, m := range AllMethods {
@@ -274,7 +274,7 @@ func (api *APIContainer) Any(relativePath string, handlersFn ...interface{}) (ro
 // OnErrorCode registers a handlers chain for this `Party` for a specific HTTP status code.
 // Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 // Look `OnAnyErrorCode` too.
-func (api *APIContainer) OnErrorCode(statusCode int, handlersFn ...interface{}) []*Route {
+func (api *APIContainer) OnErrorCode(statusCode int, handlersFn ...any) []*Route {
 	handlers := api.convertHandlerFuncs("/{tail:path}", handlersFn...)
 	return api.Self.OnErrorCode(statusCode, handlers...)
 }
@@ -282,7 +282,7 @@ func (api *APIContainer) OnErrorCode(statusCode int, handlersFn ...interface{}) 
 // OnAnyErrorCode registers a handlers chain for all error codes
 // (4xxx and 5xxx, change the `ClientErrorCodes` and `ServerErrorCodes` variables to modify those)
 // Look `OnErrorCode` too.
-func (api *APIContainer) OnAnyErrorCode(handlersFn ...interface{}) []*Route {
+func (api *APIContainer) OnAnyErrorCode(handlersFn ...any) []*Route {
 	handlers := api.convertHandlerFuncs("/{tail:path}", handlersFn...)
 	return api.Self.OnAnyErrorCode(handlers...)
 }

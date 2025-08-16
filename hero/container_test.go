@@ -101,16 +101,16 @@ func TestContainerInject(t *testing.T) {
 func TestContainerUseResultHandler(t *testing.T) {
 	c := New()
 	resultLogger := func(next ResultHandler) ResultHandler {
-		return func(ctx iris.Context, v interface{}) error {
+		return func(ctx iris.Context, v any) error {
 			t.Logf("%#+v", v)
 			return next(ctx, v)
 		}
 	}
 
 	c.UseResultHandler(resultLogger)
-	expectedResponse := map[string]interface{}{"injected": true}
+	expectedResponse := map[string]any{"injected": true}
 	c.UseResultHandler(func(next ResultHandler) ResultHandler {
-		return func(ctx iris.Context, v interface{}) error {
+		return func(ctx iris.Context, v any) error {
 			return next(ctx, expectedResponse)
 		}
 	})

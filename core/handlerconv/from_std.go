@@ -14,7 +14,7 @@ import (
 //	.FromStd(h http.Handler)
 //	.FromStd(func(w http.ResponseWriter, r *http.Request))
 //	.FromStd(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
-func FromStd(handler interface{}) context.Handler {
+func FromStd(handler any) context.Handler {
 	switch h := handler.(type) {
 	case context.Handler:
 		return h

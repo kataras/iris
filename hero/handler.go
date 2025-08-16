@@ -93,7 +93,7 @@ func isIrisHandlerType(typ reflect.Type) bool {
 	return typ == irisHandlerType || typ == irisHandlerFuncType
 }
 
-func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler {
+func makeHandler(fn any, c *Container, paramsCount int) context.Handler {
 	if fn == nil {
 		panic("makeHandler: function is nil")
 	}
@@ -184,7 +184,7 @@ func makeHandler(fn interface{}, c *Container, paramsCount int) context.Handler 
 	}
 }
 
-func isHandler(fn interface{}) (context.Handler, bool) {
+func isHandler(fn any) (context.Handler, bool) {
 	if handler, ok := fn.(context.Handler); ok {
 		return handler, ok
 	}
@@ -196,7 +196,7 @@ func isHandler(fn interface{}) (context.Handler, bool) {
 	return nil, false
 }
 
-func isHandlerWithError(fn interface{}) (func(*context.Context) error, bool) {
+func isHandlerWithError(fn any) (func(*context.Context) error, bool) {
 	if handlerWithErr, ok := fn.(func(*context.Context) error); ok {
 		return handlerWithErr, true
 	}

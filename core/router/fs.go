@@ -1199,7 +1199,7 @@ func (fi *fileInfo) Mode() os.FileMode  { return fi.mode }
 func (fi *fileInfo) ModTime() time.Time { return fi.modTime }
 func (fi *fileInfo) IsDir() bool        { return fi.isDir }
 func (fi *fileInfo) Size() int64        { return 0 }
-func (fi *fileInfo) Sys() interface{}   { return fi }
+func (fi *fileInfo) Sys() any           { return fi }
 
 type dir struct {
 	os.FileInfo   // *fileInfo

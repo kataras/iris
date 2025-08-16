@@ -17,7 +17,7 @@ var Recorder = func(ctx *Context) {
 	ctx.Next()
 }
 
-var rrpool = sync.Pool{New: func() interface{} { return &ResponseRecorder{} }}
+var rrpool = sync.Pool{New: func() any { return &ResponseRecorder{} }}
 
 // AcquireResponseRecorder returns a new *AcquireResponseRecorder from the pool.
 // Releasing is done automatically when request and response is done.

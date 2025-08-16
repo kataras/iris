@@ -127,7 +127,7 @@ type ResponseWriterWriteTo interface {
 //  | Response Writer Implementation                             |
 //  +------------------------------------------------------------+
 
-var rpool = sync.Pool{New: func() interface{} { return &responseWriter{} }}
+var rpool = sync.Pool{New: func() any { return &responseWriter{} }}
 
 // AcquireResponseWriter returns a new *ResponseWriter from the pool.
 // Releasing is done automatically when request and response is done.

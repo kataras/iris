@@ -11,8 +11,8 @@ import (
 )
 
 type testDependencyTest struct {
-	Dependency interface{}
-	Expected   interface{}
+	Dependency any
+	Expected   any
 }
 
 func TestDependency(t *testing.T) {
@@ -66,14 +66,14 @@ func TestDependency(t *testing.T) {
 		},
 		{
 
-			Dependency: func(*context.Context) interface{} {
+			Dependency: func(*context.Context) any {
 				return "1"
 			},
 			Expected: "1",
 		},
 		{
 
-			Dependency: func(*context.Context) interface{} {
+			Dependency: func(*context.Context) any {
 				return false
 			},
 			Expected: false,

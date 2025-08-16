@@ -17,7 +17,7 @@ import (
 // It affects the view engine's filesystem resolver.
 //
 // This package-level variable can be modified on initialization.
-var ResolveFS = func(fsOrDir interface{}) fs.FS {
+var ResolveFS = func(fsOrDir any) fs.FS {
 	if fsOrDir == nil {
 		return noOpFS{}
 	}
@@ -101,7 +101,7 @@ func (f *httpFS) ReadDir(name string) ([]fs.DirEntry, error) {
 // It affects the Application's API Builder's `HandleDir` method.
 //
 // This package-level variable can be modified on initialization.
-var ResolveHTTPFS = func(fsOrDir interface{}) http.FileSystem {
+var ResolveHTTPFS = func(fsOrDir any) http.FileSystem {
 	var fileSystem http.FileSystem
 	switch v := fsOrDir.(type) {
 	case string:

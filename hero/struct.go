@@ -55,7 +55,7 @@ func isMarkedAsSingleton(structPtr any) bool {
 	return false
 }
 
-func makeStruct(structPtr interface{}, c *Container, partyParamsCount int) *Struct {
+func makeStruct(structPtr any, c *Container, partyParamsCount int) *Struct {
 	v := valueOf(structPtr)
 	typ := v.Type()
 	if typ.Kind() != reflect.Ptr || indirectType(typ).Kind() != reflect.Struct {
