@@ -157,7 +157,7 @@ func (e Entry) notFound(typ reflect.Type) *ErrEntryNotFound {
 	return &ErrEntryNotFound{Key: e.Key, Kind: typ.Kind(), Type: typ}
 }
 
-var intType = reflect.TypeOf(int(0))
+var intType = reflect.TypeFor[int]()
 
 // IntDefault returns the entry's value as int.
 // If not found returns "def" and a non-nil error.
@@ -200,7 +200,7 @@ func (e Entry) IntDefault(def int) (int, error) {
 	return def, e.notFound(intType)
 }
 
-var int8Type = reflect.TypeOf(int8(0))
+var int8Type = reflect.TypeFor[int8]()
 
 // Int8Default returns the entry's value as int8.
 // If not found returns "def" and a non-nil error.
@@ -243,7 +243,7 @@ func (e Entry) Int8Default(def int8) (int8, error) {
 	return def, e.notFound(int8Type)
 }
 
-var int16Type = reflect.TypeOf(int16(0))
+var int16Type = reflect.TypeFor[int16]()
 
 // Int16Default returns the entry's value as int16.
 // If not found returns "def" and a non-nil error.
@@ -286,7 +286,7 @@ func (e Entry) Int16Default(def int16) (int16, error) {
 	return def, e.notFound(int16Type)
 }
 
-var int32Type = reflect.TypeOf(int32(0))
+var int32Type = reflect.TypeFor[int32]()
 
 // Int32Default returns the entry's value as int32.
 // If not found returns "def" and a non-nil error.
@@ -318,7 +318,7 @@ func (e Entry) Int32Default(def int32) (int32, error) {
 	return def, e.notFound(int32Type)
 }
 
-var int64Type = reflect.TypeOf(int64(0))
+var int64Type = reflect.TypeFor[int64]()
 
 // Int64Default returns the entry's value as int64.
 // If not found returns "def" and a non-nil error.
@@ -355,7 +355,7 @@ func (e Entry) Int64Default(def int64) (int64, error) {
 	return def, e.notFound(int64Type)
 }
 
-var uintType = reflect.TypeOf(uint(0))
+var uintType = reflect.TypeFor[uint]()
 
 // UintDefault returns the entry's value as uint.
 // If not found returns "def" and a non-nil error.
@@ -409,7 +409,7 @@ func (e Entry) UintDefault(def uint) (uint, error) {
 	return def, e.notFound(uintType)
 }
 
-var uint8Type = reflect.TypeOf(uint8(0))
+var uint8Type = reflect.TypeFor[uint8]()
 
 // Uint8Default returns the entry's value as uint8.
 // If not found returns "def" and a non-nil error.
@@ -458,7 +458,7 @@ func (e Entry) Uint8Default(def uint8) (uint8, error) {
 	return def, e.notFound(uint8Type)
 }
 
-var uint16Type = reflect.TypeOf(uint16(0))
+var uint16Type = reflect.TypeFor[uint16]()
 
 // Uint16Default returns the entry's value as uint16.
 // If not found returns "def" and a non-nil error.
@@ -504,7 +504,7 @@ func (e Entry) Uint16Default(def uint16) (uint16, error) {
 	return def, e.notFound(uint16Type)
 }
 
-var uint32Type = reflect.TypeOf(uint32(0))
+var uint32Type = reflect.TypeFor[uint32]()
 
 // Uint32Default returns the entry's value as uint32.
 // If not found returns "def" and a non-nil error.
@@ -549,7 +549,7 @@ func (e Entry) Uint32Default(def uint32) (uint32, error) {
 	return def, e.notFound(uint32Type)
 }
 
-var uint64Type = reflect.TypeOf(uint64(0))
+var uint64Type = reflect.TypeFor[uint64]()
 
 // Uint64Default returns the entry's value as uint64.
 // If not found returns "def" and a non-nil error.
@@ -583,7 +583,7 @@ func (e Entry) Uint64Default(def uint64) (uint64, error) {
 	return def, e.notFound(uint64Type)
 }
 
-var float32Type = reflect.TypeOf(float32(0))
+var float32Type = reflect.TypeFor[float32]()
 
 // Float32Default returns the entry's value as float32.
 // If not found returns "def" and a non-nil error.
@@ -614,7 +614,7 @@ func (e Entry) Float32Default(key string, def float32) (float32, error) {
 	return def, e.notFound(float32Type)
 }
 
-var float64Type = reflect.TypeOf(float64(0))
+var float64Type = reflect.TypeFor[float64]()
 
 // Float64Default returns the entry's value as float64.
 // If not found returns "def" and a non-nil error.
@@ -648,7 +648,7 @@ func (e Entry) Float64Default(def float64) (float64, error) {
 	return def, e.notFound(float64Type)
 }
 
-var boolType = reflect.TypeOf(false)
+var boolType = reflect.TypeFor[bool]()
 
 // BoolDefault returns the user's value as bool.
 // a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
@@ -681,7 +681,7 @@ func (e Entry) BoolDefault(def bool) (bool, error) {
 	return def, e.notFound(boolType)
 }
 
-var timeType = reflect.TypeOf(time.Time{})
+var timeType = reflect.TypeFor[time.Time]()
 
 // TimeDefault returns the stored time.Time value based on its "key".
 // If does not exist or the stored key's value is not a time
@@ -700,7 +700,7 @@ func (e Entry) TimeDefault(def time.Time) (time.Time, error) {
 	return vv, nil
 }
 
-var weekdayType = reflect.TypeOf(time.Weekday(0))
+var weekdayType = reflect.TypeFor[time.Weekday]()
 
 // WeekdayDefault returns the stored time.Weekday value based on its "key".
 // If does not exist or the stored key's value is not a weekday
