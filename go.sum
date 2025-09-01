@@ -97,8 +97,8 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/kataras/blocks v0.0.8 h1:MrpVhoFTCR2v1iOOfGng5VJSILKeZZI+7NGfxEh3SUM=
 github.com/kataras/blocks v0.0.8/go.mod h1:9Jm5zx6BB+06NwA+OhTbHW1xkMOYxahnqTN5DveZ2Yg=
-github.com/kataras/golog v0.1.13 h1:bGbPglTdCutekqwOUf8L1jq3tZ5ADG9gfPBd5p5SzKA=
-github.com/kataras/golog v0.1.13/go.mod h1:oQmzBTCv/35TetBosjJl/k+LPdlJEblaTupkNwJlwj8=
+github.com/kataras/golog v0.1.15 h1:gDNOENbbn+6me98UW1f9Cs5MRUlAkabnNvmgLFM58Xw=
+github.com/kataras/golog v0.1.15/go.mod h1:Ozu1TDa+OKC7fFe7OG64In71yLxjda+6kPl+Rg3v1hA=
 github.com/kataras/jwt v0.1.17 h1:dYjemzcdYqA4ylwq9/56MslCr/pNOyVUZ2bl3hYNHgc=
 github.com/kataras/jwt v0.1.17/go.mod h1:HUnU5HDBCDanVF8zrPVSE2VK8HicospKefZDD4DzOKU=
 github.com/kataras/neffos v0.0.24 h1:S3lHqJopCfXN285VdlbGeOj+Id83u4xdQKToa+w1vW0=
