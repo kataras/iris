@@ -2956,6 +2956,8 @@ const CSRFTokenFormKey = "csrf.token"
 // It supports any kind of type, including custom structs.
 // It will return nothing if request data are empty.
 // The struct field tag is "form".
+// If tag is missing it tries to bind using the field's name.
+// To ignore a specific field from binding use tag value "-".
 // Note that it will return nil error on empty form data if `Configuration.FireEmptyFormError`
 // is false (as defaulted) in this case the caller should check the pointer to
 // see if something was actually binded.
@@ -3122,6 +3124,8 @@ func distinctStrings(values []string) []string {
 }
 
 // ReadQuery binds URL Query to "ptr". The struct field tag is "url".
+// If tag is missing it tries to bind using the field's name.
+// To ignore a specific field from binding use tag value "-".
 //
 // Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-query/main.go
 func (ctx *Context) ReadQuery(ptr any) error {

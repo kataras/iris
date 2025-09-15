@@ -281,3 +281,43 @@ func TestParseISO8601_UnconventionalOffset(t *testing.T) {
 		})
 	}
 }
+
+func TestISO8601WithMicroseconds(t *testing.T) {
+	data := `{"start": "2025-08-20T08:06:42.611522", "end": "2025-12-31T23:59:59.999999", "nothing": null, "empty": ""}`
+	v := struct {
+		Start   ISO8601 `json:"start"`
+		End     ISO8601 `json:"end"`
+		Nothing ISO8601 `json:"nothing"`
+		Empty   ISO8601 `json:"empty"`
+	}{}
+	err := json.Unmarshal([]byte(data), &v)
+	if err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if !v.Nothing.IsZero() {
+		t.Fatalf("expected 'nothing' to be zero but got: %v", v.Nothing)
+	}
+
+	if !v.Empty.IsZero() {
+		t.Fatalf("expected 'empty' to be zero but got: %v", v.Empty)
+	}
+
+	loc := time.UTC
+
+	// Test the specific timestamp requested: 2025-08-20T08:06:42.611522
+	// 611522 microseconds = 611522000 nanoseconds
+	if expected, got := time.Date(2025, time.August, 20, 8, 6, 42, 611522000, loc), v.Start.ToTime(); expected != got {
+		t.Fatalf("expected 'start' to be: %v but got: %v", expected, got)
+	}
+
+	// Test another timestamp with maximum microseconds
+	if expected, got := time.Date(2025, time.December, 31, 23, 59, 59, 999999000, loc), v.End.ToTime(); expected != got {
+		t.Fatalf("expected 'end' to be: %v but got: %v", expected, got)
+	}
+
+	// Verify the string format excludes microseconds (as per ISO8601Layout)
+	if expected, got := "2025-08-20T08:06:42", v.Start.String(); expected != got {
+		t.Fatalf("expected 'start' string to be: %v but got: %v", expected, got)
+	}
+}

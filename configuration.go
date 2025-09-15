@@ -41,9 +41,10 @@ func homeDir() (home string) {
 	}
 
 	if home == "" {
-		if runtime.GOOS == "plan9" {
+		switch runtime.GOOS {
+		case "plan9":
 			home = os.Getenv("home")
-		} else if runtime.GOOS == "windows" {
+		case "windows":
 			home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 			if home == "" {
 				home = os.Getenv("USERPROFILE")
