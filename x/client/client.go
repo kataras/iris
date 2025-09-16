@@ -336,7 +336,7 @@ type Uploader struct {
 	Writer *multipart.Writer
 }
 
-// AddFileSource adds a form field to the uploader with the given key.
+// AddField adds a form field to the uploader with the given key.
 func (u *Uploader) AddField(key, value string) error {
 	f, err := u.Writer.CreateFormField(key)
 	if err != nil {
