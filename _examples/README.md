@@ -1,4 +1,8 @@
-# Table of Contents <a href="./README_ZH_HANT.md"> <img width="20px" src="https://iris-go.com/static/images/flag-china.svg?v=10" /> </a>
+# 🎄 Table of Contents - Christmas Edition 🎅 <a href="./README_ZH_HANT.md"> <img width="20px" src="https://iris-go.com/static/images/flag-china.svg?v=10" /> </a>
+
+🎁 **Welcome to the Iris Examples - Your Holiday Gift Guide to Web Development!**
+
+Unwrap the magic of Iris with these festive examples, each one a present waiting to help you build amazing applications this Christmas season! ✨
 
 * [Serverless](https://github.com/iris-contrib/gateway#netlify)
 * [REST API for Apache Kafka](kafka-api)

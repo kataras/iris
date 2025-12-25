@@ -1,8 +1,8 @@
-Dear Iris Community,
+🎄 **Merry Christmas, Dear Iris Community!** 🎅
 
-You might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose. For the past **10 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations**. My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs.
+As we celebrate this festive season, you might have noticed a recent lull in activity on the Iris repository, but this silence has a purpose - like Santa preparing gifts in his workshop! For the past **12 months**, I've been working diligently on the next major release of Iris, fully embracing **Generics** and introducing a suite of **new features**, **enhancements**, and **optimizations** - all wrapped up like presents under the Christmas tree! My **8 years** of Go experience guide this evolution, ensuring Iris grows with your needs throughout the holidays and beyond.
 
-Warm regards,<br/>
+🎁 Warm holiday wishes,<br/>
 Gerasimos (Makis) Maropoulos
 
 <!--<h1><img width="24" height="25" src ="https://www.iris-go.com/images/logo-new-lq-45.png"/> News</h1>
@@ -11,15 +11,15 @@ Gerasimos (Makis) Maropoulos
 
 Try the official [Iris Command Line Interface](https://github.com/kataras/iris-cli) today! -->
 
-# <a href="https://iris-go.com"><img src="https://iris-go.com/iris-terminal-55.png" width="50px" height="50px" style="margin-bottom: -5px" ></a> Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/static/images/flag-greece.svg" /> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-japan.svg" /></a> </a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/static/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/static/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/static/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/static/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/static/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/static/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/static/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-brazil.svg" /></a> <a href="README_VN.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-vietnam.svg" /></a>
+# <a href="https://iris-go.com"><img src="https://iris-go.com/iris-terminal-55.png" width="50px" height="50px" style="margin-bottom: -5px" ></a> Iris Web Framework 🎅 <a href="README_GR.md"><img width="20px" src="https://iris-go.com/static/images/flag-greece.svg" /> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-japan.svg" /></a> </a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/static/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/static/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/static/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/static/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/static/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/static/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/static/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-brazil.svg" /></a> <a href="README_VN.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-vietnam.svg" /></a>
 
 [![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
-Iris is a fast, simple yet fully featured and very efficient web framework for Go.
+🎁 Iris is a fast, simple yet fully featured and very efficient web framework for Go - the perfect gift for developers this holiday season!
 
-It provides a beautifully expressive and easy to use foundation for your next website or API.
+✨ It provides a beautifully expressive and easy to use foundation for your next website or API, wrapped with care and decorated with powerful features.
 
-Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to support its potentials.
+🌟 Learn what [others saying about Iris](https://www.iris-go.com/#review) and **[star](https://github.com/kataras/iris/stargazers)** this open-source project to spread the Christmas cheer and support its potentials!
 
 [![](https://iris-go.com/static/images/reviews.gif)](https://iris-go.com/testimonials/)
 
@@ -35,7 +35,7 @@ func main() {
   app.Use(iris.Compression)
 
   app.Get("/", func(ctx iris.Context) {
-    ctx.HTML("Hello <strong>%s</strong>!", "World")
+    ctx.HTML("🎄 Merry Christmas <strong>%s</strong>! 🎅", "World")
   })
 
   app.Listen(":8080")
@@ -184,7 +184,7 @@ func main() {
 
 -->
 
-As one [Go developer](https://twitter.com/dkuye/status/1532087942696554497) once said, **Iris got you covered all-round and standing strong over the years**.
+🎄 As one [Go developer](https://twitter.com/dkuye/status/1532087942696554497) once said, **Iris got you covered all-round and standing strong over the years** - just like a Christmas tree standing tall through the seasons! ⭐
 
 Some of the features Iris offers:
 
