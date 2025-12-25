@@ -25,7 +25,7 @@ require (
 	github.com/kataras/golog v0.1.12
 	github.com/kataras/jwt v0.1.17
 	github.com/kataras/neffos v0.0.24
-	github.com/kataras/pio v0.0.13
+	github.com/kataras/pio v0.0.14
 	github.com/kataras/sitemap v0.0.6
 	github.com/kataras/tunnel v0.0.4
 	github.com/klauspost/compress v1.18.2
