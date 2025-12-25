@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/iris-contrib/httpexpect/v2"
 )
@@ -97,6 +98,7 @@ func testSupervisor(t *testing.T, creator func(*http.Server, []func(TaskHost)) *
 
 	// WARNING: Data Race here because we try to read the logs
 	// but it's "safe" here.
+	time.Sleep(500 * time.Millisecond) // wait a bit
 
 	// testing Task (recorded) message:
 	mu.RLock()
