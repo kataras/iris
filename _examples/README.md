@@ -270,7 +270,7 @@ Unwrap the magic of Iris with these festive examples, each one a present waiting
     * [TLS](websocket/secure/README.md)
     * [Online Visitors](websocket/online-visitors/main.go)
 * Dependency Injection
-    * [Overview (Movies Service)](ependency-injection/overview/main.go)
+    * [Overview (Movies Service)](dependency-injection/overview/main.go)
     * [Basic](dependency-injection/basic/main.go)
         * [Middleware](dependency-injection/basic/middleware/main.go)
     * [Sessions](dependency-injection/sessions/main.go)
