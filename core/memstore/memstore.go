@@ -392,7 +392,12 @@ func (e Entry) UintDefault(def uint) (uint, error) {
 		}
 		return uint(vv), nil
 	case int:
-		if vv < 0 || vv > int(maxValue) {
+		// int and uint have the same width, so every non-negative int is
+		// representable as a uint; only the sign needs to be checked.
+		// Comparing against maxValue here would convert math.MaxUint64 to
+		// int on a 64-bit platform, which wraps to -1 and rejects
+		// everything.
+		if vv < 0 {
 			return def, e.notFound(uintType)
 		}
 		return uint(vv), nil
