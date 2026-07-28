@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"testing"
 )
 
@@ -163,5 +164,44 @@ func TestJSON(t *testing.T) {
 			}
 			t.Fatalf("[%d] expected: %s but got: %s", i, ex, g)
 		}
+	}
+}
+
+func TestUintDefaultInt(t *testing.T) {
+	var p Store
+	p.Set("n", 8)
+
+	if got := p.GetUintDefault("n", 0); got != 8 {
+		t.Fatalf("expected 8 but got %d", got)
+	}
+
+	value, err := Entry{Key: "n", ValueRaw: 8}.UintDefault(0)
+	if err != nil {
+		t.Fatalf("expected no error but got %v", err)
+	}
+	if value != 8 {
+		t.Fatalf("expected 8 but got %d", value)
+	}
+}
+
+func TestUintDefaultNegativeInt(t *testing.T) {
+	// a negative value cannot be represented as a uint
+	value, err := Entry{Key: "n", ValueRaw: -1}.UintDefault(7)
+	if err == nil {
+		t.Fatalf("expected a not found error for a negative value")
+	}
+	if value != 7 {
+		t.Fatalf("expected the default 7 but got %d", value)
+	}
+}
+
+func TestUintDefaultMaxInt(t *testing.T) {
+	// int and uint have the same width, so the largest int is representable
+	value, err := Entry{Key: "n", ValueRaw: math.MaxInt}.UintDefault(0)
+	if err != nil {
+		t.Fatalf("expected no error but got %v", err)
+	}
+	if value != uint(math.MaxInt) {
+		t.Fatalf("expected %d but got %d", uint(math.MaxInt), value)
 	}
 }
