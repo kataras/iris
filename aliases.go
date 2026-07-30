@@ -374,7 +374,7 @@ var (
 	// To skip HTTP Server logging for this type of warning:
 	// app.Listen/Run(..., iris.WithoutServerError(iris.ErrURLQuerySemicolon)).
 	AllowQuerySemicolons = func(ctx Context) {
-		// clopy of net/http.AllowQuerySemicolons.
+		// copy of net/http.AllowQuerySemicolons.
 		r := ctx.Request()
 		if s := r.URL.RawQuery; strings.Contains(s, ";") {
 			r2 := new(http.Request)
@@ -486,7 +486,7 @@ var (
 	// StaticCache middleware for caching static files by sending the "Cache-Control" and "Expires" headers to the client.
 	// It accepts a single input parameter, the "cacheDur", a time.Duration that it's used to calculate the expiration.
 	//
-	// If "cacheDur" <=0 then it returns the `NoCache` middleware instaed to disable the caching between browser's "back" and "forward" actions.
+	// If "cacheDur" <=0 then it returns the `NoCache` middleware instead to disable the caching between browser's "back" and "forward" actions.
 	//
 	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.StaticCache(-1))`.
 	// A middleware, which is a simple Handler can be called inside another handler as well, example:
@@ -662,7 +662,7 @@ const (
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
-// Raw Copy from the future(tip) net/http std package in order to recude the import path of "net/http" for the users.
+// Raw Copy from the future(tip) net/http std package in order to reduce the import path of "net/http" for the users.
 const (
 	StatusContinue           = http.StatusContinue           // RFC 7231, 6.2.1
 	StatusSwitchingProtocols = http.StatusSwitchingProtocols // RFC 7231, 6.2.2

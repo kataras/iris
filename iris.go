@@ -84,7 +84,7 @@ type Application struct {
 	// view engine
 	view *view.View
 	// used for build
-	builded     bool
+	built       bool
 	defaultMode bool
 	// OnBuild is a single function which
 	// is fired on the first `Build` method call.
@@ -98,7 +98,7 @@ type Application struct {
 	mu sync.RWMutex
 	// name is the application name and the log prefix for
 	// that Application instance's Logger. See `SetName` and `String`.
-	// Defaults to IRIS_APP_NAME envrinoment variable otherwise empty.
+	// Defaults to IRIS_APP_NAME environment variable otherwise empty.
 	name string
 	// Hosts contains a list of all servers (Host Supervisors) that this app is running on.
 	//
@@ -147,24 +147,6 @@ func Default() *Application {
 	// Set default log level.
 	app.logger.SetLevel("debug")
 	app.logger.Debugf(`Log level set to "debug"`)
-
-	/* #2046.
-	// Register the accesslog middleware.
-	logFile, err := os.OpenFile("./access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
-	if err == nil {
-		// Close the file on shutdown.
-		app.ConfigureHost(func(su *Supervisor) {
-			su.RegisterOnShutdown(func() {
-				logFile.Close()
-			})
-		})
-
-		ac := accesslog.New(logFile)
-		ac.AddOutput(app.logger.Printer)
-		app.UseRouter(ac.Handler)
-		app.logger.Debugf("Using <%s> to log requests", logFile.Name())
-	}
-	*/
 
 	// Register the requestid middleware
 	// before recover so current Context.GetID() contains the info on panic logs.
@@ -326,7 +308,7 @@ func (app *Application) Logger() *golog.Logger {
 // IsDebug reports whether the application is running
 // under debug/development mode.
 // It's just a shortcut of Logger().Level >= golog.DebugLevel.
-// The same method existss as Context.IsDebug() too.
+// The same method exists as Context.IsDebug() too.
 func (app *Application) IsDebug() bool {
 	return app.logger.Level >= golog.DebugLevel
 }
@@ -344,16 +326,6 @@ func (app *Application) Validate(v any) error {
 		return nil
 	}
 
-	// val := reflect.ValueOf(v)
-	// if val.Kind() == reflect.Ptr && !val.IsNil() {
-	// 	val = val.Elem()
-	// }
-
-	// if val.Kind() == reflect.Struct && val.Type() != timeType {
-	// 	return app.Validator.Struct(v)
-	// }
-
-	// no need to check the kind, underline lib does it but in the future this may change (look above).
 	err := app.Validator.Struct(v)
 	if err != nil {
 		if !strings.HasPrefix(err.Error(), "validator: ") {
@@ -385,7 +357,7 @@ func Minify(ctx Context) {
 	w := ctx.Application().Minifier().ResponseWriter(ctx.ResponseWriter().Naive(), ctx.Request())
 	// Note(@kataras):
 	// We don't use defer w.Close()
-	// because this response writer holds a sync.WaitGroup under the hoods
+	// because this response writer holds a sync.WaitGroup under the hood
 	// and we MUST be sure that its wg.Wait is called on request cancelation
 	// and not in the end of handlers chain execution
 	// (which if running a time-consuming task it will delay its resource release).
@@ -628,15 +600,6 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	return su
 }
 
-// func (app *Application) OnShutdown(closers ...func()) {
-// 	for _,cb := range closers {
-// 		if cb == nil {
-// 			continue
-// 		}
-// 		RegisterOnInterrupt(cb)
-// 	}
-// }
-
 // Shutdown gracefully terminates all the application's server hosts and any tunnels.
 // Returns an error on the first failure, otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
@@ -678,7 +641,7 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 //		app.Logger().Errorf("%s: %s", typ, err)
 //	})
 func (app *Application) Build() error {
-	if app.builded {
+	if app.built {
 		return nil
 	}
 
@@ -688,8 +651,7 @@ func (app *Application) Build() error {
 		}
 	}
 
-	// start := time.Now()
-	app.builded = true // even if fails.
+	app.built = true // even if fails.
 
 	// check if a prior app.Logger().SetLevel called and if not
 	// then set the defined configuration's log level.
@@ -793,9 +755,6 @@ func (app *Application) Build() error {
 		// re-build of the router from outside can be done with
 		// app.RefreshRouter()
 	}
-
-	// if end := time.Since(start); end.Seconds() > 5 {
-	// app.logger.Debugf("Application: build took %s", time.Since(start))
 
 	return nil
 }
@@ -1010,7 +969,7 @@ var (
 	ErrServerClosed = http.ErrServerClosed
 
 	// ErrURLQuerySemicolon is logged by the standard net/http server when
-	// the request contains a semicolon (;) wihch, after go1.17 it's not used as a key-value separator character.
+	// the request contains a semicolon (;) which, after go1.17 it's not used as a key-value separator character.
 	//
 	// Ignore it by passing this error to the `iris.WithoutServerError` configurator
 	// on `Application.Run/Listen` method.
@@ -1216,7 +1175,9 @@ func (app *Application) tryStartTunneling() {
 			app.setVHost(publicAddr[strings.Index(publicAddr, "://")+3:])
 
 			directLog := []byte(fmt.Sprintf("• Public Address: %s\n", publicAddr))
-			app.logger.Printer.Write(directLog) // nolint:errcheck
+			if _, err := app.logger.Printer.Write(directLog); err != nil {
+				app.logger.Errorf("failed to write public address log: %v", err)
+			}
 		})
 	})
 }

@@ -1,0 +1,36 @@
+<div class="cards">
+    <div class="card">
+        <div class="card-label">اجمالي الطلبات</div>
+        <div class="card-value" id="stat-requests">{{.Requests}}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">وقت التشغيل</div>
+        <div class="card-value" id="stat-uptime">{{.Uptime}}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">المسارات المسجلة</div>
+        <div class="card-value">{{.RoutesCount}}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">استخدام الذاكرة</div>
+        <div class="card-value" id="stat-memory">{{.MemoryMB}} MB</div>
+    </div>
+</div>
+
+<div class="info-section">
+    <h3>معلومات النظام</h3>
+    <table class="info-table">
+        <tr>
+            <td class="info-label">اصدار Iris</td>
+            <td>{{.Version}}</td>
+        </tr>
+        <tr>
+            <td class="info-label">اصدار Go</td>
+            <td>{{.GoVersion}}</td>
+        </tr>
+        <tr>
+            <td class="info-label">عدد الـ Goroutines</td>
+            <td id="stat-goroutines">{{.NumGoroutine}}</td>
+        </tr>
+    </table>
+</div>

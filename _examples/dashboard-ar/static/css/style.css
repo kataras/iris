@@ -1,0 +1,265 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    direction: rtl;
+}
+
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 20px 0;
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-brand {
+    text-align: center;
+    padding: 10px 20px 30px;
+    border-bottom: 1px solid #2d2d50;
+}
+
+.sidebar-brand h2 {
+    font-size: 1.8rem;
+    color: #00d2ff;
+}
+
+.sidebar-version {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.sidebar-nav {
+    padding: 15px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 25px;
+    color: #ccc;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    font-size: 0.95rem;
+}
+
+.nav-item:hover {
+    background: #2d2d50;
+    color: #fff;
+}
+
+.nav-item.active {
+    background: #00d2ff22;
+    color: #00d2ff;
+    border-right: 3px solid #00d2ff;
+}
+
+.nav-icon {
+    font-size: 1rem;
+}
+
+/* Main content */
+.main {
+    flex: 1;
+    margin-right: 220px;
+}
+
+.header {
+    background: #fff;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.header h1 {
+    font-size: 1.4rem;
+    color: #1a1a2e;
+}
+
+.header-info {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.content {
+    padding: 25px 30px;
+}
+
+/* Cards */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-label {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+/* Info section */
+.info-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.info-section h3 {
+    margin-bottom: 15px;
+    color: #1a1a2e;
+    font-size: 1.1rem;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table tr {
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.info-table td {
+    padding: 10px 0;
+    font-size: 0.9rem;
+}
+
+.info-label {
+    color: #888;
+    width: 200px;
+}
+
+/* Routes table */
+.table-container {
+    background: #fff;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow-x: auto;
+}
+
+.routes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.routes-table th {
+    text-align: right;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    color: #666;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.routes-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #f0f2f5;
+    font-size: 0.9rem;
+}
+
+.routes-table tr:hover {
+    background: #f8f9fa;
+}
+
+.method {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    min-width: 55px;
+    text-align: center;
+    font-family: monospace;
+}
+
+.method-GET { background: #28a745; }
+.method-POST { background: #007bff; }
+.method-PUT { background: #fd7e14; }
+.method-DELETE { background: #dc3545; }
+.method-PATCH { background: #6f42c1; }
+.method-HEAD { background: #6c757d; }
+.method-OPTIONS { background: #17a2b8; }
+
+.route-path {
+    font-family: monospace;
+    color: #1a1a2e;
+}
+
+.route-handler {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 60px;
+        padding: 10px 0;
+    }
+
+    .sidebar-brand h2 {
+        font-size: 1rem;
+    }
+
+    .sidebar-version,
+    .nav-item span:not(.nav-icon) {
+        display: none;
+    }
+
+    .nav-item {
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .main {
+        margin-right: 60px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

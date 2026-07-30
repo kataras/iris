@@ -1,0 +1,16 @@
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <h2>Iris</h2>
+        <span class="sidebar-version">v{{.Version}}</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/" class="nav-item {{if eq .Page "dashboard"}}active{{end}}">
+            <span class="nav-icon">&#9632;</span>
+            لوحة التحكم
+        </a>
+        <a href="/routes" class="nav-item {{if eq .Page "routes"}}active{{end}}">
+            <span class="nav-icon">&#9776;</span>
+            المسارات
+        </a>
+    </nav>
+</aside>

@@ -589,7 +589,7 @@ func WithSitemap(startURL string) Configurator {
 				ctx.ContentType(context.ContentXMLHeaderValue)
 				ctx.Write(contentCopy) // nolint:errcheck
 			}
-			if app.builded {
+			if app.built {
 				routes := app.CreateRoutes([]string{MethodGet, MethodHead, MethodOptions}, s.Path, handler)
 
 				for _, r := range routes {

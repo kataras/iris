@@ -1,0 +1,20 @@
+<div class="table-container">
+    <table class="routes-table">
+        <thead>
+            <tr>
+                <th>الطريقة</th>
+                <th>المسار</th>
+                <th>المعالج</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Routes}}
+            <tr>
+                <td><span class="method method-{{.Method}}">{{.Method}}</span></td>
+                <td class="route-path">{{.Path}}</td>
+                <td class="route-handler">{{.Handler}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
