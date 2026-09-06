@@ -163,7 +163,7 @@ func dispatchErr(ctx *context.Context, status int, err error) bool {
 // Result or (Result, error) and so on...
 //
 // where Get is an HTTP METHOD.
-func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler ResultHandler) error {
+func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler ResultHandler, hasResultHandlers bool) error {
 	if len(values) == 0 {
 		return nil
 	}
@@ -328,13 +328,13 @@ func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler Re
 		}
 	}
 
-	return dispatchCommon(ctx, statusCode, contentType, content, custom, handler, found)
+	return dispatchCommon(ctx, statusCode, contentType, content, custom, handler, found, hasResultHandlers)
 }
 
 // dispatchCommon is being used internally to send
 // commonly used data to the response writer with a smart way.
 func dispatchCommon(ctx *context.Context,
-	statusCode int, contentType string, content []byte, v any, handler ResultHandler, found bool) error {
+	statusCode int, contentType string, content []byte, v any, handler ResultHandler, found bool, hasResultHandlers bool) error {
 	// if we have a false boolean as a return value
 	// then skip everything and fire a not found,
 	// we even don't care about the given status code or the object or the content.
@@ -364,6 +364,16 @@ func dispatchCommon(ctx *context.Context,
 	ctx.ContentType(contentType)
 
 	if v != nil {
+		return handler(ctx, v)
+	}
+
+	// A nil return value normally skips the result handler chain and just
+	// flushes headers/content. But when the container has custom result
+	// handlers registered (via UseResultHandler), they must still run — a
+	// handler that returns nil is a valid case a custom handler may want to
+	// observe or replace (see issue #2534). The default handler is not invoked
+	// on nil here, so behavior without custom handlers is unchanged.
+	if hasResultHandlers {
 		return handler(ctx, v)
 	}
 
@@ -456,7 +466,7 @@ func (r Response) Dispatch(ctx *context.Context) {
 		}
 	}
 
-	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, defaultResultHandler, true)
+	err := dispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, defaultResultHandler, true, false)
 	dispatchErr(ctx, r.Code, err)
 }
 

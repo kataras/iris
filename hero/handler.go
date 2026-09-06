@@ -178,7 +178,7 @@ func makeHandler(fn any, c *Container, paramsCount int) context.Handler {
 		// }
 
 		outputs := v.Call(inputs)
-		if err := dispatchFuncResult(ctx, outputs, resultHandler); err != nil {
+		if err := dispatchFuncResult(ctx, outputs, resultHandler, len(c.resultHandlers) > 0); err != nil {
 			c.GetErrorHandler(ctx).HandleError(ctx, err)
 		}
 	}

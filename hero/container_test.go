@@ -129,3 +129,35 @@ func TestContainerUseResultHandler(t *testing.T) {
 	e := httptest.New(t, app)
 	e.GET("/42").Expect().Status(httptest.StatusOK).JSON().IsEqual(expectedResponse)
 }
+
+// TestContainerUseResultHandlerOnNil covers issue #2534: a handler that returns
+// a nil value must still run the registered result handler chain. Previously
+// dispatchCommon skipped the handler when the value was nil, so a custom
+// UseResultHandler never fired for nil returns.
+func TestContainerUseResultHandlerOnNil(t *testing.T) {
+	c := New()
+
+	called := false
+	replacement := map[string]any{"handled": true}
+	c.UseResultHandler(func(next ResultHandler) ResultHandler {
+		return func(ctx iris.Context, v any) error {
+			called = true
+			// A custom handler may replace a nil result with its own payload.
+			return next(ctx, replacement)
+		}
+	})
+
+	handler := c.Handler(func() any {
+		return nil
+	})
+
+	app := iris.New()
+	app.Get("/", handler)
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(httptest.StatusOK).JSON().IsEqual(replacement)
+
+	if !called {
+		t.Fatal("result handler was not called for a nil return value")
+	}
+}
