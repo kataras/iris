@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/v14/context/encoding"
 )
 
 func TestCSV(t *testing.T) {
@@ -34,7 +34,7 @@ func TestCSV(t *testing.T) {
 			573,
 			81,
 			nil,
-			[]memstore.StringEntry{{Key: "sleep", Value: "1s"}},
+			encoding.StringEntries{{Key: "sleep", Value: "1s"}},
 			nil)
 	}
 

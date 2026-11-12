@@ -8,12 +8,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/context/encoding"
 )
 
 func TestAccessLogPrint_Simple(t *testing.T) {
@@ -32,7 +31,7 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 	)
 
 	now := time.Now()
-	for i := 0; i < goroutinesN; i++ {
+	for range goroutinesN {
 		go func() {
 			err := ac.Print(
 				nil,
@@ -46,14 +45,14 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 				"Outcoming",
 				0,
 				0,
-				memstore.Store{
-					{Key: "path_param", ValueRaw: "path_param_value"},
+				encoding.PathParams{
+					{Key: "path_param", Value: "path_param_value"},
 				},
-				[]memstore.StringEntry{
+				encoding.StringEntries{
 					{Key: "url_query", Value: "url_query_value"},
 				},
-				[]memstore.Entry{
-					{Key: "custom", ValueRaw: "custom_value"},
+				Fields{
+					{Key: "custom", Value: "custom_value"},
 				})
 
 			if err == nil {
@@ -72,7 +71,7 @@ func TestAccessLogPrint_Simple(t *testing.T) {
 	ac.Close()
 	end := time.Since(now)
 
-	if got := atomic.LoadUint32(&ac.remaining); got > 0 { // test wait.
+	if got := ac.remaining.Load(); got > 0 { // test wait.
 		t.Fatalf("expected remaining: %d but got: %d", 0, got)
 	}
 
@@ -97,17 +96,20 @@ func TestAccessLogBroker(t *testing.T) {
 	ac.Clock = TClock(time.Time{})
 	broker := ac.Broker()
 
-	wg := new(sync.WaitGroup)
 	n := 4
-	wg.Add(n)
-	go func() {
+	// The listener goroutine sleeps and logs between receives, so the test
+	// must not return before it finishes: t.Log after test completion panics.
+	// It stops itself after "n" logs so that Wait can complete before Close
+	// and no log is lost to the race between the broker's close signal and
+	// the delivery of the last log.
+	var wg sync.WaitGroup
+	wg.Go(func() {
 		i := 0
 		ln := broker.NewListener()
 
 		for log := range ln {
 			lat := log.Latency
 			t.Log(lat.String())
-			wg.Done()
 			if expected := time.Duration(i) * time.Second; expected != lat {
 				panic(fmt.Sprintf("expected latency: %s but got: %s", expected, lat))
 			}
@@ -116,17 +118,13 @@ func TestAccessLogBroker(t *testing.T) {
 				panic("expected logger to wait for notifier before release the log")
 			}
 			i++
-		}
-
-		if i != n {
-			for i < n {
-				wg.Done()
-				i++
+			if i == n {
+				break
 			}
 		}
 
 		t.Log("Log Listener Closed: interrupted")
-	}()
+	})
 
 	time.Sleep(time.Second)
 
@@ -153,11 +151,11 @@ func TestAccessLogBroker(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		printLog(time.Duration(i) * time.Second)
 	}
 
-	// wait for all listeners to finish.
+	// wait for the listener to receive and verify all "n" logs.
 	wg.Wait()
 
 	ac.Close()
@@ -243,11 +241,8 @@ func TestAccessLogSetOutput(t *testing.T) {
 
 	testSetOutput := func(name string, w io.Writer, withSlowClose bool) {
 		wg := new(sync.WaitGroup)
-		wg.Add(n / 4)
-		for i := 0; i < n/4; i++ {
-			go func(i int) {
-				defer wg.Done()
-
+		for i := range n / 4 {
+			wg.Go(func() {
 				if i%2 == 0 {
 					time.Sleep(10 * time.Millisecond)
 				}
@@ -266,7 +261,7 @@ func TestAccessLogSetOutput(t *testing.T) {
 				}
 
 				printLog()
-			}(i)
+			})
 		}
 
 		// wait to finish.
@@ -329,7 +324,6 @@ func benchmarkAccessLogAfter(b *testing.B, withLogStruct, async bool) {
 	ac.BytesReceivedBody = false
 	ac.BytesSent = false
 	ac.BytesSentBody = false
-	ac.BodyMinify = false
 	ac.RequestBody = false
 	ac.ResponseBody = false
 	ac.Async = false
@@ -343,24 +337,19 @@ func benchmarkAccessLogAfter(b *testing.B, withLogStruct, async bool) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	ctx.ResetRequest(req)
+	ctx.SetRequest(req)
 	recorder := httptest.NewRecorder()
-	w := context.AcquireResponseWriter()
-	w.BeginResponse(recorder)
-	ctx.ResetResponseWriter(w)
+	w := context.AcquireResponseWriter(recorder)
+	ctx.SetResponseWriter(w)
 
 	wg := new(sync.WaitGroup)
-	if async {
-		wg.Add(b.N)
-	}
 
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		if async {
-			go func() {
+			wg.Go(func() {
 				ac.after(ctx, time.Millisecond, "GET", "/")
-				wg.Done()
-			}()
+			})
 		} else {
 			ac.after(ctx, time.Millisecond, "GET", "/")
 		}
@@ -369,5 +358,5 @@ func benchmarkAccessLogAfter(b *testing.B, withLogStruct, async bool) {
 	if async {
 		wg.Wait()
 	}
-	w.EndResponse()
+	context.ReleaseResponseWriter(w)
 }

@@ -4,8 +4,8 @@
 package apps
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 )
 
 // Get returns an Iris Application based on its "appName".
@@ -24,14 +24,19 @@ import (
 func Get(appName ...string) *iris.Application {
 	if len(appName) == 0 || appName[0] == "" {
 		if app := context.LastApplication(); app != nil {
-			return app.(*iris.Application)
+			if irisApp, ok := app.(*iris.Application); ok {
+				return irisApp
+			}
+			return nil
 		}
 
-		return iris.New().SetName("Default")
+		return iris.New(iris.Options{Name: "Default"})
 	}
 
 	if app, ok := context.GetApplication(appName[0]); ok {
-		return app.(*iris.Application)
+		if irisApp, ok := app.(*iris.Application); ok {
+			return irisApp
+		}
 	}
 
 	return nil
@@ -43,7 +48,9 @@ func GetAll() []*iris.Application {
 	apps := make([]*iris.Application, 0, len(appsReadOnly))
 
 	for _, app := range appsReadOnly {
-		apps = append(apps, app.(*iris.Application))
+		if irisApp, ok := app.(*iris.Application); ok {
+			apps = append(apps, irisApp)
+		}
 	}
 
 	return apps

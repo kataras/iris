@@ -8,22 +8,22 @@ import (
 
 // Uint64 completes the expvar metric interface, holds an uint64 value.
 type Uint64 struct {
-	value uint64
+	value atomic.Uint64
 }
 
 // Set sets v to value.
 func (v *Uint64) Set(value uint64) {
-	atomic.StoreUint64(&v.value, value)
+	v.value.Store(value)
 }
 
 // Value returns the underline uint64 value.
 func (v *Uint64) Value() uint64 {
-	return atomic.LoadUint64(&v.value)
+	return v.value.Load()
 }
 
 // String returns the text representation of the underline uint64 value.
 func (v *Uint64) String() string {
-	return strconv.FormatUint(atomic.LoadUint64(&v.value), 10)
+	return strconv.FormatUint(v.value.Load(), 10)
 }
 
 func newUint64(name string) *Uint64 {

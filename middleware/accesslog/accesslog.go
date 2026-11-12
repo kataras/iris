@@ -1,3 +1,10 @@
+// Package accesslog logs one line per request, in a text, CSV, JSON or custom
+// template format, to one or more destinations.
+//
+// Its entry point is New(io.Writer) (or File/FileUnbuffered), which returns an
+// *AccessLog rather than a Handler: the value owns a background flusher and a
+// broker, must be Closed, and is configured after construction; register its
+// `Handler` method with app.UseRouter.
 package accesslog
 
 import (
@@ -15,9 +22,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/host"
-	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/context/encoding"
+	"github.com/kataras/iris/v14/internal/signalhandler"
+	"github.com/kataras/iris/v14/middleware/recorder"
 )
 
 func init() {
@@ -34,7 +42,7 @@ const (
 // set/get/remove custom log fields. Use its `Set` method.
 //
 // To use with MVC: Register(accesslog.GetFields).
-// DI Handlers: ConfigureContainer().RegisterDependency(accesslog.GetFields).
+// Controllers: DI().Register(accesslog.GetFields).
 func GetFields(ctx *context.Context) (fields *Fields) {
 	if v := ctx.Values().Get(fieldsContextKey); v != nil {
 		fields = v.(*Fields)
@@ -64,9 +72,9 @@ func shouldSkip(ctx *context.Context) bool {
 }
 
 type (
-	// Fields is a type alias for memstore.Store, used to set
-	// more than one field at serve-time. Same as FieldExtractor.
-	Fields = memstore.Store
+	// Fields is a type alias for encoding.Entries, used to set
+	// more than one field at serve-time. See also FieldSetter.
+	Fields = encoding.Entries[any]
 	// FieldSetter sets one or more fields at once.
 	FieldSetter func(*context.Context, *Fields)
 )
@@ -109,8 +117,10 @@ var (
 type AccessLog struct {
 	mu sync.RWMutex // ensures atomic writes.
 	// The destination writer.
-	// If multiple output required, then define an `io.MultiWriter`.
-	// See `SetOutput` and `AddOutput` methods too.
+	// For more than one output pass several writers to `SetOutput` (or
+	// `AddOutput`) instead of combining them yourself with an `io.MultiWriter`:
+	// each writer is inspected on its own, which is how a file becomes a
+	// registered Closer and Flusher.
 	Writer io.Writer
 
 	// If not empty then each one of them is called on `Close` method.
@@ -190,16 +200,44 @@ type AccessLog struct {
 	// Note that, if this is true then it modifies the underline request's body type.
 	//
 	// Defaults to true.
+	//
+	// SECURITY WARNING: this logs the request body VERBATIM.
+	//
+	// A POST to /login writes the submitted password into the access log, and on
+	// to whatever ships it elsewhere. The same goes for tokens, API keys and card
+	// numbers. The Authorization HEADER is deliberately not logged; leaving this
+	// on defeats that.
+	//
+	// Set Redact (below) to scrub the values, or turn this off for the routes
+	// that accept credentials.
 	RequestBody bool
+	// Redact, when set, is called for every request and response body before it
+	// is written to the log. Return the value to log, e.g. "" to drop it.
+	//
+	// It is NOT called for the path, query or custom fields, which are always
+	// sanitized for control characters but never rewritten.
+	//
+	// Usage:
+	//
+	//	ac.Redact = func(ctx iris.Context, body string) string {
+	//		if ctx.Path() == "/login" {
+	//			return "[redacted]"
+	//		}
+	//		return body
+	//	}
+	Redact func(ctx *context.Context, body string) string
 	// Enable response body logging.
 	// Note that, if this is true then it uses a response recorder.
 	//
+	// The body is left out of the line when the response carries a
+	// Content-Encoding other than "identity". The access log is registered
+	// outside the compression middleware (that is the builder's order), so
+	// what it recorded for such a response is the compressed bytes: binary in
+	// the log, and nothing a Redact function can match. Bytes sent and every
+	// other field are logged as usual, and Redact is not called for that line.
+	//
 	// Defaults to false.
 	ResponseBody bool
-	// Force minify request and response contents.
-	//
-	// Defaults to true.
-	BodyMinify bool
 
 	// KeepMultiLineError displays the Context's error as it's.
 	// If set to false then it replaces all line characters with spaces.
@@ -216,6 +254,12 @@ type AccessLog struct {
 	// * LogStack   (logs the debug stack)
 	PanicLog PanicLog
 
+	// OnlyFailures if set to true then only failures will be logged, a failure is when a client receives an error (status code >=400) from the server.
+	// Useful when you want only errors to be logged, works perfectly with the rest/errors subpackage.
+	//
+	// Defaults to false.
+	OnlyFailures bool
+
 	// Map log fields with custom request values.
 	// See `AddFields` method.
 	FieldSetters []FieldSetter
@@ -230,9 +274,9 @@ type AccessLog struct {
 	// the builder for the default format.
 	bufPool *sync.Pool
 	// remaining logs when Close is called, we wait for timeout (see CloseContext).
-	remaining uint32
+	remaining atomic.Uint32
 	// reports whether the logger is already closed, see `Close` & `CloseContext` methods.
-	isClosed uint32
+	isClosed atomic.Bool
 }
 
 // PanicLog holds the type for the available panic log levels.
@@ -259,10 +303,7 @@ const (
 // Register by its `Handler` method.
 // See `File` package-level function too.
 //
-// Examples:
-// https://github.com/kataras/iris/tree/v12/_examples/logging/request-logger/accesslog
-// https://github.com/kataras/iris/tree/v12/_examples/logging/request-logger/accesslog-template
-// https://github.com/kataras/iris/tree/v12/_examples/logging/request-logger/accesslog-broker
+// Example: https://github.com/kataras/iris/tree/main/_examples/06-middleware/accesslog
 func New(w io.Writer) *AccessLog {
 	ac := &AccessLog{
 		Clock:              clockFunc(time.Now),
@@ -278,7 +319,6 @@ func New(w io.Writer) *AccessLog {
 		BytesSentBody:      true,
 		RequestBody:        true,
 		ResponseBody:       false,
-		BodyMinify:         true,
 		KeepMultiLineError: true,
 		PanicLog:           LogHandler,
 		logsPool: &sync.Pool{New: func() any {
@@ -306,10 +346,7 @@ func New(w io.Writer) *AccessLog {
 	// 	}()
 	// }
 
-	host.RegisterOnInterrupt(func() {
-		ac.Close()
-	})
-
+	signalhandler.Register(ac.Close)
 	return ac
 }
 
@@ -324,14 +361,40 @@ func New(w io.Writer) *AccessLog {
 // It panics on error.
 func File(path string) *AccessLog {
 	f := mustOpenFile(path)
-	return New(bufio.NewReadWriter(bufio.NewReader(f), bufio.NewWriter(f)))
+	// Note(@kataras): register the FILE as the closer, not the buffer.
+	//
+	// bufio.ReadWriter is a Flusher but not an io.Closer, so SetOutput found
+	// nothing to close and `Close` flushed the buffer and then leaked the
+	// descriptor - for a log file that a long-running program may reopen on
+	// rotation, once per reopen.
+	return New(bufio.NewReadWriter(bufio.NewReader(f), bufio.NewWriter(f))).addCloser(f)
 }
 
 // FileUnbuffered same as File but it does not buffer the data,
 // it flushes the loggers contents as soon as possible.
+//
+// The file is closed by `Close`, as it is with `File`.
 func FileUnbuffered(path string) *AccessLog {
 	f := mustOpenFile(path)
+	// *os.File is itself an io.Closer, so SetOutput inside New already registered
+	// it; addCloser is not needed and would close it twice.
 	return New(f)
+}
+
+// addCloser registers "c" to be closed by `Close`, for a destination whose
+// writer does not implement io.Closer itself (a buffered file, say).
+func (ac *AccessLog) addCloser(c io.Closer) *AccessLog {
+	ac.mu.Lock()
+	ac.Closers = append(ac.Closers, c)
+	ac.mu.Unlock()
+	return ac
+}
+
+// isProcessStream reports whether "w" is one of the process's own standard
+// streams. This package never closes those: it did not open them, and closing
+// stdout on shutdown breaks every other writer in the program. See setOutput.
+func isProcessStream(w io.Writer) bool {
+	return w == os.Stdout || w == os.Stderr || w == os.Stdin
 }
 
 func mustOpenFile(path string) *os.File {
@@ -469,7 +532,18 @@ func (ac *AccessLog) setOutput(reset bool, writers ...io.Writer) {
 			ac.mu.Unlock()
 		}
 
-		if closer, ok := w.(io.Closer); ok {
+		// Note(@kataras): never take ownership of the process's own streams.
+		//
+		// os.Stdout and os.Stderr are *os.File, so this type assertion used to
+		// register them as Closers - and `Close`, which a graceful shutdown and the
+		// signal handler both call, then closed the process's stdout for everyone.
+		// The application builder's default access log writes to os.Stdout, so any
+		// app with LogRequests(true) lost its standard output on shutdown: every
+		// later write from any logger went to a closed descriptor.
+		//
+		// We did not open them, so we do not close them. Flushing and truncating
+		// them is still fine and still registered above.
+		if closer, ok := w.(io.Closer); ok && !isProcessStream(w) {
 			ac.mu.Lock()
 			ac.Closers = append(ac.Closers, closer)
 			ac.mu.Unlock()
@@ -498,8 +572,9 @@ func (ac *AccessLog) setOutput(reset bool, writers ...io.Writer) {
 		}
 		for _, closer := range closers {
 			if closer != nil {
-				// cannot close os.Stdout/os.Stderr
-				if closer == os.Stdout || closer == os.Stderr {
+				// Belt and braces: the registration above never adds a standard
+				// stream, but Closers is an exported field a caller may append to.
+				if w, ok := closer.(io.Writer); ok && isProcessStream(w) {
 					continue
 				}
 				closer.Close()
@@ -514,6 +589,10 @@ func (ac *AccessLog) setOutput(reset bool, writers ...io.Writer) {
 // flushes any formatter and any buffered data to the underline writer
 // and finally closes any registered closers (files are automatically added as Closer).
 //
+// The process's own os.Stdout, os.Stderr and os.Stdin are never registered and
+// therefore never closed, even when they are the output: this package did not
+// open them.
+//
 // After Close is called the AccessLog is not accessible.
 func (ac *AccessLog) Close() (err error) {
 	ctx, cancelFunc := stdContext.WithTimeout(stdContext.Background(), 10*time.Second)
@@ -524,7 +603,7 @@ func (ac *AccessLog) Close() (err error) {
 
 // CloseContext same as `Close` but waits until given "ctx" is done.
 func (ac *AccessLog) CloseContext(ctx stdContext.Context) (err error) {
-	if !atomic.CompareAndSwapUint32(&ac.isClosed, 0, 1) {
+	if !ac.isClosed.CompareAndSwap(false, true) {
 		return
 	}
 
@@ -537,11 +616,7 @@ func (ac *AccessLog) CloseContext(ctx stdContext.Context) (err error) {
 	}
 
 	if fErr := ac.Flush(); fErr != nil {
-		if err == nil {
-			err = fErr
-		} else {
-			err = fmt.Errorf("%v, %v", err, fErr)
-		}
+		err = fErr
 	}
 
 	for _, closer := range ac.Closers {
@@ -559,7 +634,7 @@ func (ac *AccessLog) CloseContext(ctx stdContext.Context) (err error) {
 }
 
 func (ac *AccessLog) waitRemaining(ctx stdContext.Context) {
-	if n := atomic.LoadUint32(&ac.remaining); n == 0 {
+	if n := ac.remaining.Load(); n == 0 {
 		return
 	}
 
@@ -570,7 +645,7 @@ func (ac *AccessLog) waitRemaining(ctx stdContext.Context) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			if atomic.LoadUint32(&ac.remaining) == 0 {
+			if ac.remaining.Load() == 0 {
 				return
 			}
 		}
@@ -589,7 +664,7 @@ func (ac *AccessLog) waitRemaining(ctx stdContext.Context) {
 // Safe for concurrent use.
 func (ac *AccessLog) Write(p []byte) (n int, err error) {
 	if ac.Async {
-		if atomic.LoadUint32(&ac.isClosed) > 0 {
+		if ac.isClosed.Load() {
 			return 0, io.ErrClosedPipe
 		}
 	}
@@ -699,7 +774,6 @@ func (ac *AccessLog) AddFields(setters ...FieldSetter) *AccessLog {
 
 func (ac *AccessLog) shouldReadRequestBody() bool {
 	return ac.RequestBody || ac.BytesReceived || ac.BytesReceivedBody
-
 }
 
 func (ac *AccessLog) shouldReadResponseBody() bool {
@@ -729,12 +803,24 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 
 	// Enable response recording.
 	if ac.shouldReadResponseBody() {
-		ctx.Record()
+		// ctx.Record()
+		previous := ctx.ResponseWriter()
+		if rr, ok := recorder.AcquireResponseRecorder(previous); ok {
+			ctx.SetResponseWriter(rr)
+			// Put the previous writer back before the recorder returns to its
+			// pool: whatever is registered outside the access log reads the
+			// Context's writer after this handler returns.
+			defer func() {
+				ctx.SetResponseWriter(previous)
+				recorder.ReleaseResponseRecorder(rr)
+			}()
+		}
 	}
 	// Enable reading the request body
 	// multiple times (route handler and this middleware).
 	if ac.shouldReadRequestBody() {
-		ctx.RecordRequestBody(true)
+		// ctx.RecordRequestBody()
+		_ = recorder.ReadRequestBody(ctx)
 	}
 
 	// Set the fields context value so they can be modified
@@ -744,30 +830,37 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	// So we initialize them whenever, and if, asked.
 
 	// Proceed to the handlers chain.
-	currentIndex := ctx.HandlerIndex(-1)
+	// currentIndex := ctx.HandlerIndex(-1)
 	ctx.Next()
-	if context.StatusCodeNotSuccessful(ctx.GetStatusCode()) {
-		_, wasRecovered := ctx.IsRecovered()
-		// The ctx.HandlerName is still accesslog because
-		// on end of router filters the router resets
-		// the handler index, same for errors.
-		// So, as a special case, if it's a failure status code
-		// call FireErorrCode manually instead of wait
-		// to be called on EndRequest (which is, correctly, called on end of everything
-		// so we don't have chance to record its body by default).
-		//
-		// Note: this however will call the error handler twice
-		// if the end-developer registered that using `UseError` instead of `UseRouter`,
-		// there is a way to fix that too: by checking the handler index diff:
-		if currentIndex == ctx.HandlerIndex(-1) || wasRecovered {
-			// if handler index before and after ctx.Next
-			// is the same, then it means we are in `UseRouter`
-			// and on error handler.
-			ctx.Application().FireErrorCode(ctx)
-		}
-	}
+	wasFailure := context.StatusCodeNotSuccessful(ctx.GetStatusCode())
+
+	// 28 June 2024: Remove this check, let the router handle the error. TODO: Check if tests already exist for this.
+	// if wasFailure {
+	// 	_, wasRecovered := ctx.IsRecovered()
+	// 	// The ctx.HandlerName is still accesslog because
+	// 	// on end of router filters the router resets
+	// 	// the handler index, same for errors.
+	// 	// So, as a special case, if it's a failure status code
+	// 	// call FireErorrCode manually instead of wait
+	// 	// to be called on EndRequest (which is, correctly, called on end of everything
+	// 	// so we don't have chance to record its body by default).
+	// 	//
+	// 	// Note: this however will call the error handler twice
+	// 	// if the end-developer registered that using `UseError` instead of `UseRouter`,
+	// 	// there is a way to fix that too: by checking the handler index diff:
+	// 	if currentIndex == ctx.HandlerIndex(-1) || wasRecovered {
+	// 		// if handler index before and after ctx.Next
+	// 		// is the same, then it means we are in `UseRouter`
+	// 		// and on error handler.
+	// 		ctx.Application().FireErrorCode(ctx)
+	// 	}
+	// }
 
 	if shouldSkip(ctx) { // normal flow, we can get the context by executing the handler first.
+		return
+	}
+
+	if ac.OnlyFailures && !wasFailure { // if we are here then it's a success, skip.
 		return
 	}
 
@@ -782,6 +875,14 @@ func (ac *AccessLog) Handler(ctx *context.Context) {
 	}
 }
 
+// isContentEncoded reports whether the response was compressed, or encoded in
+// any other way, by something that ran inside the access log: the recorded
+// body is then the encoded bytes, not the text the handler wrote.
+func isContentEncoded(ctx *context.Context) bool {
+	encoding := ctx.ResponseWriter().Header().Get(context.ContentEncodingHeaderKey)
+	return encoding != "" && !strings.EqualFold(encoding, "identity")
+}
+
 func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path string) {
 	var (
 		// request and response data or error reading them.
@@ -791,7 +892,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		bytesSent     int
 	)
 
-	if ac.shouldReadRequestBody() {
+	if ac.shouldReadRequestBody() { // body already recorded by the previous step.
 		//	any error handler stored ( ctx.SetErr or StopWith(Plain)Error )
 		if ctxErr := ctx.GetErr(); ctxErr != nil {
 			// If there is an error here
@@ -799,7 +900,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 			// unauthorized user tries to send a malicious body.
 			requestBody = ac.getErrorText(ctxErr)
 		} else {
-			requestData, err := ctx.GetBody()
+			requestData, err := ctx.Body()
 			requestBodyLength := len(requestData)
 			if ac.BytesReceivedBody {
 				bytesReceived = requestBodyLength // store it, if the total is enabled then this will be overridden.
@@ -810,16 +911,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 				}
 			} else if requestBodyLength > 0 {
 				if ac.RequestBody {
-					if ac.BodyMinify {
-						if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentTypeRequested(), requestData); err == nil {
-							requestBody = string(minified)
-						}
-					}
-					/* Some content types, like the text/plain,
-					   no need minifier. Should be printed with spaces and \n. */
-					if requestBody == "" {
-						requestBody = string(requestData)
-					}
+					requestBody = ac.redact(ctx, string(requestData))
 				}
 			}
 
@@ -835,33 +927,21 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		}
 	}
 
-	if ac.shouldReadResponseBody() {
-		actualResponseData := ctx.Recorder().Body()
+	if ac.shouldReadResponseBody() { // response already recorded by the previous step.
+		actualResponseData := recorder.GetResponseRecorder(ctx).GetBody()
 		responseBodyLength := len(actualResponseData)
 
 		if ac.BytesSentBody {
 			bytesSent = responseBodyLength
 		}
-		if ac.ResponseBody && responseBodyLength > 0 {
-			if ac.BodyMinify {
-				// Copy response data as minifier now can change the back slice,
-				// fixes: https://github.com/kataras/iris-premium/issues/17.
-				responseData := make([]byte, len(actualResponseData))
-				copy(responseData, actualResponseData)
-
-				if minified, err := ctx.Application().Minifier().Bytes(ctx.GetContentType(), responseData); err == nil {
-					responseBody = string(minified)
-					responseBodyLength = len(responseBody)
-				}
-			}
-
+		if ac.ResponseBody && responseBodyLength > 0 && !isContentEncoded(ctx) {
 			if responseBody == "" {
-				responseBody = string(actualResponseData)
+				responseBody = ac.redact(ctx, string(actualResponseData))
 			}
 		}
 
 		if ac.BytesSent {
-			resp := ctx.Recorder().Result()
+			resp := recorder.GetResponse(ctx)
 			b, _ := httputil.DumpResponse(resp, false)
 			dateLengthProx := 38 /* it's actually ~37 */
 			if resp.Header.Get("Date") != "" {
@@ -882,7 +962,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 
 	timeFormat := ac.TimeFormat
 	if timeFormat == "" {
-		timeFormat = ctx.Application().ConfigurationReadOnly().GetTimeFormat()
+		timeFormat = ctx.OptionsReadOnly().TimeFormat
 	}
 
 	ip := ""
@@ -902,7 +982,7 @@ func (ac *AccessLog) after(ctx *context.Context, lat time.Duration, method, path
 		ip,
 		requestBody, responseBody,
 		bytesReceived, bytesSent,
-		ctx.Params().Store, ctx.URLParamsSorted(), *fields,
+		*ctx.Params(), ctx.Query().StringEntries, *fields,
 	); err != nil {
 		ctx.Application().Logger().Errorf("accesslog: %v", err)
 	}
@@ -916,7 +996,7 @@ func (ac *AccessLog) Print(ctx *context.Context,
 	code int,
 	method, path, ip, reqBody, respBody string,
 	bytesReceived, bytesSent int,
-	params memstore.Store, query []memstore.StringEntry, fields []memstore.Entry) (err error) {
+	params encoding.PathParams, query encoding.StringEntries, fields Fields) (err error) {
 
 	if ac.Async {
 		// atomic.AddUint32(&ac.remaining, 1)
@@ -924,13 +1004,13 @@ func (ac *AccessLog) Print(ctx *context.Context,
 		// but to make sure we have the correct number of increments.
 		// CAS loop:
 		for {
-			cur := atomic.LoadUint32(&ac.remaining)
-			if atomic.CompareAndSwapUint32(&ac.remaining, cur, cur+1) {
+			cur := ac.remaining.Load()
+			if ac.remaining.CompareAndSwap(cur, cur+1) {
 				break
 			}
 		}
 
-		defer atomic.AddUint32(&ac.remaining, ^uint32(0))
+		defer ac.remaining.Add(^uint32(0))
 	}
 
 	now := ac.Clock.Now()
@@ -987,10 +1067,10 @@ func (ac *AccessLog) Print(ctx *context.Context,
 	builder.WriteString(strconv.Itoa(code))
 	builder.WriteByte(ac.Delim)
 
-	builder.WriteString(method)
+	builder.WriteString(sanitizeLogValue(method))
 	builder.WriteByte(ac.Delim)
 
-	builder.WriteString(path)
+	builder.WriteString(sanitizeLogValue(path))
 	builder.WriteByte(ac.Delim)
 
 	if ac.IP {
@@ -1044,8 +1124,68 @@ func (ac *AccessLog) writeText(buf *bytes.Buffer, s string) {
 		}
 		buf.Write(ac.Blank)
 	} else {
-		buf.WriteString(s)
+		buf.WriteString(sanitizeLogValue(s))
 	}
+}
+
+// redact runs the configured Redact hook, if any, over a body before logging.
+func (ac *AccessLog) redact(ctx *context.Context, body string) string {
+	if ac.Redact == nil {
+		return body
+	}
+
+	return ac.Redact(ctx, body)
+}
+
+// sanitizeLogValue neutralises control characters in a client-controlled value
+// before it reaches a log line.
+//
+// Note(@kataras): this is the fix for log injection.
+//
+// ctx.Path() is percent-DECODED, so a request to
+//
+//	GET /a%0A2026-08-01%2012:00:00%7C1ms%7C200%7CGET%7C/admin%7C127.0.0.1
+//
+// used to write a complete, well-formed second log line that a SIEM parses as a
+// real successful admin request. Query values, path parameters, custom fields
+// and the request body were equally raw - lineBreaksReplacer existed but was
+// applied only to error text.
+//
+// ANSI escapes are stripped too: a log read in a terminal can otherwise be made
+// to rewrite or hide lines that were already printed.
+func sanitizeLogValue(s string) string {
+	if !needsSanitizing(s) {
+		return s // the common case: no allocation.
+	}
+
+	var b strings.Builder
+	b.Grow(len(s))
+
+	for _, r := range s {
+		switch {
+		case r == '\n' || r == '\r' || r == '\t':
+			b.WriteByte(' ')
+		case r == 0x1b: // ESC, the start of an ANSI sequence.
+			continue
+		case r < 0x20 || r == 0x7f: // other C0 controls and DEL.
+			continue
+		default:
+			b.WriteRune(r)
+		}
+	}
+
+	return b.String()
+}
+
+// needsSanitizing reports whether "s" contains anything sanitizeLogValue changes.
+func needsSanitizing(s string) bool {
+	for i := range len(s) {
+		if c := s[i]; c < 0x20 || c == 0x7f {
+			return true
+		}
+	}
+
+	return false
 }
 
 var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")

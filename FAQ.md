@@ -14,29 +14,35 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 
 <https://marketplace.visualstudio.com/items?itemName=kataras2006.iris>
 
-> Please feel free to list your own Iris extension(s) here by [PR](https://github.com/kataras/iris/pulls)
+> Add your own Iris extension to this list with a [pull request](https://github.com/kataras/iris/pulls).
+
+## Is there an AI assistant that knows Iris?
+
+Two of them. The free live AI wiki at <https://codewiki.google/github.com/kataras/iris> is generated from this repository and answers questions about the codebase in your browser.
+
+[Plexon AI](https://plexon.ai) is a desktop assistant built by the author of Iris. It ships the [Iris skill](https://iris-go.com/ai/) reference material built in, and its [Software Developer persona](https://plexon.ai/personas/software-developer/) turns that skill on.
 
 ## How to upgrade
 
 ```sh
-go get github.com/kataras/iris/v12@latest
+go get github.com/kataras/iris/v14@latest
 ```
 
-Go version 1.20 and above is required.
+Go version 1.27 or later is required.
 
 ## Learning
 
-More than 280 practical examples, tutorials and articles at:
+The book is free to read online and to download as a PDF, and the examples run as they are:
 
 - https://www.iris-go.com/docs
-- https://www.iris-go.com/#ebookDonateForm
+- https://iris-go.com/book/
 <!-- - https://github.com/kataras/iris/wiki/Starter-kits -->
-- https://github.com/kataras/iris/tree/v12/_examples
-- https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.12
+- https://github.com/kataras/iris/tree/main/_examples
+- https://pkg.go.dev/github.com/kataras/iris/v14@main
 
 ## Active development mode
 
-Iris may have reached version 12, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+Iris may have reached version 14, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
 ## Can I find a job if I learn how to use Iris?
 

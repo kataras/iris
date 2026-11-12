@@ -1,11 +1,17 @@
+// Package modrevision serves the build information of the running binary
+// (module version, VCS revision, build time) on a route.
+//
+// Its entry point is New(Options), which returns a Handler.
 package modrevision
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/core/pkg/buildinfo"
 )
 
 func init() {
@@ -25,6 +31,9 @@ type Options struct {
 	UnixTime bool
 	// A non nil time location value to customize the display of the build time.
 	TimeLocation *time.Location
+	// CloudDetection is used to detect and log if the server is running on a cloud provider.
+	// Defaults to false.
+	CloudDetection bool
 }
 
 // New returns an Iris Handler which renders
@@ -40,9 +49,11 @@ type Options struct {
 //	 Env:          "development",
 //	 Developer:    "kataras",
 //	 TimeLocation: time.FixedZone("Greece/Athens", 7200),
+//	 UnixTime:     true,
+//	 CloudDetection: true,
 //	}))
 func New(opts Options) context.Handler {
-	buildTime, buildRevision := context.BuildTime, context.BuildRevision
+	buildTime, buildRevision := buildinfo.BuildTime, buildinfo.BuildRevision
 	if opts.UnixTime {
 		if t, err := time.Parse(time.RFC3339, buildTime); err == nil {
 			buildTime = fmt.Sprintf("%d", t.Unix())
@@ -65,6 +76,14 @@ func New(opts Options) context.Handler {
 		tab := strings.Repeat(" ", len(buildTitle))
 		buildInfo += fmt.Sprintf("\n\n%s\n%[2]srevision        %[3]s\n%[2]sbuildtime       %[4]s\n%[2]sdeveloper       %[5]s",
 			buildTitle, tab, buildRevision, buildTime, opts.Developer)
+	}
+
+	if opts.CloudDetection {
+		if cloudContainer := buildinfo.DetectCloudContainer(); cloudContainer != nil {
+			if jsonInfo, err := json.MarshalIndent(cloudContainer, "  ", "  "); err == nil {
+				buildInfo += fmt.Sprintf("\n\n>>>> cloud container\n%s", string(jsonInfo))
+			}
+		}
 	}
 
 	contents := []byte(buildInfo)

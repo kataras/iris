@@ -1,0 +1,13 @@
+# Bookshelf configuration. Committed settings only, no secrets here: the admin
+# password comes from the ADMIN_PASSWORD environment variable.
+Host: ""            # empty means every interface
+Port: 8080
+AllowOrigin: none
+EnableCompression: true
+RequestLog: false
+Env: development
+Developer: bookshelf
+AdminUser: admin
+Iris:
+  Name: bookshelf
+  LogLevel: info

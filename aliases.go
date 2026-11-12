@@ -3,29 +3,25 @@ package iris
 import (
 	"io/fs"
 	"net/http"
-	"net/url"
-	"path"
-	"regexp"
-	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12/cache"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/handlerconv"
-	"github.com/kataras/iris/v12/core/host"
-	"github.com/kataras/iris/v12/core/router"
-	"github.com/kataras/iris/v12/hero"
-	"github.com/kataras/iris/v12/view"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/core/pkg/buildinfo"
+	"github.com/kataras/iris/v14/core/pkg/pagination"
+	"github.com/kataras/iris/v14/core/router"
+	"github.com/kataras/iris/v14/core/server"
+	"github.com/kataras/iris/v14/internal/signalhandler"
 )
 
 var (
 	// BuildRevision holds the vcs commit id information of the program's build.
 	// To display the Iris' version please use the iris.Version constant instead.
-	// Available at go version 1.18+
-	BuildRevision = context.BuildRevision
+	BuildRevision = buildinfo.BuildRevision
 	// BuildTime holds the vcs commit time information of the program's build.
-	// Available at go version 1.18+
-	BuildTime = context.BuildTime
+	BuildTime = buildinfo.BuildTime
+
+	// RegisterOnInterrupt takes a function and appends it to the list of functions to be called on an interrupt signal (CTRL+C).
+	RegisterOnInterrupt = signalhandler.Register
 )
 
 // SameSite attributes.
@@ -45,9 +41,19 @@ type (
 	// Developers send responses to the client's request through a Context.
 	// Developers get request information from the client's request by a Context.
 	Context = *context.Context
-	// ViewEngine is an alias of `context.ViewEngine`.
-	// See HTML, Blocks, Django, Jet, Pug, Ace, Handlebars and e.t.c.
-	ViewEngine = context.ViewEngine
+	// ServerOptions is a type alias for the `server.ServerOptions`.
+	ServerOptions = server.ServerOptions
+	// NgrokOptions is a type alias for the `server.NgrokOptions`.
+	NgrokOptions = server.NgrokOptions
+	// TimeoutOptions is a type alias for the `server.TimeoutOptions`.
+	TimeoutOptions = server.TimeoutOptions
+	// ContextOptions is a type alias for the `context.ContextOptions`.
+	// It carries the per-request settings, among them PostMaxMemory,
+	// BodyMaxMemory, RemoteAddrHeaders, RequestValidator and ErrorHandler.
+	// Reachable as Options.Context.
+	ContextOptions = context.ContextOptions
+	// RouterOptions is a type alias for the `router.RouterOptions`.
+	RouterOptions = router.RouterOptions
 	// UnmarshalerFunc a shortcut, an alias for the `context#UnmarshalerFunc` type
 	// which implements the `context#Unmarshaler` interface for reading request's body
 	// via custom decoders, most of them already implement the `context#UnmarshalerFunc`
@@ -55,16 +61,12 @@ type (
 	// follows the best practises and is aligned with the Go standards.
 	//
 	// See 'context#UnmarshalBody` for more.
-	//
-	// Example: https://github.com/kataras/iris/blob/v12/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc = context.UnmarshalerFunc
 	// DecodeFunc is a generic type of decoder function.
 	// When the returned error is not nil the decode operation
 	// is terminated and the error is received by the ReadJSONStream method,
 	// otherwise it continues to read the next available object.
 	// Look the `Context.ReadJSONStream` method.
-	//
-	// Example: https://github.com/kataras/iris/blob/v12/_examples/request-body/read-json-stream.
 	DecodeFunc = context.DecodeFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.
@@ -95,19 +97,6 @@ type (
 	User = context.User
 	// SimpleUser is a simple implementation of the User interface.
 	SimpleUser = context.SimpleUser
-	// Problem Details for HTTP APIs.
-	// Pass a Problem value to `context.Problem` to
-	// write an "application/problem+json" response.
-	//
-	// Read more at: https://github.com/kataras/iris/blob/v12/_examples/routing/http-errors.
-	//
-	// It is an alias of the `context#Problem` type.
-	Problem = context.Problem
-	// ProblemOptions the optional settings when server replies with a Problem.
-	// See `Context.Problem` method and `Problem` type for more details.
-	//
-	// It is an alias of the `context#ProblemOptions` type.
-	ProblemOptions = context.ProblemOptions
 	// JSON the optional settings for JSON renderer.
 	//
 	// It is an alias of the `context#JSON` type.
@@ -120,10 +109,6 @@ type (
 	//
 	// It is an alias of the `context#JSONP` type.
 	JSONP = context.JSONP
-	// ProtoMarshalOptions is a type alias for protojson.MarshalOptions.
-	ProtoMarshalOptions = context.ProtoMarshalOptions
-	// ProtoUnmarshalOptions is a type alias for protojson.UnmarshalOptions.
-	ProtoUnmarshalOptions = context.ProtoUnmarshalOptions
 	// XML the optional settings for XML renderer.
 	//
 	// It is an alias of the `context#XML` type.
@@ -133,62 +118,18 @@ type (
 	//
 	// It is an alias of the `context#Markdown` type.
 	Markdown = context.Markdown
-	// Supervisor is a shortcut of the `host#Supervisor`.
-	// Used to add supervisor configurators on common Runners
-	// without the need of importing the `core/host` package.
-	Supervisor = host.Supervisor
 
-	// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
-	// Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
+	// Router is just a group joiner of routes which have the same prefix and share same middleware(s) also.
+	// Router could also be named as 'Join' or 'Node' or 'Group' , Router chosen because it is fun.
 	//
-	// Look the `core/router#APIBuilder` for its implementation.
+	// Look the `core/router#RouterBuilder` for its implementation.
 	//
-	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
-	Party = router.Party
-	// APIContainer is a wrapper of a common `Party` featured by Dependency Injection.
-	// See `Party.ConfigureContainer` for more.
-	//
-	// A shortcut for the `core/router#APIContainer`.
-	APIContainer = router.APIContainer
-	// ResultHandler describes the function type which should serve the "v" struct value.
-	// See `APIContainer.UseResultHandler`.
-	ResultHandler = hero.ResultHandler
-
-	// DirOptions contains the optional settings that
-	// `FileServer` and `Party#HandleDir` can use to serve files and assets.
-	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.
-	DirOptions = router.DirOptions
-	// DirCacheOptions holds the options for the cached file system.
-	// See `DirOptions`.
-	DirCacheOptions = router.DirCacheOptions
-	// DirListRichOptions the options for the `DirListRich` helper function.
-	// A shortcut for the `router.DirListRichOptions`.
-	// Useful when `DirListRich` function is passed to `DirOptions.DirList` field.
-	DirListRichOptions = router.DirListRichOptions
-	// Attachments options for files to be downloaded and saved locally by the client.
-	// See `DirOptions`.
-	Attachments = router.Attachments
-	// Dir implements FileSystem using the native file system restricted to a
-	// specific directory tree, can be passed to the `FileServer` function
-	// and `HandleDir` method. It's an alias of `http.Dir`.
-	Dir = http.Dir
-
-	// ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
-	// Usage:
-	// Party#SetExecutionRules(ExecutionRules {
-	//   Done: ExecutionOptions{Force: true},
-	// })
-	//
-	// See `core/router/Party#SetExecutionRules` for more.
-	// Example: https://github.com/kataras/iris/tree/v12/_examples/mvc/middleware/without-ctx-next
-	ExecutionRules = router.ExecutionRules
-	// ExecutionOptions is a set of default behaviors that can be changed in order to customize the execution flow of the routes' handlers with ease.
-	//
-	// See `ExecutionRules` and `core/router/Party#SetExecutionRules` for more.
-	ExecutionOptions = router.ExecutionOptions
+	// A shortcut for the `core/router#Router`, the type a controller's Routing
+	// method and a Router("/path", func(iris.Router)) callback receive.
+	Router = router.Router
 
 	// CookieOption is the type of function that is accepted on
-	// context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
+	// context's methods like `AddCookie`, `RemoveCookie` and `SetCookie`
 	// as their (last) variadic input argument to amend the end cookie's form.
 	//
 	// Any custom or builtin `CookieOption` is valid,
@@ -207,17 +148,75 @@ type (
 	//
 	// An alias for the `context.N`.
 	N = context.N
-	// Locale describes the i18n locale.
-	// An alias for the `context.Locale`.
-	Locale = context.Locale
+
+	// PageOptions is an alias for the `context.PageOptions`:
+	// the page/size/details a client sends through the URL query,
+	// read by Context.BindPagination and Context.Paginated.
+	PageOptions = context.PageOptions
+	// Page is an alias for the `context.Page[T]`:
+	// the paginated response envelope of Context.Paginated and context.NewPage.
+	Page[T any] = context.Page[T]
+	// CountType is an alias for the `context.CountType`:
+	// the numeric constraint of Context.Count and Context.Paginated totals.
+	CountType = context.CountType
+	// CountResponse is an alias for the `context.CountResponse[N]`:
+	// the {"count": N} body of Context.Count.
+	CountResponse[N CountType] = context.CountResponse[N]
+	// IDType is an alias for the `context.IDType`:
+	// the identifier types Context.Created wraps as an IDPayload.
+	IDType = context.IDType
+	// IDPayload is an alias for the `context.IDPayload[T]`:
+	// the {"id": T} body Context.Created renders for a bare identifier.
+	IDPayload[T IDType] = context.IDPayload[T]
+	// Validatable is an alias for the `context.Validatable`:
+	// implemented by request types that validate themselves after decoding;
+	// Context.BindJSON and its variants call Validate and reject the request
+	// on a non-nil error.
+	Validatable = context.Validatable
+	// QueryOption is an alias for the `context.QueryOption`:
+	// the option type of the strict query readers Context.QueryDate,
+	// Context.QueryInt and Context.QueryBool.
+	// See QueryRequired, QueryDefault and QueryZeroValues.
+	QueryOption = context.QueryOption
+	// ListFilter is an alias for the `context.ListFilter`:
+	// the request half every list endpoint shares (term, names, substring
+	// and the sort request), meant to be embedded in a service's own filter.
+	ListFilter = context.ListFilter
+	// PaginationOption is an alias for the `context.PaginationOption`:
+	// the option type of Context.BindPagination and Context.Paginated.
+	// See AllowSort and DenySort.
+	PaginationOption = context.PaginationOption
 	// ErrPrivate if provided then the error saved in context
 	// should NOT be visible to the client no matter what.
 	// An alias for the `context.ErrPrivate`.
 	ErrPrivate = context.ErrPrivate
 )
 
+var (
+	// QueryRequired is a shortcut for the `context.QueryRequired`:
+	// an absent query value becomes a 400 Bad Request naming the key.
+	QueryRequired = context.QueryRequired
+	// QueryDefault is a shortcut for the `context.QueryDefault`:
+	// the raw value to parse when the query key is absent.
+	QueryDefault = context.QueryDefault
+	// QueryZeroValues is a shortcut for the `context.QueryZeroValues`:
+	// the raw values that mean "unset", e.g. "0" or "0000-00-00".
+	QueryZeroValues = context.QueryZeroValues
+
+	// AllowSort is a shortcut for the `context.AllowSort`:
+	// a sort column outside the list becomes a 400 Bad Request.
+	AllowSort = context.AllowSort
+	// DenySort is a shortcut for the `context.DenySort`:
+	// any sort request becomes a 400 Bad Request with the given message.
+	DenySort = context.DenySort
+	// ErrSortNotAllowed is a shortcut for the `context.ErrSortNotAllowed`:
+	// the error ListFilter.SortColumn wraps for a column outside the
+	// endpoint's allowed set.
+	ErrSortNotAllowed = context.ErrSortNotAllowed
+)
+
 // Constants for input argument at `router.RouteRegisterRule`.
-// See `Party#SetRegisterRule`.
+// See `Router#SetRegisterRule`.
 const (
 	// RouteOverride replaces an existing route with the new one, the default rule.
 	RouteOverride = router.RouteOverride
@@ -226,72 +225,18 @@ const (
 	// RouteError log when a route already exists, shown after the `Build` state,
 	// server never starts.
 	RouteError = router.RouteError
-	// RouteOverlap will overlap the new route to the previous one.
-	// If the route stopped and its response can be reset then the new route will be execute.
-	RouteOverlap = router.RouteOverlap
 )
 
-// Contains the enum values of the `Context.GetReferrer()` method,
-// shortcuts of the context subpackage.
-const (
-	ReferrerInvalid  = context.ReferrerInvalid
-	ReferrerIndirect = context.ReferrerIndirect
-	ReferrerDirect   = context.ReferrerDirect
-	ReferrerEmail    = context.ReferrerEmail
-	ReferrerSearch   = context.ReferrerSearch
-	ReferrerSocial   = context.ReferrerSocial
-
-	ReferrerNotGoogleSearch     = context.ReferrerNotGoogleSearch
-	ReferrerGoogleOrganicSearch = context.ReferrerGoogleOrganicSearch
-	ReferrerGoogleAdwords       = context.ReferrerGoogleAdwords
-)
-
-// NoLayout to disable layout for a particular template file
-// A shortcut for the `view#NoLayout`.
-const NoLayout = view.NoLayout
-
-var (
-	// HTML view engine.
-	// Shortcut of the view.HTML.
-	HTML = view.HTML
-	// Blocks view engine.
-	// Can be used as a faster alternative of the HTML engine.
-	// Shortcut of the view.Blocks.
-	Blocks = view.Blocks
-	// Django view engine.
-	// Shortcut of the view.Django.
-	Django = view.Django
-	// Handlebars view engine.
-	// Shortcut of the view.Handlebars.
-	Handlebars = view.Handlebars
-	// Pug view engine.
-	// Shortcut of the view.Pug.
-	Pug = view.Pug
-	// Jet view engine.
-	// Shortcut of the view.Jet.
-	Jet = view.Jet
-	// Ace view engine.
-	// Shortcut of the view.Ace.
-	Ace = view.Ace
-)
-
-type (
-	// ErrViewNotExist reports whether a template was not found in the parsed templates tree.
-	ErrViewNotExist = context.ErrViewNotExist
-	// FallbackViewFunc is a function that can be registered
-	// to handle view fallbacks. It accepts the Context and
-	// a special error which contains information about the previous template error.
-	// It implements the FallbackViewProvider interface.
-	//
-	// See `Context.View` method.
-	FallbackViewFunc = context.FallbackViewFunc
-	// FallbackView is a helper to register a single template filename as a fallback
-	// when the provided tempate filename was not found.
-	FallbackView = context.FallbackView
-	// FallbackViewLayout is a helper to register a single template filename as a fallback
-	// layout when the provided layout filename was not found.
-	FallbackViewLayout = context.FallbackViewLayout
-)
+// NewPage returns a new paginated response envelope for the given page
+// options, filter, items and total count. It forwards to `context.NewPage`;
+// a generic function cannot be a type alias, so this is a wrapper, not an
+// alias like `iris.Page[T]` itself.
+//
+// Use it when a handler builds the envelope on its own; Context.Paginated
+// already returns one.
+func NewPage[T any](opts PageOptions, filter any, items []T, totalCount int64) *Page[T] {
+	return context.NewPage(opts, filter, items, totalCount)
+}
 
 // Component returns a new Handler which can be registered as a main handler for a route.
 // It's a shortcut handler that renders the given component as HTML through Context.RenderComponent.
@@ -301,117 +246,40 @@ func Component(component context.Component) Handler {
 	}
 }
 
-// PrefixDir returns a new FileSystem that opens files
-// by adding the given "prefix" to the directory tree of "fs".
-//
-// Useful when having templates and static files in the same
-// bindata AssetFile method. This way you can select
-// which one to serve as static files and what for templates.
-// All view engines have a `RootDir` method for that reason too
-// but alternatively, you can wrap the given file system with this `PrefixDir`.
-//
-// Example: https://github.com/kataras/iris/blob/v12/_examples/file-server/single-page-application/embedded-single-page-application/main.go
-func PrefixDir(prefix string, fs http.FileSystem) http.FileSystem {
-	return &prefixedDir{prefix, fs}
-}
+/* START: Controller-specific */
 
-// PrefixFS same as "PrefixDir" but for `fs.FS` type.
-func PrefixFS(fileSystem fs.FS, dir string) (fs.FS, error) {
-	return fs.Sub(fileSystem, dir)
-}
-
-type prefixedDir struct {
-	prefix string
-	fs     http.FileSystem
-}
-
-func (p *prefixedDir) Open(name string) (http.File, error) {
-	// Don't do this: as this is responsibility of the underline fs.
-	// _, filename, ok, err := context.SafeFilename("", name)
-
-	destPath := path.Join(p.prefix, name)
-	return p.fs.Open(destPath)
-}
-
-type partyConfiguratorMiddleware struct {
-	handlers []Handler
-}
-
-func (p *partyConfiguratorMiddleware) Configure(r Party) {
-	r.Use(p.handlers...)
-}
-
-// ConfigureMiddleware is a PartyConfigurator which can be used
-// as a shortcut to add middlewares on Party.PartyConfigure("/path", WithMiddleware(handler), new(example.API)).
-func ConfigureMiddleware(handlers ...Handler) router.PartyConfigurator {
-	return &partyConfiguratorMiddleware{handlers: handlers}
-}
-
-// Compression is a middleware which enables
-// writing and reading using the best offered compression.
-// Usage:
-// app.Use (for matched routes)
-// app.UseRouter (for both matched and 404s or other HTTP errors).
-func Compression(ctx Context) {
-	ctx.CompressWriter(true)
-	ctx.CompressReader(true)
-	ctx.Next()
-}
-
-var (
-	// AllowQuerySemicolons returns a middleware that serves requests by converting any
-	// unescaped semicolons(;) in the URL query to ampersands(&).
-	//
-	// This restores the pre-Go 1.17 behavior of splitting query parameters on both
-	// semicolons and ampersands.
-	// (See golang.org/issue/25192 and https://github.com/kataras/iris/issues/1875).
-	// Note that this behavior doesn't match that of many proxies,
-	// and the mismatch can lead to security issues.
-	//
-	// AllowQuerySemicolons should be invoked before any Context read query or
-	// form methods are called.
-	//
-	// To skip HTTP Server logging for this type of warning:
-	// app.Listen/Run(..., iris.WithoutServerError(iris.ErrURLQuerySemicolon)).
-	AllowQuerySemicolons = func(ctx Context) {
-		// clopy of net/http.AllowQuerySemicolons.
-		r := ctx.Request()
-		if s := r.URL.RawQuery; strings.Contains(s, ";") {
-			r2 := new(http.Request)
-			*r2 = *r
-			r2.URL = new(url.URL)
-			*r2.URL = *r.URL
-			r2.URL.RawQuery = strings.ReplaceAll(s, ";", "&")
-			ctx.ResetRequest(r2)
-		}
-
-		ctx.Next()
-	}
-
-	// MatchImagesAssets is a simple regex expression
-	// that can be passed to the DirOptions.Cache.CompressIgnore field
-	// in order to skip compression on already-compressed file types
-	// such as images and pdf.
-	MatchImagesAssets = regexp.MustCompile("((.*).pdf|(.*).jpg|(.*).jpeg|(.*).gif|(.*).tif|(.*).tiff)$")
-	// MatchCommonAssets is a simple regex expression which
-	// can be used on `DirOptions.PushTargetsRegexp`.
-	// It will match and Push
-	// all available js, css, font and media files.
-	// Ideal for Single Page Applications.
-	MatchCommonAssets = regexp.MustCompile("((.*).js|(.*).css|(.*).ico|(.*).png|(.*).ttf|(.*).svg|(.*).webp|(.*).gif)$")
+type (
+	// Controller is a type alias for the `core/router#Controller`.
+	Controller = router.Controller
+	// Routing is a type alias for the `core/router#Routing`.
+	Routing = router.Routing
 )
 
 var (
-	// RegisterOnInterrupt registers a global function to call when CTRL+C/CMD+C pressed or a unix kill command received.
-	//
-	// A shortcut for the `host#RegisterOnInterrupt`.
-	RegisterOnInterrupt = host.RegisterOnInterrupt
+	// Join is a shortcut for the `router.Join`.
+	Join = router.Join
+	// Prefix is a shortcut for the `router.Prefix`.
+	Prefix = router.Prefix
+	// Dependencies is a shortcut for the `router.Dependencies`.
+	// Dependencies returns a Controller which can be used to register
+	// dependencies to the controllers follows in the same `Router.Router` method call.
+	// Useful when you have the same interface declared for different services
+	// that can be binded to more than one controller.
+	Dependencies = router.Dependencies
+	// Middleware is a shortcut for the `router.Middleware`.
+	// Middleware is a Controller which can be used
+	// as a shortcut to add middlewares on Router.Router("/path", Middleware(handler), new(example.API)).
+	Middleware = router.Middleware
+)
 
-	// LimitRequestBodySize is a middleware which sets a request body size limit
-	// for all next handlers in the chain.
-	//
-	// A shortcut for the `context#LimitRequestBodySize`.
-	LimitRequestBodySize = context.LimitRequestBodySize
+// ResolveController is a shortcut for the `router.ResolveController`.
+func ResolveController[T any]() Controller {
+	return router.ResolveController[T]()
+}
+
+/* END: Controller-specific */
+
+var (
 	// NewConditionalHandler returns a single Handler which can be registered
 	// as a middleware.
 	// Filter is just a type of Handler which returns a boolean.
@@ -426,38 +294,11 @@ var (
 	// about its per-request handler chain based on the new "handlers" is always updated.
 	//
 	// If not passed, then simply the Next handler(if any) is executed and "handlers" are ignored.
-	// Example can be found at: _examples/routing/conditional-chain.
+	// Example can be found at: _examples/06-middleware/conditional.
 	//
 	// A shortcut for the `context#NewConditionalHandler`.
 	NewConditionalHandler = context.NewConditionalHandler
-	// FileServer returns a Handler which serves files from a specific system, phyisical, directory
-	// or an embedded one.
-	// The first parameter is the directory, relative to the executable program.
-	// The second optional parameter is any optional settings that the caller can use.
-	//
-	// See `Party#HandleDir` too.
-	// Examples can be found at: https://github.com/kataras/iris/tree/v12/_examples/file-server
-	// A shortcut for the `router.FileServer`.
-	FileServer = router.FileServer
-	// DirList is the default `DirOptions.DirList` field.
-	// Read more at: `core/router.DirList`.
-	DirList = router.DirList
-	// DirListRich can be passed to `DirOptions.DirList` field
-	// to override the default file listing appearance.
-	// Read more at: `core/router.DirListRich`.
-	DirListRich = router.DirListRich
-	// StripPrefix returns a handler that serves HTTP requests
-	// by removing the given prefix from the request URL's Path
-	// and invoking the handler h. StripPrefix handles a
-	// request for a path that doesn't begin with prefix by
-	// replying with an HTTP 404 not found error.
-	//
-	// Usage:
-	// fileserver := iris.FileServer("./static_files", DirOptions {...})
-	// h := iris.StripPrefix("/static", fileserver)
-	// app.Get("/static/{file:path}", h)
-	// app.Head("/static/{file:path}", h)
-	StripPrefix = router.StripPrefix
+
 	// FromStd converts native http.Handler, http.HandlerFunc & func(w, r, next) to context.Handler.
 	//
 	// Supported form types:
@@ -465,58 +306,9 @@ var (
 	// 		 .FromStd(func(w http.ResponseWriter, r *http.Request))
 	// 		 .FromStd(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
 	//
-	// A shortcut for the `handlerconv#FromStd`.
-	FromStd = handlerconv.FromStd
-	// Cache is a middleware providing server-side cache functionalities
-	// to the next handlers, can be used as: `app.Get("/", iris.Cache, aboutHandler)`.
-	// It should be used after Static methods.
-	// See `iris#Cache304` for an alternative, faster way.
-	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/v12/_examples/#caching
-	Cache = cache.Handler
-	// NoCache is a middleware which overrides the Cache-Control, Pragma and Expires headers
-	// in order to disable the cache during the browser's back and forward feature.
-	//
-	// A good use of this middleware is on HTML routes; to refresh the page even on "back" and "forward" browser's arrow buttons.
-	//
-	// See `iris#StaticCache` for the opposite behavior.
-	//
-	// A shortcut of the `cache#NoCache`
-	NoCache = cache.NoCache
-	// StaticCache middleware for caching static files by sending the "Cache-Control" and "Expires" headers to the client.
-	// It accepts a single input parameter, the "cacheDur", a time.Duration that it's used to calculate the expiration.
-	//
-	// If "cacheDur" <=0 then it returns the `NoCache` middleware instaed to disable the caching between browser's "back" and "forward" actions.
-	//
-	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.StaticCache(-1))`.
-	// A middleware, which is a simple Handler can be called inside another handler as well, example:
-	// cacheMiddleware := iris.StaticCache(...)
-	// func(ctx iris.Context){
-	//  cacheMiddleware(ctx)
-	//  [...]
-	// }
-	//
-	// A shortcut of the `cache#StaticCache`
-	StaticCache = cache.StaticCache
-	// Cache304 sends a `StatusNotModified` (304) whenever
-	// the "If-Modified-Since" request header (time) is before the
-	// time.Now() + expiresEvery (always compared to their UTC values).
-	// Use this, which is a shortcut of the, `chache#Cache304` instead of the "github.com/kataras/iris/v12/cache" or iris.Cache
-	// for better performance.
-	// Clients that are compatible with the http RCF (all browsers are and tools like postman)
-	// will handle the caching.
-	// The only disadvantage of using that instead of server-side caching
-	// is that this method will send a 304 status code instead of 200,
-	// So, if you use it side by side with other micro services
-	// you have to check for that status code as well for a valid response.
-	//
-	// Developers are free to extend this method's behavior
-	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
-	// with a "modtime" based on the file modified date,
-	// similar to the `HandleDir`(which sends status OK(200) and browser disk caching instead of 304).
-	//
-	// A shortcut of the `cache#Cache304`.
-	Cache304 = cache.Cache304
+	// A shortcut for the `context#FromStd`.
+	// See `context#TryFromStd` for the non-panicking form.
+	FromStd = context.FromStd
 
 	// CookieOverride is a CookieOption which overrides the cookie explicitly to the given "cookie".
 	//
@@ -528,8 +320,8 @@ var (
 	// A shortcut for the `context#CookieDomain`.
 	CookieDomain = context.CookieDomain
 	// CookieAllowReclaim accepts the Context itself.
-	// If set it will add the cookie to (on `CookieSet`, `CookieSetKV`, `CookieUpsert`)
-	// or remove the cookie from (on `CookieRemove`) the Request object too.
+	// If set it will add the cookie to (on `SetCookie`, `AddCookie`)
+	// or remove the cookie from (on `RemoveCookie`) the Request object too.
 	//
 	// A shortcut for the `context#CookieAllowReclaim`.
 	CookieAllowReclaim = context.CookieAllowReclaim
@@ -550,14 +342,18 @@ var (
 	//
 	// A shortcut for the `context#CookieSameSite`.
 	CookieSameSite = context.CookieSameSite
-	// CookieSecure sets the cookie's Secure option if the current request's
+	// CookieSecure sets the cookie's Secure option on set operation if the current request's
 	// connection is using TLS. See `CookieHTTPOnly` too.
 	//
 	// A shortcut for the `context#CookieSecure`.
 	CookieSecure = context.CookieSecure
+	// CookieSecureForce is a `CookieOption`. It sets the cookie's Secure option to true every time.
+	//
+	// A shortcut for the `context#CookieSecureForce`.
+	CookieSecureForce = context.CookieSecureForce
 	// CookieHTTPOnly is a `CookieOption`.
 	// Use it to set the cookie's HttpOnly field to false or true.
-	// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+	// HttpOnly field defaults to true for `RemoveCookie` and `AddCookie`.
 	//
 	// A shortcut for the `context#CookieHTTPOnly`.
 	CookieHTTPOnly = context.CookieHTTPOnly
@@ -576,9 +372,15 @@ var (
 	//
 	// A shortcut for the `context#CookieExpires`.
 	CookieExpires = context.CookieExpires
+	// CookiePartitioned is a `CookieOption`.
+	// It enables the "Partitioned" cookie attribute, which binds a third-party
+	// cookie to the top-level site that caused it to be set (CHIPS).
+	//
+	// A shortcut for the `context#CookiePartitioned`.
+	CookiePartitioned = context.CookiePartitioned
 	// CookieEncoding accepts a value which implements `Encode` and `Decode` methods.
-	// It calls its `Encode` on `Context.SetCookie, UpsertCookie, and SetCookieKV` methods.
-	// And on `Context.GetCookie` method it calls its `Decode`.
+	// It calls its `Encode` on `Context.SetCookie` and `AddCookie` methods.
+	// And on `Context.Cookie` method it calls its `Decode`.
 	//
 	// A shortcut for the `context#CookieEncoding`.
 	CookieEncoding = context.CookieEncoding
@@ -588,8 +390,9 @@ var (
 	// didn't start with { or it was totally empty.
 	IsErrEmptyJSON = context.IsErrEmptyJSON
 	// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
-	// It reports whether the incoming error is type of `schema.ErrPath`,
-	// which can be ignored when server allows unknown post values to be sent by the client.
+	// It reports whether the incoming error is caused by an unknown field
+	// (`schema.UnknownKeyError`), which can be ignored when server allows
+	// unknown post values to be sent by the client.
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
@@ -609,11 +412,6 @@ var (
 	// on post data, versioning feature and others.
 	// An alias of `context.ErrNotFound`.
 	ErrNotFound = context.ErrNotFound
-	// NewProblem returns a new Problem.
-	// Head over to the `Problem` type godoc for more.
-	//
-	// A shortcut for the `context#NewProblem`.
-	NewProblem = context.NewProblem
 	// XMLMap wraps a map[string]any to compatible xml marshaler,
 	// in order to be able to render maps as XML on the `Context.XML` method.
 	//
@@ -621,19 +419,12 @@ var (
 	//
 	// A shortcut for the `context#XMLMap`.
 	XMLMap = context.XMLMap
-	// ErrStopExecution if returned from a hero middleware or a request-scope dependency
-	// stops the handler's execution, see _examples/dependency-injection/basic/middleware.
-	ErrStopExecution = hero.ErrStopExecution
 	// ErrHijackNotSupported is returned by the Hijack method to
 	// indicate that Hijack feature is not available.
 	//
 	// A shortcut for the `context#ErrHijackNotSupported`.
 	ErrHijackNotSupported = context.ErrHijackNotSupported
-	// ErrPushNotSupported is returned by the Push method to
-	// indicate that HTTP/2 Push support is not available.
-	//
-	// A shortcut for the `context#ErrPushNotSupported`.
-	ErrPushNotSupported = context.ErrPushNotSupported
+
 	// PrivateError accepts an error and returns a wrapped private one.
 	// A shortcut for the `context#PrivateError` function.
 	PrivateError = context.PrivateError
@@ -655,6 +446,8 @@ const (
 	MethodPatch   = http.MethodPatch
 	MethodOptions = http.MethodOptions
 	MethodTrace   = http.MethodTrace
+	// MethodQuery is the RFC 10008 QUERY method.
+	MethodQuery = router.MethodQuery
 	// MethodNone is an iris-specific "virtual" method
 	// to store the "offline" routes.
 	MethodNone = router.MethodNone
@@ -745,43 +538,37 @@ const (
 )
 
 var (
+	// Timeout returns a new Timeout configuration builder.
+	//
+	// It's a shortcut of the `server#Timeout`.
+	Timeout = server.Timeout
+
 	// StatusText returns a text for the HTTP status code. It returns the empty
 	// string if the code is unknown.
 	//
-	// Shortcut for core/router#StatusText.
+	// Shortcut for context#StatusText.
 	StatusText = context.StatusText
-	// RegisterMethods adds custom http methods to the "AllMethods" list.
-	// Use it on initialization of your program.
-	//
-	// Shortcut for core/router#RegisterMethods.
-	RegisterMethods = router.RegisterMethods
-
-	// WebDAVMethods contains a list of WebDAV HTTP Verbs.
-	// Register using RegiterMethods package-level function or
-	// through HandleMany party-level method.
-	WebDAVMethods = []string{
-		MethodGet,
-		MethodHead,
-		MethodPatch,
-		MethodPut,
-		MethodPost,
-		MethodDelete,
-		MethodOptions,
-		MethodConnect,
-		MethodTrace,
-		"MKCOL",
-		"COPY",
-		"MOVE",
-		"LOCK",
-		"UNLOCK",
-		"PROPFIND",
-		"PROPPATCH",
-		"LINK",
-		"UNLINK",
-		"PURGE",
-		"VIEW",
-	}
 )
+
+// WithErrorHandler returns a middleware which sets a custom error handler for
+// the requests it runs on. It overrides the Options.Context.ErrorHandler value
+// for those requests only, and applies on Render, RenderComponent, JSON, JSONP,
+// XML, Markdown, YAML, Protobuf and MsgPack write errors.
+//
+// Register it like any other middleware, on the application, a router or a
+// single route:
+//
+//	app.Use(iris.WithErrorHandler(func(ctx iris.Context, err error) {
+//		ctx.StopWithPlainError(iris.StatusInternalServerError, err)
+//	}))
+//
+// To customize panic recovery errors instead, see middleware/recovery.WithErrorHandler.
+func WithErrorHandler(handler context.ErrorHandler) Handler {
+	return func(ctx Context) {
+		ctx.Options().ErrorHandler = handler
+		ctx.Next()
+	}
+}
 
 var globalPatches = &GlobalPatches{
 	contextPatches: &ContextPatches{
@@ -789,7 +576,7 @@ var globalPatches = &GlobalPatches{
 	},
 }
 
-// GlobalPatches is a singleton features a uniform way to apply global/package-level modifications.
+// GlobalPatches is a singleton that provides a uniform way to apply global/package-level modifications.
 //
 // See the `Patches` package-level function.
 type GlobalPatches struct {
@@ -801,7 +588,7 @@ type GlobalPatches struct {
 //
 // See its `Context` method.
 //
-// Example: https://github.com/kataras/iris/blob/v12/_examples/response-writer/json-third-party/main.go
+// Example: https://github.com/kataras/iris/blob/main/_examples/16-advanced/patches/main.go
 func Patches() *GlobalPatches { // singleton.
 	return globalPatches
 }
@@ -825,21 +612,34 @@ func (cp *ContextPatches) Writers() *ContextWriterPatches {
 // which is used on subdomain redirect feature, i18n's language cookie for subdomain sharing
 // and the rewrite middleware.
 func (cp *ContextPatches) GetDomain(patchFunc func(hostport string) string) {
-	context.GetDomain = patchFunc
+	server.GetRootDomain = patchFunc
 }
 
-// SetCookieKVExpiration modifies the default cookie expiration time on `Context#SetCookieKV` method.
-func (cp *ContextPatches) SetCookieKVExpiration(patch time.Duration) {
-	context.SetCookieKVExpiration = patch
+// SetDefaultCookieExpiration modifies the lifetime Context.AddCookie gives a cookie
+// when no CookieExpires option is passed (context.DefaultCookieExpiration, 365 days by default).
+func (cp *ContextPatches) SetDefaultCookieExpiration(patch time.Duration) {
+	context.DefaultCookieExpiration = patch
 }
 
 // ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
-// It affects the Application's API Builder's `HandleDir` method.
+// It affects the Application's API Builder's `fileserver.Handler` method.
 func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir any) http.FileSystem) {
 	context.ResolveHTTPFS = patchFunc
 }
 
-// ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
+// SetMaxPageSize modifies the largest page size PageOptions.GetLimit returns
+// (pagination.MaxPageSize, 100000 by default). Zero or less means no bound.
+func (cp *ContextPatches) SetMaxPageSize(size int) {
+	pagination.MaxPageSize = size
+}
+
+// SetDefaultPageSize modifies the page size PageOptions.GetLimit returns when
+// the request asks for none (pagination.DefaultPageSize, 100 by default).
+func (cp *ContextPatches) SetDefaultPageSize(size int) {
+	pagination.DefaultPageSize = size
+}
+
+// ResolveFS modifies the default way to resolve a filesystem by any type of value.
 // It affects the view engine's filesystem resolver.
 func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir any) fs.FS) {
 	context.ResolveFS = patchFunc
@@ -872,10 +672,3 @@ func (cwp *ContextWriterPatches) Markdown(patchFunc func(ctx Context, v []byte, 
 func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v any, indentSpace int) error) {
 	context.WriteYAML = patchFunc
 }
-
-// Singleton is a structure which can be used as an embedded field on
-// struct/controllers that should be marked as singletons on `PartyConfigure` or `MVC` Applications.
-type Singleton struct{}
-
-// Singleton returns true as this controller is a singleton.
-func (c Singleton) Singleton() bool { return true }

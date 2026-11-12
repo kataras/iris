@@ -1,14 +1,21 @@
+// Package recaptcha verifies the Google reCAPTCHA answer that a form submission
+// carries.
+//
+// Its entry point is New(Options), which returns a Handler that calls SiteVerify
+// and runs Options.FailureHandler when the answer does not pass. Read the stored
+// Response with Get.
 package recaptcha
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/netutil"
+	"github.com/kataras/iris/v14/client"
+	"github.com/kataras/iris/v14/context"
 )
 
 func init() {
@@ -28,25 +35,71 @@ type Response struct {
 	Success     bool      `json:"success"`
 }
 
-// Client is the default `net/http#Client` instance which
-// is used to send requests to the Google API.
+// Client is the default `github.com/kataras/iris/v14/client#Client` instance which
+// is used to send requests to the Google API. It is created with a 20s dial timeout.
 //
 // Change Client only if you know what you're doing.
-var Client = netutil.Client(time.Duration(20 * time.Second))
+var Client = client.New(client.DialTimeout(20 * time.Second))
 
-// New accepts the google's recaptcha secret key and returns
-// a middleware that verifies the request by sending a response to the google's API(V2-latest).
-// Secret key can be obtained by https://www.google.com/recaptcha.
-//
-// Used for communication between your site and Google. Be sure to keep it a secret.
+// Options is the configuration for the recaptcha middleware.
+// The zero value is valid but useless: Secret is required.
+type Options struct {
+	// Secret is the google's recaptcha secret key, obtained by
+	// https://www.google.com/recaptcha. Used for communication between your
+	// site and Google. Be sure to keep it a secret.
+	// Required.
+	Secret string `yaml:"Secret"`
+
+	// FailureHandler, when set, is called instead of the default 429
+	// (Too Many Requests) response after a failed verification.
+	// Read the reason with `Get`.
+	//
+	// Defaults to DefaultFailureHandler.
+	FailureHandler context.Handler `yaml:"-"`
+}
+
+// DefaultFailureHandler is the default handler that is fired on recaptcha
+// failures. It stops the chain with 429 (Too Many Requests).
+// See `Options.FailureHandler`.
+var DefaultFailureHandler = func(ctx *context.Context) {
+	ctx.StopWithStatus(http.StatusTooManyRequests)
+}
+
+// New returns a middleware that verifies the request by sending a response to
+// the google's API(V2-latest), using the given Options.
 //
 // Use `SiteVerify` to verify a request inside another handler if needed.
-func New(secret string) context.Handler {
-	return func(ctx *context.Context) {
-		if SiteVerify(ctx, secret).Success {
-			ctx.Next()
-		}
+// A failed verification stops the chain with 429 (Too Many Requests) and stores
+// the provider's response on the context, retrievable with `Get`.
+//
+// Note(@kataras): the failure branch is not optional. This used to have no else
+// at all, so a failed captcha answered an empty "200 OK" - which every client
+// and every monitor reads as success - and discarded the reason in ErrorCodes.
+func New(opts Options) context.Handler {
+	failureHandler := opts.FailureHandler
+	if failureHandler == nil {
+		failureHandler = DefaultFailureHandler
 	}
+
+	return func(ctx *context.Context) {
+		response := SiteVerify(ctx, opts.Secret)
+		if response.Success {
+			ctx.Next()
+			return
+		}
+
+		ctx.Values().Set(responseContextKey, response)
+		failureHandler(ctx)
+	}
+}
+
+const responseContextKey = "iris.recaptcha.response"
+
+// Get returns the verification response of the current request, as stored by the
+// middleware returned from `New`.
+func Get(ctx *context.Context) (Response, bool) {
+	v, ok := ctx.Values().Get(responseContextKey).(Response)
+	return v, ok
 }
 
 // SiteVerify accepts  context and the secret key(https://www.google.com/recaptcha) and
@@ -54,14 +107,14 @@ func New(secret string) context.Handler {
 //
 // Use `New` for middleware use instead.
 func SiteVerify(ctx *context.Context, secret string) (response Response) {
-	generatedResponseID := ctx.FormValue("g-recaptcha-response")
+	generatedResponseID := ctx.Form().Get("g-recaptcha-response")
 	if generatedResponseID == "" {
 		response.ErrorCodes = append(response.ErrorCodes,
 			"form value[g-recaptcha-response] is empty")
 		return
 	}
 
-	r, err := Client.PostForm(apiURL,
+	r, err := Client.Form(ctx, "POST", apiURL,
 		url.Values{
 			"secret":   {secret},
 			"response": {generatedResponseID},

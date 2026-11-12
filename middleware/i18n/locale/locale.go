@@ -1,0 +1,20 @@
+package locale
+
+import "golang.org/x/text/language"
+
+// Locale is the interface which returns from a `Localizer.GetLocale` method.
+// It serves the translations based on "key" or format. See `GetMessage`.
+type Locale interface { // Shared by internal and handler packages.
+	// Index returns the current locale index from the languages list.
+	Index() int
+	// Tag returns the full language Tag attached to this Locale,
+	// it should be unique across different Locales.
+	Tag() *language.Tag
+	// Language should return the exact language code of this `Locale`
+	// that the user provided on `New` function.
+	//
+	// Same as `Tag().String()` but it's static.
+	Language() string
+	// GetMessage should return translated text based on the given "key".
+	GetMessage(key string, args ...any) string
+}

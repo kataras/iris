@@ -1,11 +1,19 @@
+// Package grpc serves a gRPC (or gRPC-Web) server through an Iris route.
+//
+// Its entry point is New(grpcServer http.Handler), which returns a Handler. The
+// single input is the server itself, so it is a plain argument and there is no
+// Options struct.
 package grpc
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v14/context"
 )
+
+func init() {
+	context.SetHandlerName("iris/middleware/grpc.*", "iris.gRPC")
+}
 
 // New returns a new gRPC Iris router wrapper for a gRPC server.
 // useful when you want to share one port (such as 443 for https) between gRPC and Iris.
@@ -14,18 +22,18 @@ import (
 //
 // Usage:
 //
-//	import grpcWrapper "github.com/kataras/iris/v12/middleware/grpc"
+//	import grpcWrapper "github.com/kataras/iris/v14/middleware/grpc"
 //	[...]
 //	app := iris.New()
 //	grpcServer := grpc.NewServer()
-//	app.WrapRouter(grpcWrapper.New(grpcServer))
-func New(grpcServer http.Handler) router.WrapperFunc {
-	return func(w http.ResponseWriter, r *http.Request, mux http.HandlerFunc) {
-		if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
-			grpcServer.ServeHTTP(w, r)
+//	app.UseRouter(grpcWrapper.New(grpcServer))
+func New(grpcServer http.Handler) context.Handler {
+	return func(ctx *context.Context) {
+		if ctx.IsGRPC() {
+			grpcServer.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 			return
 		}
 
-		mux.ServeHTTP(w, r)
+		ctx.Next() // continue to mux.
 	}
 }

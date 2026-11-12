@@ -2,12 +2,13 @@ package apps
 
 import (
 	"fmt"
+	nethttptest "net/http/httptest"
 	"net/url"
 	"testing"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 type testRequests map[string]map[string]int // url -> path -> status code
@@ -22,14 +23,14 @@ func TestSwitchHosts(t *testing.T) {
 		}
 	)
 
-	testdomain1 := iris.New().SetName("test 1 domain")
+	testdomain1 := iris.New(iris.Options{Name: "test 1 domain"})
 	testdomain1.Get("/", index) // should match host matching with "testdomain1.com".
 
-	testdomain2 := iris.New().SetName("test 2 domain")
+	testdomain2 := iris.New(iris.Options{Name: "test 2 domain"})
 	testdomain2.Get("/", index) // should match host matching with "testdomain2.com".
 
-	mydomain := iris.New().SetName("my domain")
-	mydomain.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
+	mydomain := iris.New(iris.Options{Name: "my domain"})
+	mydomain.HandleNoRoute(func(ctx iris.Context) {
 		ctx.WriteString(ctx.Host() + " custom not found")
 	})
 	mydomain.Get("/", index) // should match ALL hosts starting with "my".
@@ -72,7 +73,7 @@ func TestSwitchHosts(t *testing.T) {
 					"/": iris.StatusOK,
 				},
 				"http://nmy.com": {
-					"/": iris.StatusBadGateway, /* 404 hijacked by switch.OnErrorCode */
+					"/": iris.StatusBadGateway, /* 404 hijacked by switch.SetHTTPErrorHandler */
 				},
 			},
 		},
@@ -83,7 +84,7 @@ func TestSwitchHosts(t *testing.T) {
 		hosts = append(hosts, Host{tt.Pattern, tt.Target})
 	}
 	switcher := Switch(hosts)
-	switcher.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
+	switcher.HandleNoRoute(func(ctx iris.Context) {
 		// inject the 404 to 502.
 		// tests the ctx.Next inside the Hosts switch provider.
 		ctx.StatusCode(iris.StatusBadGateway)
@@ -114,6 +115,30 @@ func TestSwitchHosts(t *testing.T) {
 	}
 }
 
+func TestHostRedirectDoesNotMutateRequest(t *testing.T) {
+	app := newHostRedirectApp("target.com", iris.StatusMovedPermanently)
+	if err := app.Build(); err != nil {
+		t.Fatal(err)
+	}
+
+	r := nethttptest.NewRequest("GET", "http://source.com/path?foo=bar", nil)
+	w := nethttptest.NewRecorder()
+	app.ServeHTTP(w, r)
+
+	if w.Code != iris.StatusMovedPermanently {
+		t.Fatalf("expected status %d but got %d", iris.StatusMovedPermanently, w.Code)
+	}
+
+	if expected, got := "http://target.com/path?foo=bar", w.Header().Get("Location"); expected != got {
+		t.Fatalf("expected Location %q but got %q", expected, got)
+	}
+
+	// The redirect URL must be built on a clone, the incoming request stays intact.
+	if r.Host != "source.com" || r.URL.Host != "source.com" {
+		t.Fatalf("the redirect must not mutate the incoming request, got Host: %q and URL.Host: %q", r.Host, r.URL.Host)
+	}
+}
+
 func TestSwitchHostsRedirect(t *testing.T) {
 	var (
 		expected = func(appName, host, path string) string {
@@ -124,9 +149,16 @@ func TestSwitchHostsRedirect(t *testing.T) {
 		}
 	)
 
-	mydomain := iris.New().SetName("mydomain")
-	mydomain.OnAnyErrorCode(func(ctx iris.Context) {
+	mydomain := iris.New(iris.Options{Name: "mydomain"})
+	mydomain.HandleNoRoute(func(ctx iris.Context) {
 		ctx.WriteString("custom: " + iris.StatusText(ctx.GetStatusCode()))
+	})
+	mydomain.UseRouter(func(ctx iris.Context) {
+		ctx.Next()
+
+		if ctx.ResponseWriter().Written() <= 0 {
+			ctx.WriteString("custom: " + iris.StatusText(ctx.GetStatusCode()))
+		}
 	})
 	mydomain.Get("/", index)
 	mydomain.Get("/f", index)

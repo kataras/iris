@@ -1,9 +1,0 @@
-DisablePathCorrection = false
-EnablePathEscape = false
-FireMethodNotAllowed = true
-DisableBodyConsumptionOnUnmarshal = false
-TimeFormat = "Mon, 01 Jan 2006 15:04:05 GMT"
-Charset = "utf-8"
-RemoteAddrHeaders = ["X-Real-Ip", "X-Forwarded-For", "CF-Connecting-IP"]
-[Other]
-	MyServerName = "iris"

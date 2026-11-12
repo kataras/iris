@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 func TestSwitchJoin(t *testing.T) {
 	myapp := iris.New()
 	customFilter := func(ctx iris.Context) bool {
-		pass, _ := ctx.URLParamBool("filter")
+		pass := ctx.Query().GetBool("filter")
 		return pass
 	}
 

@@ -8,6 +8,28 @@ node_modules
 issue-*/
 internalcode-*/
 /_examples/feature-*/
+/_examples/out.txt
+# Files an example wrote at runtime, but not the example itself: this rule used
+# to swallow _examples/03-request/uploads/main.go, so the repository tracked 58
+# examples while its README documented 59.
 _examples/**/uploads/*
+!_examples/**/uploads/*.go
+!_examples/**/uploads/*.md
+_examples/**/*.exe
 _issues/**
 .DS_STORE
+*.exe
+# Local workspace for building against a sibling checkout (see client/README.md).
+go.work
+go.work.sum
+# AI
+.plexon
+PLEXON.md
+.claude
+CLAUDE.md
+.codex
+AGENTS.md
+.agents
+.code-review-graph
+_proposals
+.superpowers

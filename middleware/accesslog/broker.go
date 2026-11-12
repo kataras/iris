@@ -25,6 +25,10 @@ type Broker struct {
 
 	// force-terminate all listeners.
 	close chan struct{}
+
+	// done is closed when the `run` goroutine returns,
+	// after a termination signal through the "close" channel.
+	done chan struct{}
 }
 
 // newBroker returns a new broker factory.
@@ -35,6 +39,7 @@ func newBroker() *Broker {
 		closingListeners: make(chan LogChan),
 		listeners:        make(map[LogChan]bool),
 		close:            make(chan struct{}),
+		done:             make(chan struct{}),
 	}
 
 	// Listens and Broadcasts events.
@@ -45,6 +50,8 @@ func newBroker() *Broker {
 
 // run listens on different channels and act accordingly.
 func (b *Broker) run() {
+	defer close(b.done)
+
 	for {
 		select {
 		case s := <-b.newListeners:
@@ -68,6 +75,8 @@ func (b *Broker) run() {
 				delete(b.listeners, clientMessageChan)
 				close(clientMessageChan)
 			}
+
+			return
 		}
 	}
 }

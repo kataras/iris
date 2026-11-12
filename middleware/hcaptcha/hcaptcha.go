@@ -1,3 +1,8 @@
+// Package hcaptcha verifies the hCaptcha answer that a form submission carries.
+//
+// Its entry point is New(Options), which returns a Handler that calls SiteVerify
+// and runs Options.FailureHandler when the answer does not pass. Read the stored
+// Response with Get.
 package hcaptcha
 
 import (
@@ -6,62 +11,55 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
+	"sync"
+	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
 )
 
 func init() {
 	context.SetHandlerName("iris/middleware/hcaptcha.*", "iris.hCaptcha")
 }
 
+// responseContextKey is the request's context key that keeps the response of a hcaptcha request.
+// Read the value with Get.
+const responseContextKey = "iris.hcaptcha"
+
 var (
-	// ResponseContextKey is the default request's context key that response of a hcaptcha request is kept.
-	ResponseContextKey string = "iris.hcaptcha"
 	// DefaultFailureHandler is the default HTTP handler that is fired on hcaptcha failures.
-	// See `Client.FailureHandler`.
+	// See `Options.FailureHandler`.
 	DefaultFailureHandler = func(ctx *context.Context) {
 		ctx.StopWithStatus(http.StatusTooManyRequests)
 	}
 )
 
-// Client represents the hcaptcha client.
-type Client struct {
+// Options is the configuration for the hcaptcha middleware.
+// The zero value is valid but useless: Secret is required.
+type Options struct {
+	// Secret is the hcaptcha secret key, from https://dashboard.hcaptcha.com/settings.
+	// Required.
+	Secret string `yaml:"Secret"`
+
 	// FailureHandler if specified, fired when user does not complete hcaptcha successfully.
-	// Failure and error codes information are kept as `Response` type
-	// at the Request's Context key of "hcaptcha".
+	// Failure and error codes information are kept as a `Response` value
+	// in the request's context, retrieved through the `Get` package-level function.
 	//
-	// Defaults to a handler that writes a status code of 429 (Too Many Requests)
-	// and without additional information.
-	FailureHandler context.Handler
+	// Defaults to DefaultFailureHandler, which writes a status code of
+	// 429 (Too Many Requests) and no additional information.
+	FailureHandler context.Handler `yaml:"-"`
 
-	// Optional checks for siteverify.
+	// RemoteIP is an optional check for siteverify:
+	// the user's remote IP address, sent as the "remoteip" form field.
 	//
-	// The user's remote IP address.
-	RemoteIP string
-	// The sitekey form field you expect to see.
-	SiteKey string
+	// Defaults to empty, not sent.
+	RemoteIP string `yaml:"RemoteIP"`
 
-	secret string
-}
-
-// Option declares an option for the hcaptcha client.
-// See `New` package-level function.
-type Option func(*Client)
-
-// WithRemoteIP sets the remote ip field to the given value.
-// It sends the remoteip form field on "SiteVerify".
-func WithRemoteIP(remoteIP string) Option {
-	return func(c *Client) {
-		c.RemoteIP = remoteIP
-	}
-}
-
-// WithSiteKey sets the site key field to the given value.
-// It sends the sitekey form field on "SiteVerify".
-func WithSiteKey(siteKey string) Option {
-	return func(c *Client) {
-		c.SiteKey = siteKey
-	}
+	// SiteKey is an optional check for siteverify:
+	// the sitekey form field you expect to see.
+	//
+	// Defaults to empty, not sent.
+	SiteKey string `yaml:"SiteKey"`
 }
 
 // Response is the hcaptcha JSON response.
@@ -70,50 +68,50 @@ type Response struct {
 	Hostname    string   `json:"hostname"`
 	ErrorCodes  []string `json:"error-codes,omitempty"`
 	Success     bool     `json:"success"`
-	Credit      bool     `json:"credit,omitempty"`
+	Credit      bool     `json:"credit,omitzero"`
 }
 
-// New accepts a hpcatcha secret key and returns a new hcaptcha HTTP Client.
+// New returns a route middleware Handler which verifies the hcaptcha response
+// of each incoming request against the given Options.
+//
+// It calls the `SiteVerify` function and fires the "next" handler when the user
+// completed the hcaptcha successfully, otherwise it calls Options.FailureHandler.
+// The hcaptcha's `Response` (which contains any `ErrorCodes`) is saved on the
+// Request's Context (see the `Get` package-level function).
 //
 // Instructions at: https://docs.hcaptcha.com/.
-//
-// See its `Handler` and `SiteVerify` for details.
-// See the `WithRemoteIP` and `WithSiteKey` package-level functions too.
-func New(secret string, options ...Option) context.Handler {
-	c := &Client{
-		FailureHandler: DefaultFailureHandler,
-		secret:         secret,
+func New(opts Options) context.Handler {
+	failureHandler := opts.FailureHandler
+	if failureHandler == nil {
+		failureHandler = DefaultFailureHandler
 	}
 
-	for _, opt := range options {
-		opt(c)
-	}
+	return func(ctx *context.Context) {
+		v := SiteVerify(ctx, opts.Secret, opts.RemoteIP, opts.SiteKey)
+		ctx.Values().Set(responseContextKey, v)
+		if v.Success {
+			ctx.Next()
+			return
+		}
 
-	return c.Handler
-}
-
-// Handler is the HTTP route middleware featured hcaptcha validation.
-// It calls the `SiteVerify` method and fires the "next" when user completed the hcaptcha successfully,
-//
-//	otherwise it calls the Client's `FailureHandler`.
-//
-// The hcaptcha's `Response` (which contains any `ErrorCodes`)
-// is saved on the Request's Context (see `GetResponseFromContext`).
-func (c *Client) Handler(ctx *context.Context) {
-	v := SiteVerify(ctx, c.secret, c.RemoteIP, c.SiteKey)
-	ctx.Values().Set(ResponseContextKey, v)
-	if v.Success {
-		ctx.Next()
-		return
-	}
-
-	if c.FailureHandler != nil {
-		c.FailureHandler(ctx)
+		failureHandler(ctx)
 	}
 }
 
 // responseFormValue = "h-captcha-response"
 const apiURL = "https://hcaptcha.com/siteverify"
+
+// VerifyTimeout bounds how long a single verification call may take.
+// Set it before the first verification; the HTTP client is built once,
+// on first use, and later assignments have no effect.
+var VerifyTimeout = 10 * time.Second
+
+// verifyClient is used instead of http.DefaultClient, which has no timeout.
+// It is built on first use rather than at package init, so a VerifyTimeout
+// assignment in the program's main is honored.
+var verifyClient = sync.OnceValue(func() *http.Client {
+	return &http.Client{Timeout: VerifyTimeout}
+})
 
 // SiteVerify accepts an Iris Context and a secret key (https://dashboard.hcaptcha.com/settings).
 // It returns the hcaptcha's `Response`.
@@ -122,7 +120,7 @@ const apiURL = "https://hcaptcha.com/siteverify"
 //
 // The remoteIP and siteKey input arguments are optional.
 func SiteVerify(ctx *context.Context, secret, remoteIP, siteKey string) (response Response) {
-	generatedResponseID := ctx.FormValue("h-captcha-response")
+	generatedResponseID := ctx.Form().Get("h-captcha-response")
 
 	if generatedResponseID == "" {
 		response.ErrorCodes = append(response.ErrorCodes,
@@ -141,7 +139,22 @@ func SiteVerify(ctx *context.Context, secret, remoteIP, siteKey string) (respons
 		values.Add("sitekey", siteKey)
 	}
 
-	resp, err := http.DefaultClient.PostForm(apiURL, values)
+	// Note(@kataras): a timeout and the request's context, not http.DefaultClient.
+	//
+	// DefaultClient has NO timeout. If hcaptcha.com is slow, or an on-path
+	// attacker simply holds the connection open, every request goroutine that
+	// reaches this captcha-protected route blocks indefinitely - connection and
+	// goroutine exhaustion from a dependency the application does not control.
+	// Threading the request context also makes a client disconnect cancel the
+	// outbound call instead of leaving it running.
+	req, err := http.NewRequestWithContext(ctx.Request().Context(), http.MethodPost, apiURL, strings.NewReader(values.Encode()))
+	if err != nil {
+		response.ErrorCodes = append(response.ErrorCodes, err.Error())
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := verifyClient().Do(req)
 	if err != nil {
 		response.ErrorCodes = append(response.ErrorCodes, err.Error())
 		return
@@ -165,7 +178,7 @@ func SiteVerify(ctx *context.Context, secret, remoteIP, siteKey string) (respons
 
 // Get returns the hcaptcha `Response` of the current request and reports whether was found or not.
 func Get(ctx *context.Context) (Response, bool) {
-	v := ctx.Values().Get(ResponseContextKey)
+	v := ctx.Values().Get(responseContextKey)
 	if v != nil {
 		if response, ok := v.(Response); ok {
 			return response, true
@@ -193,8 +206,8 @@ func ParseForm(dataSiteKey, postActionRelativePath string) string {
 	return fmt.Sprintf(HTMLForm, postActionRelativePath, Script, dataSiteKey)
 }
 
-// RenderForm writes the `HTMLForm` to "w" response writer.
-// See `_examples/auth/hcaptcha/templates/register_form.html` example for a custom form instead.
-func RenderForm(ctx *context.Context, dataSiteKey, postActionRelativePath string) (int, error) {
+// RenderForm writes the `HTMLForm` to the Context's response writer.
+// Use `ParseForm` or write your own HTML form for a custom result instead.
+func RenderForm(ctx *context.Context, dataSiteKey, postActionRelativePath string) error {
 	return ctx.HTML(ParseForm(dataSiteKey, postActionRelativePath))
 }

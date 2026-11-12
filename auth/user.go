@@ -1,10 +1,7 @@
-//go:build go1.18
-// +build go1.18
-
 package auth
 
 import (
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/kataras/jwt"
 )
@@ -15,30 +12,26 @@ type (
 	// User is an alias of an empty interface, it's here to declare the typeof T,
 	// which can be any custom struct type.
 	//
-	// Example can be found at: https://github.com/kataras/iris/tree/v12/_examples/auth/auth/user.go.
+	// Example can be found at: https://github.com/kataras/iris/tree/main/_examples/09-authentication/auth-sdk/main.go (Customer).
 	User = any
 )
 
-const accessTokenContextKey = "iris.auth.context.access_token"
+const authCntextKey = "iris.auth"
 
-// GetAccessToken accepts the iris Context and returns the raw access token value.
+// Get accepts the iris Context and returns the current Auth[T] instance.
 // It's only available after Auth.VerifyHandler is executed.
-func GetAccessToken(ctx *context.Context) string {
-	return ctx.Values().GetString(accessTokenContextKey)
+func Get[T User](ctx *context.Context) (*Auth[T], bool) {
+	return ctx.ValueAs[*Auth[T]](authCntextKey)
 }
 
-const standardClaimsContextKey = "iris.auth.context.standard_claims"
+const authTokenContextKey = "iris.auth.context.token"
 
-// GetStandardClaims accepts the iris Context and returns the standard token's claims.
+// GetToken accepts the iris Context and returns the
+// verified JWT token instance, which contains the raw access token
+// and its claims.
 // It's only available after Auth.VerifyHandler is executed.
-func GetStandardClaims(ctx *context.Context) StandardClaims {
-	if v := ctx.Values().Get(standardClaimsContextKey); v != nil {
-		if c, ok := v.(StandardClaims); ok {
-			return c
-		}
-	}
-
-	return StandardClaims{}
+func GetToken(ctx *context.Context) (*jwt.VerifiedToken, bool) {
+	return ctx.ValueAs[*jwt.VerifiedToken](authTokenContextKey)
 }
 
 const userContextKey = "iris.auth.context.user"
@@ -46,14 +39,13 @@ const userContextKey = "iris.auth.context.user"
 // GetUser is the package-level function of the Auth.GetUser method.
 // It returns the T user value after Auth.VerifyHandler is executed.
 func GetUser[T User](ctx *context.Context) T {
-	if v := ctx.Values().Get(userContextKey); v != nil {
-		if t, ok := v.(T); ok {
-			return t
-		}
-	}
+	t, _ := ctx.ValueAs[T](userContextKey)
+	return t
+}
 
-	var empty T
-	return empty
+// UserAuthorized accepts the iris Context and returns true if the user is authorized.
+func UserAuthorized(ctx *context.Context) bool {
+	return ctx.Values().Get(userContextKey) != nil
 }
 
 // GetUser accepts the iris Context and returns the T custom user/claims struct value.

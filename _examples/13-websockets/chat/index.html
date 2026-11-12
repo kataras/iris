@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Iris chat</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; }
+        #output { border: 1px solid #ccc; padding: 0.5rem; min-height: 12rem; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Iris chat</h1>
+    <p>Open this page in a second tab and type in either one.</p>
+    <pre id="output"></pre>
+    <input id="input" type="text" placeholder="Say something" autofocus>
+    <button id="send" disabled>Send</button>
+
+    <!-- neffos.js speaks the namespace/event protocol the server uses. -->
+    <script src="https://cdn.jsdelivr.net/npm/neffos.js@latest/dist/neffos-es5.js"></script>
+    <script>
+        const output = document.getElementById("output");
+        const input = document.getElementById("input");
+        const send = document.getElementById("send");
+        const show = (text) => { output.textContent += text + "\n"; };
+
+        async function run() {
+            const scheme = location.protocol === "https:" ? "wss" : "ws";
+            const conn = await neffos.dial(scheme + "://" + location.host + "/ws", {
+                default: {
+                    _OnNamespaceConnected: (nsConn, msg) => {
+                        show("connected to namespace " + msg.Namespace);
+                        send.disabled = false;
+                        const submit = () => {
+                            const text = input.value.trim();
+                            if (!text) return;
+                            nsConn.emit("chat", text);
+                            show("me: " + text);
+                            input.value = "";
+                        };
+                        send.onclick = submit;
+                        input.onkeydown = (e) => { if (e.key === "Enter") submit(); };
+                    },
+                    _OnNamespaceDisconnect: (nsConn, msg) => {
+                        show("disconnected");
+                        send.disabled = true;
+                    },
+                    chat: (nsConn, msg) => { show(msg.Body); },
+                },
+            });
+            conn.connect("default");
+        }
+
+        run().catch((err) => show("error: " + err));
+    </script>
+</body>
+</html>

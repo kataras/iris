@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: dragonfly
+    ports:
+      - "6379:6379"
+    ulimits:
+      memlock: -1
+    command: --requirepass 'admin!123'
+    restart: unless-stopped
+# Through docker compose, you can run Dragonfly with the following command:
+# docker-compose up -d
+#
+# To run Dragonfly from Docker manually, you can use the following commands:
+# First time:
+# sudo apt update
+# sudo apt install -y docker.io docker-compose
+# sudo systemctl start docker
+# sudo systemctl enable docker
+# sudo usermod -aG docker $USER
+# wsl --shutdown
+# wsl -d Ubuntu
+# Then, run the following commands to start Dragonfly:
+# sudo service docker start
+# docker run -d --name dragonfly -p 6379:6379 --ulimit memlock=-1 docker.dragonflydb.io/dragonflydb/dragonfly --requirepass 'admin!123'
+# docker rm -f dragonfly (to delete it).

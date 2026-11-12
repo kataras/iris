@@ -3,10 +3,10 @@ package requestid_test
 import (
 	"testing"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/httptest"
-	"github.com/kataras/iris/v12/middleware/requestid"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/httptest"
+	"github.com/kataras/iris/v14/middleware/requestid"
 )
 
 func TestRequestID(t *testing.T) {
@@ -15,14 +15,14 @@ func TestRequestID(t *testing.T) {
 		ctx.WriteString(requestid.Get(ctx))
 	}
 
-	def := app.Party("/default")
+	def := app.Router("/default")
 	{
-		def.Use(requestid.New())
+		def.Use(requestid.New()) // TODO: think if child then only ship middlewares to child's routes (so MatchedRoutes always), otherwise use this pattern and default to all endpoints.
 		def.Get("/", h)
 	}
 
 	const expectedCustomID = "my_id"
-	custom := app.Party("/custom")
+	custom := app.Router("/custom")
 	{
 		customGen := func(ctx *context.Context) string {
 			return expectedCustomID
@@ -33,7 +33,7 @@ func TestRequestID(t *testing.T) {
 	}
 
 	const expectedErrMsg = "no id"
-	customWithErr := app.Party("/custom_err")
+	customWithErr := app.Router("/custom_err")
 	{
 		customGen := func(ctx *context.Context) string {
 			ctx.StopWithText(iris.StatusUnauthorized, expectedErrMsg)
@@ -45,7 +45,7 @@ func TestRequestID(t *testing.T) {
 	}
 
 	const expectedCustomIDFromOtherMiddleware = "my custom id"
-	changeID := app.Party("/custom_change_id")
+	changeID := app.Router("/custom_change_id")
 	{
 		changeID.Use(func(ctx iris.Context) {
 			ctx.SetID(expectedCustomIDFromOtherMiddleware)
@@ -56,7 +56,7 @@ func TestRequestID(t *testing.T) {
 	}
 
 	const expectedClientSentID = "client sent id"
-	clientSentID := app.Party("/client_id")
+	clientSentID := app.Router("/client_id")
 	{
 		clientSentID.Use(requestid.New())
 		clientSentID.Get("/", h)

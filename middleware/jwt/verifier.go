@@ -2,9 +2,10 @@ package jwt
 
 import (
 	"reflect"
+	"slices"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/kataras/jwt"
 )
@@ -14,13 +15,15 @@ const (
 	verifiedTokenContextKey = "iris.jwt.token"
 )
 
-// Get returns the claims decoded by a verifier.
-func Get(ctx *context.Context) any {
-	if v := ctx.Values().Get(claimsContextKey); v != nil {
-		return v
-	}
-
-	return nil
+// Get returns the claims decoded by a verifier, as type T. It reports false
+// when the request carries no claims or when they are not a T; it never panics.
+//
+// The stored value is what the claims constructor passed to Verify returned,
+// usually a pointer, so T is that pointer type:
+//
+//	claims, ok := jwt.Get[*UserClaims](ctx)
+func Get[T any](ctx *context.Context) (T, bool) {
+	return ctx.ValueAs[T](claimsContextKey)
 }
 
 // GetVerifiedToken returns the verified token structure
@@ -80,8 +83,11 @@ type Verifier struct {
 //
 // Get the claims:
 //
-//	claims := jwt.Get(ctx).(*userClaims)
-//	username := claims.Username
+//	claims, ok := jwt.Get[*userClaims](ctx)
+//	if !ok {
+//		return // the request went through no verifier.
+//	}
+//	ctx.Writef("hello %s", claims.Username)
 //
 // Get the context user:
 //
@@ -97,7 +103,7 @@ func NewVerifier(signatureAlg Alg, signatureKey any, validators ...TokenValidato
 	return &Verifier{
 		Alg:        signatureAlg,
 		Key:        signatureKey,
-		Extractors: []TokenExtractor{FromHeader, FromQuery},
+		Extractors: []TokenExtractor{FromHeader},
 		ErrorHandler: func(ctx *context.Context, err error) {
 			ctx.StopWithError(401, context.PrivateError(err))
 		},
@@ -105,7 +111,20 @@ func NewVerifier(signatureAlg Alg, signatureKey any, validators ...TokenValidato
 	}
 }
 
-// WithDecryption enables AES-GCM payload-only encryption.
+// WithQueryToken adds the query-parameter (?token=) extractor to the verifier.
+//
+// As of v14 the default extractors read the Authorization header only, because
+// tokens placed in the URL query string tend to leak into access logs, proxy
+// logs, browser history and Referer headers. Opt back in only when you must
+// (e.g. browser downloads that cannot set an Authorization header):
+//
+//	verifier := jwt.NewVerifier(jwt.HS256, key).WithQueryToken()
+func (v *Verifier) WithQueryToken() *Verifier {
+	v.Extractors = append(v.Extractors, FromQuery)
+	return v
+}
+
+// WithDecryption enables AES-GCM payload-only decryption of the incoming token.
 func (v *Verifier) WithDecryption(key, additionalData []byte) *Verifier {
 	_, decrypt, err := jwt.GCM(key, additionalData)
 	if err != nil {
@@ -173,13 +192,13 @@ func (v *Verifier) VerifyToken(token []byte, validators ...TokenValidator) (*Ver
 // from unauthorized client requests. After this, the route handlers can access the claims
 // through the jwt.Get package-level function.
 //
-// By default it extracts the token from Authorization: Bearer $token header and ?token URL Query parameter,
-// to change that behavior modify its Extractors field.
+// By default it extracts the token from the Authorization: Bearer $token header only.
+// Query-parameter (?token=) extraction is opt-in through the Verifier.WithQueryToken
+// method, or by modifying its Extractors field.
 //
 // By default a 401 status code with a generic message will be sent to the client on
 // a token verification or claims validation failure, to change that behavior
-// modify its ErrorHandler field or register OnErrorCode(401, errorHandler) and
-// retrieve the error through Context.GetErr method.
+// modify its ErrorHandler field and retrieve the error through Context.GetErr method.
 //
 // If the "claimsType" is nil then only the jwt.GetVerifiedToken is available
 // and the handler should unmarshal the payload to extract the claims by itself.
@@ -190,6 +209,21 @@ func (v *Verifier) Verify(claimsType func() any, validators ...TokenValidator) c
 		if hasRequired(c) {
 			unmarshal = jwt.UnmarshalWithRequired
 		}
+	}
+
+	// Note(@kataras): the Verifier's own validators run for EVERY Verify call,
+	// with or without a Blocklist.
+	//
+	// They used to be spliced in only inside the "if v.Blocklist != nil" branch
+	// below, so the documented
+	//
+	//	jwt.NewVerifier(jwt.HS256, secret, jwt.Expected{Issuer: "my-app"})
+	//
+	// stored the validator and then never ran it unless a blocklist happened to
+	// be configured. A token minted by a different service that shares the
+	// signing key - or any token with a foreign "iss"/"aud" - was accepted.
+	if len(v.Validators) > 0 {
+		validators = append(slices.Clone(v.Validators), validators...)
 	}
 
 	if v.Blocklist != nil {
@@ -206,7 +240,9 @@ func (v *Verifier) Verify(claimsType func() any, validators ...TokenValidator) c
 			}
 		}
 
-		validators = append([]TokenValidator{v.Blocklist}, append(v.Validators, validators...)...)
+		// The blocklist runs first: a revoked token should be rejected before any
+		// other claim is considered.
+		validators = append([]TokenValidator{v.Blocklist}, validators...)
 	}
 
 	return func(ctx *context.Context) {
@@ -244,7 +280,7 @@ func (v *Verifier) Verify(claimsType func() any, validators ...TokenValidator) c
 		}
 
 		if v.Blocklist != nil {
-			ctx.SetLogoutFunc(v.invalidate)
+			ctx.SetLogoutFunc(func(ctx *context.Context) error { v.invalidate(ctx); return nil })
 		}
 
 		ctx.Values().Set(verifiedTokenContextKey, verifiedToken)
@@ -259,8 +295,7 @@ func hasRequired(i any) bool {
 		return false
 	}
 
-	for i := 0; i < val.NumField(); i++ {
-		field := typ.Field(i)
+	for field := range typ.Fields() {
 		if jwt.HasRequiredJSONTag(field) {
 			return true
 		}

@@ -2,13 +2,13 @@ package httptest
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
-	"github.com/kataras/iris/v12/i18n"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/iris-contrib/httpexpect/v2"
 )
@@ -64,6 +64,10 @@ var (
 			c.URL = schemeAndHost
 		}
 	}
+
+	// Domain if set then it sets the httptest's BaseURL to a specific internal URL (https://iris-go.com) which enables the cookies for this domain.
+	Domain = URL("https://iris-go.com")
+
 	// Debug if true then debug messages from the httpexpect will be shown when a test runs
 	// Defaults to false.
 	Debug = func(val bool) OptionSet {
@@ -104,22 +108,33 @@ func DefaultConfiguration() *Configuration {
 //
 //	httptest.New(t, app, httptest.URL(...), httptest.Debug(true), httptest.LogLevel("debug"), httptest.Strict(true))
 //
-// Examples at: https://github.com/kataras/iris/tree/v12/_examples/testing/httptest and
-// https://github.com/kataras/iris/tree/v12/_examples/testing/ginkgotest.
+// Example: https://github.com/kataras/iris/tree/main/_examples/14-testing/iris-httptest
 func New(t IrisTesty, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
 	}
 
+	if conf.URL != "" {
+		parsedURL, err := url.Parse(conf.URL)
+		if err != nil {
+			panic(fmt.Errorf("httptest: invalid URL option value: %v", err))
+		}
+
+		app.EditOptions(func(opts *iris.Options) {
+			opts.SetHost(parsedURL.Host)
+		})
+	}
+
 	// set the logger or disable it (default).
 	app.Logger().SetLevel(conf.LogLevel)
-
 	if err := app.Build(); err != nil {
 		if conf.LogLevel != "disable" {
 			app.Logger().Println(err.Error())
-			return nil
 		}
+		t.Helper()
+		t.Fatalf("httptest: application build: %v", err)
+		return nil
 	}
 
 	var reporter httpexpect.Reporter
@@ -189,19 +204,33 @@ var (
 //
 // For a more efficient testing please use the `New` function instead.
 func Do(w http.ResponseWriter, r *http.Request, handler iris.Handler, irisConfigurators ...iris.Configurator) {
-	app := new(iris.Application)
-	app.I18n = i18n.New()
-	app.Configure(iris.WithConfiguration(iris.DefaultConfiguration()), iris.WithLogLevel("disable"))
+	defaultOptions := iris.DefaultOptions
+	defaultOptions.LogLevel = "disable"
+	app := iris.New(defaultOptions)
 	app.Configure(irisConfigurators...)
 
-	app.HTTPErrorHandler = router.NewDefaultHandler(app.ConfigurationReadOnly(), app.Logger())
-	app.ContextPool = context.New(func() any {
-		return context.NewContext(app)
-	})
+	// app := new(iris.Application)
+	// defaultOptions := iris.DefaultOptions
+	// defaultOptions.LogLevel = "disable"
+	// app.Configure(defaultOptions)
+	// app.ContextPool = context.New(func() any {
+	// 	ctx := context.NewContext(app)
+	// 	return ctx
+	// })
+	// app.Configure(irisConfigurators...)
 
-	ctx := app.ContextPool.Acquire(w, r)
+	ctx := app.ContextPool().Acquire()
+	writer := context.AcquireResponseWriter(w)
+	ctx.SetResponseWriter(writer)
+	ctx.SetRequest(r)
+	ctx.Options() // set options to defaults.
 	handler(ctx)
-	app.ContextPool.Release(ctx)
+	// Same contract as the router: anything still writing to this response
+	// from another goroutine (an sse heartbeat, say) stops here, while the
+	// writer is still valid. See Context.OnRelease.
+	ctx.RunReleaseHooks()
+	context.ReleaseResponseWriter(writer)
+	app.ContextPool().Release(ctx)
 }
 
 // IrisTesty is an interface which all testing package should implement.

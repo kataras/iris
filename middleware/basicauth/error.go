@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
 )
 
 type (
@@ -58,24 +58,31 @@ func (e ErrHTTPVersion) Error() string {
 	return "http version not supported"
 }
 
+// The Error methods name the user but never include the password or the raw
+// authorization header (which is base64 of username:password). handleError logs
+// every one of them at Debug level, DefaultErrorHandler's fallback writes
+// err.Error() into the response body and a custom ErrorHandler may do the same;
+// a failed login is very often a valid user's typo of their real password.
+// The Password field stays on the structs for handlers that deliberately need it.
+
 func (e ErrCredentialsForbidden) Error() string {
-	return fmt.Sprintf("credentials: forbidden <%s:%s> for <%s> after <%d> attempts", e.Username, e.Password, e.Age, e.Tries)
+	return fmt.Sprintf("credentials: forbidden <%s> for <%s> after <%d> attempts", e.Username, e.Age, e.Tries)
 }
 
 func (e ErrCredentialsMissing) Error() string {
 	if e.Header != "" {
-		return fmt.Sprintf("credentials: malformed <%s>", e.Header)
+		return "credentials: malformed header"
 	}
 
 	return "empty credentials"
 }
 
 func (e ErrCredentialsInvalid) Error() string {
-	return fmt.Sprintf("credentials: invalid <%s:%s> current tries <%d>", e.Username, e.Password, e.CurrentTries)
+	return fmt.Sprintf("credentials: invalid <%s> current tries <%d>", e.Username, e.CurrentTries)
 }
 
 func (e ErrCredentialsExpired) Error() string {
-	return fmt.Sprintf("credentials: expired <%s:%s>", e.Username, e.Password)
+	return fmt.Sprintf("credentials: expired <%s>", e.Username)
 }
 
 // DefaultErrorHandler is the default error handler for the Options.ErrorHandler field.
@@ -96,13 +103,13 @@ func DefaultErrorHandler(ctx *context.Context, err error) {
 		unauthorize(ctx, e.AuthenticateHeader, e.AuthenticateHeaderValue, e.Code)
 	default:
 		// This will never happen.
-		ctx.StopWithText(http.StatusInternalServerError, fmt.Sprintf("unknown error: %v", err))
+		ctx.StopWithText(http.StatusInternalServerError, "unknown error: "+err.Error())
 	}
 }
 
 // unauthorize sends a 401 status code (or 407 if Proxy was set to true)
 // which client should catch and prompt for username:password credentials.
 func unauthorize(ctx *context.Context, authHeader, authHeaderValue string, code int) {
-	ctx.Header(authHeader, authHeaderValue)
+	ctx.SetHeader(authHeader, authHeaderValue)
 	ctx.StopWithStatus(code)
 }

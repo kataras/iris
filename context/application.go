@@ -2,65 +2,46 @@ package context
 
 import (
 	stdContext "context"
-	"io"
 	"net/http"
+	"slices"
 	"sync"
 
 	"github.com/kataras/golog"
-	"github.com/tdewolff/minify/v2"
 )
 
 // Application is the context's owner.
 // This interface contains the functions that can be used with safety inside a Handler
 // by `context.Application()`.
 type Application interface {
-	// ConfigurationReadOnly returns all the available configuration values can be used on a request.
-	ConfigurationReadOnly() ConfigurationReadOnly
+	Router
 
 	// Logger returns the golog logger instance(pointer) that is being used inside the "app".
 	Logger() *golog.Logger
 	// IsDebug reports whether the application is running
 	// under debug/development mode.
 	// It's just a shortcut of Logger().Level >= golog.DebugLevel.
-	// The same method existss as Context.IsDebug() too.
+	// The same method exists as Context.IsDebug() too.
 	IsDebug() bool
 
-	// I18nReadOnly returns the i18n's read-only features.
-	I18nReadOnly() I18nReadOnly
-
-	// Validate validates a value and returns nil if passed or
-	// the failure reason if not.
-	Validate(any) error
-
-	// Minifier returns the minifier instance.
-	// By default it can minifies:
-	// - text/html
-	// - text/css
-	// - image/svg+xml
-	// - application/text(javascript, ecmascript, json, xml).
-	// Use that instance to add custom Minifiers before server ran.
-	Minifier() *minify.M
-	// View executes and write the result of a template file to the writer.
-	//
-	// Use context.View to render templates to the client instead.
-	// Returns an error on failure, otherwise nil.
-	View(writer io.Writer, filename string, layout string, bindingData any) error
-
-	// GetContextPool returns the Iris sync.Pool which holds the contexts values.
+	// ListRoutesReadOnly returns a read-only version of the registered routes.
+	ListRoutesReadOnly() []RouteReadOnly
+	// ContextPool returns the Iris sync.Pool which holds the contexts values.
 	// Iris automatically releases the request context, so you don't have to use it.
 	// It's only useful to manually release the context on cases that connection
 	// is hijacked by a third-party middleware and the http handler return too fast.
-	GetContextPool() *Pool
+	ContextPool() *Pool
 
-	// GetContextErrorHandler returns the handler which handles errors
-	// on JSON write failures.
-	GetContextErrorHandler() ErrorHandler
+	// ContextOptions returns the context's configuration.
+	ContextOptions() *ContextOptions
+	// RegisterOnBuild registers callback functions to be executed before or/and after the application is built.
+	// The callbacks are executed after the application's internal state is constructed but before the server is started.
+	RegisterOnBuild(beforeBuild, afterBuild func() error)
 
-	// ServeHTTPC is the internal router, it's visible because it can be used for advanced use cases,
+	// HandleRequest is the internal router, it's visible because it can be used for advanced use cases,
 	// i.e: routing within a foreign context.
 	//
 	// It is ready to use after Build state.
-	ServeHTTPC(ctx *Context)
+	HandleRequest(ctx *Context)
 
 	// ServeHTTP is the main router handler which calls the .Serve and acquires a new context from the pool.
 	//
@@ -68,33 +49,13 @@ type Application interface {
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	// Shutdown gracefully terminates all the application's server hosts and any tunnels.
-	// Returns an error on the first failure, otherwise nil.
+	// Every closer runs even if one of them fails, the returned error joins all the
+	// failures (match individual ones with errors.Is/errors.As), otherwise nil.
 	Shutdown(ctx stdContext.Context) error
 
-	// GetRouteReadOnly returns the registered "read-only" route based on its name, otherwise nil.
-	// One note: "routeName" should be case-sensitive. Used by the context to get the current route.
-	// It returns an interface instead to reduce wrong usage and to keep the decoupled design between
-	// the context and the routes.
-	//
-	// Look core/router/APIBuilder#GetRoute for more.
-	GetRouteReadOnly(routeName string) RouteReadOnly
+	// GetDisableAutoFireStatusCode returns the Router's DisableAutoFireStatusCode field.
+	// GetDisableAutoFireStatusCode() bool
 
-	// GetRoutesReadOnly returns the registered "read-only" routes.
-	//
-	// Look core/router/APIBuilder#GetRoutes for more.
-	GetRoutesReadOnly() []RouteReadOnly
-
-	// FireErrorCode handles the response's error response.
-	// If `Configuration.ResetOnFireErrorCode()` is true
-	// and the response writer was a recorder or a gzip writer one
-	// then it will try to reset the headers and the body before calling the
-	// registered (or default) error handler for that error code set by
-	// `ctx.StatusCode` method.
-	FireErrorCode(ctx *Context)
-
-	// RouteExists reports whether a particular route exists
-	// It will search from the current subdomain of context's host, if not inside the root domain.
-	RouteExists(ctx *Context, method, path string) bool
 	// FindClosestPaths returns a list of "n" paths close to "path" under the given "subdomain".
 	//
 	// Order may change.
@@ -134,15 +95,20 @@ func RegisterApplication(app Application) {
 		return
 	}
 
+	// Snapshot the listeners under the same lock that appends the application, so
+	// a concurrent registration cannot slip in between, then run them unlocked.
+	// A listener is arbitrary user code: calling it while holding the lock lets it
+	// deadlock the process by registering an application or another listener,
+	// because sync.RWMutex is not reentrant.
 	mu.Lock()
 	registeredApps = append(registeredApps, app)
+	listeners := make([]func(Application), len(onApplicationRegisteredListeners))
+	copy(listeners, onApplicationRegisteredListeners)
 	mu.Unlock()
 
-	mu.RLock()
-	for _, listener := range onApplicationRegisteredListeners {
+	for _, listener := range listeners {
 		listener(app)
 	}
-	mu.RUnlock()
 }
 
 // OnApplicationRegistered adds a function which fires when a new application
@@ -158,7 +124,7 @@ func GetApplications() []Application {
 	mu.RLock()
 	// a copy slice but the instances are pointers so be careful what modifications are done
 	// the return value is read-only but it can be casted to *iris.Application.
-	apps := make([]Application, 0, len(registeredApps))
+	apps := make([]Application, len(registeredApps))
 	copy(apps, registeredApps)
 	mu.RUnlock()
 
@@ -170,8 +136,8 @@ func GetApplications() []Application {
 // use `Context.Application()` instead.
 func LastApplication() Application {
 	mu.RLock()
-	for i := len(registeredApps) - 1; i >= 0; i-- {
-		if app := registeredApps[i]; app != nil {
+	for _, app := range slices.Backward(registeredApps) {
+		if app != nil {
 			mu.RUnlock()
 			return app
 		}
@@ -186,8 +152,8 @@ func LastApplication() Application {
 func GetApplication(appName string) (Application, bool) {
 	mu.RLock()
 
-	for i := len(registeredApps) - 1; i >= 0; i-- {
-		if app := registeredApps[i]; app != nil && app.String() == appName {
+	for _, app := range slices.Backward(registeredApps) {
+		if app != nil && app.String() == appName {
 			mu.RUnlock()
 			return app, true
 		}

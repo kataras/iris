@@ -4,33 +4,46 @@ import (
 	"io"
 	"time"
 
-	"github.com/kataras/iris/v12/macro"
+	"github.com/kataras/iris/v14/core/router/macro"
 )
+
+// Router is the interface which all routers should implement.
+type Router interface {
+	// GetRelPath returns the relative path of the router.
+	GetRelPath() string
+	// ContextOptions returns the router's request & response options.
+	ContextOptions() *ContextOptions
+
+	// Application returns the read-only application.
+	// Application() Application
+}
 
 // RouteReadOnly allows decoupled access to the current route
 // inside the context.
 type RouteReadOnly interface {
-	// Name returns the route's name.
-	Name() string
+	// Router returns the Router which owns this route.
+	Router() Router
 
-	// StatusErrorCode returns 0 for common resource routes
-	// or the error code that an http error handler registered on.
-	StatusErrorCode() int
+	// GetName returns the route's name.
+	GetName() string
 
-	// Method returns the route's method.
-	Method() string
+	// GetMethod returns the route's method.
+	GetMethod() string
 
-	// Subdomains returns the route's subdomain.
-	Subdomain() string
+	// GetSubdomain returns the route's subdomain.
+	GetSubdomain() string
 
-	// Path returns the route's original registered path.
-	Path() string
+	// GetPath returns the route's original registered path.
+	GetPath() string
 
 	// String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
 	String() string
 
 	// IsOnline returns true if the route is marked as "online" (state).
 	IsOnline() bool
+
+	// IsSitemapDisabled reports whether this route is excluded from the sitemap.
+	IsSitemapDisabled() bool
 
 	// IsStatic reports whether this route is a static route.
 	// Does not contain dynamic path parameters,
@@ -56,15 +69,39 @@ type RouteReadOnly interface {
 	// Available after the build state, i.e a request handler or Iris Configurator.
 	Tmpl() macro.Template
 
-	// MainHandlerName returns the first registered handler for the route.
-	MainHandlerName() string
+	// GetMainHandlerName returns the name of the route's main handler,
+	// the last handler in its MainHandlerList (the one after every middleware).
+	GetMainHandlerName() string
 
-	// MainHandlerIndex returns the first registered handler's index for the route.
-	MainHandlerIndex() int
+	// GetMainHandlerIndex returns the index of the route's main handler
+	// inside the MainHandlerList, that is the index of its last handler.
+	GetMainHandlerIndex() int
 
-	// Property returns a specific property based on its "key"
-	// of this route's Party owner.
-	Property(key string) (any, bool)
+	// GetHandlerList returns the route's handler list.
+	// It contains all handlers, middleware and main handlers.
+	// It's available only after BuildHandlers method.
+	GetHandlerList() *HandlerList
+	// GetRegisterFileName returns the file name that this route was registered on.
+	GetRegisterFileName() string
+	// GetRegisterLineNumber returns the line number that this route was registered on.
+	GetRegisterLineNumber() int
+
+	// GetProperty returns a specific property based on its "key"
+	// of this route's Router owner.
+	GetProperty(key string) (any, bool)
+
+	// IsNoRoute reports whether this route is a no-route (404, fired by the serve mux).
+	// Access of the not found path is gain by `ctx.Path()`.
+	IsNoRoute() bool
+	// IsMethodNotAllowed reports whether this route is a no-method (405, method not allowed, fired by the serve mux).
+	// Access of the forbidden request method is gain by `ctx.Method()` and allowed methods through "Allow" response header.
+	IsMethodNotAllowed() bool
+	// IsPreRouting reports whether this route is running before the main serve mux.
+	// Means that this Route's Handlers are running under `UseRouter`.
+	IsPreRouting() bool
+
+	// IsRoute reports whether this route is a registered route.
+	IsRoute() bool
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
 

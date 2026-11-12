@@ -1,20 +1,34 @@
+// Package rewrite redirects or rewrites requests according to a list of
+// regular-expression rules, and can force a primary subdomain such as "www".
+//
+// Its entry point is New(Options), which returns an *Engine rather than a
+// Handler because the engine is also a router wrapper with its own logger:
+// register its `Handler` method with Application.UseRouter. Use `Must` to panic
+// on a bad rule instead of reporting it, or `Load` to read the rules from a
+// YAML or JSON file.
 package rewrite
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/netip"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/router"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/core/router"
+	"github.com/kataras/iris/v14/core/server"
 
 	"github.com/kataras/golog"
 	"gopkg.in/yaml.v3"
 )
+
+func init() {
+	context.SetHandlerName("iris/middleware/rewrite.*", "iris.rewrite")
+}
 
 // Options holds the developer input to customize
 // the redirects for the Rewrite Engine.
@@ -37,8 +51,8 @@ type Options struct {
 // LoadOptions loads rewrite Options from a system file.
 func LoadOptions(filename string) (opts Options) {
 	ext := ".yml"
-	if index := strings.LastIndexByte(filename, '.'); index > 1 && len(filename)-1 > index {
-		ext = filename[index:]
+	if before, after, ok := strings.CutLast(filename, "."); ok && len(before) > 1 && after != "" {
+		ext = "." + after
 	}
 
 	f, err := os.Open(filename)
@@ -63,11 +77,9 @@ func LoadOptions(filename string) (opts Options) {
 	return
 }
 
-// Rewrite is a struct that represents a rewrite engine for Iris web framework.
+// Engine is a struct that represents a rewrite engine for Iris web framework.
 // It contains a slice of redirect rules, an options struct, a logger, and a domain validator function.
 // It provides methods to create, configure, and apply rewrite rules to HTTP requests and responses.
-//
-// Navigate through _examples/routing/rewrite for more.
 type Engine struct {
 	redirects []*redirectMatch
 	options   Options
@@ -77,25 +89,33 @@ type Engine struct {
 }
 
 // Load decodes the "filename" options
-// and returns a new Rewrite Engine Router Wrapper.
+// and returns a new Rewrite Engine Router Middleware.
 // It panics on errors.
 // Usage:
 // redirects := Load("redirects.yml")
-// app.WrapRouter(redirects)
+// app.UseRouter(redirects)
 // See `New` too.
-func Load(filename string) router.WrapperFunc {
-	opts := LoadOptions(filename)
+func Load(filename string) context.Handler {
+	return Must(LoadOptions(filename)).Handler
+}
+
+// Must is New but it panics on a parser error.
+// Usage:
+//
+//	engine := rewrite.Must(rewrite.Options{RedirectMatch: []string{"301 /seo/(.*) /$1"}})
+//	app.UseRouter(engine.Handler)
+func Must(opts Options) *Engine {
 	engine, err := New(opts)
 	if err != nil {
 		panic(err)
 	}
-	return engine.Rewrite
+
+	return engine
 }
 
 // New returns a new Rewrite Engine based on "opts".
 // It reports any parser error.
-// See its `Handler` or `Rewrite` methods. Depending
-// on the needs, select one.
+// See its `Handler` method and the `Must` companion.
 func New(opts Options) (*Engine, error) {
 	redirects := make([]*redirectMatch, 0, len(opts.RedirectMatch))
 
@@ -150,30 +170,27 @@ func (e *Engine) debugf(format string, args ...any) {
 	fmt.Fprintf(e.logger.Printer, skipDBUGSpace+format, args...)
 }
 
-// Handler is an Iris Handler that can be used as a router or party or route middleware.
-// For a global alternative, if you want to wrap the entire Iris Application
-// use the `Wrapper` instead.
-// Usage:
-// app.UseRouter(engine.Handler)
-func (e *Engine) Handler(ctx *context.Context) {
-	e.Rewrite(ctx.ResponseWriter(), ctx.Request(), func(http.ResponseWriter, *http.Request) {
-		ctx.Next()
-	})
-}
-
 const localhost = "localhost"
 
-// Rewrite is used to wrap the entire Iris Router.
-// Rewrite is a bit faster than Handler because it's executed
-// even before any route matched and it stops on redirect pattern match.
-// Use it to wrap the entire Iris Application, otherwise look `Handler` instead.
+// Handler is a router middleware, it is used to wrap the entire Iris Router to apply the given rewrite rules.
 //
 // Usage:
-// app.WrapRouter(engine.Rewrite).
-func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler http.HandlerFunc) {
+// app.UseRouter(engine.Handler).
+func (e *Engine) Handler(ctx *context.Context) {
+	r := ctx.Request()
+
 	if primarySubdomain := e.options.PrimarySubdomain; primarySubdomain != "" {
-		hostport := context.GetHost(r)
-		root := context.GetDomain(hostport)
+		hostport := ctx.Host()
+
+		// if it's an IP address, don't do anything.
+		if _, err := netip.ParseAddr(hostport); err == nil {
+			// IP addresses don't have subdomains: Unlike domain names, IP addresses don’t have a hierarchical structure that includes subdomains.
+			// Redirecting an IP address to a “www” subdomain doesn’t make sense because it’s not a valid operation for an IP address.
+			ctx.Next()
+			return
+		}
+
+		root := server.GetRootDomain(hostport)
 
 		e.initDebugf("Begin request: full host: %s and root domain: %s\n", hostport, root)
 		// Note:
@@ -191,9 +208,9 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 				// we are in root domain, full redirect to its primary subdomain.
 				newHost := primarySubdomain + root
 				e.debugf("Redirecting from root domain to: %s\n", newHost)
-				r.Host = newHost
-				r.URL.Host = newHost
-				http.Redirect(w, r, r.URL.String(), http.StatusMovedPermanently)
+				u := r.URL.Clone()
+				u.Host = newHost
+				ctx.Redirect(u.String(), http.StatusMovedPermanently)
 				return
 			}
 
@@ -225,20 +242,22 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 		if target, ok := rd.matchAndReplace(src); ok {
 			if target == src {
 				e.debugf("WARNING: source and target URLs match: %s\n", src)
-				routeHandler(w, r)
+				ctx.Next()
 				return
 			}
 
 			if rd.noRedirect {
 				u, err := r.URL.Parse(target)
 				if err != nil {
-					http.Error(w, err.Error(), http.StatusMisdirectedRequest)
+					// Private: the parse error quotes the rewrite target, which is
+					// built from the server's own rules.
+					ctx.StopWithPlainError(http.StatusMisdirectedRequest, context.PrivateError(err))
 					return
 				}
 
 				e.debugf("No redirect: handle request: %s as: %s\n", r.RequestURI, u)
 				r.URL = u
-				routeHandler(w, r)
+				ctx.Next()
 				return
 			}
 
@@ -246,17 +265,30 @@ func (e *Engine) Rewrite(w http.ResponseWriter, r *http.Request, routeHandler ht
 				// this performs better, no need to check query or host,
 				// the uri already built.
 				e.debugf("Full redirect: from: %s to: %s\n", src, target)
-				router.RedirectAbsolute(w, r, target, rd.code)
+				router.RedirectAbsolute(ctx, target, rd.code)
 			} else {
+				// Note(@kataras): a relative rule must produce a relative target.
+				//
+				// With the documented rule `301 /seo/(.*) /$1`, the request
+				// GET /seo//evil.com yields the target "//evil.com" - which every
+				// browser resolves as https://evil.com, not as a path on this host.
+				// That is an open redirect handed to an attacker through a rule
+				// whose author believed it could only ever rewrite local paths.
+				if isProtocolRelativeOrAbsolute(target) {
+					e.debugf("WARNING: relative rule produced a non-relative target: %s\n", target)
+					ctx.Next()
+					return
+				}
+
 				e.debugf("Path redirect: from: %s to: %s\n", src, target)
-				http.Redirect(w, r, target, rd.code)
+				ctx.Redirect(target, rd.code)
 			}
 
 			return
 		}
 	}
 
-	routeHandler(w, r)
+	ctx.Next()
 }
 
 type redirectMatch struct {
@@ -325,4 +357,32 @@ func getPort(hostport string) string { // returns :port, note that this is only 
 	}
 
 	return ""
+}
+
+// isProtocolRelativeOrAbsolute reports whether "target" would take the client
+// off this host.
+//
+// A leading "//" is protocol-relative: the browser reads what follows as an
+// authority, not as a path. A "scheme:" prefix is absolute. Backslashes are
+// included because several browsers normalise them to forward slashes, so
+// "/\evil.com" and "\evil.com" behave like "//evil.com".
+func isProtocolRelativeOrAbsolute(target string) bool {
+	if target == "" {
+		return false
+	}
+
+	normalized := strings.ReplaceAll(target, "\\", "/")
+
+	if strings.HasPrefix(normalized, "//") {
+		return true
+	}
+
+	// A scheme must appear before any slash, e.g. "javascript:", "https://".
+	if i := strings.IndexByte(normalized, ':'); i > 0 {
+		if slash := strings.IndexByte(normalized, '/'); slash == -1 || i < slash {
+			return true
+		}
+	}
+
+	return false
 }

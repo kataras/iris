@@ -1,0 +1,5 @@
+<h1>{{ .Title }}</h1>
+{{ if .Now }}<p>Server time: {{ .Now }}</p>{{ end }}
+<ul>
+{{ range .Shelves }}    <li>{{ . }}</li>
+{{ end }}</ul>

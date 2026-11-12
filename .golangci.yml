@@ -1,0 +1,90 @@
+# golangci-lint configuration, v2 schema.
+#
+# Kept in step with the golangci-lint-action@v9 pin in .github/workflows/ci.yml.
+# Action v7 and later drive golangci-lint v2 only, and v9 is the first that runs on
+# Node 24 rather than the Node 20 that GitHub has deprecated. Changing either of the
+# two means checking the other: the action validates this file against the JSON schema
+# for the golangci-lint version it installs, so a v1-schema file fails the run outright
+# rather than being ignored.
+#
+# The bar here is "find me a bug", not "make the code look like everyone else's". A lint
+# job that reports hundreds of things nobody intends to act on is a job people learn to
+# skip, and then it catches nothing when it finally has something worth saying. So the
+# set below is deliberately narrow, and every exclusion says why.
+version: "2"
+
+linters:
+  default: standard
+
+  disable:
+    # errcheck insists every returned error is handled. On a web framework the great
+    # majority of what it finds is a response write: ctx.WriteString, ctx.Writef,
+    # ctx.Write and the io.Writer calls underneath them. Those fail only when the client
+    # has already gone away, and by then the status line and the headers are on the wire,
+    # so there is no second response to send and nothing a handler could do with the
+    # error. The rest is buffer writes that document a nil error and best-effort teardown
+    # in tests. Three hundred call sites rewritten to satisfy the check would leave the
+    # framework noisier and no more correct.
+    #
+    # This is not a claim that dropped errors never matter. It is a claim that a check
+    # with this hit rate cannot tell the two apart, so it belongs in review rather than in
+    # a gate.
+    - errcheck
+
+  settings:
+    staticcheck:
+      # staticcheck ships four families and only one of them finds bugs.
+      #
+      #   SA  - correctness: deprecated APIs, comparisons that are never true, values
+      #         computed and then thrown away. This is the family worth failing a build
+      #         over.
+      #   S1  - simplifications. Opinion, and sometimes actively unwanted where a longer
+      #         form is clearer about intent.
+      #   ST1 - naming and comment style. Opinion, not correctness.
+      #   QF1 - quickfix refactors: De Morgan rewrites, dropping an embedded type from a
+      #         selector, tagged switches. Opinion, not correctness, and on a codebase
+      #         this size it is the family that produces the noise.
+      checks:
+        - all
+        - -S1*
+        - -ST1*
+        - -QF1*
+
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+
+    rules:
+      # Test files here keep alternative constructions side by side on purpose: the same
+      # application built with the fluent builder next to the imperative form, so both stay
+      # compilable examples of the API. `unused` reports whichever one the current test does
+      # not happen to call, which is not the dead code the check is looking for.
+      - linters:
+          - unused
+        path: _test\.go
+
+    paths:
+      # Directories whose names start with an underscore are invisible to the go tool, so
+      # ./... never reaches them. They are listed anyway, in case the linter is ever
+      # pointed at a path directly.
+      - _examples
+      - _issues
+      - _proposals
+      - third_party$
+      - builtin$
+      - examples$
+
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - _examples
+      - _issues
+      - _proposals
+      - third_party$
+      - builtin$
+      - examples$

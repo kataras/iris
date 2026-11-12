@@ -32,16 +32,33 @@ func negotiationMatch(in []string, priorities []string) string {
 		for _, p := range priorities {
 			// wildcard is */* or text/* and etc.
 			// so loop through each char.
-			for i, n := 0, len(accepted); i < n; i++ {
+			//
+			// Note(@kataras): the loop must be bounded by BOTH strings. Bounding it
+			// by len(accepted) alone lets a client send a value that is a strict
+			// prefix-extension of a registered mime (e.g. "application/jsonX"
+			// against "application/json") and index p past its end, panicking the
+			// handler. See TestNegotiationMatchLongerAcceptValue.
+			n := min(len(accepted), len(p))
+			for i := range n {
+				if p[i] == '*' {
+					// The server registered a wildcard ("*/*", "text/*"),
+					// so answer with the concrete type the client asked for.
+					return accepted
+				}
+
+				if accepted[i] == '*' {
+					// The client accepts a wildcard ("application/*"),
+					// so answer with the concrete type the server registered.
+					return p
+				}
+
 				if accepted[i] != p[i] {
 					break
 				}
 
-				if accepted[i] == '*' || p[i] == '*' {
-					return p
-				}
-
-				if i == n-1 {
+				// A full match is only a match when BOTH values are exhausted,
+				// otherwise "application/json" would match "application/jsonX".
+				if i == n-1 && len(accepted) == len(p) {
 					return p
 				}
 			}
@@ -51,9 +68,13 @@ func negotiationMatch(in []string, priorities []string) string {
 	return ""
 }
 
-func negotiateAcceptHeader(in []string, offers []string, bestOffer string) string {
+// NegotiateAcceptHeader returns the best match from the "in" slice of Accept* headers
+// based on the "offers". If no match is found it returns the "bestOffer", or "identity"
+// when the "bestOffer" is empty. It returns an empty string when the best matching
+// offer was explicitly rejected by the client with a q=0 quality factor.
+func NegotiateAcceptHeader(in []string, offers []string, bestOffer string) string {
 	if bestOffer == "" {
-		bestOffer = IDENTITY
+		bestOffer = "identity" // a no op.
 	}
 
 	bestQ := -1.0
@@ -190,7 +211,7 @@ func init() {
 	// token      = 1*<any CHAR except CTLs or separators>
 	// qdtext     = <any TEXT except <">>
 
-	for c := 0; c < 256; c++ {
+	for c := range 256 {
 		var t octetType
 		isCtl := c <= 31 || c == 127
 		isChar := 0 <= c && c <= 127

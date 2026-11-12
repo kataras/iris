@@ -1,0 +1,204 @@
+package funcer
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/kataras/iris/v14/core/pkg/reflex"
+)
+
+type Option[T any] func(*Func[T])
+
+// WithFuncName sets the name of the function.
+// A name set this way is trusted as the function's identity
+// (see FuncInfo.Equal), unlike compiler-derived anonymous names.
+func WithFuncName[T any](name string) Option[T] {
+	return func(f *Func[T]) {
+		f.Name = name
+		f.NameSource = NameExplicit
+	}
+}
+
+// FuncInfo is a structure that holds the function's name, file and line number.
+type FuncInfo struct {
+	Name    string `json:"name"`     // function name.
+	File    string `json:"file"`     // file name.
+	FileRel string `json:"file_rel"` // relative file name.
+	Line    int    `json:"line"`     // line number.
+
+	// ID is a process-wide unique registration id, assigned when the function
+	// enters a List. It is the primary identity of anonymous functions:
+	// their derived names cannot be trusted since Go 1.27, where distinct
+	// code-identical literals may share a code pointer (and therefore a
+	// runtime symbol, file and line).
+	ID uint64 `json:"-"`
+	// NameSource records how Name was produced; see the NameSource constants.
+	NameSource NameSource `json:"-"`
+}
+
+// NewFuncInfo returns a new FuncInfo based on the function pointer.
+func NewFuncInfo(ns *NameResolver, ptr uintptr) *FuncInfo {
+	name, file, line := reflex.FuncPtrNameAndFileLine(ptr)
+	name, matched := ns.GetCustomNameMatched(name, file)
+	source := NameDerived
+	if matched {
+		source = NameResolved
+	}
+
+	return &FuncInfo{
+		Name:       name,
+		File:       file,
+		FileRel:    RelFilename(file),
+		Line:       line,
+		NameSource: source,
+	}
+}
+
+// Clone returns a new copy of the FuncInfo.
+func (f *FuncInfo) Clone() FuncInfo {
+	return FuncInfo{
+		Name:       f.Name,
+		File:       f.File,
+		FileRel:    f.FileRel,
+		Line:       f.Line,
+		ID:         f.ID,
+		NameSource: f.NameSource,
+	}
+}
+
+// TrustedFuncName reports whether this FuncInfo's Name is safe to use as the
+// function's identity: it was set explicitly, matched a SetName mapping, or
+// is a derived name of a named (non-anonymous) function.
+func (f *FuncInfo) TrustedFuncName() bool {
+	return f.NameSource != NameDerived || TrustedName(f.Name)
+}
+
+// Equal compares two FuncInfo values for identity.
+//
+// Two FuncInfos are equal when they carry the same registration ID, or when
+// they share the same trusted Name. Compiler-derived anonymous names are
+// never used as identity: since Go 1.27 two distinct code-identical literals
+// may share a code pointer, so name/file/line equality no longer proves the
+// functions are the same registration. A consequence: re-registering the
+// same unnamed anonymous closure through Upsert appends instead of replacing;
+// name it (WithFuncName or SetHandlerName) to get replace semantics back.
+func (f *FuncInfo) Equal(other FuncInfo) bool {
+	if f.ID != 0 && f.ID == other.ID {
+		return true
+	}
+
+	return f.Name == other.Name && f.TrustedFuncName() && other.TrustedFuncName()
+}
+
+// String returns a string representation of the FuncInfo.
+func (f *FuncInfo) String() string {
+	return fmt.Sprintf("%s (%s:%d)", f.Name, f.File, f.Line)
+}
+
+// CopyFrom copies the values of the other Func to the current FuncInfo.
+// The copied Name becomes this FuncInfo's explicit (trusted) identity.
+// The registration ID is inherited only when the source carries one,
+// so copying display information from a cache-resolved FuncInfo does not
+// erase the destination's own registration.
+func (f *FuncInfo) CopyFrom(other FuncInfo) {
+	f.Name = other.Name
+	f.File = other.File
+	f.FileRel = other.FileRel
+	f.Line = other.Line
+	f.NameSource = NameExplicit
+	if other.ID != 0 {
+		f.ID = other.ID
+	}
+}
+
+// CopyTo copies the values of the current FuncInfo to the other FuncInfo.
+// See CopyFrom for the identity semantics.
+func (f *FuncInfo) CopyTo(other *FuncInfo) {
+	other.CopyFrom(*f)
+}
+
+// SetFilenameLine sets the filename and line number of the function.
+func (f *FuncInfo) SetFilenameLine(filename string, line int) {
+	f.File = filename
+	f.FileRel = RelFilename(filename)
+	f.Line = line
+}
+
+// SetNameFileAndLineByMethod sets the function name, filename and line number of the function by type and method name by using reflection.
+func (f *FuncInfo) SetNameFileAndLineByMethod(typ reflect.Type, methodName string) {
+	m, _ := typ.MethodByName(methodName)
+
+	relName := strings.TrimPrefix(typ.String(), "main.")
+	// Set function name as the method's name.
+	f.Name = fmt.Sprintf("%s.%s", relName, m.Name)
+	f.NameSource = NameExplicit
+
+	// Set filename and line pointing to the struct's method.
+	file, line := getSourceFileLine(typ, m)
+	f.SetFilenameLine(file, line)
+}
+
+func getSourceFileLine(ctrlType reflect.Type, m reflect.Method) (string, int) { // used for debug logs.
+	sourceFileName, sourceLineNumber := reflex.FuncFileLine(m.Func)
+	if sourceFileName == "<autogenerated>" {
+		elem := reflex.IndirectType(ctrlType)
+
+		for i, n := 0, elem.NumField(); i < n; i++ {
+			if f := elem.Field(i); f.Anonymous {
+				typ := reflex.IndirectType(f.Type)
+				if typ.Kind() != reflect.Struct {
+					continue // field is not a struct.
+				}
+
+				// Why we do that?
+				// because if the element is not Ptr
+				// then it's probably used as:
+				// type ctrl {
+				//   BaseCtrl
+				// }
+				typ = reflect.New(typ).Type()
+
+				if embeddedMethod, ok := typ.MethodByName(m.Name); ok {
+					sourceFileName, sourceLineNumber = reflex.FuncFileLine(embeddedMethod.Func)
+					break
+				}
+			}
+		}
+	}
+
+	return sourceFileName, sourceLineNumber
+}
+
+// Func is a structure that holds the function and its name.
+type Func[T any] struct {
+	Value    T   `json:"-"`    // the function itself.
+	Meta     any `json:"meta"` // any custom meta data.
+	FuncInfo     // the function's information.
+}
+
+// Clone returns a new copy of the Func.
+func (f *Func[T]) Clone() *Func[T] {
+	return &Func[T]{
+		Value:    f.Value,
+		Meta:     f.Meta,
+		FuncInfo: f.FuncInfo, // Clone is not needed here.
+	}
+}
+
+// Equal compares two FuncInfo values for equality.
+func (f *Func[T]) Equal(other *Func[T]) bool {
+	return f.FuncInfo.Equal(other.FuncInfo)
+}
+
+// CopyFrom copies the information of the other Func to the current Func.
+// It does not copy the function itself.
+func (f *Func[T]) CopyFrom(other *Func[T]) {
+	f.FuncInfo = other.FuncInfo // Clone is not needed here.
+}
+
+// CopyTo copies the information of the current Func to the other Func.
+// It does not copy the function itself.
+func (f *Func[T]) CopyTo(other *Func[T]) {
+	other.FuncInfo.CopyFrom(f.FuncInfo)
+}

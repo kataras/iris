@@ -3,19 +3,20 @@ package router
 import (
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/context/encoding"
 )
 
 const (
 	// ParamStart the character in string representation where the underline router starts its dynamic named parameter.
 	ParamStart = ":"
 	// paramStartCharacter is the character as rune of ParamStart.
-	paramStartCharacter = ':'
+	paramStartCharacter byte = ':'
 	// WildcardParamStart the character in string representation where the underline router starts its dynamic wildcard
 	// path parameter.
 	WildcardParamStart = "*"
 	// wildcardParamStartCharacter is the character as rune of WildcardParamStart.
-	wildcardParamStartCharacter = '*'
+	wildcardParamStartCharacter byte = '*'
 )
 
 // An iris-specific identical version of the https://github.com/kataras/muxie version 1.0.0 released at 15 Oct 2018
@@ -34,7 +35,7 @@ type trieNode struct {
 	staticKey string
 
 	// insert data.
-	Route    context.RouteReadOnly
+	Route    *Route
 	Handlers context.Handlers
 }
 
@@ -93,8 +94,7 @@ type trie struct {
 	hasRootWildcard bool
 	hasRootSlash    bool
 
-	statusCode int // for error codes only, method is ignored.
-	method     string
+	method string
 
 	// subdomain is empty for default-hostname routes,
 	// ex: mysubdomain.
@@ -114,7 +114,7 @@ func slowPathSplit(path string) []string {
 	return strings.Split(path, pathSep)[1:]
 }
 
-func (tr *trie) insert(path string, route context.RouteReadOnly, handlers context.Handlers) {
+func (tr *trie) insert(path string, route *Route, handlers context.Handlers) {
 	input := slowPathSplit(path)
 	if len(input) == 0 {
 		return
@@ -184,7 +184,7 @@ func (tr *trie) insert(path string, route context.RouteReadOnly, handlers contex
 	// fmt.Printf("trie.insert: (whole path=%v) Path: %s, Route name: %s, Handlers len: %d\n", n.end, n.key, route.Name(), len(handlers))
 }
 
-func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
+func (tr *trie) search(q string, params *encoding.PathParams) *trieNode {
 	end := len(q)
 
 	if end == 0 || (end == 1 && q[0] == pathSepB) {
@@ -242,7 +242,7 @@ func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 					// /second/wild/*p
 					// /second/wild/static/otherstatic/
 					// req: /second/wild/static/otherstatic/random => but not found!
-					params.Set(n.paramKeys[0], q[len(n.staticKey):])
+					params.Add(n.paramKeys[0], q[len(n.staticKey):])
 					return n
 				}
 
@@ -264,7 +264,7 @@ func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 	if n == nil || !n.end {
 		if n != nil { // we need it on both places, on last segment (below) or on the first unnknown (above).
 			if n = n.findClosestParentWildcardNode(); n != nil && len(n.paramKeys) > 0 {
-				params.Set(n.paramKeys[0], q[len(n.staticKey):])
+				params.Add(n.paramKeys[0], q[len(n.staticKey):])
 				return n
 			}
 		}
@@ -282,7 +282,7 @@ func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 				return nil
 			}
 
-			params.Set(n.paramKeys[0], q[1:])
+			params.Add(n.paramKeys[0], q[1:])
 			return n
 		}
 
@@ -291,7 +291,7 @@ func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 
 	for i, paramValue := range paramValues {
 		if len(n.paramKeys) > i {
-			params.Set(n.paramKeys[i], paramValue)
+			params.Add(n.paramKeys[i], paramValue)
 		}
 	}
 

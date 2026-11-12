@@ -1,0 +1,12 @@
+hi: "γεια, %s"
+
+FreeDay:
+  one: "Έχεις μία ελεύθερη μέρα."
+  other: "Έχεις %d ελεύθερες μέρες."
+
+Vars:
+  - Minutes:
+      one: "λεπτό"
+      other: "λεπτά"
+
+YouLate: "Άργησες %[1]d ${Minutes}."

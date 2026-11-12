@@ -62,7 +62,7 @@ func TestCleanPath(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		if expected, got := tt.expected, cleanPath(tt.path); expected != got {
+		if expected, got := tt.expected, CleanPath(tt.path); expected != got {
 			t.Fatalf("[%d] - expected path '%s' but got '%s'", i, expected, got)
 		}
 	}
@@ -114,7 +114,7 @@ func TestSplitPath(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		paths := splitPath(tt.path)
+		paths := SplitPath(tt.path)
 		if expected, got := tt.expected, paths; !equalSlice(expected, got) {
 			t.Fatalf("[%d] - expected paths '%#v' but got '%#v'", i, expected, got)
 		}
@@ -136,7 +136,7 @@ func TestSplitSubdomainAndPath(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		subdomain, path := splitSubdomainAndPath(tt.original)
+		subdomain, path := SplitSubdomainAndPath(tt.original)
 
 		if expected, got := tt.subdomain, subdomain; expected != got {
 			t.Fatalf("[%d] - expected subdomain '%s' but got '%s'", i, expected, got)

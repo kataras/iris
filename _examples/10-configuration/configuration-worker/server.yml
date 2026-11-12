@@ -1,0 +1,26 @@
+# The whole service's configuration: the keys iris.BaseConfiguration declares,
+# then this service's own. Set SERVER_CONFIG to this document, or to a path to
+# it, to replace the file at deployment time.
+#
+# No secrets here. This file is committed; secrets come from the environment.
+
+# Empty listens on every interface. PORT (or HTTP_PLATFORM_PORT) overrides Port.
+Host: ""
+Port: 8080
+
+# "none" installs no CORS middleware at all. ALLOW_ORIGIN overrides it.
+AllowOrigin: "none"
+EnableCompression: true
+RequestLog: true
+
+# The framework's own options, as iris.New accepts them.
+Iris:
+  Name: rates
+  LogLevel: info
+
+# This service's keys.
+RefreshEvery: 10s
+Currencies:
+  - EUR
+  - USD
+  - GBP

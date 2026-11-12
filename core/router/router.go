@@ -1,348 +1,463 @@
 package router
 
 import (
-	"errors"
-	"net/http"
-	"sort"
-	"strings"
-	"sync"
-	"time"
-
-	"github.com/kataras/iris/v12/context"
-
-	"github.com/schollz/closestmatch"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/core/dep"
+	"github.com/kataras/iris/v14/core/router/macro"
 )
 
-// Router is the "director".
-// Caller should provide a request handler (router implementation or root handler).
-// Router is responsible to build the received request handler and run it
-// to serve requests, based on the received context.Pool.
+// Router is just a group joiner of routes which have the same prefix and share same middleware(s) also.
+// Router could also be named as 'Join' or 'Node' or 'Group' , Router chosen because it is fun.
 //
-// User can refresh the router with `RefreshRouter` whenever a route's field is changed by him.
-type Router struct {
-	mu sync.Mutex // for Downgrade, WrapRouter & BuildRouter,
+// Look the `RouterBuilder` structure for its implementation.
+type Router interface {
+	context.Router
 
-	requestHandler RequestHandler   // build-accessible, can be changed to define a custom router or proxy, used on RefreshRouter too.
-	mainHandler    http.HandlerFunc // init-accessible
-	wrapperFunc    WrapperFunc
-	// wrappers to be built on BuildRouter state,
-	// first is executed first at this case.
-	// Case:
-	// - SubdomainRedirect on user call, registers a wrapper, on design state
-	// - i18n,if loaded and Subdomain or PathRedirect is true, registers a wrapper too, on build state
-	// the SubdomainRedirect should be the first(subdomainWrap(i18nWrap)) wrapper
-	// to be executed instead of last(i18nWrap(subdomainWrap)).
-	wrapperFuncs []WrapperFunc
+	// Application returns the read-only application.
+	// Can be casted as *iris.Application and used to access the application's properties and methods
+	// on Router Controllers.
+	Application() context.Application
+	// IsRoot reports whether this Router is the root Application's one.
+	// It will return false on all children Routers, no exception.
+	IsRoot() bool
 
-	cPool          *context.Pool // used on RefreshRouter
-	routesProvider RoutesProvider
+	// GetRoot returns the very first Router (the Application's Router Builder).
+	GetRoot() *RouterBuilder
 
-	// key = subdomain
-	// value = closest of static routes, filled on `BuildRouter/RefreshRouter`.
-	closestPaths map[string]*closestmatch.ClosestMatch
-}
+	// Routes returns the route repository.
+	// It's been used by the `ServeMux` and `Application` to register the routes
+	// on Handle, Get, Post and so on.
+	Routes() *RouteRegistry
+	// GetRelPath returns the current Router's relative path.
+	// i.e:
+	// if r := app.Router("/users"), then the `r.GetRelPath()` is the "/users".
+	// if r := app.Router("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
+	GetRelPath() string
+	// Macros returns the macro collection that is responsible
+	// to register custom macros with their own parameter types and their macro functions for all routes.
+	//
+	// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/02-routing/custom-macro
+	Macros() *macro.Macros
 
-// NewRouter returns a new empty Router.
-func NewRouter() *Router {
-	return &Router{}
-}
+	// Properties returns the original Router's properties map,
+	// it can be modified before server startup but not afterwards.
+	Properties() context.Map
 
-// RefreshRouter re-builds the router. Should be called when a route's state
-// changed (i.e Method changed at serve-time).
-//
-// Note that in order to use RefreshRouter while in serve-time,
-// you have to set the `EnableDynamicHandler` Iris Application setting to true,
-// e.g. `app.Listen(":8080", iris.WithEnableDynamicHandler)`
-func (router *Router) RefreshRouter() error {
-	return router.BuildRouter(router.cPool, router.requestHandler, router.routesProvider, true)
-}
+	// SetRoutesNoLog disables (true) the verbose logging for the next registered
+	// routes under this Router and its children.
+	//
+	// It covers the controllers registered through Router too.
+	//
+	// Defaults to false when log level is "debug".
+	SetRoutesNoLog(disable bool)
 
-// AddRouteUnsafe adds a route directly to the router's request handler.
-// Works before or after Build state.
-// Mainly used for internal cases like `iris.WithSitemap`.
-// Do NOT use it on serve-time.
-func (router *Router) AddRouteUnsafe(routes ...*Route) error {
-	if h := router.requestHandler; h != nil {
-		if v, ok := h.(RouteAdder); ok {
-			for _, r := range routes {
-				return v.AddRoute(r)
-			}
-		}
-	}
+	// DI returns the Dependency Injection Container of this Router.
+	// Useful to configure the dependencies and inject them on the controllers and handlers.
+	DI() *dep.Container
+	// RegisterDependency registers a single or multiple dependencies to the router's DI Container.
+	// It's a shortcut of `router.DI().RegisterDependency`.
+	RegisterDependency(deps ...any) error
+	// HandlerFunc resolves a function which returns a Handler as a Handler.
+	// It accepts a function with arguments that are resolved by the registered dependencies and returns a Handler.
+	// It panics if the given function returns nil or a different type than Handler.
+	//
+	// Example:
+	//
+	//	app.RegisterDependency(func(otherDependnecies...) *MyService {
+	//		return &MyService{...}
+	//	})
+	//
+	//	handler := app.HandlerFunc(func(service *MyService) iris.Handler {
+	//		return func(ctx iris.Context) {
+	//			ctx.WriteString(service.Get())
+	//		}
+	//	})
+	//
+	//	app.Get("/", handler)
+	//
+	// Or as middleware:
+	//
+	//	app.Use("/", app.HandlerFunc(func(service *MyService) iris.Handler {
+	//		return func(ctx iris.Context) {
+	//			// [middleware action...] before the main handler.
+	//			ctx.Next()
+	//		}
+	//	}))
+	HandlerFunc(fn any) context.Handler
+	// HandlerFuncs resolves a list of functions which return functions with dependencies as Handlers.
+	// Read the `HandlerFunc` documentation for more information.
+	HandlerFuncs(fns ...any) context.Handlers
+	// Router creates and returns a new child Router based on a prefix path.
+	// It accepts a relative path and one or more handlers or controllers and returns the child group.
+	//
+	// Simple group usage:
+	// It accepts one or more handlers as middlewares.
+	// 	usersAPI := app.Router("/users", authMiddleware, logMiddleware)
+	// 	usersAPI.Handle("GET", ...)
+	//
+	// Router func usage:
+	// It accepts a function that receives this created child Router.
+	// 	app.Router("/users", func(r iris.Router) {
+	//		r.Use(authMiddleware, logMiddleware)
+	//		r.Get("/", getAllUsers)
+	//		r.Post("/", createOrUpdateUser)
+	//		r.Delete("/", deleteUser)
+	// 	})
+	//
+	// Routing interface usage:
+	// It accepts a pointer to a struct value which implements the Routing interface: Routing(r Router) method.
+	// Useful when the api's dependencies amount are too much to pass on a function.
+	//	app.Router("/users", &api.UserController{UserRepository: ..., ...})
+	//
+	// Where UserController looks like:
+	//
+	//	type UserController struct { Users UserRepository }
+	//	func(c *UserController) Routing(r iris.Router) {
+	//	 r.Get("/{id:uuid}", c.getUser)
+	//	 [...]
+	//	}
+	//
+	// Usage with (static) dependencies:
+	//
+	//	app.RegisterDependency(userRepo, ...)
+	//	app.Router("/users", new(router.UserController))
+	//
+	// Controller usage:
+	// A controller can be any type of the following:
+	//
+	//   - A struct which implements the Controller interface.
+	//   - A struct which its fields are binded based on the registered dependencies.
+	//   - A function which returns a struct which implements the Controller interface.
+	//   - A function which accepts a Router and returns nothing.
+	//   - A function which accepts a Router and returns a struct which implements the Controller interface.
+	//   - A function which returns a struct which implements the Controller interface and accepts a Router.
+	//   - A function which returns a struct which implements the Controller interface and accepts a Router and
+	//     a pointer to a struct which its fields are binded based on the registered dependencies.
+	Router(relativePath string, c ...any) Router
+	// Subdomain returns a new Router which is responsible to register routes to this specific "subdomain".
+	//
+	// If called from a child Router then the subdomain will be prepended to the path instead of appended.
+	// So if app.Subdomain("admin").Subdomain("panel") then the result is: "panel.admin.".
+	Subdomain(subdomain string, middleware ...context.Handler) Router
 
-	return ErrNotRouteAdder
-}
+	// UseRouter appends one or more middlewares to the Application.
+	// The given "handlers" will be executed before the routing logic itself.
+	// So before any route, no match routes and no method allowed requests.
+	// The handlers are registered to the top-level router, even on 404s.
+	// Useful when you want to log all incoming requests or change the path before mux or add a global rate limiter.
+	UseRouter(handlers ...context.Handler)
+	// Use registers middlewares on all routes, including 404 and 405 requests for root application
+	// and just matched routes for child routers.
+	Use(handlers ...context.Handler)
+	// UseRelevant registers middlewares on matched routes only, on the root
+	// application as well. Prefer it over Use when the middleware makes no
+	// sense for a request that matched nothing, an authentication check for
+	// instance: through Use, on the root application, it would answer for
+	// every unknown path too.
+	UseRelevant(handlers ...context.Handler)
+	// UseOnce either inserts a middleware or on the basis of the middleware already existing, replace that existing middleware instead.
+	// The given "handlers" will be executed on all routes, including 404 and 405 requests for root application
+	// and just matched routes for child routers.
+	UseOnce(handlers ...context.Handler)
+	// RoutesHandlers returns the list of this Router's registered route handlers information.
+	// The returned value is a cloned one, any changes made to the returned value
+	// will NOT affect the next registered route handlers.
+	RoutesHandlers() *context.HandlerList
 
-// FindClosestPaths returns a list of "n" paths close to "path" under the given "subdomain".
-//
-// Order may change.
-func (router *Router) FindClosestPaths(subdomain, searchPath string, n int) []string {
-	if router.closestPaths == nil {
-		return nil
-	}
+	// EnableStatusCodeResponse registers a middleware that will handle the status code responses automatically.
+	EnableStatusCodeResponse()
+	// AllowMethods will re-register the future routes that will be registered
+	// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Router and its children,
+	// duplicates are not registered.
+	//
+	// Call of `AllowMethods` will override any previous allow methods.
+	AllowMethods(methods ...string)
 
-	cm, ok := router.closestPaths[subdomain]
-	if !ok {
-		return nil
-	}
+	// Handle registers a route to this specific group of routes (Router).
+	// If "method" is empty then the route is registered to all available HTTP Methods.
+	// The "method" parameter can be any valid HTTP method, including the HTTP verb itself,
+	// i.e. "GET", "POST", "PUT", "DELETE", "OPTIONS", "CONNECT", "HEAD", "PATCH", "TRACE".
+	// The method supports multiple HTTP verbs as well, separated by a single space or single comma,
+	// i.e.: "GET POST", "GET,POST" and so on.
+	//
+	// It returns the registered routes.
+	//
+	// Patterns can match the host and path of a request.
+	//   - "/index.html" matches the path "/index.html" for any host and registered method(s)..
+	//   - "www." matches the root path for the "www" subdomain to the current host (let's call it {app_domain}).
+	//   - "site.example./index" matches the path "/index" for the host "site.example.{app_domain}".
+	//   - "*./index" matches the path "/index.html" to any subdomain (* is the wildcard character).
+	//   - "/lists/{listname}/objects/{objectname:path}" matches paths whose first segment is "lists"
+	//     and whose third segment is "objects". The name "listname" denotes the second
+	//     segment and "objectname" denotes the remainder of the (trailing) path.
+	//
+	// For more information about the available path parameters and their types please
+	// read below.
+	// Standard macro types for parameters:
+	// +------------------------+
+	// | {param:string}         |
+	// +------------------------+
+	// string type
+	// anything (single path segmnent)
+	//
+	// +-------------------------------+
+	// | {param:int}                   |
+	// +-------------------------------+
+	// int type
+	// -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch
+	//
+	// +------------------------+
+	// | {param:int8}           |
+	// +------------------------+
+	// int8 type
+	// -128 to 127
+	//
+	// +------------------------+
+	// | {param:int16}          |
+	// +------------------------+
+	// int16 type
+	// -32768 to 32767
+	//
+	// +------------------------+
+	// | {param:int32}          |
+	// +------------------------+
+	// int32 type
+	// -2147483648 to 2147483647
+	//
+	// +------------------------+
+	// | {param:int64}          |
+	// +------------------------+
+	// int64 type
+	// -9223372036854775808 to 9223372036854775807
+	//
+	// +------------------------+
+	// | {param:uint}           |
+	// +------------------------+
+	// uint type
+	// 0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32)
+	//
+	// +------------------------+
+	// | {param:uint8}          |
+	// +------------------------+
+	// uint8 type
+	// 0 to 255
+	//
+	// +------------------------+
+	// | {param:uint16}         |
+	// +------------------------+
+	// uint16 type
+	// 0 to 65535
+	//
+	// +------------------------+
+	// | {param:uint32}          |
+	// +------------------------+
+	// uint32 type
+	// 0 to 4294967295
+	//
+	// +------------------------+
+	// | {param:uint64}         |
+	// +------------------------+
+	// uint64 type
+	// 0 to 18446744073709551615
+	//
+	// +---------------------------------+
+	// | {param:bool} or {param:boolean} |
+	// +---------------------------------+
+	// bool type
+	// only "1" or "t" or "T" or "TRUE" or "true" or "True"
+	// or "0" or "f" or "F" or "FALSE" or "false" or "False"
+	//
+	// +------------------------+
+	// | {param:alphabetical}   |
+	// +------------------------+
+	// alphabetical/letter type
+	// letters only (upper or lowercase)
+	//
+	// +------------------------+
+	// | {param:file}           |
+	// +------------------------+
+	// file type
+	// letters (upper or lowercase)
+	// numbers (0-9)
+	// underscore (_)
+	// dash (-)
+	// point (.)
+	// no spaces ! or other character
+	//
+	// +------------------------+
+	// | {param:path}           |
+	// +------------------------+
+	// path type
+	// anything, should be the last part, can be requested for more than one path segment,
+	// i.e: "/test/{param:path}" and request: "/test/path1/path2/path3" , ctx.Params().GetString("param") == "path1/path2/path3"
+	//
+	// +------------------------+
+	// | {param:uuid}           |
+	// +------------------------+
+	// UUIDv4 (and v1) path parameter validation.
+	//
+	// +------------------------+
+	// | {param:mail}           |
+	// +------------------------+
+	// Email without domain validation.
+	//
+	// +------------------------+
+	// | {param:email}           |
+	// +------------------------+
+	// Email with domain validation.
+	//
+	// +------------------------+
+	// | {param:date}           |
+	// +------------------------+
+	// yyyy/mm/dd format e.g. /blog/{param:date} matches /blog/2022/04/21.
+	//
+	// +------------------------+
+	// | {param:weekday}        |
+	// +------------------------+
+	// positive integer 0 to 6 or
+	// string of time.Weekday longname format ("sunday" to "monday" or "Sunday" to "Monday")
+	// format e.g. /schedule/{param:weekday} matches /schedule/monday.
+	//
+	// If type is missing then parameter's type is defaulted to string, so
+	// {param} is identical to {param:string}.
+	//
+	// If a function not found on that type then the `string` macro type's functions are being used.
+	//
+	// Besides the fact that iris provides the basic types and some default "macro funcs"
+	// you are able to register your own too.
+	//
+	// Register a named path parameter function:
+	//
+	//	app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+	//	 [...]
+	//	 return true/false -> true means valid.
+	//	})
+	//
+	// at the func(argument ...) you can have any standard type, it will be validated before the server starts
+	// so don't care about performance here, the only thing it runs at serve time is the returning func(paramValue string) bool.
+	//
+	// {param:string equal(iris)} , "iris" will be the argument here:
+	//
+	//	app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
+	//		return func(paramValue string) bool { return argument == paramValue }
+	//	})
+	//
+	// Some examples:
+	//
+	//	app.Handle("GET", "/user/{id:uint64}", userByIDHandler)
+	//	app.Handle("GET", "/user/{name}", userNameHandler)
+	//	app.Handle("GET", "/user/{name:string min(1) else 504}", userNameHandler)
+	//	app.Handle("GET", "/user/{name:string min(1) else 504}/profile", userProfileHandler)
+	//	app.Handle("GET", "/user/{id:uuid}/{name}/profile", userProfileHandler)
+	//	app.Handle("GET", "/api/{version}/users", apiUsersHandler)
+	//	app.Handle("GET", "/api/{version}/users/{id:uint64}", apiUserByIDHandler)
+	//	app.Handle("GET", "/api/{version}/users/{id:uint64}/friends", apiUserFriendsHandler)
+	//	app.Handle("GET", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}", apiUserFriendByIDHandler)
+	//	app.Handle("GET", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages", apiUserFriendMessagesHandler)
+	//	app.Handle("GET", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}", apiUserFriendMessageByIDHandler)
+	//	app.Handle("POST", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}/reply", apiUserFriendMessageReplyHandler)
+	//	app.Handle("POST", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}/forward", apiUserFriendMessageForwardHandler)
+	//	app.Handle("DELETE", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}/delete", apiUserFriendMessageDeleteHandler)
+	//	app.Handle("PUT", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}/edit", apiUserFriendMessageEditHandler)
+	//	app.Handle("POST", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}/report", apiUserFriendMessageReportHandler)
+	//	app.Handle("GET", "/api/{version}/users/{id:uint64}/friends/{friendID:uint64}/messages/{messageID:uint64}/report/{reportID:uint64}", apiUserFriendMessageReportByIDHandler)
+	//
+	// Please refer to the _examples directory for even more productive code samples
+	// for almost every use case you can imagine. The _examples/02-routing/path-parameters/main.go is the main
+	// example file you could navigate to.
+	Handle(method string, registeredPath string, handlers ...context.Handler) *RouteRegistry
 
-	list := cm.ClosestN(searchPath, n)
-	if len(list) == 1 && list[0] == "" {
-		// yes, it may return empty string as its first slice element when not found.
-		return nil
-	}
+	// None registers an "offline" route: it is added to the registry under the
+	// MethodNone method, so the serve mux never matches an incoming request to it.
+	//
+	// Returns the registered route or nil on failure.
+	None(relativePath string, handlers ...context.Handler) *Route
 
-	return list
-}
+	// Get registers a route for the Get HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Get(relativePath string, handlers ...context.Handler) *Route
+	// Post registers a route for the Post HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Post(relativePath string, handlers ...context.Handler) *Route
+	// Query registers a route for the QUERY HTTP Method (RFC 10008):
+	// a safe, idempotent request that carries a body, e.g. a list filter.
+	//
+	// Returns the registered route or nil on failure.
+	Query(relativePath string, handlers ...context.Handler) *Route
+	// Put registers a route for the Put HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Put(relativePath string, handlers ...context.Handler) *Route
+	// Delete registers a route for the Delete HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Delete(relativePath string, handlers ...context.Handler) *Route
+	// Connect registers a route for the Connect HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Connect(relativePath string, handlers ...context.Handler) *Route
+	// Head registers a route for the Head HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Head(relativePath string, handlers ...context.Handler) *Route
+	// Options registers a route for the Options HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Options(relativePath string, handlers ...context.Handler) *Route
+	// Patch registers a route for the Patch HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Patch(relativePath string, handlers ...context.Handler) *Route
+	// Trace registers a route for the Trace HTTP Method.
+	//
+	// Returns the registered route or nil on failure.
+	Trace(relativePath string, handlers ...context.Handler) *Route
+	// Any registers a route for ALL of the HTTP methods:
+	// Get
+	// Post
+	// Put
+	// Delete
+	// Head
+	// Patch
+	// Options
+	// Connect
+	// Trace
+	// Query
+	Any(registeredPath string, handlers ...context.Handler) *RouteRegistry
+	// Resource registers a route for the Get and Head HTTP Methods.
+	// It's a shortcut for router.Handle("GET HEAD", relativePath, handlers...).
+	Resource(relativePath string, handlers ...context.Handler) *RouteRegistry
+	// HandleServer registers a route for all HTTP methods which forwards the requests to the given server.
+	//
+	// Usage:
+	//
+	//	app.HandleServer("/api/identity/{first:string}/orgs/{second:string}/{p:path}", otherApp)
+	//
+	// OR
+	//
+	//	app.HandleServer("/api/identity", otherApp)
+	HandleServer(relativePath string, server ServerHandler)
 
-func (router *Router) buildMainHandler(cPool *context.Pool, requestHandler RequestHandler) {
-	router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
-		ctx := cPool.Acquire(w, r)
-		router.requestHandler.HandleRequest(ctx)
-		cPool.Release(ctx)
-	}
-}
+	// CreateRoutes returns a list of Router-based Routes.
+	// It does NOT registers the route. Use `Handle, Get...` methods instead.
+	// This method can be used for third-parties Iris helpers packages and tools
+	// that want a more detailed view of Router-based Routes before take the decision to register them.
+	// CreateRoutes(methods []string, relativePath string, handlers ...context.Handler) *RouteRegistry
 
-func (router *Router) buildMainHandlerWithFilters(routerFilters map[Party]*Filter, cPool *context.Pool, requestHandler RequestHandler) {
-	sortedFilters := make([]*Filter, 0, len(routerFilters))
-	// key was just there to enforce uniqueness on API level.
-	for _, f := range routerFilters {
-		sortedFilters = append(sortedFilters, f)
-		// append it as one handlers so execution rules are being respected in that step too.
-		f.Handlers = append(f.Handlers, func(ctx *context.Context) {
-			// set the handler index back to 0 so the route's handlers can be executed as expected.
-			ctx.HandlerIndex(0)
-			// execute the main request handler, this will fire the found route's handlers
-			// or if error the error code's associated handler.
-			router.requestHandler.HandleRequest(ctx)
-		})
-	}
+	// RemoveRoute deletes a registered route by its name before `Application.Listen`.
+	// The default naming for newly created routes is: method + subdomain + path.
+	// Reports whether a route with that name was found and removed successfully.
+	//
+	// Note that this method applies to all children Routers
+	// even if each of the Router have access to this method,
+	// as the route name is unique per Iris Application.
+	RemoveRoute(routeName string) bool
 
-	sort.SliceStable(sortedFilters, func(i, j int) bool {
-		left, right := sortedFilters[i], sortedFilters[j]
-		var (
-			leftSubLen  = len(left.Subdomain)
-			rightSubLen = len(right.Subdomain)
-
-			leftSlashLen  = strings.Count(left.Path, "/")
-			rightSlashLen = strings.Count(right.Path, "/")
-		)
-
-		if leftSubLen == rightSubLen {
-			if leftSlashLen > rightSlashLen {
-				return true
-			}
-		}
-
-		if leftSubLen > rightSubLen {
-			return true
-		}
-
-		if leftSlashLen > rightSlashLen {
-			return true
-		}
-
-		if leftSlashLen == rightSlashLen {
-			return len(left.Path) > len(right.Path)
-		}
-
-		return len(left.Path) > len(right.Path)
-	})
-
-	router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
-		ctx := cPool.Acquire(w, r)
-
-		filterExecuted := false
-		for _, f := range sortedFilters { // from subdomain, largest path to shortest.
-			// fmt.Printf("Sorted filter execution: [%s] [%s]\n", f.Subdomain, f.Path)
-			if f.Matcher.Match(ctx) {
-				// fmt.Printf("Matched [%s] and execute [%d] handlers [%s]\n\n", ctx.Path(), len(f.Handlers), context.HandlersNames(f.Handlers))
-				filterExecuted = true
-				// execute the final handlers chain.
-				ctx.Do(f.Handlers)
-				break // and break on first found.
-			}
-		}
-
-		if !filterExecuted {
-			// If not at least one match filter found and executed,
-			// then just run the router.
-			router.requestHandler.HandleRequest(ctx)
-		}
-
-		cPool.Release(ctx)
-	}
-}
-
-// BuildRouter builds the router based on
-// the context factory (explicit pool in this case),
-// the request handler which manages how the main handler will multiplexes the routes
-// provided by the third parameter, routerProvider (it's the api builder in this case) and
-// its wrapper.
-//
-// Use of RefreshRouter to re-build the router if needed.
-func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHandler, routesProvider RoutesProvider, force bool) error {
-	if requestHandler == nil {
-		return errors.New("router: request handler is nil")
-	}
-
-	if cPool == nil {
-		return errors.New("router: context pool is nil")
-	}
-
-	// build the handler using the routesProvider
-	if err := requestHandler.Build(routesProvider); err != nil {
-		return err
-	}
-
-	router.mu.Lock()
-	defer router.mu.Unlock()
-
-	// store these for RefreshRouter's needs.
-	if force {
-		router.cPool = cPool
-		router.requestHandler = requestHandler
-		router.routesProvider = routesProvider
-	} else {
-		if router.cPool == nil {
-			router.cPool = cPool
-		}
-
-		if router.requestHandler == nil {
-			router.requestHandler = requestHandler
-		}
-
-		if router.routesProvider == nil && routesProvider != nil {
-			router.routesProvider = routesProvider
-		}
-	}
-
-	// the important stuff.
-	if routerFilters := routesProvider.GetRouterFilters(); len(routerFilters) > 0 {
-		router.buildMainHandlerWithFilters(routerFilters, cPool, requestHandler)
-	} else {
-		router.buildMainHandler(cPool, requestHandler)
-	}
-
-	for i := len(router.wrapperFuncs) - 1; i >= 0; i-- {
-		w := router.wrapperFuncs[i]
-		if w == nil {
-			continue
-		}
-		router.WrapRouter(w)
-	}
-
-	if router.wrapperFunc != nil { // if wrapper used then attach that as the router service
-		router.mainHandler = newWrapper(router.wrapperFunc, router.mainHandler).ServeHTTP
-	}
-
-	// build closest.
-	subdomainPaths := make(map[string][]string)
-	for _, r := range router.routesProvider.GetRoutes() {
-		if !r.IsStatic() {
-			continue
-		}
-
-		subdomainPaths[r.Subdomain] = append(subdomainPaths[r.Subdomain], r.Path)
-	}
-
-	router.closestPaths = make(map[string]*closestmatch.ClosestMatch)
-	for subdomain, paths := range subdomainPaths {
-		router.closestPaths[subdomain] = closestmatch.New(paths, []int{3, 4, 6})
-	}
-
-	return nil
-}
-
-// Downgrade "downgrades", alters the router supervisor service(Router.mainHandler)
-// algorithm to a custom one,
-// be aware to change the global variables of 'ParamStart' and 'ParamWildcardStart'.
-// can be used to implement a custom proxy or
-// a custom router which should work with raw ResponseWriter, *Request
-// instead of the Context(which again, can be retrieved by the Framework's context pool).
-//
-// Note: Downgrade will by-pass the Wrapper, the caller is responsible for everything.
-// Downgrade is thread-safe.
-func (router *Router) Downgrade(newMainHandler http.HandlerFunc) {
-	router.mu.Lock()
-	router.mainHandler = newMainHandler
-	router.mu.Unlock()
-}
-
-// Downgraded returns true if this router is downgraded.
-func (router *Router) Downgraded() bool {
-	return router.mainHandler != nil && router.requestHandler == nil
-}
-
-// SetTimeoutHandler overrides the main handler with a timeout handler.
-//
-// TimeoutHandler supports the Pusher interface but does not support
-// the Hijacker or Flusher interfaces.
-//
-// All previous registered wrappers and middlewares are still executed as expected.
-func (router *Router) SetTimeoutHandler(timeout time.Duration, msg string) {
-	if timeout <= 0 {
-		return
-	}
-
-	mainHandler := router.mainHandler
-	h := func(w http.ResponseWriter, r *http.Request) {
-		mainHandler(w, r)
-	}
-
-	router.mainHandler = http.TimeoutHandler(http.HandlerFunc(h), timeout, msg).ServeHTTP
-}
-
-// WrapRouter adds a wrapper on the top of the main router.
-// Usually it's useful for third-party middleware
-// when need to wrap the entire application with a middleware like CORS.
-//
-// Developers can add more than one wrappers,
-// those wrappers' execution comes from last to first.
-// That means that the second wrapper will wrap the first, and so on.
-//
-// Before build.
-func (router *Router) WrapRouter(wrapperFunc WrapperFunc) {
-	// logger := context.DefaultLogger("router wrapper")
-	// file, line := context.HandlerFileLineRel(wrapperFunc)
-	// if router.wrapperFunc != nil {
-	// 	wrappedFile, wrappedLine := context.HandlerFileLineRel(router.wrapperFunc)
-	// 	logger.Infof("%s:%d wraps %s:%d", file, line, wrappedFile, wrappedLine)
-	// } else {
-	// 	logger.Infof("%s:%d wraps the main router", file, line)
-	// }
-	router.wrapperFunc = makeWrapperFunc(router.wrapperFunc, wrapperFunc)
-}
-
-// AddRouterWrapper adds a router wrapper.
-// Unlike `WrapRouter` the first registered will be executed first
-// so a wrapper wraps its next not the previous one.
-// it defers the wrapping until the `BuildRouter`.
-// Redirection wrappers should be added using this method
-// e.g. SubdomainRedirect.
-func (router *Router) AddRouterWrapper(wrapperFunc WrapperFunc) {
-	router.wrapperFuncs = append(router.wrapperFuncs, wrapperFunc)
-}
-
-// PrependRouterWrapper like `AddRouterWrapper` but this wrapperFunc
-// will always be executed before the previous `AddRouterWrapper`.
-// Path form (no modification) wrappers should be added using this method
-// e.g. ForceLowercaseRouting.
-func (router *Router) PrependRouterWrapper(wrapperFunc WrapperFunc) {
-	router.wrapperFuncs = append([]WrapperFunc{wrapperFunc}, router.wrapperFuncs...)
-}
-
-// ServeHTTPC serves the raw context, useful if we have already a context, it by-pass the wrapper.
-func (router *Router) ServeHTTPC(ctx *context.Context) {
-	router.requestHandler.HandleRequest(ctx)
-}
-
-func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	router.mainHandler(w, r)
-}
-
-// RouteExists reports whether a particular route exists
-// It will search from the current subdomain of context's host, if not inside the root domain.
-func (router *Router) RouteExists(ctx *context.Context, method, path string) bool {
-	return router.requestHandler.RouteExists(ctx, method, path)
+	// StaticContent registers a GET and HEAD method routes to the requestPath
+	// that are ready to serve raw static bytes, memory cached.
+	//
+	// Returns the GET *Route.
+	StaticContent(requestPath string, cType string, content []byte) *Route
 }

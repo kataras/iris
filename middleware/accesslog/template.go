@@ -66,6 +66,11 @@ func (f *Template) LogText(log *Log) (string, error) {
 	}
 
 	if err != nil {
+		// Reset before returning it: a dirty buffer put back into the shared pool
+		// poisons whichever log line picks it up next, prepending the failed
+		// render and corrupting the delimiter count that downstream consumers
+		// rely on.
+		temp.Reset()
 		f.ac.bufPool.Put(temp)
 		return "", err
 	}
@@ -93,6 +98,7 @@ func (f *Template) Format(log *Log) (bool, error) {
 	}
 
 	if err != nil {
+		temp.Reset() // see the note in the sibling method above.
 		f.ac.bufPool.Put(temp)
 		return true, err
 	}

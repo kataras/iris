@@ -5,9 +5,9 @@ import (
 )
 
 // Blocklist should hold and manage invalidated-by-server tokens.
-// The `NewBlocklist` and `NewBlocklistContext` functions
-// returns a memory storage of tokens,
-// it is the internal "blocklist" struct.
+// The `jwt.NewBlocklist` and `jwt.NewBlocklistContext` functions of the
+// github.com/kataras/jwt package return a memory storage of tokens;
+// use the `Verifier.WithDefaultBlocklist` method to attach one.
 //
 // The end-developer can implement her/his own blocklist,
 // e.g. a redis one to keep persistence of invalidated tokens on server restarts.

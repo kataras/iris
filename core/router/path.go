@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/v12/core/netutil"
-	"github.com/kataras/iris/v12/macro"
-	"github.com/kataras/iris/v12/macro/interpreter/ast"
-	"github.com/kataras/iris/v12/macro/interpreter/lexer"
+	"github.com/kataras/iris/v14/core/pkg/netutil"
+	"github.com/kataras/iris/v14/core/router/internal/lexer"
+	"github.com/kataras/iris/v14/core/router/macro"
+	"github.com/kataras/iris/v14/core/router/macro/interpreter/ast"
 )
 
 // Param receives a parameter name prefixed with the ParamStart symbol.
 func Param(name string) string {
-	return prefix(name, ParamStart)
+	return WithPrefix(name, ParamStart)
 }
 
 // WildcardParam receives a parameter name prefixed with the WildcardParamStart symbol.
@@ -22,7 +22,7 @@ func WildcardParam(name string) string {
 	if name == "" {
 		return ""
 	}
-	return prefix(name, WildcardParamStart)
+	return WithPrefix(name, WildcardParamStart)
 }
 
 // WildcardFileParam wraps a named parameter "file" with the trailing "path" macro parameter type.
@@ -55,7 +55,8 @@ func convertMacroTmplToNodePath(tmpl macro.Template) string {
 	return routePath
 }
 
-func prefix(s string, prefix string) string {
+// WithPrefix returns the given string prefixed with the given prefix if it's not already prefixed.
+func WithPrefix(s string, prefix string) string {
 	if !strings.HasPrefix(s, prefix) {
 		return prefix + s
 	}
@@ -63,15 +64,45 @@ func prefix(s string, prefix string) string {
 	return s
 }
 
-func splitMethod(methodMany string) []string {
-	methodMany = strings.Trim(methodMany, " ")
-	return strings.Split(methodMany, " ")
+// SplitMethod splits the given method with a comma or space.
+func SplitMethod(methodMany string) []string {
+	methodMany = strings.TrimSpace(methodMany)
+
+	var delimeter string
+	if strings.Contains(methodMany, ",") {
+		// by comma.
+		delimeter = ","
+	} else if strings.Contains(methodMany, " ") {
+		// by space.
+		delimeter = " "
+	} else {
+		// only one.
+		return []string{methodMany}
+	}
+
+	result := strings.Split(methodMany, delimeter)
+	for i := range result {
+		result[i] = strings.ReplaceAll(result[i], " ", "")
+	}
+
+	return result
 }
 
-func splitPath(pathMany string) (paths []string) {
+// JoinMethods joins the given methods with a space into one string.
+func JoinMethods(methods ...string) string {
+	for i := range methods {
+		methods[i] = strings.ToUpper(strings.ReplaceAll(methods[i], " ", ""))
+	}
+	return strings.Join(methods, " ")
+}
+
+// SplitPath splits the given paths, which are separated by a space
+// (e.g. "/user /admin"), and returns each one of them prefixed with a slash.
+// A single path is returned as it is.
+func SplitPath(pathMany string) (paths []string) {
 	pathMany = strings.Trim(pathMany, " ")
-	pathsWithoutSlashFromFirstAndSoOn := strings.Split(pathMany, " /")
-	for _, path := range pathsWithoutSlashFromFirstAndSoOn {
+	pathsWithoutSlashFromFirstAndSoOn := strings.SplitSeq(pathMany, " /")
+	for path := range pathsWithoutSlashFromFirstAndSoOn {
 		if path == "" {
 			continue
 		}
@@ -83,23 +114,24 @@ func splitPath(pathMany string) (paths []string) {
 	return
 }
 
-func joinPath(path1 string, path2 string) string {
+// JoinPath joins the given paths with a slash.
+func JoinPath(path1 string, path2 string) string {
 	return path.Join(path1, path2)
 }
 
-// cleanPath applies the following rules
+// CleanPath applies the following rules
 // iteratively until no further processing can be done:
 //
 //  1. Replace multiple slashes with a single slash.
 //  2. Replace '\' with '/'
 //  3. Replace "\\" with '/'
-//  4. Ignore anything inside '{' and '}'
+//  4. Ignore anything inside '{' and '}' (dynamic path parameter)
 //  5. Makes sure that prefixed with '/'
-//  6. Remove trailing '/'.
+//  6. Remove any trailing '/'.
 //
 // The returned path ends in a slash only if it is the root "/".
 // The function does not modify the dynamic path parts.
-func cleanPath(path string) string {
+func CleanPath(path string) string {
 	// note that we don't care about the performance here, it's before the server ran.
 	if path == "" || path == "." {
 		return "/"
@@ -111,7 +143,7 @@ func cleanPath(path string) string {
 	}
 
 	// prefix with "/".
-	path = prefix(path, "/")
+	path = WithPrefix(path, "/")
 
 	s := []rune(path)
 
@@ -201,16 +233,16 @@ func hasSubdomain(s string) bool {
 	slashIdx := strings.IndexByte(s, '/')
 	return slashIdx > 0 || // for route paths
 		s[0] == SubdomainPrefix[0] || // for route paths
-		(len(s) >= 2 && s[0:2] == SubdomainWildcardIndicator) || // for party rel path or route paths
-		(len(s) >= 2 && slashIdx != 0 && s[len(s)-1] == '.') // for party rel, i.e www., or subsub.www.
+		(len(s) >= 2 && s[0:2] == SubdomainWildcardIndicator) || // for router rel path or route paths
+		(len(s) >= 2 && slashIdx != 0 && s[len(s)-1] == '.') // for router rel, i.e www., or subsub.www.
 }
 
-// splitSubdomainAndPath checks if the path has subdomain and if it's
+// SplitSubdomainAndPath checks if the path has subdomain and if it's
 // it splits the subdomain and path and returns them, otherwise it returns
 // an empty subdomain and the clean path.
 //
 // First return value is the subdomain, second is the path.
-func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path string) {
+func SplitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path string) {
 	s := fullUnparsedPath
 	if s == "" || s == "/" {
 		return "", "/"
@@ -229,7 +261,7 @@ func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path stri
 
 	if slashIdx == -1 {
 		// this will only happen when this function
-		// is called to Party's relative path (e.g. control.admin.),
+		// is called to Router's relative path (e.g. control.admin.),
 		// and not a route's one (the route's one always contains a slash).
 		// return all as subdomain and "/" as path.
 		return s, "/"
@@ -314,7 +346,7 @@ func WithServer(srv *http.Server) RoutePathReverserOption {
 // route name is required because a route may being registered
 // on more than one http method.
 type RoutePathReverser struct {
-	provider RoutesProvider
+	routes *RouteRegistry
 	// both vhost and vscheme are being used, optionally, for the URL feature.
 	vhost   string
 	vscheme string
@@ -324,9 +356,12 @@ type RoutePathReverser struct {
 // a routes provider, needed to get a route based on its name.
 // Options is required for the URL function.
 // See WithScheme and WithHost or WithServer.
-func NewRoutePathReverser(apiRoutesProvider RoutesProvider, options ...RoutePathReverserOption) *RoutePathReverser {
+//
+// Example:
+// ps := NewRoutePathReverser(app.Routes(), router.WithHost(host), router.WithScheme("http"))
+func NewRoutePathReverser(routes *RouteRegistry, options ...RoutePathReverserOption) *RoutePathReverser {
 	ps := &RoutePathReverser{
-		provider: apiRoutesProvider,
+		routes: routes,
 	}
 	for _, o := range options {
 		o(ps)
@@ -336,13 +371,13 @@ func NewRoutePathReverser(apiRoutesProvider RoutesProvider, options ...RoutePath
 
 // Path  returns a route path based on a route name and any dynamic named parameter's values-only.
 func (ps *RoutePathReverser) Path(routeName string, paramValues ...any) string {
-	r := ps.provider.GetRoute(routeName)
+	r := ps.routes.GetByName(routeName)
 	if r == nil {
 		return ""
 	}
 
 	if len(paramValues) == 0 {
-		return r.Path
+		return r.NodePath
 	}
 
 	return r.ResolvePath(toStringSlice(paramValues)...)
@@ -381,7 +416,7 @@ func (ps *RoutePathReverser) URL(routeName string, paramValues ...any) (url stri
 		return "not supported"
 	}
 
-	r := ps.provider.GetRoute(routeName)
+	r := ps.routes.GetByName(routeName)
 	if r == nil {
 		return
 	}

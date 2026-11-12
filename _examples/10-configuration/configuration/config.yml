@@ -1,0 +1,17 @@
+# Committed settings only. The admin password comes from the ADMIN_PASSWORD
+# environment variable; credentials, keys and connection strings never belong
+# in a file that ships with the code.
+
+# The framework half: iris.Options, inlined into Config, so its keys sit at the
+# top level of this same document. Everything left out keeps its default.
+Name: configuration
+LogLevel: info
+Context:
+    BodyMaxMemory: 1048576 # 1 MB, raised per request by the /uploads group.
+    RemoteAddrHeaders:
+        - X-Forwarded-For
+
+# This application's own half.
+Addr: ":8080"
+Env: development
+AdminUser: admin

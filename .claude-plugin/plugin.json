@@ -1,0 +1,20 @@
+{
+  "$schema": "https://code.claude.com/schemas/plugin.json",
+  "name": "iris",
+  "description": "Development guide for the Iris v14 Go web framework: builder chain, routing macros, rest helpers, error mapping, auth SDK, middleware, and testing.",
+  "author": {
+    "name": "Gerasimos (Makis) Maropoulos",
+    "url": "https://github.com/kataras"
+  },
+  "homepage": "https://github.com/kataras/iris",
+  "repository": "https://github.com/kataras/iris",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "go",
+    "iris",
+    "web-framework",
+    "rest-api",
+    "webserver"
+  ],
+  "skills": "./skill"
+}

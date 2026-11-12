@@ -1,3 +1,10 @@
+// Package monitor reports live process and system statistics (CPU, memory,
+// goroutines, uptime) as JSON and as a small HTML dashboard.
+//
+// Its entry point is New(Options), which returns a *Monitor rather than a
+// Handler because it exposes two of them - `Stats` for the JSON payload and
+// `View` for the dashboard page - and owns the background sampler that both
+// read; call `Stop` when it is no longer needed.
 package monitor
 
 import (
@@ -6,9 +13,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
 
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 func init() {
@@ -39,6 +46,10 @@ type Monitor struct {
 	viewBody []byte
 }
 
+// DefaultRefreshInterval is the stats refresh interval used when
+// Options.RefreshInterval is not set.
+const DefaultRefreshInterval = 2 * time.Second
+
 // New returns a new Monitor.
 // Metrics stored through expvar standard package:
 // - pid_cpu
@@ -50,24 +61,41 @@ type Monitor struct {
 // - os_load_avg
 // - os_conns
 //
-// Check https://github.com/iris-contrib/middleware/tree/v12/expmetric
+// Check https://github.com/iris-contrib/middleware/tree/master/expmetric
 // which can be integrated with datadog or other platforms.
+//
+// SECURITY WARNING: the stats endpoint MUST NOT be public.
+//
+// It reports the process id, resident memory, host CPU and RAM, load average
+// and connection counts - a precise picture of the machine, useful to anyone
+// deciding whether and when to attack it. Guard it exactly like pprof:
+//
+//	auth := basicauth.Default(map[string]string{"admin": os.Getenv("MONITOR_PASSWORD")})
+//	app.Get("/monitor", auth, m.View)
+//	app.Get("/monitor/stats", auth, m.Stats)
+//
+// Note also that importing this package registers its metrics into the default
+// expvar map at init, so they are also visible through any mounted
+// "/debug/vars" handler.
 func New(opts Options) *Monitor {
 	if opts.PID == 0 {
 		opts.PID = int32(os.Getpid())
 	}
 
 	if opts.RefreshInterval <= 0 {
-		opts.RefreshInterval = 2 * opts.RefreshInterval
+		// Note(@kataras): "2 * opts.RefreshInterval" is 0 when the interval is 0,
+		// so monitor.New(monitor.Options{}) - the obvious first call - reached
+		// time.NewTicker(0) and panicked at startup.
+		opts.RefreshInterval = DefaultRefreshInterval
 	}
 
 	if opts.ViewRefreshInterval <= 0 {
 		opts.ViewRefreshInterval = opts.RefreshInterval
 	}
 
-	viewRefreshIntervalBytes := []byte(fmt.Sprintf("%d", opts.ViewRefreshInterval.Milliseconds()))
+	viewRefreshIntervalBytes := fmt.Appendf(nil, "%d", opts.ViewRefreshInterval.Milliseconds())
 	viewBody := bytes.Replace(defaultViewBody, viewRefreshIntervalTmplVar, viewRefreshIntervalBytes, 1)
-	viewAnimationIntervalBytes := []byte(fmt.Sprintf("%d", opts.ViewAnimationInterval.Milliseconds()))
+	viewAnimationIntervalBytes := fmt.Appendf(nil, "%d", opts.ViewAnimationInterval.Milliseconds())
 	viewBody = bytes.Replace(viewBody, viewAnimationIntervalTmplVar, viewAnimationIntervalBytes, 2)
 	viewTitleBytes := []byte(opts.ViewTitle)
 	viewBody = bytes.Replace(viewBody, viewTitleTmplVar, viewTitleBytes, 2)
@@ -100,6 +128,6 @@ func (m *Monitor) Stats(ctx *context.Context) {
 
 // View renders a default view for the stats.
 func (m *Monitor) View(ctx *context.Context) {
-	ctx.ContentType("text/html")
+	ctx.SetContentType("text/html")
 	ctx.Write(m.viewBody)
 }

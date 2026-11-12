@@ -17,1395 +17,526 @@
 
 Developers are not forced to upgrade if they don't really need it. Upgrade whenever you feel ready.
 
-**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v12@latest` and `go mod tidy -compat=1.21`.
+**How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v14@latest` and `go mod tidy`.
+
+# Thu, 12 November 2026 | v14.0.0
+
+<details><summary>Fast Migration tricks</summary>
+
+<br/>
+
+- Replace import path and function `github.com/kataras/iris/v12/cache.Cache304` function to `github.com/kataras/iris/v14/middleware/cache.New(cache.DefaultOptions)`
+- Replace import path `github.com/kataras/iris/v12/x/client` to `github.com/kataras/iris/v14/client`
+- Replace import path `github.com/kataras/iris/v12/x/jsonx` to `github.com/kataras/iris/v14/rest/types`
+- Replace import path `github.com/kataras/iris/v12/sessions` to `github.com/kataras/iris/v14/middleware/sessions`
+- Replace function `Configure(r iris.Party)` to `Routing(r iris.Router)`
+- Replace `.PartyConfigure("` to `.Router("`
+- Replace `.Party("` to `.Router("`
+- Replace `iris.Party` to `iris.Router`
+- Replace `ctx.URLParam(` to `ctx.Query().Get(`
+- Replace `ctx.URLParamSlice(` to `ctx.Query().GetSlice(`
+- Replace `ctx.Params().Get(` to `ctx.Params().GetString(`
+- Replace `ctx.URLParamUint64(` to `ctx.Query().GetUint64(`
+- Replace `ctx.URLParamBoolDefault(` to `ctx.Query().GetBool(` (remove the 2nd default argument and perform manual check)
+- Replace `ctx.URLParamDefault(` to `ctx.Query().Get(` (remove the 2nd default argument and perform manual check)
+- Replace `ctx.URLParamFloat64Default(` to `ctx.Query().GetFloat64(` (remove the 2nd default argument and perform manual check)
+- Replace `ctx.URLParamIntDefault(` to `ctx.Query().GetInt(` (remove the 2nd default argument and perform manual check)
+- Replace `ctx.URLParamInt(` to `ctx.Query().GetInt(` and check the value for `0` for invalid int or `-1` for missing query entry at all.
+- Replace `ctx.Header("` (old method to set a response header) to `ctx.SetHeader("`
+- Replace `ctx.GetHeader("` (old method to get a request header) to `ctx.Header("` (response headers are read through `ctx.ResponseHeader`; the `GetHeader` name is removed)
+- Cond Replace `r.PartyFunc("/{blog_id:uuid}/posts", func(p iris.Party) {` to `r.Router("/{blog_id:uuid}/posts", func(p iris.Router) {`
+    > Or Replace `r.PartyFunc(` to `r.Router(` and `func(p iris.Party)` to `func(r iris.Router)` and `p.PartyFunc(` to `r.Router(` (if more children groups).
+- Replace `ctx.RecordRequestBody(true)` with `_ = recorder.RecordRequestBody(ctx)`
+- Add `import _ "github.com/kataras/iris/v14/rest/errors/pgerrors"` when using `github.com/kataras/pg`, to keep the automatic no-rows -> 404 and duplicate-key -> 409 error mapping.
+- Replace `c.ReadJSON[T](ctx, method, path, payload)` with `c.BindJSON[T](ctx, method, path, payload)` and `c.ReadPlain[T](` with `c.BindPlain[T](` (the `client` package; the pointer forms `c.ReadJSON(ctx, &v, ...)` and `c.ReadPlain(ctx, &v, ...)` are the destination-filling ones, as on `iris.Context`).
+- Replace `client.New(client.Debug)` with `client.New(client.Debug(nil))`.
+- Replace `client.RequestRateLimit(n)` with `client.RateLimitFor("name", n)` on the client and `client.RequestRateLimit("name")` on the request.
+- Replace `ctx.UpsertCookie(` with `ctx.SetCookie(` (it now replaces a cookie with the same name, path and domain) and `ctx.SetCookieKV(` with `ctx.AddCookie(`.
+- Replace `ctx.ReadHeaders(` with `ctx.ReadHeader(`.
+- Replace `context.IsErrPathCRSFToken` with `context.IsErrPathCSRFToken`.
+- Replace `context.SetCookieKVExpiration` with `context.DefaultCookieExpiration` and `iris.Patches().Context().SetCookieKVExpiration(` with `iris.Patches().Context().SetDefaultCookieExpiration(`.
+- Replace `auth.Must(auth.New[T](cfg))` with `auth.Must[T](cfg)`.
+- Replace `claims := jwt.Get(ctx).(*Claims)` with `claims, ok := jwt.Get[*Claims](ctx)`.
+- Replace `ctx.Values().Get(hcaptcha.ResponseContextKey)` with `hcaptcha.Get(ctx)`.
+- Replace `client.BindResponse(resp, &v)` with `v, err := client.Bind[T](resp)`.
+
+---
+- Replace `basicauth.Options{` to `basicauth.Options[*iris.SimpleUser]{` (or your own user type), `basicauth.AllowUsers(map[string]string{...})` to `basicauth.AllowUsersMap(map[string]string{...})` and `ctx.User().GetRaw().(T)` to `basicauth.GetUser[T](ctx)`.
 
-# Next
-
-Changes apply to `v12` branch.
-
-# Thu, 12 November 2026 | v12.2.12
-
-This release tags everything that landed on `main` since v12.2.11. From now on the v12 code lives on the [v12 branch](https://github.com/kataras/iris/tree/v12), and `main` moves on to v14, which has its own import path.
-
-- The module now requires Go 1.26 (v12.2.11 required 1.22). Dependencies are upgraded to their latest versions.
-- `sessions/sessiondb/badger` moves from badger v2 to v4. Its import is now `github.com/dgraph-io/badger/v4`.
-- `x/jsonx`: `ISO8601` parses timestamps with an unconventional offset, such as `2024-05-21T18:06:07.000000-04:01:19`.
-- `x/jsonx`: new `Season` bitmask type and a `GetSeasonByDate(SimpleDate)` helper.
-- `x/errors`: when a response body cannot be encoded because of a `NaN` value, the error reports which field holds it.
-- `macro/interpreter/token`: `Type` has a `String()` method. A token type prints as its name (`LBRACE`) instead of a number.
-- New Arabic translation of the README: [README_AR.md](README_AR.md) ([#2539](https://github.com/kataras/iris/pull/2539)).
-- Fixed [#2587](https://github.com/kataras/iris/issues/2587).
-
-# Thu, 25 April 2024 | v12.2.11
-
-Dear Iris Community,
-
-You might have noticed a recent lull in activity on the Iris repository. I want to assure you that this silence is not without reason. For the past **3-4 months**, I've been diligently working on the next major release of Iris.
-
-This upcoming version is poised to be a significant leap forward, fully embracing the **Generics** feature introduced in Go. We're not just stopping at Generics, though. Expect a suite of **new features**, **enhancements**, and **optimizations** that will elevate your development experience to new heights.
-
-My journey with Go spans over **8 years**, and with each year, my expertise and understanding of the language deepen. This accumulated knowledge is being poured into Iris, ensuring that the framework not only evolves with the language but also with the community's growing needs.
-
-Stay tuned for more updates, and thank you for your continued support and patience. The wait will be worth it.
-
-Warm regards,<br/>
-Gerasimos (Makis) Maropoulos
-
-### This is the last release for the version 12 family.
-
-- Security improvements and dependencies upgrade.
-
-- New `Application/Party.MiddlewareExists(handlerNameOrHandler)` method added, example:
-
-```go
-package main
-
-import (
-	"fmt"
-
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/x/errors"
-)
-
-func main() {
-	app := iris.New()
-
-	app.UseRouter(errors.RecoveryHandler)
-
-	if app.MiddlewareExists(errors.RecoveryHandler) { // <- HERE.
-		fmt.Println("errors.RecoveryHandler exists")
-	}
-	// OR:
-	// if app.MiddlewareExists("iris.errors.recover") {
-	// 	fmt.Println("Iris.Errors.Recovery exists")
-	// }
-
-	app.Get("/", indexHandler)
-
-	app.Listen(":8080")
-}
-
-func indexHandler(ctx iris.Context) {
-	panic("an error here")
-	ctx.HTML("<h1>Index</h1>")
-}
-
-```
-- New `x/errors.Intercept(func(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error{ ... })` package-level function.
-
-```go
-func main() {
-    app := iris.New()
-
-    // Create a new service and pass it to the handlers.
-    service := new(myService)
-
-    app.Post("/", errors.Intercept(responseHandler), errors.CreateHandler(service.Create))
-
-    // [...]
-}
-
-func responseHandler(ctx iris.Context, req *CreateRequest, resp *CreateResponse) error {
-    fmt.Printf("intercept: request got: %+v\nresponse sent: %#+v\n", req, resp)
-    return nil
-}
-```
-
-- Rename `x/errors/ContextValidator.ValidateContext(iris.Context) error` to `x/errors/RequestHandler.HandleRequest(iris.Context) error`.
-
-# Thu, 18 Jan 2024 | v12.2.10
-
-- Simplify the `/core/host` subpackage and remove its `DeferFlow` and `RestoreFlow` methods. These methods are replaced with: `Supervisor.Configure(host.NonBlocking())` before `Serve` and ` Supervisor.Wait(context.Context) error` after `Serve`.
-- Fix internal `trimHandlerName` and other minor stuff.
-- New `iris.NonBlocking()` configuration option to run the server without blocking the main routine, `Application.Wait(context.Context) error` method can be used to block and wait for the server to be up and running. Example:
-
-```go
-func main() {
-    app := iris.New()
-    app.Get("/", func(ctx iris.Context) {
-        ctx.Writef("Hello, %s!", "World")
-    })
-
-    app.Listen(":8080", iris.NonBlocking(), iris.WithoutServerError(iris.ErrServerClosed))
-
-    ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-    defer cancel()
-
-    if err := app.Wait(ctx); err != nil {
-        log.Fatal(err)
-    }
-
-    // [Server is up and running now, you may continue with other functions below].
-}
-```
-
-- Add `x/mathx.RoundToInteger` math helper function.
-
-# Wed, 10 Jan 2024 | v12.2.9
-
-- Add `x/errors.RecoveryHandler` package-level function.
-- Add `x/errors.Validation` package-level function to add one or more validations for the request payload before a service call of the below methods.
-- Add `x/errors.Handler`, `CreateHandler`, `NoContentHandler`, `NoContentOrNotModifiedHandler` and `ListHandler` ready-to-use handlers for service method calls to Iris Handler.
-- Add `x/errors.List` package-level function to support `ListObjects(ctx context.Context, opts pagination.ListOptions, f Filter) ([]Object, int64, error)` type of service calls.
-- Simplify how validation errors on `/x/errors` package works. A new `x/errors/validation` sub-package added to make your life easier (using the powerful Generics feature).
-- Add `x/errors.OK`, `Create`, `NoContent` and `NoContentOrNotModified` package-level generic functions as custom service method caller helpers. Example can be found [here](_examples/routing/http-wire-errors/service/main.go).
-- Add `x/errors.ReadPayload`, `ReadQuery`, `ReadPaginationOptions`, `Handle`, `HandleCreate`, `HandleCreateResponse`, `HandleUpdate` and `HandleDelete` package-level functions as helpers for common actions.
-- Add `x/jsonx.GetSimpleDateRange(date, jsonx.WeekRange, time.Monday, time.Sunday)` which returns all dates between the given range and start/end weekday values for WeekRange.
-- Add `x/timex.GetMonthDays` and `x/timex.GetMonthEnd` functions.
-- Add `iris.CookieDomain` and `iris.CookieOverride` cookie options to handle [#2309](https://github.com/kataras/iris/issues/2309).
-- New `x/errors.ErrorCodeName.MapErrorFunc`, `MapErrors`, `Wrap` methods and `x/errors.HandleError` package-level function.
-
-# Sun, 05 Nov 2023 | v12.2.8
-
-- A new way to customize the handler's parameter among with the `hero` and `mvc` packages. New `iris.NewContextWrapper` and
- `iris.NewContextPool` methods were added to wrap a handler (`.Handler`, `.Handlers`, `.HandlerReturnError`, `HandlerReturnDuration`, `Filter` and `FallbackViewFunc` methods) and use a custom context instead of the iris.Context directly. Example at: https://github.com/kataras/iris/tree/v12/_examples/routing/custom-context.
-
-- The `cache` sub-package has an update, 4 years after:
-
-    - Add support for custom storage on `cache` package, through the `Handler#Store` method.
-    - Add support for custom expiration duration on `cache` package, trough the `Handler#MaxAge` method.
-    - Improve the overral performance of the `cache` package.
-    - The `cache.Handler` input and output arguments remain as it is.
-    - The `cache.Cache` input argument changed from `time.Duration` to `func(iris.Context) time.Duration`.
-
-# Mon, 25 Sep 2023 | v12.2.7
-
-Minor bug fixes and support of multiple `block` and `define` directives in multiple layouts and templates in the `Blocks` view engine.
-
-# Mon, 21 Aug 2023 | v12.2.5
-
-- Add optional `Singleton() bool` method to controllers to mark them as singleton, will panic with a specific error if a controller expects dynamic dependencies. This behavior is idendical to the app-driven `app.EnsureStaticBindings()`.
-
-- Non-zero fields of a controller that are marked as ignored, with `ignore:"true"` field tag, they are not included in the dependencies at all now.
-
-- Re-add error log on context rich write (e.g. JSON) failures when the application is running under debug mode (with `app.Logger().SetLevel("debug")`) and there is no a registered context error handler at place.
-
-- `master` branch finally renamed to `main`. Don't worry GitHub will still navigate any `master` request to `main` automatically. Examples, Documentation and other Pages are refactored too.
-
-# Sat, 12 Aug 2023 | v12.2.4
-
-- Add new `iris.WithDynamicHandler` option (`EnableDynamicHandler` setting) to work with `iris.Application.RefreshRouter` method. It allows to change the entire router while your server is up and running. Handles [issue #2167](https://github.com/kataras/iris/issues/2167). Example at [_examples/routing/route-state/main.go](_examples/routing/route-state/main.go).
-
-> We jumped v12.2.2 and v12.2.3.
-
-# Mon, 17 July 2023 | v12.2.1
-
-- Add `mvc.Application.EnableStructDependents()` method to handle [#2158](https://github.com/kataras/iris/issues/2158).
-
-- Fix [iris-premium#17](https://github.com/kataras/iris-premium/issues/17).
-
-- Replace [russross/blackfriday](github.com/russross/blackfriday/v2) with [gomarkdown](https://github.com/gomarkdown/markdown) as requested at [#2098](https://github.com/kataras/iris/issues/2098).
-
-- Add `mvc.IgnoreEmbedded` option to handle [#2103](https://github.com/kataras/iris/issues/2103). Example Code:
-
-```go
-func configure(m *mvc.Application) {
-	m.Router.Use(cacheHandler)
-	m.Handle(&exampleController{
-		timeFormat: "Mon, Jan 02 2006 15:04:05",
-	}, mvc.IgnoreEmbedded /* BaseController.GetDoSomething will not be parsed at all */)
-}
-
-type BaseController struct {
-	Ctx iris.Context
-}
-
-func (c *BaseController) GetDoSomething(i any) error {
-	return nil
-}
-
-type exampleController struct {
-	BaseController
-
-	timeFormat string
-}
-
-func (c *exampleController) Get() string {
-	now := time.Now().Format(c.timeFormat)
-	return "last time executed without cache: " + now
-}
-```
-
-- Add `LoadKV` method on `Iris.Application.I18N` instance. It should be used when no locale files are available. It loads locales via pure Go Map (or database decoded values).
-
-- Remove [ace](https://github.com/eknkc/amber) template parser support, as it was discontinued by its author more than five years ago.
-
-# Sa, 11 March 2023 | v12.2.0
-
-This release introduces new features and some breaking changes.
-The codebase for Dependency Injection, Internationalization and localization and more have been simplified a lot (fewer LOCs and easier to read and follow up).
-
-## 24 Dec 2022
-
-All new features have been tested in production and seem to work fine. Fixed all reported and reproducible bugs. The `v12.2.0-beta7` is the latest beta release of v12.2.0. Expect the final public and stable release of v12.2.0 shortly after February 2023.
-
-## Fixes and Improvements
- 
-- Add `iris.TrimParamFilePart` to handle cases like [#2024](https://github.com/kataras/iris/issues/2024) and improve the [_examples/routing/dynamic-path/main.go](_examples/routing/dynamic-path/main.go#L356) example to include that case as well.
-
-- **Breaking-change**: HTML template functions `yield`, `part`, `partial`, `partial_r` and `render` now accept (and require for some cases) a second argument of the binding data context too. Convert: `{{ yield }}` to `{{ yield . }}`, `{{ render "templates/mytemplate.html" }}` to `{{ render "templates/mytemplate.html" . }}`, `{{ partial "partials/mypartial.html" }}` to `{{ partial "partials/mypartial.html" . }}` and so on.
-
-- Add new `URLParamSeparator` to the configuration. Defaults to "," but can be set to an empty string to disable splitting query values on `Context.URLParamSlice` method.
-
-- [PR #1992](https://github.com/kataras/iris/pull/1992): Added support for third party packages on [httptest](https://github.com/kataras/iris/tree/v12/httptest). An example using 3rd-party module named [Ginkgo](github.com/onsi/ginkgo) can be found [here](https://github.com/kataras/iris/blob/v12/_examples/testing/ginkgotest). 
-
-- Add `Context.Render` method for compatibility.
-
-- Support of embedded [locale files](https://github.com/kataras/iris/blob/v12/_examples/i18n/template-embedded/main.go) using standard `embed.FS` with the new `LoadFS` function.
-- Support of direct embedded view engines (`HTML, Blocks, Django, Handlebars, Pug, Jet` and `Ace`) with `embed.FS` or `fs.FS` (in addition to `string` and `http.FileSystem` types).
-- Add support for `embed.FS` and `fs.FS` on `app.HandleDir`.
-
-- Add `iris.Patches()` package-level function to customize Iris Request Context REST (and more to come) behavior.
-- Minor fixes.
-
-- Enable setting a custom "go-redis" client through `SetClient` go redis driver method or `Client` struct field on sessions/database/redis driver as requested at [chat](https://chat.iris-go.com).
-- Ignore `"csrf.token"` form data key when missing on `ctx.ReadForm` by default as requested at [#1941](https://github.com/kataras/iris/issues/1941).
-
-- Fix [CVE-2020-5398](https://github.com/advisories/GHSA-8wx2-9q48-vm9r).
-
-- New `{x:weekday}` path parameter type, example code:
-
-```go
-// 0 to 7 (leading zeros don't matter) or "Sunday" to "Monday" or "sunday" to "monday".
-// http://localhost:8080/schedule/monday or http://localhost:8080/schedule/Monday or
-// http://localhost:8080/schedule/1 or http://localhost:8080/schedule/0001.
-app.Get("/schedule/{day:weekday}", func(ctx iris.Context) {
-    day, _ := ctx.Params().GetWeekday("day")
-    ctx.Writef("Weekday requested was: %v\n", day)
-})
-```
-
-- Make the `Context.JSON` method customizable by modifying the `context.WriteJSON` package-level function.
-- Add new `iris.NewGuide` which helps you build a simple and nice JSON API with services as dependencies and better design pattern.
-- Make `Context.Domain()` customizable by letting developers to modify the `Context.GetDomain` package-level function.
-- Remove Request Context-based Transaction feature as its usage can be replaced with just the Iris Context (as of go1.7+) and better [project](_examples/project) structure.
-- Fix [#1882](https://github.com/kataras/iris/issues/1882)
-- Fix [#1877](https://github.com/kataras/iris/issues/1877)
-- Fix [#1876](https://github.com/kataras/iris/issues/1876)
-
-- New `date` dynamic path parameter type. E.g. `/blog/{param:date}` matches to `"/blog/2022/04/21"`.
-
-- Add `iris.AllowQuerySemicolons` and `iris.WithoutServerError(iris.ErrURLQuerySemicolon)` to handle golang.org/issue/25192 as reported at: https://github.com/kataras/iris/issues/1875. 
-- Add new `Application.SetContextErrorHandler` to globally customize the default behavior (status code 500 without body) on `JSON`, `JSONP`, `Protobuf`, `MsgPack`, `XML`, `YAML` and `Markdown` method call write errors instead of catching the error on each handler.
-- Add new [x/pagination](x/pagination/pagination.go) sub-package which supports generics code (go 1.18+).
-- Add new [middleware/modrevision](middleware/modrevision) middleware (example at [_examples/project/api/router.go]_examples/project/api/router.go).
-- Add `iris.BuildRevision` and `iris.BuildTime` to embrace the new go's 1.18 debug build information.
-
-- ~Add `Context.SetJSONOptions` to customize on a higher level the JSON options on `Context.JSON` calls.~ update: remains as it's, per JSON call.
-- Add new [auth](auth) sub-package which helps on any user type auth using JWT (access & refresh tokens) and a cookie (optional).
-
-- Add `Party.EnsureStaticBindings` which, if called, the MVC binder panics if a struct's input binding depends on the HTTP request data instead of a static dependency. This is useful to make sure your API crafted through `Party.PartyConfigure` depends only on struct values you already defined at `Party.RegisterDependency` == will never use reflection at serve-time (maximum performance).
-
-- Add a new [x/sqlx](/x/sqlx/) sub-package ([example](_examples/database/sqlx/main.go)).
-
-- Add a new [x/reflex](/x/reflex) sub-package. 
-
-- Add `Context.ReadMultipartRelated` as requested at: [issues/#1787](https://github.com/kataras/iris/issues/1787).
-
-- Add `Container.DependencyMatcher` and `Dependency.Match` to implement the feature requested at [issues/#1842](https://github.com/kataras/iris/issues/1842).
-
-- Register [CORS middleware](middleware/cors) to the Application by default when `iris.Default()` is used instead of `iris.New()`.
-
-- Add [x/jsonx: DayTime](/x/jsonx/day_time.go) for JSON marshal and unmarshal of "15:04:05" (hour, minute, second).
-
-- Fix a bug of `WithoutBodyConsumptionOnUnmarshal` configurator and a minor dependency injection issue caused by the previous alpha version between 20 and 26 February of 2022.
-
-- New basic [cors middleware](middleware/cors).
-- New `httptest.NewServer` helper.
-- New [x/errors](x/errors) sub-package, helps with HTTP Wire Errors. Example can be found [here](_examples/routing/http-wire-errors/main.go).
-
-- New [x/timex](x/timex) sub-package, helps working with weekdays.
-
-- Minor improvements to the [JSON Kitchen Time](x/jsonx/kitchen_time.go).
-- A session database can now implement the `EndRequest(ctx *context.Context, session *Session)` method which will be fired at the end of the request-response lifecycle. 
-- Improvements on JSON and ReadJSON when `Iris.Configuration.EnableOptimizations` is true. The request's Context is used whenever is necessary.
-- New [monitor](_examples/monitor/monitor-middleware/main.go) middleware.
-
-- New `RegisterRequestHandler` package-level and client methods to the new `x/client` package. Control or log the request-response lifecycle.
-- New `RateLimit` and `Debug` HTTP Client options to the new `x/client` package.
-
-- Push a security fix reported by [Kirill Efimov](https://github.com/kirill89) for older go runtimes.
-
-- New `Configuration.Timeout` and `Configuration.TimeoutMessage` fields. Use it to set HTTP timeouts. Note that your http server's (`Application.ConfigureHost`) Read/Write timeouts should be a bit higher than the `Configuration.Timeout` in order to give some time to http timeout handler to kick in and be able to send the `Configuration.TimeoutMessage` properly.
-
-- New `apps.OnApplicationRegistered` method which listens on new Iris applications hosted under the same binary. Use it on your `init` functions to configure Iris applications by any spot in your project's files.
-
-- `Context.JSON` respects any object implements the `easyjson.Marshaler` interface and renders the result using the [easyjon](https://github.com/mailru/easyjson)'s writer. **Set** the `Configuration.EnableProtoJSON` and `Configuration.EnableEasyJSON` to true in order to enable this feature.
-
-- minor: `Context` structure implements the standard go Context interface now (includes: Deadline, Done, Err and Value methods). Handlers can now just pass the `ctx iris.Context` as a shortcut of `ctx.Request().Context()` when needed.
-
-- New [x/jsonx](x/jsonx) sub-package for JSON type helpers.
-
-- New [x/mathx](x/mathx) sub-package for math related functions.
-
-- New [/x/client](x/client) HTTP Client sub-package.
-
-- New `email` builtin path parameter type. Example:
-
-```go
-// +------------------------+
-// | {param:email}           |
-// +------------------------+
-// Email + mx look up path parameter validation. Use it on production.
-
-// http://localhost:8080/user/kataras2006@hotmail.com -> OK
-// http://localhost:8080/user/b-c@invalid_domain      -> NOT FOUND
-app.Get("/user/{user_email:email}", func(ctx iris.Context) {
-    email := ctx.Params().Get("user_email")
-    ctx.WriteString(email)
-})
-
-// +------------------------+
-// | {param:mail}           |
-// +------------------------+
-// Simple email path parameter validation.
-
-// http://localhost:8080/user/kataras2006@hotmail.com    -> OK
-// http://localhost:8080/user/b-c@invalid_domainxxx1.com -> NOT FOUND
-app.Get("/user/{local_email:mail}", func(ctx iris.Context) {
-    email := ctx.Params().Get("local_email")
-    ctx.WriteString(email)
-})
-```
-
-- New `iris.IsErrEmptyJSON(err) bool` which reports whether the given "err" is caused by a
-`Context.ReadJSON` call when the request body didn't start with { (or it was totally empty). 
-
-Example Code:
-
-```go
-func handler(ctx iris.Context) {
-    var opts SearchOptions
-    if err := ctx.ReadJSON(&opts); err != nil && !iris.IsErrEmptyJSON(err) {
-        ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{"message": "unable to parse body"})
-        return
-    }
-
-    // [...continue with default values of "opts" struct if the client didn't provide some]
-}
-```
-
-That means that the client can optionally set a JSON body.
-	
-- New `APIContainer.EnableStrictMode(bool)` to disable automatic payload binding and panic on missing dependencies for exported struct'sfields or function's input parameters on MVC controller or hero function or PartyConfigurator.
-
-- New `Party.PartyConfigure(relativePath string, partyReg ...PartyConfigurator) Party` helper, registers a children Party like `Party` and `PartyFunc` but instead it accepts a structure value which may contain one or more of the dependencies registered by `RegisterDependency` or `ConfigureContainer().RegisterDependency` methods and fills the unset/zero exported struct's fields respectfully (useful when the api's dependencies amount are too much to pass on a function).
-
-- **New feature:** add the ability to set custom error handlers on path type parameters errors (existing or custom ones). Example Code:
-
-```go
-app.Macros().Get("uuid").HandleError(func(ctx iris.Context, paramIndex int, err error) {
-    ctx.StatusCode(iris.StatusBadRequest)
-
-    param := ctx.Params().GetEntryAt(paramIndex)
-    ctx.JSON(iris.Map{
-        "error":     err.Error(),
-        "message":   "invalid path parameter",
-        "parameter": param.Key,
-        "value":     param.ValueRaw,
-    })
-})
-
-app.Get("/users/{id:uuid}", getUser)
-```
-
-- Improve the performance and fix `:int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64` path type parameters couldn't accept a positive number written with the plus symbol or with a leading zeroes, e.g. `+42` and `021`.
-
-- The `iris.WithEmptyFormError` option is respected on `context.ReadQuery` method too, as requested at [#1727](https://github.com/kataras/iris/issues/1727). [Example comments](https://github.com/kataras/iris/blob/v12/_examples/request-body/read-query/main.go) were updated.
-
-- New `httptest.Strict` option setter to enable the `httpexpect.RequireReporter` instead of the default `httpexpect.AssetReporter. Use that to enable complete test failure on the first error. As requested at: [#1722](https://github.com/kataras/iris/issues/1722).
-
-- New `uuid` builtin path parameter type. Example:
-
-```go
-// +------------------------+
-// | {param:uuid}           |
-// +------------------------+
-// UUIDv4 (and v1) path parameter validation.
-
-// http://localhost:8080/user/bb4f33e4-dc08-40d8-9f2b-e8b2bb615c0e -> OK
-// http://localhost:8080/user/dsadsa-invalid-uuid                  -> NOT FOUND
-app.Get("/user/{id:uuid}", func(ctx iris.Context) {
-    id := ctx.Params().Get("id")
-    ctx.WriteString(id)
-})
-```
-
-- New `Configuration.KeepAlive` and `iris.WithKeepAlive(time.Duration) Configurator` added as helpers to start the server using a tcp listener featured with keep-alive.
-
-- New `DirOptions.ShowHidden bool` is added by [@tuhao1020](https://github.com/tuhao1020) at [PR #1717](https://github.com/kataras/iris/pull/1717) to show or hide the hidden files when `ShowList` is set to true.
-
-- New `Context.ReadJSONStream` method and `JSONReader` options for `Context.ReadJSON` and `Context.ReadJSONStream`, see the [example](_examples/request-body/read-json-stream/main.go).
-
-- New `FallbackView` feature, per-party or per handler chain. Example can be found at: [_examples/view/fallback](_examples/view/fallback).
-
-```go
-    app.FallbackView(iris.FallbackViewFunc(func(ctx iris.Context, err iris.ErrViewNotExist) error {
-        // err.Name is the previous template name.
-        // err.IsLayout reports whether the failure came from the layout template.
-        // err.Data is the template data provided to the previous View call.
-        // [...custom logic e.g. ctx.View("fallback.html", err.Data)]
-        return err
-    }))
-```
-
-- New `versioning.Aliases` middleware and up to 80% faster version resolve. Example Code:
-
-```go
-app := iris.New()
-
-api := app.Party("/api")
-api.Use(Aliases(map[string]string{
-    versioning.Empty: "1", // when no version was provided by the client.
-    "beta": "4.0.0",
-    "stage": "5.0.0-alpha"
-}))
-
-v1 := NewGroup(api, ">=1.0.0 <2.0.0")
-v1.Get/Post...
-
-v4 := NewGroup(api, ">=4.0.0 <5.0.0")
-v4.Get/Post...
-
-stage := NewGroup(api, "5.0.0-alpha")
-stage.Get/Post...
-```
-
-- New [Basic Authentication](https://github.com/kataras/iris/tree/v12/middleware/basicauth) middleware. Its `Default` function has not changed, however, the rest, e.g. `New` contains breaking changes as the new middleware features new functionalities.
-- Add `iris.DirOptions.SPA bool` field to allow [Single Page Applications](https://github.com/kataras/iris/tree/v12/_examples/file-server/single-page-application/basic/main.go) under a file server.
-- A generic User interface, see the `Context.SetUser/User` methods in the New Context Methods section for more. In-short, the basicauth middleware's stored user can now be retrieved through `Context.User()` which provides more information than the native `ctx.Request().BasicAuth()` method one. Third-party authentication middleware creators can benefit of these two methods, plus the Logout below. 
-- A `Context.Logout` method is added, can be used to invalidate [basicauth](https://github.com/kataras/iris/blob/v12/_examples/auth/basicauth/basic/main.go) or [jwt](https://github.com/kataras/iris/blob/v12/_examples/auth/jwt/blocklist/main.go) client credentials.
-- Add the ability to [share functions](https://github.com/kataras/iris/tree/v12/_examples/routing/writing-a-middleware/share-funcs) between handlers chain and add an [example](https://github.com/kataras/iris/tree/v12/_examples/routing/writing-a-middleware/share-services) on sharing Go structures (aka services).
-
-- Add the new `Party.UseOnce` method to the `*Route`
-- Add a new `*Route.RemoveHandler(...any) int` and `Party.RemoveHandler(...any) Party` methods, delete a handler based on its name or the handler pc function.
-
-```go
-func middleware(ctx iris.Context) {
-    // [...]
-}
-
-func main() {
-    app := iris.New()
-
-    // Register the middleware to all matched routes.
-    app.Use(middleware)
-
-    // Handlers = middleware, other
-    app.Get("/", index)
-
-    // Handlers = other
-    app.Get("/other", other).RemoveHandler(middleware)
-}
-```
-
-- Redis Driver is now based on the [go-redis](https://github.com/go-redis/redis/) module. Radix and redigo removed entirely. Sessions are now stored in hashes which fixes [issue #1610](https://github.com/kataras/iris/issues/1610). The only breaking change on default configuration is that the `redis.Config.Delim` option was removed. The redis sessions database driver is now defaults to the `&redis.GoRedisDriver{}`. End-developers can implement their own implementations too. The `Database#Close` is now automatically called on interrupt signals, no need to register it by yourself.
-
-- Add builtin support for **[i18n pluralization](https://github.com/kataras/iris/tree/v12/_examples/i18n/plurals)**. Please check out the [following yaml locale example](https://github.com/kataras/iris/tree/v12/_examples/i18n/plurals/locales/en-US/welcome.yml) to see an overview of the supported formats.
-- Fix [#1650](https://github.com/kataras/iris/issues/1650)
-- Fix [#1649](https://github.com/kataras/iris/issues/1649)
-- Fix [#1648](https://github.com/kataras/iris/issues/1648)
-- Fix [#1641](https://github.com/kataras/iris/issues/1641)
-
-- Add `Party.SetRoutesNoLog(disable bool) Party` to disable (the new) verbose logging of next routes.
-- Add `mvc.Application.SetControllersNoLog(disable bool) *mvc.Application` to disable (the new) verbose logging of next controllers. As requested at [#1630](https://github.com/kataras/iris/issues/1630).
-
-- Fix [#1621](https://github.com/kataras/iris/issues/1621) and add a new `cache.WithKey` to customize the cached entry key.
-
-- Add a `Response() *http.Response` to the Response Recorder.
-- Fix Response Recorder `Flush` when transfer-encoding is `chunked`.
-- Fix Response Recorder `Clone` concurrent access afterwards.
-
-- Add a `ParseTemplate` method on view engines to manually parse and add a template from a text as [requested](https://github.com/kataras/iris/issues/1617). [Examples](https://github.com/kataras/iris/tree/v12/_examples/view/parse-template).
-- Full `http.FileSystem` interface support for all **view** engines as [requested](https://github.com/kataras/iris/issues/1575). The first argument of the functions(`HTML`, `Blocks`, `Pug`, `Ace`, `Jet`, `Django`, `Handlebars`) can now be either a directory of `string` type (like before) or a value which completes the `http.FileSystem` interface. The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string.
-
-- Add `Route.ExcludeSitemap() *Route` to exclude a route from sitemap as requested in [chat](https://chat.iris-go.com), also offline routes are excluded automatically now.
-
-- Improved tracing (with `app.Logger().SetLevel("debug")`) for routes. Screens:
-
-#### DBUG Routes (1)
-
-![DBUG routes 1](https://iris-go.com/static/images/v12.2.0-dbug.png?v=0)
-
-#### DBUG Routes (2)
-
-![DBUG routes 2](https://iris-go.com/static/images/v12.2.0-dbug2.png?v=0)
-
-#### DBUG Routes (3)
-
-![DBUG routes with Controllers](https://iris-go.com/static/images/v12.2.0-dbug3.png?v=0)
-
-- Update the [pprof middleware](https://github.com/kataras/iris/tree/v12/middleware/pprof).
-
-- New `Controller.HandleHTTPError(mvc.Code) <T>` optional Controller method to handle http errors as requested at: [MVC - More Elegent OnErrorCode registration?](https://github.com/kataras/iris/issues/1595). Example can be found [here](https://github.com/kataras/iris/tree/v12/_examples/mvc/error-handler-http/main.go).
-
-![MVC: HTTP Error Handler Method](https://user-images.githubusercontent.com/22900943/90948989-e04cd300-e44c-11ea-8c97-54d90fb0cbb6.png)
-
-- New [Rewrite Engine Middleware](https://github.com/kataras/iris/tree/v12/middleware/rewrite). Set up redirection rules for path patterns using the syntax we all know. [Example Code](https://github.com/kataras/iris/tree/v12/_examples/routing/rewrite).
-
-```yml
-RedirectMatch: # REDIRECT_CODE_DIGITS | PATTERN_REGEX | TARGET_REPL
-  # Redirects /seo/* to /*
-  - 301 /seo/(.*) /$1
-
-  # Redirects /docs/v12* to /docs
-  - 301 /docs/v12(.*) /docs
-
-  # Redirects /old(.*) to /
-  - 301 /old(.*) /
-
-  # Redirects http or https://test.* to http or https://newtest.*
-  - 301 ^(http|https)://test.(.*) $1://newtest.$2
-
-  # Handles /*.json or .xml as *?format=json or xml,
-  # without redirect. See /users route.
-  # When Code is 0 then it does not redirect the request,
-  # instead it changes the request URL
-  # and leaves a route handle the request.
-  - 0 /(.*).(json|xml) /$1?format=$2
-
-# Redirects root domain to www.
-# Creation of a www subdomain inside the Application is unnecessary,
-# all requests are handled by the root Application itself.
-PrimarySubdomain: www
-```
-
-- New `TraceRoute bool` on [middleware/logger](https://github.com/kataras/iris/tree/v12/middleware/logger) middleware. Displays information about the executed route. Also marks the handlers executed. Screenshot:
-
-![logger middleware: TraceRoute screenshot](https://iris-go.com/static/images/github/logger-trace-route.png)
-
-- Implement feature request [Log when I18n Translation Fails?](https://github.com/kataras/iris/issues/1593) by using the new `Application.I18n.DefaultMessageFunc` field **before** `I18n.Load`. [Example of usage](https://github.com/kataras/iris/blob/v12/_examples/i18n/basic/main.go#L28-L50).
-
-- Fix [#1594](https://github.com/kataras/iris/issues/1594) and add a new `PathAfterHandler` which can be set to true to enable the old behavior (not recommended though).
-
-- New [apps](https://github.com/kataras/iris/tree/v12/apps) subpackage. [Example of usage](https://github.com/kataras/iris/tree/v12/_examples/routing/subdomains/redirect/multi-instances).
-
-![apps image example](https://user-images.githubusercontent.com/22900943/90459288-8a54f400-e109-11ea-8dea-20631975c9fc.png)
-
-- Fix `AutoTLS` when used with `iris.TLSNoRedirect` [*](https://github.com/kataras/iris/issues/1577). The `AutoTLS` runner can be customized through the new `iris.AutoTLSNoRedirect` instead, read its go documentation. Example of having both TLS and non-TLS versions of the same application without conflicts with letsencrypt `./well-known` path:
-
-![](https://iris-go.com/static/images/github/autotls-1.png)
-
-```go
-package main
-
-import (
-	"net/http"
-	"time"
-
-	"github.com/kataras/iris/v12"
-)
-
-func main() {
-	app := iris.New()
-	app.Logger().SetLevel("debug")
-
-	app.Get("/", func(ctx iris.Context) {
-		ctx.JSON(iris.Map{
-			"time": time.Now().Unix(),
-			"tls":  ctx.Request().TLS != nil,
-		})
-	})
-
-	var fallbackServer = func(acme func(http.Handler) http.Handler) *http.Server {
-		srv := &http.Server{Handler: acme(app)}
-		go srv.ListenAndServe()
-		return srv
-	}
-
-	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com",
-		iris.AutoTLSNoRedirect(fallbackServer)))
-}
-```
-
-- `iris.Minify` middleware to minify responses based on their media/content-type.
-
-- `Context.OnCloseErr` and `Context.OnConnectionCloseErr` - to call a function of `func() error`  instead of an `iris.Handler` when request is closed or manually canceled.
-
-- `Party.UseError(...Handler)` - to register handlers to run before any http errors (e.g. before `OnErrorCode/OnAnyErrorCode` or default error codes when no handler is responsible to handle a specific http status code).
-
-- `Party.UseRouter(...Handler) and Party.ResetRouterFilters()` - to register handlers before the main router, useful on handlers that should control whether the router itself should ran or not. Independently of the incoming request's method and path values. These handlers will be executed ALWAYS against ALL incoming matched requests. Example of use-case: CORS.
-
-- `*versioning.Group` type is a full `Party` now.
-
-- `Party.UseOnce` - either inserts a middleware, or on the basis of the middleware already existing, replace that existing middleware instead.
-
-- Ability to register a view engine per group of routes or for the current chain of handlers through `Party.RegisterView` and `Context.ViewEngine` respectfully.
-
-- Add [Blocks](_examples/view/template_blocks_0) template engine. <!-- Reminder for @kataras: follow https://github.com/flosch/pongo2/pull/236#issuecomment-668950566 discussion so we can get back on using the original pongo2 repository as they fixed the issue about an incompatible 3rd party package (although they need more fixes, that's why I commented there) -->
-
-- Add [Ace](_examples/view/template_ace_0) template parser to the view engine and other minor improvements.
-
-- Fix huge repo size of 55.7MB, which slows down the overall Iris installation experience. Now, go-get performs ~3 times faster. I 've managed it using the [bfg-repo-cleaner](https://github.com/rtyley/bfg-repo-cleaner) tool - an alternative to  git-filter-branch command. Watch the small gif below to learn how:
-
-[![](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)](https://media.giphy.com/media/U8560aiWTurW4iAOLn/giphy.gif)
-
-- [gRPC](https://grpc.io/) features:
-    - New Router [Wrapper](middleware/grpc).
-    - New MVC `.Handle(ctrl, mvc.GRPC{...})` option which allows to register gRPC services per-party (without the requirement of a full wrapper) and optionally strict access to gRPC clients only, see the [example here](_examples/mvc/grpc-compatible).
-
-- Add `Configuration.RemoteAddrHeadersForce bool` to force `Context.RemoteAddr() string` to return the first entry of request headers as a fallback instead of the `Request.RemoteAddr` one, as requested at: [1567#issuecomment-663972620](https://github.com/kataras/iris/issues/1567#issuecomment-663972620).
-
-- Fix [#1569#issuecomment-663739177](https://github.com/kataras/iris/issues/1569#issuecomment-663739177).
-
-- Fix [#1564](https://github.com/kataras/iris/issues/1564).
-
-- Fix [#1553](https://github.com/kataras/iris/issues/1553).
-
-- New `DirOptions.Cache` to cache assets in-memory among with their compressed contents (in order to be ready to served if client ask). Learn more about this feature by reading [all #1556 comments](https://github.com/kataras/iris/issues/1556#issuecomment-661057446). Usage:
-
-```go
-var dirOpts = DirOptions{
-    // [...other options]
-    Cache: DirCacheOptions{
-        Enable: true,
-        // Don't compress files smaller than 300 bytes.
-        CompressMinSize: 300,
-        // Ignore compress already compressed file types
-        // (some images and pdf).
-        CompressIgnore: iris.MatchImagesAssets,
-        // Gzip, deflate, br(brotli), snappy.
-        Encodings: []string{"gzip", "deflate", "br", "snappy"},
-        // Log to the stdout the total reduced file size.
-        Verbose: 1,
-    },
-}
-```
-
-- New `DirOptions.PushTargets` and `PushTargetsRegexp` to push index' assets to the client without additional requests. Inspirated by issue [#1562](https://github.com/kataras/iris/issues/1562). Example matching all `.js, .css and .ico` files (recursively):
-
-```go
-var dirOpts = iris.DirOptions{
-    // [...other options]
-    IndexName: "/index.html",
-    PushTargetsRegexp: map[string]*regexp.Regexp{
-        "/": regexp.MustCompile("((.*).js|(.*).css|(.*).ico)$"),
-        // OR:
-        // "/": iris.MatchCommonAssets,
-    },
-    Compress: true,
-}
-```
-
-- Update jet parser to v5.0.2, closes [#1551](https://github.com/kataras/iris/issues/1551). It contains two breaking changes by its author:
-    - Relative paths on `extends, import, include...` tmpl functions, e.g. `{{extends "../layouts/application.jet"}}` instead of `layouts/application.jet`
-    - the new [jet.Ranger](https://github.com/CloudyKit/jet/pull/165) interface now requires a `ProvidesIndex() bool` method too
-    - Example has been [updated](https://github.com/kataras/iris/tree/v12/_examples/view/template_jet_0)
-
-- Fix [#1552](https://github.com/kataras/iris/issues/1552).
-
-- Proper listing of root directories on `Party.HandleDir` when its `DirOptions.ShowList` was set to true.
-    - Customize the file/directory listing page through views, see [example](https://github.com/kataras/iris/tree/v12/_examples/file-server/file-server).
-
-- Socket Sharding as requested at [#1544](https://github.com/kataras/iris/issues/1544). New `iris.WithSocketSharding` Configurator and `SocketSharding bool` setting.
-
-- Versioned Controllers feature through the new `mvc.Version` option. See [_examples/mvc/versioned-controller](https://github.com/kataras/iris/blob/v12/_examples/mvc/versioned-controller/main.go).
-
-- Fix [#1539](https://github.com/kataras/iris/issues/1539).
-
-- New [rollbar example](https://github.com/kataras/iris/blob/v12/_examples/logging/rollbar/main.go).
-
-- New builtin [requestid](https://github.com/kataras/iris/tree/v12/middleware/requestid) middleware.
-
-- New builtin [JWT](https://github.com/kataras/iris/tree/v12/middleware/jwt) middleware based on the fastest JWT implementation; [kataras/jwt](https://github.com/kataras/jwt) featured with optional wire encryption to set claims with sensitive data when necessary.
-
-- New `iris.RouteOverlap` route registration rule. `Party.SetRegisterRule(iris.RouteOverlap)` to allow overlapping across multiple routes for the same request subdomain, method, path. See [1536#issuecomment-643719922](https://github.com/kataras/iris/issues/1536#issuecomment-643719922). This allows two or more **MVC Controllers** to listen on the same path based on one or more registered dependencies (see [_examples/mvc/authenticated-controller](https://github.com/kataras/iris/tree/v12/_examples/mvc/authenticated-controller)).
-
-- `Context.ReadForm` now can return an `iris.ErrEmptyForm` instead of `nil` when the new `Configuration.FireEmptyFormError` is true  (when `iris.WithEmptyFormError` is set) on missing form body to read from.
-
-- `Configuration.EnablePathIntelligence | iris.WithPathIntelligence` to enable path intelligence automatic path redirection on the most closest path (if any), [example]((https://github.com/kataras/iris/blob/v12/_examples/routing/intelligence/main.go)
-
-- Enhanced cookie security and management through new `Context.AddCookieOptions` method and new cookie options (look on New Package-level functions section below), [securecookie](https://github.com/kataras/iris/tree/v12/_examples/cookies/securecookie) example has been updated.
-- `Context.RemoveCookie` removes also the Request's specific cookie of the same request lifecycle when `iris.CookieAllowReclaim` is set to cookie options, [example](https://github.com/kataras/iris/tree/v12/_examples/cookies/options).
-
-- `iris.TLS` can now accept certificates in form of raw `[]byte` contents too.
-- `iris.TLS` registers a secondary http server which redirects "http://" to their "https://" equivalent requests, unless the new `iris.TLSNoRedirect` host Configurator is provided on `iris.TLS`, e.g. `app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key", iris.TLSNoRedirect))`. There is `iris.AutoTLSNoRedirect` option for `AutoTLS` too.
-
-- Fix an [issue](https://github.com/kataras/i18n/issues/1) about i18n loading from path which contains potential language code.
-
-- Server will not return neither log the `ErrServerClosed` error if `app.Shutdown` was called manually via interrupt signal(CTRL/CMD+C), note that if the server closed by any other reason the error will be fired as previously (unless `iris.WithoutServerError(iris.ErrServerClosed)`).
-
-- Finally, Log level's and Route debug information colorization is respected across outputs. Previously if the application used more than one output destination (e.g. a file through `app.Logger().AddOutput`) the color support was automatically disabled from all, including the terminal one, this problem is fixed now. Developers can now see colors in their terminals while log files are kept with clear text.
-
-- New `iris.WithLowercaseRouting` option which forces all routes' paths to be lowercase and converts request paths to their lowercase for matching.
-
-- New `app.Validator { Struct(any) error }` field and `app.Validate` method were added. The `app.Validator = ` can be used to integrate a 3rd-party package such as [go-playground/validator](https://github.com/go-playground/validator). If set-ed then Iris `Context`'s `ReadJSON`, `ReadXML`, `ReadMsgPack`, `ReadYAML`, `ReadForm`, `ReadQuery`, `ReadBody` methods will return the validation error on data validation failures. The [read-json-struct-validation](_examples/request-body/read-json-struct-validation) example was updated.
-
-- A result of <T> can implement the new `hero.PreflightResult` interface which contains a single method of `Preflight(iris.Context) error`. If this method exists on a custom struct value which is returned from a handler then it will fire that `Preflight` first and if not errored then it will cotninue by sending the struct value as JSON(by-default) response body.
-
-- `ctx.JSON, JSONP, XML`: if `iris.WithOptimizations` is NOT passed on `app.Run/Listen` then the indentation defaults to `"    "` (four spaces) and `"  "` respectfully otherwise it is empty or the provided value.
-
-- Hero Handlers (and `app.ConfigureContainer().Handle`) do not have to require `iris.Context` just to call `ctx.Next()` anymore, this is done automatically now.
-
-- Improve Remote Address parsing as requested at: [#1453](https://github.com/kataras/iris/issues/1453). Add `Configuration.RemoteAddrPrivateSubnets` to exclude those addresses when fetched by `Configuration.RemoteAddrHeaders` through `context.RemoteAddr() string`.
-
-- Fix [#1487](https://github.com/kataras/iris/issues/1487).
-
-- Fix [#1473](https://github.com/kataras/iris/issues/1473).
-
-## New Package-level Variables
-
-- `iris.DirListRichOptions` to pass on `iris.DirListRich` method.
-- `iris.DirListRich` to override the default look and feel if the `DirOptions.ShowList` was set to true, can be passed to `DirOptions.DirList` field.
-- `DirOptions.PushTargets` for http/2 push on index [*](https://github.com/kataras/iris/tree/v12/_examples/file-server/http2push/main.go).
-- `iris.Compression` middleware to compress responses and decode compressed request data respectfully.
-- `iris.B, KB, MB, GB, TB, PB, EB` for byte units.
-- `TLSNoRedirect` to disable automatic "http://" to "https://" redirections (see below)
-- `CookieAllowReclaim`, `CookieAllowSubdomains`, `CookieSameSite`, `CookieSecure` and `CookieEncoding` to bring previously sessions-only features to all cookies in the request.
-
-## New Context Methods
-
-- `Context.FormFiles(key string, before ...func(*Context, *multipart.FileHeader) bool) (files []multipart.File, headers []*multipart.FileHeader, err error)` method.
-- `Context.ReadURL(ptr any) error` shortcut of `ReadParams` and `ReadQuery`. Binds URL dynamic path parameters and URL query parameters to the given "ptr" pointer of a struct value.
-- `Context.SetUser(User)` and `Context.User() User` to store and retrieve an authenticated client. Read more [here](https://github.com/iris-contrib/middleware/issues/63).
-- `Context.SetLogoutFunc(fn any, persistenceArgs ...any)` and `Logout(args ...any) error` methods to allow different kind of auth middlewares to be able to set a "logout" a user/client feature with a single function, the route handler may not be aware of the implementation of the authentication used.
-- `Context.SetFunc(name string, fn any, persistenceArgs ...any)` and `Context.CallFunc(name string, args ...any) ([]reflect.Value, error)` to allow middlewares to share functions dynamically when the type of the function is not predictable, see the [example](https://github.com/kataras/iris/tree/v12/_examples/routing/writing-a-middleware/share-funcs) for more.
-- `Context.TextYAML(any) error` same as `Context.YAML` but with set the Content-Type to `text/yaml` instead (Google Chrome renders it as text). 
-- `Context.IsDebug() bool` reports whether the application is running under debug/development mode. It is a shortcut of Application.Logger().Level >= golog.DebugLevel.
-- `Context.IsRecovered() bool` reports whether the current request was recovered from the [recover middleware](https://github.com/kataras/iris/tree/v12/middleware/recover). Also the `Context.GetErrPublic() (bool, error)`, `Context.SetErrPrivate(err error)` methods and `iris.ErrPrivate` interface have been introduced. 
-- `Context.RecordRequestBody(bool)` same as the Application's `DisableBodyConsumptionOnUnmarshal` configuration field but registers per chain of handlers. It makes the request body readable more than once.
-- `Context.IsRecordingBody() bool` reports whether the request body can be readen multiple times.
-- `Context.ReadHeaders(ptr any) error` binds request headers to "ptr". [Example](https://github.com/kataras/iris/blob/v12/_examples/request-body/read-headers/main.go).
-- `Context.ReadParams(ptr any) error` binds dynamic path parameters to "ptr". [Example](https://github.com/kataras/iris/blob/v12/_examples/request-body/read-params/main.go).
-- `Context.SaveFormFile(fh *multipart.FileHeader, dest string) (int64, error)` previously unexported. Accepts a result file of `Context.FormFile` and saves it to the disk.
-- `Context.URLParamSlice(name string) []string` is a a shortcut of `ctx.Request().URL.Query()[name]`. Like `URLParam` but it returns all values as a string slice instead of a single string separated by commas. Note that it skips any empty values (e.g. https://iris-go.com?values=).
-- `Context.PostValueMany(name string) (string, error)` returns the post data of a given key. The returned value is a single string separated by commas on multiple values. It also reports whether the form was empty or when the "name" does not exist or whether the available values are empty. It strips any empty key-values from the slice before return. See `ErrEmptyForm`, `ErrNotFound` and `ErrEmptyFormField` respectfully. The `PostValueInt`, `PostValueInt64`, `PostValueFloat64` and `PostValueBool` now respect the above errors too (the `PostValues` method now returns a second output argument of `error` too, see breaking changes below). 
-- `Context.URLParamsSorted() []memstore.StringEntry` returns a sorted (by key) slice of key-value entries of the URL Query parameters.
-- `Context.ViewEngine(ViewEngine)` to set a view engine on-fly for the current chain of handlers, responsible to render templates through `ctx.View`. [Example](_examples/view/context-view-engine).
-- `Context.SetErr(error)` and `Context.GetErr() error` helpers.
-- `Context.CompressWriter(bool) error` and `Context.CompressReader(bool) error`.
-- `Context.Clone() Context` returns a copy of the Context safe for concurrent access.
-- `Context.IsCanceled() bool` reports whether the request has been canceled by the client.
-- `Context.IsSSL() bool` reports whether the request is under HTTPS SSL (New `Configuration.SSLProxyHeaders` and `HostProxyHeaders` fields too).
-- `Context.CompressReader(enable bool)` method and `iris.CompressReader` middleware to enable future request read body calls to decompress data, [example](_examples/compression/main.go).
-- `Context.RegisterDependency(v any)` and `Context.UnregisterDependency(typ reflect.Type)` to register/remove struct dependencies on serve-time through a middleware.
-- `Context.SetID(id any)` and `Context.GetID() any` added to register a custom unique indetifier to the Context, if necessary.
-- `Context.Scheme() string` returns the full scheme of the request URL.
-- `Context.SubdomainFull() string` returns the full subdomain(s) part of the host (`host[0:rootLevelDomain]`).
-- `Context.Domain() string` returns the root level domain.
-- `Context.AddCookieOptions(...CookieOption)` adds options for `SetCookie`, `SetCookieKV, UpsertCookie` and `RemoveCookie` methods for the current request.
-- `Context.ClearCookieOptions()` clears any cookie options registered through `AddCookieOptions`.
-- `Context.SetLanguage(langCode string)` force-sets a language code from inside a middleare, similar to the `app.I18n.ExtractFunc`
-- `Context.ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` methods to throttle the "download" speed of the client
-- `Context.IsHTTP2() bool` reports whether the protocol version for incoming request was HTTP/2
-- `Context.IsGRPC() bool` reports whether the request came from a gRPC client
-- `Context.UpsertCookie(*http.Cookie, cookieOptions ...context.CookieOption)` upserts a cookie, fixes [#1485](https://github.com/kataras/iris/issues/1485) too
-- `Context.StopWithStatus(int)` stops the handlers chain and writes the status code
-- `StopWithText(statusCode int, format string, args ...any)` stops the handlers chain, writes thre status code and a plain text message
-- `Context.StopWithError(int, error)` stops the handlers chain, writes thre status code and the error's message
-- `Context.StopWithJSON(int, any)` stops the handlers chain, writes the status code and sends a JSON response
-- `Context.StopWithProblem(int, iris.Problem)` stops the handlers, writes the status code and sends an `application/problem+json` response
-- `Context.Protobuf(proto.Message)` sends protobuf to the client (note that the `Context.JSON` is able to send protobuf as JSON)
-- `Context.MsgPack(any)` sends msgpack format data to the client
-- `Context.ReadProtobuf(ptr)` binds request body to a proto message
-- `Context.ReadJSONProtobuf(ptr, ...options)` binds JSON request body to a proto message
-- `Context.ReadMsgPack(ptr)` binds request body of a msgpack format to a struct
-- `Context.ReadBody(ptr)` binds the request body to the "ptr" depending on the request's Method and Content-Type
-- `Context.ReflectValue() []reflect.Value` stores and returns the `[]reflect.ValueOf(ctx)`
-- `Context.Controller() reflect.Value` returns the current MVC Controller value.
-
-## MVC & Dependency Injection
-
-The new release contains a fresh new and awesome feature....**a function dependency can accept previous registered dependencies and update or return a new value of any type**.
-
-The new implementation is **faster** on both design and serve-time.
-
-The most common scenario from a route to handle is to:
-- accept one or more path parameters and request data, a payload
-- send back a response, a payload (JSON, XML,...)
-
-The new Iris Dependency Injection feature is about **33.2% faster** than its predecessor on the above case. This drops down even more the performance cost between native handlers and dynamic handlers with dependencies. This reason itself brings us, with safety and performance-wise, to the new `Party.ConfigureContainer(builder ...func(*iris.APIContainer)) *APIContainer` method which returns methods such as `Handle(method, relativePath string, handlersFn ...any) *Route` and `RegisterDependency`.
-
-Look how clean your codebase can be when using Iris':
-
-```go
-package main
-
-import "github.com/kataras/iris/v12"
-
-type (
-    testInput struct {
-        Email string `json:"email"`
-    }
-
-    testOutput struct {
-        ID   int    `json:"id"`
-        Name string `json:"name"`
-    }
-)
-
-func handler(id int, in testInput) testOutput {
-    return testOutput{
-        ID:   id,
-        Name: in.Email,
-    }
-}
-
-func main() {
-    app := iris.New()
-    app.ConfigureContainer(func(api *iris.APIContainer) {
-        api.Post("/{id:int}", handler)
-    })
-    app.Listen(":5000", iris.WithOptimizations)
-}
-```
-
-Your eyes don't lie you. You read well, no `ctx.ReadJSON(&v)` and `ctx.JSON(send)` neither `error` handling are presented. It is a huge relief but if you ever need, you still have the control over those, even errors from dependencies. Here is a quick list of the new Party.ConfigureContainer()'s fields and methods:
-
-```go
-// Container holds the DI Container of this Party featured Dependency Injection.
-// Use it to manually convert functions or structs(controllers) to a Handler.
-Container *hero.Container
-```
-
-```go
-// OnError adds an error handler for this Party's DI Hero Container and its handlers (or controllers).
-// The "errorHandler" handles any error may occurred and returned
-// during dependencies injection of the Party's hero handlers or from the handlers themselves.
-OnError(errorHandler func(iris.Context, error))
-```
-
-```go
-// RegisterDependency adds a dependency.
-// The value can be a single struct value or a function.
-// Follow the rules:
-// * <T> {structValue}
-// * func(accepts <T>)                                 returns <D> or (<D>, error)
-// * func(accepts iris.Context)                        returns <D> or (<D>, error)
-//
-// A Dependency can accept a previous registered dependency and return a new one or the same updated.
-// * func(accepts1 <D>, accepts2 <T>)                  returns <E> or (<E>, error) or error
-// * func(acceptsPathParameter1 string, id uint64)     returns <T> or (<T>, error)
-//
-// Usage:
-//
-// - RegisterDependency(loggerService{prefix: "dev"})
-// - RegisterDependency(func(ctx iris.Context) User {...})
-// - RegisterDependency(func(User) OtherResponse {...})
-RegisterDependency(dependency any)
-
-// UseResultHandler adds a result handler to the Container.
-// A result handler can be used to inject the returned struct value
-// from a request handler or to replace the default renderer.
-UseResultHandler(handler func(next iris.ResultHandler) iris.ResultHandler)
-```
-
-<details><summary>ResultHandler</summary>
-
-```go
-type ResultHandler func(ctx iris.Context, v any) error
-```
 </details>
+<br/>
+
+- Fixed a crash in every application that runs compression under the access log, which is what `iris.NewBuilder()` registers for `Compression(true)` with `LogRequests(true)` or `LogRequestsWith(ac)`. A request carrying an `Accept-Encoding` the server supports (every browser sends one) panicked with a nil pointer dereference in `compress.(*ResponseWriter).StatusCode`, reached from `accesslog.Handler` through `ctx.GetStatusCode()`. The access log sits above recovery, so net/http dropped the connection. `compress.Handler`, `compress.Safe` and `compress.Limited` closed their pooled writer and returned it to the pool but left it on the Context; they now put the previous writer back first, on the normal path as on the panic path. In-process tests and curl send no `Accept-Encoding`, which is why nobody saw it.
+- The middleware that record the response put the previous response writer back on the Context before they release their pooled `ResponseRecorder`: `recorder.Response`, `accesslog.Handler` (with `ResponseBody` or `BytesSent`), `servertiming.Handler`, `sessions.Handler` and the `httpcache` handler. The released recorder used to stay on the Context. A handler registered outside them that wrote after `ctx.Next()`, such as `errors.Handler` answering a bare failure status, wrote into a buffer nobody sent, and under load the recorder was shared with another request (the race detector reports it). A recorder released with an empty body no longer sends the status line on its own, so that outer handler can still set a Content-Type and write. If you swap the writer by hand, restore it the same way before `recorder.ReleaseResponseRecorder` or `compress.ReleaseResponseWriter`; both doc comments and `middleware/compress/README.md` show the five lines.
+- `compress.ResponseWriter.Written()` reports the bytes the handlers wrote, counted before compression. It used to report the count of the writer underneath, which stays at "nothing written" for deflate, brotli, snappy, s2 and zstd until the compressor flushes. `errors.Handler` then believed no body existed and appended a second JSON error document after the one a route had rendered, for example on an `mvc.UseRepository` resource requested with `Accept-Encoding: br`. gzip was not affected, because it writes its 10-byte header at once. A side effect: `httpcost` and the identity cost handler, which read `Written()`, count uncompressed bytes when they run inside compression.
+- `recorder.ResponseRecorder.Written()` reports the state of the writer it wraps when nothing is recorded: `context.NoWritten` for an untouched response, `context.StatusCodeWritten` or a byte count when the status line or a body already went out underneath. It used to answer 0 in all of these cases, which is the value that means "status line sent, no body yet", so code that asks whether a response is still untouched could not tell under a recorder. With something recorded it reports the recorded length, as before.
+- **Behaviour change:** an application built with `iris.NewBuilder()`, and with `iris.Default()` which uses it, answers a failure status that reaches the client with nothing written with the `rest/errors` JSON envelope. Covered: a status of 400 or above set by a route handler or by a middleware given to `RouterMiddlewares`, `Middlewares` or `API`, whether or not it stopped the chain (`ctx.StopWithStatus(403)`, `ctx.NotFound()`, the 401 of `jwt`, `basicauth` and `oauth2`, the rejections of `ipaccess`, `hcaptcha` and `recaptcha`, the 413 of `bodylimit`, a file the file server does not have); an unknown path (404); and a method a known path does not serve (405, with the `Allow` header intact, when `Options.Router.FireMethodNotAllowed` is on; it is off by default and the answer is then the 404 one). These used to reach the client with an empty body, or with the text `Not Found` or `Method Not Allowed`; they now answer `{"id":"...","http_error_code":{"canonical_name":"PERMISSION_DENIED","status":403},"message":"Forbidden"}` and its `UNAUTHENTICATED`, `NOT_FOUND`, `METHOD_NOT_ALLOWED` and `RESOURCE_EXHAUSTED` counterparts. The 413 of `bodylimit` is the one in that list whose message is not the status text: it answers `TOO_LARGE` with the message `request body too large`. Not covered, because they are answered ahead of the handler and keep their bare status: a rejection from a handler a `Configurator` registered with `UseRouter`, and the 415 of the compression middleware for a request body that is not what its `Content-Encoding` says. Not covered either: a middleware that writes its own body when it rejects keeps that body. `versioning`, for example, still answers 501 with the text `version not found`. A response that has a body, that declares a `Content-Length`, or whose status line is already on the wire, is not touched, nor is a hijacked connection, a status below 400 or `/health`. The builder registers `errors.Handler` as the last of its built-in router middleware, after compression, and as the 404 and the 405 handler when the application registered none: your own `app.HandleNoRoute` or `app.HandleNoMethod`, from a `Configurator` given to `NewBuilder` or `Services` or on the value `Default` returns, still runs and wins. Applications created with `iris.New()` are unchanged; they opt in with `app.UseRouter(errors.Handler)`, `app.HandleNoRoute(errors.Handler)` and `app.HandleNoMethod(errors.Handler)`. A client or a test that expected an empty failure body, or the text `Not Found`, from a builder application has to read the JSON instead. Expect more traffic at the collector too: one configured through `Errors(errors.NewOptions().SetCollector(...))` now receives every 404, every 405 and every bare 401 or 403, where it used to receive only the errors the application reported through `rest/errors`.
+- **Behaviour change:** `errors.Handler` renders a failure status with nothing written whether or not the handler stopped the chain. It used to require a stopped chain, so `ctx.NotFound()` in a route, `ctx.StatusCode(404)` followed by a return, and the file server's missing file kept an empty body under it. It also renders only a response nobody has touched: once the status line is on the wire (a flush with no body yet) or the connection is hijacked it writes nothing, where it used to append a JSON document to a response the client had already started to read. A response that declares a `Content-Length` is left alone as well, because whoever declared it chose the body, an empty one included: a standard handler converted with `iris.FromStd` that sets `Content-Length: 0` and calls `w.WriteHeader(401)`, which is what `httputil.ReverseProxy` relays for an upstream's empty 401, keeps its empty answer. A standard handler that sets a failure status and neither writes, flushes nor declares a length gets the envelope. This applies wherever the handler is installed, `mvc.UseController` and `mvc.UseRepository` resources and `iris.New()` applications included.
+- **Behaviour change:** `errors.Handler` does not send the text of a stored error on a status of 500 or above unless the error is not private and a mapping recognises it. `ctx.StopWithPlainError(503, err)` and `ctx.SetErr(err)` next to a 5xx status used to answer `err.Error()` as the message when the error was not marked private, so a store that was down had its address read by the client. The error now goes to the configured error logger, the collector receives it in full, and the client reads the status with its canonical code and the generic `"server error"` message, which is what `errors.HandleError` does with an error no mapping recognises. The status the handler set stays: a 503 is still a 503 (`UNAVAILABLE`). One exception: a stored `*errors.Error` that is not private is sent as it is, with the code of that status, because it was built for the client. It is logged like any other, but the collector is not called for it. Below 500 nothing changes for a stored error that is not private: its text is the message, as a message written for the client should be. To show a client a 5xx text of your own, render it yourself (`errors.Unavailable.Message(ctx, "...")`) or map the error.
+- **Behaviour change:** a private stored error on a status below 500 renders the status text and no detail, where `errors.Handler` used to render `"message":"server error","detail":"an unexpected error occurred while processing the request"`. The `jwt` middleware stops every bad token with `ctx.StopWithError(401, iris.PrivateError(err))`, so its 401 read as a server fault; it now reads `"message":"Unauthorized"`, like the 401 of `basicauth`. The private text stays off the wire and still reaches the collector.
+- **Behaviour change:** `errors.Handler` and `ErrorCodeName.ErrPrivate` show nothing of a private error, whatever its type and whatever a mapping would make of it. `errors.Handler` used to look at a private stored error the way it looks at any other, so three kinds went out in full. A private error that a mapping recognises rendered through the mapping, with the mapping's status and the whole text as the message: `errors.NewOptions()` maps `sql.ErrNoRows` to `NotFound`, so `ctx.StopWithError(401, iris.PrivateError(fmt.Errorf("tenant db-eu-7: %w", sql.ErrNoRows)))` answered 404 with `"message":"tenant db-eu-7: sql: no rows in result set"`. It maps the `kataras/jwt` errors too, so under `Errors(errors.NewOptions())` the 401 of the `jwt` middleware answered `"message":"jwt: token is empty"`. A private error that wraps an `ErrorCodeName`, or that is a validation error, rendered the same way. And a private `*errors.Error` on a status of 500 or above was sent as it is. A private stored error is now answered before any mapping is asked: the status the handler set, with the status text as the message below 500 and the generic `"server error"` at 500 and above, where it is also logged. The `jwt` 401 reads `"message":"Unauthorized"` with or without options, which also means a client can no longer read from the message why its token was refused. Private means stored with `ctx.SetErrPrivate` or `iris.PrivateError`, or carrying the mark anywhere in its chain, which is what `errors.Private` builds and what a private error wrapped again with `fmt.Errorf("...: %w", err)` is; such an error on a status below 500 used to have its text sent as the message. `ctx.StopWithError` reads the chain the same way: `ctx.StopWithError(400, errors.Private(err))` used to write the whole text as a plain body, because it looked at the outermost value only, and it now sets the status and writes nothing, as it does for `iris.PrivateError(err)`. It stores such an error as private, so `ctx.ErrPublic()` reports it that way to every error handler, the status text handler of `app.EnableStatusCodeResponse()` included, while `ctx.GetErr()` still returns the error you passed. `errors.Internal.ErrPrivate(ctx, err)` answers the generic message for every error too: it used to send a `*errors.Error` as it is and to render a validation error with its fields. The collector receives the error in full in every one of these cases. If a mapping used to pick the status of an error you also store as private, set that status where you store the error, or store it as it is and return `errors.Private(err)` from the mapping function, which keeps the mapping's status and hides the text.
+- Fixed `errors.Handler` answering 500 for a body the client sent malformed. A JSON decode error stored next to a status below 500, as in `ctx.StopWithPlainError(400, err)` with the error of `ctx.ReadJSON`, answered 500 `INTERNAL` with `"message":"unable to parse response body"`. It now answers 400 `INVALID_ARGUMENT` with `"message":"unable to parse request body"` and the same detail, `malformed JSON` for half a document. The status stored next to the error decides: a JSON error stored with a status of 500 or above, such as a value the server could not encode, still answers 500.
+- **Behaviour change:** `bodylimit.New` answers one thing for a body past the limit, whenever it finds out. A request that declares a `Content-Length` above the limit is refused before the handler runs, and the error stored for it now wraps `context.ErrRequestEntityTooLarge`, the error the middleware's reader returns when a body with no declared length passes the limit while it is read. Under `errors.Handler` both answer 413 `TOO_LARGE` with the message `request body too large`; the declared-length case used to answer `"message":"failed to read request body: (content-length: 11, content-type: text/plain)"`. The stored error still matches `context.ErrReadRequestBody` with `errors.Is`, and without `errors.Handler` the answer is the bare 413 it was.
+- The framework's own middleware mark the internal failures they store on the Context as private, so no error handler, built-in or custom, shows them to a client: `sessions.Handler` (a database failure on load and on commit), `oauth2.AllowScopes`, `DisallowScopes`, `AllowPolicies` and `DisallowPolicies` (why a token was not accepted; the client reads the 401), `view.WithTemplate` (a template or data error), the `rewrite` engine (a target that does not parse), the favicon handler (a failed write) and `httpcache` (a failed store write or invalidation). `ctx.GetErr()` returns the same error as before for the server's own handlers. `httpcache` no longer stores a failed cache read on the Context at all: it logs it at error level and serves the request uncached. The stored error used to become the message of whatever failure the route answered next, so a 403 on a cached route went out as `"message":"failed to get cache: dial tcp ..."` while the store was down. Two consequences during a store outage: the log gets one error line per cached request (it is not throttled), and the invalidation handler, which skips its work when the Context carries an error, no longer skips because of a failed read earlier in the request. It tries, fails against the same store and stores that failure privately, so a mutation costs one more failed store call.
+- The access log leaves the response body out of a line whose response carries a `Content-Encoding` other than `identity`. It is registered outside compression (the builder's order, so that a panic is still logged), so for a compressed response its recorder holds the compressed bytes: `LogRequests(true)` would have written binary into `access_log.json` for every browser request, and a `Redact` function was handed bytes it cannot match, with the values it was meant to mask still recoverable from the log. Status, bytes sent and every other field are logged as usual, `Redact` is not called for that line, and a response that is not encoded is logged with its body as before. The body is not decompressed for the log, so an application that wants response bodies in the log under compression gets none.
+- A panic under compression no longer answers plain JSON labelled as compressed. The recovery handler sits outside compression and writes uncompressed, but the `Content-Encoding` and `Vary: Accept-Encoding` the compression middleware had announced were still on the response, so a browser failed to decode the 500. When nothing has left the compressor yet, the middleware now takes both back before it re-panics, drops what the handler had handed to the compressor and returns its writer to the pool without writing a footer. One case cannot be saved: a handler whose compressed output already left the compressor before the panic. gzip sends its 10-byte header on the first write, and any encoder sends bytes after a flush or once the body outgrows its buffer; that response is committed, as after any partial body. The middleware leaves its headers alone then and still writes no footer, so the client reads a compressed stream that ends early, which it can detect. That holds under an access log that records the response body too, where those bytes wait in the recorder: they go out as `Content-Encoding: gzip`, not as ten bytes of binary labelled plain text.
+- **Behaviour change:** the compression middleware steps aside for a response whose handler declared a `Content-Length` and wrote nothing, for example a standard handler that relays an upstream's empty 401 with `Content-Length: 0`. That response goes out as the handler left it, without `Content-Encoding` and without the `Vary: Accept-Encoding` the middleware had set. It used to answer `Content-Encoding: gzip` and `Content-Length: 0` with no bytes, because net/http refuses the empty compressed stream the middleware writes into a declared length of zero. `compress.ReleaseResponseWriter` applies the same rule to a writer you swapped in by hand. A response with no declared length is compressed as before, an empty one included.
+- New `httptest.NewController(t, prefix, controller, mw...)`, which builds a throwaway application with one controller registered under a prefix and returns what `httptest.New` returns, so a `Routing` value can be tested on its own without a server type or the builder chain. It installs what the builder installs for failures, so a controller test asserts the body production sends: the path parameter type and context error handlers, and `errors.Handler`, which renders a bare failure status and an unknown path under the prefix (404) as the `rest/errors` envelope. A method the controller does not serve answers that 404 envelope too, not a 405, because `Options.Router.FireMethodNotAllowed` is off by default and `NewController` takes no options. The variadic middleware is registered on the controller's own group, so it does not reach the 404 chain. Nothing else the builder chain adds is there: no CORS, no access log, no recovery, no compression. Earlier builds of `main` installed only the two error handlers; a test written against them that asserted an empty body or `Not Found` changes to the JSON.
+- `MapErrorAs` is a generic method: `Options.MapErrorAs[E error](code, render)` and `ErrorCodeMap.MapErrorAs[E error](code, render)`. It finds a typed error anywhere in the error tree with `errors.As` and hands it to a function that builds the `*errors.Error` to send, so a mapping can use the error's own fields; a nil function classifies without transforming, and a nil result falls through to the next mapping, like `MapErrorFunc` returning nil. It chains like every other mapping method, `errors.NewOptions().MapErrors(errors.NotFound, sql.ErrNoRows).MapErrorAs(errors.ResourceExhausted, func(e *QuotaError) *errors.Error { ... })`, and the error type is inferred from the function. Earlier builds of `main` had it as the package function `errors.MapErrorAs(mapper, code, render)` with an `errors.ErrorMapper` constraint, both removed: change `errors.MapErrorAs(opts, code, fn)` to `opts.MapErrorAs(code, fn)`, and `errors.MapErrorAs[*QuotaError](opts, code, nil)` to `opts.MapErrorAs[*QuotaError](code, nil)`.
+- New `errors.AsType[E](err) (E, bool)` in `rest/errors`, the standard library's `errors.AsType` next to the `Is`, `As`, `Unwrap` and `Join` the package already forwards, so a file that imports `rest/errors` as `errors` needs no second import for it: `if quota, ok := errors.AsType[*QuotaError](err); ok { ... }`.
+- **Behaviour change:** `ctx.SetCookie` replaces, like `ctx.SetHeader`. When the response already carries a `Set-Cookie` line with the same name, path and domain (domain compared case-insensitively, without a leading dot), that line is replaced in place and any further duplicates of it are dropped, so two `SetCookie` calls with one name, path and domain now emit one line instead of two (RFC 6265 section 4.1.1). A cookie with the same name but another path or domain is still added as its own line. `ctx.AddCookie` and `ctx.RemoveCookie` follow the same rule, so a cookie set and then removed in one response leaves one line, the removal. `ctx.UpsertCookie` is removed: call `ctx.SetCookie` instead (it matched on the name alone and returned a bool that nothing read).
+- `context.SetCookieKVExpiration` is renamed to `context.DefaultCookieExpiration` (the lifetime `ctx.AddCookie` gives a cookie when no `CookieExpires` option is passed, 365 days), and `iris.Patches().Context().SetCookieKVExpiration(d)` to `SetDefaultCookieExpiration(d)`, the spelling `SetDefaultPageSize` uses.
+- `context.IsErrPathCRSFToken` is renamed to `context.IsErrPathCSRFToken`, and it now finds a `schema.MultiError` wrapped inside another error (`errors.AsType`). The `ReadForm` doc no longer tells you to set `context.CSRFTokenFormKey` to an empty value, which a constant cannot be: the "csrf.token" key is fixed. The form decoder splits a key on dots, so a field tagged `form:"csrf.token"` never receives the token. To bind it, tag a struct field `form:"csrf"` and give its type a field tagged `form:"token"`.
+- `sessions.Options.Codecs` is renamed to `sessions.Options.DataCodecs`. `sessions.NewOptions` fills it as before; code that set or read `opts.Codecs` changes the field name.
+- **Behaviour change:** a standard handler converted with `iris.FromStd` reads the route parameters with `r.PathValue(name)` in all three forms (`http.Handler`, `func(w, r)` and `func(w, r, next)`); only the middleware form did before. All three also set `r.Pattern`, when it is empty, to the matched route's template as registered, for example `/users/{id:uuid}`, so standard middleware that labels requests by route works unchanged. That changes what such middleware records: a metrics or tracing label read from `r.Pattern` was empty before and is now the route template, so dashboards and alerts keyed on the old label see new series. The built-in 404 and 405 routes leave `r.Pattern` empty.
+- ngrok is now opt-in. The tunnel code moved out of `core/server` into the new package `core/server/ngrok`, which registers itself from `init()`. To use `ServerOptions.Ngrok` (`iris.NgrokOptions`), add `import _ "github.com/kataras/iris/v14/core/server/ngrok"`. `ServerOptions.Ngrok` and `NgrokOptions` are unchanged, so existing YAML configuration keeps working. **Behaviour change:** when `Ngrok` is set and the package is not imported, the server fails to start with `server: ngrok is configured but its listener is not linked in: add the import _ "github.com/kataras/iris/v14/core/server/ngrok"` instead of opening a tunnel. Why: every program that imported Iris linked the ngrok SDK for a feature most never use. `go list -deps .` on the root package drops from 370 to 347 packages, none of them ngrok's, and the hello-world example's binary from 23,760,384 to 20,997,120 bytes on windows/amd64. `core/server` gains `RegisterNgrokListener`, `RegisteredNgrokListener`, `NgrokListenerFunc` and `NgrokTunnelListener` for the registration. A `NgrokListenerFunc` returns a `NgrokTunnelListener`, so a listener registered there always reports the tunnel's public URL to the server.
+- **Behaviour change:** `cache.CacheControlBuilder.MaxAge` and `SMaxAge` take a `time.Duration` instead of an `int` of seconds, like every other duration in `middleware/`. The header still carries whole seconds: `MaxAge(time.Hour)` writes `max-age=3600`, and `MaxAge(0)` still writes `max-age=0`. A bare number still compiles but now means nanoseconds, so a value above zero and below one second panics with `cache: MaxAge(3.6µs) is below one second: pass a time.Duration, for example MaxAge(time.Hour)`, and a negative value panics too. Replace `MaxAge(3600)` with `MaxAge(time.Hour)` and `SMaxAge(7200)` with `SMaxAge(2 * time.Hour)`. `cache.DefaultOptions` and the README were converted.
+- `jwt.Get` is generic: `claims, ok := jwt.Get[*UserClaims](ctx)` replaces `claims := jwt.Get(ctx).(*UserClaims)`. It reports false, without a panic, when the request carries no claims or they are of another type. T is what the claims constructor passed to `Verify` returns, usually a pointer. `Verify` itself is unchanged.
+- `auth.Must` takes what `New` takes: `auth.Must[Customer](config)` replaces `auth.Must(auth.New[Customer](config))`, the same shape as `ipaccess.Must`, `rewrite.Must` and `httpcache.Must`.
+- Fixed `auth` signout leaving the access token cookie in the browser. `SigninHandler` and `RefreshHandler` set the cookie with the request's root domain (`Domain=example.com` for a request to `app.example.com`), and `SignoutHandler`, `SignoutAllHandler` and a failed `SigninHandler` removed it without a domain. A browser keys a cookie on its name, domain and path, so the removal named another cookie and the browser kept the one that holds the token: the next request was still signed in unless a provider had invalidated the token on the server. The removal now carries the same `Domain` and `Path` as the cookie it removes.
+- `oauth2.NewClient`, `(*oauth2.Server).RegisterClient` and `(*oauth2.Server).CreateClient` take one `oauth2.ClientRegistration` value (after the `ctx` for the two methods) instead of ten positional arguments, five of them strings that could be swapped without a compile error. The fields are `Name`, `Website`, `LogoURL` (named like `Client.LogoURL`), `RedirectURI`, `VerificationURI`, `GrantTypes`, `Scopes`, `CodeMaxAge`, `AccessMaxAge` and `RefreshMaxAge`; the three max ages stay `int` seconds. Defaults and validation are unchanged and now documented on the fields. Write `RegisterClient(ctx, oauth2.ClientRegistration{Name: "app", Website: "https://example.com", LogoURL: "https://example.com/logo.png", Scopes: scopes})`.
+- `(*identity.Server).AddUserApplication` takes an `identity.UserApplicationRegistration` value. It has no grant types or scopes, because the old `grantTypes` and `scopes` arguments were accepted and ignored: a user application always gets the authorization code, device code and refresh token grant types and the `UserAppPolicies` scopes. Drop the two `nil, nil` arguments and move the rest into the struct.
+- `hcaptcha.ResponseContextKey` is gone. It was an exported, assignable variable; the key is now an unexported constant, as in `recaptcha`. Read the response with `hcaptcha.Get(ctx)`.
+- `client.BindResponse` is removed; it was deprecated. Use `v, err := client.Bind[T](resp)`, which decodes under the same Iris JSON policy and picks the decoder from `Content-Type` the same way.
+- Six packages that only the framework itself used moved to `internal/` directories and can no longer be imported from outside the module: `core/router/macro/interpreter/lexer`, `parser` and `token` (now `core/router/internal/...`), `core/pkg/errgroup`, `core/pkg/mimetypes` and `core/server/signalhandler` (now `internal/...`). No application imported them. If you registered an interrupt callback through `signalhandler.Register`, use `iris.RegisterOnInterrupt`, which keeps the same signature. `core/router/macro/interpreter/ast` stays public.
+- Removed `core/pkg/beep`. Nothing in the framework or the examples used it.
+- `context/encoding.ErrMissingRequiredField` is removed. No decoder returned it, so an `errors.Is` check against it never matched; a missing required field is reported as a `*encoding.ValidationError` whose `IsRequired` method reports true.
+- Removed three `Context` methods that nothing called. `DisablePoolRelease` stopped the router from putting the Context back in the pool after the handler returned; take a copy with `ctx.Clone()` for a goroutine that outlives the handler, or register cleanup with `ctx.OnRelease(fn)`. `Pool.Release` now always puts the Context back. `OnConnectionCloseErr(func() error)` ran a callback once the request's context was done and logged its error at debug level; use `ctx.OnConnectionClose(handler)`, or start your own goroutine that waits on `ctx.Request().Context().Done()`. `ProceedAndReportIfStopped(h)` is now unexported; call `ctx.Proceed(h)`, which returns false when `h` stopped the chain or did not call `ctx.Next()`. Checking `ctx.IsStopped()` afterwards does not work, because `Proceed` restores the handler index, so if you need to know which of the two happened, have `h` record it.
+- **Behaviour change:** `ctx.ReadForm` drops only the unknown key error for `csrf.token`, the hidden field CSRF protection adds to a form, and returns every other decode error. It used to throw away the whole decode error whenever `csrf.token` was in it, so a value that did not parse into an `int` field, or a second unknown key, was lost and the handler saw success with that field left at its zero value. A form that used to "succeed" with a bad field next to the CSRF token now returns the error. It is a `schema.MultiError` without the `csrf.token` entry, so `iris.IsErrPath(err)` still reports true when what is left is unknown keys only. A form whose only problem is the `csrf.token` key still reads with no error.
+- Fixed `buildinfo.LogCloudDetection`: the first log line read literally `Running in %s %s` because `slog` does not format messages. It now logs "Running in a cloud container" with `cloud_provider` and `platform` attributes.
+- **Typed getters for UUIDs, durations, times and IP addresses.** `ctx.Params()`, `ctx.Query()`, `ctx.Form()`, `ctx.PostForm()` and `ctx.Values()` gain `GetUUID(key) uuid.UUID`, `GetDuration(key) time.Duration`, `GetTime(key) time.Time` and `GetIP(key) netip.Addr`, next to the existing `GetDate`. A string value is parsed (`uuid.Parse`, `time.ParseDuration`, RFC 3339 through the swappable `encoding.ParseTime`, `netip.ParseAddr`); a missing key or an unparsable value returns the zero value, as `GetDate` does. The entry-level triplets exist too (`entry.UUID()`, `entry.GetUUID()`, `entry.MustUUID()`, and the same for Duration, Time and IP). **Behaviour change:** the `{id:uuid}` route macro now stores the parsed `uuid.UUID`, the way `{id:int}` stores an `int`, instead of the text it validated. `ctx.Params().GetUUID("id")` is therefore a type assertion on such a route, `ctx.BindParam[uuid.UUID]("id")` works, and `ctx.BindParam[string]("id")` on it answers 400 like any other type mismatch. `ctx.Params().GetString("id")` keeps working and now returns the canonical lowercase hyphenated form whatever spelling the client sent (braced, `urn:uuid:` prefixed, bare 32 hex or uppercase). MVC handlers that declare a `string` id keep working through the path-parameter converter, and a `string` struct field tagged `param:"id,uuid"` receives the canonical text. Struct binding (`param` tags, `ctx.ReadQuery`, `ReadForm`, `ReadHeader`) now decodes `uuid.UUID` and `time.Duration` fields. The string macro funcs (`prefix`, `suffix`, `contains`, `min`, `max`, `eq`, `eqor`, `regexp`) now work on typed macros: `{id:int prefix(4)}` and `{id:uuid prefix(a6)}` compare against the value's text instead of panicking inside reflect on the first request. Every example, the tutorial and the book read ids with `ctx.Params().GetUUID("id")`; the `uuid.Parse(ctx.Params().GetString("id"))` pattern and its error branch are gone from them. The examples are also reordered so that `func main` is the first declaration after the imports, followed by the types and then the handlers in call order.
+
+- `app.Listen` and `app.Run` report their own failure. A build error, a listener that could not be opened, or a server that stops with an error is logged at fatal level and the process exits with status 1, so `app.Listen(":8080")` is called as a statement; a graceful shutdown still returns nil. New `iris.Options.DisableFatalRun` logs the failure at error level and returns it to the caller instead, for a process that runs more than one server or a test that opens a real listener. Every example, the tutorial and the book now use the bare call. A program that hands the error from `app.Listen` up to its own `log.Fatal` keeps compiling and still exits with status 1, now from inside `Listen`. The root `iris.md` is removed: what it described lives in chapters 1, 11 and 19 of the book and in `skill/iris/references/configuration-and-deployment.md`.
+- HTTP QUERY (RFC 10008), a safe and idempotent request that carries a body and whose response is cacheable, is a first-class method. New `iris.MethodQuery` and `router.MethodQuery` (`"QUERY"`, `= http.MethodQuery` once go.mod reaches Go 1.28), `Router.Query(path, handlers...)` next to `Post`, `RouteRegistry.Query()`, the `rest/errors` `Router.Query`, and struct controllers answer QUERY on a `Query(ctx)` method (`Query(ctx) error` under `rest/errors`). `AllMethods`, and so `Any`, include it. The trailing-slash redirect answers 307 for QUERY and PATCH as it did for POST and PUT, so the body survives. `CheckIfModifiedSince` and `middleware/cache` answer 304 to a conditional QUERY, `httpcache` caches QUERY keyed on the body, `cors` lists it in `Access-Control-Allow-Methods`, and `methodoverride` accepts it. A url-encoded QUERY body is not part of `ctx.Form*` on Go 1.27 (net/http parses it only for POST, PUT and PATCH); send JSON.
+- List endpoints answer QUERY next to POST on the same path: the mvc `List` verb (`/resource/list`, in both `UseController` and `UseRepository`), `controller/mvc/handler.List` and `ListBy`, and the identity server's `/u/list` and `/u/groups/list`. The server answers QUERY next to POST, but the identity SDK's `AdminListUsers` and `AdminListClients` send POST because proxies such as the Azure Container Apps ingress reject QUERY.
+- The identity server gains a client management API under the admin client token: `POST /clients` (create), `POST` or `QUERY /clients/list`, `GET /clients/count`, `GET` and `DELETE /clients/{id}`, `POST /clients/{id}/token` and `POST /clients/{id}/revoke-tokens`. The routes sit behind new `clients:*` scopes, `AddAdminApplication` registers the bootstrap admin client (existing bootstrap clients gain the scopes on boot), and `identity.ClientCredentials` returns the token with its `audience`. The SDK adds `AdminCreateClient`, `AdminListClients`, `AdminCountClients`, `AdminGetClient`, `AdminDeleteClient`, `AdminIssueClientToken` and `AdminRevokeClientTokens`. The SDK rejects an empty client id with `ErrClientIDRequired` before sending a request. `oauth2.ClientStore` is wider: list, count, delete, update scopes and increment version. `oauth2.NewClient` now accepts a `redirect_uri` without a `verification_uri` unless the device_code grant is requested.
+- The paginated list types moved to the std-only package `core/pkg/pagination`: `PageOptions`, `Page[T]`, `NewPage`, `CountType`, `CountResponse[N]`, `CountToInt64`, `ListFilter`, `ErrSortNotAllowed`. `context` and `iris` alias them, so code that names `iris.Page[T]` or `context.PageOptions` is unchanged. The page size bounds are `pagination.MaxPageSize` and `pagination.DefaultPageSize`, also set through `iris.Patches().Context().SetMaxPageSize(n)` and `SetDefaultPageSize(n)`.
+- `client.List[T](ctx, c, path, pageOptions, filter, opts...)` fetches one page over QUERY and `client.Items[T](ctx, c, path, filter, opts...)` walks every page as an `iter.Seq2[T, error]`. `client.PageSize(n)` sets the page size and `client.ListMethod(http.MethodPost)` talks to a server that lists over POST. `client.MethodQuery`, `client.PageOptions`, `client.Page[T]`, `client.CountResponse[N]` and `client.ListFilter` are the same types the server uses.
+- `middleware/basicauth` is typed by the user type. `basicauth.New(basicauth.Options[U]{...})` returns a `context.Handler` as before, `Options.Allow` is an `AuthFunc[U]` that returns `U` instead of `any`, and handlers read the value back with the new `basicauth.GetUser[U](ctx)`; `ctx.User()` and `ctx.Logout()` keep working for every `U`. `AllowUsers` takes a `[]U` and resolves the credentials once, at startup, from the `User` interface, the `Username` and `Password` fields (json tags and embedded structs included), a `Map`, or the new `Credentials` option; the `map[string]string` form is `AllowUsersMap`, which is what `Default` uses, and `Default` accepts only that form now. `AllowUsersFile[U]` decodes the JSON or YAML list into `U`, `Load` keeps it as a `Map`. New `basicauth.AuthorizedAt(ctx)` reports the first login time behind `MaxAge`, and the `*SimpleUser` that `Default` builds carries it too. `ErrCredentialsMissing.Error()` no longer prints the raw header, which is base64 of the credentials. The package is the Iris mirror of `github.com/kataras/basicauth`, the net/http version, and the two now share their user store, errors and tests.
+- The `client` package is now a thin layer over `github.com/kataras/httpclient`, the author's standalone HTTP client, which gained everything the Iris client had (`OAuth2`, `Call`, a default debug logger, per-direction JSON options) so that the two never drift again. Every type, option and function of that module is re-exported here under the same name, with one exception: `BindResponse`, which is deprecated there, is left out (use `client.Bind[T]`). An application imports only `iris/v14/client`; what this package adds is the framework's defaults, the `core/pkg/jsonutil` JSON policy for payloads and bodies and golog for `Debug(nil)`. `client.APIError` is `httpclient.APIError`, so `rest/errors.HandleAPIError` and `errors.As` also recognise errors produced by services that use `httpclient` directly. Renames, matching `iris.Context`: the generic `ReadJSON[T]` and `ReadPlain[T]` are `BindJSON[T]` and `BindPlain[T]` (the latter also accepting `int64`, `float64` and named types), and `ReadJSON(ctx, &v, ...)`/`ReadPlain(ctx, &v, ...)` are the pointer forms; `Debug` is a constructor, `Debug(logger)`, with `Debug(nil)` keeping the golog output; `RequestRateLimit(requestsPerSecond)` is `RequestRateLimit(key)`, selecting a limiter registered with `RateLimitFor(key, n)` (the old form built a fresh limiter per call and enforced nothing), and `RequestRateLimitPerMinute` is gone in favour of `RateLimitForPerMinute`. New: `Retry(RetryPolicy)` with exponential backoff and `Retry-After` support, `Transport(rt)`, `RateLimiter`/`RateLimiterFor`/`NewRateLimiter`/`NewRateLimiterPerMinute` and the `Limiter` interface for budgets shared across clients, `RedactQueryParams`/`RedactHeaders`/`RedactURL` (secrets replaced by `REDACTED` in `APIError` messages and `Debug` dumps; `Authorization`, `Proxy-Authorization`, `Cookie` and `Set-Cookie` always), `JSONOptions`/`JSONMarshalOptions`/`JSONUnmarshalOptions`, `Bind[T]`, `BindError[T]`, `IsErrEmptyJSON` (an empty body is `io.EOF`), `ErrUploaderClosed` (a second `Upload` on the same `Uploader` fails instead of sending a malformed body), `APIError.Code()`, `APIError.URL`, `APIError.ReadErr`, `DebugLogger`, `DefaultDebugLogger`, `PlainText`, and a package-level `DrainResponseBody` that, like the method, returns an error and tolerates a nil response. Behaviour changes and fixes: `RateLimitPerMinute(n)` allowed `60·n` requests per second (the arithmetic was inverted), so `middleware/geolocation`'s free-tier client is now actually held to 45 requests a minute; `BindResponse` (since removed in favour of `Bind[T]`) compared against `plain/text` and could never bind a `text/plain` body; `DialTimeout` replaced the transport with a bare `&http.Transport{}`, silently dropping `HTTP_PROXY`/`NO_PROXY` and the pool defaults, and now clones `http.DefaultTransport` (its dial-failure `golog.Debugf` line is gone, `Debug` covers it); `Debug` panicked on a transport error, having no response to dump, and used the dump as a format string; `GetError` finds a wrapped `APIError` (`errors.As`) and reports false for one without a response; `GetErrorCode` returns 0 instead of 200 for a nil or non-API error, so check for zero; `APIError.Error()` prints the status once (`host/x: 404 Not Found: body`) and, for an error with a body and no response, the body alone; `BaseURL` trims a trailing `/`; a caller's `RequestHeader(true, "Content-Type", ...)` now wins over the content type `JSON`/`BindJSON`/`ReadJSON` force; an `EndRequest` handler returning the error it was given is a pass-through rather than an abort, and the response is drained when a handler does abort; responses from the `Handler` transport carry `"404 Not Found"`-style status text, `Proto` and `Content-Length`. The framework requires `github.com/kataras/httpclient` v0.2.0 or newer.
+- `sse.Read` caps one event with `MaxEventBytes`, as it always said it did. The counter was never reset between events, so it was enforced against the cumulative stream and every stream died with `ErrTooLarge` after 1 MiB of data in total.
+- `sse.Read` ends with `io.ErrUnexpectedEOF` when the stream is cut mid-event, instead of ending quietly as if the answer were complete. New `ReadOptions.RequireTerminator` and `sse.ErrNoTerminator` (which also matches `io.ErrUnexpectedEOF`) report a stream that ends cleanly without one of the configured `Terminators`; `ai.Relay` sets it whenever terminators are configured (no opt-out), and returns every failed upstream read (reset, timeout, cut mid-event, missing sentinel) through `Classify`, as a transient `*UpstreamError` wrapping the cause (a client that hangs up mid-read stays `ClassCanceled`). An upstream that closes without its `[DONE]` therefore produces a `BAD_GATEWAY` error frame rather than a `done` frame claiming the answer was complete, and a gateway's failover logic sees it as the upstream failure it is.
+- `ai.Classify` no longer treats a timeout as a cancellation. Only `context.Canceled` is `ClassCanceled`; `context.DeadlineExceeded` and any `net.Error` whose `Timeout()` is true are `ClassTransient`, retryable, and reported to the client as `DEADLINE_EXCEEDED` (504). net/http's own timeout errors, from `http.Client.Timeout` and `Transport.ResponseHeaderTimeout`, are both at once and used to be misread as cancellations because they satisfy `errors.Is(err, context.DeadlineExceeded)`; the `net.Error` check covers timeouts from elsewhere, such as a `net.Conn` read deadline. New `(*ai.UpstreamError).Timeout()`. A stalled provider previously became an unretried, unreported empty 200.
+- `rest/errors.ErrorCodeName.Report` (and `errors.Report` through it) skips a failure only when the request's own context is cancelled, never because the error looks like a cancellation. An upstream dial or read timeout after the first token now produces the error frame, the log line and the collector call it always should have; only a client that hung up is left unreported.
+- New `Context.OnRelease(fn)` and `Context.RunReleaseHooks()`. The router runs the registered callbacks after the handler chain returns and before the response writer and the Context are recycled, in reverse registration order. It exists because the Context is released inside `ServeHTTP`, before net/http cancels the request context, so a goroutine waiting on `Request().Context().Done()` can still write through a nil writer or into the next request's Context. A host that acquires Contexts from the pool itself must call `RunReleaseHooks` before releasing.
+- `sse.Stream` and `ai.Response` end themselves through `Context.OnRelease` when a handler returns without `Close`: the heartbeat, an attached `Coalescer`'s ticker and the coalescing drain are stopped and waited for, and the stream is marked closed (a late `Send` reports `ErrClosed`; `Stream.Err` reports `ErrClosed` too, so an abandoned stream is distinguishable from a cleanly closed one). Nothing is written, not even the terminator: the missing terminator is the truncation signal. `ai.Options.OnFinish` still runs, once, for both shapes, with the new `Result.Abandoned` set, so the accounting leg gets its record however the turn ended. A `Close` in flight on another goroutine when the handler returns is waited for, so its terminal frames reach the wire before the writer is recycled. `Context.RunReleaseHooks` makes a bounded number of passes (8) and drops a hook that keeps re-arming itself, with a debug log line; hooks registered by a running hook run in the same pass. `httptest.Do` and `Pool.ForceRelease` honour the same contract: `Do` runs the release hooks before it releases the writer, and `ForceRelease` drops them, so a caller that releases a Context itself cannot leave hooks for the next request. Both packages also snapshot the response writer at commit time and never read the Context from their goroutines again. Previously a 1 ms heartbeat or a pending coalesced part could crash the process with a nil-pointer panic in a non-handler goroutine, or write into another request's response.
+- `ai.Error(err)` sent through `Response.Send` goes through the same policy as the error given to `Close`: `rest/errors` report, redaction of unmapped and private errors, then `Options.Redact`. It previously encoded `err.Error()` verbatim, so a provider message naming a vendor, a model or a host could reach the client through `Send` while `Close` redacted it. **Wire change:** the neutral error object's `error` member is now the `rest/errors` envelope (`{"id","http_error_code","message","detail"}`) rather than a string, and on the `SSEJSON` encoder an error part's frame carries that envelope directly, identical to the frame `Close` writes.
+- `ai.NDJSON` ends every stream with a terminal line, `{"type":"done"}`, and reports a failure after the first byte as `{"type":"error","error":{...}}` before it, so an NDJSON consumer can detect truncation the way an SSE client does. `ai.PlainText` documents that it has no terminator and no in-band error; the failure still reaches the logger and the collector. A streaming turn that ends with an error before the first byte still writes nothing, on every encoder.
+- A streaming `ai` turn with zero parts commits the response and writes its terminator on `Close(nil)`, as the non-streaming shape writes `{}`. New `sse.Stream.Commit()` writes the status line and the stream headers without an event, for the same purpose.
+- `sse.Stream.Close` flushes an attached `Coalescer` before the error frame and the terminator, so text still buffered when the stream closes reaches the client whichever of the two is closed first; it previously was dropped and `Coalescer.Close` then failed with `ErrClosed`.
+- `sse.Stream.Err` is nil after a clean `Close(nil)`; it previously reported `context.Canceled`. `sse.Options.Terminator` is validated at `Open` (`ErrInvalidField` on CR, LF or NUL) and the event `Options.ErrorFrame` returns gets the same framing check as a `Send`; an invalid frame is dropped and the terminator still goes out. The error frame is rendered before the stream lock is taken, so a renderer may write to the stream itself.
+- `ai.Response.Result` returns a `Result` value (a snapshot taken under the lock) instead of a pointer into the turn's own record, which `Close` kept writing outside the lock. `Response.Send` checks that the turn is closed before running `OnPart`, so a hook with side effects does not fire for a part that can never be sent.
+- `ai.TagSplit` panics on an empty open or close marker instead of looping forever or classifying the whole answer as reasoning.
+- `sse.Options.AutoID` and the sse README no longer claim `Last-Event-ID` resumption: an automatic id makes gaps detectable within one connection; the counter restarts on every stream. The sse README options table gains `Retry` and `ErrorFrame`.
+- `Context.BindJSONOneOrMany` and `BindJSONList` (renamed from `BindJSONObjectOrArray` and `BindJSONObjectOrArrayAsList`) report a body-read failure as a client error, so a body over `BodyMaxMemory` answers 413 and the method returns `false`; they used to continue with a nil payload and a 200. Both also run `ContextOptions.RequestValidator` on every decoded value, like `BindJSON` does.
+- `Context.Body` returns `ErrReadRequestBody` for a nil request body instead of panicking; `ReadMsgPack`, `ReadProtobuf` and the one-or-many binders read through it.
+- `Context.Count` renders a zero (or negative) count as `200 {"count":0}`. It used to set 304 Not Modified, a conditional-request status under which net/http refuses the JSON body, so every zero count logged a server error.
+- `PageOptions.GetLimit` clamps `Size` to `MaxPageSize` as documented; a `Size` equal to or above the maximum used to fall back to `DefaultPageSize`. `NewPage` computes the page count with integer arithmetic (exact above 2^53), `Page.Transform` copies `HasNextPage`, and `Context.Paginated` rounds a float total count half up instead of truncating it.
+- `Context.ReadJSONStream` with `JSONReader.ArrayStream` no longer spins when the callback swallows a decode error: the loop stops at the decoder error and returns it. A body that does not start with an array returns the new `context.ErrJSONArrayExpected`; an empty body returns `ErrEmptyJSON`.
+- A refused websocket upgrade leaves the Context to the router instead of force-releasing it. `websocket.Upgrade` called `Context.DisablePoolRelease` before the handshake and put the Context back through `Pool.ForceRelease` when the handshake failed, while the router still held it: the router's own `Release` then put the very same Context a second time, so the pool handed one object to two in-flight requests, which shared its values, its `User` and its response writer, and the refused request's `OnRelease` hooks were dropped instead of run. Any plain GET to a `websocket.New` route did this - a health check, a crawler, a browser opening the URL. A successful upgrade no longer holds on to the request's Context either. The socket gets its own copy, taken with `Context.Clone` before the handshake, and the router recycles the original like any other request's; `websocket.GetContext` returns that copy, with the upgrade request's values, params and headers. The old shape disabled the pool release after the handshake and put the Context back from the disconnect event, on neffos' goroutine, with nothing ordering it against the router, which was still running the release hooks and reading the release flag: a client that closed right after the handshake could get the same Context put in the pool twice. The race detector caught it in `TestNewUsesOptionsIDGenerator`.
+- `rest/errors.ErrorCodeName.Log` and `LogErr` follow `Report`'s cancellation policy: they skip a failure only when the request's own context is cancelled, never because the error - or one of `Log`'s format arguments - looks like a cancellation. An upstream dial or read timeout is a `net.Error` whose `Timeout()` is true and matches `errors.Is(err, context.DeadlineExceeded)`, so it used to be swallowed silently: no 500, no log line, no collector call, for exactly the failure an operator most needs to see. Only a client that hung up is left unreported now.
+- `ai.Response.Close` reports the committed state as it is when the turn ends, not as it was before the terminator was written. A streaming turn with no parts commits the response and writes its terminator inside `Close`, after the `Result` snapshot was taken, so `OnFinish` was told `Committed: false` for an answer that had reached the client in full - the accounting leg disagreeing with the wire on every empty answer. The document shape's flag moves under the same lock instead of being set outside it.
+- `Context.ReadJSON` and `Context.ReadJSONStream` answer `ErrEmptyJSON` for a request with no body at all, instead of panicking. A hand-built `http.NewRequest(method, url, nil)` - what an in-process caller and most unit tests produce - leaves `Request.Body` nil, which the net/http server never does, and the JSON decoder read from it immediately. `BindJSONOptional` therefore yields the zero value and `BindJSON` answers 400, the same as for an empty body.
+- `context.NewPage` keeps the total count and the requested page on a page that came back empty. A request for page 9 of a 10-row result set reported `current_page: 1, total_items: 0, total_pages: 0` - an empty result set rather than an empty page of a real one - so a pager rendered "0 of 0" and lost its way back. `has_next_page` stays false whenever no items were returned, whatever the count says, and `items` is still an empty array rather than null.
+- New `context.CountToInt64`, the rounding `Context.Paginated` already used, now exported and used by the MVC `ListHandler` and `ListByHandler` too. Those truncated a fractional total with a plain `int64()` cast, so the same aggregate `2.5` answered `total_items: 2` through a controller and `3` through `Paginated`.
+- `ipaccess.Must` takes what `New` takes: `ipaccess.Must(allowed, blocked []string) context.Handler`, panicking on a malformed pattern, like `rewrite.Must` and `httpcache.Must`. It used to wrap a `New` call as `ipaccess.Must(ipaccess.New(allowed, blocked))`; update those call sites by dropping the inner `ipaccess.New`.
+- `ai.Relay` returns `ClassCanceled` when the turn's own context ends under `DisconnectCancel`, whatever ended it. A server-side request deadline arrived as `context.DeadlineExceeded` and was classified transient, so a gateway's failover logic retried a request whose response was already over. The cause is kept, so `errors.Is(err, context.DeadlineExceeded)` still matches.
+- New `Context.BindUpdate[T]` decodes the JSON body exactly as `BindJSON` does (request validator and `Validate` included) and returns, next to the value, the `?columns=a&columns=b` list the client wants updated, as a repeated key or one comma-separated value, trimmed, without empties and without duplicates. Every column is checked against the JSON member names of `T` (the `json` tag name, or the field name when there is none, embedded structs flattened, `json:"-"` skipped) and an unknown one answers 400 naming the column and the allowed names. No columns at all means a full update and returns a nil slice. Hand-written update handlers passed the query straight to the database, where a typo matched no column, changed nothing and still answered 204.
+- New `Context.HandleError(err)`, the error half that `OK`, `Created`, `NoContent`, `List`, `Count` and `Paginated` each run before rendering their success body, on its own for a step that has an error but nothing to render on success: `if ctx.HandleError(svc.Deactivate(ctx, id)) { return }`. A nil error writes nothing and reports false. It renders exactly what `rest/errors.HandleError` renders, mappings included, and lets a handler that only needed that one call drop the `rest/errors` import.
+- New `errors.ErrorCodeName.Handle(ctx, err)`, the guard form of `Err`: it renders the error as that code and reports whether it did, so a step whose failure means one thing at this call site and nothing in general is one line - `if errors.Unavailable.Handle(ctx, api.users.UpdateEmail(ctx, old, new)) { return }`. A nil error writes nothing and reports false. `Err` keeps its signature deliberately: it is `func(*Context, error)`, which is what `LogErrorFunc` and `cors.HandleErrorFunc` take, and `cors.New().HandleErrorFunc(errors.FailedPrecondition.Err)` passes it as a bare method value.
+- `Context.BindPagination` and `Context.Paginated` never hand a nil filter to the collector. A repository method takes its filter by pointer, so `ctx.Paginated(repo.ListUsersPaginated)` infers `Filter` as `*UserFilterOptions` and a request with no body decoded to a nil one: the first field the repository read was a nil dereference, and the sort policy passed silently because a nil filter has no `SortRequest` to answer with, so `AllowSort` and `DenySort` were skipped on exactly the routes that carry no body. A nil pointer filter is now allocated to its zero value, which is the honest reading of an absent body and requests no sort; the page envelope's `filter` renders as `{}` rather than `null` for those routes. A filter taken by value is unaffected.
+- `iris.DenySort` takes an optional renderer, so the rejection of a sort request is not always a 400 Bad Request: `errors.PermissionDenied.DenySort(message)` (new, on any `errors.ErrorCodeName`) answers with that code instead. Sorting is often a permission and not a shape - a list a client may read but not order - and the hand-written `if filter.Sort != "" { errors.PermissionDenied.Message(ctx, ...) }` that replaced `DenySort` for it can go. `iris.DenySort(message)` keeps its meaning and its signature.
+- The strict query readers accept several keys in one call, separated by a space: `ctx.QueryDate("date day from")` tries each in the order stated and reads the first that carries a value, restoring the multi-key fallback of the removed `rest.QueryDate` without a new option. A URL query key cannot contain a space, so a key without one is a single key and reads exactly as before. The 400 for a missing value names every accepted key; the 400 for an unparsable one names only the key that carried it, because the client did not send the others. `Context.QueryInt` and `Context.QueryBool` take the same.
+- New strict query readers `Context.QueryDate`, `Context.QueryInt` and `Context.QueryBool` with the `QueryRequired`, `QueryDefault` and `QueryZeroValues` options (`iris.QueryOption`). A present but unparsable value is always a 400 naming the key and the shape expected, never the silent zero every hand-written `ctx.Query().GetInt` filter answers with (`?date=null` included: the date parser reads `null` as the zero date, and only `QueryZeroValues` may declare a raw value to mean "unset"); an absent value is the zero value, or the `QueryDefault` raw value parsed like a client's, or a 400 under `QueryRequired`. `QueryZeroValues` declares the placeholders older clients send for "unset" ("0", "zero", "0000-00-00", "null") and reads them as an absent value. `QueryBool` accepts what `strconv.ParseBool` accepts plus yes/no/on/off, case-insensitively.
+- New `iris.ListFilter`, the request half every list endpoint shares (`Term`, `Names`, `Substring`, `Sort`, `SortDescending`), carrying both the `json` tags of the `POST /list` body and the `url` tags of a query-read list route. Embed it in a service's own filter and read the sort request through `SortColumn` (which returns an error wrapping the new `iris.ErrSortNotAllowed`, naming the column, for anything outside the allowed set), `SortOrder` and `SortRequest`. `Context.BindPagination` and `Context.Paginated` now take the `iris.AllowSort(columns...)` and `iris.DenySort(message)` options: a sort column the endpoint does not offer answers 400 naming the column and the allowed ones before the collector runs, so a client-chosen `ORDER BY` cannot reach the query. Both options read the decoded filter through its `SortRequest` method, so a filter without one is unaffected.
+- New `Context.List(items, err, tolerate...)` renders a list as a 200 JSON array. A nil or empty slice renders `[]` and never `null`, and an error matching one of `tolerate` renders `[]` as well: a repository's not-found for an empty set is not a failure of the list endpoint. Any other error goes through the error renderer and `List` reports false.
+- New `iris.LoadConfiguration[T](envKey, filename)` and `iris.BaseConfiguration`. `LoadConfiguration` reads a YAML document into `T` from the named environment variable when it is set, otherwise from the file, and runs `T`'s (or `*T`'s) `BindEnv()` afterwards so the environment wins over the document. The variable may hold either the document or a path to it: a value that names an existing file is read as a file, anything else is decoded as YAML, so the same binary works whether the configuration is mounted or passed inline. Embed `BaseConfiguration` (`Host`, `Port`, `AllowOrigin`, `EnableCompression`, `RequestLog`, `Iris iris.Options`) to get that behaviour for the fields every service shares; its `BindEnv` reads `HOST`, `PORT`, `HTTP_PLATFORM_PORT` (which wins over `PORT`, because a hosting platform that picks the port passes it there while `PORT` may still carry the value baked into the image) and `ALLOW_ORIGIN`, ignoring a non-numeric port rather than turning it into zero. `BaseConfiguration.Addr()` returns the `host:port` for `app.Listen`: an empty host listens on every interface and a zero port defaults to 8080. There is deliberately no `Application.Serve`; `Listen` and `Run` stay the only entry points.
+- New `iris.Worker` (`Run(ctx) error`, `Stop(ctx) error`), accepted by `Builder.Services`. A scheduler, a queue consumer or a cache refresher passed there is registered as a dependency like any other value, started in its own goroutine after every `iris.Initializer` has returned, and stopped before the closers run, so it lives inside the startup and shutdown chain the builder already enforces instead of in a goroutine next to it. `Run`'s context is cancelled at shutdown; an error it returns before that is logged at Error level with the worker's type name and nothing else, because a failed worker should not take down a server that can still answer every request which does not need it. `Stop` runs once, with the `Application.Shutdown` context when that one carries a deadline and inside a ten second timeout when it does not, so a hanging `Stop` cannot hold the process open. That ten second budget is per worker and not per shutdown, because the closers run one after another; pass a deadline to `Shutdown` to bound the whole chain instead. `Shutdown` then waits for `Run` to return within the same budget, so a worker is really finished when `Shutdown` reports success rather than still draining while the process exits from under it; a `Run` which does not return in time is logged at Error level with the worker's type name and reported as a shutdown error. A value that is both a `Worker` and a closer is stopped, waited for, and then closed, in that order, because closing the connection a running `Run` is still reading from is the crash the ordering avoids. A shutdown which arrives before the application is built cancels the worker and keeps a later `Build` from starting it.
+- New `Options.MapErrorContains(code, substr, message)` and `ErrorCodeMap.MapErrorContains` answer an error whose text contains a case-sensitive substring, replacing the text with the given message; it exists for the SQL and vendor errors that arrive as text only, and a typed mapping stays preferable because a driver is free to reword its text.
+- `pgerrors` maps a foreign-key violation (SQLSTATE 23503) to `INVALID_ARGUMENT` with the constraint name in the detail, instead of letting it fall through to a 500. A client that referenced a row which is not there gets a 400 naming the constraint it broke; the driver's own message and detail, which carry the table, the column and the offending value, are logged and not forwarded.
+- New `errors.NotFoundID(ctx, resource, id)`, which renders `NOT_FOUND` with the detail `"<resource> <id> not found"`. It replaces the hand-written `errors.NotFound.Detailf(ctx, ..., "%s %v not found", ...)` that call sites repeated. The result follows the `Context.OK` convention, `true` meaning the handler succeeded, so it is always `false` here; `HandleError` in the same package reports the opposite, `true` when it wrote the response.
+- New `types.Number`, a `float64` with a JSON null: `NaN` and both infinities marshal as `null` and a JSON `null` unmarshals back to `NaN`, where a plain `float64` fails to marshal and takes the whole document with it. `NULL` and `NaN` are the same value across the SQL driver too, so a nullable `float8` column needs no `sql.NullFloat64` wrapper. The zero value is the number zero, not null; `NullNumber()` returns the null one and `IsNull()` reports it.
+- New `types.Weekday`, a `time.Weekday` that travels as a lowercase name (`"monday"`), so a client reading a schedule gets a word it can print instead of a number whose base it has to guess. `ParseWeekday` accepts any case and the three-letter form (`"Monday"`, `"monday"`, `"MON"`, `"mon"`), `String` is lowercase, and the SQL column is text. The seven days are exported as constants, `Weekday.Std()` converts out to `time.Weekday` and `types.WeekdayOf` converts in. The numbering is `time.Weekday`'s, Sunday being zero, which means the zero value marshals as `"sunday"`.
+- New `mvc.UseRepository(repo, opts...)`: the six resource routes registered straight over a repository, with no controller type in between. A repository is the five methods a service already has over the standard context (`Create`, `Get`, `Update`, `Delete`, `List`), so a resource whose HTTP half adds nothing to its store needs no code at all. `POST /` renders 201 `{"id": ...}`, `GET /{model_id}` the model, `PUT` and `PATCH /{model_id}` (with `?columns=`) a 204 or a 304 through `Context.NoContent`, `DELETE /{model_id}` the same, and `POST /list` the page `mvc`'s List route already renders. The parameter name and its macro derive from the model and its ID type exactly as they do for `UseController`, so a `uuid.UUID` id registers `{model_id:uuid}` and validates before any handler runs. The update routes read their body and columns through `Context.BindUpdate`, so a column that is not a member of the model answers 400 naming it and the members it could have been, instead of updating nothing and reporting success; the names which reach the repository are still the client's, so a repository that builds SQL from them must map them and never interpolate them.
+- New options shared by `mvc.UseController` and `mvc.UseRepository`, both of which now take a variadic `...mvc.Option`: `mvc.Guard(handlers...)` registers middleware for the write routes only (Create, Update, Delete), which is the "everyone may read, only a signed-in caller may write" shape a router-level `Use` cannot express without splitting the resource in two; `mvc.Without(verbs...)` drops generated routes (`mvc.Create`, `mvc.Get`, `mvc.Update`, `mvc.Delete`, `mvc.List`); `mvc.IDParam(name)` overrides the derived parameter name while the macro still comes from the ID type; `mvc.BeforeWrite(func(ctx iris.Context, v *T) error)` runs on Create and Update after the body is decoded and before the repository or the controller sees it, which is how a value the client must not choose (a tenant id, an owner) is stamped on every body in one place; and `mvc.Pagination(opts ...iris.PaginationOption)` declares the List route's sort policy, so `iris.AllowSort("created_at", "name")` limits the column a client may sort by and `iris.DenySort(message)` refuses any sort, each answering 400 before the controller or the repository runs. Three of them fail at registration rather than silently: a `BeforeWrite` hook declared for a model other than the one the resource writes panics, naming both types, because what it used to skip is typically "stamp the tenant id on this body" and the failure showed up as a cross-tenant write; `mvc.Without` panics on an unknown verb and `mvc.IDParam` on an empty name. `handler.ListHandler` and `handler.ListByHandler` take the pagination policy through a new `handler.WithPagination` option and keep their signatures. Existing `UseController()` calls compile unchanged.
+- New `auth.Scope(derive)` and `auth.ScopeID[ID](ctx)`: derive a per-request scope id (a tenant, a customer, an organisation) from the verified user once, after `VerifyHandler`, and read it back anywhere downstream. A handler that forgets to filter by tenant is a data leak and a handler that derives the tenant again is a second chance to get it wrong, so the derivation happens in one place. The user is read with one typed lookup, so a missing user and a user of another type both answer 401 (`auth.ErrMissingUser`), the same failure `VerifyHandler` answers with, instead of deriving an empty scope from a zero value and reporting success. A derived zero id is stored as it is, because a global administrator may legitimately have no scope. The cost per request is one `Values` read, the derive call and one `Values` set, and `ScopeID` is one map lookup and one type assertion.
+- New `middleware/apikey` package: guards routes with a shared secret the caller presents on every request, for services, cron jobs, webhook senders and CLI tools that have no user to sign in. `apikey.New(apikey.Options{...})` reads the key from a header (`Authorization: Bearer <key>` by default, the scheme matched case-insensitively per RFC 7235, `apikey.NoScheme` for a bare `X-API-Key` value) or from a query parameter, and compares fixed-width SHA-256 digests of the presented key and of every configured key, with no early exit and no branch on the result, so neither which key matched nor how long the configured keys are can be read out of the time a rejection takes (`subtle.ConstantTimeCompare` returns immediately when two lengths differ, so comparing the raw values would have left a usable length oracle). `Options.Hash` (with `apikey.SHA256`) lets `Keys` hold digests so the configuration never holds a working credential, and `Options.Lookup` resolves keys that live in a database, where an error is a 500 rather than a 401. On success `apikey.Get(ctx)` names the principal that matched and a `context.SimpleUser` is set when nothing else set a user, so code written against `ctx.User()` sees the caller. A middleware with no keys and no `Lookup` denies every request and logs a warning on the first one; `AllowAnonymous` opens it for local development only.
+- **Behaviour change:** the MVC update routes now parse `?columns=` the same way everywhere. `handler.HandlerByColumns` read the raw repeated values, so `?columns=a,b` reached the service as the single bogus column name `"a,b"`, while `handler.UpdatePartial` and the repository routes split on the comma. All three now use one reader, which mirrors `Context.BindUpdate`: both spellings are accepted, values are trimmed, empties dropped and duplicates removed, keeping the client's order. A service that relied on receiving `"a,b"` unsplit now receives two names.
+- `go vet` reports a wrong `ctx.Writef` again. Its printf fact is keyed by the method's position in the type, and on go1.27.0 a generic method declared before `Writef` shifts that position between the package that writes the fact and the package that reads it, so `ctx.Writef("%d", "x")` went unreported in every program importing Iris while some unrelated `Context` method was reported instead as if it formatted. `Writef` is now declared ahead of every generic `*Context` method, in `context/before_generic_methods_writef.go`, whose header says why the file is named the way it is.
+- The examples are re-sequenced to follow the book and now open with a tutorial. `_examples/01-getting-started` is thirteen complete programs that grow the Bookshelf service of TUTORIAL.md one idea at a time, from a single route to the full `iris.NewBuilder` chain and an in-memory `httptest` suite; each step says what you learn and which step comes next. The topic sections are renumbered in the book's chapter order (`02-routing` to `16-advanced`: 16 sections, 78 examples), every `main.go` header has the same shape (`Learn:`, `Before:`, `Run:`, `Try:` with the expected status on every line, `Next:`), `app.Listen` always checks its error, and three topics that had no example have one: `11-views/templates` (the blocks engine through `middleware/view`), `12-database/pg-crud` (`kataras/pg` behind the builder's `Services`, with `pgerrors`) and `13-websockets/chat` (`neffos` namespaces and events with the `neffos.js` client). `10-production/newbuilder-api` and `10-production/testing` are gone; tutorial steps 12 and 13 are the same two programs in Bookshelf form. The mirror at github.com/iris-contrib/examples is regenerated from the new tree, so deep links into its v14 sections move with them.
+- New example `_examples/09-authentication/api-key`: `middleware/apikey` in its three shapes, the default `Authorization: Bearer`, a custom header with `apikey.NoScheme`, and hashed keys with `Options.Hash`/`apikey.SHA256` alongside a `Lookup` for keys that live in a database, with the 401 envelope the middleware renders.
+- New example `_examples/10-configuration/configuration-worker`: `iris.LoadConfiguration[T]` and an embedded `iris.BaseConfiguration` (with its `BindEnv` and `Addr`), plus an `iris.Worker` passed to `Services` so the builder starts it after the initializers and stops it before the closers.
+- New example `_examples/03-controllers/repository`: `mvc.UseRepository` generating the six resource routes over a repository, with `mvc.Guard` on the writes only, `mvc.Pagination(iris.AllowSort(...))` for the list route's sort policy and `mvc.BeforeWrite` stamping the owner on every write.
+- New example `_examples/04-request/strict-query`: `ctx.QueryDate`, `ctx.QueryInt` and `ctx.QueryBool` with `iris.QueryRequired`, `iris.QueryDefault` and `iris.QueryZeroValues`, and `ctx.BindUpdate` with the 400 it answers for a column the model has not.
+- The four examples that hand-rolled an API key now use `middleware/apikey` instead: `_examples/06-middleware/error-middleware` (an unknown key is a 401 from the middleware, and the example's own error-returning middleware is left with the authorization question and its 403), `_examples/08-errors/error-router`, and `_examples/06-middleware/rate-limit`, whose buckets are now keyed by the authenticated principal rather than by whatever the client typed into a header. `_examples/16-advanced/std-interop` keeps its hand-written net/http guard, which is the adapter it demonstrates, and says so.
+- `(*errors.Error).Error()` no longer rewrites the receiver's empty `Message`/`Detail` to `<empty>` (or fills in the error code); it formats locals, so an `Error` value logged first no longer renders those placeholders on the wire.
+- `jsonutil.DefaultMarshalOptions` rejects duplicate object names on output (the v2 default), matching the read side. Re-emitting a raw `jsontext.Value` (or any custom marshaler output) that carries duplicate object names therefore fails to marshal: an upstream body with duplicate keys forwarded through `errors.Internal.Data`/`HandleAPIError` renders as `UNEXPECTED_ERROR` instead of being passed through.
+- `types.Merge`/`MergeJSON` merge overlapping keys instead of emitting both (the later value wins, first position kept), and marshal their parts with the framework's json/v2 policy, so a struct renders the same inside `Merge` as through `ctx.JSON` (nil slices as `[]`). A `ctx.JSON(types.Merge(a, b))` response with overlapping keys is now readable by `client.ReadJSON`. `MergeJSON` re-serializes its parts compactly (no whitespace, members in first-seen order), so a pre-indented raw string or `[]byte` part no longer keeps its formatting in the merged output.
+- `Context.StopWithJSON`, `errors.HandleError` and `errors.HandleRequestError` write nothing once a body has already gone out (the status is committed); `HandleError`/`HandleRequestError` still log the error and report it as handled so the caller stops. A partial body followed by `ctx.OK(nil, err)` no longer carries an error document appended to a 200.
+- The built-in fallback renderer of the typed `Bind*` methods (active without `rest/errors`) answers `ErrRequestEntityTooLarge` with 413 and respects a stopped chain on every method.
+- `errors.HandleRequestJSONError` classifies a truncated document (`{"a":`) as "malformed JSON" instead of "empty body", and the `encoding/json` v1 fallback branches send fixed details instead of the Go error text (which named server types).
+- `Context.JSONP` marshals the payload before writing, so a marshal failure leaves no dangling `callback(` on the wire, and escapes U+2028/U+2029 for the script body in addition to HTML.
+- `Context.MsgPack` returns the marshal error instead of swallowing it and writing an empty body.
+- `ErrorCodeName.Err` returns after rendering a `ValidationError`/`ValidationErrors` instead of falling through to a second render. `ErrPrivate` does not render one at all: it answers the generic message for every error it is given.
+- New `errors.Cancelled` (`CANCELLED`, 408 Request Timeout; the non-standard 499 stays with `TokenRequired`). `errors.HandleRequestError` ignores a nil error like `HandleError`; `HandleErrorf`/`HandleRequestErrorf` no longer write the wrapped error into the caller's argument slice.
+- `context.IsErrCanceled` no longer matches the error text "closed pool" (a pgx pool sentinel); it classifies by `context.Canceled`, `DeadlineExceeded`, `http.ErrHandlerTimeout` and `net.Error` timeouts only. An application that wants pgx's `puddle.ErrClosedPool` treated as a cancellation maps it itself, for example `Options.MapErrors(errors.Cancelled, puddle.ErrClosedPool)`, or keeps skipping it through its own error-log filter.
+- `client.APIError.Error()`, `client.ExtractError` and `client.GetErrorCode` tolerate a nil response, request or body (server-built `APIError` values have none); `GetErrorCode` reports 0 for an `APIError` without a response.
+- `Context.BindParam` reports a mismatched parameter type as "param %s has an unexpected type"; the message used to include the Go type name.
+- `client.DialTimeout` configures the transport's `DialContext` instead of the deprecated `Dial`, so dials honour the request context's cancellation as well as the timeout.
+- `iris.Default` returns an application that has not been built yet, so the usage it advertises works: `app := iris.Default(); app.Get(...); app.Listen(":8080")` now serves that route instead of answering 404. It ended its internal builder chain with `Build`, which compiled the mux from the routes registered up to that point, and every later registration was dropped in silence.
+- `Router.Router("/path", ..., func(r iris.Router){...}, NewSomeAPI)` registers the controllers that follow a `func(iris.Router)` argument. The function used to end the loop, so every controller after it, including through the builder's `API` step, was skipped without a word.
+- The builder registers its built-in router middleware in one fixed order: the `Errors` options handler, the access log, recovery, CORS, the `Server`/`X-Developer` headers, compression, then `errors.Handler`, which renders a bare failure status as the `rest/errors` envelope (see the bullet on it above). `AllowOrigin`, `Cors`, `LogRequests` and `LogRequestsWith` now only record what they are given. A CORS rejection is therefore written through the collector, renderer and id generator configured by `Errors`, and it is recorded by the access log; previously both ran before the errors options reached the context. The access log sits above recovery because `accesslog.Handler` logs when `ctx.Next` returns rather than in a `defer`: below it, a panicking handler was recorded nowhere and the `PanicLog` option was unreachable. The price of this order is that a panic inside the access log or the errors options handler itself is not caught by the builder's recovery middleware.
+- The builder no longer registers a second recovery middleware when one is already installed. Its guard looked for the handler name `iris.recover`, while the registered name is `iris.recovery`, and it searched the route handlers rather than the router handlers it registers into, so it never matched.
+- `Builder.Middlewares` registers through `UseRelevant` instead of `Use`. Under `NoPrefix` those handlers were prepended to the 404 and 405 chains too, so `Middlewares(jwt.Verify)` answered 401 for every unknown path.
+- The builder installs the `rest/errors` context error handler and path parameter type error handler in `NewBuilder`, before `Prefix` can create a child Router. A child copies the context options when it is created, so a prefixed API used to answer a failed response write with the framework's bare 500 while a `NoPrefix` application rendered the `rest/errors` body.
+- `Builder.Compression(true)` installs `compress.Safe` instead of `compress.Handler`: request decompression is bounded at 32MB, so a ~1MB gzip body of zeros no longer expands to ~1GB in memory. Raise or lower the ceiling with `compress.Limited(n)`.
+- `Builder.Services` panics on a `func()` or a `func() error`. Such a value has no service to provide and was quietly registered as a shutdown closer instead. Pass it to `Deferrables` for cleanup, or implement `iris.Initializer` for startup work.
+- A route registered after the router was built is reported: the router logs a warning naming the method, the path and the file and line it was registered from. The mux is compiled once, so such a route was never served and nothing said so.
+- `iris.Router` gained `UseRelevant(handlers ...iris.Handler)`, which registers middleware on matched routes only, on the root application as well as on child routers. It was already implemented, it was just missing from the interface.
+- An MVC controller declared with a `string` ID maps to the `{id:string}` route macro instead of `{id:uuid}`. A string id that was not a UUID used to 404. Declare the controller with `uuid.UUID` to keep the `uuid` macro and its validation.
+- The registration panics of `Router.Router`, `router.Dependencies`, `mvc.UseController` and `mvc.GrpcController` name the package, the router path and the fix to apply, instead of leaking internal identifiers such as `functionReturnsController`.
+- `Context.SetHeader(name, value)` sets: a second call with the same name replaces the first value, so a middleware registered twice cannot emit the duplicate `Access-Control-Allow-Origin` that browsers reject. An empty value still deletes the header. The new `Context.AddHeader(name, value)` adds, for a list-valued header such as `Vary`; `SetHeaderOverride` is removed. The framework's own `Vary` writers (`middleware/cors`, `middleware/cache`, `middleware/methodoverride`) use `AddHeader`.
+- Context readers drop their `Get` prefix: `GetCurrentRoute` → `CurrentRoute`, `GetLastPathParameter` → `LastPathParameter`, `GetValue[T]` → `ValueAs[T]`, `GetRequestValue[T]` → `RequestValue[T]`, `GetErrPublic` → `ErrPublic`, `GetID` → `ID`. `GetErr` stays because the standard `Err()` is taken by `context.Context`, and `GetStatusCode` stays as the sanctioned pair of `StatusCode(code)`. Route getters (`GetName`, `GetPath`, ...) are unchanged.
+- Removed from `Context`: `NextOrNotFound`, `NextOr`, `DoError` and `StopWithStatusText` (nothing in the framework called them; `Next`, `NotFound`, `StopWithStatus` and `StopWithText` cover them). `RequestPath(escape bool)` is replaced by `EscapedPath() string`, the percent-encoded path as the client sent it; `Path()` remains the decoded form. `ContextOptions.Apply` (always `nil`) is removed.
+- `Router.Child` is removed from the `iris.Router` interface and from `RouterBuilder`; `Router(path, handlers...)` is the one way to make a child router (a bare handler argument is registered through `Use`).
+- The `If/Then/Else` conditional controller (`router.ConditionalController`, `router.If`, `iris.If`) is removed. Register the branch you want from ordinary Go code.
+- The named-format response writers `Binary`, `Text`, `HTML`, `Protobuf`, `ProtobufJSON`, `MsgPack` and `Negotiate` return `error` only, like `JSON`, `XML`, `YAML`, `Markdown` and `Render` already did. `Write`, `Writef` and `WriteString` keep the `io.Writer` `(int, error)` contract. The `context.ContentNegotiator` interface follows: `Negotiate(ctx) error`. `hcaptcha.RenderForm` returns `error`.
+- `iris.JSON` (the per-call writer options) renames `ASCII` → `EscapeNonASCII` and `Secure` → `ArrayPrefix` (still the `while(1);` guard before a top-level array); the struct is per call, so its yaml tags are gone.
+- `rest/errors.HandleJSONError(ctx, serverError, err)` is split into `HandleRequestJSONError(ctx, err) bool` (decode failure, 400) and `HandleResponseJSONError(ctx, err) bool` (encode failure, 500). The `context.RestErrorRenderer` seam carries the same two methods.
+- The module no longer depends on `golang.org/x/exp`. The two constraints it used (`Integer`, `Float`, combined as `Number`) live in the new `core/pkg/constraints` package, which exports six: `Signed`, `Unsigned`, `Integer`, `Float`, `Number`, `Ordered`.
+- `router.EmployController[T]` / `iris.EmployController[T]` → `ResolveController[T]`.
+- `ServeMux.ServeHTTPC` → `HandleRequest`, matching the `Handle*` names on `RouterBuilder`. The same rename applies to `context.Application.HandleRequest`, `router.ServerHandler` and `rest/errors.ServerHandler`.
+- The root `rest` package is gone; its subpackages `rest/errors`, `rest/types` and `rest/math` stay. The response helpers are `Context` methods: `rest.OK(ctx, resp, err)` → `ctx.OK(resp, err)`, `rest.Created(ctx, resp, err)` → `ctx.Created(resp, err)`, `rest.NoContent(ctx, modified, err)` → `ctx.NoContent(modified, err)` and `rest.JSON(ctx, resp)` → `ctx.JSONOrError(resp)`. They render a non-nil error through the same `RestErrorRenderer` seam as `Count` and `Paginated` (`rest/errors` when it is linked in). The `rest.HandleError`, `HandleRequestError`, `HandleErrorf`, `HandleRequestErrorf` and `HandleJSONError` shortcut variables are gone: call `rest/errors.HandleError` and friends directly. `rest.GetContext` is removed without replacement (nothing called it).
+- `ctx.NoContent(modified bool, err error) bool` keeps the 204/304 split the old `rest.NoContent` had. A `true` "modified" sends `204 No Content` (the delete or the update changed something), a `false` one `304 Not Modified` (the call succeeded and nothing changed); both write an empty body and report `true`. A non-nil error goes through the `rest/errors` pipeline and reports `false`.
+- `ctx.Created` wraps a bare identifier as `{"id": ...}` when its type is in `context.IDType` (`string`, `int`, `int64`, `uint64`, `uuid.UUID`, the last as its string form); every other value renders as given. The `[]string` heuristic (a slice whose first element parsed as a UUID became a list of id objects) is removed: a `[]string` is a JSON array of strings.
+- `rest.IDType`, `rest.IDPayload`, `rest.PageOptions`, `rest.Page`, `rest.NewPage`, `rest.CountType`, `rest.CountResponse`, `rest.ItemsCollectorFunc`, `rest.Validatable` and `rest.RequestValueContextKey` are the `context` package's types and functions; the root `iris` package aliases the commonly used ones: `iris.PageOptions`, `iris.Page[T]`, `iris.CountResponse[N]`, `iris.IDPayload[T]`, `iris.Validatable`. New `iris.NewPage[T](opts PageOptions, filter any, items []T, totalCount int64) *Page[T]` wraps `context.NewPage`: `iris.Page[T]` is a type alias, but a generic function cannot be one, so this is a real forwarding function.
+- `rest.QueryDate(ctx, required, keys...)` and `QueryDateResult` are replaced by a pure parser that renders nothing: `ctx.Query().GetSimpleDate(keys ...string) (types.SimpleDate, bool, error)` on `encoding.StringSliceEntries`. Keys default to `"date"` and are tried in order; a missing key is `(zero, false, nil)`, an unparsable value `(zero, true, err)`, so the caller decides the default and the error response. (It is not named `GetDate` because `Entries[V].GetDate(key) time.Time` already exists on every entries type, the query entries included.)
+- `mvc.Controller.Update` is `Update(Context, ID, Request, ...string) (*Response, bool, error)`: a non-nil `*Response` renders 200 with the value; when it is nil the boolean decides the empty-body answer, `true` → 204, `false` → 304. The `fn` of `handler.HandlerByColumns` and `handler.UpdatePartial` has the same shape and hands the flag to `ctx.NoContent(updated, err)`. The generic boolean response branch (`handler.Handler`, `HandlerBy`, `Delete`/`DeleteBy`, `Update`/`UpdateBy`, `ResponseHandler`) renders `true` as `204 No Content` and `false` as `304 Not Modified` with an empty body, so a `Delete` returning `(false, nil)` is a 304.
+- One constructor convention across `middleware/**`: a package with settings exposes `Options` and `New(opts Options) context.Handler`; a package without settings exposes a plain `Handler`; a constructor that can fail returns `(handler, error)` and has a `Must` companion; a package that produces something other than one handler says so in the first paragraph of its package doc, and every package under `middleware/` now has a package doc whose first paragraph names its entry point. The renames: `httpcost.Handler(Options)` → `httpcost.New(Options)`; `websocket.Handler(*neffos.Server, Options)` → `websocket.New(*neffos.Server, Options)`; `geolocation.New(...Option)` → `geolocation.New(Options)`, the functional options `APIKey`, `LocationClient`, `LanguageClient`, `NoLanguage` and `Cache` becoming the fields `APIKey`, `LocationClient`, `LanguageClient`, `DisableLanguage`, `Cache` and `DisableCache`; `methodoverride.New(...Option)` → `methodoverride.New(Options)`, the functional options `Methods`, `Headers`, `FormField`, `Query`, `Getter`, `Only`, `HeadersOnly` and `SaveOriginalMethod` becoming the fields `Methods`, `Headers`, `FormField`, `Query`, `Getters`, `HeadersOnly` and `SaveOriginalMethodContextKey` (`Methods` replaces the default list, as it already did); `hcaptcha.New(secret string, ...Option)` → `hcaptcha.New(Options)` with `Secret`, `FailureHandler`, `RemoteIP` and `SiteKey` fields, the `Client` type and the `WithRemoteIP`/`WithSiteKey` options gone; `recaptcha.New(secret string)` → `recaptcha.New(Options)` with `Secret` and `FailureHandler` fields, the package-level `recaptcha.FailureHandler` variable replaced by `Options.FailureHandler` and the new `recaptcha.DefaultFailureHandler`; `rate.New(limit, burst, ...Option)` and `rate.Limit(limit, burst, ...Option)` → `rate.New(limit, burst, Options)` and `rate.Limit(limit, burst, Options)`, the functional options `ExceedHandler`, `ClientData` and `PurgeEvery` becoming the fields `ExceedHandler`, `ClientData`, `PurgeEvery` and `PurgeMaxLifetime`; `sessions.NewOptions` returns an `Options` value instead of `*Options`, and `NewSession`, `NewCookieDatabase`, `NewRedisDatabase` and `NewPostgresDatabase` take it by value (`Options.Apply` has a value receiver and returns a value; `Options.Clone` is gone, copying the value is the clone). New `rewrite.Must(Options) *Engine` and `httpcache.Must(Options) *Cache`, the panicking companions of their `New`.
+- `rate.Options.PurgeEvery` and `rate.Options.PurgeMaxLifetime` are independent now. Setting one alone used to be discarded silently, because the custom purger was only installed when both were set; each half now falls back on its own default (the one-minute tick, and the rate-derived max lifetime).
+- `accesslog.File` registers the underlying `*os.File` as a Closer. It wraps the file in a `bufio.ReadWriter`, which is a Flusher but not an `io.Closer`, so `Close` flushed the buffer and then leaked the descriptor.
+- The access log never closes `os.Stdout`, `os.Stderr` or `os.Stdin`. They are `*os.File`, so they used to be registered as Closers, and a graceful shutdown of any application with `LogRequests(true)`, whose default access log writes to `os.Stdout`, closed the process's own standard output for every other writer in the program.
+- The access log's `SetOutput`/`AddOutput` are variadic and inspect each writer they are given, which is how a file becomes a registered closer. The README told readers to pre-combine with `io.MultiWriter`, which hides every writer inside it; it now passes them separately.
+- `httpcost`'s `SetHandlerName` pattern named `iris/middleware/cache/httpcost*`, a path that does not exist, so the handler appeared in route traces as the raw Go symbol. It is `iris/middleware/httpcost.*` now, and `handler_names_test.go` pins it.
+- `core/router.RouterOptions` json tags are all snake_case now, matching the ini tags and `context.ContextOptions`: `disablePathCorrection` → `disable_path_correction`, `disablePathCorrectionRedirection` → `disable_path_correction_redirection`, `enablePathIntelligence` → `enable_path_intelligence`, `forceLowercaseRouting` → `force_lowercase_routing`, `enableDynamicHandler` → `enable_dynamic_handler`, `fireMethodNotAllowed` → `fire_method_not_allowed`. `AllowQuerySemicolons` gained the `ini:"allow_query_semicolons"` tag its siblings already had. The dangling `EnableWWW` doc block (its field had been commented out) is deleted; a one-line note on the struct points at the rewrite middleware's `PrimarySubdomain` instead.
+- Remove the `.iris.yml` live-reload bridge. `Build` no longer looks for that file in the working directory, and no longer registers the router-level middleware that recorded every response so it could inject a WebSocket reload script into the HTML ones. It existed for an external development tool that v14 does not document, and a `.iris.yml` left over in a project is read by nothing now.
+- Serve-time changes to the handler chain no longer write into the route's registered `Handlers` slice, which every request for that route shares. `Context.AddHandler` and `NewConditionalHandler` copy before they append; `UniqueHandlers` and `UpsertHandlers` no longer modify the slice they are given. `UniqueHandlers` also removes every occurrence rather than the first one per entry, as its documentation always said it did.
+- `Pool.ForceRelease` zeroes the values and params entries instead of only re-slicing them, so a finished request's data (its decoded body, its `User` and any credential on it) is not reachable from the pooled `Context`.
+- `Context.HandlerName` and `Context.HandlerFileLine` return empty values instead of panicking when the execution has stopped or the chain is empty. The recovery middleware calls both while unwinding a panic, after its own `recover` has run, so a panic there escaped the middleware entirely.
+- `ResponseWriter.IsHijacked` no longer probes with a zero-byte write, which committed the response on a live connection and silently discarded any status code set afterwards. `WriteHeader` now ignores a status code outside 100-999 rather than passing it to net/http, which panics on those.
+- The panic dump in `ErrPanicRecovery` redacts `Authorization`, `Cookie` and the other credential-bearing request headers, and `Error()` no longer embeds the dump; use `LogMessage()` for the full form.
+- `ParseContentType` keeps the case of parameter values, so a multipart `boundary` survives it. It also caps the parameter map at `context.MaxContentTypeParams` (32) and drops a non-positive `version`. See MIGRATION.md.
+- `UserMap` getters resolve capitalized keys, which `unicode.IsTitle` never matched. See MIGRATION.md.
+- `SimpleUser`, `UserPartial` and `Context.User` document that a `User` carries the credentials it authenticated with and must not be written to the response.
+- New package documentation for the root `iris` package and for `context`, plus the first runnable `Example` functions.
+- `ctx.BindJSON` (and the one-or-many binders) now run the request type's `Validate() error` method after decoding when implemented; new `ctx.BindJSONOptional` treats an empty body as the zero value. App-level `ContextOptions.RequestValidator` failures now render a client error instead of being dropped.
+- New `errors.HandleErrorf`/`HandleRequestErrorf`: wrap with `%w` (mappings still apply) and render the call-site format as the response message.
+- `iris.Options` passed to `iris.New` now merge with the defaults instead of replacing them (new `ContextOptions.FillZero`).
+- `rest/errors` no longer imports `github.com/kataras/pg`: the default map covers `database/sql.ErrNoRows` only; PostgreSQL mapping moved to the opt-in `rest/errors/pgerrors` subpackage, built on the new `errors.RegisterErrorResolver` extension point.
+- New `iris.Initializer` interface: services registered through the builder that implement `Init(ctx context.Context) error` are initialized once inside `Build()`, after dependency injection (new `dep.Container.VisitSingletons`).
+- Remove the `Context.GetHeader`/`GetContentType`/`GetMediaType` names; the response-side readers are `ResponseHeader`/`ResponseContentType`/`ResponseMediaType` (the `Get` prefix silently flipped between request and response reads). Coming from v12, where `GetHeader` read the **request**, the replacement is `Header(k)`, not `ResponseHeader(k)`; see [MIGRATION.md](MIGRATION.md#headers-are-split-between-request-and-response).
+- New `Context.WithoutCancel()`: a standard context that keeps the request values but survives client disconnects, for must-finish work.
+- New builder step `LogRequestsWith(*accesslog.AccessLog)` to register a custom-configured access log; `LogRequests(true)` keeps the tuned default.
+- New builder step `Cors(*cors.CORS)` next to `AllowOrigin`, for the CORS settings the origin line cannot reach (credentials, exposed headers, max age, the origin extractor and the error handler). `AllowOrigin(line)` is now the shorthand for `Cors(cors.New().HandleErrorFunc(errors.FailedPrecondition.Err).AllowOrigin(line))`; the value passed to `Cors` is used as given, so set `HandleErrorFunc` yourself to keep that error mapping.
+- `middleware/cors` no longer sends `Access-Control-Allow-Credentials` together with `Access-Control-Allow-Origin: *`, a combination browsers reject. Note that a request carrying an `Origin` header gets that origin echoed back, so this only affects requests with no `Origin` at all. Call the new `AllowCredentials()` to advertise credentials even then.
+- New `Options.MapErrorFuncCtx`/`ErrorCodeMap.MapErrorFuncCtx`: context-aware error mappers; `ErrorCodeMap.Filter` now takes the context as its first argument.
+- Fix `Context.ReadBody` with `*string`/`*[]byte` targets: the raw body is assigned and the method returns immediately (previously it fell through and re-read a drained body).
+- Fix `errors.Router.UseRouter` to register pre-routing middleware (it registered route-scoped `Use` middleware instead).
+- Fix `context.GetApplications` returning an always-empty slice (`apps.GetAll` was broken).
+- Fix `mvc.PathParam.Get` panicking on a parameter type mismatch (e.g. `uuid` macro storing the raw string); the mvc path-parameter registry is now concurrency-safe.
+- Fix `middleware/recorder` body buffering: reads never terminated (`io.ReadAll` looped forever; `accesslog` with `RequestBody: true` spun and grew memory unboundedly) and decoder consumers left the buffer un-rewound.
+- Fix `ContextOptions.BodyMaxMemory` not being enforced on the plain `Context.ReadJSON` path (and therefore `ReadBody`'s JSON dispatch and `ctx.BindJSON`).
+- Fix `middleware/rate`: the limiter admitted every request when `burst >= 1` (the reservation check could never fail), so limits were recorded but never enforced; exceeding requests now get the configured exceed handler (429 by default).
+- Fix `Context.Logout`: it read the registered logout function through `unsafe.Pointer`, which jumped to an invalid code address and killed the process with an unrecoverable access violation. It now type-asserts the stored handler.
+- Fix `rest/errors/validation`: numeric range messages said "characters" (e.g. "must be between 18 and 130 characters" for an age field); they now read "must be between 18 and 130".
+- Fix `rest/types.KitchenTime.Scan`: a shadowed variable dropped the minutes of every scanned database TIME value, so `13:45:00` became `1:00 PM`.
+- Fix `middleware/httpcost`: a response without a body reported `NetworkUsed` as 18446744073709551615 (an unclamped `-1`), inflating the computed cost.
+- Modernized the codebase for Go 1.26: `slices`/`maps` helpers, range-over-int, `strings.Cut`/`CutPrefix`/`SplitSeq`, `errors.AsType`, `reflect.TypeFor`, `fmt.Appendf`, `sync.WaitGroup.Go`, `testing.B.Loop` and atomic field types. All dependencies updated (including `golang.org/x/crypto`, `x/net`, `x/sys`, `x/text`, `oauth2` and `protobuf`).
+
+- **Go 1.27 is now the minimum required version.** Notes that come with the toolchain itself, without any Iris code change: `go test` now runs the `stdversion` vet check by default; `x509.SystemCertPool` honors `SSL_CERT_FILE`/`SSL_CERT_DIR` on Windows and macOS too, which can change outbound TLS behavior on machines where other tooling set those variables (affects `client/`, the buildinfo cloud probes, hcaptcha/recaptcha/geolocation calls); `image/png` output bytes changed, so the TOTP enrollment QR PNGs differ byte-for-byte from Go 1.26 builds (consumers fingerprinting the image see a full cache invalidation); binaries grow ~60KB from the runtime's new size-specialized allocator (small allocations get up to 30% cheaper); goroutine labels set via `runtime/pprof` now print in panic traceback headers. Iris itself sets none, and the recovery middleware's header redaction cannot reach labels an application sets, so never put request data (user ids, tokens) in pprof labels.
+- Handler identity hardening for Go 1.27, where the compiler may give two distinct code-identical function literals a single shared code pointer (and therefore one runtime symbol): a handler's identity is now an explicit registration id plus its *trusted* name (a `SetHandlerName`/`WithFuncName`-assigned name, or the symbol of a named function), never a compiler-generated anonymous symbol. Consequences: `UseOnce`/`UpsertHandlers` re-registering the *same unnamed closure* now appends instead of replacing (name it to get replace semantics back); two distinct anonymous middlewares can no longer silently collapse into one; `UniqueHandlers` no longer removes handlers by anonymous-name match. `SetHandlerName` patterns must now be valid regular expressions: an invalid pattern panics at init instead of silently degrading to an exact-literal match (which is how the `rest/errors` recovery and `referrer` name mappings shipped dead, and the rate-limiter mapping survived only by accident; all three are fixed, and a new root-package test pins every constructible mapping).
+- Work around a Go 1.27.0 linker bug (`fatal error: unreachable method called. linker bug?`) in `core/dep`: calling a constraint method on a type parameter whose concrete type satisfies the constraint via an *embedded interface* crashes, because the linker prunes the compiler-generated wrapper method. The dependency-resolution loop now converts to the interface before the call.
+- `github.com/kataras/neffos` moves to v0.0.25. It requires Go 1.27 and changes a few of its signatures (its HISTORY has the table). `mvc.Websocket` builds its controllers through the new `neffos.NewStructValue`, the reflection form of the now generic `neffos.Struct[T]`, so a controller resolved by the dependency injection container keeps working unchanged, and `middleware/websocket` needs no change at all. Applications that reach neffos through Iris get its typed helpers (`msg.As[T]()`, `c.SendObject`, `c.AskObject[Reply]`, `c.Conn.Value[T](key)` in place of `Get`) and `encoding/json/v2` message bodies; the `neffos.Exclude(id)` and `*Room` forms of `Server.Broadcast` now also work through a redis or nats stack exchange.
+- **`github.com/google/uuid` is replaced by the Go standard library's `uuid` package** everywhere Iris touches UUIDs: the `context.IDType` union member, the mvc path-parameter conversions, the `:uuid` route macro (which always matched *any* UUID version; its `uuidv4` alias name survives, its documentation no longer lies) and the unsafe fast paths in `core/pkg/reflex` (now guarded by compile-time 16-byte layout asserts and a kind-map test). Session ids generated by the sessions middleware are now **UUID version 7** (time-ordered, so neighboring sessions land on neighboring Redis/Postgres storage keys; note that a v7 id embeds its creation time in the cookie, accepted and documented), while JWT `jti` token ids stay version 4 on purpose: a token id must not leak its mint time. Session-id validation is version-agnostic `Parse`, so v4 ids issued before the switch keep working. `middleware/requestid` failure mode changed: the stdlib generator has no error return, so an entropy failure now surfaces as a panic caught by the recovery middleware (still a 500, via recovery) instead of the old explicit 500 branch. The new tiny `core/pkg/uid` package (`NewString`, `NewV7String`) is the framework's id-minting seam. `github.com/google/uuid` remains only as an indirect dependency via `kataras/neffos`.
+
+- **JSON is now `encoding/json/v2` end to end.** Every `ctx.JSON` response is marshaled through the standard library's new v2 encoder into a pooled buffer, and every `ctx.ReadJSON`/`ReadJSONStream` decode runs on `jsontext` + v2. What is preserved by explicit framework defaults: sorted map keys, duplicate object names and invalid UTF-8 tolerated on output, `time.Duration` as int64 nanoseconds on both directions (v2 has no default Duration representation; see the exported `context.MarshalDurationAsNanos`/`UnmarshalDurationFromNanos` options), case-insensitive member matching on reads (opt out per call with `JSONReader.CaseSensitive`), and a trailing newline after every JSON body, now uniformly, where the `ArrayPrefix`/`EscapeNonASCII`/`Prefix` path used to lack it. What deliberately changed: HTML escaping is off by default (`JSON.UnescapeHTML` is replaced by the inverted opt-in `JSON.EscapeHTML`; JSONP always escapes), nil slices/maps render as `[]`/`{}` instead of `null`, request bodies with duplicate object names or invalid UTF-8 are rejected with 400 (JSON-smuggling defense), and empty-body detection is structural (`context.ErrEmptyJSON`, wrapping `io.EOF`) instead of error-text sniffing. Bugs that the old implementation carried are gone by construction: the `UnescapeHTML` byte-rewrite corrupted string values containing a literal `<`; the `ASCII` option emitted invalid five-hex escapes for astral-plane runes (now proper UTF-16 surrogate pairs); an oversized body could decode successfully despite `BodyMaxMemory` because the limiting reader handed the whole read over together with the error. JSON error responses improved: bad-body 400s name the offending member by JSON pointer (`field "/items/0/price": expected number, got string`) without ever echoing the server's Go type names, and marshal-side 500 details do the same. New per-call escape hatches: `JSON.MarshalOptions` / `JSONReader.UnmarshalOptions` accept raw `encoding/json/v2` options.
+- The `github.com/mailru/easyjson` dependency is gone: `Context.EasyJSON` and the mvc easyjson fast path are removed. A type implementing v2's `json.MarshalerTo` streams through plain `ctx.JSON` with no intermediate `[]byte`, which is the same fast path without the code generator. The accesslog JSON formatter is one code path now (the hand-edited easyjson writer and the divergent std path disagreed on entry fields, the indented form leaking `"immutable":false` and `"Sep":""` per entry, and patched the timestamp by byte-replacement); `middleware/accesslog`'s SSE/AI frame encoders marshal into pooled buffers. Note that `encoding/json.RawMessage` is an alias of `jsontext.Value` since Go 1.27, so raw-JSON fields (`ai.Part`, `client.APIError.Body`, `rest/errors.Error.Data`) interoperate with both APIs unchanged.
+- The framework's JSON policy now lives in one place: the new `core/pkg/jsonutil` package (std-only imports) holds the default v2 marshal/unmarshal options and the shared pooled marshal buffers, and every producer and consumer composes its option set from it: the Context writers and readers, `rest/errors` (including the problem+json renderer), the `sse` and `ai` encoders, the accesslog formatter and the HTTP `client`. Practical consequence: `client.ReadJSON`/`Bind`/`DecodeError` now decode exactly what an Iris server emits (`time.Duration` as int64 nanoseconds, case-insensitive member matching), where they previously ran on bare v2 defaults.
+- `rest/errors`: a `dataValue` of type `error` (with message and detail already set) is JSON-string-encoded into `Data` instead of being placed raw where valid JSON was required, which made the error response itself fail to render; caller-supplied `[]byte` data is validated and falls back to a JSON string. The RFC 7807 problem+json renderer keeps deterministic member order and buffers before writing.
+- `context.UserPartial` marshals as `{"raw":...}` only: encoding/json/v2 rejects JSON tags on unexported fields, and the exported embedded interfaces re-serialized the user, credentials included, a second time under their own keys.
+- Tag sweep: fields of numeric, boolean and `time.Duration` types that relied on `omitempty` now use `omitzero`: under v2 semantics `omitempty` no longer omits a zero number or `false`. Applications upgrading should do the same sweep on their own response structs.
+- **The ctx-first generic `rest` helpers are now canonical generic methods on `iris.Context`** (Go 1.27 generic methods) and the old package functions are removed. Renames: `rest.ReadJSON[T](ctx)` → `ctx.BindJSON[T]()`, `rest.ReadJSONOptional[T](ctx)` → `ctx.BindJSONOptional[T]()`, `rest.ReadJSONObjectOrArray[T](ctx)` → `ctx.BindJSONOneOrMany[T]()`, `rest.ReadJSONObjectOrArrayAsList[T](ctx)` → `ctx.BindJSONList[T]()`, `rest.GetParams[S](ctx)` → `ctx.BindParams[S]()`, `rest.GetParam[T](ctx, name)` → `ctx.BindParam[T](name)`, `rest.GetContextValue[T](ctx, key)`/`context.GetContextValue[T](ctx, key)` → `ctx.ValueAs[T](key)`, `rest.GetContextRequestValue[T](ctx)` → `ctx.RequestValue[T]()`, `rest.Count(ctx, n, err)` → `ctx.Count(n, err)`, `rest.ReadPaginationOptions[F](ctx)` → `ctx.BindPagination[F]()`, `rest.Paginated(ctx, collect)` → `ctx.Paginated(collect)`, `rest.TransformPage(list, f)` → `list.Transform[V](f)`, `rest.GetUser[T](ctx)` → the pre-existing `auth.GetUser[T](ctx)`. The moved types live in `context` (`PageOptions`, `Page[T]`, `NewPage`, `CountType`, `CountResponse[N]`, `ItemsCollectorFunc`, `Validatable`, `MaxPageSize`/`DefaultPageSize`) with aliases for the common ones in the `iris` root package (`iris.PageOptions`, `iris.Page[T]`, `iris.CountResponse[N]`, `iris.IDPayload[T]`, `iris.Validatable`). Structurally, the methods render their error responses through the new `context.RestErrorRenderer` seam: `rest/errors` installs the canonical renderer at package-init time (dependency inversion, breaking the context → rest/errors import cycle), and a minimal built-in `{"message": ...}` fallback keeps package `context` usable alone.
+- `mvc`: the new generic method `DeployedController.WithViews[IndexViewData, CreateViewData, ModelViewData, ListViewData]()` replaces `Extend`/`ViewExtension` (both removed): the view data types are now stated at the call site and a controller that does not implement `mvc.ViewController` for them panics at registration time. Same theme in `core/dep`: `Container.Resolve[T]()` is the typed resolver (the reflect-typed accessor is renamed to `Container.ResolveValue`) and `Container.VisitSingletons[T](fn func(T))` filters by the visited type (pass a `func(v any)` to visit everything, as before).
+
+- New `zstd` (Zstandard, RFC 8878) content encoding in `middleware/compress`, for both response compression and request body decompression, and in `controller/fileserver`'s pre-compression defaults. It is appended at the end of `compress.AllEncodings`, so a client sending `Accept-Encoding: gzip, zstd` without q-values keeps getting gzip; a client that prefers zstd gets it by saying so (`zstd;q=1.0, gzip;q=0.5`). The default level maps to zstd's own default (3 on the zstd CLI scale); encoder and decoder run single-threaded, since they live for one request.
+
+- New `errors.Report` and `ErrorCodeName.Report` in `rest/errors`: run the full error pipeline - code mapping, private redaction, id generation, logging and collection - and return the resulting `*Error` **without writing anything to the response**. A response that has already committed a status code, which is every stream after its first byte, previously had no way to use the error system at all: the render path would have written a JSON body into the middle of the stream, and skipping it meant the logger and the collector never fired, so a mid-stream failure was invisible to whatever cloud sink they feed. The `sse` and `ai` packages use it, so a streaming handler reports failures through the same machinery as every other handler with no extra wiring.
+
+- New canonical error code `errors.BadGateway` (502), for the case an upstream this service depends on failed. It is distinct from `Unavailable`, which says this service cannot serve the request, and the set had 503 and 504 without it.
+
+- Fix `(*errors.Options).ErrorCodeMap()` panicking on a nil receiver. `getReadOnlyOptions` returns nil for any request in an application that registered no error options, and every sibling accessor already guarded.
+
+- New `sse.Options.ErrorFrame` with `sse.ReportErrorFrame` as the default, and `sse.RawErrorFrame` to opt out. **Behaviour change:** the error event a failed stream ends with now carries the `rest/errors` envelope - correlation id, canonical code, message, detail - rather than the raw `err.Error()` text, and an unmapped error is redacted to a generic message. An upstream message naming a vendor, a model or a host can no longer reach a client by default.
+
+- New `ai.Options.Redact`, `(*ai.UpstreamError).ErrorCode` and `(*ai.UpstreamError).Report`. A classified upstream failure keeps its canonical code, so a provider rate limit reaches the client as `RESOURCE_EXHAUSTED` rather than as a generic internal error, and the client is told what the failure means rather than what the provider said. `Redact` rewrites the client-facing text for the remaining case: an error the application mapped and described on purpose whose description still names a vendor.
+
+- `ai.Options.OnPart` now also sees the terminal error that `Close` writes, as a `KindError` part. It previously went straight to the wire without passing the one hook that governs every other part, which made the documented claim that `OnPart` is the whole policy surface false.
+
+- New `sse` package: Server-Sent Events as a first-class transport, in both directions. `sse.Open(ctx)` writes nothing until the first `Send`, so an authorization failure after it still returns an ordinary status code; on that first event it removes every buffering response-writer wrapper, clears the server's absolute `WriteTimeout`, enables full duplex for a POST body on HTTP/1, and sets the cache and proxy-buffering headers. It carries a 15s heartbeat (the largest interval that survives nginx, ALB, Cloudflare and Heroku at once, and the only way to notice a client that vanished without a FIN), automatic event ids, a terminal frame written on success as well as on failure so a client can detect truncation, and `Coalesce` for batching text deltas. `sse.Read` is a tolerant `iter.Seq2` parser for consuming somebody else's stream, which is the piece every Go LLM SDK reimplements. Read more at [sse/README](./sse/README.md).
+
+- New `ai` package: renders and relays AI model streams over HTTP, transport-aware and provider-agnostic. One handler serves both `stream: true` and `stream: false`; a neutral seven-kind `Part` vocabulary whose constructors make an invalid combination unrepresentable; pluggable `Encoder`s (`SSEJSON`, `NDJSON`, `PlainText`) as the single seam a vendor dialect may enter through; `Relay` for forwarding an upstream stream; `Classify` for a typed `*UpstreamError` read from the response rather than from an error string; and `TagSplit` for models that fence their reasoning in an inline tag. It ships no vendor SDK, no HTTP client for any AI service and no vendor schema. Read more at [ai/README](./ai/README.md).
+
+- New `Context.DisableResponseBuffering()` and a redefined `context.ResponseWriterDisabler` (`Disable() ResponseWriter`), implemented by `middleware/compress` and `middleware/recorder`. This fixes a real defect rather than adding a convenience: `ResponseRecorder.Flush` forwarded its buffer only when the handler had set `Transfer-Encoding: chunked`, and `accesslog` installs a recorder whenever it reads the response body, which `iris.NewBuilder().LogRequests(true)` turns on. The framework's own recommended chain therefore de-streamed every Server-Sent Events response. Both wrappers now also step aside by themselves on a `text/event-stream` or `application/x-ndjson` response, for handlers that stream without using the `sse` package.
+
+- New `context.ResponseWriterFlushError` interface and `(*DefaultResponseWriter).FlushError() error`, plus `context.FlushResponseWriter`. `http.ResponseController` probes this interface before `http.Flusher`, so a flush stops always reporting success and becomes the cheapest disconnect signal a long-lived response has. Behaviour change worth noting: code that flushes on a dead connection now gets a real error where it used to get nil.
+
+- New `Context.ShuttingDown()`: a channel closed when the server begins a graceful shutdown, carried on every request context through a new `http.Server.BaseContext`. `http.Server.Shutdown` cancels no request context, so a handler blocked in a stream loop was never told the process was stopping and `Shutdown` waited for it until its own deadline expired. The signal is deliberately separate from cancellation, because a draining stream still needs to write its terminal frame.
+
+- `Context.StreamWriter` re-checks cancellation after each write, so a writer that never blocks cannot run a whole generation without noticing that nobody is reading, and it reports a failed flush instead of discarding it. `io.EOF` remains the normal-completion sentinel; for event streams prefer the new `sse` package, whose push API fits a producer goroutine rather than a poll loop.
+
+- `middleware/compress` no longer compresses `text/event-stream` or `application/x-ndjson`. The check is on the response media type with its parameters stripped, so `text/event-stream;charset=utf-8` cannot fall through, which is the exact form that broke net/http's own `ReverseProxy` and Caddy.
+
+- `core/server` logs a warning at startup when `Timeout.HandlerTimeout` is set: `http.TimeoutHandler`'s response writer implements neither `http.Flusher` nor `http.Hijacker`, so under that one option no response can stream and no connection can be hijacked. `sse.Open` reports it as `ErrNotStreamable` before writing a byte.
+
+- New `middleware/httpcost`: Monitors requests' resource usage (time, memory, CPU) to produce a cost metric for performance analysis or billing. Read more at [middleware/httpcost/README](./middleware/httpcost/README.md).
+
+- Add `controller/apigraph`: Registers a handler that renders a graph of the application's routes. It generates an HTML page with a D3.js visualization of the routes, showing the paths, methods, and handlers. The graph is interactive: hover over a link or a node to see more details. Usage: `app.Router("/apigraph", apigraph.New(apigraph.Options{Theme: "dark"}))`
+
+- Add a `Context.Addr` method to retrieve IP address of the client, even if the client is a local one. This differs from the `Context.RemoteAddr` which tries to get the real IP address of the client, even if the client is behind a proxy server.
+
+- Move the `view` sub-package to `middleware/view` with a new API and features. View engine implementations are now moved to the [iris-contrib/views](https://github.com/iris-contrib/views) repository. The `Blocks` view engine is not needed anymore and was removed entirely, as the [kataras/blocks](https://github.com/kataras/blocks) is already fully compatible with the new `view.Engine` interface.
+- The `github.com/kataras/blocks` view engine is updated to **v0.1.0**, which requires Go 1.27 and breaks a few things worth knowing about if you render with it. Its exported `Root`, `Templates` and `Layouts` fields are replaced by `Lookup(name, layout)`, `TemplateNames()` and `LayoutNames()`; go-bindata and `http.FileSystem` inputs are gone in favour of `embed.FS`; markdown renders through goldmark instead of blackfriday; a bare `{{ yield }}` passes the data instead of nil, trim markers around a yield are honoured, and `Option` now reaches layouts. The fixes that matter to a running server: reloading templates while requests render no longer risks a concurrent map crash, a failed reload keeps the working templates, and a parse error no longer carries the template source into the error string. Iris itself needs no change, since `blocks.Blocks` still satisfies `view.Engine`, `view.EngineFuncer` and `view.EngineExtenser`. See https://github.com/kataras/blocks/blob/main/CHANGELOG.md.
+- Fixed `context.ResolveFS` for an `http.FileSystem` that has sub-directories. A template engine given `http.Dir("./views")` failed to open the first template of a nested directory, in every release since v12.2.0. The file system is now walked like any other `fs.FS`.
+
+Old Code:
 
 ```go
-// Use same as a common Party's "Use" but it accepts dynamic functions as its "handlersFn" input.
-Use(handlersFn ...any)
-// Done same as a common Party's but it accepts dynamic functions as its "handlersFn" input.
-Done(handlersFn ...any)
+templates := iris.HTML("./views", ".html")
+
+app.RegisterView(templates)
+
+// To register per group of routes:
+app.Party("/other").RegisterView(otherTemplates)
 ```
 
-```go
-// Handle same as a common Party's `Handle` but it accepts one or more "handlersFn" functions which each one of them
-// can accept any input arguments that match with the Party's registered Container's `Dependencies` and
-// any output result; like custom structs <T>, string, []byte, int, error,
-// a combination of the above, hero.Result(hero.View | hero.Response) and more.
-//
-// It's common from a hero handler to not even need to accept a `Context`, for that reason,
-// the "handlersFn" will call `ctx.Next()` automatically when not called manually.
-// To stop the execution and not continue to the next "handlersFn"
-// the end-developer should output an error and return `iris.ErrStopExecution`.
-Handle(method, relativePath string, handlersFn ...any) *Route
+New Code:
 
-// Get registers a GET route, same as `Handle("GET", relativePath, handlersFn....)`.
-Get(relativePath string, handlersFn ...any) *Route
-// and so on...
+```go
+import "github.com/kataras/iris/v14/middleware/view"
+import "github.com/iris-contrib/views"
+
+// [...]
+templates := views.HTML("./views", ".html")
+
+app.Use(view.Handler(templates))
+
+// To register per group of routes:
+app.Router("/other", view.Handler(otherTemplates))
 ```
 
-Prior to this version the `iris.Context` was the only one dependency that has been automatically binded to the handler's input or a controller's fields and methods, read below to see what types are automatically binded:
+- Move the `i18n` sub-package to `middleware/i18n` with a new API and new features.
+- Move the `sessions` sub-package to `middleware/sessions` with a new API and new features.
+- Remove the `context.GetReferrer` method, use the [middleware/referrer](./middleware/referrer/) instead.
+- Remove the `context.Problem` type and methods, replaced by `errors.$ErrorCodeName.Problem` method (and `errors.Problem` renderer).
+- Remove the `x/**/*` sub-packages, for the `sqlx` please consider the fully postgres compatible high-performant library [pg](https://github.com/kataras/pg) instead. For the rest please take a look at the new [rest](rest/README.md) sub-package.
+- Remove the `/websocket` sub-package in favor of the new [websocket](middleware/websocket) middleware.
+- Remove the `/cache` sub-package in favor of the new [cache](middleware/cache) middleware. Which does support http caching but not server-side caching, use custom implementations with stores like Redis for more.
+- Remove the Iris Application's option for sitemap and replace the whole sitemap functionality with a new [sitemap](controller/sitemap) controller.
+- Add a simple [counter](middleware/counter) middleware which contains a global counter too for different kind of usages. 
+- Remove the `middleware/logger` in favor of the `middleware/accesslog`.
+- The `HandleDir` & `Favicon` methods were replaced by the new [fileserver](./controller/fileserver) controller.
+- The `Context`'s request body limit methods were replaced by the new [bodylimit](./middleware/bodylimit/) middleware. 
+- The `Context`'s compression methods were replaced by the new [compress](./middleware/compress/) middleware. 
+- The `versioning` sub-package was was replaced by the new [versoning](./middleware/versioning/) middleware, which it's simplified and uses API path prefixes for internal redirections and versioning matching. 
+- The `Application.Validator, Validate` is now a per-context value. Set a custom validator globally through `iris.Options`:
+```go
+app := iris.New(iris.Options{
+    Context: iris.ContextOptions{RequestValidator: myValidator},
+})
+```
+Or edit it per request:
+```go
+ctx.Options().RequestValidator = myValidator
+```
 
-| Type | Maps To |
-|------|:---------|
-| [*mvc.Application](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Application) | Current MVC Application |
-| [iris.Context](https://pkg.go.dev/github.com/kataras/iris/v12/context?tab=doc#Context) | Current Iris Context |
-| [*sessions.Session](https://pkg.go.dev/github.com/kataras/iris/v12/sessions?tab=doc#Session) | Current Iris Session |
-| [context.Context](https://golang.org/pkg/context/#Context) | [ctx.Request().Context()](https://golang.org/pkg/net/http/#Request.Context) |
-| [*http.Request](https://golang.org/pkg/net/http/#Request) | `ctx.Request()` |
-| [http.ResponseWriter](https://golang.org/pkg/net/http/#ResponseWriter) | `ctx.ResponseWriter()` |
-| [http.Header](https://golang.org/pkg/net/http/#Header) | `ctx.Request().Header` |
-| [time.Time](https://golang.org/pkg/time/#Time) | `time.Now()` |
-| [*golog.Logger](https://pkg.go.dev/github.com/kataras/golog) | Iris Logger |
-| [net.IP](https://golang.org/pkg/net/#IP) | `net.ParseIP(ctx.RemoteAddr())` |
-| [mvc.Code](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Code) | `ctx.GetStatusCode() int` |
-| [mvc.Err](https://pkg.go.dev/github.com/kataras/iris/v12/mvc?tab=doc#Err) | `ctx.GetErr() error` |
-| [iris/context.User](https://pkg.go.dev/github.com/kataras/iris/v12/context?tab=doc#User) | `ctx.User()` |
-| `string`, | |
-| `int, int8, int16, int32, int64`, | |
-| `uint, uint8, uint16, uint32, uint64`, | |
-| `float, float32, float64`, | |
-| `bool`, | |
-| `slice` | [Path Parameter](https://github.com/kataras/iris/blob/v12/_examples/routing/dynamic-path/main.go#L20) |
-| Struct | [Request Body](https://github.com/kataras/iris/tree/v12/_examples/request-body) of `JSON`, `XML`, `YAML`, `Form`, `URL Query`, `Protobuf`, `MsgPack` |
-
-Here is a preview of what the new Hero handlers look like:
-
-### Request & Response & Path Parameters
-
-**1.** Declare Go types for client's request body and a server's response.
+- The `middleware#AccessLog.BodyMinify` field and the `iris.Minify` middleware were removed, no need to keep that kind of functionality here. To mimic the behavior, if you are still want to minify response bodies please follow the below code snippet:
 
 ```go
-type (
-	request struct {
-		Firstname string `json:"firstname"`
-		Lastname  string `json:"lastname"`
-	}
-
-	response struct {
-		ID      uint64 `json:"id"`
-		Message string `json:"message"`
-	}
+import (
+    "github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/css"
+	"github.com/tdewolff/minify/v2/html"
+	"github.com/tdewolff/minify/v2/js"
+	"github.com/tdewolff/minify/v2/json"
+	"github.com/tdewolff/minify/v2/svg"
+	"github.com/tdewolff/minify/v2/xml"
 )
-```
 
-**2.** Create the route handler.
-
-Path parameters and request body are binded automatically.
-- **id uint64** binds to "id:uint64"
-- **input request** binds to client request data such as JSON
-
-```go
-func updateUser(id uint64, input request) response {
-	return response{
-		ID:      id,
-		Message: "User updated successfully",
-	}
-}
-```
-
-**3.** Configure the container per group and register the route.
-
-```go
-app.Party("/user").ConfigureContainer(container)
-
-func container(api *iris.APIContainer) {
-    api.Put("/{id:uint64}", updateUser)
-}
-```
-
-**4.** Simulate a [client](https://curl.haxx.se/download.html) request which sends data to the server and displays the response.
-
-```sh
-curl --request PUT -d '{"firstanme":"John","lastname":"Doe"}' http://localhost:8080/user/42
-```
-
-```json
-{
-    "id": 42,
-    "message": "User updated successfully"
-}
-```
-
-### Custom Preflight
-
-Before we continue to the next section, register dependencies, you may want to learn how a response can be customized through the `iris.Context` right before sent to the client.
-
-The server will automatically execute the `Preflight(iris.Context) error` method of a function's output struct value right before send the response to the client.
-
-Take for example that you want to fire different HTTP status codes depending on the custom logic inside your handler and also modify the value(response body) itself before sent to the client. Your response type should contain a `Preflight` method like below.
-
-```go
-type response struct {
-    ID      uint64 `json:"id,omitempty"`
-    Message string `json:"message"`
-    Code    int    `json:"code"`
-    Timestamp int64 `json:"timestamp,omitempty"`
-}
-
-func (r *response) Preflight(ctx iris.Context) error {
-    if r.ID > 0 {
-        r.Timestamp = time.Now().Unix()
-    }
-
-    if r.Code > 0 {
-        ctx.StatusCode(r.Code)
-    }
-
-    return nil
-}
-```
-
-Now, each handler that returns a `*response` value will call the `response.Preflight` method automatically.
-
-```go
-func deleteUser(db *sql.DB, id uint64) *response {
-    // [...custom logic]
-
-    return &response{
-        Message: "User has been marked for deletion",
-        Code: iris.StatusAccepted,
-    }
-}
-```
-
-If you register the route and fire a request you should see an output like this, the timestamp is filled and the HTTP status code of the response that the client will receive is 202 (Status Accepted).
-
-```json
-{
-  "message": "User has been marked for deletion",
-  "code": 202,
-  "timestamp": 1583313026
-}
-```
-
-### Register Dependencies
-
-**1.** Import packages to interact with a database.
-The go-sqlite3 package is a database driver for [SQLite](https://www.sqlite.org/index.html).
-
-```go
-import "database/sql"
-import _ "github.com/mattn/go-sqlite3"
-```
-
-**2.** Configure the container ([see above](#request--response--path-parameters)), register your dependencies. Handler expects an *sql.DB instance.
-
-```go
-localDB, _ := sql.Open("sqlite3", "./foo.db")
-api.RegisterDependency(localDB)
-```
-
-**3.** Register a route to create a user.
-
-```go
-api.Post("/{id:uint64}", createUser)
-```
-
-**4.** The create user Handler.
-
-The handler accepts a database and some client request data such as JSON, Protobuf, Form, URL Query and e.t.c. It Returns a response.
-
-```go
-func createUser(db *sql.DB, user request) *response {
-    // [custom logic using the db]
-    userID, err := db.CreateUser(user)
-    if err != nil {
-        return &response{
-            Message: err.Error(),
-            Code: iris.StatusInternalServerError,
-        }
-    }
-
-	return &response{
-		ID:      userID,
-		Message: "User created",
-		Code:    iris.StatusCreated,
-	}
-}
-```
-
-**5.** Simulate a [client](https://curl.haxx.se/download.html) to create a user.
-
-```sh
-# JSON
-curl --request POST -d '{"firstname":"John","lastname":"Doe"}' \
---header 'Content-Type: application/json' \
-http://localhost:8080/user
-```
-
-```sh
-# Form (multipart)
-curl --request POST 'http://localhost:8080/users' \
---header 'Content-Type: multipart/form-data' \
---form 'firstname=John' \
---form 'lastname=Doe'
-```
-
-```sh
-# Form (URL-encoded)
-curl --request POST 'http://localhost:8080/users' \
---header 'Content-Type: application/x-www-form-urlencoded' \
---data-urlencode 'firstname=John' \
---data-urlencode 'lastname=Doe'
-```
-
-```sh
-# URL Query
-curl --request POST 'http://localhost:8080/users?firstname=John&lastname=Doe'
-```
-
-Response: 
-
-```json
-{
-    "id": 42,
-    "message": "User created",
-    "code": 201,
-    "timestamp": 1583313026
-}
-```
-
-## Breaking Changes
-
-- The `versioning.NewMatcher` has been removed entirely in favor of `NewGroup`. Strict versions format on `versioning.NewGroup` is required. E.g. `"1"` is not valid anymore, you have to specify `"1.0.0"`. Example: `NewGroup(api, ">=1.0.0 <2.0.0")`. The [routing/versioning](_examples/routing/versioning) examples have been updated.
-- Now that `RegisterView` can be used to register different view engines per-Party, there is no need to support registering multiple engines under the same Party. The `app.RegisterView` now upserts the given Engine instead of append. You can now render templates **without file extension**, e.g. `index` instead of `index.ace`, both forms are valid now.
-- The `Context.ContentType` does not accept filenames to resolve the mime type anymore (caused issues with  vendor-specific(vnd) MIME types).
-- The `Configuration.RemoteAddrPrivateSubnets.IPRange.Start and End` are now type of `string` instead of `net.IP`. The `WithRemoteAddrPrivateSubnet` option remains as it is, already accepts `string`s.
-- The `i18n#LoaderConfig.FuncMap template.FuncMap` field was replaced with `Funcs func(iris.Locale) template.FuncMap` in order to give current locale access to the template functions. A new `app.I18n.Loader` was introduced too, in order to make it easier for end-developers to customize the translation key values.
-- Request Logger's `Columns bool` field has been removed. Use the new [accesslog](https://github.com/kataras/iris/tree/v12/_examples/logging/request-logger/accesslog/main.go) middleware instead.
-- The `.Binary` method of all view engines was removed: pass the go-bindata's latest version `AssetFile()` exported function as the first argument instead of string. All examples updated.
-- `ContextUploadFormFiles(destDirectory string, before ...func(*Context, *multipart.FileHeader) bool) (uploaded []*multipart.FileHeader, n int64, err error)` now returns the total files uploaded too (as its first parameter) and the "before" variadic option should return a boolean, if false then the specific file is skipped.
-- `Context.PostValues(name string) ([]string, error)` now returns a second output argument of `error` type too, which reports `ErrEmptyForm` or `ErrNotFound` or `ErrEmptyFormField`. The single post value getters now returns the **last value** if multiple was given instead of the first one (this allows clients to append values on flow updates).
-- `Party.GetReporter()` **removed**. The `Application.Build` returns the first error now and the API's errors are logged, this allows the server to run even if some of the routes are invalid but not fatal to the entire application (it was a request from a company).
-- `versioning.NewGroup(string)` now accepts a `Party` as its first input argument: `NewGroup(Party, string)`.
-- `versioning.RegisterGroups` is **removed** as it is no longer necessary.
-- `Configuration.RemoteAddrHeaders` from `map[string]bool` to `[]string`. If you used `With(out)RemoteAddrHeader` then you are ready to proceed without any code changes for that one.
-- `ctx.Gzip(boolean)` replaced with `ctx.CompressWriter(boolean) error`.
-- `ctx.GzipReader(boolean) error` replaced with `ctx.CompressReader(boolean) error`.
-- `iris.Gzip` and `iris.GzipReader` replaced with `iris.Compression` (middleware).
-- `ctx.ClientSupportsGzip() bool` replaced with `ctx.ClientSupportsEncoding("gzip", "br" ...) bool`.
-- `ctx.GzipResponseWriter()` is **removed**.
-- `Party.HandleDir/iris.FileServer` now accepts both `http.FileSystem` and `string` and returns a list of `[]*Route` (GET and HEAD) instead of GET only. You can write: both `app.HandleDir("/", iris.Dir("./assets"))` and `app.HandleDir("/", "./assets")` and `DirOptions.Asset, AssetNames, AssetInfo` removed, use `go-bindata -fs [..]` and `app.HandleDir("/", AssetFile())` instead.
-- `Context.OnClose` and `Context.OnCloseConnection` now both accept an `iris.Handler` instead of a simple `func()` as their callback.
-- `Context.StreamWriter(writer func(w io.Writer) bool)` changed to `StreamWriter(writer func(w io.Writer) error) error` and it's now the `Context.Request().Context().Done()` channel that is used to receive any close connection/manual cancel signals, instead of the deprecated `ResponseWriter().CloseNotify()` one. Same for the `Context.OnClose` and `Context.OnCloseConnection` methods.
-- Fixed handler's error response not be respected when response recorder was used instead of the common writer. Fixes [#1531](https://github.com/kataras/iris/issues/1531). It contains a **BREAKING CHANGE** of: the new `Configuration.ResetOnFireErrorCode` field should be set **to true** in order to behave as it used before this update (to reset the contents on recorder).
-- `Context.String()` (rarely used by end-developers) it does not return a unique string anymore, to achieve the old representation you must call the new `Context.SetID` method first.
-- `iris.CookieEncode` and `CookieDecode` are replaced with the `iris.CookieEncoding`.
-- `sessions#Config.Encode` and `Decode` are removed in favor of (the existing) `Encoding` field.
-- `versioning.GetVersion` now returns an empty string if version wasn't found.
-- Change the MIME type of `Javascript .js` and `JSONP` as the HTML specification now recommends to `"text/javascript"` instead of the obselete `"application/javascript"`. This change was pushed to the `Go` language itself as well. See <https://go-review.googlesource.com/c/go/+/186927/>.
-- Remove the last input argument of `enableGzipCompression` in `Context.ServeContent`, `ServeFile` methods. This was deprecated a few versions ago. A middleware (`app.Use(iris.CompressWriter)`) or a prior call to `Context.CompressWriter(true)` will enable compression. Also these two methods and `Context.SendFile` one now support `Content-Range` and `Accept-Ranges` correctly out of the box (`net/http` had a bug, which is now fixed).
-- `Context.ServeContent` no longer returns an error, see `ServeContentWithRate`, `ServeFileWithRate` and `SendFileWithRate` new methods too.
-- `route.Trace() string` changed to `route.Trace(w io.Writer)`, to achieve the same result just pass a `bytes.Buffer`
-- `var mvc.AutoBinding` removed as the default behavior now resolves such dependencies automatically (see [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)).
-- `mvc#Application.SortByNumMethods()` removed as the default behavior now binds the "thinnest"  empty `any` automatically (see [MVC: service injecting fails](https://github.com/kataras/iris/issues/1343)).
-- `mvc#BeforeActivation.Dependencies().Add` should be replaced with `mvc#BeforeActivation.Dependencies().Register` instead
-- **REMOVE** the `kataras/iris/v12/typescript` package in favor of the new [iris-cli](https://github.com/kataras/iris-cli). Also, the alm typescript online editor was removed as it is deprecated by its author, please consider using the [designtsx](https://designtsx.com/) instead.
-
-# Su, 16 February 2020 | v12.1.8
-
-New Features:
-
--  [[FEATURE REQUEST] MVC serving gRPC-compatible controller](https://github.com/kataras/iris/issues/1449)
-
-Fixes:
-
-- [App can't find embedded pug template files by go-bindata](https://github.com/kataras/iris/issues/1450)
-
-New Examples:
-
-- [_examples/mvc/grpc-compatible](_examples/mvc/grpc-compatible)
-
-# Mo, 10 February 2020 | v12.1.7
-
-Implement **new** `SetRegisterRule(iris.RouteOverride, RouteSkip, RouteError)` to resolve: https://github.com/kataras/iris/issues/1448
-
-New Examples:
-
-- [_examples/routing/route-register-rule](_examples/routing/route-register-rule)
-
-# We, 05 February 2020 | v12.1.6
-
-Fixes:
-
-- [jet.View - urlpath error](https://github.com/kataras/iris/issues/1438)
-- [Context.ServeFile send 'application/wasm' with a wrong extra field](https://github.com/kataras/iris/issues/1440)
-
-# Su, 02 February 2020 | v12.1.5
-
-Various improvements and linting.
-
-# Su, 29 December 2019 | v12.1.4
-
-Minor fix on serving embedded files.
-
-# We, 25 December 2019 | v12.1.3
-
-Fix [[BUG] [iris.Default] RegisterView](https://github.com/kataras/iris/issues/1410)
-
-# Th, 19 December 2019 | v12.1.2
-
-Fix [[BUG]Session works incorrectly when meets the multi-level TLDs](https://github.com/kataras/iris/issues/1407).
-
-# Mo, 16 December 2019 | v12.1.1
-
-Add [Context.FindClosest(n int) []string](https://github.com/kataras/iris/blob/v12/_examples/routing/intelligence/manual/main.go#L22)
-
-```go
-app := iris.New()
-app.OnErrorCode(iris.StatusNotFound, notFound)
-```
-
-```go
-func notFound(ctx iris.Context) {
-    suggestPaths := ctx.FindClosest(3)
-    if len(suggestPaths) == 0 {
-        ctx.WriteString("404 not found")
-        return
-    }
-
-    ctx.HTML("Did you mean?<ul>")
-    for _, s := range suggestPaths {
-        ctx.HTML(`<li><a href="%s">%s</a></li>`, s, s)
-    }
-    ctx.HTML("</ul>")
-}
-```
-
-![](https://iris-go.com/static/images/iris-not-found-suggests.png)
-
-# Fr, 13 December 2019 | v12.1.0
-
-## Breaking Changes
-
-Minor as many of you don't even use them but, indeed, they need to be covered here.
-
-- Old i18n middleware(iris/middleware/i18n) was replaced by the [i18n](i18n) sub-package which lives as field at your application: `app.I18n.Load(globPathPattern string, languages ...string)` (see below)
-- Community-driven i18n middleware(iris-contrib/middleware/go-i18n) has a `NewLoader` function which returns a loader which can be passed at `app.I18n.Reset(loader i18n.Loader, languages ...string)` to change the locales parser
-- The Configuration's `TranslateFunctionContextKey` was replaced by `LocaleContextKey` which Context store's value (if i18n is used) returns the current Locale which contains the translate function, the language code, the language tag and the index position of it
-- The `context.Translate` method was replaced by `context.Tr` as a shortcut for the new `context.GetLocale().GetMessage(format, args...)` method and it matches the view's function `{{tr format args}}` too
-- If you used [Iris Django](https://github.com/kataras/iris/tree/v12/_examples/view/template_django_0) view engine with `import _ github.com/flosch/pongo2-addons` you **must change** the import path to `_ github.com/iris-contrib/pongo2-addons` or add a [go mod replace](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive) to your `go.mod` file, e.g. `replace github.com/flosch/pongo2-addons => github.com/iris-contrib/pongo2-addons v0.0.1`.
-
-## Fixes
-
-All known issues.
-
-1. [#1395](https://github.com/kataras/iris/issues/1395) 
-2. [#1369](https://github.com/kataras/iris/issues/1369)
-3. [#1399](https://github.com/kataras/iris/issues/1399) with PR [#1400](https://github.com/kataras/iris/pull/1400)
-4. [#1401](https://github.com/kataras/iris/issues/1401) 
-5. [#1406](https://github.com/kataras/iris/issues/1406)
-6. [neffos/#20](https://github.com/kataras/neffos/issues/20)
-7. [pio/#5](https://github.com/kataras/pio/issues/5)
-
-## New Features
-
-### Internationalization and localization
-
-Support for i18n is now a **builtin feature** and is being respected across your entire application, per say [sitemap](https://github.com/kataras/iris/blob/v12/_examples/routing/sitemap/main.go) and [views](https://github.com/kataras/iris/blob/v12/_examples/i18n/basic/main.go#L50).
-
-### Sitemaps
-
-Iris generates and serves one or more [sitemap.xml](https://www.sitemaps.org/protocol.html) for your static routes.
-
-Navigate through: https://github.com/kataras/iris/blob/v12/_examples/routing/sitemap/main.go for more.
-
-## New Examples
-
-2. [_examples/i18n](_examples/i18n)
-1. [_examples/sitemap](_examples/routing/sitemap)
-3. [_examples/desktop/blink](_examples/desktop/blink)
-4. [_examples/desktop/lorca](_examples/desktop/lorca)
-5. [_examples/desktop/webview](_examples/desktop/webview)
-
-# Sa, 26 October 2019 | v12.0.0
-
-- Add version suffix of the **import path**, learn why and see what people voted at [issue #1370](https://github.com/kataras/iris/issues/1370)
-
-![](https://iris-go.com/static/images/vote-v12-version-suffix_26_oct_2019.png)
-
-- All errors are now compatible with go1.13 `errors.Is`, `errors.As` and `fmt.Errorf` and a new `core/errgroup` package created
-- Fix [#1383](https://github.com/kataras/iris/issues/1383)
-- Report whether system couldn't find the directory of view templates
-- Remove the `Party#GetReport` method, keep `Party#GetReporter` which is an `error` and an `errgroup.Group`.
-- Remove the router's deprecated methods such as StaticWeb and StaticEmbedded_XXX
-- The `Context#CheckIfModifiedSince` now returns an `context.ErrPreconditionFailed` type of error when client conditions are not met. Usage: `if errors.Is(err, context.ErrPreconditionFailed) { ... }`
-- Add `SourceFileName` and `SourceLineNumber` to the `Route`, reports the exact position of its registration inside your project's source code.
-- Fix a bug about the MVC package route binding, see [PR #1364](https://github.com/kataras/iris/pull/1364)
-- Add `mvc/Application#SortByNumMethods` as requested at [#1343](https://github.com/kataras/iris/issues/1343#issuecomment-524868164)
-- Add status code `103 Early Hints`
-- Fix performance of session.UpdateExpiration on 200 thousands+ keys with new radix as reported at [issue #1328](https://github.com/kataras/iris/issues/1328)
-- New redis session database configuration field: `Driver: redis.Redigo()` or `redis.Radix()`, see [updated examples](_examples/sessions/database/redis/)
-- Add Clusters support for redis:radix session database (`Driver: redis:Radix()`) as requested at [issue #1339](https://github.com/kataras/iris/issues/1339)
-- Create Iranian [README_FA](README_FA.md) translation with [PR #1360](https://github.com/kataras/iris/pull/1360) 
-- Create Korean [README_KO](README_KO.md) translation with [PR #1356](https://github.com/kataras/iris/pull/1356)
-- Create Spanish [README_ES](README_ES.md) and [HISTORY_ES](HISTORY_ES.md) translations with [PR #1344](https://github.com/kataras/iris/pull/1344).
-
-The iris-contrib/middleare and examples are updated to use the new `github.com/kataras/iris/v12` import path.
-
-# Fr, 16 August 2019 | v11.2.8
-
-- Set `Cookie.SameSite` to `Lax` when subdomains sessions share is enabled[*](https://github.com/kataras/iris/commit/6bbdd3db9139f9038641ce6f00f7b4bab6e62550)
-- Add and update all [experimental handlers](https://github.com/iris-contrib/middleware) 
-- New `XMLMap` function which wraps a `map[string]any` and converts it to a valid xml content to render through `Context.XML` method
-- Add new `ProblemOptions.XML` and `RenderXML` fields to render the `Problem` as XML(application/problem+xml) instead of JSON("application/problem+json) and enrich the `Negotiate` to easily accept the `application/problem+xml` mime.
-
-Commit log: https://github.com/kataras/iris/compare/v11.2.7...v11.2.8
-
-# Th, 15 August 2019 | v11.2.7
-
-This minor version contains improvements on the Problem Details for HTTP APIs implemented on [v11.2.5](#mo-12-august-2019--v1125).
-
-- Fix https://github.com/kataras/iris/issues/1335#issuecomment-521319721
-- Add `ProblemOptions` with `RetryAfter` as requested at: https://github.com/kataras/iris/issues/1335#issuecomment-521330994.
-- Add `iris.JSON` alias for `context#JSON` options type.
-
-[Example](https://github.com/kataras/iris/blob/45d7c6fedb5adaef22b9730592255f7bb375e809/_examples/routing/http-errors/main.go#L85) updated. 
-
-References:
-
-- https://tools.ietf.org/html/rfc7231#section-7.1.3
-- https://tools.ietf.org/html/rfc7807
-
-Commit log: https://github.com/kataras/iris/compare/v11.2.6...v11.2.7
-
-# We, 14 August 2019 | v11.2.6
-
-Allow [handle more than one route with the same paths and parameter types but different macro validation functions](https://github.com/kataras/iris/issues/1058#issuecomment-521110639).
-
-```go
-app.Get("/{alias:string regexp(^[a-z0-9]{1,10}\\.xml$)}", PanoXML)
-app.Get("/{alias:string regexp(^[a-z0-9]{1,10}$)}", Tour)
-```
-
-Commit log: https://github.com/kataras/iris/compare/v11.2.5...v11.2.6
-
-# Mo, 12 August 2019 | v11.2.5
-
-- [New Feature: Problem Details for HTTP APIs](https://github.com/kataras/iris/pull/1336)
-- [Add Context.AbsoluteURI](https://github.com/kataras/iris/pull/1336/files#diff-15cce7299aae8810bcab9b0bf9a2fdb1R2368)
-
-Commit log: https://github.com/kataras/iris/compare/v11.2.4...v11.2.5
-
-# Fr, 09 August 2019 | v11.2.4
-
-- Fixes [iris.Jet: no view engine found for '.jet' or '.html'](https://github.com/kataras/iris/issues/1327)
-- Fixes [ctx.ViewData not work with JetEngine](https://github.com/kataras/iris/issues/1330)
-- **New Feature**: [HTTP Method Override](https://github.com/kataras/iris/issues/1325)
-- Fixes [Poor performance of session.UpdateExpiration on 200 thousands+ keys with new radix lib](https://github.com/kataras/iris/issues/1328) by introducing the `sessions.Config.Driver` configuration field which defaults to `Redigo()` but can be set to `Radix()` too, future additions are welcomed.
-
-Commit log: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
-
-# Tu, 30 July 2019 | v11.2.3
-
-- [New Feature: Handle different parameter types in the same path](https://github.com/kataras/iris/issues/1315)
-- [New Feature: Content Negotiation](https://github.com/kataras/iris/issues/1319)
-- [Context.ReadYAML](https://github.com/kataras/iris/tree/v12/_examples/request-body/read-yaml)
-- Fixes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
-
-# We, 24 July 2019 | v11.2.2
-
-Sessions as middleware:
-
-```go
-import "github.com/kataras/iris/v12/sessions"
 // [...]
 
-app := iris.New()
-sess := sessions.New(sessions.Config{...})
+func newMinifier() *minify.M {
+	m := minify.New()
+	m.AddFunc("text/css", css.Minify)
+	m.AddFunc("text/html", html.Minify)
+	m.AddFunc("image/svg+xml", svg.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
+	return m
+}
 
-app.Get("/path", func(ctx iris.Context){
-    session := sessions.Get(ctx)
-    // [work with session...]
-})
+// [...]
+
+var minifier = newMinifier()
+
+func Minify(ctx Context) { // the middleware.
+	w := minifier.ResponseWriter(ctx.ResponseWriter().Naive(), ctx.Request())
+
+	ctx.OnCloseErr(w.Close)
+	ctx.ResponseWriter().SetWriter(w)
+	ctx.Next()
+}
+
+// Usage:
+// app.Use(iris.Minify)
 ```
 
-- Add `Session.Len() int` to return the total number of stored values/entries.
-- Make `Context.HTML` and `Context.Text` to accept an optional, variadic, `args ...any` input arg(s) too.
+> Compression is a separate feature and stays fully supported; see the [compress](./middleware/compress/) middleware.
 
-## v11.1.1
+- The `Application.WWW` and `Application.SubdomainRedirect` methods were removed. It's better to use the Iris [rewrite](./middleware/rewrite) middleware instead. E.g. for WWW replacement:
 
-- https://github.com/kataras/iris/issues/1298
-- https://github.com/kataras/iris/issues/1207
+```go
+engine, err := rewrite.New(rewrite.Options{PrimarySubdomain: "www"})
+if err != nil {
+    panic(err)
+}
 
-# Tu, 23 July 2019 | v11.2.0
+app.UseRouter(engine.Handler)
+```
 
-Read about the new release at: https://www.facebook.com/iris.framework/posts/3276606095684693
+- The `sessions.Database` **interface** was redesigned around generics and the request context. The v12 shape (`Acquire`, `OnUpdateExpiration`, `Set`, `Get`, `Decode`, ...) is replaced by the three-method `Database[T]`: `Get(ctx, cookieName)`, `Load(ctx, cookieName, cookieValue)` and `Commit(ctx, session)`. Built-in implementations: `NewCookieDatabase`, `NewRedisDatabase` and `NewPostgresDatabase`.
+
+- New `context.ReadValues(ptr)` binds the current request context's values to a pointer of struct value.
+
+<details><summary>New Context method naming strategy</summary>
+<br/>
+
+When a named action is available in both response and request:
+
+- Response: `SetContentType(string, opts...)`/`ResponseContentType()`
+- Request: `ContentType()`
+
+- Response: `SetHeader(string,string)` replaces, `AddHeader(string,string)` appends, `ResponseHeader(string)` reads
+- Request: `Header(string)`
+
+>  like `Method()`, `Path()`, `Referrer()` and so on.
+
+When a named action is only available in response (something that only a server can send to the client): 
+
+- Response: `StatusCode(code int)`/`GetStatusCode() int`
+
+Readers carry no `Get` prefix: `CurrentRoute()`, `ID()`, `ValueAs[T](key)`, `RequestValue[T]()`, `ErrPublic()`, `LastPathParameter()`. Two exceptions: `GetErr()`, because the bare `Err()` is taken by the standard `context.Context`, and `GetStatusCode()`, the sanctioned pair of `StatusCode(code)`. Route getters (`GetName`, `GetPath`, ...) keep their prefix.
+
+<hr/>
+
+</details>
+
+- Breaking changes on `Context.Params().Get(key) string` -> `Context.Params().GetString(key) string`, `Context`: `GetCookie` -> `CookieValue`, `GetRequestCookie` -> `Cookie`, `SetLogoutFunc(fn any, persistenceArgs ...any)` -> `SetLogoutFunc(Handler)`,  `Logout(args ...any) error` -> `Logout() error`, `ResetResponseWriter` -> `SetResponseWriter`, `ResetRequest` -> `SetRequest`, `GetBody` -> `Body`, `GetReferrer` -> removed (use the [middleware/referrer](./middleware/referrer/)), `GetHeader` -> `Header` (request; the v12 two-argument `Header(k, v)` response setter is now `SetHeader(k, v)`, and response headers are read through the new `ResponseHeader`; the `GetHeader` name is removed), `SetMaxRequestBodySize` -> removed (use the [bodylimit](./middleware/bodylimit/) middleware or `ContextOptions.BodyMaxMemory`), `RequestContentLength` -> `ContentLength`, `GetContentTypeRequested() string` -> `ContentType() ContentType` (new `MediaType() string`, `Charset() string` and `IsMediaType(...string) bool` for request), new `SetContentType(string, opts ...ContentTypeOption)` and `ResponseContentType() ContentType` and `ResponseMediaType() string` for response, remove of `VisitAllCookies`, `ReflectValue`, `Controller`, `RegisterDependency`, `UnregisterDependency`, `SetFunc`, `GetFunc` and `CallFunc`.
+
+- When importing the `rest/errors` package, framework automatically binds the context render errors and path parameter errors to its `HandleError` method.
+- If the request content type or the context's response content type was `text/html` then the error is not rendered using `JSON`, instead it uses the `View(errors/$status_code.$view_ext)` and if no registered view was found then it renders a default html page error.
+- Add `rest/errors.WithRenderer` middleware to override the default Error JSON renderer, a `rest/errors.HTML` helper exists as well. 
+
+- Breaking change: remove `hero` sub-package entirely, replaced by the `dep` container and the `rest/*` sub-packages that they work with fewer LOCs and smarter. 
+- Breaking change: rename `Router.Dependencies()` to `Router.DI()`.
+
+- Add `middleware/accesslog.OnlyFailures bool` field in order to tell the logger to capture only http errors, works perfectly with the new `rest/errors` subpackage.
+
+- Add `WithIDGenerator` and `WithCollector` on the `rest/errors` package. Example of `WithCollector`:
+
+```go
+// [...]
+
+errorCollector := func(ctx iris.Context, err errors.Error) {
+    // Store the error to a database or a file.
+    // e.g.:
+    // db.Save(err)
+    // file.Write(err)
+    // or even:
+    // Note that this runs on the same goroutine as the request handler,
+    // so on real-world application it's better to run it on a separate goroutine and use
+    // a standard context.Background() or a custom timeout because the request's context will be canceled after the response was sent.
+    slog.LogAttrs(ctx, slog.LevelInfo, "http error", err.Attrs()...)
+}
+
+// Register the custom error collector or store through `WithCollector` on a single route (you may register it globally too).
+app.Get("/store-me", errors.WithCollector(errorCollector), storeErrorExample)
+
+// [...]
+
+func storeErrorExample(ctx iris.Context) {
+	errors.InvalidArgument.DataWithDetails(ctx, "unable to process the request", "more details of the error here", iris.Map{"custom": "data of any type"})
+}
+```
+
+- Replace the old `mvc.GRPC` with `controller/mvc.GRPC`, the API changes as follows:
+
+Previously:
+
+```go
+mvc.New(app).
+    Register(new(myService)).
+    Handle(ctrl, mvc.GRPC{
+        Server:      grpcServer,           // Required.
+        ServiceName: "helloworld.Greeter", // Required.
+        Strict:      false,
+    })
+```
+
+Now:
+
+```go
+app.RegisterDependency(new(myService))
+app.Router("/", mvc.GRPC(ctrl).
+    Server(grpcServer).
+    ServiceName("helloworld.Greeter").
+    Strict(false))
+```
+
+> `mvc` here is `github.com/kataras/iris/v14/controller/mvc`.
+
+- New `Router.Routes() *router.RouteRegistry` method returns a structure which is responsible for low-level control of the registered routes. Here's a list of its methods:
+    - `SetRegisterRule(rule RouteRegisterRule)`
+    - `Add(route *Route) (*Route, error)`
+    - `RemoveByName(routeName string) bool`
+    - `RemoveByIndex(indexToDelete int) bool`
+    - `Len() int`
+    - `GetIndexByName(routeName string) int`
+    - `GetByIndex(index int) *Route`
+    - `GetByMethod(method string) *Route`
+    - `GetByName(name string) *Route`
+    - `GetByPath(tmplPath string) *Route`
+    - `GetRelative(r *Route) *Route`
+    - `First() *Route`
+    - `Last() *Route`
+    - `Get() *Route`
+    - `Head() *Route`
+    - `Post() *Route`
+    - `Put() *Route`
+    - `Patch() *Route`
+    - `Delete() *Route`
+    - `Connect() *Route`
+    - `Options() *Route`
+    - `Trace() *Route`
+    - `ListByMethod(method string) *RouteRegistry`
+    - `ListByPattern(pattern string) *RouteRegistry`
+    - `CountHandlers() int`
+
+- A lot of changes (and breaking ones on the API for more control over the code maintenance):
+    - `Router.SetRegisterRule` -> `Router.Routes().SetRegisterRule`
+    - Deprecate `Application/Router.HandleMany` in favor of `Application/Router.Handle` and `mvc.Application.HandleMany` in favor of `mvc.Application.Handle`
+    - All methods of a `Router` that may create more than one route are now return a `*router.RouteRegistry` now (this may be a breaking change for some, use its `First()` method which returns a single route, replicates the old behavior)
+    - Rename `RouteReadOnly.Name, StatusErrorCode, Method, Subdomain, Path, MainHandlerName, MainHandlerIndex, Property` methods to `RouteReadOnly.GetName, GetStatusErrorCode, GetMethod, GetSubdomain, GetPath, GetMainHandlerName, GetMainHandlerIndex, GetProperty` 
+
+- Improve `context.FromStdWithNext` in order to transfer all Iris Dynamic Path Parameters to the standard `http.Request` through its new `SetPathValue` method.
+

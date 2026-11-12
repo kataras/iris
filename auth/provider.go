@@ -1,13 +1,10 @@
-//go:build go1.18
-// +build go1.18
-
 package auth
 
 import (
 	stdContext "context"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/x/errors"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/rest/errors"
 
 	"github.com/kataras/jwt"
 )
@@ -23,7 +20,7 @@ type VerifiedToken = jwt.VerifiedToken
 // ErrorHandler all in once when necessary.
 // Set a provider using the AddProvider method of Auth type.
 //
-// Example can be found at: https://github.com/kataras/iris/tree/v12/_examples/auth/auth/user_provider.go.
+// Example can be found at: https://github.com/kataras/iris/tree/main/_examples/09-authentication/auth-sdk/main.go (customerProvider).
 type Provider[T User] interface {
 	// Signin accepts a username (or email) and a password and should
 	// return a valid T value or an error describing
@@ -34,6 +31,16 @@ type Provider[T User] interface {
 	//
 	// It's called on Auth.SigninHandler.
 	Signin(ctx stdContext.Context, username, password string) (T, error)
+
+	// Refresh accepts the T value obtained by the Signin method
+	// and should return a new T value or an error describing
+	// the user authentication or verification reason of failure.
+	// It is mostly used to refresh the user information from a persistence storage.
+	// The first input argument standard context can be
+	// casted to iris.Context if executed through Auth.RefreshHandler.
+	//
+	// It's called on Auth.RefreshHandler.
+	Refresh(ctx stdContext.Context, t T) (T, error)
 
 	// ValidateToken accepts the standard JWT claims and the T value obtained
 	// by the Signin method and should return a nil error on validation success
@@ -121,7 +128,7 @@ type DefaultErrorHandler struct{}
 // InvalidArgument sends 400 (bad request) with "unable to parse body" as its message
 // and the "err" value as its details.
 func (e *DefaultErrorHandler) InvalidArgument(ctx *context.Context, err error) {
-	errors.InvalidArgument.Details(ctx, "unable to parse body", err.Error())
+	errors.InvalidArgument.Detail(ctx, "unable to parse body", err.Error())
 }
 
 // Unauthenticated sends 401 (unauthenticated) with the "err" value as its message.

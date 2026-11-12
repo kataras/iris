@@ -41,10 +41,6 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
  crypto              4b2356b1ed79e6b     https://go.googlesource.com/crypto       
                      e3deca3737a3db3                                              
                      d132d2847a                                                                                                   
- easyjson            8ab5ff9cd8e4e43     https://github.com/mailru/easyjson
-                     2e8b79f6c47d324
-                     a31dd803cf
-
  securecookie        e59506cc896acb7    https://github.com/gorilla/securecookie
                      f7bf732d4fdf5e2
                      5f7ccd8983
@@ -71,10 +67,7 @@ Revision ID: 5fc50a00491616d5cd0cbce3abd8b699838e25ca
                      1029f1d962                                                   
  msgpack             911bfe50493ebbc     https://github.com/vmihailenco/msgpack   
                      b6e0af9e6f36451                                              
-                     255746ff46       
- minify              119ab8b676c60a6     https://github.com/tdewolff/minify   
-                     12b9cc824e6a84a                                              
-                     865191aabb                                                      
+                     255746ff46                                                         
  neffos              2221a9afc8392b9     https://github.com/kataras/neffos        
                      a3e984473dd34f8                                              
                      380ce80840                                                     

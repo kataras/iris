@@ -1,9 +1,7 @@
 package apps
 
 import (
-	"strings"
-
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 // Switch returns a new Application
@@ -53,7 +51,7 @@ import (
 //		r.URL.RawPath = apiPath
 //		ctx.Params().Remove("p")
 //
-//		myOtherApp.ServeHTTPC(ctx)
+//		myOtherApp.HandleRequest(ctx)
 //	})
 //
 // app.Listen(":80")
@@ -63,12 +61,12 @@ func Switch(provider SwitchProvider, options ...SwitchOption) *iris.Application 
 		panic("iris: switch: empty cases")
 	}
 
-	var friendlyAddrs []string
-	if fp, ok := provider.(FriendlyNameProvider); ok {
-		if friendlyName := fp.GetFriendlyName(); friendlyName != "" {
-			friendlyAddrs = append(friendlyAddrs, friendlyName)
-		}
-	}
+	// var friendlyAddrs []string
+	// if fp, ok := provider.(FriendlyNameProvider); ok {
+	// 	if friendlyName := fp.GetFriendlyName(); friendlyName != "" {
+	// 		friendlyAddrs = append(friendlyAddrs, friendlyName)
+	// 	}
+	// }
 
 	opts := DefaultSwitchOptions()
 	for _, opt := range options {
@@ -111,7 +109,7 @@ func Switch(provider SwitchProvider, options ...SwitchOption) *iris.Application 
 				// Note(@kataras): don't ever try something like that;
 				// the context pool is the switcher's one.
 				// 	ctx.SetApplication(c.App)
-				// 	c.App.ServeHTTPC(ctx)
+				// 	c.App.HandleRequest(ctx)
 				// 	ctx.SetApplication(app)
 				// }
 				return
@@ -124,11 +122,11 @@ func Switch(provider SwitchProvider, options ...SwitchOption) *iris.Application 
 	})
 
 	// Configure the switcher's supervisor.
-	app.ConfigureHost(func(su *iris.Supervisor) {
-		if len(friendlyAddrs) > 0 {
-			su.FriendlyAddr = strings.Join(friendlyAddrs, ", ")
-		}
-	})
+	// app.ConfigureHost(func(su *iris.Supervisor) {
+	// 	if len(friendlyAddrs) > 0 {
+	// 		su.FriendlyAddr = strings.Join(friendlyAddrs, ", ")
+	// 	}
+	// })
 	return app
 }
 
@@ -150,9 +148,9 @@ type (
 
 	// FriendlyNameProvider can be optionally implemented by providers
 	// to customize the Switcher's Supervisor.FriendlyAddr field (Startup log).
-	FriendlyNameProvider interface {
-		GetFriendlyName() string
-	}
+	// FriendlyNameProvider interface {
+	// 	GetFriendlyName() string
+	// }
 
 	// Join returns a new slice which joins different type of switch cases.
 	Join []SwitchProvider

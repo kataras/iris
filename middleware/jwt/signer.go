@@ -54,7 +54,7 @@ func NewSigner(signatureAlg Alg, signatureKey any, maxAge time.Duration) *Signer
 	return s
 }
 
-// WithEncryption enables AES-GCM payload-only decryption.
+// WithEncryption enables AES-GCM payload-only encryption of the signed token.
 func (s *Signer) WithEncryption(key, additionalData []byte) *Signer {
 	encrypt, _, err := jwt.GCM(key, additionalData)
 	if err != nil {

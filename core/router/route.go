@@ -3,65 +3,75 @@ package router
 import (
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/macro"
-	"github.com/kataras/iris/v12/macro/handler"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/core/router/macro"
+	"github.com/kataras/iris/v14/core/router/macro/handler"
 
-	"github.com/kataras/pio"
+	"github.com/kataras/golog/printer"
 )
 
 // Route contains the information about a registered Route.
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
-	// The Party which this Route was created and registered on.
-	Party       Party
+	router      *RouterBuilder // the router that this route belongs to.
+	Properties  context.Map    // Properties (map) coming from the Router this route belongs to.
 	Title       string         `json:"title"`       // custom name to replace the method on debug logging.
 	Name        string         `json:"name"`        // "userRoute"
 	Description string         `json:"description"` // "lists a user"
 	Method      string         `json:"method"`      // "GET"
-	StatusCode  int            `json:"statusCode"`  // 404 (only for HTTP error handlers).
-	methodBckp  string         // if Method changed to something else (which is possible at runtime as well, via RefreshRouter) then this field will be filled with the old one.
-	Subdomain   string         `json:"subdomain"` // "admin."
+	Subdomain   string         `json:"subdomain"`   // "admin."
 	tmpl        macro.Template // Tmpl().Src: "/api/user/{id:uint64}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	// They run right after any builtinBeginHandlers.
-	beginHandlers context.Handlers
+	relativePattern string // it's the relative pattern-path, i.e "/api/user/{id}".
+
 	// temp storage, these are always registered first as Handlers on Build.
 	// There are the handlers may be added by the framework and
 	// can NOT be modified by the end-developer (i.e overlapRoute & bindMultiParamTypesHandler),
-	// even if a function like UseGlobal is used.
-	builtinBeginHandlers context.Handlers
+	// even if a function like Use is used.
+	builtinBeginHandlerList *context.HandlerList `json:"-"`
+
+	// MiddlewareList contains the middleware handlers as they given by the end-developer (router builder).
+	MiddlewareList *context.HandlerList `json:"middleware_list"`
+	// MainHandlerList contains the main handlers as they given by the end-developer (router builder).
+	MainHandlerList *context.HandlerList `json:"main_handler_list"`
+
+	// HandlerList contains the middleware and main handlers.
+	// They are built after BuildHandlers method (except newEmptyRoute).
+	HandlerList *context.HandlerList `json:"handler_list"`
 
 	// Handlers are the main route's handlers, executed by order.
-	// Cannot be empty.
-	Handlers         context.Handlers `json:"-"`
-	MainHandlerName  string           `json:"mainHandlerName"`
-	MainHandlerIndex int              `json:"mainHandlerIndex"`
-	// temp storage, they're appended to the Handlers on build.
-	// Execution happens after Begin and main Handler(s), can be empty.
-	doneHandlers context.Handlers
+	// Cannot be empty. Empty until built by the BuildHandlers method.
+	Handlers context.Handlers `json:"-"`
 
-	Path string `json:"path"` // the underline router's representation, i.e "/api/user/:id"
+	// Path is the registered path part (without subdomain), i.e "/api/user/{id:uint64}".
+	// Shortcut of Tmpl().Src.
+	Path string `json:"path"` // the registered path, i.e "/api/user/{id:uuid}"
+
+	// NodePath is the underline router's representation, i.e "/api/user/:id".
+	NodePath string `json:"node_path"` // the underline router's representation, i.e "/api/user/:id"
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
-	FormattedPath string `json:"formattedPath"`
+	FormattedPath string `json:"formatted_path"`
 
-	// the source code's filename:filenumber that this route was created from.
-	SourceFileName   string `json:"sourceFileName"`
-	SourceLineNumber int    `json:"sourceLineNumber"`
+	// Initialized on buildHandlers and used for the trace.
+	MainHandlerName  string `json:"main_handler_name"`
+	MainHandlerIndex int    `json:"main_handler_index"`
 
-	// where the route registered.
-	RegisterFileName   string `json:"registerFileName"`
-	RegisterLineNumber int    `json:"registerLineNumber"`
+	// the source code's filename:filenumber that this route was registered on.
+	RegisterFileName   string `json:"register_filename"`
+	RegisterLineNumber int    `json:"register_line_number"`
 
-	// see APIBuilder.handle, routerHandler.bindMultiParamTypesHandler and routerHandler.Build,
+	// see RouterBuilder.handle, routerHandler.bindMultiParamTypesHandler and routerHandler.Build,
 	// it's the parent route of the last registered of the same path parameter. Specifically for path parameters.
 	topLink *Route
 	// overlappedLink specifically for overlapRoute feature.
@@ -71,158 +81,134 @@ type Route struct {
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
 	NoSitemap  bool      // when this route should be hidden from sitemap.
-	LastMod    time.Time `json:"lastMod,omitempty"`
-	ChangeFreq string    `json:"changeFreq,omitempty"`
-	Priority   float32   `json:"priority,omitempty"`
-
-	// ReadOnly is the read-only structure of the Route.
-	ReadOnly context.RouteReadOnly
+	LastMod    time.Time `json:"last_mod,omitempty"`
+	ChangeFreq string    `json:"change_freq,omitempty"`
+	Priority   float32   `json:"priority,omitzero"`
 
 	// OnBuild runs right before BuildHandlers.
 	OnBuild func(r *Route)
-	NoLog   bool // disables debug logging.
+	NoLog   bool // disables debug logging for this route.
 }
+
+var _ context.RouteReadOnly = &Route{}
 
 // NewRoute returns a new route based on its method,
 // subdomain, the path (unparsed or original),
 // handlers and the macro container which all routes should share.
 // It parses the path based on the "macros",
 // handlers are being changed to validate the macros at serve time, if needed.
-func NewRoute(p Party, statusErrorCode int, method, subdomain, unparsedPath string,
-	handlers context.Handlers, macros macro.Macros) (*Route, error) {
-	path := cleanPath(unparsedPath) // required. Before macro template parse as the cleanPath does not modify the dynamic path route parts.
+func NewRoute(router *RouterBuilder,
+	method, relativePath, pattern string,
+	middlewareList, mainHandlersList *context.HandlerList /* they are clones */) (*Route, error) {
 
-	tmpl, err := macro.Parse(path, macros)
+	fullpath := relativePath + pattern // for now, keep the trailing "/" if any, it will be clenaned by the cleanPath below.
+	// separate the subdomain and relative nodePath.
+	subdomain, nodePath := SplitSubdomainAndPath(fullpath)
+	// required. Before macro template parse as the cleanPath does not modify the dynamic path route parts.
+	nodePath = CleanPath(nodePath)
+
+	tmpl, err := macro.Parse(nodePath, *router.Macros())
 	if err != nil {
 		return nil, err
 	}
 
-	path = convertMacroTmplToNodePath(tmpl)
+	nodePath = convertMacroTmplToNodePath(tmpl)
 	// prepend the macro handler to the route, now,
-	// right before the register to the tree, so APIBuilder#UseGlobal will work as expected.
+	// right before the register to the tree, so RouterBuilder#Use will work as expected.
 	if handler.CanMakeHandler(tmpl) {
 		macroEvaluatorHandler := handler.MakeHandler(tmpl)
-		handlers = append(context.Handlers{macroEvaluatorHandler}, handlers...)
+		middlewareList.Prepend(macroEvaluatorHandler)
 	}
 
 	defaultName := method + subdomain + tmpl.Src
-	if statusErrorCode > 0 {
-		defaultName = fmt.Sprintf("%d_%s", statusErrorCode, defaultName)
-	}
-
-	formattedPath := formatPath(path)
+	formattedPath := formatPath(nodePath)
 
 	route := &Route{
-		Party:         p,
-		StatusCode:    statusErrorCode,
-		Name:          defaultName,
-		Method:        method,
-		methodBckp:    method,
-		Subdomain:     subdomain,
-		tmpl:          tmpl,
-		Path:          path,
-		Handlers:      handlers,
-		FormattedPath: formattedPath,
+		router:                  router,
+		Properties:              maps.Clone(router.Properties()), // Clone in order to make sure this isn't modified by us at serve-time.
+		Name:                    defaultName,
+		Method:                  method,
+		Subdomain:               subdomain,
+		tmpl:                    tmpl,
+		Path:                    tmpl.Src,
+		NodePath:                nodePath,
+		builtinBeginHandlerList: context.NewHandlerList(),
+		MiddlewareList:          middlewareList,
+		MainHandlerList:         mainHandlersList,
+		FormattedPath:           formattedPath,
+		relativePattern:         pattern,
 	}
 
-	route.ReadOnly = routeReadOnlyWrapper{route}
 	return route, nil
 }
 
-// Use adds explicit begin handlers to this route.
-// Alternatively the end-dev can prepend to the `Handlers` field.
-// Should be used before the `BuildHandlers` which is
-// called by the framework itself on `Application#Run` (build state).
-//
-// Used internally at  `APIBuilder#UseGlobal` -> `beginGlobalHandlers` -> `APIBuilder#Handle`.
-func (r *Route) Use(handlers ...context.Handler) {
-	if len(handlers) == 0 {
+func newEmptyRoute(router *RouterBuilder, name string, handlerList *context.HandlerList) *Route {
+	return &Route{
+		router:                  router,
+		Name:                    name,
+		Method:                  MethodNone,
+		Subdomain:               "",
+		tmpl:                    macro.Template{},
+		relativePattern:         "",
+		builtinBeginHandlerList: context.NewHandlerList(),
+		topLink:                 nil,
+		overlappedLink:          nil,
+		Properties:              nil,
+		Title:                   "",
+		Description:             "",
+		MiddlewareList:          nil,
+		MainHandlerList:         handlerList,
+		HandlerList:             handlerList,
+		// The newEmptyRoute need to call the BuildHandlers() too, so we don't set the final handlers chain here.
+		// Handlers:                handlerList.Values(),
+		// MainHandlerName:         handlerList.Last().Name,
+		// MainHandlerIndex:        handlerList.Count() - 1,
+		Path:     "/",
+		NodePath: "/",
+		NoLog:    true,
+	}
+}
+
+// IsNoRoute reports whether this route is a no-route (404, fired by the serve mux).
+// Access of the not found path is gain by `ctx.Path()`.
+func (r *Route) IsNoRoute() bool {
+	return r.Name == NoRouteName
+}
+
+// IsMethodNotAllowed reports whether this route is a no-method (405, method not allowed, fired by the serve mux).
+// Access of the forbidden request method is gain by `ctx.Method()` and allowed methods through "Allow" response header.
+func (r *Route) IsMethodNotAllowed() bool {
+	return r.Name == NoMethodName
+}
+
+// IsPreRouting reports whether this route is running before the main serve mux.
+// Means that this Route's Handlers are running under `UseRouter`.
+func (r *Route) IsPreRouting() bool {
+	return r.Name == PreRoutingName
+}
+
+// IsRoute reports whether this route is a registered, end-developer route
+// (not a built-in 404 or 405 one, and not nil).
+// Note that the pre-routing slot reports true as well, see `IsPreRouting`.
+func (r *Route) IsRoute() bool {
+	return r != nil && !r.IsNoRoute() && !r.IsMethodNotAllowed()
+}
+
+// SetSourceByMethodType sets the route's source caller based on the method's type and name.
+func (r *Route) SetSourceByMethodType(typ reflect.Type, methodName string) {
+	if r == nil {
 		return
 	}
-	r.beginHandlers = append(r.beginHandlers, handlers...)
-}
 
-// UseOnce like Use but it replaces any duplicate handlers with
-// the new ones.
-// Should be called before Application Build.
-func (r *Route) UseOnce(handlers ...context.Handler) {
-	r.beginHandlers = context.UpsertHandlers(r.beginHandlers, handlers)
-}
-
-// RemoveHandler deletes a handler from begin, main and done handlers
-// based on its name or the handler pc function.
-// Returns the total amount of handlers removed.
-//
-// Should be called before Application Build.
-func (r *Route) RemoveHandler(namesOrHandlers ...any) (count int) {
-	for _, nameOrHandler := range namesOrHandlers {
-		handlerName := ""
-		switch h := nameOrHandler.(type) {
-		case string:
-			handlerName = h
-		case context.Handler: //, func(*context.Context):
-			handlerName = context.HandlerName(h)
-		default:
-			panic(fmt.Sprintf("remove handler: unexpected type of %T", h))
-		}
-
-		r.beginHandlers = removeHandler(handlerName, r.beginHandlers, &count)
-		r.Handlers = removeHandler(handlerName, r.Handlers, &count)
-		r.doneHandlers = removeHandler(handlerName, r.doneHandlers, &count)
+	if last := r.MainHandlerList.Last(); last != nil {
+		last.SetNameFileAndLineByMethod(typ, methodName)
 	}
-
-	return
 }
 
-func removeHandler(handlerName string, handlers context.Handlers, counter *int) (newHandlers context.Handlers) {
-	for _, h := range handlers {
-		if h == nil {
-			continue
-		}
-
-		if context.HandlerName(h) == handlerName {
-			if counter != nil {
-				*counter++
-			}
-
-			continue
-		}
-
-		newHandlers = append(newHandlers, h)
-	}
-
-	return
-}
-
-// Done adds explicit finish handlers to this route.
-// Alternatively the end-dev can append to the `Handlers` field.
-// Should be used before the `BuildHandlers` which is
-// called by the framework itself on `Application#Run` (build state).
-//
-// Used internally at  `APIBuilder#DoneGlobal` -> `doneGlobalHandlers` -> `APIBuilder#Handle`.
-func (r *Route) Done(handlers ...context.Handler) {
-	if len(handlers) == 0 {
-		return
-	}
-	r.doneHandlers = append(r.doneHandlers, handlers...)
-}
-
-// ChangeMethod will try to change the HTTP Method of this route instance.
-// A call of `RefreshRouter` is required after this type of change in order to change to be really applied.
-func (r *Route) ChangeMethod(newMethod string) bool {
-	if newMethod != r.Method {
-		r.methodBckp = r.Method
-		r.Method = newMethod
-		return true
-	}
-
-	return false
-}
-
-// SetStatusOffline will try make this route unavailable.
-// A call of `RefreshRouter` is required after this type of change in order to change to be really applied.
-func (r *Route) SetStatusOffline() bool {
-	return r.ChangeMethod(MethodNone)
+// SetCaller sets the route's source caller, useful for debugging.
+func (r *Route) SetCaller(fileName string, fileLine int) {
+	r.RegisterFileName = fileName
+	r.RegisterLineNumber = fileLine
 }
 
 // Describe sets the route's description
@@ -234,23 +220,6 @@ func (r *Route) Describe(description string) *Route {
 	return r
 }
 
-// SetSourceLine sets the route's source caller, useful for debugging.
-// Returns the `Route` itself.
-func (r *Route) SetSourceLine(fileName string, lineNumber int) *Route {
-	r.SourceFileName = fileName
-	r.SourceLineNumber = lineNumber
-	return r
-}
-
-// RestoreStatus will try to restore the status of this route instance, i.e if `SetStatusOffline` called on a "GET" route,
-// then this function will make this route available with "GET" HTTP Method.
-// Note if that you want to set status online for an offline registered route then you should call the `ChangeMethod` instead.
-// It will return true if the status restored, otherwise false.
-// A call of `RefreshRouter` is required after this type of change in order to change to be really applied.
-func (r *Route) RestoreStatus() bool {
-	return r.ChangeMethod(r.methodBckp)
-}
-
 // BuildHandlers is executed automatically by the router handler
 // at the `Application#Build` state. Do not call it manually, unless
 // you were defined your own request mux handler.
@@ -259,15 +228,19 @@ func (r *Route) BuildHandlers() {
 		r.OnBuild(r)
 	}
 
-	// prepend begin handlers.
-	r.Handlers = append(r.builtinBeginHandlers, append(r.beginHandlers, r.Handlers...)...)
-	// append done handlers.
-	r.Handlers = append(r.Handlers, r.doneHandlers...)
-	// reset the temp storage, so a second call of
-	// BuildHandlers will not re-add them (i.e RefreshRouter).
-	r.builtinBeginHandlers = r.builtinBeginHandlers[0:0]
-	r.beginHandlers = r.beginHandlers[0:0]
-	r.doneHandlers = r.doneHandlers[0:0]
+	if r.MainHandlerName == "" {
+		if last := r.MainHandlerList.Last(); last != nil {
+			r.MainHandlerName = last.Name
+			r.MainHandlerIndex = r.MainHandlerList.Count() - 1 // last index.
+		}
+	}
+
+	allRouteHandlers := context.ConcatHandlerLists(r.builtinBeginHandlerList.Clone(), r.MiddlewareList, r.MainHandlerList)
+	r.HandlerList = allRouteHandlers
+	r.Handlers = allRouteHandlers.Values()
+	// reset the temp storage of builtin begin handlers, so a second call of
+	// BuildHandlers will not re-add them (it shouldn't happen).
+	r.builtinBeginHandlerList.Reset()
 }
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
@@ -285,7 +258,7 @@ func (r *Route) String() string {
 // underline representation of the route's path,
 // instead of the `String` function which returns the front representation.
 func (r *Route) Equal(other *Route) bool {
-	return r.StatusCode == other.StatusCode && r.Method == other.Method && r.Subdomain == other.Subdomain && r.Path == other.Path
+	return r.Method == other.Method && r.Subdomain == other.Subdomain && r.NodePath == other.NodePath
 }
 
 // DeepEqual compares the method, subdomain, the
@@ -293,6 +266,61 @@ func (r *Route) Equal(other *Route) bool {
 // and the template source.
 func (r *Route) DeepEqual(other *Route) bool {
 	return r.Equal(other) && r.tmpl.Src == other.tmpl.Src
+}
+
+// GetMainHandlerName returns the name of the route's main handler,
+// that is the last handler registered in the MainHandlerList.
+func (r *Route) GetMainHandlerName() string {
+	return r.MainHandlerName
+}
+
+// GetMainHandlerIndex returns the index of the route's main handler
+// inside the MainHandlerList, that is the index of its last handler.
+func (r *Route) GetMainHandlerIndex() int {
+	return r.MainHandlerIndex
+}
+
+// GetHandlerList returns the route's handler list.
+// It contains all handlers, middleware and main handlers.
+// It's available only after BuildHandlers method.
+func (r *Route) GetHandlerList() *context.HandlerList {
+	return r.HandlerList
+}
+
+// GetRegisterFileName returns the file name that this route was registered on.
+func (r *Route) GetRegisterFileName() string {
+	return r.RegisterFileName
+}
+
+// GetRegisterLineNumber returns the line number that this route was registered on.
+func (r *Route) GetRegisterLineNumber() int {
+	return r.RegisterLineNumber
+}
+
+// GetProperty returns a specific property based on its "key"
+// of this route's Router owner.
+func (r *Route) GetProperty(key string) (any, bool) {
+	if len(r.Properties) == 0 {
+		return nil, false
+	}
+
+	property, ok := r.Properties[key]
+	return property, ok
+}
+
+// GetMethod returns the route's method.
+func (r *Route) GetMethod() string {
+	return r.Method
+}
+
+// GetSubdomain returns the route's subdomain.
+func (r *Route) GetSubdomain() string {
+	return r.Subdomain
+}
+
+// GetPath returns the route's original registered path.
+func (r *Route) GetPath() string {
+	return r.Path
 }
 
 // SetName overrides the default route name which defaults to
@@ -305,11 +333,22 @@ func (r *Route) SetName(newRouteName string) *Route {
 	return r
 }
 
+// GetName returns the route's name.
+func (r *Route) GetName() string {
+	return r.Name
+}
+
+// Router returns the read-only router that this route belongs to.
+func (r *Route) Router() context.Router {
+	return r.router
+}
+
 // ExcludeSitemap excludes this route page from sitemap generator.
 // It sets the NoSitemap field to true.
 //
 // See `SetLastMod`, `SetChangeFreq`, `SetPriority` methods
-// and `iris.WithSitemap`.
+// and the `sitemap.New` controller of the
+// github.com/kataras/iris/v14/controller/sitemap package too.
 func (r *Route) ExcludeSitemap() *Route {
 	r.NoSitemap = true
 	return r
@@ -319,6 +358,11 @@ func (r *Route) ExcludeSitemap() *Route {
 func (r *Route) SetLastMod(t time.Time) *Route {
 	r.LastMod = t
 	return r
+}
+
+// GetLastMod returns the date of last modification of the file served by this static GET route.
+func (r *Route) GetLastMod() time.Time {
+	return r.LastMod
 }
 
 // SetChangeFreq sets how frequently this static GET route's page is likely to change,
@@ -335,10 +379,20 @@ func (r *Route) SetChangeFreq(freq string) *Route {
 	return r
 }
 
+// GetChangeFreq returns the the page frequently is likely to change.
+func (r *Route) GetChangeFreq() string {
+	return r.ChangeFreq
+}
+
 // SetPriority sets the priority of this static GET route's URL relative to other URLs on your site.
 func (r *Route) SetPriority(prio float32) *Route {
 	r.Priority = prio
 	return r
+}
+
+// GetPriority returns the priority of this route's URL relative to other URLs on your site.
+func (r *Route) GetPriority() float32 {
+	return r.Priority
 }
 
 // Tmpl returns the path template,
@@ -356,7 +410,7 @@ func (r *Route) Tmpl() macro.Template {
 // RegisteredHandlersLen returns the end-developer's registered handlers, all except the macro evaluator handler
 // if was required by the build process.
 func (r *Route) RegisteredHandlersLen() int {
-	n := len(r.Handlers)
+	n := r.MiddlewareList.Count() + r.HandlerList.Count()
 	if handler.CanMakeHandler(r.tmpl) {
 		n--
 	}
@@ -367,6 +421,11 @@ func (r *Route) RegisteredHandlersLen() int {
 // IsOnline returns true if the route is marked as "online" (state).
 func (r *Route) IsOnline() bool {
 	return r.Method != MethodNone
+}
+
+// IsSitemapDisabled reports whether this route is excluded from the sitemap.
+func (r *Route) IsSitemapDisabled() bool {
+	return r.NoSitemap
 }
 
 // formats the parsed to the underline path syntax.
@@ -382,13 +441,13 @@ func (r *Route) IsOnline() bool {
 func formatPath(path string) string {
 	if strings.Contains(path, ParamStart) || strings.Contains(path, WildcardParamStart) {
 		var (
-			startRune         = ParamStart[0]
-			wildcardStartRune = WildcardParamStart[0]
+			startRune         = paramStartCharacter
+			wildcardStartRune = wildcardParamStartCharacter
 		)
 
 		var formattedParts []string
-		parts := strings.Split(path, "/")
-		for _, part := range parts {
+		parts := strings.SplitSeq(path, "/")
+		for part := range parts {
 			if part == "" {
 				continue
 			}
@@ -423,7 +482,7 @@ func (r *Route) StaticPath() string {
 
 // ResolvePath returns the formatted path's %v replaced with the args.
 func (r *Route) ResolvePath(args ...string) string {
-	rpath, formattedPath := r.Path, r.FormattedPath
+	rpath, formattedPath := r.NodePath, r.FormattedPath
 	if rpath == formattedPath {
 		// static, no need to pass args
 		return rpath
@@ -453,15 +512,16 @@ func traceHandlerFile(title, name, line string, number int) string {
 }
 
 var methodColors = map[string]int{
-	http.MethodGet:     pio.Green,
-	http.MethodPost:    pio.Magenta,
-	http.MethodPut:     pio.Blue,
-	http.MethodDelete:  pio.Red,
-	http.MethodConnect: pio.Green,
+	http.MethodGet:     32,
+	http.MethodPost:    35,
+	http.MethodPut:     34,
+	http.MethodDelete:  31,
+	http.MethodConnect: 32,
 	http.MethodHead:    23,
-	http.MethodPatch:   pio.Blue,
-	http.MethodOptions: pio.Gray,
-	http.MethodTrace:   pio.Yellow,
+	http.MethodPatch:   34,
+	http.MethodOptions: 37,
+	http.MethodTrace:   33,
+	MethodQuery:        36,
 	MethodNone:         203, // orange-red.
 }
 
@@ -474,15 +534,11 @@ func TraceTitleColorCode(method string) int {
 	return 131 // for error handlers, of "ERROR [%STATUSCODE]"
 }
 
-// GetTitle returns the custom Title or the method or the error code.
+// GetTitle returns the custom Title or the method.
 func (r *Route) GetTitle() string {
 	title := r.Title
 	if title == "" {
-		if r.StatusCode > 0 {
-			title = fmt.Sprintf("%d", r.StatusCode) // if error code then title is the status code, e.g. 400.
-		} else {
-			title = r.Method // else is its method, e.g. GET
-		}
+		title = r.Method // else is its method, e.g. GET
 	}
 
 	return title
@@ -504,8 +560,8 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 
 	// @method: @path
 	// space := strings.Repeat(" ", len(http.MethodConnect)-len(method))
-	// s := fmt.Sprintf("%s: %s", pio.Rich(title, color), path)
-	pio.WriteRich(w, title, color)
+	// s := fmt.Sprintf("%s: %s", printer.Rich(title, color), path)
+	printer.WriteRich(w, title, color)
 
 	path := r.tmpl.Src
 	if path == "" {
@@ -535,59 +591,24 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 	}
 
 	if description != "" {
-		// s += fmt.Sprintf(" %s", pio.Rich(description, pio.Cyan, pio.Underline))
+		// s += fmt.Sprintf(" %s", printer.Rich(description, printer.Cyan, printer.Underline))
 		fmt.Fprint(w, " ")
-		pio.WriteRich(w, description, pio.Cyan, pio.Underline)
+		printer.WriteRich(w, description, printer.Cyan, printer.Underline)
 	}
 
 	// (@route_rel_location)
 	// s += fmt.Sprintf(" (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
 	fmt.Fprintf(w, " (%s:%d)", r.RegisterFileName, r.RegisterLineNumber)
 
-	for i, h := range r.Handlers {
-		var (
-			name string
-			file string
-			line int
-		)
-
-		if i == r.MainHandlerIndex && r.MainHandlerName != "" {
-			// Main handler info can be programmatically
-			// changed to be more specific, respect these changes.
-			name = r.MainHandlerName
-			file = r.SourceFileName
-			line = r.SourceLineNumber
-		} else {
-			name = context.HandlerName(h)
-			file, line = context.HandlerFileLineRel(h)
-			// If a middleware, e.g (macro) which changes the main handler index,
-			// skip it.
-
-			// TODO: think of it.
-			if file == "<autogenerated>" {
-				// At PartyConfigure, 2nd+ level of routes it will get <autogenerated> but in reallity will be the same as the caller.
-				file = r.RegisterFileName
-				line = r.RegisterLineNumber
-			}
-
-			if file == r.SourceFileName && line == r.SourceLineNumber {
-				continue
-			}
-		}
-
-		// If a handler is an anonymous function then it was already
-		// printed in the first line, skip it.
-		if file == r.RegisterFileName && line == r.RegisterLineNumber {
-			continue
-		}
-
+	infos := r.HandlerList.List() // this is why it must be called after Build, otherwise concat the MiddlewareList and MainHandlerList, we must separate main handler list to modify the handler info (e.g. errors/router).
+	for i, info := range infos {
 		// * @handler_name (@handler_rel_location)
-		fmt.Fprint(w, traceHandlerFile(title, name, file, line))
-		if stoppedIndex != -1 && stoppedIndex <= len(r.Handlers) {
+		fmt.Fprint(w, traceHandlerFile(title, info.Name, info.File, info.Line))
+		if stoppedIndex != -1 && stoppedIndex <= len(infos) {
 			if i <= stoppedIndex {
-				pio.WriteRich(w, " ✓", pio.Green)
+				printer.WriteRich(w, " ✓", printer.Green)
 				// } else {
-				// pio.WriteRich(w, " ✕", pio.Red, pio.Underline)
+				// printer.WriteRich(w, " ✕", printer.Red, printer.Underline)
 			}
 		}
 	}
@@ -600,69 +621,4 @@ func (r *Route) Trace(w io.Writer, stoppedIndex int) {
 		r.overlappedLink.Trace(w, -1)
 		r.overlappedLink.Description = bckpDesc
 	}
-}
-
-type routeReadOnlyWrapper struct {
-	*Route
-}
-
-var _ context.RouteReadOnly = routeReadOnlyWrapper{}
-
-func (rd routeReadOnlyWrapper) StatusErrorCode() int {
-	return rd.Route.StatusCode
-}
-
-func (rd routeReadOnlyWrapper) Method() string {
-	return rd.Route.Method
-}
-
-func (rd routeReadOnlyWrapper) Name() string {
-	return rd.Route.Name
-}
-
-func (rd routeReadOnlyWrapper) Subdomain() string {
-	return rd.Route.Subdomain
-}
-
-func (rd routeReadOnlyWrapper) Path() string {
-	return rd.Route.tmpl.Src
-}
-
-func (rd routeReadOnlyWrapper) Trace(w io.Writer, stoppedIndex int) {
-	rd.Route.Trace(w, stoppedIndex)
-}
-
-func (rd routeReadOnlyWrapper) Tmpl() macro.Template {
-	return rd.Route.Tmpl()
-}
-
-func (rd routeReadOnlyWrapper) MainHandlerName() string {
-	return rd.Route.MainHandlerName
-}
-
-func (rd routeReadOnlyWrapper) MainHandlerIndex() int {
-	return rd.Route.MainHandlerIndex
-}
-
-func (rd routeReadOnlyWrapper) Property(key string) (any, bool) {
-	properties := rd.Route.Party.Properties()
-	if properties != nil {
-		if property, ok := properties[key]; ok {
-			return property, true
-		}
-	}
-
-	return nil, false
-}
-
-func (rd routeReadOnlyWrapper) GetLastMod() time.Time {
-	return rd.Route.LastMod
-}
-
-func (rd routeReadOnlyWrapper) GetChangeFreq() string {
-	return rd.Route.ChangeFreq
-}
-
-func (rd routeReadOnlyWrapper) GetPriority() float32 {
-	return rd.Route.Priority
 }

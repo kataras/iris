@@ -6,13 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/memstore"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/context/encoding"
 )
 
 // Log represents the log data specifically for the accesslog middleware.
-//
-//easyjson:json
 type Log struct {
 	// The AccessLog instance this Log was created of.
 	Logger *AccessLog `json:"-" yaml:"-" toml:"-"`
@@ -35,11 +33,11 @@ type Log struct {
 	// The Remote Address.
 	IP string `json:"ip,omitempty" csv:"ip,omitempty"`
 	// Sorted URL Query arguments.
-	Query []memstore.StringEntry `json:"query,omitempty" csv:"query,omitempty"`
+	Query encoding.StringEntries `json:"query,omitempty" csv:"query,omitempty"`
 	// Dynamic path parameters.
-	PathParams memstore.Store `json:"params,omitempty" csv:"params,omitempty"`
+	PathParams encoding.PathParams `json:"params,omitempty" csv:"params,omitempty"`
 	// Fields any data information useful to represent this Log.
-	Fields memstore.Store `json:"fields,omitempty" csv:"fields,omitempty"`
+	Fields Fields `json:"fields,omitempty" csv:"fields,omitempty"`
 	// The Request and Response raw bodies.
 	// If they are escaped (e.g. JSON),
 	// A third-party software can read it through:
@@ -48,8 +46,10 @@ type Log struct {
 	Request  string `json:"request,omitempty" csv:"request,omitempty"`
 	Response string `json:"response,omitempty" csv:"response,omitempty"`
 	//  The actual number of bytes received and sent on the network (headers + body or body only).
-	BytesReceived int `json:"bytes_received,omitempty" csv:"bytes_received,omitempty"`
-	BytesSent     int `json:"bytes_sent,omitempty" csv:"bytes_sent,omitempty"`
+	// omitzero, not omitempty: under encoding/json/v2 omitempty no longer
+	// omits a zero number.
+	BytesReceived int `json:"bytes_received,omitzero" csv:"bytes_received,omitempty"`
+	BytesSent     int `json:"bytes_sent,omitzero" csv:"bytes_sent,omitempty"`
 
 	// A copy of the Request's Context when Async is true (safe to use concurrently),
 	// otherwise it's the current Context (not safe for concurrent access).
@@ -124,29 +124,32 @@ func parseRequestValues(buf interface {
 	io.StringWriter
 	io.ByteWriter
 	Len() int
-}, code int, pathParams memstore.Store, query []memstore.StringEntry, fields memstore.Store) (int, int) {
+}, code int, pathParams encoding.PathParams, query encoding.StringEntries, fields Fields) (int, int) {
 	n := buf.Len()
 	if !context.StatusCodeNotSuccessful(code) {
 		// collect path parameters on a successful request-response only.
+		// Every value below is client-controlled; sanitizeLogValue strips the
+		// CR/LF and ANSI escapes that would otherwise let a request forge whole
+		// log lines. See its doc comment in accesslog.go.
 		for _, entry := range pathParams {
-			buf.WriteString(entry.Key)
+			buf.WriteString(sanitizeLogValue(entry.Key))
 			buf.WriteByte(eq)
-			buf.WriteString(fmt.Sprintf("%v", entry.ValueRaw))
+			buf.WriteString(sanitizeLogValue(entry.String()))
 			buf.WriteByte(space)
 		}
 	}
 
 	for _, entry := range query {
-		buf.WriteString(entry.Key)
+		buf.WriteString(sanitizeLogValue(entry.Key))
 		buf.WriteByte(eq)
-		buf.WriteString(entry.Value)
+		buf.WriteString(sanitizeLogValue(entry.Value))
 		buf.WriteByte(space)
 	}
 
 	for _, entry := range fields {
-		buf.WriteString(entry.Key)
+		buf.WriteString(sanitizeLogValue(entry.Key))
 		buf.WriteByte(eq)
-		buf.WriteString(fmt.Sprintf("%v", entry.ValueRaw))
+		buf.WriteString(sanitizeLogValue(fmt.Sprintf("%v", entry.Value)))
 		buf.WriteByte(space)
 	}
 

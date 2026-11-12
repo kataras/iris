@@ -1,6 +1,49 @@
 package rewrite
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestLoadOptionsFileExtension(t *testing.T) {
+	dir := t.TempDir()
+
+	tests := []struct {
+		filename string
+		contents string
+	}{
+		{"redirects.yml", "RedirectMatch:\n  - 301 /seo/(.*) /$1\n"},
+		{"redirects.yaml", "RedirectMatch:\n  - 301 /seo/(.*) /$1\n"},
+		{"redirects.json", `{"redirectMatch": ["301 /seo/(.*) /$1"]}`},
+		{"redirects", "RedirectMatch:\n  - 301 /seo/(.*) /$1\n"}, // no extension defaults to yaml.
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.filename, func(t *testing.T) {
+			if !strings.Contains(tt.filename, ".") && strings.Contains(dir, ".") {
+				// the extension is cut from the full path,
+				// a dotted temp dir would hide the no-extension case.
+				t.Skipf("temp dir contains a dot: %s", dir)
+			}
+
+			filename := filepath.Join(dir, tt.filename)
+			if err := os.WriteFile(filename, []byte(tt.contents), 0600); err != nil {
+				t.Fatal(err)
+			}
+
+			opts := LoadOptions(filename)
+			if expected, got := 1, len(opts.RedirectMatch); expected != got {
+				t.Fatalf("expected %d redirect match lines but got %d", expected, got)
+			}
+
+			if expected, got := "301 /seo/(.*) /$1", opts.RedirectMatch[0]; expected != got {
+				t.Fatalf("expected %q but got %q", expected, got)
+			}
+		})
+	}
+}
 
 func TestRedirectMatch(t *testing.T) {
 	tests := []struct {

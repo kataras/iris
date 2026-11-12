@@ -1,8 +1,8 @@
 # The `apps` package
 
-Package `github.com/kataras/iris/v12/apps` provides a globally scoped control over all registered Iris Applications of the same Program.
+Package `github.com/kataras/iris/v14/apps` provides a globally scoped control over all registered Iris Applications of the same Program.
 
-[Example Application](https://github.com/kataras/iris/tree/v12/_examples/routing/subdomains/redirect/multi-instances)
+[Example Application](https://github.com/kataras/iris/tree/main/_examples/16-advanced/multi-app)
 
 Below you will find a use case for each feature.
 
@@ -36,8 +36,8 @@ func Get(appName ...string) *iris.Application
 package userapi
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/apps"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/apps"
 )
 
 func init() {
@@ -59,7 +59,7 @@ package main
 import (
 	_ "myserver/api/user"
 
-	"github.com/kataras/iris/v12/apps"
+	"github.com/kataras/iris/v14/apps"
 )
 
 func main() {
@@ -73,12 +73,16 @@ initializes an Iris Application, if not already exists, and registers it to the 
 
 - Reference one or more Iris Applications based on their names.
 
-The `Application.SetName` method sets a unique name to this Iris Application.
-It sets a child prefix for the current Application's Logger.
-Its `Application.String` method returns the given name. It returns itself.
+The `Name` field of `iris.Options` gives an Iris Application a unique name.
+It is also the prefix of that Application's Logger, and `Application.String` returns it.
 
 ```go
-func (app *Application) SetName(appName string) *Application
+type Options struct {
+    // Name is the application name and the log prefix for
+    // that Application instance's Logger.
+    Name string
+    // [...]
+}
 ```
 
 ```go
@@ -86,10 +90,10 @@ func (app *Application) SetName(appName string) *Application
 
 package main
 
-import "github.com/kataras/iris/v12"
+import "github.com/kataras/iris/v14"
 
 func main() {
-    app := iris.New().SetName("app.company.com")
+    app := iris.New(iris.Options{Name: "app.company.com"})
 }
 ```
 
@@ -98,7 +102,7 @@ func main() {
 
 package pkg
 
-import "github.com/kataras/iris/v12/apps"
+import "github.com/kataras/iris/v14/apps"
 
 func DoSomething() {
     app := apps.Get("app.company.com")
@@ -156,7 +160,7 @@ The `SwitchCase` structure contains the Filter and the target Iris Application.
 
 ```go
 type SwitchCase struct {
-	Filter func(ctx iris.Context) bool
+	Filter iris.Filter // func(ctx iris.Context) bool
 	App    *iris.Application
 }
 ```

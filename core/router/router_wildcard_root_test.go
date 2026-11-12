@@ -1,6 +1,6 @@
 // black-box testing
 //
-// see _examples/routing/main_test.go for the most common router tests that you may want to see,
+// see _examples/14-testing/iris-httptest/main_test.go for the most common router tests that you may want to see,
 // this is a test for the new feature that I just coded: wildcard "/{p:path}" on root without conflicts
 
 package router_test
@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 const (
@@ -165,13 +165,13 @@ func testTheRoutes(t *testing.T, tests []testRoute, debug bool) {
 		app.Handle(tt.method, tt.path, tt.handler)
 	}
 
-	// setup the test suite
+	// setup the test suite.
 	e := httptest.New(t, app, httptest.Debug(debug))
 
-	// run the tests
+	// run the tests.
 	for _, tt := range tests {
 		for _, req := range tt.requests {
-			// t.Logf("req: %s:%s\n", tt.method, tt.path)
+			// t.Logf("req: %s:%s\n", tt.method, tt.path).
 			method := req.method
 			if method == "" {
 				method = tt.method

@@ -1,7 +1,7 @@
 // black-box testing
 //
-// see _examples/routing/main_test.go for the most common router tests that you may want to see,
-// this is a test which makes sure that the APIBuilder's `UseGlobal`, `Use` and `Done` functions are
+// see _examples/14-testing/iris-httptest/main_test.go for the most common router tests that you may want to see,
+// this is a test which makes sure that the RouterBuilder's `UseRouter`, `Use` and `Done` functions are
 // working as expected.
 
 package router_test
@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 // test registering of below handlers
@@ -54,15 +54,21 @@ var (
 	secondUseGlobalHandler  = writeHandler(secondUseGlobalResponse)
 
 	firstDoneResponse = "done1"
-	firstDoneHandler  = writeHandler(firstDoneResponse)
+	firstDoneHandler  = func(ctx iris.Context) {
+		ctx.Next()
+
+		ctx.WriteString(firstDoneResponse)
+	}
 
 	secondDoneResponse = "done2"
 	secondDoneHandler  = func(ctx iris.Context) {
+		ctx.Next()
+
 		ctx.WriteString(secondDoneResponse)
 	}
 
 	finalResponse = firstUseRouterResponse + secondUseRouterResponse + firstUseGlobalResponse + secondUseGlobalResponse +
-		firstUseResponse + secondUseResponse + mainResponse + firstDoneResponse + secondDoneResponse
+		firstUseResponse + secondUseResponse + mainResponse + secondDoneResponse + firstDoneResponse /*done 1st is executed first with ctx.Next, so the done 2nd will be executed first */
 
 	testResponse = func(t *testing.T, app *iris.Application, path string) {
 		t.Helper()
@@ -77,8 +83,8 @@ func TestMiddlewareByRouteDef(t *testing.T) {
 	app.UseRouter(firstUseRouterHandler)
 	app.UseRouter(secondUseRouterHandler)
 
-	app.Get("/mypath", firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler,
-		mainHandler, firstDoneHandler, secondDoneHandler)
+	app.Get("/mypath", firstDoneHandler, secondDoneHandler, firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler,
+		mainHandler)
 
 	testResponse(t, app, "/mypath")
 }
@@ -86,76 +92,22 @@ func TestMiddlewareByRouteDef(t *testing.T) {
 func TestMiddlewareByUseAndDoneDef(t *testing.T) {
 	app := iris.New()
 	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
-	app.Use(firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler)
-	app.Done(firstDoneHandler, secondDoneHandler)
+
+	doneHandler := func(ctx iris.Context) {
+		ctx.Next()
+
+		firstDoneHandler(ctx)
+	}
+
+	doneHandler2 := func(ctx iris.Context) {
+		ctx.Next()
+
+		secondDoneHandler(ctx)
+	}
+
+	app.Use(doneHandler, doneHandler2, firstUseGlobalHandler, secondUseGlobalHandler, firstUseHandler, secondUseHandler)
 
 	app.Get("/mypath", mainHandler)
-
-	testResponse(t, app, "/mypath")
-}
-
-func TestMiddlewareByUseUseGlobalAndDoneDef(t *testing.T) {
-	app := iris.New()
-
-	app.Use(firstUseHandler, secondUseHandler)
-	// if failed then UseGlobal didnt' registered these handlers even before the
-	// existing middleware.
-	app.UseGlobal(firstUseGlobalHandler, secondUseGlobalHandler)
-	app.Done(firstDoneHandler, secondDoneHandler)
-
-	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
-	app.Get("/mypath", mainHandler)
-
-	testResponse(t, app, "/mypath")
-}
-
-func TestMiddlewareByUseDoneAndUseGlobalDef(t *testing.T) {
-	app := iris.New()
-	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
-
-	app.Use(firstUseHandler, secondUseHandler)
-	app.Done(firstDoneHandler, secondDoneHandler)
-
-	app.Get("/mypath", mainHandler)
-
-	// if failed then UseGlobal was unable to
-	// prepend these handlers to the route was registered before
-	// OR
-	// when order failed because these should be executed in order, first the firstUseGlobalHandler,
-	// because they are the same type (global begin handlers)
-	app.UseGlobal(firstUseGlobalHandler)
-	app.UseGlobal(secondUseGlobalHandler)
-
-	testResponse(t, app, "/mypath")
-}
-
-func TestMiddlewareByUseGlobalUseAndDoneGlobalDef(t *testing.T) {
-	app := iris.New()
-	app.UseRouter(firstUseRouterHandler)
-	app.UseRouter(secondUseRouterHandler)
-
-	app.UseGlobal(firstUseGlobalHandler)
-	app.UseGlobal(secondUseGlobalHandler)
-	app.Use(firstUseHandler, secondUseHandler)
-
-	app.Get("/mypath", mainHandler)
-
-	app.DoneGlobal(firstDoneHandler, secondDoneHandler)
-
-	testResponse(t, app, "/mypath")
-}
-
-func TestMiddlewareByDoneUseAndUseGlobalDef(t *testing.T) {
-	app := iris.New()
-	app.UseRouter(firstUseRouterHandler, secondUseRouterHandler)
-	app.Done(firstDoneHandler, secondDoneHandler)
-
-	app.Use(firstUseHandler, secondUseHandler)
-
-	app.Get("/mypath", mainHandler)
-
-	app.UseGlobal(firstUseGlobalHandler)
-	app.UseGlobal(secondUseGlobalHandler)
 
 	testResponse(t, app, "/mypath")
 }
@@ -172,63 +124,13 @@ func TestUseRouterStopExecution(t *testing.T) {
 	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual("stop")
 
 	app = iris.New()
-	app.OnErrorCode(iris.StatusForbidden, func(ctx iris.Context) {
-		ctx.Writef("err: %v", ctx.GetErr())
-	})
 	app.UseRouter(func(ctx iris.Context) {
-		ctx.StopWithPlainError(iris.StatusForbidden, fmt.Errorf("custom error"))
-		// stopped but not data written yet, the error code handler
-		// should be responsible of it (use StopWithError to write and close).
+		ctx.StopWithError(iris.StatusForbidden, fmt.Errorf("custom error"))
 	})
 	app.Get("/", writeHandler("index"))
 
 	e = httptest.New(t, app)
-	e.GET("/").Expect().Status(iris.StatusForbidden).Body().IsEqual("err: custom error")
-}
-
-func TestUseRouterParentDisallow(t *testing.T) {
-	const expectedResponse = "no_userouter_allowed"
-
-	app := iris.New()
-	app.UseRouter(func(ctx iris.Context) {
-		ctx.WriteString("always")
-		ctx.Next()
-	})
-	app.Get("/index", func(ctx iris.Context) {
-		ctx.WriteString(expectedResponse)
-	})
-
-	app.SetPartyMatcher(func(ctx iris.Context, p iris.Party) bool {
-		// modifies the PartyMatcher to not match any UseRouter,
-		// tests should receive the handlers response alone.
-		return false
-	})
-
-	app.PartyFunc("/", func(p iris.Party) { // it's the same instance of app.
-		p.UseRouter(func(ctx iris.Context) {
-			ctx.WriteString("_2")
-			ctx.Next()
-		})
-		p.Get("/", func(ctx iris.Context) {
-			ctx.WriteString(expectedResponse)
-		})
-	})
-
-	app.PartyFunc("/user", func(p iris.Party) {
-		p.UseRouter(func(ctx iris.Context) {
-			ctx.WriteString("_3")
-			ctx.Next()
-		})
-
-		p.Get("/", func(ctx iris.Context) {
-			ctx.WriteString(expectedResponse)
-		})
-	})
-
-	e := httptest.New(t, app)
-	e.GET("/index").Expect().Status(iris.StatusOK).Body().IsEqual(expectedResponse)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual(expectedResponse)
-	e.GET("/user").Expect().Status(iris.StatusOK).Body().IsEqual(expectedResponse)
+	e.GET("/").Expect().Status(iris.StatusForbidden).Body().IsEqual("custom error")
 }
 
 func TestUseRouterSubdomains(t *testing.T) {
@@ -287,34 +189,73 @@ func TestUseRouterSubdomains(t *testing.T) {
 		IsEqual("Not Found")
 }
 
+func TestUseRouterPathPrefix(t *testing.T) {
+	app := iris.New()
+	app.UseRouter(func(ctx iris.Context) { // this registers everywhere.
+		ctx.WriteString("root_")
+		ctx.Next()
+	})
+	app.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("index")
+	})
+	app.Get("/about", func(ctx iris.Context) {
+		ctx.WriteString("about")
+	})
+
+	usersAPI := app.Router("/users")
+	usersAPI.UseRouter(func(ctx iris.Context) { // this only registers under the /users prefix.
+		ctx.WriteString("users_")
+		ctx.Next()
+	})
+	usersAPI.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("index")
+	})
+	usersAPI.Get("/profile", func(ctx iris.Context) {
+		ctx.WriteString("profile")
+	})
+
+	postsAPI := app.Router("/posts")
+	postsAPI.UseRouter(func(ctx iris.Context) { // this only registers under the /posts prefix.
+		ctx.WriteString("posts_")
+		ctx.Next()
+	})
+	postsAPI.Get("/", func(ctx iris.Context) {
+		ctx.WriteString("index")
+	})
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().IsEqual("root_index")
+	e.GET("/about").Expect().Status(iris.StatusOK).Body().IsEqual("root_about")
+	e.GET("/users").Expect().Status(iris.StatusOK).Body().IsEqual("root_users_index")
+	e.GET("/users/profile").Expect().Status(iris.StatusOK).Body().IsEqual("root_users_profile")
+	e.GET("/posts").Expect().Status(iris.StatusOK).Body().IsEqual("root_posts_index")
+}
+
 func TestUseWrapOrder(t *testing.T) {
 	var (
-		expectedBody         = "#1 .WrapRouter\n#2 .UseRouter\n#3 .UseGlobal\n#4 .Use\n#5 Main Handler\n"
-		expectedNotFoundBody = "#3 .UseGlobal\n#1 .UseError\n#2 Main Error Handler\n"
+		expectedBody         = "#1 .WrapRouter\n#2 .UseRouter\n#3 .Use\n#4 Main Handler\n"
+		expectedNotFoundBody = "#1 .UseError\n#2 Main Error Handler\n"
 		makeMiddleware       = func(body string) iris.Handler {
 			return func(ctx iris.Context) {
-				ctx.WriteString(body)
+				if route := ctx.CurrentRoute(); route.IsNoRoute() || route.IsMethodNotAllowed() {
+					ctx.WriteString("#1 .UseError\n")
+				} else {
+					ctx.WriteString(body)
+				}
 				ctx.Next()
 			}
 		}
 
 		handler = func(ctx iris.Context) {
-			ctx.WriteString("#5 Main Handler\n")
+			ctx.WriteString("#4 Main Handler\n")
 		}
 
 		errorHandler = func(ctx iris.Context) {
 			ctx.WriteString("#2 Main Error Handler\n")
 		}
 
-		useHandler = makeMiddleware("#4 .Use\n")
-		useGlobal  = makeMiddleware("#3 .UseGlobal\n")
-		useError   = func(ctx iris.Context) {
-			// UseError has captured the status code, because it runs
-			// after the router itself but only one error handlers.
-			ctx.WriteString("#1 .UseError\n")
-			ctx.Next()
-		}
-		useRouter = func(ctx iris.Context) {
+		useHandler = makeMiddleware("#3 .Use\n")
+		useRouter  = func(ctx iris.Context) {
 			if ctx.Path() == "/" {
 				ctx.WriteString("#2 .UseRouter\n")
 			}
@@ -350,12 +291,11 @@ func TestUseWrapOrder(t *testing.T) {
 
 	app := iris.New()
 	app.Use(useHandler)
-	app.UseGlobal(useGlobal)
-	app.UseError(useError)
 	app.UseRouter(useRouter)
 	app.WrapRouter(wrapRouter)
 
-	app.OnErrorCode(iris.StatusNotFound, errorHandler)
+	app.HandleNoRoute(errorHandler)
+	app.HandleNoMethod(errorHandler)
 	app.Get("/", handler)
 
 	e := httptest.New(t, app)

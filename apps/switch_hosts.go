@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 )
 
 type (
@@ -89,7 +89,12 @@ func hostApp(host Host) *iris.Application {
 
 	switch target := host.Target.(type) {
 	case context.Application:
-		return target.(*iris.Application)
+		// Host.Target is user-supplied; guard the assertion in case a non-iris
+		// context.Application implementation is provided.
+		if irisApp, ok := target.(*iris.Application); ok {
+			return irisApp
+		}
+		return nil
 	case string:
 		// Check if the given target is an application name, if so
 		// we must not redirect (loop) we must serve the request
@@ -139,10 +144,10 @@ func newHostRedirectApp(targetHost string, code int) *iris.Application {
 			return
 		}
 
-		r.Host = targetHost
-		r.URL.Host = targetHost
+		u := r.URL.Clone()
+		u.Host = targetHost
 		// r.URL.User = nil
-		http.Redirect(w, r, r.URL.String(), code)
+		http.Redirect(w, r, u.String(), code)
 	})
 	return app
 }

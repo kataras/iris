@@ -2,11 +2,13 @@ package redis
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"sync/atomic"
 
-	"github.com/kataras/iris/v12/core/host"
-	"github.com/kataras/iris/v12/middleware/jwt"
+	"github.com/kataras/iris/v14/internal/signalhandler"
+	"github.com/kataras/iris/v14/middleware/jwt"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -40,7 +42,7 @@ type Blocklist struct {
 	Prefix string
 	// Both Client and ClusterClient implements this interface.
 	client    Client
-	connected uint32
+	connected atomic.Bool
 	// Customize any go-redis fields manually
 	// before Connect.
 	ClientOptions  Options
@@ -76,8 +78,22 @@ func NewBlocklist() *Blocklist {
 	}
 }
 
-func defaultGetKey(_ []byte, claims jwt.Claims) string {
-	return claims.ID
+// defaultGetKey derives the storage key of a token.
+//
+// It prefers the "jti" claim, and falls back to a digest of the token itself
+// when the signer did not set one.
+//
+// Note(@kataras): the fallback is not cosmetic. Returning claims.ID unchecked
+// meant every token without a "jti" mapped to the EMPTY key, so invalidating one
+// user's token wrote to "" and the existence check for every other token read
+// from "" - one logout blocked every session in the system.
+func defaultGetKey(token []byte, claims jwt.Claims) string {
+	if claims.ID != "" {
+		return claims.ID
+	}
+
+	sum := sha256.Sum256(token)
+	return hex.EncodeToString(sum[:])
 }
 
 // Connect prepares the redis client and fires a ping response to it.
@@ -101,18 +117,18 @@ func (b *Blocklist) Connect() error {
 		return err
 	}
 
-	host.RegisterOnInterrupt(func() {
-		atomic.StoreUint32(&b.connected, 0)
-		b.client.Close()
+	signalhandler.Register(func() error {
+		b.connected.Store(false)
+		return b.client.Close()
 	})
-	atomic.StoreUint32(&b.connected, 1)
+	b.connected.Store(true)
 
 	return nil
 }
 
 // IsConnected reports whether the Connect function was called.
 func (b *Blocklist) IsConnected() bool {
-	return atomic.LoadUint32(&b.connected) > 0
+	return b.connected.Load()
 }
 
 // ValidateToken checks if the token exists and

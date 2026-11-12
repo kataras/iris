@@ -7,4 +7,6 @@ type (
 	Request = httpexpect.Request
 	// Expect type alias.
 	Expect = httpexpect.Expect
+	// ContentOpts alias.
+	ContentOpts = httpexpect.ContentOpts
 )

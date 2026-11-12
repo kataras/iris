@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [v12]
+    branches: [main]
   pull_request:
-    branches: [v12]
+    branches: [main]
 
 permissions:
   contents: read
@@ -15,28 +15,123 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        go_version: [1.26.x]
     steps:
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
+    #   with:
+    #     persist-credentials: false
+    #     token: ${{ secrets.GH_ACCESS_TOKEN }}
+    # - name: Granting private modules access
+    #   run: |
+    #    git config --global url."https://${{ secrets.GH_ACCESS_TOKEN }}:@github.com/".insteadOf "https://github.com"
+    # - name: Get dependencies
+    #   env:
+    #     GOPRIVATE: github.com/*
+    #   run: |
+    #     go mod download
 
+    # The go directive in go.mod is the single source of truth for the
+    # minimum Go version; codeql-analysis.yml already reads it the same way.
     - name: Set up Go 1.x
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@v7
       with:
         go-version-file: './go.mod'
         check-latest: true
     - run: go version
 
     - name: Test
-      run: go test -v ./...
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        NGROK_DOMAIN: ${{ secrets.NGROK_DOMAIN }}
+      run: go test -race -v ./...
 
-    - name: Setup examples for testing
-      run: ./.github/scripts/setup_examples_test.bash
+    # Temporary disabled. TODO: re-enable them when we go online.
+    # - name: Setup examples for testing
+    #   run: ./.github/scripts/setup_examples_test.bash
+    # - name: Test examples
+    #   continue-on-error: true
+    #   working-directory: _examples
+    #   run: go test -v -mod=mod -cover -race ./...
 
-    - name: Test examples
-      continue-on-error: true
-      working-directory: _examples
-      run: go test -v -mod=mod -cover -race ./...
+  # action@v9 runs on Node 24. Anything up to v8 runs on Node 20, which GitHub has deprecated.
+  # Action v7 and later support golangci-lint v2 only, so .golangci.yml uses the v2 schema.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v7
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: './go.mod'
+        check-latest: true
+
+    # golangci-lint ships its own copy of the Go type checker, so it must be at
+    # least as new as the toolchain that compiled the standard library it reads.
+    # v2.13 (x/tools 0.49) chokes on the export data Go 1.27.3 writes:
+    # "export data version 5 is greater than maximum supported version 4".
+    # v2.14 moved to x/tools 0.50, which reads it. v2.15 is the current line.
+    # Bump this pin whenever a Go patch release breaks the Lint job the same way.
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v9
+      with:
+        version: v2.15
+
+  crosscompile:
+    name: Cross-compile
+    runs-on: ubuntu-latest
+
+    # A build, not a test, because these targets cannot run here — and a build is
+    # all it takes to catch the class of bug this job exists for. An untyped
+    # math.MaxUint32 takes the width of int, so it is a constant on a 64-bit
+    # machine and an overflow on a 32-bit one; a syscall field is a uint64 on
+    # amd64 and a uint32 on arm. Both shipped, both were invisible to every test
+    # on every developer machine, and both were a compile error the moment
+    # somebody set GOARCH.
+    #
+    # 386 and arm are the 32-bit word size, s390x is big-endian, and freebsd is
+    # the platform with no syscall implementation of its own. js/wasm is absent
+    # on purpose: it fails inside kataras/golog, not here.
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - {goos: linux, goarch: "386"}
+          - {goos: linux, goarch: arm}
+          - {goos: linux, goarch: s390x}
+          - {goos: windows, goarch: "386"}
+          - {goos: darwin, goarch: arm64}
+          - {goos: freebsd, goarch: amd64}
+
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v7
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: './go.mod'
+        check-latest: true
+    - name: Build for ${{ matrix.target.goos }}/${{ matrix.target.goarch }}
+      env:
+        GOOS: ${{ matrix.target.goos }}
+        GOARCH: ${{ matrix.target.goarch }}
+      run: go build ./...
+
+  govulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v7
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: './go.mod'
+        check-latest: true
+    - name: Run govulncheck
+      run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...

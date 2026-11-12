@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/load"
-	"github.com/shirou/gopsutil/v3/mem"
-	"github.com/shirou/gopsutil/v3/net"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/load"
+	"github.com/shirou/gopsutil/v4/mem"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 // Stats holds the process and operating system statistics values.
@@ -71,49 +71,56 @@ func (sh *StatsHolder) Err() <-chan error {
 	return sh.errCh
 }
 
-// Stop terminates the routine retrieves the stats.
-// Note that no other monitor can be initialized after Stop.
+// Stop terminates the routine which retrieves the stats for this holder.
+// It is a no-op if the holder was never started or it is already stopped.
+// Other StatsHolder instances are not affected.
 func (sh *StatsHolder) Stop() {
+	sh.mu.Lock()
 	if !sh.started {
+		sh.mu.Unlock()
 		return
 	}
+	sh.started = false
+	sh.mu.Unlock()
 
 	sh.closeCh <- struct{}{}
-	sh.started = false
 }
 
 func (sh *StatsHolder) start(refreshInterval time.Duration) {
+	sh.mu.Lock()
 	if sh.started {
+		sh.mu.Unlock()
 		return
 	}
 	sh.started = true
+	sh.mu.Unlock()
 
-	once.Do(func() {
-		go func() {
-			ticker := time.NewTicker(refreshInterval)
-			defer ticker.Stop()
+	// Each holder runs its own ticker goroutine. The sh.started guard above
+	// prevents a single holder from starting more than one; using a per-package
+	// sync.Once here previously meant only the first StatsHolder ever started
+	// (and a second holder's Stop would block forever on closeCh).
+	go func() {
+		ticker := time.NewTicker(refreshInterval)
+		defer ticker.Stop()
 
-			for {
-				select {
-				case <-sh.closeCh:
-					// close(sh.errCh)
-					return
-				case <-ticker.C:
-					err := refresh(sh.proc)
-					if err != nil {
-						// push the error to the channel and continue the execution,
-						// the only way to stop it is through its "Stop" method.
-						sh.errCh <- err
-					}
+		for {
+			select {
+			case <-sh.closeCh:
+				// close(sh.errCh)
+				return
+			case <-ticker.C:
+				err := refresh(sh.proc)
+				if err != nil {
+					// push the error to the channel and continue the execution,
+					// the only way to stop it is through its "Stop" method.
+					sh.errCh <- err
 				}
 			}
-		}()
-	})
+		}
+	}()
 }
 
 var (
-	once = new(sync.Once)
-
 	metricPidCPU   = expvar.NewFloat("pid_cpu")
 	metricPidRAM   = newUint64("pid_ram")
 	metricPidConns = expvar.NewInt("pid_conns")

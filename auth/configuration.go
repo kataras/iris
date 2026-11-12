@@ -1,17 +1,18 @@
-//go:build go1.18
-// +build go1.18
-
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/gorilla/securecookie"
+	"slices"
+
 	"github.com/kataras/jwt"
 	"gopkg.in/yaml.v3"
 )
@@ -30,10 +31,17 @@ type (
 	Configuration struct {
 		// The authorization header keys that server should read the access token from.
 		//
-		// Defaults to:
+		// Required, there is no default value, the `New` function
+		// returns an error when this field is empty.
+		// The `Configuration.BindRandom` method and the
+		// `MustGenerateConfiguration` package-level function fill it with:
 		// - Authorization
 		// - X-Authorization
 		Headers []string `json:"headers" yaml:"Headers" toml:"Headers" ini:"Headers"`
+		// HeadersNoBearer if true then the server will not expect the "Bearer " prefix
+		// before the values of the given "Headers".
+		// Defaults to false.
+		HeadersNoBearer bool `json:"headers_no_bearer" yaml:"HeadersNoBearer" toml:"HeadersNoBearer" ini:"HeadersNoBearer"`
 		// Cookie optional configuration.
 		// A Cookie.Name holds the access token value fully encrypted.
 		Cookie CookieConfiguration `json:"cookie" yaml:"Cookie" toml:"Cookie" ini:"cookie"`
@@ -62,6 +70,14 @@ type (
 		Block string `json:"block" yaml:"Block" toml:"Block" ini:"block"`
 	}
 )
+
+// Clone returns a deep copy of the Configuration.
+func (c *Configuration) Clone() Configuration {
+	clone := *c
+	clone.Headers = slices.Clone(c.Headers)
+	clone.Keys = c.Keys.Clone()
+	return clone
+}
 
 func (c *Configuration) validate() (jwt.Keys, error) {
 	if len(c.Headers) == 0 {
@@ -113,8 +129,8 @@ func (c *Configuration) BindRandom() error {
 		Cookie: CookieConfiguration{
 			Name:   "iris_auth_cookie",
 			Secure: false,
-			Hash:   string(securecookie.GenerateRandomKey(64)),
-			Block:  string(securecookie.GenerateRandomKey(32)),
+			Hash:   string(generateRandomKey(64)),
+			Block:  string(generateRandomKey(32)),
 		},
 		Keys: jwt.KeysConfiguration{
 			{
@@ -130,7 +146,7 @@ func (c *Configuration) BindRandom() error {
 				MaxAge:        720 * time.Hour,
 				Public:        string(refreshPublic),
 				Private:       string(refreshPrivate),
-				EncryptionKey: string(jwt.MustGenerateRandom(32)),
+				EncryptionKey: hex.EncodeToString(jwt.MustGenerateRandom(16)),
 			},
 		},
 	}
@@ -206,7 +222,55 @@ func MustLoadConfiguration(filename string) Configuration {
 // LoadConfiguration reads a filename (fullpath)
 // and returns a Configuration binded to the contents of the given filename.
 // See Configuration.BindFile method too.
+//
+// Example yaml contents:
+/*
+Headers: # required.
+  - "Authorization"
+  - "X-Authorization"
+Cookie: # optional.
+  Name: "iris_auth_cookie"
+  Secure: false
+  Hash: "D*G-KaPdSgUkXp2s5v8y/B?E(H+MbQeThWmYq3t6w9z$C&F)J@NcRfUjXn2r4u7x" # length of 64 characters (512-bit).
+  Block: "VkYp3s6v9y$B&E)H@McQfTjWmZq4t7w!" # length of 32 characters (256-bit).
+Keys:
+  - ID: IRIS_AUTH_ACCESS # required.
+    Alg: EdDSA
+    MaxAge: 2h # 2 hours lifetime for access tokens.
+    Private: |+
+      -----BEGIN PRIVATE KEY-----
+      MC4CAQAwBQYDK2VwBCIEIFdZWoDdFny5SMnP9Fyfr8bafi/B527EVZh8JJjDTIFO
+      -----END PRIVATE KEY-----
+    Public: |+
+      -----BEGIN PUBLIC KEY-----
+      MCowBQYDK2VwAyEAzpgjKSr9E032DX+foiOxq1QDsbzjLxagTN+yVpGWZB4=
+      -----END PUBLIC KEY-----
+  - ID: IRIS_AUTH_REFRESH # optional. Good practise to have it though.
+    Alg: EdDSA
+    # 1 month lifetime for refresh tokens,
+    # after that period the user has to signin again.
+    MaxAge: 720h
+    Private: |+
+      -----BEGIN PRIVATE KEY-----
+      MC4CAQAwBQYDK2VwBCIEIHJ1aoIjA2sRp5eqGjGR3/UMucrHbBdBv9p8uwfzZ1KZ
+      -----END PRIVATE KEY-----
+    Public: |+
+      -----BEGIN PUBLIC KEY-----
+      MCowBQYDK2VwAyEAsKKAr+kDtfAqwG7cZdoEAfh9jHt9W8qi9ur5AA1KQAQ=
+      -----END PUBLIC KEY-----
+    # Example of setting a binary form of the encryption key for refresh tokens,
+    # it could be a "string" as well.
+    EncryptionKey: 14be763a0cd7b7b98d48c3e808bfaf84
+*/
 func LoadConfiguration(filename string) (c Configuration, err error) {
 	err = c.BindFile(filename)
 	return
+}
+
+func generateRandomKey(length int) []byte {
+	k := make([]byte, length)
+	if _, err := io.ReadFull(rand.Reader, k); err != nil {
+		return nil
+	}
+	return k
 }

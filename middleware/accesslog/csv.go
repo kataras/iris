@@ -135,9 +135,40 @@ func (f *CSV) Format(log *Log) (bool, error) {
 		values = append(values, log.Response)
 	}
 
+	// Note(@kataras): escape spreadsheet formulas before writing.
+	//
+	// This formatter exists specifically so the log can be opened in a
+	// spreadsheet (DateScript above is a Google Sheets hook). A request to
+	// /=cmd|'/c calc'!A1 lands in a cell that Excel and Sheets treat as a
+	// formula and offer to execute - CWE-1236, and every value here except the
+	// timestamp and the numbers is client-controlled.
+	//
+	// The timestamp is skipped on purpose: DateScript deliberately makes it a
+	// formula, and it is not attacker-controlled.
+	for i := 1; i < len(values); i++ {
+		values[i] = escapeCSVFormula(values[i])
+	}
+
 	w := f.writerPool.Get().(*csv.Writer)
 	err := w.Write(values)
 	w.Flush() // it works as "reset" too.
 	f.writerPool.Put(w)
 	return true, err
+}
+
+// escapeCSVFormula prefixes a value that a spreadsheet would interpret as a
+// formula with a single quote, so it is shown as text instead of evaluated.
+//
+// See the note in Format.
+func escapeCSVFormula(s string) string {
+	if s == "" {
+		return s
+	}
+
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + s
+	default:
+		return s
+	}
 }

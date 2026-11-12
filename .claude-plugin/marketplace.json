@@ -1,0 +1,15 @@
+{
+  "name": "kataras-iris",
+  "owner": {
+    "name": "Gerasimos (Makis) Maropoulos",
+    "url": "https://github.com/kataras"
+  },
+  "description": "The iris skill: a development guide for the Iris v14 Go web framework.",
+  "plugins": [
+    {
+      "name": "iris",
+      "source": ".",
+      "description": "Development guide for the Iris v14 Go web framework: builder chain, routing macros, rest helpers, error mapping, auth SDK, middleware, and testing."
+    }
+  ]
+}

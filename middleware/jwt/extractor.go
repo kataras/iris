@@ -3,7 +3,8 @@ package jwt
 import (
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/middleware/recorder"
 )
 
 // TokenExtractor is a function that takes a context as input and returns
@@ -15,7 +16,7 @@ type TokenExtractor func(*context.Context) string
 // It reads the token from the Authorization request header of form:
 // Authorization: "Bearer {token}".
 func FromHeader(ctx *context.Context) string {
-	authHeader := ctx.GetHeader("Authorization")
+	authHeader := ctx.Header("Authorization")
 	if authHeader == "" {
 		return ""
 	}
@@ -31,8 +32,13 @@ func FromHeader(ctx *context.Context) string {
 
 // FromQuery is a token extractor.
 // It reads the token from the "token" url query parameter.
+//
+// Security note: tokens placed in the URL query string tend to leak into access
+// logs, proxy logs, browser history and Referer headers. As of v14 FromQuery is
+// NOT one of the default extractors; opt in explicitly with Verifier.WithQueryToken
+// only when header-based extraction is not possible.
 func FromQuery(ctx *context.Context) string {
-	return ctx.URLParam("token")
+	return ctx.Query().Get("token")
 }
 
 // FromJSON is a token extractor.
@@ -41,13 +47,12 @@ func FromQuery(ctx *context.Context) string {
 // this method will not try to read and consume the body.
 func FromJSON(jsonKey string) TokenExtractor {
 	return func(ctx *context.Context) string {
-		if ctx.GetContentTypeRequested() != context.ContentJSONHeaderValue {
+		if !ctx.IsMediaType(context.ContentJSONHeaderValue) {
 			return ""
 		}
 
 		var m context.Map
-		ctx.RecordRequestBody(true)
-		defer ctx.RecordRequestBody(false)
+		_ = recorder.RecordRequestBody(ctx)
 		if err := ctx.ReadJSON(&m); err != nil {
 			return ""
 		}

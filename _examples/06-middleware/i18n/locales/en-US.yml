@@ -1,0 +1,16 @@
+hi: "hello, %s"
+
+# A plural message: the value is a map of plural forms. Supported forms are
+# zero, one, two, other and the comparisons "=N", "<N" and ">N".
+FreeDay:
+  one: "You have one day off."
+  other: "You have %d days off."
+
+# Vars are variables with plural forms of their own, referenced as ${Name}
+# inside any message of this locale.
+Vars:
+  - Minutes:
+      one: "minute"
+      other: "minutes"
+
+YouLate: "You are %[1]d ${Minutes} late."
