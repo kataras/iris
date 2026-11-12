@@ -45,7 +45,7 @@ func (h *CategoryHandler) GetByID(ctx iris.Context) {
 
 type (
 	List struct {
-		Data  interface{} `json:"data"`
+		Data  any `json:"data"`
 		Order string      `json:"order"`
 		Next  Range       `json:"next,omitempty"`
 		Prev  Range       `json:"prev,omitempty"`
@@ -136,7 +136,7 @@ func (h *CategoryHandler) Update(ctx iris.Context) {
 func (h *CategoryHandler) PartialUpdate(ctx iris.Context) {
 	id := ctx.Params().GetInt64Default("id", 0)
 
-	var attrs map[string]interface{}
+	var attrs map[string]any
 	if err := ctx.ReadJSON(&attrs); err != nil {
 		return
 	}

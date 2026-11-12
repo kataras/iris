@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/versioning"
 )
@@ -99,7 +101,7 @@ func testError(v string) iris.Handler {
 
 func testView(ctx iris.Context) {
 	if err := ctx.View("index.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

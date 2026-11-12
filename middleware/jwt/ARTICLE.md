@@ -352,7 +352,7 @@ func main() {
     // You can also register the pre-defined jwt middleware for all protected routes
     // which performs verification automatically and set the custom Claims to the Context
     // for next handlers to use through: claims := jwt.Get(ctx).(*Claims).
-    app.Use(accessVerifier.Verify(func() interface{} {
+    app.Use(accessVerifier.Verify(func() any {
 		return new(Claims)
 	}))
 
@@ -418,7 +418,7 @@ We should get a response like this:
 
 In this tutorial, we learned how to use JWT authentication with Iris, a fast and simple web framework for Go. We learned how to create a signer and a verifier for JWT, how to generate and validate JWT tokens, how to protect an API endpoint with JWT, and how to refresh JWT tokens. We also learned how to use the Iris middleware/jwt package, which provides a common Iris handler for JWT authentication.
 
-You can find the complete code for this tutorial on GitHub: https://github.com/kataras/iris/tree/main/_examples/auth/jwt/tutorial and https://github.com/kataras/jwt.
+You can find the complete code for this tutorial on GitHub: https://github.com/kataras/iris/tree/v12/_examples/auth/jwt/tutorial and https://github.com/kataras/jwt.
 
 If you want to learn more about Iris, you can visit its official website: https://www.iris-go.com/
 

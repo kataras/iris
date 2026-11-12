@@ -60,7 +60,7 @@ func Do(method, url string, body io.Reader, opts ...RequestOption) (*http.Respon
 }
 
 // JSON fires a request with "v" as client json data.
-func JSON(method, url string, v interface{}, opts ...RequestOption) (*http.Response, error) {
+func JSON(method, url string, v any, opts ...RequestOption) (*http.Response, error) {
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(v)
 	if err != nil {
@@ -85,7 +85,7 @@ func Form(method, url string, formData url.Values, opts ...RequestOption) (*http
 }
 
 // BindResponse binds a response body to the "dest" pointer and closes the body.
-func BindResponse(resp *http.Response, dest interface{}) error {
+func BindResponse(resp *http.Response, dest any) error {
 	contentType := resp.Header.Get("Content-Type")
 	if idx := strings.IndexRune(contentType, ';'); idx > 0 {
 		contentType = contentType[0:idx]

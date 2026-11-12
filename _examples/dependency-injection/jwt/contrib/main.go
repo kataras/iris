@@ -19,7 +19,7 @@ func register(api *iris.APIContainer) {
 	j := jwt.New(jwt.Config{
 		// Extract by "token" url parameter.
 		Extractor: jwt.FromFirst(jwt.FromParameter("token"), jwt.FromAuthHeader),
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+		ValidationKeyGetter: func(token *jwt.Token) (any, error) {
 			return secret, nil
 		},
 		SigningMethod: jwt.SigningMethodHS256,

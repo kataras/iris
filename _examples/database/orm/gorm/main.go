@@ -150,7 +150,7 @@ func main() {
 		var body patchParam
 		ctx.ReadJSON(&body)
 		app.Logger().Println(body)
-		if err := tx.Model(&user).Updates(map[string]interface{}{"username": body.Data.UserName, "password": body.Data.Password}).Error; err != nil {
+		if err := tx.Model(&user).Updates(map[string]any{"username": body.Data.UserName, "password": body.Data.Password}).Error; err != nil {
 			app.Logger().Fatalf("update record failed")
 			tx.Rollback()
 			ctx.JSON(iris.Map{

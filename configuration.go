@@ -41,9 +41,10 @@ func homeDir() (home string) {
 	}
 
 	if home == "" {
-		if runtime.GOOS == "plan9" {
+		switch runtime.GOOS {
+		case "plan9":
 			home = os.Getenv("home")
-		} else if runtime.GOOS == "windows" {
+		case "windows":
 			home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 			if home == "" {
 				home = os.Getenv("USERPROFILE")
@@ -232,7 +233,7 @@ func NonBlocking() Configurator {
 //
 // See `Configuration#IgnoreServerErrors []string` too.
 //
-// Example: https://github.com/kataras/iris/tree/main/_examples/http-server/listen-addr/omit-server-errors
+// Example: https://github.com/kataras/iris/tree/v12/_examples/http-server/listen-addr/omit-server-errors
 func WithoutServerError(errors ...error) Configurator {
 	return func(app *Application) {
 		if len(errors) == 0 {
@@ -480,10 +481,10 @@ func WithHostProxyHeader(headers ...string) Configurator {
 // WithOtherValue adds a value based on a key to the Other setting.
 //
 // See `Configuration.Other`.
-func WithOtherValue(key string, val interface{}) Configurator {
+func WithOtherValue(key string, val any) Configurator {
 	return func(app *Application) {
 		if app.config.Other == nil {
-			app.config.Other = make(map[string]interface{})
+			app.config.Other = make(map[string]any)
 		}
 		app.config.Other[key] = val
 	}
@@ -509,7 +510,7 @@ func WithOtherValue(key string, val interface{}) Configurator {
 // If the result does not complete your needs you can take control
 // and use the github.com/kataras/sitemap package to generate a customized one instead.
 //
-// Example: https://github.com/kataras/iris/tree/main/_examples/sitemap.
+// Example: https://github.com/kataras/iris/tree/v12/_examples/sitemap.
 func WithSitemap(startURL string) Configurator {
 	sitemaps := sitemap.New(startURL)
 	return func(app *Application) {
@@ -699,7 +700,7 @@ type Configuration struct {
 	//
 	// See `WithoutServerError(...)` function too.
 	//
-	// Example: https://github.com/kataras/iris/tree/main/_examples/http-server/listen-addr/omit-server-errors
+	// Example: https://github.com/kataras/iris/tree/v12/_examples/http-server/listen-addr/omit-server-errors
 	//
 	// Defaults to an empty slice.
 	IgnoreServerErrors []string `ini:"ignore_server_errors" json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
@@ -891,7 +892,7 @@ type Configuration struct {
 	// Defaults to "iris.view.layout".
 	ViewLayoutContextKey string `ini:"view_layout_context_key" json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
 	// ViewDataContextKey is the context's values key
-	// responsible to store and retrieve(interface{}) the current view binding data.
+	// responsible to store and retrieve(any) the current view binding data.
 	// A middleware can modify its associated value to change
 	// the template's data on-fly.
 	//
@@ -975,7 +976,7 @@ type Configuration struct {
 	// This field used only by you to set any app's options you want.
 	//
 	// Defaults to empty map.
-	Other map[string]interface{} `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
+	Other map[string]any `ini:"other" json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
 
 var _ context.ConfigurationReadOnly = (*Configuration)(nil)
@@ -1182,7 +1183,7 @@ func (c *Configuration) GetHostProxyHeaders() map[string]bool {
 }
 
 // GetOther returns the Other field.
-func (c *Configuration) GetOther() map[string]interface{} {
+func (c *Configuration) GetOther() map[string]any {
 	return c.Other
 }
 
@@ -1376,7 +1377,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
-				main.Other = make(map[string]interface{}, len(v))
+				main.Other = make(map[string]any, len(v))
 			}
 			for key, value := range v {
 				main.Other[key] = value
@@ -1464,6 +1465,6 @@ func DefaultConfiguration() Configuration {
 		EnableOptimizations: false,
 		EnableProtoJSON:     false,
 		EnableEasyJSON:      false,
-		Other:               make(map[string]interface{}),
+		Other:               make(map[string]any),
 	}
 }

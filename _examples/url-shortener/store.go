@@ -7,7 +7,7 @@ import (
 )
 
 // Panic panics, change it if you don't want to panic on critical INITIALIZE-ONLY-ERRORS
-var Panic = func(v interface{}) {
+var Panic = func(v any) {
 	panic(v)
 }
 

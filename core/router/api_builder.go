@@ -360,7 +360,7 @@ func (api *APIBuilder) EnsureStaticBindings() Party {
 
 // RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
 // with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
-func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {
+func (api *APIBuilder) RegisterDependency(dependencies ...any) {
 	diContainer := api.ConfigureContainer()
 	for i, dependency := range dependencies {
 		if dependency == nil {
@@ -442,7 +442,7 @@ func (api *APIBuilder) RegisterDependency(dependencies ...interface{}) {
 // the dependency injection, mvc and function handlers.
 //
 // This method is just a shortcut of the `ConfigureContainer().Handle`.
-func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route {
+func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...any) *Route {
 	return api.ConfigureContainer().Handle(method, relativePath, handlersFn...)
 }
 
@@ -451,7 +451,7 @@ func (api *APIBuilder) HandleFunc(method, relativePath string, handlersFn ...int
 // or a result of <T> and/or an error.
 //
 // This method is just a shortcut of the `ConfigureContainer().Use`.
-func (api *APIBuilder) UseFunc(handlersFn ...interface{}) {
+func (api *APIBuilder) UseFunc(handlersFn ...any) {
 	api.ConfigureContainer().Use(handlersFn...)
 }
 
@@ -496,7 +496,7 @@ func (api *APIBuilder) AllowMethods(methods ...string) Party {
 //
 // Returns this Party.
 //
-// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
+// Example: https://github.com/kataras/iris/tree/v12/_examples/mvc/middleware/without-ctx-next
 func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
 	api.handlerExecutionRules = executionRules
 	return api
@@ -635,8 +635,8 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // HandleDir("/public",subFilesystem, DirOptions{...})
 //
 // Examples:
-// https://github.com/kataras/iris/tree/main/_examples/file-server
-func (api *APIBuilder) HandleDir(requestPath string, fsOrDir interface{}, opts ...DirOptions) (routes []*Route) {
+// https://github.com/kataras/iris/tree/v12/_examples/file-server
+func (api *APIBuilder) HandleDir(requestPath string, fsOrDir any, opts ...DirOptions) (routes []*Route) {
 	options := DefaultDirOptions
 	if len(opts) > 0 {
 		options = opts[0]
@@ -1052,7 +1052,7 @@ func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
 // Macros returns the macro collection that is responsible
 // to register custom macros with their own parameter types and their macro functions for all routes.
 //
-// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/routing/dynamic-path
+// Learn more at:  https://github.com/kataras/iris/tree/v12/_examples/routing/dynamic-path
 func (api *APIBuilder) Macros() *macro.Macros {
 	return api.macros
 }
@@ -1401,7 +1401,7 @@ func (api *APIBuilder) MiddlewareExists(handlerNameOrFunc any) bool {
 // Returns the Party itself for chain calls.
 //
 // Should be called before children routes regitration.
-func (api *APIBuilder) RemoveHandler(namesOrHandlers ...interface{}) Party {
+func (api *APIBuilder) RemoveHandler(namesOrHandlers ...any) Party {
 	var counter *int
 
 	for _, nameOrHandler := range namesOrHandlers {
@@ -1804,12 +1804,12 @@ func (api *APIBuilder) FallbackView(provider context.FallbackViewProvider) {
 //
 //		my.Get("/", func(ctx iris.Context) {
 //		if err := ctx.View("page1.html"); err != nil {
-//		  ctx.HTML("<h3>%s</h3>", err.Error())
+//		  ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 //		  return
 //	 }
 //		})
 //
-// Examples: https://github.com/kataras/iris/tree/main/_examples/view
+// Examples: https://github.com/kataras/iris/tree/v12/_examples/view
 func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
 	handler := func(ctx *context.Context) {
 		ctx.ViewLayout(tmplLayoutFile)

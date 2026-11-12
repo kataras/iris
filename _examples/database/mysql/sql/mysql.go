@@ -57,7 +57,7 @@ func (db *MySQL) Drop(database string) error {
 }
 
 // Select performs the SELECT query for this database (dsn database name is required).
-func (db *MySQL) Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (db *MySQL) Select(ctx context.Context, dest any, query string, args ...any) error {
 	rows, err := db.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func (db *MySQL) Select(ctx context.Context, dest interface{}, query string, arg
 }
 
 // Get same as `Select` but it moves the cursor to the first result.
-func (db *MySQL) Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (db *MySQL) Get(ctx context.Context, dest any, query string, args ...any) error {
 	rows, err := db.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -118,6 +118,6 @@ func (db *MySQL) Get(ctx context.Context, dest interface{}, query string, args .
 
 // Exec executes a query. It does not return any rows.
 // Use the first output parameter to count the affected rows on UPDATE, INSERT, or DELETE.
-func (db *MySQL) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (db *MySQL) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return db.Conn.ExecContext(ctx, query, args...)
 }

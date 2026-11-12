@@ -22,7 +22,7 @@ import (
 //
 // Note: we don't accept the Context here because Tr method and template func {{ tr }}
 // have no direct access to it.
-type MessageFunc func(langInput, langMatched, key string, args ...interface{}) string
+type MessageFunc func(langInput, langMatched, key string, args ...any) string
 
 // Catalog holds the locales and the variables message storage.
 type Catalog struct {

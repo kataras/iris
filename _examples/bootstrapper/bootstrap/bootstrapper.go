@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gorilla/securecookie"
@@ -78,7 +79,7 @@ func (b *Bootstrapper) SetupErrorHandlers() {
 		ctx.ViewData("Err", err)
 		ctx.ViewData("Title", "Error")
 		if err := ctx.View("shared/error.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

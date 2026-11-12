@@ -150,12 +150,12 @@ func (r *GoRedisDriver) CloseConnection() error {
 
 // Set stores a "value" based on the session's "key".
 // The value should be type of []byte, so unmarshal can happen.
-func (r *GoRedisDriver) Set(sid, key string, value interface{}) error {
+func (r *GoRedisDriver) Set(sid, key string, value any) error {
 	return r.Client.HSet(defaultContext, sid, key, value).Err()
 }
 
 // Get returns the associated value of the session's given "key".
-func (r *GoRedisDriver) Get(sid, key string) (interface{}, error) {
+func (r *GoRedisDriver) Get(sid, key string) (any, error) {
 	return r.Client.HGet(defaultContext, sid, key).Bytes()
 }
 

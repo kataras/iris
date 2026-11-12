@@ -1,6 +1,10 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	app := iris.New()
@@ -23,7 +27,7 @@ func index(ctx iris.Context) {
 	// Layouts are only rendered from inside the index page itself
 	// using the "extends" keyword.
 	if err := ctx.View("index", data); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

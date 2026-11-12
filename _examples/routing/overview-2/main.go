@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -77,7 +79,7 @@ func main() {
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<html><head></head><body><ul>")
 		for _, link := range []string{"/encode", "/profile/username", "/users/42"} {
-			ctx.HTML(`<li><a href="%s">%s</a></li>`, link, link)
+			ctx.HTML(fmt.Sprintf(`<li><a href="%s">%s</a></li>`, link, link))
 		}
 		ctx.HTML("</ul></body></html>")
 	})
@@ -101,7 +103,7 @@ func profileByUsername(ctx iris.Context) {
 	// renders "./views/user/profile.html"
 	// with {{ .Username }} equals to the username dynamic path parameter.
 	if err := ctx.View("user/profile.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }
@@ -126,7 +128,7 @@ func createUser(ctx iris.Context) {
 	// with {{ . }} equals to the User object, i.e {{ .Username }} , {{ .Firstname}} etc...
 	ctx.ViewData("", user)
 	if err := ctx.View("user/create_verification.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

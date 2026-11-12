@@ -38,7 +38,7 @@ func (s *Service) RecordInfo() Record {
 var ErrNoRows = sql.ErrNoRows
 
 // GetByID binds a single record from the databases to the "dest".
-func (s *Service) GetByID(ctx context.Context, dest interface{}, id int64) error {
+func (s *Service) GetByID(ctx context.Context, dest any, id int64) error {
 	q := fmt.Sprintf("SELECT * FROM %s WHERE %s = ? LIMIT 1", s.rec.TableName(), s.rec.PrimaryKey())
 	err := s.db.Get(ctx, dest, q, id)
 	return err
@@ -70,14 +70,14 @@ type ListOptions struct {
 	OrderByColumn string
 	Order         string // "ASC" or "DESC" (could be a bool type instead).
 	WhereColumn   string
-	WhereValue    interface{}
+	WhereValue    any
 }
 
 // Where accepts a column name and column value to set
 // on the WHERE clause of the result query.
 // It returns a new `ListOptions` value.
 // Note that this is a basic implementation which just takes care our current needs.
-func (opt ListOptions) Where(colName string, colValue interface{}) ListOptions {
+func (opt ListOptions) Where(colName string, colValue any) ListOptions {
 	opt.WhereColumn = colName
 	opt.WhereValue = colValue
 	return opt
@@ -85,7 +85,7 @@ func (opt ListOptions) Where(colName string, colValue interface{}) ListOptions {
 
 // BuildQuery returns the query and the arguments that
 // should be form a SELECT command.
-func (opt ListOptions) BuildQuery() (q string, args []interface{}) {
+func (opt ListOptions) BuildQuery() (q string, args []any) {
 	q = fmt.Sprintf("SELECT * FROM %s", opt.Table)
 
 	if opt.WhereColumn != "" && opt.WhereValue != nil {
@@ -122,7 +122,7 @@ func ParseListOptions(q url.Values) ListOptions {
 // List binds one or more records from the database to the "dest".
 // If the record supports ordering then it will sort by the `Sorted.OrderBy` column name(s).
 // Use the "order" input parameter to set a descending order ("DESC").
-func (s *Service) List(ctx context.Context, dest interface{}, opts ListOptions) error {
+func (s *Service) List(ctx context.Context, dest any, opts ListOptions) error {
 	// Set table and order by column from record info for `List` by options
 	// so it can be more flexible to perform read-only calls of other table's too.
 	if opts.Table == "" {
@@ -160,14 +160,14 @@ var ErrUnprocessable = errors.New("invalid entity")
 // PartialUpdate accepts a columns schema and a key-value map to
 // update the record based on the given "id".
 // Note: Trivial string, int and boolean type validations are performed here.
-func (s *Service) PartialUpdate(ctx context.Context, id int64, schema map[string]reflect.Kind, attrs map[string]interface{}) (int, error) {
+func (s *Service) PartialUpdate(ctx context.Context, id int64, schema map[string]reflect.Kind, attrs map[string]any) (int, error) {
 	if len(schema) == 0 || len(attrs) == 0 {
 		return 0, nil
 	}
 
 	var (
 		keyLines []string
-		values   []interface{}
+		values   []any
 	)
 
 	for key, kind := range schema {

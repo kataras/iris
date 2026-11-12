@@ -114,7 +114,7 @@ func main() {
 
 		ctx.ViewData("title", "Show TODO")
 		if err := ctx.View("todos/show.jet", todo); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -136,7 +136,7 @@ func main() {
 		// and ctx.View("todos/index.jet")
 		// OR
 		if err := ctx.View("todos/index.jet", (&doneTODOs{}).New(todos)); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

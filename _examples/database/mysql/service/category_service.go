@@ -69,6 +69,6 @@ var categoryUpdateSchema = map[string]reflect.Kind{
 
 // PartialUpdate accepts a key-value map to
 // update the record based on the given "id".
-func (s *CategoryService) PartialUpdate(ctx context.Context, id int64, attrs map[string]interface{}) (int, error) {
+func (s *CategoryService) PartialUpdate(ctx context.Context, id int64, attrs map[string]any) (int, error) {
 	return s.Service.PartialUpdate(ctx, id, categoryUpdateSchema, attrs)
 }

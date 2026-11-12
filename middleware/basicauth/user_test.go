@@ -13,13 +13,13 @@ import (
 )
 
 type IUserRepository interface {
-	GetByUsernameAndPassword(dest interface{}, username, password string) error
+	GetByUsernameAndPassword(dest any, username, password string) error
 }
 
 // Test a custom implementation of AuthFunc with a user repository.
 // This is a usage example of custom AuthFunc implementation.
-func UserRepository(repo IUserRepository, newUserPtr func() interface{}) AuthFunc {
-	return func(_ *context.Context, username, password string) (interface{}, bool) {
+func UserRepository(repo IUserRepository, newUserPtr func() any) AuthFunc {
+	return func(_ *context.Context, username, password string) (any, bool) {
 		dest := newUserPtr()
 		err := repo.GetByUsernameAndPassword(dest, username, password)
 		if err == nil {
@@ -50,7 +50,7 @@ type testRepo struct {
 }
 
 // Implements IUserRepository interface.
-func (r *testRepo) GetByUsernameAndPassword(dest interface{}, username, password string) error {
+func (r *testRepo) GetByUsernameAndPassword(dest any, username, password string) error {
 	for _, e := range r.entries {
 		if e.username == username && e.password == password {
 			*dest.(*testUser) = e
@@ -68,7 +68,7 @@ func TestAllowUserRepository(t *testing.T) {
 		},
 	}
 
-	allow := UserRepository(repo, func() interface{} {
+	allow := UserRepository(repo, func() any {
 		return new(testUser)
 	})
 
@@ -260,7 +260,7 @@ func TestAllowUsersFile(t *testing.T) {
 
 		u, ok := v.(context.Map)
 		if !ok {
-			t.Fatalf("[%d] a user loaded from external source or file should be alway type of map[string]interface{} but got: %#+v (%T)", i, v, v)
+			t.Fatalf("[%d] a user loaded from external source or file should be alway type of map[string]any but got: %#+v (%T)", i, v, v)
 		}
 
 		if expected, got := len(tt.user), len(u); expected != got {

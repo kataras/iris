@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -88,7 +89,7 @@ func (p *ParamParser) Reset(src string) {
 	p.errors = []string{}
 }
 
-func (p *ParamParser) appendErr(format string, a ...interface{}) {
+func (p *ParamParser) appendErr(format string, a ...any) {
 	p.errors = append(p.errors, fmt.Sprintf(format, a...))
 }
 
@@ -101,7 +102,7 @@ const (
 
 func (p ParamParser) Error() error {
 	if len(p.errors) > 0 {
-		return fmt.Errorf(strings.Join(p.errors, "\n"))
+		return errors.New(strings.Join(p.errors, "\n"))
 	}
 	return nil
 }

@@ -172,7 +172,7 @@ func main() {
 
     app.Get("/", func(ctx iris.Context) {
         if err := ctx.View("upload.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
     })
@@ -305,7 +305,7 @@ If you have done it successfully. Now go and upload some images and reload the u
 - http://www.dropzonejs.com/#server-side-implementation
 - https://www.startutorial.com/articles/view/how-to-build-a-file-upload-form-using-dropzonejs-and-php
 - https://docs.iris-go.com
-- https://github.com/kataras/iris/tree/main/_examples/dropzonejs
+- https://github.com/kataras/iris/tree/v12/_examples/dropzonejs
 
 ## The end
 

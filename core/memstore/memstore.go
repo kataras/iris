@@ -18,13 +18,13 @@ type (
 	// ValueSetter is the interface which can be accepted as a generic solution of RequestParams or memstore when Set is the only requirement,
 	// i.e internally on macro/template/TemplateParam#Eval:paramChanger.
 	ValueSetter interface {
-		Set(key string, newValue interface{}) (Entry, bool)
+		Set(key string, newValue any) (Entry, bool)
 	}
 	// Entry is the entry of the context storage Store - .Values()
 	Entry struct {
-		Key       string      `json:"key" msgpack:"key" yaml:"Key" toml:"Value"`
-		ValueRaw  interface{} `json:"value" msgpack:"value" yaml:"Value" toml:"Value"`
-		immutable bool        // if true then it can't change by its caller.
+		Key       string `json:"key" msgpack:"key" yaml:"Key" toml:"Value"`
+		ValueRaw  any    `json:"value" msgpack:"value" yaml:"Value" toml:"Value"`
+		immutable bool   // if true then it can't change by its caller.
 	}
 
 	// StringEntry is just a key-value wrapped by a struct.
@@ -47,7 +47,7 @@ var _ ValueSetter = (*Store)(nil)
 //
 // If the "k" kind is not a string or int or int64 or bool
 // then it will return the raw value of the entry as it's.
-func (e Entry) GetByKindOrNil(k reflect.Kind) interface{} {
+func (e Entry) GetByKindOrNil(k reflect.Kind) any {
 	switch k {
 	case reflect.String:
 		v := e.StringDefault("__$nf")
@@ -136,7 +136,7 @@ func (e *ErrEntryNotFound) Error() string {
 // Do NOT use this method directly, prefer` errors.As` method as explained above.
 //
 // Implements: go/src/errors/wrap.go#84
-func (e *ErrEntryNotFound) As(target interface{}) bool {
+func (e *ErrEntryNotFound) As(target any) bool {
 	v, ok := target.(*ErrEntryNotFound)
 	if !ok {
 		return false
@@ -721,7 +721,7 @@ func (e Entry) WeekdayDefault(def time.Weekday) (time.Weekday, error) {
 
 // Value returns the value of the entry,
 // respects the immutable.
-func (e Entry) Value() interface{} {
+func (e Entry) Value() any {
 	if e.immutable {
 		// take its value, no pointer even if set with a reference.
 		vv := reflect.Indirect(reflect.ValueOf(e.ValueRaw))
@@ -751,7 +751,7 @@ func (e Entry) Value() interface{} {
 //
 // Returns the entry and true if it was just inserted, meaning that
 // it will return the entry and a false boolean if the entry exists and it has been updated.
-func (r *Store) Save(key string, value interface{}, immutable bool) (Entry, bool) {
+func (r *Store) Save(key string, value any, immutable bool) (Entry, bool) {
 	args := *r
 	n := len(args)
 
@@ -802,7 +802,7 @@ func (r *Store) Save(key string, value interface{}, immutable bool) (Entry, bool
 // it will return the entry and a false boolean if the entry exists and it has been updated.
 //
 // See `SetImmutable` and `Get`.
-func (r *Store) Set(key string, value interface{}) (Entry, bool) {
+func (r *Store) Set(key string, value any) (Entry, bool) {
 	return r.Save(key, value, false)
 }
 
@@ -817,7 +817,7 @@ func (r *Store) Set(key string, value interface{}) (Entry, bool) {
 //
 // Use it consistently, it's far slower than `Set`.
 // Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-func (r *Store) SetImmutable(key string, value interface{}) (Entry, bool) {
+func (r *Store) SetImmutable(key string, value any) (Entry, bool) {
 	return r.Save(key, value, true)
 }
 
@@ -851,7 +851,7 @@ func (r *Store) GetEntryAt(index int) (Entry, bool) {
 // GetDefault returns the entry's value based on its key.
 // If not found returns "def".
 // This function checks for immutability as well, the rest don't.
-func (r *Store) GetDefault(key string, def interface{}) interface{} {
+func (r *Store) GetDefault(key string, def any) any {
 	v, ok := r.GetEntry(key)
 	if !ok || v.ValueRaw == nil {
 		return def
@@ -874,14 +874,14 @@ func (r *Store) Exists(key string) bool {
 
 // Get returns the entry's value based on its key.
 // If not found returns nil.
-func (r *Store) Get(key string) interface{} {
+func (r *Store) Get(key string) any {
 	return r.GetDefault(key, nil)
 }
 
 // GetOrSet is like `GetDefault` but it accepts a function which is
 // fired and its result is used to `Set` if
 // the "key" was not found or its value is nil.
-func (r *Store) GetOrSet(key string, setFunc func() interface{}) interface{} {
+func (r *Store) GetOrSet(key string, setFunc func() any) any {
 	if v, ok := r.GetEntry(key); ok && v.ValueRaw != nil {
 		return v.Value()
 	}
@@ -893,7 +893,7 @@ func (r *Store) GetOrSet(key string, setFunc func() interface{}) interface{} {
 
 // Visit accepts a visitor which will be filled
 // by the key-value objects.
-func (r *Store) Visit(visitor func(key string, value interface{})) {
+func (r *Store) Visit(visitor func(key string, value any)) {
 	args := *r
 	for i, n := 0, len(args); i < n; i++ {
 		kv := args[i]

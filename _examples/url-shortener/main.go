@@ -10,6 +10,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 
 	"github.com/kataras/iris/v12"
@@ -51,7 +52,7 @@ func newApp(db *DB) *iris.Application {
 	indexHandler := func(ctx iris.Context) {
 		ctx.ViewData("URL_COUNT", db.Len())
 		if err := ctx.View("index.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	}

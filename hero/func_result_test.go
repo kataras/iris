@@ -107,7 +107,7 @@ func GetCustomTypedPtrNilEmptyResponse() *iris.Map {
 	return nil
 }
 
-func GetCustomMapNilEmptyResponse() map[string]interface{} {
+func GetCustomMapNilEmptyResponse() map[string]any {
 	return nil
 }
 
@@ -172,7 +172,7 @@ func TestFuncResult(t *testing.T) {
 		ContentType("text/html", "utf-8").
 		Body().IsEqual("<b>internal server error</b>")
 
-	expectedResultFromCustomStruct := map[string]interface{}{
+	expectedResultFromCustomStruct := map[string]any{
 		"name": "Iris",
 		"age":  2,
 	}

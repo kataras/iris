@@ -17,7 +17,7 @@ func main() {
 }
 
 func readWriteHandler(ctx iris.Context) {
-	var req interface{}
+	var req any
 	ctx.ReadBody(&req)
 
 	ctx.JSON(iris.Map{

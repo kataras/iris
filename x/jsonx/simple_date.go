@@ -155,7 +155,7 @@ func (t SimpleDate) String() string {
 
 // Scan completes the pg and native sql driver.Scanner interface
 // reading functionality of a custom type.
-func (t *SimpleDate) Scan(src interface{}) error {
+func (t *SimpleDate) Scan(src any) error {
 	switch v := src.(type) {
 	case time.Time: // type was set to timestamp
 		if v.IsZero() {
@@ -209,7 +209,7 @@ func (t SimpleDates) DateStrings() []string {
 }
 
 // Scan completes the pg and native sql driver.Scanner interface.
-func (t *SimpleDates) Scan(src interface{}) error {
+func (t *SimpleDates) Scan(src any) error {
 	if src == nil {
 		return nil
 	}

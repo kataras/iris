@@ -34,7 +34,7 @@ type CSV struct {
 func (f *CSV) SetOutput(dest io.Writer) {
 	f.ac, _ = dest.(*AccessLog)
 	f.writerPool = &sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return csv.NewWriter(dest)
 		},
 	}

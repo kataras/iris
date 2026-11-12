@@ -1,6 +1,7 @@
 package hero_test
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -10,8 +11,8 @@ import (
 )
 
 type testDependencyTest struct {
-	Dependency interface{}
-	Expected   interface{}
+	Dependency any
+	Expected   any
 }
 
 func TestDependency(t *testing.T) {
@@ -65,14 +66,14 @@ func TestDependency(t *testing.T) {
 		},
 		{
 
-			Dependency: func(*context.Context) interface{} {
+			Dependency: func(*context.Context) any {
 				return "1"
 			},
 			Expected: "1",
 		},
 		{
 
-			Dependency: func(*context.Context) interface{} {
+			Dependency: func(*context.Context) any {
 				return false
 			},
 			Expected: false,
@@ -111,9 +112,9 @@ func TestDependentDependency(t *testing.T) {
 		},
 		{ // 3
 			Dependency: func(msg testMessage) error {
-				return fmt.Errorf(msg.Body)
+				return errors.New(msg.Body)
 			},
-			Expected: fmt.Errorf(msgBody),
+			Expected: errors.New(msgBody),
 		},
 		// Test depend on more than one previous registered dependencies and require a before-previous one.
 		{ // 4

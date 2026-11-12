@@ -37,7 +37,7 @@ type TemplateParam struct {
 	Index   int           `json:"index"`
 	ErrCode int           `json:"errCode"`
 	// Note that, the value MUST BE a type of `handler.ParamErrorHandler`.
-	HandleError interface{} `json:"-"` /* It's not an typed value because of import-cycle,
+	HandleError any `json:"-"` /* It's not an typed value because of import-cycle,
 	// neither a special struct required, see `handler.MakeFilter`. */
 	TypeEvaluator ParamEvaluator  `json:"-"`
 	Funcs         []reflect.Value `json:"-"`
@@ -80,7 +80,7 @@ type errorInterface interface {
 //
 // It is called from the converted macro handler (middleware)
 // from the higher-level component of "kataras/iris/macro/handler#MakeHandler".
-func (p *TemplateParam) Eval(paramValue string) (interface{}, bool) {
+func (p *TemplateParam) Eval(paramValue string) (any, bool) {
 	if p.TypeEvaluator == nil {
 		for _, fn := range p.stringInFuncs {
 			if !fn(paramValue) {
@@ -106,7 +106,7 @@ func (p *TemplateParam) Eval(paramValue string) (interface{}, bool) {
 	if len(p.Funcs) > 0 {
 		paramIn := []reflect.Value{reflect.ValueOf(newValue)}
 		for _, evalFunc := range p.Funcs {
-			// or make it as func(interface{}) bool and pass directly the "newValue"
+			// or make it as func(any) bool and pass directly the "newValue"
 			// but that would not be as easy for end-developer, so keep that "slower":
 			if !evalFunc.Call(paramIn)[0].Interface().(bool) { // i.e func(paramValue int) bool
 				return nil, false

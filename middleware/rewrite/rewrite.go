@@ -130,7 +130,7 @@ func (e *Engine) SetLogger(logger *golog.Logger) *Engine {
 }
 
 // init the request logging with [DBUG].
-func (e *Engine) initDebugf(format string, args ...interface{}) {
+func (e *Engine) initDebugf(format string, args ...any) {
 	if e.logger == nil {
 		return
 	}
@@ -142,7 +142,7 @@ var skipDBUGSpace = strings.Repeat(" ", 7)
 
 // continue debugging the same request with new lines and spacing,
 // easier to read.
-func (e *Engine) debugf(format string, args ...interface{}) {
+func (e *Engine) debugf(format string, args ...any) {
 	if e.logger == nil || e.logger.Level < golog.DebugLevel {
 		return
 	}

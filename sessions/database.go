@@ -42,13 +42,13 @@ type Database interface {
 	OnUpdateExpiration(sid string, newExpires time.Duration) error
 	// Set sets a key value of a specific session.
 	// The "immutable" input argument depends on the store, it may not implement it at all.
-	Set(sid string, key string, value interface{}, ttl time.Duration, immutable bool) error
+	Set(sid string, key string, value any, ttl time.Duration, immutable bool) error
 	// Get retrieves a session value based on the key.
-	Get(sid string, key string) interface{}
+	Get(sid string, key string) any
 	// Decode binds the "outPtr" to the value associated to the provided "key".
-	Decode(sid, key string, outPtr interface{}) error
+	Decode(sid, key string, outPtr any) error
 	// Visit loops through all session keys and values.
-	Visit(sid string, cb func(key string, value interface{})) error
+	Visit(sid string, cb func(key string, value any)) error
 	// Len returns the length of the session's entries (keys).
 	Len(sid string) int
 	// Delete removes a session key value based on its key.
@@ -92,7 +92,7 @@ func (s *mem) Acquire(sid string, expires time.Duration) memstore.LifeTime {
 func (s *mem) OnUpdateExpiration(string, time.Duration) error { return nil }
 
 // immutable depends on the store, it may not implement it at all.
-func (s *mem) Set(sid string, key string, value interface{}, _ time.Duration, immutable bool) error {
+func (s *mem) Set(sid string, key string, value any, _ time.Duration, immutable bool) error {
 	s.mu.RLock()
 	store, ok := s.values[sid]
 	s.mu.RUnlock()
@@ -103,7 +103,7 @@ func (s *mem) Set(sid string, key string, value interface{}, _ time.Duration, im
 	return nil
 }
 
-func (s *mem) Get(sid string, key string) interface{} {
+func (s *mem) Get(sid string, key string) any {
 	s.mu.RLock()
 	store, ok := s.values[sid]
 	s.mu.RUnlock()
@@ -114,7 +114,7 @@ func (s *mem) Get(sid string, key string) interface{} {
 	return nil
 }
 
-func (s *mem) Decode(sid string, key string, outPtr interface{}) error {
+func (s *mem) Decode(sid string, key string, outPtr any) error {
 	v := s.Get(sid, key)
 	if v != nil {
 		reflect.ValueOf(outPtr).Set(reflect.ValueOf(v))
@@ -122,7 +122,7 @@ func (s *mem) Decode(sid string, key string, outPtr interface{}) error {
 	return nil
 }
 
-func (s *mem) Visit(sid string, cb func(key string, value interface{})) error {
+func (s *mem) Visit(sid string, cb func(key string, value any)) error {
 	s.mu.RLock()
 	store, ok := s.values[sid]
 	s.mu.RUnlock()

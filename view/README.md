@@ -16,11 +16,11 @@ Parse using embedded assets, Layouts and Party-specific layout, Template Funcs, 
 | 6 | Jet        | [CloudyKit/jet](https://github.com/CloudyKit/jet) |
 | 7 | Ace        | [yosssi/ace](https://github.com/yosssi/ace) |
 
-[List of Examples](https://github.com/kataras/iris/tree/main/_examples/view).
+[List of Examples](https://github.com/kataras/iris/tree/v12/_examples/view).
 
-[Benchmarks](https://github.com/kataras/iris/tree/main/_benchmarks/view).
+[Benchmarks](https://github.com/kataras/iris/tree/v12/_benchmarks/view).
 
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/main/_examples/view/quicktemplate) example.
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `Context.ResponseWriter`, take a look at the [iris/_examples/view/quicktemplate](https://github.com/kataras/iris/tree/v12/_examples/view/quicktemplate) example.
 
 ## Overview
 
@@ -44,7 +44,7 @@ func main() {
         ctx.ViewData("message", "Hello world!")
         // Render template file: ./views/hello.html
         if err := ctx.View("hello.html"); err != nil {
-		    ctx.HTML("<h3>%s</h3>", err.Error())
+		    ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		    return
 	    }
     })
@@ -109,7 +109,7 @@ func main() {
 func hi(ctx iris.Context) {
     // render the template file "./templates/hi.html"
     if err := ctx.View("hi.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }
@@ -156,13 +156,13 @@ func hi(ctx iris.Context) {
     //                      {{.Page.Title}} and {{Page.Name}}
     ctx.ViewData("Page", page{Title: "Hi Page", Name: "iris"})
     if err := ctx.View("hi.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }
 ```
 
-Examples can be found here: https://github.com/kataras/iris/tree/main/_examples/view/embedding-templates-into-app and  https://github.com/kataras/iris/tree/main/_examples/view/embedding-templates-into-app-bindata.
+Examples can be found here: https://github.com/kataras/iris/tree/v12/_examples/view/embedding-templates-into-app and  https://github.com/kataras/iris/tree/v12/_examples/view/embedding-templates-into-app-bindata.
 
 ## Reload
 

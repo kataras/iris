@@ -1,7 +1,11 @@
 // Package main shows an example of pug actions based on https://github.com/Joker/jade/tree/master/example/actions
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 type Person struct {
 	Name   string
@@ -39,7 +43,7 @@ func index(ctx iris.Context) {
 	}
 
 	if err := ctx.View("index.pug", person); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

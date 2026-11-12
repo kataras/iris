@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 
 	"github.com/kataras/iris/v12"
 )
@@ -23,7 +24,7 @@ func main() {
 
 	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("page1.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -32,7 +33,7 @@ func main() {
 	app.Get("/nolayout", func(ctx iris.Context) {
 		ctx.ViewLayout(iris.NoLayout)
 		if err := ctx.View("page1.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})
@@ -42,13 +43,13 @@ func main() {
 	{ // both of these will use the layouts/mylayout.html as their layout.
 		my.Get("/", func(ctx iris.Context) {
 			if err := ctx.View("page1.html"); err != nil {
-				ctx.HTML("<h3>%s</h3>", err.Error())
+				ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 				return
 			}
 		})
 		my.Get("/other", func(ctx iris.Context) {
 			if err := ctx.View("page1.html"); err != nil {
-				ctx.HTML("<h3>%s</h3>", err.Error())
+				ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 				return
 			}
 		})

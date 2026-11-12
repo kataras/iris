@@ -10,6 +10,9 @@ import (
 
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/kataras/iris/v12/macro"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -137,8 +140,8 @@ func parseMethod(macros *macro.Macros, fn reflect.Method, skipper func(string) b
 }
 
 func methodTitle(httpMethod string) string {
-	httpMethodFuncName := strings.Title(strings.ToLower(httpMethod))
-	return httpMethodFuncName
+	caser := cases.Title(language.English)
+	return caser.String(strings.ToLower(httpMethod))
 }
 
 var errSkip = errors.New("skip")

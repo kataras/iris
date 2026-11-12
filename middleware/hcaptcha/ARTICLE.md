@@ -71,6 +71,6 @@ app.Get("/protected", hcaptchaMiddleware, func(ctx iris.Context) {
 
 ## Conclusion
 
-In this article, we have learned how to use basic hCAPTCHA middleware with Iris. For a more complete example please navigate through: https://github.com/kataras/iris/tree/main/_examples/auth/hcaptcha. By using these kind of features, we can create a more secure, user-friendly, and robust web application.
+In this article, we have learned how to use basic hCAPTCHA middleware with Iris. For a more complete example please navigate through: https://github.com/kataras/iris/tree/v12/_examples/auth/hcaptcha. By using these kind of features, we can create a more secure, user-friendly, and robust web application.
 
 I hope you enjoyed this article and found it useful. If you have any questions or feedback, please feel free to leave a comment below. Thank you for reading! 😊

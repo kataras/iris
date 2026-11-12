@@ -108,7 +108,7 @@ func (t KitchenTime) String() string {
 
 // Scan completes the pg and native sql driver.Scanner interface
 // reading functionality of a custom type.
-func (t *KitchenTime) Scan(src interface{}) error {
+func (t *KitchenTime) Scan(src any) error {
 	switch v := src.(type) {
 	case time.Time: // type was set to timestamp.
 		if v.IsZero() {

@@ -2,6 +2,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kataras/iris/v12"
 )
 
@@ -34,7 +36,7 @@ func main() {
 		paramsAsArray := []string{"theParam1", "theParam2", "paramThirdAfterStatic"}
 		ctx.ViewData("ParamsAsArray", paramsAsArray)
 		if err := ctx.View("page.jet"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

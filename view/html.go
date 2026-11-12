@@ -65,7 +65,7 @@ var (
 // HTML(iris.Dir("./views"), ".html") or
 // HTML(embed.FS, ".html") or HTML(AssetFile(), ".html") for embedded data or
 // HTML("","").ParseTemplate("hello", `[]byte("hello {{.Name}}")`, nil) for custom template parsing only.
-func HTML(dirOrFS interface{}, extension string) *HTMLEngine {
+func HTML(dirOrFS any, extension string) *HTMLEngine {
 	s := &HTMLEngine{
 		name:      "HTML",
 		fs:        getFS(dirOrFS),
@@ -76,12 +76,12 @@ func HTML(dirOrFS interface{}, extension string) *HTMLEngine {
 		right:     "}}",
 		layout:    "",
 		layoutFuncs: template.FuncMap{
-			"yield": func(binding interface{}) template.HTML {
+			"yield": func(binding any) template.HTML {
 				return template.HTML("")
 			},
 		},
 		funcs: make(template.FuncMap),
-		bufPool: &sync.Pool{New: func() interface{} {
+		bufPool: &sync.Pool{New: func() any {
 			return new(bytes.Buffer)
 		}},
 	}
@@ -105,7 +105,7 @@ func (s *HTMLEngine) RootDir(root string) *HTMLEngine {
 }
 
 // FS change templates DIR
-func (s *HTMLEngine) FS(dirOrFS interface{}) *HTMLEngine {
+func (s *HTMLEngine) FS(dirOrFS any) *HTMLEngine {
 	s.fs = getFS(dirOrFS)
 	return s
 }
@@ -191,7 +191,7 @@ func (s *HTMLEngine) Layout(layoutFile string) *HTMLEngine {
 // - partial func(partialName string) (template.HTML, error)
 // - partial_r func(partialName string) (template.HTML, error)
 // - render func(fullPartialName string) (template.HTML, error).
-func (s *HTMLEngine) AddLayoutFunc(funcName string, funcBody interface{}) *HTMLEngine {
+func (s *HTMLEngine) AddLayoutFunc(funcName string, funcBody any) *HTMLEngine {
 	s.rmu.Lock()
 	s.layoutFuncs[funcName] = funcBody
 	s.rmu.Unlock()
@@ -203,8 +203,8 @@ func (s *HTMLEngine) AddLayoutFunc(funcName string, funcBody interface{}) *HTMLE
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
 // - render func(fullPartialName string) (template.HTML, error).
-// - tr func(lang, key string, args ...interface{}) string
-func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) {
+// - tr func(lang, key string, args ...any) string
+func (s *HTMLEngine) AddFunc(funcName string, funcBody any) {
 	s.rmu.Lock()
 	s.funcs[funcName] = funcBody
 	s.rmu.Unlock()
@@ -369,7 +369,7 @@ func (s *HTMLEngine) initRootTmpl() { // protected by the caller.
 	}
 }
 
-func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (string, error) {
+func (s *HTMLEngine) executeTemplateBuf(name string, binding any) (string, error) {
 	buf := s.bufPool.Get().(*bytes.Buffer)
 	buf.Reset()
 
@@ -381,7 +381,7 @@ func (s *HTMLEngine) executeTemplateBuf(name string, binding interface{}) (strin
 
 func (s *HTMLEngine) getBuiltinRuntimeLayoutFuncs(name string) template.FuncMap {
 	funcs := template.FuncMap{
-		"yield": func(binding interface{}) (template.HTML, error) {
+		"yield": func(binding any) (template.HTML, error) {
 			result, err := s.executeTemplateBuf(name, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(result), err
@@ -393,7 +393,7 @@ func (s *HTMLEngine) getBuiltinRuntimeLayoutFuncs(name string) template.FuncMap 
 
 func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
 	funcs := template.FuncMap{
-		"part": func(partName string, binding interface{}) (template.HTML, error) {
+		"part": func(partName string, binding any) (template.HTML, error) {
 			nameTemp := strings.ReplaceAll(name, s.extension, "")
 			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
 			result, err := s.executeTemplateBuf(fullPartName, binding)
@@ -405,7 +405,7 @@ func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
 		"current": func() (string, error) {
 			return name, nil
 		},
-		"partial": func(partialName string, binding interface{}) (template.HTML, error) {
+		"partial": func(partialName string, binding any) (template.HTML, error) {
 			fullPartialName := fmt.Sprintf("%s-%s", partialName, name)
 			if s.Templates.Lookup(fullPartialName) != nil {
 				result, err := s.executeTemplateBuf(fullPartialName, binding)
@@ -417,7 +417,7 @@ func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
 		// it would be easier for adding pages' style/script inline
 		// for example when using partial_r '.script' in layout.html
 		// templates/users/index.html would load templates/users/index.script.html
-		"partial_r": func(partialName string, binding interface{}) (template.HTML, error) {
+		"partial_r": func(partialName string, binding any) (template.HTML, error) {
 			ext := filepath.Ext(name)
 			root := name[:len(name)-len(ext)]
 			fullPartialName := fmt.Sprintf("%s%s%s", root, partialName, ext)
@@ -427,7 +427,7 @@ func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
 			}
 			return "", nil
 		},
-		"render": func(fullPartialName string, binding interface{}) (template.HTML, error) {
+		"render": func(fullPartialName string, binding any) (template.HTML, error) {
 			result, err := s.executeTemplateBuf(fullPartialName, binding)
 			return template.HTML(result), err
 		},
@@ -437,7 +437,7 @@ func (s *HTMLEngine) getBuiltinFuncs(name string) template.FuncMap {
 }
 
 // ExecuteWriter executes a template and writes its result to the w writer.
-func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bindingData interface{}) error {
+func (s *HTMLEngine) ExecuteWriter(w io.Writer, name string, layout string, bindingData any) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
 		s.rmu.Lock()

@@ -74,16 +74,16 @@ func FS(fileSystem fs.FS, pattern string, options LoaderConfig) (Loader, error) 
 }
 
 // LangMap key as language (e.g. "el-GR") and value as a map of key-value pairs (e.g. "hello": "Γειά").
-type LangMap = map[string]map[string]interface{}
+type LangMap = map[string]map[string]any
 
 // KV is a loader which accepts a map of language(key) and the available key-value pairs.
 // Example Code:
 //
 //	m := i18n.LangMap{
-//		"en-US": map[string]interface{}{
+//		"en-US": map[string]any{
 //			"hello": "Hello",
 //		},
-//		"el-GR": map[string]interface{}{
+//		"el-GR": map[string]any{
 //			"hello": "Γειά",
 //		},
 //	}
@@ -100,7 +100,7 @@ func KV(langMap LangMap, opts ...LoaderConfig) Loader {
 		}
 
 		languageIndexes := make([]int, 0, len(langMap))
-		keyValuesMulti := make([]map[string]interface{}, 0, len(langMap))
+		keyValuesMulti := make([]map[string]any, 0, len(langMap))
 
 		for languageName, pairs := range langMap {
 			langIndex := parseLanguageName(m, languageName) // matches and adds the language tag to m.Languages.
@@ -170,7 +170,7 @@ func load(assetNames []string, asset func(string) ([]byte, error), options Loade
 		}
 
 		for langIndex, langFiles := range languageFiles {
-			keyValues := make(map[string]interface{})
+			keyValues := make(map[string]any)
 
 			for _, fileName := range langFiles {
 				unmarshal := yaml.Unmarshal
@@ -211,13 +211,13 @@ func load(assetNames []string, asset func(string) ([]byte, error), options Loade
 	}
 }
 
-func unmarshalINI(data []byte, v interface{}) error {
+func unmarshalINI(data []byte, v any) error {
 	f, err := ini.Load(data)
 	if err != nil {
 		return err
 	}
 
-	m := *v.(*map[string]interface{})
+	m := *v.(*map[string]any)
 
 	// Includes the ini.DefaultSection which has the root keys too.
 	// We don't have to iterate to each section to find the subsection,

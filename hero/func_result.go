@@ -11,9 +11,9 @@ import (
 )
 
 // ResultHandler describes the function type which should serve the "v" struct value.
-type ResultHandler func(ctx *context.Context, v interface{}) error
+type ResultHandler func(ctx *context.Context, v any) error
 
-func defaultResultHandler(ctx *context.Context, v interface{}) error {
+func defaultResultHandler(ctx *context.Context, v any) error {
 	if p, ok := v.(PreflightResult); ok {
 		if err := p.Preflight(ctx); err != nil {
 			return err
@@ -51,7 +51,7 @@ func defaultResultHandler(ctx *context.Context, v interface{}) error {
 // All types that complete this interface
 // can be returned as values from the method functions.
 //
-// Example at: https://github.com/kataras/iris/tree/main/_examples/dependency-injection/overview.
+// Example at: https://github.com/kataras/iris/tree/v12/_examples/dependency-injection/overview.
 type Result interface {
 	// Dispatch should send a response to the client.
 	Dispatch(*context.Context)
@@ -84,7 +84,7 @@ var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
 // otherwise it returns the "failure" response if any,
 // if not then a 400 bad request is being sent.
 //
-// Example usage at: https://github.com/kataras/iris/blob/main/hero/func_result_test.go.
+// Example usage at: https://github.com/kataras/iris/blob/v12/hero/func_result_test.go.
 func Try(fn func() Result, failure ...Result) Result {
 	var failed bool
 	var actionResponse Result
@@ -183,7 +183,7 @@ func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler Re
 		// if not nil then check
 		// for content type (or json default) and send the custom data object
 		// except when found == false or err != nil.
-		custom interface{}
+		custom any
 		// if false then skip everything and fire 404.
 		found = true // defaults to true of course, otherwise will break :)
 	)
@@ -334,7 +334,7 @@ func dispatchFuncResult(ctx *context.Context, values []reflect.Value, handler Re
 // dispatchCommon is being used internally to send
 // commonly used data to the response writer with a smart way.
 func dispatchCommon(ctx *context.Context,
-	statusCode int, contentType string, content []byte, v interface{}, handler ResultHandler, found bool) error {
+	statusCode int, contentType string, content []byte, v any, handler ResultHandler, found bool) error {
 	// if we have a false boolean as a return value
 	// then skip everything and fire a not found,
 	// we even don't care about the given status code or the object or the content.
@@ -396,7 +396,7 @@ type Response struct {
 	// previously set "ContentType". If "Lang" and "Text" are not empty
 	// then this "Object" field becomes the template data that the
 	// locale text should use to be rendered.
-	Object interface{}
+	Object any
 
 	// If Path is not empty then it will redirect
 	// the client to this Path, if Code is >= 300 and < 400
@@ -465,11 +465,11 @@ func (r Response) Dispatch(ctx *context.Context) {
 // wraps the template file name, layout, (any) view data, status code and error.
 // It's smart enough to complete the request and send the correct response to the client.
 //
-// Example at: https://github.com/kataras/iris/blob/main/_examples/dependency-injection/overview/web/routes/hello.go.
+// Example at: https://github.com/kataras/iris/blob/v12/_examples/dependency-injection/overview/web/routes/hello.go.
 type View struct {
 	Name   string
 	Layout string
-	Data   interface{} // map or a custom struct.
+	Data   any // map or a custom struct.
 	Code   int
 	Err    error
 }
@@ -502,7 +502,7 @@ func (r View) Dispatch(ctx *context.Context) { // r as Response view.
 			} else {
 				// else check if r.Data is map or struct, if struct convert it to map,
 				// do a range loop and modify the data one by one.
-				// context.Map is actually a map[string]interface{} but we have to make that check:
+				// context.Map is actually a map[string]any but we have to make that check:
 				if m, ok := r.Data.(context.Map); ok {
 					setViewData(ctx, m)
 				} else if reflect.Indirect(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
@@ -515,7 +515,7 @@ func (r View) Dispatch(ctx *context.Context) { // r as Response view.
 	}
 }
 
-func setViewData(ctx *context.Context, data map[string]interface{}) {
+func setViewData(ctx *context.Context, data map[string]any) {
 	for k, v := range data {
 		ctx.ViewData(k, v)
 	}

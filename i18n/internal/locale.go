@@ -160,7 +160,7 @@ func (loc *Locale) Language() string {
 }
 
 // GetMessage should return translated text based on the given "key".
-func (loc *Locale) GetMessage(key string, args ...interface{}) string {
+func (loc *Locale) GetMessage(key string, args ...any) string {
 	if msg, ok := loc.Messages[key]; ok {
 		result, err := msg.Render(args...)
 		if err != nil {

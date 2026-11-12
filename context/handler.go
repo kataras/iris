@@ -131,7 +131,7 @@ type Handler = func(*Context)
 // See `Handler` for more.
 type Handlers = []Handler
 
-func valueOf(v interface{}) reflect.Value {
+func valueOf(v any) reflect.Value {
 	if val, ok := v.(reflect.Value); ok {
 		return val
 	}
@@ -142,7 +142,7 @@ func valueOf(v interface{}) reflect.Value {
 // HandlerName returns the handler's function name.
 // See `Context.HandlerName` method to get function name of the current running handler in the chain.
 // See `SetHandlerName` too.
-func HandlerName(h interface{}) string {
+func HandlerName(h any) string {
 	pc := valueOf(h).Pointer()
 	fn := runtime.FuncForPC(pc)
 	name := fn.Name()
@@ -166,10 +166,10 @@ func HandlerName(h interface{}) string {
 // or to determinate if end-developer
 // called the same exactly Use/UseRouter/Done... API methods
 // so framework can give a warning.
-func HandlersNames(handlers ...interface{}) string {
+func HandlersNames(handlers ...any) string {
 	if len(handlers) == 1 {
 		if hs, ok := handlers[0].(Handlers); ok {
-			asInterfaces := make([]interface{}, 0, len(hs))
+			asInterfaces := make([]any, 0, len(hs))
 			for _, h := range hs {
 				asInterfaces = append(asInterfaces, h)
 			}
@@ -188,14 +188,14 @@ func HandlersNames(handlers ...interface{}) string {
 
 // HandlerFileLine returns the handler's file and line information.
 // See `context.HandlerFileLine` to get the file, line of the current running handler in the chain.
-func HandlerFileLine(h interface{}) (file string, line int) {
+func HandlerFileLine(h any) (file string, line int) {
 	pc := valueOf(h).Pointer()
 	return runtime.FuncForPC(pc).FileLine(pc)
 }
 
 // HandlerFileLineRel same as `HandlerFileLine` but it returns the path
 // corresponding to its relative based on the package-level "WorkingDir" variable.
-func HandlerFileLineRel(h interface{}) (file string, line int) {
+func HandlerFileLineRel(h any) (file string, line int) {
 	file, line = HandlerFileLine(h)
 	if relFile, err := filepath.Rel(WorkingDir, file); err == nil {
 		if !strings.HasPrefix(relFile, "..") {
@@ -209,13 +209,13 @@ func HandlerFileLineRel(h interface{}) (file string, line int) {
 
 // MainHandlerName tries to find the main handler that end-developer
 // registered on the provided chain of handlers and returns its function name.
-func MainHandlerName(handlers ...interface{}) (name string, index int) {
+func MainHandlerName(handlers ...any) (name string, index int) {
 	if len(handlers) == 0 {
 		return
 	}
 
 	if hs, ok := handlers[0].(Handlers); ok {
-		tmp := make([]interface{}, 0, len(hs))
+		tmp := make([]any, 0, len(hs))
 		for _, h := range hs {
 			tmp = append(tmp, h)
 		}

@@ -14,7 +14,7 @@ type ValidationError interface {
 	error
 
 	GetField() string
-	GetValue() interface{}
+	GetValue() any
 	GetReason() string
 }
 

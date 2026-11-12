@@ -85,7 +85,7 @@ func Cache(maxAgeFunc client.MaxAgeFunc) *client.Handler {
 // Handler like `Cache` but returns an Iris Handler to be used as a middleware.
 // For more options use the `Cache`.
 //
-// Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/response-writer/cache
+// Examples can be found at: https://github.com/kataras/iris/tree/v12/_examples/response-writer/cache
 func Handler(expiration time.Duration) context.Handler {
 	maxAgeFunc := func(*context.Context) time.Duration {
 		return expiration

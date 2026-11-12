@@ -335,7 +335,7 @@ func NewRoutePathReverser(apiRoutesProvider RoutesProvider, options ...RoutePath
 }
 
 // Path  returns a route path based on a route name and any dynamic named parameter's values-only.
-func (ps *RoutePathReverser) Path(routeName string, paramValues ...interface{}) string {
+func (ps *RoutePathReverser) Path(routeName string, paramValues ...any) string {
 	r := ps.provider.GetRoute(routeName)
 	if r == nil {
 		return ""
@@ -348,7 +348,7 @@ func (ps *RoutePathReverser) Path(routeName string, paramValues ...interface{}) 
 	return r.ResolvePath(toStringSlice(paramValues)...)
 }
 
-func toStringSlice(args []interface{}) (argsString []string) {
+func toStringSlice(args []any) (argsString []string) {
 	argsSize := len(args)
 	if argsSize <= 0 {
 		return
@@ -376,7 +376,7 @@ func toStringSlice(args []interface{}) (argsString []string) {
 // developers can just concat the subdomain, (host can be auto-retrieve by browser using the Path).
 
 // URL same as Path but returns the full uri, i.e https://mysubdomain.mydomain.com/hello/iris
-func (ps *RoutePathReverser) URL(routeName string, paramValues ...interface{}) (url string) {
+func (ps *RoutePathReverser) URL(routeName string, paramValues ...any) (url string) {
 	if ps.vhost == "" || ps.vscheme == "" {
 		return "not supported"
 	}

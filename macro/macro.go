@@ -14,12 +14,12 @@ type (
 	// It accepts the param's value as string and returns
 	// the <T> value (which its type is used for the input argument of the parameter functions, if any)
 	// and a true value for passed, otherwise nil and false should be returned.
-	ParamEvaluator func(paramValue string) (interface{}, bool)
+	ParamEvaluator func(paramValue string) (any, bool)
 )
 
 var goodEvaluatorFuncs = []reflect.Type{
-	reflect.TypeOf(func(string) (interface{}, bool) { return nil, false }),
-	reflect.TypeOf(ParamEvaluator(func(string) (interface{}, bool) { return nil, false })),
+	reflect.TypeOf(func(string) (any, bool) { return nil, false }),
+	reflect.TypeOf(ParamEvaluator(func(string) (any, bool) { return nil, false })),
 }
 
 func goodParamFunc(typ reflect.Type) bool {
@@ -99,7 +99,7 @@ func goodParamFuncName(name string) bool {
 
 // the convertBuilderFunc return value is generating at boot time.
 // convertFunc converts an interface to a valid full param function.
-func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
+func convertBuilderFunc(fn any) ParamFuncBuilder {
 	typFn := reflect.TypeOf(fn)
 	if !goodParamFunc(typFn) {
 		// it's not a function which returns a function,
@@ -143,7 +143,7 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 
 			// try to convert the string literal as we get it from the parser.
 			var (
-				val interface{}
+				val any
 			)
 
 			// try to get the value based on the expected type.
@@ -228,7 +228,7 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 		// } else if _v, ok = evalFn.(func(string) bool); ok {
 		// 	evaluator = _v
 		// }
-		// return func(paramValue interface{}) bool {
+		// return func(paramValue any) bool {
 		// 	return evaluator(paramValue)
 		// }
 		return evalFn
@@ -254,7 +254,7 @@ type (
 		trailing bool
 
 		Evaluator   ParamEvaluator
-		handleError interface{}
+		handleError any
 		funcs       []ParamFunc
 
 		goType reflect.Type
@@ -327,12 +327,12 @@ func (m *Macro) GoType() reflect.Type {
 // otherwise the program will receive a panic before server startup.
 // The status code of the ErrCode (`else` literal) is set
 // before the error handler but it can be modified inside the handler itself.
-func (m *Macro) HandleError(fnHandler interface{}) *Macro { // See handler.MakeFilter.
+func (m *Macro) HandleError(fnHandler any) *Macro { // See handler.MakeFilter.
 	m.handleError = fnHandler
 	return m
 }
 
-// func (m *Macro) SetParamResolver(fn func(memstore.Entry) interface{}) *Macro {
+// func (m *Macro) SetParamResolver(fn func(memstore.Entry) any) *Macro {
 // 	m.ParamResolver = fn
 // 	return m
 // }
@@ -343,7 +343,7 @@ func (m *Macro) HandleError(fnHandler interface{}) *Macro { // See handler.MakeF
 // and the function body, which should return an EvaluatorFunc
 // a bool (it will be converted to EvaluatorFunc later on),
 // i.e RegisterFunc("min", func(minValue int) func(paramValue string) bool){})
-func (m *Macro) RegisterFunc(funcName string, fn interface{}) *Macro {
+func (m *Macro) RegisterFunc(funcName string, fn any) *Macro {
 	fullFn := convertBuilderFunc(fn)
 
 	// if it's not valid then not register it at all.

@@ -64,7 +64,7 @@ type RouteReadOnly interface {
 
 	// Property returns a specific property based on its "key"
 	// of this route's Party owner.
-	Property(key string) (interface{}, bool)
+	Property(key string) (any, bool)
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
 

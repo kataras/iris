@@ -78,18 +78,18 @@ func toUserAuthOptions(opts []UserAuthOption) (options UserAuthOptions) {
 // The "users" input parameter can be one of the following forms:
 //
 //	map[string]string e.g. {username: password, username: password...}.
-//	[]map[string]interface{} e.g. []{"username": "...", "password": "...", "other_field": ...}, ...}.
+//	[]map[string]any e.g. []{"username": "...", "password": "...", "other_field": ...}, ...}.
 //	[]T which T completes the User interface.
 //	[]T which T contains at least Username and Password fields.
 //
 // Usage:
 // New(Options{Allow: AllowUsers(..., [BCRYPT])})
-func AllowUsers(users interface{}, opts ...UserAuthOption) AuthFunc {
+func AllowUsers(users any, opts ...UserAuthOption) AuthFunc {
 	// create a local user structure to be used in the map copy,
 	// takes longer to initialize but faster to serve.
 	type user struct {
 		password string
-		ref      interface{}
+		ref      any
 	}
 	cp := make(map[string]*user)
 
@@ -114,7 +114,7 @@ func AllowUsers(users interface{}, opts ...UserAuthOption) AuthFunc {
 		switch m := elem.(type) {
 		case map[string]string:
 			return userMap(m, opts...)
-		case map[string]interface{}:
+		case map[string]any:
 			username, password, ok := mapUsernameAndPassword(m)
 			if !ok {
 				break
@@ -133,7 +133,7 @@ func AllowUsers(users interface{}, opts ...UserAuthOption) AuthFunc {
 
 	options := toUserAuthOptions(opts)
 
-	return func(_ *context.Context, username, password string) (interface{}, bool) {
+	return func(_ *context.Context, username, password string) (any, bool) {
 		if u, ok := cp[username]; ok { // fast map access,
 			if options.ComparePassword(u.password, password) {
 				return u.ref, true
@@ -147,7 +147,7 @@ func AllowUsers(users interface{}, opts ...UserAuthOption) AuthFunc {
 func userMap(usernamePassword map[string]string, opts ...UserAuthOption) AuthFunc {
 	options := toUserAuthOptions(opts)
 
-	return func(_ *context.Context, username, password string) (interface{}, bool) {
+	return func(_ *context.Context, username, password string) (any, bool) {
 		pass, ok := usernamePassword[username]
 		return nil, ok && options.ComparePassword(pass, password)
 	}
@@ -173,7 +173,7 @@ func AllowUsersFile(jsonOrYamlFilename string, opts ...UserAuthOption) AuthFunc 
 		usernamePassword map[string]string
 		// no need to support too much forms, this would be for:
 		// "$username": { "password": "$pass", "other_field": ...}
-		userList []map[string]interface{}
+		userList []map[string]any
 	)
 
 	if err := decodeFile(jsonOrYamlFilename, &usernamePassword, &userList); err != nil {
@@ -199,7 +199,7 @@ func AllowUsersFile(jsonOrYamlFilename string, opts ...UserAuthOption) AuthFunc 
 	panic("malformed document file: " + jsonOrYamlFilename)
 }
 
-func decodeFile(src string, dest ...interface{}) error {
+func decodeFile(src string, dest ...any) error {
 	data, err := ReadFile(src)
 	if err != nil {
 		return err
@@ -208,7 +208,7 @@ func decodeFile(src string, dest ...interface{}) error {
 	// We use unmarshal instead of file decoder
 	// as we may need to read it more than once (dests, see below).
 	var (
-		unmarshal func(data []byte, v interface{}) error
+		unmarshal func(data []byte, v any) error
 		ext       string
 	)
 
@@ -245,7 +245,7 @@ func decodeFile(src string, dest ...interface{}) error {
 	return nil // if at least one is succeed we are ok.
 }
 
-func extractUsernameAndPassword(s interface{}) (username, password string, ok bool) {
+func extractUsernameAndPassword(s any) (username, password string, ok bool) {
 	if s == nil {
 		return
 	}
@@ -256,7 +256,7 @@ func extractUsernameAndPassword(s interface{}) (username, password string, ok bo
 		password = u.GetPassword()
 		ok = username != "" && password != ""
 		return
-	case map[string]interface{}:
+	case map[string]any:
 		return mapUsernameAndPassword(u)
 	default:
 		b, err := json.Marshal(u)
@@ -264,7 +264,7 @@ func extractUsernameAndPassword(s interface{}) (username, password string, ok bo
 			return
 		}
 
-		var m map[string]interface{}
+		var m map[string]any
 		if err = json.Unmarshal(b, &m); err != nil {
 			return
 		}
@@ -273,7 +273,7 @@ func extractUsernameAndPassword(s interface{}) (username, password string, ok bo
 	}
 }
 
-func mapUsernameAndPassword(m map[string]interface{}) (username, password string, ok bool) {
+func mapUsernameAndPassword(m map[string]any) (username, password string, ok bool) {
 	// type of username: password.
 	if len(m) == 1 {
 		for username, v := range m {

@@ -107,7 +107,7 @@ func main() {
     // GET: http://localhost:8080
     app.Get("/", func(ctx iris.Context) {
         if err := ctx.View("upload.html"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
     })

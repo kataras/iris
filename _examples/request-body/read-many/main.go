@@ -42,7 +42,7 @@ func logAllBody(ctx iris.Context) {
 }
 
 func logJSON(ctx iris.Context) {
-	var p interface{}
+	var p any
 	if err := ctx.ReadJSON(&p); err == nil {
 		ctx.Application().Logger().Infof("logJSON: %#+v", p)
 	}

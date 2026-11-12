@@ -28,8 +28,8 @@ func configureAPI(api *iris.APIContainer) {
 	/* Here is how you can inject a return value from a handler,
 	   in this case the "testOutput":
 	api.UseResultHandler(func(next iris.ResultHandler) iris.ResultHandler {
-		return func(ctx iris.Context, v interface{}) error {
-			return next(ctx, map[string]interface{}{"injected": true})
+		return func(ctx iris.Context, v any) error {
+			return next(ctx, map[string]any{"injected": true})
 		}
 	})
 	*/

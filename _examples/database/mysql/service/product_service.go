@@ -48,7 +48,7 @@ func (s *ProductService) BatchInsert(ctx context.Context, products []entity.Prod
 
 	var (
 		valuesLines []string
-		args        []interface{}
+		args        []any
 	)
 
 	for _, p := range products {
@@ -58,7 +58,7 @@ func (s *ProductService) BatchInsert(ctx context.Context, products []entity.Prod
 		}
 
 		valuesLines = append(valuesLines, "(?,?,?,?,?)")
-		args = append(args, []interface{}{p.CategoryID, p.Title, p.ImageURL, p.Price, p.Description}...)
+		args = append(args, []any{p.CategoryID, p.Title, p.ImageURL, p.Price, p.Description}...)
 	}
 
 	q := fmt.Sprintf("INSERT INTO %s (category_id, title, image_url, price, description) VALUES %s;",
@@ -105,6 +105,6 @@ var productUpdateSchema = map[string]reflect.Kind{
 
 // PartialUpdate accepts a key-value map to
 // update the record based on the given "id".
-func (s *ProductService) PartialUpdate(ctx context.Context, id int64, attrs map[string]interface{}) (int, error) {
+func (s *ProductService) PartialUpdate(ctx context.Context, id int64, attrs map[string]any) (int, error) {
 	return s.Service.PartialUpdate(ctx, id, productUpdateSchema, attrs)
 }

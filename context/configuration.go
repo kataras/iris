@@ -96,5 +96,5 @@ type ConfigurationReadOnly interface {
 	// GetHostProxyHeaders returns the HostProxyHeaders field.
 	GetHostProxyHeaders() map[string]bool
 	// GetOther returns the Other field.
-	GetOther() map[string]interface{}
+	GetOther() map[string]any
 }

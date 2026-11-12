@@ -72,7 +72,7 @@ func TestGetBindingsForFunc(t *testing.T) {
 	}
 
 	var tests = []struct {
-		Func     interface{}
+		Func     any
 		Expected []*binding
 	}{
 		{ // 0
@@ -368,7 +368,7 @@ func TestBindingsForStruct(t *testing.T) {
 	}
 
 	var depsInterfaces = []*Dependency{
-		NewDependency(func(ctx *context.Context) interface{} {
+		NewDependency(func(ctx *context.Context) any {
 			return "name"
 		}),
 	}
@@ -383,7 +383,7 @@ func TestBindingsForStruct(t *testing.T) {
 	}
 
 	var tests = []struct {
-		Value      interface{}
+		Value      any
 		Registered []*Dependency
 		Expected   []*binding
 	}{
@@ -492,7 +492,7 @@ func TestBindingsForStruct(t *testing.T) {
 				},
 			},
 		},
-		// 10. test bind an interface{}.
+		// 10. test bind an any.
 		{
 			Value:      &controller{},
 			Registered: depsInterfaces,

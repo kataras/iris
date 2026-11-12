@@ -30,7 +30,7 @@ type Application interface {
 
 	// Validate validates a value and returns nil if passed or
 	// the failure reason if not.
-	Validate(interface{}) error
+	Validate(any) error
 
 	// Minifier returns the minifier instance.
 	// By default it can minifies:
@@ -44,7 +44,7 @@ type Application interface {
 	//
 	// Use context.View to render templates to the client instead.
 	// Returns an error on failure, otherwise nil.
-	View(writer io.Writer, filename string, layout string, bindingData interface{}) error
+	View(writer io.Writer, filename string, layout string, bindingData any) error
 
 	// GetContextPool returns the Iris sync.Pool which holds the contexts values.
 	// Iris automatically releases the request context, so you don't have to use it.

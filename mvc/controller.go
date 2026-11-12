@@ -105,7 +105,7 @@ type ControllerActivator struct {
 
 // NameOf returns the package name + the struct type's name,
 // it's used to take the full name of an Controller, the `ControllerActivator#Name`.
-func NameOf(v interface{}) string {
+func NameOf(v any) string {
 	elemTyp := indirectType(reflect.ValueOf(v).Type())
 
 	typName := elemTyp.Name()
@@ -115,7 +115,7 @@ func NameOf(v interface{}) string {
 	return fullname
 }
 
-func newControllerActivator(app *Application, controller interface{}) *ControllerActivator {
+func newControllerActivator(app *Application, controller any) *ControllerActivator {
 	if controller == nil {
 		return nil
 	}
@@ -424,7 +424,7 @@ func (c *ControllerActivator) parseMethod(m reflect.Method) {
 	c.Handle(httpMethod, httpPath, m.Name)
 }
 
-func (c *ControllerActivator) logErrorf(format string, args ...interface{}) {
+func (c *ControllerActivator) logErrorf(format string, args ...any) {
 	c.Router().Logger().Errorf(format, args...)
 }
 

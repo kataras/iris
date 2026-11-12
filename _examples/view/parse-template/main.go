@@ -4,7 +4,11 @@
 // template parsers navigate through the example's subdirectories.
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 func main() {
 	// To not load any templates from files or embedded data,
@@ -34,7 +38,7 @@ func index(ctx iris.Context) {
 	if err := ctx.View("program.html", iris.Map{
 		"Name": "Gerasimos",
 	}); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

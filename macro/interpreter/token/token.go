@@ -1,7 +1,19 @@
 package token
 
+import "strconv"
+
 // Type is a specific type of int which describes the symbols.
 type Type int
+
+// String returns the name of the token type, e.g. "LBRACE" for the '{' symbol.
+// It returns the numeric value of an unknown type as it is.
+func (t Type) String() string {
+	if name, ok := typeNames[t]; ok {
+		return name
+	}
+
+	return strconv.Itoa(int(t))
+}
 
 // Token describes the letter(s) or symbol, is a result of the lexer.
 type Token struct {
@@ -36,6 +48,20 @@ const (
 	// keywords_end
 	INT // 42
 )
+
+var typeNames = map[Type]string{
+	EOF:     "EOF",
+	ILLEGAL: "ILLEGAL",
+	LBRACE:  "LBRACE",
+	RBRACE:  "RBRACE",
+	COLON:   "COLON",
+	LPAREN:  "LPAREN",
+	RPAREN:  "RPAREN",
+	COMMA:   "COMMA",
+	IDENT:   "IDENT",
+	ELSE:    "ELSE",
+	INT:     "INT",
+}
 
 var keywords = map[string]Type{
 	"else": ELSE,

@@ -34,7 +34,7 @@ func main() {
 	verifier.WithDefaultBlocklist()
 	// Enable payload decryption with:
 	// verifier.WithDecryption(encKey, nil)
-	verifyMiddleware := verifier.Verify(func() interface{} {
+	verifyMiddleware := verifier.Verify(func() any {
 		return new(fooClaims)
 	})
 

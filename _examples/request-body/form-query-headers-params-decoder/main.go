@@ -10,7 +10,7 @@
 // See here: https://godoc.org/go.mongodb.org/mongo-driver/bson/primitive#ObjectID.MarshalJSON.
 //
 // To register a converter import the github.com/iris-contrib/schema and call
-// schema.Query.RegisterConverter(value interface{}, converterFunc Converter).
+// schema.Query.RegisterConverter(value any, converterFunc Converter).
 //
 // The Converter is just a type of func(string) reflect.Value.
 //

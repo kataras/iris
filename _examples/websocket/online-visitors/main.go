@@ -34,7 +34,7 @@ func main() {
 	h := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "index page"})
 		if err := ctx.View("index.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	}
@@ -42,7 +42,7 @@ func main() {
 	h2 := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "other page"})
 		if err := ctx.View("other.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	}

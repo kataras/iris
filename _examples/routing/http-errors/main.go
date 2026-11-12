@@ -112,6 +112,6 @@ func problemExample(ctx iris.Context) {
 		// retry-after based on the request. Useful for ProblemOptions reusability.
 		// Overrides the RetryAfter field.
 		//
-		// RetryAfterFunc: func(iris.Context) interface{} { [...] }
+		// RetryAfterFunc: func(iris.Context) any { [...] }
 	})
 }

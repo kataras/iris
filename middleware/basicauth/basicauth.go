@@ -42,7 +42,7 @@ const (
 //
 // Default implementations are:
 // AllowUsers and AllowUsersFile functions.
-type AuthFunc func(ctx *context.Context, username, password string) (interface{}, bool)
+type AuthFunc func(ctx *context.Context, username, password string) (any, bool)
 
 // ErrorHandler should handle the given request credentials failure.
 // See Options.ErrorHandler and DefaultErrorHandler for details.
@@ -242,7 +242,7 @@ func New(opts Options) context.Handler {
 // A user list can defined with one of the following values:
 //
 //	map[string]string form of: {username:password, ...}
-//	map[string]interface{} form of: {"username": {"password": "...", "other_field": ...}, ...}
+//	map[string]any form of: {"username": {"password": "...", "other_field": ...}, ...}
 //	[]T which T completes the User interface, where T is a struct value
 //	[]T which T contains at least Username and Password fields.
 //
@@ -252,7 +252,7 @@ func New(opts Options) context.Handler {
 //	  "admin": "admin",
 //	  "john": "p@ss",
 //	})
-func Default(users interface{}, userOpts ...UserAuthOption) context.Handler {
+func Default(users any, userOpts ...UserAuthOption) context.Handler {
 	opts := Options{
 		Realm: DefaultRealm,
 		Allow: AllowUsers(users, userOpts...),

@@ -2,7 +2,7 @@ Hello template, implements the Partial's methods.
 
 {% code
 type Hello struct {
-  Vars map[string]interface{}
+  Vars map[string]any
 }
 %}
 

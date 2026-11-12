@@ -34,7 +34,7 @@ var ErrNotSupported = errors.New("not supported")
 // - UserPartial (a wrapper by SetUser)
 type User interface {
 	// GetRaw should return the raw instance of the user, if supported.
-	GetRaw() (interface{}, error)
+	GetRaw() (any, error)
 	// GetAuthorization should return the authorization method,
 	// e.g. Basic Authentication.
 	GetAuthorization() (string, error)
@@ -60,12 +60,12 @@ type User interface {
 	// GetField should optionally return a dynamic field
 	// based on its key. Useful for custom user fields.
 	// Keep in mind that these fields are encoded as a separate JSON key.
-	GetField(key string) (interface{}, error)
+	GetField(key string) (any, error)
 } /* Notes:
 We could use a structure of User wrapper and separate interfaces for each of the methods
 so they return ErrNotSupported if the implementation is missing it, so the `Features`
 field and HasUserFeature can be omitted and
-add a Raw() interface{} to return the underline User implementation too.
+add a Raw() any to return the underline User implementation too.
 The advandages of the above idea is that we don't have to add new methods
 for each of the builtin features and we can keep the (assumed) struct small.
 But we dont as it has many disadvantages, unless is requested.
@@ -95,7 +95,7 @@ type SimpleUser struct {
 var _ User = (*SimpleUser)(nil)
 
 // GetRaw returns itself.
-func (u *SimpleUser) GetRaw() (interface{}, error) {
+func (u *SimpleUser) GetRaw() (any, error) {
 	return u, nil
 }
 
@@ -156,7 +156,7 @@ func (u *SimpleUser) GetToken() ([]byte, error) {
 
 // GetField optionally returns a dynamic field from the `Fields` field
 // based on its key.
-func (u *SimpleUser) GetField(key string) (interface{}, error) {
+func (u *SimpleUser) GetField(key string) (any, error) {
 	if u.Fields == nil {
 		return nil, ErrNotSupported
 	}
@@ -164,10 +164,10 @@ func (u *SimpleUser) GetField(key string) (interface{}, error) {
 	return u.Fields[key], nil
 }
 
-// UserMap can be used to convert a common map[string]interface{} to a User.
+// UserMap can be used to convert a common map[string]any to a User.
 // Usage:
 //
-//	user := map[string]interface{}{
+//	user := map[string]any{
 //	  "username": "kataras",
 //	  "age"     : 27,
 //	}
@@ -189,7 +189,7 @@ type UserMap Map
 var _ User = UserMap{}
 
 // GetRaw returns the underline map.
-func (u UserMap) GetRaw() (interface{}, error) {
+func (u UserMap) GetRaw() (any, error) {
 	return Map(u), nil
 }
 
@@ -235,11 +235,11 @@ func (u UserMap) GetToken() ([]byte, error) {
 
 // GetField returns the raw map's value based on its "key".
 // It's not kind of useful here as you can just use the map.
-func (u UserMap) GetField(key string) (interface{}, error) {
+func (u UserMap) GetField(key string) (any, error) {
 	return u[key], nil
 }
 
-func (u UserMap) val(key string) interface{} {
+func (u UserMap) val(key string) any {
 	isTitle := unicode.IsTitle(rune(key[0])) // if starts with uppercase.
 	if isTitle {
 		key = strings.ToLower(key)
@@ -333,7 +333,7 @@ type (
 	}
 
 	userGetField interface {
-		GetField(string) interface{}
+		GetField(string) any
 	}
 
 	// UserPartial is a User.
@@ -341,7 +341,7 @@ type (
 	// may or may not complete the whole User interface.
 	// See Context.SetUser.
 	UserPartial struct {
-		Raw                  interface{} `json:"raw"`
+		Raw                  any `json:"raw"`
 		userGetAuthorization `json:",omitempty"`
 		userGetAuthorizedAt  `json:",omitempty"`
 		userGetID            `json:",omitempty"`
@@ -356,7 +356,7 @@ type (
 
 var _ User = (*UserPartial)(nil)
 
-func newUserPartial(i interface{}) *UserPartial {
+func newUserPartial(i any) *UserPartial {
 	if i == nil {
 		return nil
 	}
@@ -407,7 +407,7 @@ func newUserPartial(i interface{}) *UserPartial {
 }
 
 // GetRaw returns the original raw instance of the user.
-func (u *UserPartial) GetRaw() (interface{}, error) {
+func (u *UserPartial) GetRaw() (any, error) {
 	if u == nil {
 		return nil, ErrNotSupported
 	}
@@ -496,7 +496,7 @@ func (u *UserPartial) GetToken() ([]byte, error) {
 // GetField should optionally return a dynamic field
 // based on its key. Useful for custom user fields.
 // Keep in mind that these fields are encoded as a separate JSON key.
-func (u *UserPartial) GetField(key string) (interface{}, error) {
+func (u *UserPartial) GetField(key string) (any, error) {
 	if v := u.userGetField; v != nil {
 		return v.GetField(key), nil
 	}

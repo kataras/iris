@@ -204,7 +204,7 @@ func TestControllerMethodResultTypes(t *testing.T) {
 		ContentType("text/html", "utf-8").
 		Body().IsEqual("<b>internal server error</b>")
 
-	expectedResultFromCustomStruct := map[string]interface{}{
+	expectedResultFromCustomStruct := map[string]any{
 		"name": "Iris",
 		"age":  2,
 	}

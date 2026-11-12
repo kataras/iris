@@ -109,7 +109,7 @@ func main() {
 	app.Get("/admin", func(ctx iris.Context) {
 		ctx.WriteString("super secret information that only logged in administrators must see!\n\n")
 		if usernames, err := userstate.AllUsernames(); err == nil {
-			ctx.Writef("list of all users: %s" + strings.Join(usernames, ", "))
+			ctx.Writef("list of all users: %s", strings.Join(usernames, ", "))
 		}
 	})
 

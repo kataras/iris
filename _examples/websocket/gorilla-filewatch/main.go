@@ -12,6 +12,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -147,7 +148,7 @@ func serveHome(ctx iris.Context) {
 		strconv.FormatInt(lastMod.UnixNano(), 16),
 	}
 	if err := ctx.View("home.html", v); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

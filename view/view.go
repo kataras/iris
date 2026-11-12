@@ -58,7 +58,7 @@ func (v *View) ensureTemplateName(s string) string {
 }
 
 // ExecuteWriter calls the correct view Engine's ExecuteWriter func
-func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
+func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData any) error {
 	filename = v.ensureTemplateName(filename)
 	layout = v.ensureTemplateName(layout)
 
@@ -67,7 +67,7 @@ func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindin
 
 // AddFunc adds a function to all registered engines.
 // Each template engine that supports functions has its own AddFunc too.
-func (v *View) AddFunc(funcName string, funcBody interface{}) {
+func (v *View) AddFunc(funcName string, funcBody any) {
 	if !v.Registered() {
 		return
 	}

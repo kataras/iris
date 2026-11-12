@@ -96,7 +96,7 @@ func DefaultErrorHandler(ctx *context.Context, err error) {
 		unauthorize(ctx, e.AuthenticateHeader, e.AuthenticateHeaderValue, e.Code)
 	default:
 		// This will never happen.
-		ctx.StopWithText(http.StatusInternalServerError, "unknown error: %v", err)
+		ctx.StopWithText(http.StatusInternalServerError, fmt.Sprintf("unknown error: %v", err))
 	}
 }
 

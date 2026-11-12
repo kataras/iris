@@ -170,7 +170,7 @@ func NewCompressReader(src io.Reader, encoding string) (*CompressReader, error) 
 	}, nil
 }
 
-var compressWritersPool = sync.Pool{New: func() interface{} { return &CompressResponseWriter{} }}
+var compressWritersPool = sync.Pool{New: func() any { return &CompressResponseWriter{} }}
 
 // AddCompressHeaders just adds the headers "Vary" to "Accept-Encoding"
 // and "Content-Encoding" to the given encoding.

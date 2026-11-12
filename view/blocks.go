@@ -44,7 +44,7 @@ func WrapBlocks(v *blocks.Blocks) *BlocksEngine {
 // Blocks("./views", ".html") or
 // Blocks(iris.Dir("./views"), ".html") or
 // Blocks(embed.FS, ".html") or Blocks(AssetFile(), ".html") for embedded data.
-func Blocks(fs interface{}, extension string) *BlocksEngine {
+func Blocks(fs any, extension string) *BlocksEngine {
 	return WrapBlocks(blocks.New(fs).Extension(extension))
 }
 
@@ -80,13 +80,13 @@ func (s *BlocksEngine) Ext() string {
 // by the framework to add template functions like:
 // - url func(routeName string, args ...string) string
 // - urlpath func(routeName string, args ...string) string
-// - tr func(lang, key string, args ...interface{}) string
-func (s *BlocksEngine) AddFunc(funcName string, funcBody interface{}) {
+// - tr func(lang, key string, args ...any) string
+func (s *BlocksEngine) AddFunc(funcName string, funcBody any) {
 	s.Engine.Funcs(template.FuncMap{funcName: funcBody})
 }
 
 // AddLayoutFunc adds a template function for templates that are marked as layouts.
-func (s *BlocksEngine) AddLayoutFunc(funcName string, funcBody interface{}) *BlocksEngine {
+func (s *BlocksEngine) AddLayoutFunc(funcName string, funcBody any) *BlocksEngine {
 	s.Engine.LayoutFuncs(template.FuncMap{funcName: funcBody})
 	return s
 }
@@ -115,7 +115,7 @@ func (s *BlocksEngine) Load() error {
 }
 
 // ExecuteWriter renders a template on "w".
-func (s *BlocksEngine) ExecuteWriter(w io.Writer, tmplName, layoutName string, data interface{}) error {
+func (s *BlocksEngine) ExecuteWriter(w io.Writer, tmplName, layoutName string, data any) error {
 	if layoutName == NoLayout {
 		layoutName = ""
 	}

@@ -49,7 +49,7 @@ func NewTemplate(c *Catalog, m *Message) (*Template, error) {
 	}
 
 	bufPool := &sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return new(bytes.Buffer)
 		},
 	}
@@ -86,9 +86,9 @@ func registerTemplateVars(c *Catalog, m *Message) error {
 // Render completes the Renderer interface.
 // It renders a template message.
 // Each key has its own Template, plurals too.
-func (t *Template) Render(args ...interface{}) (string, error) {
+func (t *Template) Render(args ...any) (string, error) {
 	var (
-		data   interface{}
+		data   any
 		result string
 	)
 
@@ -125,7 +125,7 @@ func (t *Template) Render(args ...interface{}) (string, error) {
 	return result, nil
 }
 
-func findVarsCount(data interface{}, vars []Var) (args []interface{}) {
+func findVarsCount(data any, vars []Var) (args []any) {
 	if data == nil {
 		return nil
 	}
@@ -167,7 +167,7 @@ func findVarsCount(data interface{}, vars []Var) (args []interface{}) {
 	return
 }
 
-func findPluralCount(data interface{}) (int, bool) {
+func findPluralCount(data any) (int, bool) {
 	if data == nil {
 		return -1, false
 	}
@@ -207,7 +207,7 @@ func findPluralCount(data interface{}) (int, bool) {
 	return -1, false
 }
 
-func (t *Template) replaceTmplVars(result string, args ...interface{}) string {
+func (t *Template) replaceTmplVars(result string, args ...any) string {
 	varsKey := t.Key + "." + VarsKeySuffix
 	translationVarsText := t.Locale.Printer.Sprintf(varsKey, args...)
 	if translationVarsText != "" {

@@ -67,7 +67,7 @@ func (c *MovieController) PutBy(ctx iris.Context, id int64) (datamodels.Movie, e
 // DeleteBy deletes a movie.
 // Demo:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
-func (c *MovieController) DeleteBy(id int64) interface{} {
+func (c *MovieController) DeleteBy(id int64) any {
 	wasDel := c.Service.DeleteByID(id)
 	if wasDel {
 		// return the deleted movie's ID

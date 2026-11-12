@@ -8,7 +8,7 @@ import (
 
 // Hello renders our ../templates/hello.qtpl file using the compiled ../templates/hello.qtpl.go file.
 func Hello(ctx iris.Context) {
-	// vars := make(map[string]interface{})
+	// vars := make(map[string]any)
 	// vars["message"] = "Hello World!"
 	// vars["name"] = ctx.Params().Get("name")
 	// [...]

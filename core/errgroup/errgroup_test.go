@@ -145,7 +145,7 @@ func TestGroup(t *testing.T) {
 
 	t.Run("Walk", func(t *testing.T) {
 		expectedEntries := 4
-		_ = Walk(g, func(typ interface{}, err error) {
+		_ = Walk(g, func(typ any, err error) {
 			g.IncludeChildren = false
 			childAPIErrorsGroup.IncludeChildren = false
 			childAPIErrorsGroup2.IncludeChildren = false

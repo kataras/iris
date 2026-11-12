@@ -157,7 +157,7 @@ func (c *Controller) renderNotFound(id int64) mvc.View {
 // in order to be able to return a type of `Model`
 // as mvc.Result.
 // If this function didn't exist then
-// we should explicit set the output result to that Model or to an interface{}.
+// we should explicit set the output result to that Model or to an any.
 func (u Model) Dispatch(ctx iris.Context) {
 	ctx.JSON(u)
 }
@@ -182,7 +182,7 @@ func (c *Controller) GetBy(userID int64) mvc.Result {
 	// either a user which returns the Model as JSON via its Dispatch.
 	//
 	// We could also return just a struct value that is not an mvc.Result,
-	// if the output result of the `GetBy` was that struct's type or an interface{}
+	// if the output result of the `GetBy` was that struct's type or an any
 	// and iris would render that with JSON as well, but here we can't do that without complete the `Dispatch`
 	// function, because we may return an mvc.View which is an mvc.Result.
 	return user

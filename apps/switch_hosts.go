@@ -19,7 +19,7 @@ type (
 		Pattern string
 		// Target is the target Host that incoming requests will be redirected on pattern match
 		// or an Application's Name that will handle the incoming request matched the Pattern.
-		Target interface{} // It was a string in my initial design but let's do that interface{}, we may support more types here in the future, until generics are in, keep it interface{}.
+		Target any // It was a string in my initial design but let's do that any, we may support more types here in the future, until generics are in, keep it any.
 	}
 	// Hosts is a switch provider.
 	// It can be used as input argument to the `Switch` function

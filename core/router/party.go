@@ -33,7 +33,7 @@ type Party interface {
 	EnsureStaticBindings() Party
 	// RegisterDependency calls the `ConfigureContainer.RegisterDependency` method
 	// with the provided value(s). See `HandleFunc` and `PartyConfigure` methods too.
-	RegisterDependency(dependencies ...interface{})
+	RegisterDependency(dependencies ...any)
 	// HandleFunc registers a route on HTTP verb "method" and relative, to this Party, path.
 	// It is like the `Handle` method but it accepts one or more "handlersFn" functions
 	// that each one of them can accept any input arguments as the HTTP request and
@@ -103,13 +103,13 @@ type Party interface {
 	// the dependency injection, mvc and function handlers.
 	//
 	// This method is just a shortcut for the `ConfigureContainer().Handle` one.
-	HandleFunc(method, relativePath string, handlersFn ...interface{}) *Route
+	HandleFunc(method, relativePath string, handlersFn ...any) *Route
 	// UseFunc registers a function which can accept one or more
 	// dependencies (see RegisterDependency) and returns an iris.Handler
 	// or a result of <T> and/or an error.
 	//
 	// This method is just a shortcut of the `ConfigureContainer().Use`.
-	UseFunc(handlersFn ...interface{})
+	UseFunc(handlersFn ...any)
 
 	// GetRelPath returns the current party's relative path.
 	// i.e:
@@ -119,7 +119,7 @@ type Party interface {
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
-	// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/routing/dynamic-path
+	// Learn more at:  https://github.com/kataras/iris/tree/v12/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
 	// Properties returns the original Party's properties map,
@@ -245,7 +245,7 @@ type Party interface {
 	// Returns the Party itself for chain calls.
 	//
 	// Should be called before children routes regitration.
-	RemoveHandler(namesOrHandlers ...interface{}) Party
+	RemoveHandler(namesOrHandlers ...any) Party
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 	// and the execution rules.
 	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
@@ -287,7 +287,7 @@ type Party interface {
 	//
 	// Returns this Party.
 	//
-	// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/kataras/iris/tree/v12/_examples/mvc/middleware/without-ctx-next
 	SetExecutionRules(executionRules ExecutionRules) Party
 	// SetRegisterRule sets a `RouteRegisterRule` for this Party and its children.
 	// Available values are:
@@ -337,8 +337,8 @@ type Party interface {
 	// HandleDir("/public", iris.Dir("./assets"), DirOptions{...})
 	//
 	// Examples:
-	// https://github.com/kataras/iris/tree/main/_examples/file-server
-	HandleDir(requestPath string, fileSystem interface{}, opts ...DirOptions) []*Route
+	// https://github.com/kataras/iris/tree/v12/_examples/file-server
+	HandleDir(requestPath string, fileSystem any, opts ...DirOptions) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and
@@ -466,11 +466,11 @@ type Party interface {
 	// my := app.Party("/my").Layout("layouts/mylayout.html")
 	// 	my.Get("/", func(ctx iris.Context) {
 	// 	if err := ctx.View("page1.html"); err != nil {
-	//	  ctx.HTML("<h3>%s</h3>", err.Error())
+	//	  ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 	//	  return
 	//  }
 	// 	})
 	//
-	// Examples: https://github.com/kataras/iris/tree/main/_examples/view
+	// Examples: https://github.com/kataras/iris/tree/v12/_examples/view
 	Layout(tmplLayoutFile string) Party
 }

@@ -1,4 +1,8 @@
-# Table of Contents <a href="./README_ZH_HANT.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /> </a>
+# Table of Contents <a href="./README_ZH_HANT.md"> <img width="20px" src="https://iris-go.com/static/images/flag-china.svg?v=10" /> </a>
+
+🎁 **Welcome to the Iris Examples**
+
+Unwrap the magic of Iris with these festive examples, each one a present waiting to help you build amazing applications ✨
 
 * [Serverless](https://github.com/iris-contrib/gateway#netlify)
 * [REST API for Apache Kafka](kafka-api)
@@ -91,7 +95,7 @@
         * [Redirection](routing/subdomains/redirect/main.go)
             * [Multi Instances](routing/subdomains/redirect/multi-instances/main.go)
         * [HTTP Errors View](routing/subdomains/http-errors-view/main.go)
-    * [HTTP Method Override](https://github.com/kataras/iris/blob/main/middleware/methodoverride/methodoverride_test.go)
+    * [HTTP Method Override](https://github.com/kataras/iris/blob/v12/middleware/methodoverride/methodoverride_test.go)
     * [API Versioning](routing/versioning/main.go)
     * [Sitemap](routing/sitemap/main.go)
 * Logging
@@ -108,7 +112,7 @@
         * [Root and Proxy AccessLog instances](logging/request-logger/accesslog-proxy/main.go)
         * [Slack integration example](logging/request-logger/accesslog-slack/main.go)
 * API Documentation
-    * [Swagger](https://github.com/iris-contrib/swagger/tree/master/_examples/basic)
+    * [Swagger](https://github.com/iris-contrib/swagger/tree/v12/_examples/basic)
 * Testing
     * [Testing with httptest](testing/httptest/main_test.go)
     * [Testing with ginkgo](testing/ginkgotest)
@@ -177,7 +181,7 @@
         * [Render `valyala/quicktemplate` templates](view/quicktemplate)
         * [Render `shiyanhui/hero` templates](view/herotemplate)
         * [Render `a-h/templ` templates](view/templ) **NEW**
-* [Request ID](https://github.com/kataras/iris/blob/main/middleware/requestid/requestid_test.go)
+* [Request ID](https://github.com/kataras/iris/blob/v12/middleware/requestid/requestid_test.go)
 * [Request Rate Limit](request-ratelimit/main.go)
 * [Request Referrer](request-referrer/main.go)
 * [Webassembly](webassembly/main.go)

@@ -123,7 +123,7 @@ func main() {
 
 	app.Delete("/something", func(ctx iris.Context) {
 		name := ctx.URLParam("name")
-		ctx.Writef(name)
+		ctx.WriteString(name)
 	})
 
 	app.None("/secret", privateHandler)

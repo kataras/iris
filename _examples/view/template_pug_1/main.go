@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 
 	"github.com/kataras/iris/v12"
@@ -25,7 +26,7 @@ func main() {
 
 func index(ctx iris.Context) {
 	if err := ctx.View("index.pug"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

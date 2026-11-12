@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kataras/iris/v12/_examples/mvc/login/datasource"
@@ -34,7 +35,7 @@ func main() {
 		ctx.ViewData("Message", ctx.Values().
 			GetStringDefault("message", "The page you're looking for doesn't exist"))
 		if err := ctx.View("shared/error.html"); err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
+			ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 			return
 		}
 	})

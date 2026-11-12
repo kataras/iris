@@ -16,7 +16,7 @@ type Error struct {
 	Timestamp  int64  `json:"timestamp"`
 }
 
-func newError(statusCode int, method, path, format string, args ...interface{}) Error {
+func newError(statusCode int, method, path, format string, args ...any) Error {
 	msg := format
 	if len(args) > 0 {
 		// why we check for that? If the original error message came from our database

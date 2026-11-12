@@ -135,7 +135,7 @@ func (db *sqlite) Exec(q string) error { return nil }
 
 The `DB` depends on the `Environment.
 
-> A practical and operational database example, including Docker images, can be found at the following guide: https://github.com/kataras/iris/tree/main/_examples/database/mysql
+> A practical and operational database example, including Docker images, can be found at the following guide: https://github.com/kataras/iris/tree/v12/_examples/database/mysql
 
 ## Service
 

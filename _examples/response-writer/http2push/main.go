@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/kataras/iris/v12"
@@ -39,7 +40,7 @@ func pushHandler(ctx iris.Context) {
 		}
 	}
 
-	ctx.HTML(`<html><body><script src="%s"></script></body></html>`, target)
+	ctx.HTML(fmt.Sprintf(`<html><body><script src="%s"></script></body></html>`, target))
 }
 
 func simpleAssetHandler(ctx iris.Context) {

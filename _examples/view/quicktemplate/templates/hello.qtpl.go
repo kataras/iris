@@ -26,7 +26,7 @@ var (
 //line hello.qtpl:4
 
 type Hello struct {
-	Vars map[string]interface{}
+	Vars map[string]any
 }
 
 //line hello.qtpl:9

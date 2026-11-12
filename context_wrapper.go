@@ -72,7 +72,7 @@ var _ ContextPool[*emptyContextSetter] = (*syncContextPool[emptyContextSetter, *
 func NewContextPool[T any, contextPtr ContextSetterPtr[T]]() ContextPool[contextPtr] {
 	return &syncContextPool[T, contextPtr]{
 		pool: &sync.Pool{
-			New: func() interface{} {
+			New: func() any {
 				var t contextPtr = new(T)
 				return t
 			},
@@ -114,7 +114,7 @@ type ContextWrapper[T any] struct {
 // Use the `iris.NewContextPool[T, *T]()` to pass a simple context pool.
 // Then, use the `Handler` method to wrap custom handlers to iris ones.
 //
-// Example: https://github.com/kataras/iris/tree/main/_examples/routing/custom-context
+// Example: https://github.com/kataras/iris/tree/v12/_examples/routing/custom-context
 func NewContextWrapper[T any](pool ContextPool[T]) *ContextWrapper[T] {
 	if pool == nil {
 		panic("pool cannot be nil")

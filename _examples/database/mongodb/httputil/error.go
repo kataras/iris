@@ -56,7 +56,7 @@ type HTTPError struct {
 	Description string `json:"description"`
 }
 
-func newError(statusCode int, err error, format string, args ...interface{}) HTTPError {
+func newError(statusCode int, err error, format string, args ...any) HTTPError {
 	if format == "" {
 		format = http.StatusText(statusCode)
 	}
@@ -92,7 +92,7 @@ func LogFailure(logger io.Writer, ctx iris.Context, err HTTPError) {
 
 // Fail will send the status code, write the error's reason
 // and return the HTTPError for further use, i.e logging, see `InternalServerError`.
-func Fail(ctx iris.Context, statusCode int, err error, format string, args ...interface{}) HTTPError {
+func Fail(ctx iris.Context, statusCode int, err error, format string, args ...any) HTTPError {
 	httpErr := newError(statusCode, err, format, args...)
 	httpErr.writeHeaders(ctx)
 
@@ -102,7 +102,7 @@ func Fail(ctx iris.Context, statusCode int, err error, format string, args ...in
 
 // FailJSON will send to the client the error data as JSON.
 // Useful for APIs.
-func FailJSON(ctx iris.Context, statusCode int, err error, format string, args ...interface{}) HTTPError {
+func FailJSON(ctx iris.Context, statusCode int, err error, format string, args ...any) HTTPError {
 	httpErr := newError(statusCode, err, format, args...)
 	httpErr.writeHeaders(ctx)
 
@@ -114,17 +114,17 @@ func FailJSON(ctx iris.Context, statusCode int, err error, format string, args .
 // InternalServerError logs to the server's terminal
 // and dispatches to the client the 500 Internal Server Error.
 // Internal Server errors are critical, so we log them to the `os.Stderr`.
-func InternalServerError(ctx iris.Context, err error, format string, args ...interface{}) {
+func InternalServerError(ctx iris.Context, err error, format string, args ...any) {
 	LogFailure(os.Stderr, ctx, Fail(ctx, iris.StatusInternalServerError, err, format, args...))
 }
 
 // InternalServerErrorJSON acts exactly like `InternalServerError` but instead it sends the data as JSON.
 // Useful for APIs.
-func InternalServerErrorJSON(ctx iris.Context, err error, format string, args ...interface{}) {
+func InternalServerErrorJSON(ctx iris.Context, err error, format string, args ...any) {
 	LogFailure(os.Stderr, ctx, FailJSON(ctx, iris.StatusInternalServerError, err, format, args...))
 }
 
 // UnauthorizedJSON sends JSON format of StatusUnauthorized(401) HTTPError value.
-func UnauthorizedJSON(ctx iris.Context, err error, format string, args ...interface{}) HTTPError {
+func UnauthorizedJSON(ctx iris.Context, err error, format string, args ...any) HTTPError {
 	return FailJSON(ctx, iris.StatusUnauthorized, err, format, args...)
 }

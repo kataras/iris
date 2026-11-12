@@ -36,7 +36,7 @@ func TestJWT(t *testing.T) {
 	verifier.ErrorHandler = func(ctx iris.Context, err error) { // app.OnErrorCode(401, ...)
 		ctx.StopWithError(iris.StatusUnauthorized, err)
 	}
-	middleware := verifier.Verify(func() interface{} { return new(fooClaims) })
+	middleware := verifier.Verify(func() any { return new(fooClaims) })
 	app.Get("/protected", middleware, func(ctx iris.Context) {
 		claims := jwt.Get(ctx).(*fooClaims)
 		ctx.WriteString(claims.Foo)

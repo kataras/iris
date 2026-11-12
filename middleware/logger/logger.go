@@ -86,7 +86,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 		status = strconv.Itoa(ctx.GetStatusCode())
 	}
 
-	var message interface{}
+	var message any
 	if ctxKeys := l.config.MessageContextKeys; len(ctxKeys) > 0 {
 		for _, key := range ctxKeys {
 			msg := ctx.Values().Get(key)
@@ -97,7 +97,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx *context.Context) {
 			}
 		}
 	}
-	var headerMessage interface{}
+	var headerMessage any
 	if headerKeys := l.config.MessageHeaderKeys; len(headerKeys) > 0 {
 		for _, key := range headerKeys {
 			msg := ctx.GetHeader(key)

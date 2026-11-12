@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -270,22 +271,22 @@ func (e ErrorCodeName) MapErrors(targets ...error) {
 }
 
 // Message sends an error with a simple message to the client.
-func (e ErrorCodeName) Message(ctx *context.Context, format string, args ...interface{}) {
-	fail(ctx, e, sprintf(format, args...), "", nil, nil)
+func (e ErrorCodeName) Message(ctx *context.Context, msg string) {
+	fail(ctx, e, msg, "", nil, nil)
 }
 
 // Details sends an error with a message and details to the client.
-func (e ErrorCodeName) Details(ctx *context.Context, msg, details string, detailsArgs ...interface{}) {
-	fail(ctx, e, msg, sprintf(details, detailsArgs...), nil, nil)
+func (e ErrorCodeName) Details(ctx *context.Context, msg, details string) {
+	fail(ctx, e, msg, msg, nil, nil)
 }
 
 // Data sends an error with a message and json data to the client.
-func (e ErrorCodeName) Data(ctx *context.Context, msg string, data interface{}) {
+func (e ErrorCodeName) Data(ctx *context.Context, msg string, data any) {
 	fail(ctx, e, msg, "", nil, data)
 }
 
 // DataWithDetails sends an error with a message, details and json data to the client.
-func (e ErrorCodeName) DataWithDetails(ctx *context.Context, msg, details string, data interface{}) {
+func (e ErrorCodeName) DataWithDetails(ctx *context.Context, msg, details string, data any) {
 	fail(ctx, e, msg, details, nil, data)
 }
 
@@ -294,7 +295,7 @@ func (e ErrorCodeName) Validation(ctx *context.Context, validationErrors ...Vali
 	e.validation(ctx, validationErrors)
 }
 
-func (e ErrorCodeName) validation(ctx *context.Context, validationErrors interface{}) {
+func (e ErrorCodeName) validation(ctx *context.Context, validationErrors any) {
 	fail(ctx, e, "validation failure", "fields were invalid", validationErrors, nil)
 }
 
@@ -338,7 +339,7 @@ func (e ErrorCodeName) Err(ctx *context.Context, err error) {
 // error using the "LogError" package-level function, which can be customized.
 //
 // See "LogErr" too.
-func (e ErrorCodeName) Log(ctx *context.Context, format string, args ...interface{}) {
+func (e ErrorCodeName) Log(ctx *context.Context, format string, args ...any) {
 	if SkipCanceled {
 		if ctx.IsCanceled() {
 			return
@@ -404,22 +405,49 @@ func handleAPIError(ctx *context.Context, apiErr client.APIError) {
 }
 
 func handleJSONError(ctx *context.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	messageText := "unable to parse request body"
+	wireError := InvalidArgument
+
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		wireError.Details(ctx, messageText, "empty body")
+		return true
+	}
+
 	var syntaxErr *json.SyntaxError
 	if errors.As(err, &syntaxErr) {
-		InvalidArgument.Details(ctx, "unable to parse body", "syntax error at byte offset %d", syntaxErr.Offset)
+		wireError.Details(ctx, messageText, fmt.Sprintf("json: syntax error at byte offset %d", syntaxErr.Offset))
 		return true
 	}
 
 	var unmarshalErr *json.UnmarshalTypeError
 	if errors.As(err, &unmarshalErr) {
-		InvalidArgument.Details(ctx, "unable to parse body", "unmarshal error for field %q", unmarshalErr.Field)
+		wireError.Details(ctx, messageText, unmarshalErr.Error())
+		return true
+	}
+
+	var unsupportedValueErr *json.UnsupportedValueError
+	if errors.As(err, &unsupportedValueErr) {
+		wireError.Details(ctx, messageText, err.Error())
+		return true
+	}
+
+	var unsupportedTypeErr *json.UnsupportedTypeError
+	if errors.As(err, &unsupportedTypeErr) {
+		wireError.Details(ctx, messageText, err.Error())
+		return true
+	}
+
+	var invalidUnmarshalErr *json.InvalidUnmarshalError
+	if errors.As(err, &invalidUnmarshalErr) {
+		wireError.Details(ctx, messageText, err.Error())
 		return true
 	}
 
 	return false
-	// else {
-	// 	InvalidArgument.Details(ctx, "unable to parse body", err.Error())
-	// }
 }
 
 var (
@@ -438,12 +466,12 @@ var (
 //
 // Examples can be found at:
 //
-//	https://github.com/kataras/iris/tree/main/_examples/routing/http-wire-errors.
+//	https://github.com/kataras/iris/tree/v12/_examples/routing/http-wire-errors.
 type Error struct {
 	ErrorCode  ErrorCode       `json:"http_error_code" yaml:"HTTPErrorCode"`
 	Message    string          `json:"message,omitempty" yaml:"Message"`
 	Details    string          `json:"details,omitempty" yaml:"Details"`
-	Validation interface{}     `json:"validation,omitempty" yaml:"Validation,omitempty"`
+	Validation any             `json:"validation,omitempty" yaml:"Validation,omitempty"`
 	Data       json.RawMessage `json:"data,omitempty" yaml:"Data,omitempty"` // any other custom json data.
 }
 
@@ -468,7 +496,7 @@ func (err *Error) Error() string {
 	return sprintf("iris http wire error: canonical name: %s, http status code: %d, message: %s, details: %s", err.ErrorCode.CanonicalName, err.ErrorCode.Status, err.Message, err.Details)
 }
 
-func fail(ctx *context.Context, codeName ErrorCodeName, msg, details string, validationErrors interface{}, dataValue interface{}) {
+func fail(ctx *context.Context, codeName ErrorCodeName, msg, details string, validationErrors any, dataValue any) {
 	errorCode, ok := errorCodeMap[codeName]
 	if !ok {
 		// This SHOULD NEVER happen, all ErrorCodeNames MUST be registered.

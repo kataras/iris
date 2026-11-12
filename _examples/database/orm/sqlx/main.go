@@ -51,7 +51,7 @@ func main() {
 
 	app.Get("/insert", func(ctx iris.Context) {
 		res, err := db.NamedExec(`INSERT INTO person (first_name,last_name,email) VALUES (:first,:last,:email)`,
-			map[string]interface{}{
+			map[string]any{
 				"first": "John",
 				"last":  "Doe",
 				"email": "johndoe@example.com",

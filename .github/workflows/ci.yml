@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [v12]
   pull_request:
-    branches: [main]
+    branches: [v12]
 
 permissions:
   contents: read
@@ -17,14 +17,14 @@ jobs:
 
     strategy:
       matrix:
-        go_version: [1.22.x]
+        go_version: [1.26.x]
     steps:
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go 1.x
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: './go.mod'
         check-latest: true

@@ -1,6 +1,10 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import (
+	"fmt"
+
+	"github.com/kataras/iris/v12"
+)
 
 // $ go install github.com/go-bindata/go-bindata/v3/go-bindata@latest
 //
@@ -23,7 +27,7 @@ func main() {
 
 func index(ctx iris.Context) {
 	if err := ctx.View("index.pug"); err != nil {
-		ctx.HTML("<h3>%s</h3>", err.Error())
+		ctx.HTML(fmt.Sprintf("<h3>%s</h3>", err.Error()))
 		return
 	}
 }

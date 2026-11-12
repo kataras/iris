@@ -2,5 +2,11 @@ version: 2
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
+    exclude-paths:
+      - "_examples/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

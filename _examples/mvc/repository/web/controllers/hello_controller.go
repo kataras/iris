@@ -14,7 +14,7 @@ type HelloController struct{}
 
 var helloView = mvc.View{
 	Name: "hello/index.html",
-	Data: map[string]interface{}{
+	Data: map[string]any{
 		"Title":     "Hello Page",
 		"MyMessage": "Welcome to my awesome website",
 	},

@@ -14,7 +14,7 @@ import (
 // It does not support JWE, JWK.
 type Signer struct {
 	Alg Alg
-	Key interface{}
+	Key any
 
 	// MaxAge to set "exp" and "iat".
 	// Recommended value for access tokens: 15 minutes.
@@ -33,7 +33,7 @@ type Signer struct {
 //
 //	signer := NewSigner(HS256, secret, 15*time.Minute)
 //	token, err := signer.Sign(userClaims{Username: "kataras"})
-func NewSigner(signatureAlg Alg, signatureKey interface{}, maxAge time.Duration) *Signer {
+func NewSigner(signatureAlg Alg, signatureKey any, maxAge time.Duration) *Signer {
 	if signatureAlg == HS256 {
 		// A tiny helper if the end-developer uses string instead of []byte for hmac keys.
 		if k, ok := signatureKey.(string); ok {
@@ -66,7 +66,7 @@ func (s *Signer) WithEncryption(key, additionalData []byte) *Signer {
 }
 
 // Sign generates a new token based on the given "claims" which is valid up to "s.MaxAge".
-func (s *Signer) Sign(claims interface{}, opts ...SignOption) ([]byte, error) {
+func (s *Signer) Sign(claims any, opts ...SignOption) ([]byte, error) {
 	if len(opts) > 0 {
 		opts = append(opts, s.Options...)
 	} else {
@@ -79,7 +79,7 @@ func (s *Signer) Sign(claims interface{}, opts ...SignOption) ([]byte, error) {
 // NewTokenPair accepts the access and refresh claims plus the life time duration for the refresh token
 // and generates a new token pair which can be sent to the client.
 // The same token pair can be json-decoded.
-func (s *Signer) NewTokenPair(accessClaims interface{}, refreshClaims interface{}, refreshMaxAge time.Duration, accessOpts ...SignOption) (TokenPair, error) {
+func (s *Signer) NewTokenPair(accessClaims any, refreshClaims any, refreshMaxAge time.Duration, accessOpts ...SignOption) (TokenPair, error) {
 	if refreshMaxAge <= s.MaxAge {
 		return TokenPair{}, fmt.Errorf("refresh max age should be bigger than access token's one[%d - %d]", refreshMaxAge, s.MaxAge)
 	}

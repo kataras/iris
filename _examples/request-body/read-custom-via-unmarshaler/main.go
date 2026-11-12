@@ -44,7 +44,7 @@ var DefaultBodyDecoder = myBodyDecoder{}
 // we will use the simplest `context#UnmarshalerFunc` to pass just the yaml.Unmarshal.
 //
 // Can be used as: ctx.UnmarshalBody(&c, DefaultBodyDecoder)
-func (r *myBodyDecoder) Unmarshal(data []byte, outPtr interface{}) error {
+func (r *myBodyDecoder) Unmarshal(data []byte, outPtr any) error {
 	return yaml.Unmarshal(data, outPtr)
 }
 */

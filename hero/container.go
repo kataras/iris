@@ -99,7 +99,7 @@ type ReportEntry struct {
 	InputPosition   int          // struct field position or parameter position.
 	InputFieldName  string       // if it's a struct field, then this is its type name (we can't get param names).
 	InputFieldType  reflect.Type // the input's type.
-	DependencyValue interface{}  // the dependency value binded to that InputPosition of Name.
+	DependencyValue any          // the dependency value binded to that InputPosition of Name.
 	DependencyFile  string       // the file
 	DependencyLine  int          // and line number of the dependency's value.
 	Static          bool
@@ -222,7 +222,7 @@ var BuiltinDependencies = []*Dependency{
 // New returns a new Container, a container for dependencies and a factory
 // for handlers and controllers, this is used internally by the `mvc#Application` structure.
 // Please take a look at the structure's documentation for more information.
-func New(dependencies ...interface{}) *Container {
+func New(dependencies ...any) *Container {
 	deps := make([]*Dependency, len(BuiltinDependencies))
 	copy(deps, BuiltinDependencies)
 
@@ -277,7 +277,7 @@ func (c *Container) Clone() *Container {
 // - Register(loggerService{prefix: "dev"})
 // - Register(func(ctx iris.Context) User {...})
 // - Register(func(User) OtherResponse {...})
-func Register(dependency interface{}) *Dependency {
+func Register(dependency any) *Dependency {
 	return Default.Register(dependency)
 }
 
@@ -298,7 +298,7 @@ func Register(dependency interface{}) *Dependency {
 // - Register(loggerService{prefix: "dev"})
 // - Register(func(ctx iris.Context) User {...})
 // - Register(func(User) OtherResponse {...})
-func (c *Container) Register(dependency interface{}) *Dependency {
+func (c *Container) Register(dependency any) *Dependency {
 	d := newDependency(dependency, c.DisablePayloadAutoBinding, c.EnableStructDependents, c.DependencyMatcher, c.Dependencies...)
 	if d.DestType == nil {
 		// prepend the dynamic dependency so it will be tried at the end
@@ -324,7 +324,7 @@ func (c *Container) UseResultHandler(handler func(next ResultHandler) ResultHand
 // custom structs, Result(View | Response) and anything you can imagine.
 // It returns a standard `iris/context.Handler` which can be used anywhere in an Iris Application,
 // as middleware or as simple route handler or subdomain's handler.
-func Handler(fn interface{}) context.Handler {
+func Handler(fn any) context.Handler {
 	return Default.Handler(fn)
 }
 
@@ -358,20 +358,20 @@ func Handler(fn interface{}) context.Handler {
 //
 // - If <R> is static dependency (e.g. a database or a service) then its result
 // can be used as a static dependency to the next dependencies or to the controller/function itself.
-func (c *Container) Handler(fn interface{}) context.Handler {
+func (c *Container) Handler(fn any) context.Handler {
 	return c.HandlerWithParams(fn, 0)
 }
 
 // HandlerWithParams same as `Handler` but it can receive a total path parameters counts
 // to resolve coblex path parameters input dependencies.
-func (c *Container) HandlerWithParams(fn interface{}, paramsCount int) context.Handler {
+func (c *Container) HandlerWithParams(fn any, paramsCount int) context.Handler {
 	return makeHandler(fn, c, paramsCount)
 }
 
 // Struct accepts a pointer to a struct value and returns a structure which
 // contains bindings for the struct's fields and a method to
 // extract a Handler from this struct's method.
-func (c *Container) Struct(ptrValue interface{}, partyParamsCount int) *Struct {
+func (c *Container) Struct(ptrValue any, partyParamsCount int) *Struct {
 	return makeStruct(ptrValue, c, partyParamsCount)
 }
 
@@ -394,7 +394,7 @@ var ErrMissingDependency = errors.New("missing dependency")
 // [...]
 // var db Database
 // err := c.Inject(&db)
-func (c *Container) Inject(toPtr interface{}) error {
+func (c *Container) Inject(toPtr any) error {
 	val := reflect.Indirect(valueOf(toPtr))
 	typ := val.Type()
 

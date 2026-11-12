@@ -24,7 +24,7 @@ type (
 	// Contains its source location, the dependency handler (provider) itself and information
 	// such as static for static struct values or explicit to bind a value to its exact DestType and not if just assignable to it (interfaces).
 	Dependency struct {
-		OriginalValue interface{} // Used for debugging and for logging only.
+		OriginalValue any // Used for debugging and for logging only.
 		Source        Source
 		Handle        DependencyHandler
 		// It's the exact type of return to bind, if declared to return <T>, otherwise nil.
@@ -75,12 +75,12 @@ func (d *Dependency) String() string {
 // NewDependency converts a function or a function which accepts other dependencies or static struct value to a *Dependency.
 //
 // See `Container.Handler` for more.
-func NewDependency(dependency interface{}, funcDependencies ...*Dependency) *Dependency { // used only on tests.
+func NewDependency(dependency any, funcDependencies ...*Dependency) *Dependency { // used only on tests.
 	return newDependency(dependency, false, false, nil, funcDependencies...)
 }
 
 func newDependency(
-	dependency interface{},
+	dependency any,
 	disablePayloadAutoBinding bool,
 	enableStructDependents bool,
 	matchDependency DependencyMatcher,

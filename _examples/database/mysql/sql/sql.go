@@ -7,9 +7,9 @@ import (
 
 // Database is an interface which a database(sql) should implement.
 type Database interface {
-	Get(ctx context.Context, dest interface{}, q string, args ...interface{}) error
-	Select(ctx context.Context, dest interface{}, q string, args ...interface{}) error
-	Exec(ctx context.Context, q string, args ...interface{}) (sql.Result, error)
+	Get(ctx context.Context, dest any, q string, args ...any) error
+	Select(ctx context.Context, dest any, q string, args ...any) error
+	Exec(ctx context.Context, q string, args ...any) (sql.Result, error)
 }
 
 // Record should represent a database record.

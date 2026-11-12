@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -55,7 +56,7 @@ type (
 	//
 	// See 'context#UnmarshalBody` for more.
 	//
-	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/v12/_examples/request-body/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc = context.UnmarshalerFunc
 	// DecodeFunc is a generic type of decoder function.
 	// When the returned error is not nil the decode operation
@@ -63,7 +64,7 @@ type (
 	// otherwise it continues to read the next available object.
 	// Look the `Context.ReadJSONStream` method.
 	//
-	// Example: https://github.com/kataras/iris/blob/main/_examples/request-body/read-json-stream.
+	// Example: https://github.com/kataras/iris/blob/v12/_examples/request-body/read-json-stream.
 	DecodeFunc = context.DecodeFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.
@@ -86,7 +87,7 @@ type (
 	// See `NewConditionalHandler` for more.
 	// An alias for the `context/Filter`.
 	Filter = context.Filter
-	// A Map is an alias of map[string]interface{}.
+	// A Map is an alias of map[string]any.
 	Map = context.Map
 	// User is a generic view of an authorized client.
 	// See `Context.User` and `SetUser` methods for more.
@@ -98,7 +99,7 @@ type (
 	// Pass a Problem value to `context.Problem` to
 	// write an "application/problem+json" response.
 	//
-	// Read more at: https://github.com/kataras/iris/blob/main/_examples/routing/http-errors.
+	// Read more at: https://github.com/kataras/iris/blob/v12/_examples/routing/http-errors.
 	//
 	// It is an alias of the `context#Problem` type.
 	Problem = context.Problem
@@ -179,7 +180,7 @@ type (
 	// })
 	//
 	// See `core/router/Party#SetExecutionRules` for more.
-	// Example: https://github.com/kataras/iris/tree/main/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/kataras/iris/tree/v12/_examples/mvc/middleware/without-ctx-next
 	ExecutionRules = router.ExecutionRules
 	// ExecutionOptions is a set of default behaviors that can be changed in order to customize the execution flow of the routes' handlers with ease.
 	//
@@ -309,7 +310,7 @@ func Component(component context.Component) Handler {
 // All view engines have a `RootDir` method for that reason too
 // but alternatively, you can wrap the given file system with this `PrefixDir`.
 //
-// Example: https://github.com/kataras/iris/blob/main/_examples/file-server/single-page-application/embedded-single-page-application/main.go
+// Example: https://github.com/kataras/iris/blob/v12/_examples/file-server/single-page-application/embedded-single-page-application/main.go
 func PrefixDir(prefix string, fs http.FileSystem) http.FileSystem {
 	return &prefixedDir{prefix, fs}
 }
@@ -325,15 +326,10 @@ type prefixedDir struct {
 }
 
 func (p *prefixedDir) Open(name string) (http.File, error) {
-	destPath, _, ok, err := context.SafeFilename(p.prefix, name)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, http.ErrMissingFile // unsafe.
-	}
+	// Don't do this: as this is responsibility of the underline fs.
+	// _, filename, ok, err := context.SafeFilename("", name)
 
-	//	name = path.Join(destPath, filename)
+	destPath := path.Join(p.prefix, name)
 	return p.fs.Open(destPath)
 }
 
@@ -440,7 +436,7 @@ var (
 	// The second optional parameter is any optional settings that the caller can use.
 	//
 	// See `Party#HandleDir` too.
-	// Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/file-server
+	// Examples can be found at: https://github.com/kataras/iris/tree/v12/_examples/file-server
 	// A shortcut for the `router.FileServer`.
 	FileServer = router.FileServer
 	// DirList is the default `DirOptions.DirList` field.
@@ -476,7 +472,7 @@ var (
 	// It should be used after Static methods.
 	// See `iris#Cache304` for an alternative, faster way.
 	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/main/_examples/#caching
+	// Examples can be found at: https://github.com/kataras/iris/tree/v12/_examples/#caching
 	Cache = cache.Handler
 	// NoCache is a middleware which overrides the Cache-Control, Pragma and Expires headers
 	// in order to disable the cache during the browser's back and forward feature.
@@ -618,10 +614,10 @@ var (
 	//
 	// A shortcut for the `context#NewProblem`.
 	NewProblem = context.NewProblem
-	// XMLMap wraps a map[string]interface{} to compatible xml marshaler,
+	// XMLMap wraps a map[string]any to compatible xml marshaler,
 	// in order to be able to render maps as XML on the `Context.XML` method.
 	//
-	// Example: `Context.XML(XMLMap("Root", map[string]interface{}{...})`.
+	// Example: `Context.XML(XMLMap("Root", map[string]any{...})`.
 	//
 	// A shortcut for the `context#XMLMap`.
 	XMLMap = context.XMLMap
@@ -805,7 +801,7 @@ type GlobalPatches struct {
 //
 // See its `Context` method.
 //
-// Example: https://github.com/kataras/iris/blob/main/_examples/response-writer/json-third-party/main.go
+// Example: https://github.com/kataras/iris/blob/v12/_examples/response-writer/json-third-party/main.go
 func Patches() *GlobalPatches { // singleton.
 	return globalPatches
 }
@@ -839,13 +835,13 @@ func (cp *ContextPatches) SetCookieKVExpiration(patch time.Duration) {
 
 // ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
 // It affects the Application's API Builder's `HandleDir` method.
-func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir interface{}) http.FileSystem) {
+func (cp *ContextPatches) ResolveHTTPFS(patchFunc func(fsOrDir any) http.FileSystem) {
 	context.ResolveHTTPFS = patchFunc
 }
 
 // ResolveHTTPFS modifies the default way to resolve a filesystem by any type of value.
 // It affects the view engine's filesystem resolver.
-func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) fs.FS) {
+func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir any) fs.FS) {
 	context.ResolveFS = patchFunc
 }
 
@@ -853,17 +849,17 @@ func (cp *ContextPatches) ResolveFS(patchFunc func(fsOrDir interface{}) fs.FS) {
 type ContextWriterPatches struct{}
 
 // JSON sets a custom function which runs and overrides the default behavior of the `Context#JSON` method.
-func (cwp *ContextWriterPatches) JSON(patchFunc func(ctx Context, v interface{}, options *JSON) error) {
+func (cwp *ContextWriterPatches) JSON(patchFunc func(ctx Context, v any, options *JSON) error) {
 	context.WriteJSON = patchFunc
 }
 
 // JSONP sets a custom function which runs and overrides the default behavior of the `Context#JSONP` method.
-func (cwp *ContextWriterPatches) JSONP(patchFunc func(ctx Context, v interface{}, options *JSONP) error) {
+func (cwp *ContextWriterPatches) JSONP(patchFunc func(ctx Context, v any, options *JSONP) error) {
 	context.WriteJSONP = patchFunc
 }
 
 // XML sets a custom function which runs and overrides the default behavior of the `Context#XML` method.
-func (cwp *ContextWriterPatches) XML(patchFunc func(ctx Context, v interface{}, options *XML) error) {
+func (cwp *ContextWriterPatches) XML(patchFunc func(ctx Context, v any, options *XML) error) {
 	context.WriteXML = patchFunc
 }
 
@@ -873,7 +869,7 @@ func (cwp *ContextWriterPatches) Markdown(patchFunc func(ctx Context, v []byte, 
 }
 
 // YAML sets a custom function which runs and overrides the default behavior of the `Context#YAML` method.
-func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v interface{}, indentSpace int) error) {
+func (cwp *ContextWriterPatches) YAML(patchFunc func(ctx Context, v any, indentSpace int) error) {
 	context.WriteYAML = patchFunc
 }
 

@@ -2,6 +2,7 @@ package example
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/sessions"
@@ -26,8 +27,8 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 		}
 
 		ctx.HTML("<ul>")
-		session.Visit(func(key string, value interface{}) {
-			ctx.HTML("<li> %s = %v </li>", key, value)
+		session.Visit(func(key string, value any) {
+			ctx.HTML(fmt.Sprintf("<li> %s = %v </li>", key, value))
 		})
 
 		ctx.HTML("</ul>")
@@ -95,7 +96,7 @@ func NewApp(sess *sessions.Sessions) *iris.Application {
 		session := sessions.Get(ctx)
 
 		key := ctx.Params().Get("key")
-		var value interface{}
+		var value any
 
 		switch ctx.Params().Get("type") {
 		case "int":
