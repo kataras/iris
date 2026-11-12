@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Duration is a JSON representation of the standard Duration type, until Go version 2 supports it under the hoods.
+// Duration is a JSON representation of the standard Duration type, until Go version 2 supports it under the hood.
 type Duration time.Duration
 
 // ParseDuration parses a string to a duration.

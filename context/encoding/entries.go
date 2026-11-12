@@ -379,8 +379,16 @@ func (e Entries[V]) MergeQuery(extra url.Values) url.Values {
 		return values
 	}
 
+	if values == nil {
+		// An empty store: ToQuery has no map to give.
+		values = make(url.Values, len(extra))
+	}
+
 	for key, extraValues := range extra {
-		values[key] = append(values[key], extraValues...)
+		// Clip first, so that append copies. A []string the store still holds
+		// may have spare capacity, and writing into it would leak this merge
+		// into the next one.
+		values[key] = append(slices.Clip(values[key]), extraValues...)
 	}
 
 	return values

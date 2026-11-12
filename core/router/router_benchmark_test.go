@@ -74,5 +74,5 @@ func BenchmarkRouterBuilder(b *testing.B) {
 
 	b.StopTimer()
 
-	b.Logf("%d routes have just builded\n", len(api.Routes().List()))
+	b.Logf("%d routes have just been built\n", len(api.Routes().List()))
 }

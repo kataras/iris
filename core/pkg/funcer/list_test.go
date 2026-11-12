@@ -198,7 +198,7 @@ func TestList_SubscribePrependBefore(t *testing.T) {
 }
 
 // TestList_SubscribeAppendAfter ensures that subscribing and appending after a named func works correctly.
-func TestList_SubscribeAppendAFter(t *testing.T) {
+func TestList_SubscribeAppendAfter(t *testing.T) {
 	list := NewList(pc, nil)
 	list.SubscribeAppendAfter(funcA, names.GetName(funcB))
 	list.Append(funcB)

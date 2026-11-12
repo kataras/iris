@@ -418,7 +418,7 @@ func (s *Server) startHTTPServer(handler http.Handler, listener net.Listener) er
 	httpServer := &http.Server{
 		Addr:     s.options.Addr, // it's not required here as we use its Serve method using a predefined listener.
 		Handler:  handler,
-		ErrorLog: logger, // if nil, then it uses the standard log package's logger under the hoods. Ignore http.ErrServerClosed.
+		ErrorLog: logger, // if nil, then it uses the standard log package's logger under the hood. Ignore http.ErrServerClosed.
 		BaseContext: func(net.Listener) context.Context {
 			return withShutdownSignal(context.Background(), shutdownCh)
 		},

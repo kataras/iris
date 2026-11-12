@@ -75,7 +75,8 @@ func (e *Entry[V]) MustString() string {
 }
 
 // StringSlice returns the value as []string.
-// It returns nil if the value is not a []string.
+// A string value is split by the entry's separator.
+// It returns nil for any other type.
 func (e *Entry[V]) StringSlice() []string {
 	if value, ok := e.GetStringSlice(); ok {
 		return value
@@ -352,7 +353,8 @@ func (e *Entry[V]) MustFloat64() float64 {
 }
 
 // Bool returns the value as bool.
-// It returns false if the value is not a bool.
+// A string value is parsed by strconv.ParseBool.
+// It returns false for any other type and for a string that does not parse.
 func (e *Entry[V]) Bool() bool {
 	if value, ok := e.GetBool(); ok {
 		return value
@@ -534,7 +536,8 @@ var (
 )
 
 // Weekday returns the value as time.Weekday.
-// It returns -1 if the value is not a time.Weekday.
+// A string value is parsed by ParseWeekday.
+// It returns -1 for any other type and for a string that does not parse.
 func (e *Entry[V]) Weekday() time.Weekday {
 	if value, ok := e.GetWeekday(); ok {
 		return value
@@ -754,23 +757,38 @@ func (e *Entry[V]) TrimFileInt() int {
 	return v
 }
 
-func (e *Entry[V]) getRightTrimmed(cutset string) string {
-	return strings.TrimRight(strings.ToLower(e.String()), cutset)
+// trimSuffixFold returns the value without the given suffix. The suffix is
+// matched without regard to letter case, and the rest of the value comes back
+// as it was stored.
+//
+// It is a suffix and not a cutset: strings.TrimRight(value, ".html") strips
+// every trailing '.', 'h', 't', 'm' and 'l', which turns "math.html" into "ma".
+func (e *Entry[V]) trimSuffixFold(suffix string) string {
+	value := e.String()
+
+	if n := len(value) - len(suffix); n >= 0 && strings.EqualFold(value[n:], suffix) {
+		return value[:n]
+	}
+
+	return value
 }
 
 // TrimHTML returns a value without the last ".html" part.
+// The extension is matched in any letter case.
 func (e *Entry[V]) TrimHTML() string {
-	return e.getRightTrimmed(".html")
+	return e.trimSuffixFold(".html")
 }
 
 // TrimJSON returns a value without the last ".json" part.
+// The extension is matched in any letter case.
 func (e *Entry[V]) TrimJSON() string {
-	return e.getRightTrimmed(".json")
+	return e.trimSuffixFold(".json")
 }
 
 // TrimXML returns a value without the last ".xml" part.
+// The extension is matched in any letter case.
 func (e *Entry[V]) TrimXML() string {
-	return e.getRightTrimmed(".xml")
+	return e.trimSuffixFold(".xml")
 }
 
 // IntUnslashed returns the value as int but without the first slash if found.
@@ -815,6 +833,11 @@ type ErrEntryNotFound struct {
 }
 
 func (e *ErrEntryNotFound) Error() string {
+	if e.Type == nil {
+		// A probe built by hand, as the As documentation shows, carries no Type.
+		return fmt.Sprintf("not found: %s as %s", e.Key, e.Kind.String())
+	}
+
 	return fmt.Sprintf("not found: %s as %s (%s)", e.Key, e.Kind.String(), e.Type.String())
 }
 

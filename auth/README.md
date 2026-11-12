@@ -70,7 +70,7 @@ Keys:
       -----BEGIN PUBLIC KEY-----
       MCowBQYDK2VwAyEAsKKAr+kDtfAqwG7cZdoEAfh9jHt9W8qi9ur5AA1KQAQ=
       -----END PUBLIC KEY-----
-    EncryptionKey: 14be763a0cd7b7b98d48c3e808bfaf84
+    EncryptionKey: 0123456789abcdef0123456789abcdef
 ```
 
 You can also use the `MustGenerateConfiguration` function to generate a configuration file with random keys and `ToYAML` method to convert it to YAML format, this is useful for fast start when you don't know how to generate the necessary keys.

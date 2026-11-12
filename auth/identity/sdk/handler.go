@@ -82,7 +82,7 @@ func NewAuth[T any](s *SDK[T], authConfig auth.Configuration) *auth.Auth[T] {
 	}
 
 	// Check if needs to use the default transformer to convert entity.User to custom flat T
-	// inside the FlatTransformer itself. This default transformer can be overriden
+	// inside the FlatTransformer itself. This default transformer can be overridden
 	// by custom call of SetTransformer/SetTransformerFunc after this function call.
 	newAuthInstance.SetTransformer(entity.FlatTransformer[T]())
 	return newAuthInstance

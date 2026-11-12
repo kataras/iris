@@ -600,7 +600,7 @@ func (ctx *Context) getQuery() url.Values {
 	// if we ever want to handle this:
 	//
 	// ErrURLQuerySemicolon is logged by the standard net/http server when
-	// the request contains a semicolon (;) wihch, after go1.17 it's not used as a key-value separator character.
+	// the request contains a semicolon (;) which, after go1.17 it's not used as a key-value separator character.
 	//
 	// This is automatically ignored by the Server's logger.
 	// var ErrURLQuerySemicolon = errors.New("http: URL query contains semicolon, which is no longer a supported separator; parts of the query may be stripped when parsed; see golang.org/issue/25192")
@@ -1373,7 +1373,7 @@ func (ctx *Context) SaveFormFile(fh *multipart.FileHeader, dest string) (int64, 
 	return io.Copy(out, src)
 }
 
-// Form contains the parsed form data, including both the URL
+// form contains the parsed form data, including both the URL
 // field's query parameters and the POST or PUT form data.
 func (ctx *Context) form() (form map[string][]string, found bool) {
 	return GetForm(ctx.request, ctx.OptionsReadOnly().PostMaxMemory)

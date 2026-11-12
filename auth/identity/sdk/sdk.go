@@ -148,7 +148,7 @@ func New[T any](opts Options) (*SDK[T], error) {
 	return sdk, nil
 }
 
-// HasJSONTagField checks if the type T has a field with the given JSON tag.
+// hasJSONTagField checks if the type T has a field with the given JSON tag.
 func hasJSONTagField[T any](tag string) bool {
 	var t T
 	typ := reflect.TypeOf(t)

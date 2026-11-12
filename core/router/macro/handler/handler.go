@@ -150,7 +150,7 @@ func MakeFilter(tmpl macro.Template) context.Filter {
 			// app.Get("/{id:int}", idHandler)
 			//
 			// before that user didn't see anything
-			// but under the hoods the set-ed value was a type of string instead of type of int,
+			// but under the hood the set-ed value was a type of string instead of type of int,
 			// because store contained both "fullname" (which set-ed by the router itself on its string representation)
 			// and "id" by the param evaluator (see core/router/handler.go and bindMultiParamTypesHandler->MakeFilter)
 			// and the MVC get by index (e.g. 0) therefore

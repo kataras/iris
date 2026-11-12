@@ -35,7 +35,7 @@ func TestNew(t *testing.T) {
 	opts := Options{
 		BaseURL:               baseURL,
 		Token:                 "eyJraWQiOiJJUklTX0FVVEhfUkVGUkVTSCIsImFsZyI6IkVkRFNBIn0.Vv5tHtAp2uD9_I42wmLnqcQ4ckVHKMmi9PucK2R9eXbh8DoIxBZcGVvfCqjPbuPZYe2iZeYzqg5gsdkYvsPDCTogfPMGwveUOz-Y9J15N4kn0iJWAA1JPclcAf-zKWPKAPTGeUcnv3tYhx_SC4HQItvNUHwjROV87e76JWdrKPt4QtyOoxomZXgRhYnoqjRfHI0orx01z0NqASgsp5_iteAR2A6MdcEzQZQrOG8_2kD4y16qr4y8iOYC7PVk4l-8RHMOhteb7iCc9ojMyE1SSd6Gkilo5v446HM9yX0p0IJn3H3R02Wp3MIREEzf_rci7qCf10uUd-Ix_xumJ2bBhNcCt7kPoIQlut9m45_C8bVe_1Z89T4s51uPVuVJ1anfh15lU0NpbAD6Yk213ZldIYCGEL5o_961kow3V7byRihYYCdbimencO7Bbqz_K1umVTUSswG8TkY1AQaPn67uH5EM5s-EMFytrGyMvaeoWxf4ki2DdiHqmw_Fx-UyPosBfyFEIjZiMurAYcmkaV6RfGLujzWNYNj53yU0JoyQYh5k_WksgW622zINLhL0IaTwf_u1pF94nBD8hCmFg_hVD40uO_5SgdcZKf_sJTF9WxGUdufSNdMMTMrhYJiDxQwti8dT0M5rVsTXKYdIwkO9illsfCX7zZcslEp5csj4CxMQtlI.S6CJ8u7hIGH9IC0ptrKQA4OguW2Z-HDlBcBDTUWxhGtHioYwb7NnvyUGODtc8HMA8OZwobZ5jG3q3TgiRdJCCA",
-		EncryptionKey:         "14be763a0cd7b7b98d48c3e808bfaf84",
+		EncryptionKey:         "0123456789abcdef0123456789abcdef",
 		PasswordStrengthLevel: validation.PasswordMedium,
 	}
 	sdk, err := New[MyUser](opts)

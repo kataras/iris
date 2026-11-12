@@ -55,7 +55,7 @@ type Application struct {
 	logger *golog.Logger
 
 	// used for build
-	builded     bool
+	built       bool
 	defaultMode bool
 	// OnBuild is a single function which
 	// is fired on the first `Build` method call.
@@ -115,7 +115,7 @@ func New(configurators ...Configurator) *Application {
 // created and keeps that copy, so call EditOptions before registering any
 // child Router if the change is an Options.Context one.
 func (app *Application) EditOptions(fn func(*Options)) {
-	if app.builded {
+	if app.built {
 		app.logger.Warn("EditOptions: application is already built, changes to the options may not be applied")
 	}
 	fn(app.options)
@@ -389,7 +389,7 @@ func (app *Application) registerOnBuilt(fn func() error) {
 //	w := httptest.NewRecorder()
 //	app.Handler.ServeHTTP(w, req)
 func (app *Application) Build() error {
-	if app.builded {
+	if app.built {
 		return nil
 	}
 
@@ -399,7 +399,7 @@ func (app *Application) Build() error {
 		}
 	}
 
-	app.builded = true // even if fails.
+	app.built = true // even if fails.
 
 	// check if a prior app.Logger().SetLevel called and if not
 	// then set the defined configuration's log level.

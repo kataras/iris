@@ -159,7 +159,7 @@ func TestHandlerByRequestAndParamDecoderFunc(t *testing.T) {
 	}
 
 	// app.Post("/user", handler.HandlerBy(createUser, handler.WithStatusCode(iris.StatusCreated), handler.WithParamDecoderFunc(paramDecoder), handler.WithRequestDecoderFunc(requestDecoder)))
-	app.Post("/user2", handler.HandlerBy(createUser, handler.WithStatusCode(iris.StatusCreated), handler.WithParamDecoderFunc(paramDecoder))) // set only param decoder, keep the default request decoder, which reads from JSON too, smae effect.
+	app.Post("/user2", handler.HandlerBy(createUser, handler.WithStatusCode(iris.StatusCreated), handler.WithParamDecoderFunc(paramDecoder))) // set only param decoder, keep the default request decoder, which reads from JSON too, same effect.
 
 	e := httptest.New(t, app)
 	// e.POST("/user").WithJSON(iris.Map{"firstname": "John", "lastname": "Doe"}).Expect().Status(httptest.StatusCreated).JSON().Object().

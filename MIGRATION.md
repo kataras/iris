@@ -780,7 +780,7 @@ err := ctx.Logout()
 
 ## Corrected v12 behavior
 
-Five v12 bugs are fixed in v14. None needs a code change, but each changes
+Six v12 bugs are fixed in v14. None needs a code change, but each changes
 what your program observes at runtime.
 
 ### ReadBody fills *string and *[]byte targets and returns immediately
@@ -840,6 +840,18 @@ is given.
 
 This matters because a route's registered `Handlers` slice is shared by every
 request for that route.
+
+### GetTrimHTML, GetTrimJSON and GetTrimXML remove the extension only
+
+`ctx.Params().GetTrimHTML` and its JSON and XML siblings are documented as
+returning the value "without the last .html part". They passed the extension
+to `strings.TrimRight`, which takes a set of characters and not a suffix, over
+a lowercased copy of the value. Every trailing `.`, `h`, `t`, `m` and `l` was
+stripped, so `math.html` came back as `ma` and `Index.html` as `index`.
+
+They now remove the extension and nothing else. It is matched in any letter
+case and the rest of the value keeps the case it arrived in: `Index.HTML`
+gives `Index`. The result is no longer lowercased as a side effect.
 
 ## Breaking default changes
 

@@ -7,7 +7,7 @@ import (
 	"github.com/kataras/iris/v14/auth/oauth2"
 )
 
-// ExternalPolicy represents a policy evaluated by an external policy engine.
+// externalPolicy represents a policy evaluated by an external policy engine.
 type externalPolicy struct {
 	*Client
 

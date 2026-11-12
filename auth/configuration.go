@@ -260,7 +260,7 @@ Keys:
       -----END PUBLIC KEY-----
     # Example of setting a binary form of the encryption key for refresh tokens,
     # it could be a "string" as well.
-    EncryptionKey: 14be763a0cd7b7b98d48c3e808bfaf84
+    EncryptionKey: 0123456789abcdef0123456789abcdef
 */
 func LoadConfiguration(filename string) (c Configuration, err error) {
 	err = c.BindFile(filename)

@@ -80,7 +80,7 @@ func handler[T any](database Database[T], cookieName string, writeAccess bool) c
 			}
 
 			defer func() {
-				if !session.commitCalled && rr.StatusCode() < 400 { // if any other error or commited already, then don't try to persist the session.
+				if !session.commitCalled && rr.StatusCode() < 400 { // if any other error or committed already, then don't try to persist the session.
 					if err := session.Commit(ctx); err != nil {
 						rr.Body.Reset() // reset the response body, so we are sure that the main handler doesn't write any contents on commit error.
 						// Private, like the Get failure above.

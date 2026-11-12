@@ -111,7 +111,7 @@ Keys:
       -----BEGIN PUBLIC KEY-----
       MCowBQYDK2VwAyEAsKKAr+kDtfAqwG7cZdoEAfh9jHt9W8qi9ur5AA1KQAQ=
       -----END PUBLIC KEY-----
-    EncryptionKey: 14be763a0cd7b7b98d48c3e808bfaf84
+    EncryptionKey: 0123456789abcdef0123456789abcdef
 ```
 
 These keys and cookies allow Iris to sign and store tokens securely.

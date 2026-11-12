@@ -231,6 +231,21 @@ if err := view.Render(ctx, "index", "main", data); err != nil {
 
 `view.WithTemplate` needs no such branch. It stops the request and keeps the error private by itself.
 
+### Load Errors
+
+The framework does not load templates for you, so a broken template cannot stop `app.Listen` on its own. `Load` returns the error to your code and you choose what it means. The examples here panic, which is right when a release with a broken page must not start. To keep the rest of the application serving, log it instead:
+
+```go
+templates := blocks.New("./views")
+if err := templates.Load(); err != nil {
+    app.Logger().Errorf("views: %v", err)
+}
+
+app.UseRouter(view.Handler(templates))
+```
+
+Every other route answers as usual. A route that renders gets the error back from `view.Render` and answers 500 through the branch above. Call `templates.Load()` again once the file is fixed and the same running application renders it, with no restart.
+
 ## Example Application
 
 Below is a simple example demonstrating how to set up the view middleware with routes and templates:

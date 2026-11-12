@@ -532,7 +532,7 @@ func (m ErrorCodeMap) mapErrorTypes(e ErrorCodeName, transformToSpecificTarget b
 	return m
 }
 
-// clopy of internal errors "as".
+// copy of internal errors "as".
 func as(err error, target any, targetElemVal reflect.Value, targetType reflect.Type) bool {
 	for {
 		if reflect.TypeOf(err).AssignableTo(targetType) {

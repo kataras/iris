@@ -409,7 +409,7 @@ func (l *List[T]) subscribe(onFuncName string, cb eventCallback) {
 	l.listeners[onFuncName] = append(l.listeners[onFuncName], cb)
 }
 
-// Publish triggers the event and calls the subscribed handlers.
+// publish triggers the event and calls the subscribed handlers.
 func (l *List[T]) publish(op eventOp, funcName string) {
 	if funcName == "" {
 		return // Skip publishing if the function name is empty.

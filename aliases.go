@@ -455,7 +455,7 @@ const (
 
 // HTTP status codes as registered with IANA.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml.
-// Raw Copy from the future(tip) net/http std package in order to recude the import path of "net/http" for the users.
+// Raw Copy from the future(tip) net/http std package in order to reduce the import path of "net/http" for the users.
 const (
 	StatusContinue           = http.StatusContinue           // RFC 7231, 6.2.1
 	StatusSwitchingProtocols = http.StatusSwitchingProtocols // RFC 7231, 6.2.2
