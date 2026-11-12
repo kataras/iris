@@ -6,7 +6,7 @@
 
 # <a href="https://iris-go.com"><img src="https://iris-go.com/iris-terminal-55.png" width="50px" height="50px" style="margin-bottom: -5px" ></a> Iris Web Framework <a href="README.md">English</a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/static/images/flag-greece.svg" /></a> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-japan.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/static/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/static/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/static/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/static/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/static/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/static/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/static/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-brazil.svg" /></a> <a href="README_VN.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-vietnam.svg" /></a> <a href="README_AR.md">العربية</a>
 
-[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=v12&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/v12/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
 
 ⚡ Iris 是基于 Go 编写的一个快速、简单但功能齐全且非常高效的 Web 框架。
 
@@ -567,7 +567,7 @@ import 路径变为 `github.com/kataras/iris/v14`，因此 v12 和 v14 可以并
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@latest # 或 @v12.2.11
+$ go get github.com/kataras/iris/v12@latest # 或 @v12.2.12
 ```
 
 <details><summary>在已有项目中安装</summary>
@@ -590,7 +590,7 @@ $ go run .
 
 Iris 有完整且详尽的 **[使用文档](https://www.iris-go.com/docs)**，让您可以轻松地上手此框架。
 
-要了解更详细的技术文档，请访问我们的 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)。如果想要寻找可运行的示例代码，可以到仓库的 [./_examples](_examples) 子目录下获取。
+要了解更详细的技术文档，请访问我们的 [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.12)。如果想要寻找可运行的示例代码，可以到仓库的 [./_examples](_examples) 子目录下获取。
 
 ### 用 Plexon AI 开发
 

@@ -10,7 +10,7 @@ Source code and other details for the project are available at GitHub:
 
 # Current Version
 
-12.2.11
+12.2.12
 
 # Installation
 
@@ -24,11 +24,11 @@ Wiki:
 
 Examples:
 
-	https://github.com/kataras/iris/tree/main/_examples
+	https://github.com/kataras/iris/tree/v12/_examples
 
 Middleware:
 
-	https://github.com/kataras/iris/tree/main/middleware
+	https://github.com/kataras/iris/tree/v12/middleware
 	https://github.com/iris-contrib/middleware
 
 Home Page:

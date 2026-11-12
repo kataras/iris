@@ -39,7 +39,7 @@ import (
 )
 
 // Version is the current version of the Iris Web Framework.
-const Version = "12.2.11"
+const Version = "12.2.12"
 
 // Byte unit helpers.
 const (
@@ -250,7 +250,7 @@ func (app *Application) WWW() router.Party {
 // If you need more information about this implementation then you have to navigate through
 // the `core/router#NewSubdomainRedirectWrapper` function instead.
 //
-// Example: https://github.com/kataras/iris/tree/main/_examples/routing/subdomains/redirect
+// Example: https://github.com/kataras/iris/tree/v12/_examples/routing/subdomains/redirect
 func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 	sd := router.NewSubdomainRedirectWrapper(app.ConfigurationReadOnly().GetVHost, from.GetRelPath(), to.GetRelPath())
 	app.Router.AddRouterWrapper(sd)
@@ -820,7 +820,7 @@ type Runner func(*Application) error
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/main/_examples/http-server/notify-on-shutdown/main.go
+// https://github.com/kataras/iris/blob/v12/_examples/http-server/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -842,7 +842,7 @@ func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/main/_examples/http-server/notify-on-shutdown/main.go
+// https://github.com/kataras/iris/blob/v12/_examples/http-server/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -866,7 +866,7 @@ func Server(srv *http.Server, hostConfigs ...host.Configurator) Runner {
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/main/_examples/http-server/notify-on-shutdown/main.go
+// https://github.com/kataras/iris/blob/v12/_examples/http-server/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -927,7 +927,7 @@ var (
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/main/_examples/http-server/notify-on-shutdown/main.go
+// https://github.com/kataras/iris/blob/v12/_examples/http-server/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -966,7 +966,7 @@ func TLS(addr string, certFileOrContents, keyFileOrContents string, hostConfigs 
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/main/_examples/http-server/notify-on-shutdown/main.go
+// https://github.com/kataras/iris/blob/v12/_examples/http-server/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // Usage:

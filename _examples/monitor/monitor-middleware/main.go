@@ -50,7 +50,7 @@ func main() {
 		- os_total_ram
 		- os_load_avg
 		- os_conns
-	Check https://github.com/iris-contrib/middleware/tree/master/expmetric
+	Check https://github.com/iris-contrib/middleware/tree/v12/expmetric
 	which can be integrated with datadog or other platforms.
 	*/
 

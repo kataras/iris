@@ -17,7 +17,7 @@ Gerasimos (Makis) Maropoulos
 
 </div>
 
-[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=v12&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/v12/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
 
 <div dir="rtl">
 
@@ -602,7 +602,7 @@ app := iris.New(iris.Options{Name: "myapp", LogLevel: "debug"})
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@latest # أو @v12.2.11
+$ go get github.com/kataras/iris/v12@latest # أو @v12.2.12
 ```
 
 <details><summary>التثبيت على مشروع قائم</summary>
@@ -625,7 +625,7 @@ $ go run .
 
 يحتوي Iris على **[وثائق](https://www.iris-go.com/docs)** شاملة ومفصّلة تسهّل عليك البدء باستخدام الإطار.
 
-للاطلاع على توثيق تقني أكثر تفصيلًا، يمكنك زيارة [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11) الخاص بنا. وللاطلاع على أمثلة قابلة للتنفيذ، يمكنك دائمًا زيارة المجلد الفرعي [./_examples](_examples) في المستودع.
+للاطلاع على توثيق تقني أكثر تفصيلًا، يمكنك زيارة [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.12) الخاص بنا. وللاطلاع على أمثلة قابلة للتنفيذ، يمكنك دائمًا زيارة المجلد الفرعي [./_examples](_examples) في المستودع.
 
 ### التطوير مع Plexon AI
 

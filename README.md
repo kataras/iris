@@ -6,7 +6,7 @@
 
 # <a href="https://iris-go.com"><img src="https://iris-go.com/iris-terminal-55.png" width="50px" height="50px" style="margin-bottom: -5px" ></a> Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/static/images/flag-greece.svg" /></a> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-japan.svg" /></a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/static/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/static/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/static/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/static/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/static/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/static/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/static/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-brazil.svg" /></a> <a href="README_VN.md"><img width="20px" height="20px" src="https://iris-go.com/static/images/flag-vietnam.svg" /></a> <a href="README_AR.md">العربية</a>
 
-[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/main/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=v12&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![view examples](https://img.shields.io/badge/examples%20-285-a83adf.svg?style=for-the-badge&logo=go)](https://github.com/kataras/iris/tree/v12/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) <!--[![FOSSA Status](https://img.shields.io/badge/LICENSE%20SCAN-PASSING❤️-CD2956?style=for-the-badge&logo=fossa)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)--> [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate) <!--[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)--><!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.12)--> <!-- [![release](https://img.shields.io/badge/release%20-v12.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) -->
 
 ⚡ Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
@@ -77,21 +77,21 @@ func updateUser(ctx iris.Context) {
 }
 ```
 
-> Read the [routing examples](https://github.com/kataras/iris/blob/main/_examples/routing) for more!
+> Read the [routing examples](https://github.com/kataras/iris/blob/v12/_examples/routing) for more!
 
 </details>
 
 <details><summary>Handler with custom input and output arguments</summary>
 
-[![https://github.com/kataras/iris/blob/main/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
+[![https://github.com/kataras/iris/blob/v12/_examples/dependency-injection/basic/main.go](https://user-images.githubusercontent.com/22900943/105253731-b8db6d00-5b88-11eb-90c1-0c92a5581c86.png)](https://twitter.com/iris_framework/status/1234783655408668672)
 
-> Interesting? Read the [examples](https://github.com/kataras/iris/blob/main/_examples/dependency-injection).
+> Interesting? Read the [examples](https://github.com/kataras/iris/blob/v12/_examples/dependency-injection).
 
 </details>
 
 <details><summary>Party Controller (NEW)</summary>
 
-> Head over to the [full running example](https://github.com/kataras/iris/blob/main/_examples/routing/party-controller)!
+> Head over to the [full running example](https://github.com/kataras/iris/blob/v12/_examples/routing/party-controller)!
 
 </details>
 
@@ -709,7 +709,7 @@ The only requirement is the [Go Programming Language](https://go.dev/dl/).
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@latest # or @v12.2.11
+$ go get github.com/kataras/iris/v12@latest # or @v12.2.12
 ```
 
 <details><summary>Install on existing project</summary>
@@ -736,7 +736,7 @@ Iris contains extensive and thorough **[documentation](https://www.iris-go.com/d
 
 <!-- ![](https://media.giphy.com/media/Ur8iqy9FQfmPuyQpgy/giphy.gif) -->
 
-For a more detailed technical documentation you can head over to our [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.11). And for executable code you can always visit the [./_examples](_examples) repository's subdirectory.
+For a more detailed technical documentation you can head over to our [godocs](https://pkg.go.dev/github.com/kataras/iris/v12@v12.2.12). And for executable code you can always visit the [./_examples](_examples) repository's subdirectory.
 
 ### Develop with Plexon AI
 

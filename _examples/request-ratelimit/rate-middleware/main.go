@@ -17,9 +17,9 @@ func main() {
 	//   Read more at: https://en.wikipedia.org/wiki/Token_bucket
 	//
 	// Alternatives:
-	//   * https://github.com/iris-contrib/middleware/blob/master/throttler/_example/main.go
+	//   * https://github.com/iris-contrib/middleware/blob/v12/throttler/_example/main.go
 	//     Read more at: https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
-	//   * https://github.com/iris-contrib/middleware/tree/master/tollboothic/_examples/limit-handler
+	//   * https://github.com/iris-contrib/middleware/tree/v12/tollboothic/_examples/limit-handler
 	app.Listen(":8080")
 }
 
