@@ -11,9 +11,9 @@
 //   - Register(...) adds a whole new parameter type with its own evaluator,
 //     which converts the raw path segment to a Go value or reports failure.
 //
-// Both must happen before any route is registered. The registry is
-// process-wide (it is the same defaults registry for every Iris application
-// in the binary), so register macros from main only.
+// Both must happen before any route is registered. The registry belongs to
+// this application: it starts as a copy of the built-in types, and what is
+// registered on it does not reach another application in the same binary.
 //
 // When the evaluator fails with an error, the 400 body is the rest/errors
 // envelope:

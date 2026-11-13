@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -241,6 +242,8 @@ type AccessLog struct {
 
 	// KeepMultiLineError displays the Context's error as it's.
 	// If set to false then it replaces all line characters with spaces.
+	// The default format and the Template and CSV formatters write one line
+	// per request and replace them whatever this is set to.
 	//
 	// See `PanicLog` to customize recovered-from-panic errors even further.
 	//
@@ -1186,6 +1189,64 @@ func needsSanitizing(s string) bool {
 	}
 
 	return false
+}
+
+// sanitizeLog returns a copy of "log" with every value a client controls passed
+// through sanitizeLogValue. The Template formatter executes its template with
+// it, because a template prints the values as they are. The default format
+// sanitizes as it writes and the JSON formatter escapes by itself.
+//
+// The Log itself is left alone: the Broker's listeners receive it next, with
+// the values as the request sent them.
+func sanitizeLog(log *Log) *Log {
+	clean := *log
+	clean.Method = sanitizeLogValue(log.Method)
+	clean.Path = sanitizeLogValue(log.Path)
+	clean.IP = sanitizeLogValue(log.IP)
+	clean.Query = sanitizeEntries(log.Query)
+	clean.PathParams = sanitizeEntries(log.PathParams)
+	clean.Fields = sanitizeEntries(log.Fields)
+	clean.Request = sanitizeLogValue(log.Request)
+	clean.Response = sanitizeLogValue(log.Response)
+
+	return &clean
+}
+
+// sanitizeEntries returns "entries" when none of its keys and values needs
+// sanitizing, which is the common case, and a sanitized copy otherwise: the
+// entries of a Log are the request's own.
+//
+// A value that is not a string is judged by the text it prints as. When that
+// text needs sanitizing it takes the value's place, which is what the default
+// format writes for it.
+func sanitizeEntries[V any](entries encoding.Entries[V]) encoding.Entries[V] {
+	cloned := false
+
+	for i, entry := range entries {
+		key := sanitizeLogValue(entry.Key)
+
+		text, isString := any(entry.Value).(string)
+		if !isString {
+			text = fmt.Sprint(entry.Value)
+		}
+
+		dirty := needsSanitizing(text)
+		if !dirty && key == entry.Key {
+			continue
+		}
+
+		if !cloned {
+			entries, cloned = slices.Clone(entries), true
+		}
+
+		entries[i].Key = key
+		if dirty {
+			// V is either string or any, both hold a string.
+			entries[i].Value, _ = any(sanitizeLogValue(text)).(V)
+		}
+	}
+
+	return entries
 }
 
 var lineBreaksReplacer = strings.NewReplacer("\n\r", " ", "\n", " ")

@@ -15,6 +15,15 @@ import (
 // and compile your own quicktemplate: https://github.com/valyala/quicktemplate
 //
 // This one uses the standard text/template syntax.
+//
+// The template is executed with a copy of the Log in which the values a client
+// controls (Method, Path, IP, Query, PathParams, Fields, Request and Response)
+// are sanitized as in the default format: a line break or a tab becomes a space
+// and any other control character is dropped, so a request cannot start a new
+// line in the log. A value of Fields or PathParams that is not a string is
+// judged by the text it prints as: it keeps its type when that text is clean,
+// and its sanitized text takes its place otherwise. Log.Ctx is the request's
+// Context itself, and what a template reads through it is printed as it is.
 type Template struct {
 	// Custom template source.
 	// Use this or `Tmpl/TmplName` fields.
@@ -54,6 +63,10 @@ const defaultTmplText = "{{.Now.Format .TimeFormat}}|{{.Latency}}|{{.Code}}|{{.M
 func (f *Template) LogText(log *Log) (string, error) {
 	var err error
 
+	// A template prints the values as they are and a line break in one of
+	// them starts a new line in the log, so it gets a sanitized copy.
+	log = sanitizeLog(log)
+
 	// A template may be executed safely in parallel, although if parallel
 	// executions share a Writer the output may be interleaved.
 	// We solve that using a buffer pool, no locks when template is executing (x2 performance boost).
@@ -85,6 +98,8 @@ func (f *Template) LogText(log *Log) (string, error) {
 // Format prints the logs in text/template format.
 func (f *Template) Format(log *Log) (bool, error) {
 	var err error
+
+	log = sanitizeLog(log) // see the note in the sibling method above.
 
 	// A template may be executed safely in parallel, although if parallel
 	// executions share a Writer the output may be interleaved.

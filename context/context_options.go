@@ -44,10 +44,21 @@ type (
 		BodyMaxMemory int64 `ini:"body_max_memory" json:"body_max_memory,omitzero" yaml:"BodyMaxMemory" toml:"BodyMaxMemory"`
 		// RemoteAddrHeaders specifies the request header names that can be used to determine the client's IP address.
 		// By default, no "X-" headers are considered safe. Use behind proxies or with trusted services like Cloudflare.
+		//
+		// `Context.RemoteAddr()` reads the headers in this order and each of them from right to left.
+		// The first public address is the client's IP (without its port, if it has one), an address within
+		// the `RemoteAddrPrivateSubnets` is skipped, and an entry that is not an address, such as "unknown",
+		// ends the reading of its header with no result. With no result from a header the next one is read,
+		// and with no result from any of them the client's IP is the address of the connection.
 		// Defaults to empty slice.
 		RemoteAddrHeaders []string `ini:"remote_addr_headers" json:"remote_addr_headers,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 		// RemoteAddrHeadersForce overrides the default behavior of `Context.RemoteAddr()` to use the first entry
 		// from a request header as the client's IP, even if it's within the `RemoteAddrPrivateSubnets`.
+		//
+		// It applies when the headers give no public address, and only to a header whose entries are all addresses:
+		// that header gives its first address from the left. A header with an entry that is not an address,
+		// such as "unknown", is read exactly as with this option off: it gives no result, so the next header
+		// is read and at last the address of the connection is used.
 		// Defaults to false.
 		RemoteAddrHeadersForce bool `ini:"remote_addr_headers_force" json:"remote_addr_headers_force,omitzero" yaml:"RemoteAddrHeadersForce" toml:"RemoteAddrHeadersForce"`
 		// RemoteAddrPrivateSubnets lists the IP ranges considered as private subnets.

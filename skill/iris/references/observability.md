@@ -44,7 +44,7 @@ builder.LogRequestsWith(newAccessLog())
 
 A handler that flushes behind that recorder without streaming, such as an `httputil.ReverseProxy` mounted with `iris.FromStd` whose upstream sends no `Content-Length`, keeps its status code and headers: the recorder hands them to the writer underneath before the flush, and the body stays recorded for the log line.
 
-**Watch the defaults.** `accesslog.New()` already sets `BytesReceivedBody`, `BytesSentBody` and `KeepMultiLineError` to true, and `PanicLog` to `accesslog.LogHandler`. Setting those to their existing values is a no-op; `KeepMultiLineError = false` is the actual change (it collapses a multi-line error into one line, which is what you want for line-oriented log shipping).
+**Watch the defaults.** `accesslog.New()` already sets `BytesReceivedBody`, `BytesSentBody` and `KeepMultiLineError` to true, and `PanicLog` to `accesslog.LogHandler`. Setting those to their existing values is a no-op; `KeepMultiLineError = false` is the actual change: it replaces the line breaks of an error text with spaces. That shows in the JSON formatter (the string holds spaces, not `\n` escapes; the record is one line either way), in a custom `Formatter` and in the `Broker` listeners. The default text format, `CSV` and `Template` write one line per record whatever it is set to, a panic trace included.
 
 Constructors: `accesslog.File(path)` (buffered), `accesslog.FileUnbuffered(path)`, `accesslog.New(w io.Writer)`.
 
@@ -56,7 +56,11 @@ The JSON formatter emits `timestamp` (unix ms), `latency`, `code`, `method`, `pa
 Time|Latency|Code|Method|Path|IP|Path Params Query Fields|Bytes Received|Bytes Sent|Request|Response|
 ```
 
-Formatters: `&accesslog.JSON{Indent, HumanTime}`, `&accesslog.CSV{Header}`, `&accesslog.Template{Text}` (fields `.Now`, `.TimeFormat`, `.Code`, `.Method`, `.Path`, `.Latency`). Custom ones implement `Formatter`:
+Formatters: `&accesslog.JSON{Indent, HumanTime}`, `&accesslog.CSV{Header}`, `&accesslog.Template{Text}` (fields `.Now`, `.TimeFormat`, `.Code`, `.Method`, `.Path`, `.Latency`).
+
+`CSV` and `Template` sanitize the values a client controls, as the default text format does: in the method, the path, the IP, the query, the path parameters, the fields and both bodies a line break or a tab becomes a space and any other control character is dropped. A request to a path with `%0A` in it cannot start a second log line, and a CSV record never holds a line break inside a quoted field. In a template, a `Fields` or `PathParams` value that is not a string keeps its type unless the text it prints as holds a control character; its sanitized text takes its place then, and a template that reads into the value (`{{.Value.Name}}`, `{{range .Value}}`) fails for that record. What a template reads through `.Ctx` is printed as it is. The JSON formatter escapes by itself; a custom `Formatter` and the `Broker` listeners get the values as the request sent them.
+
+Custom ones implement `Formatter`:
 
 ```go
 type Formatter interface {

@@ -33,9 +33,9 @@ var _ Database[any] = (*redisDatabase[any])(nil)
 //
 // The client is built by the caller, so either a single node or a cluster works:
 //
-//	client := redis.NewClient(redis.Options{...})
+//	client := redis.NewClient(&redis.Options{...})
 //	// OR
-//	client := redis.NewClusterClient(redis.ClusterOptions{...})
+//	client := redis.NewClusterClient(&redis.ClusterOptions{...})
 func NewRedisDatabase[T any](client RedisClient, opts Options) Database[T] {
 	if client == nil {
 		panic("redis client is required")
@@ -89,6 +89,7 @@ func (db *redisDatabase[T]) load(ctx *context.Context, cookieName string, cookie
 	result, err := db.client.Get(ctx, db.makeKey(cookieName, session.ID)).Result() // assign the error.
 	if err == nil {
 		err = db.Options.Decode(cookieName, result, &session.SessionData) // assign the error.
+		session.decoded = err == nil
 	} else if errors.Is(err, redis.Nil) { // Cookie exists in the browser but not in the database for some reason.
 		// we don't care about this error, it's just a new session and Commit will create it if it's missing,
 		// however for security reasons we assign a new session id here.

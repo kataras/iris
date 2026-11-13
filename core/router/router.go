@@ -35,6 +35,8 @@ type Router interface {
 	GetRelPath() string
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
+	// It belongs to this application: it starts as a copy of macro.Defaults and
+	// what is registered on it does not reach another application.
 	//
 	// Learn more at:  https://github.com/kataras/iris/tree/main/_examples/02-routing/custom-macro
 	Macros() *macro.Macros
@@ -328,7 +330,7 @@ type Router interface {
 	//
 	// Register a named path parameter function:
 	//
-	//	app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+	//	app.Macros().Get("int").RegisterFunc("min", func(argument int) func(paramValue string) bool {
 	//	 [...]
 	//	 return true/false -> true means valid.
 	//	})
@@ -338,7 +340,7 @@ type Router interface {
 	//
 	// {param:string equal(iris)} , "iris" will be the argument here:
 	//
-	//	app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
+	//	app.Macros().Get("string").RegisterFunc("equal", func(argument string) func(paramValue string) bool {
 	//		return func(paramValue string) bool { return argument == paramValue }
 	//	})
 	//

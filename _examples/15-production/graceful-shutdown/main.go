@@ -7,7 +7,7 @@
 // through iris.Timeout(). Your own cleanup is a separate list, run by
 // app.Shutdown(ctx); iris.RegisterOnInterrupt is what connects the two.
 //
-// Learn: make Ctrl+C drain the requests already running and then run your own closers in order.
+// Learn: make Ctrl+C drain the requests already running, and hand your own closers to the same signal.
 // Before: ../serving-and-tls
 //
 // Run:
@@ -48,8 +48,14 @@ func main() {
 	})
 
 	// Listen uses the default timeouts. Run spells them out: 20 seconds for the
-	// server's own drain on interrupt, instead of the 15-second default. Run
-	// returns after the drain; a failed start is logged and exits the process.
+	// server's own drain on interrupt, instead of the 15-second default. A
+	// failed start is logged and exits the process.
+	//
+	// Run returns once app.Shutdown has run its whole list, not when the server
+	// has drained, and main ends with it. Interrupt it while /jobs/slow is
+	// running: "jobs: flushing caches", "jobs: goodbye" and "worker: stopping"
+	// are all printed before the process exits. Nothing has to keep main alive
+	// after Run.
 	app.Run(iris.ServerOptions{
 		Addr:      ":8080",
 		Network:   "tcp",

@@ -87,10 +87,13 @@ func NewBuilder(configurators ...Configurator) Builder {
 	app.RegisterDependency(app) // register itself as a dependency, so controllers/custom routers can use it directly.
 
 	// Install the rest/errors handlers here and not in the once-block below:
-	// a child Router copies the context options and the macros of its parent
-	// when Prefix creates it, which is the very first builder step. Installed
-	// any later, a prefixed API would keep the framework's default context
-	// error handler while a NoPrefix one renders the rest/errors body.
+	// a child Router copies the context options of its parent when Prefix
+	// creates it, which is the very first builder step. Installed any later, a
+	// prefixed API would keep the framework's default context error handler
+	// while a NoPrefix one renders the rest/errors body. The macros are not
+	// copied, a child shares them with its parent, but a route takes the error
+	// handler of its parameter types when it is registered, so that handler
+	// has to be in place before the first route as well.
 	app.Macros().SetErrorHandler(errors.DefaultPathParameterTypeErrorHandler)
 	app.EditOptions(func(o *Options) {
 		o.Context.ErrorHandler = errors.DefaultContextErrorHandler
@@ -339,8 +342,12 @@ type (
 		// Returns ServiceBuilder for chaining.
 		Errors(*errors.Options) ServiceBuilder
 
-		// Deferrables registers cleanup functions that will be executed when
-		// the server shuts down gracefully. This ensures proper resource cleanup.
+		// Deferrables registers cleanup functions that Application.Shutdown
+		// runs, in the order given, after the server's own shutdown. `Run` and
+		// `Listen` return once they have finished. On an interrupt signal they
+		// run only when Shutdown is wired to it with
+		// iris.RegisterOnInterrupt(app.Shutdown): the server's built-in handler
+		// drains the connections and exits.
 		//
 		// Supported values (stdContext is the standard library's "context" package):
 		//   - func()                         // Simple cleanup function
@@ -675,9 +682,12 @@ type Initializer interface {
 
 // Worker is implemented by a long-running service registered through
 // Builder.Services: a scheduler, a queue consumer, a cache refresher. The
-// builder starts it after every Initializer has returned and stops it before
-// the closers run, so it lives inside the startup and shutdown chain the
-// builder already enforces instead of in a goroutine next to it.
+// builder starts it after every Initializer has returned and stops it when
+// Application.Shutdown runs its closers, so it lives inside the startup and
+// shutdown chain the builder already enforces instead of in a goroutine next
+// to it. Its stop is one of those closers and runs in registration order:
+// after the Deferrables and the Close of a service that Services was given
+// before it, and before the Close of one given after it.
 //
 // A Worker is registered as a dependency too, exactly like a value with a
 // Close method is, so the same value can be injected into controllers.
@@ -703,6 +713,16 @@ type Worker interface {
 	// one after another, so N stuck workers cost N times ten seconds. Pass a
 	// deadline to Application.Shutdown to bound the whole chain instead; a
 	// caller-supplied deadline is used as it is and is shared by every closer.
+	//
+	// iris.RegisterOnInterrupt(app.Shutdown) supplies the deadline that
+	// RegisterOnInterrupt documents: the Timeout.ShutdownOnInterruptTimeout
+	// of the running server, 15 seconds by default, counted from the signal
+	// and spent first on the server's drain. After a drain that used all of
+	// it Stop receives a context that has expired already and Run gets no
+	// time to return: unless it has returned by that instant, that is the
+	// shutdown error above, and the process ends with status 1. Without that
+	// registration an interrupt signal does not call Stop at all: the server
+	// drains and the process exits.
 	Stop(ctx stdContext.Context) error
 }
 

@@ -50,7 +50,11 @@
 //	curl -i localhost:8080/api/admin/stats                                                          # 401
 //	curl -u admin:change-me localhost:8080/api/admin/stats                                          # 200
 //
-// Press Ctrl+C: the store's Close and the Deferrables run during shutdown.
+// Press Ctrl+C: the server drains the requests in flight, then the Deferrables
+// log "bookshelf: goodbye" and the store's Close logs "bookshelf: store closed".
+// The signal alone would not run those two: main hands app.Shutdown to
+// iris.RegisterOnInterrupt, which is what ties the closers to the signal
+// (../../07-dependency-injection/initializer goes through it).
 //
 // Next: step 13 tests all of this in memory (../13-testing).
 package main
@@ -83,6 +87,11 @@ func main() {
 	seed(store)
 
 	app := newApp(cfg, store)
+
+	// Ctrl+C stops the server by itself. Handing app.Shutdown to the signal
+	// makes it run the closers too: the Deferrables and the store's Close.
+	iris.RegisterOnInterrupt(app.Shutdown)
+
 	app.Listen(cfg.Addr())
 }
 

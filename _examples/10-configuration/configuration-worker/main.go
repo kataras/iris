@@ -18,19 +18,22 @@
 //
 // An iris.Worker is a long-running service with Run and Stop. Passed to
 // Services it is registered as an injectable dependency AND started after every
-// Initializer has returned, then stopped before the closers run: it lives
-// inside the startup and shutdown chain the builder already enforces, instead
-// of in a goroutine next to it. Run's context is cancelled at shutdown, and
-// Shutdown then waits for Run to return, so the process really is finished
-// refreshing when it exits.
+// Initializer has returned, then stopped when app.Shutdown runs its closers: it
+// lives inside the startup and shutdown chain the builder already enforces,
+// instead of in a goroutine next to it. Shutdown cancels Run's context, calls
+// Stop and waits for Run to return, so the worker really has finished
+// refreshing when Shutdown returns.
 //
 // Learn: load a service's YAML into a type that embeds iris.BaseConfiguration,
 // and run a background job as an iris.Worker the builder starts and stops.
 // Before: ../configuration
 //
 // The program reads server.yml from the working directory, so run it from this
-// directory. Stop it with Ctrl+C and watch the worker stop before the process
-// exits.
+// directory. Ctrl+C drains the server and then stops the worker, which logs
+// "rates: worker stopping after N refreshes" before the process exits. The
+// signal alone would not stop it: main hands app.Shutdown to
+// iris.RegisterOnInterrupt, which is what ties the closers to the signal
+// (../../07-dependency-injection/initializer goes through it).
 //
 // Run:
 //
@@ -81,11 +84,15 @@ func main() {
 		LogRequests(cfg.RequestLog).
 		Health(true, "production", "rates-team").
 		Errors(errorOptions).
-		Services(NewRatesCache(cfg)). // injected, started, and stopped at shutdown.
+		Services(NewRatesCache(cfg)). // injected, started, and stopped by app.Shutdown.
 		RouterMiddlewares().
 		Middlewares().
 		API("/rates", NewRatesAPI).
 		Build()
+
+	// Ctrl+C stops the server by itself. Handing app.Shutdown to the signal
+	// makes it stop the worker too, within the 15 seconds Listen allows.
+	iris.RegisterOnInterrupt(app.Shutdown)
 
 	// Addr is "host:port" from the configuration, ":8080" when both are unset.
 	app.Listen(cfg.Addr())

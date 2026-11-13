@@ -73,9 +73,11 @@ func serve(app *iris.Application) {
 	case "letsencrypt":
 		// Automatic certificates from Let's Encrypt. Hosts is the list the
 		// certificate is valid for; the first entry is treated as the root
-		// domain. The port must be reachable from the internet for the
-		// challenge to succeed. CertFile and KeyFile, when also given, are
-		// used as a local fallback if issuance fails.
+		// domain. The challenge is tls-alpn-01, answered by this TLS
+		// listener: Let's Encrypt connects to port 443 of each host, so that
+		// port must reach this server from the internet, and port 80 is not
+		// needed. CertFile and KeyFile, when also given, are used as a local
+		// fallback if issuance fails.
 		hosts := strings.Split(envOr("TLS_HOSTS", "example.com"), ",")
 		app.Run(iris.ServerOptions{
 			Addr:        ":443",

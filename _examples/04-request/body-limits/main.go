@@ -10,7 +10,10 @@
 // The bodylimit middleware applies the same enforcement wherever it is
 // registered. It rejects a request up front when the declared Content-Length
 // already exceeds the limit, and wraps the body reader to catch chunked or
-// compressed bodies that only reveal their size while being read.
+// compressed bodies that only reveal their size while being read: the read
+// stops at the limit and fails with the same error. Forms are the exception:
+// ctx.ReadForm returns no error for a chunked form past the limit and binds
+// nothing of it.
 //
 // PostMaxMemory is a different knob - it bounds multipart form buffering, not
 // body size. See ../uploads.

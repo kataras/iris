@@ -227,7 +227,9 @@ Failure defaults: `GetString` returns `""`, the `GetInt*` and `GetFloat*` family
 
 ### Custom Macro Registration
 
-Register custom parameter types or add functions to existing types:
+Register custom parameter types or add functions to existing types. The registry is per application: `app.Macros()` starts as a copy of `macro.Defaults`, taken when the application is created, and a `Register`, `Unregister`, `SetErrorHandler` or `Get(...).RegisterFunc` on it affects that application only. A child `Router` and a `Subdomain` return the collection of their application. A registration on `macro.Defaults` or on a package macro such as `macro.Int` reaches the applications created after it and none of the existing ones.
+
+Register before the routes: a route reads its macros when it is registered. An unknown parameter type panics there (`unexpected parameter type`). An unknown function is skipped silently, and the route then accepts what the function would refuse.
 
 ```go
 // Add a custom function to the string type
@@ -266,6 +268,10 @@ app.Macros().SetErrorHandler(func(ctx iris.Context, paramIndex int, err error) {
 
 // The builder automatically sets this to errors.DefaultPathParameterTypeErrorHandler
 ```
+
+`iris.NewBuilder`, `iris.Default` and `httptest.NewController` set it on their own application only. An `iris.New()` application in the same process answers a type error with 404, or tries the next route, until it calls `app.Macros().SetErrorHandler(errors.DefaultPathParameterTypeErrorHandler)` itself. Call it before the routes are registered: each route keeps the handler that was set at that moment. `errors.ApplyPatches()` is the process-wide switch.
+
+`TemplateParam.Type` (through `Route.Tmpl()` or `ctx.LastPathParameter()`) holds the application's copy of a macro, so `Type == macro.Path` is false; use `IsMacro(macro.Path)`, which compares by type name, or `Type.Indent()`.
 
 ## Subdomain Routing
 

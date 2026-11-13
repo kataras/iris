@@ -35,12 +35,18 @@ type Session[T any] struct {
 
 	// state of commit
 	commitCalled bool
+
+	// decoded is set by the databases of this package when they decoded the
+	// data of the session from the cookie or the store for this request. Only
+	// then is the data the request's own copy, which Handler can read to tell
+	// after the request whether it changed.
+	decoded bool
 }
 
 // NewSession creates and returns a new Session instance with the provided options.
 //
-// Options is a value type, so the session gets its own copy: Expire, Commit and
-// Destroy write to Options.MaxAge and must not reach the database's own copy.
+// Options is a value type, so the session gets its own copy: Delete, Commit and
+// Cookie write to Options.MaxAge and must not reach the database's own copy.
 // The DataCodecs slice is the one part still shared, by design, because it holds the keys.
 func NewSession[T any](opts Options) *Session[T] {
 	return &Session[T]{
@@ -131,6 +137,11 @@ func (s *Session[T]) Delete(ctx *context.Context) error {
 
 // Commit saves the session data to the database and sets the session cookie in the context.
 // If there is an error during the commit, it expires the session cookie.
+//
+// Handler calls it after the request, for a session that the request changed.
+// Call it yourself on a route that only reads the session to move the expiry
+// of the session forward: the cookie, the TTL of the Redis record, and the
+// expiration of the Postgres record under ShiftExpiration.
 //
 // Note that you should call Commit before any other writes to the response.
 func (s *Session[T]) Commit(ctx *context.Context) error {

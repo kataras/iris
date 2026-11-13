@@ -140,11 +140,18 @@ type ContextOptions struct {
     BodyMaxMemory int64
 
     // Request header names used to determine the client's IP (behind proxies).
+    // ctx.RemoteAddr() reads them in this order, each from right to left:
+    // the first public address is the client's IP, without its port. A private
+    // address is skipped. An entry that is not an address ("unknown", "unix:")
+    // ends that header with no result, so the next header is read and at last
+    // the address of the connection is used.
     // Defaults to empty (no "X-" headers are trusted).
     RemoteAddrHeaders []string
 
-    // Use the first header entry as the client IP even if it is
-    // within RemoteAddrPrivateSubnets. Defaults to false.
+    // When the headers give no public address, use the first address from the
+    // left of a header whose entries are all addresses, even if it is within
+    // RemoteAddrPrivateSubnets. A header with an entry that is not an address
+    // is read as with this option off: it gives nothing. Defaults to false.
     RemoteAddrHeadersForce bool
 
     // IP ranges considered private subnets. Defaults to common private ranges.
@@ -263,7 +270,7 @@ Mutual exclusivity is enforced at startup: combining `TLSConfig` with `Letsencry
 app.Listen(":8080")
 ```
 
-Blocks until the server stops and returns nil after a graceful shutdown. A failed start (build error, port taken) is logged at fatal level and the process exits with status 1, so the call is a statement, not an `if err :=`. With `iris.Options{DisableFatalRun: true}` the failure is logged at error level and returned instead; use that when one process runs several servers or a test opens a real listener. The same rule applies to `Run`.
+Blocks until the server stops and returns nil after a graceful shutdown, once that shutdown has finished: the requests in flight are answered, or its deadline has passed, and `app.Shutdown` has run its whole list of closers (the server's shutdown first, then `AddCloser`, `Deferrables`, the `Close` of a service or a worker). A `main` that ends with `Listen` therefore cuts no closer. The other way round is a deadlock: a closer or an interrupt function that waits for `Listen` or `Run` to return blocks for good, because they wait for it. A program that calls `Listen` or `Run` cannot reach the `server.Server` they start. It can reach the `http.Server` that `ServerOptions.OnServerCreated` hands out, and a `Shutdown` or `Close` called on that one is not the list: it runs no closer and releases `Run` the moment it is called, not when the requests in flight have been drained. A failed start (build error, port taken) is logged at fatal level and the process exits with status 1, so the call is a statement, not an `if err :=`. With `iris.Options{DisableFatalRun: true}` the failure is logged at error level and returned instead; use that when one process runs several servers or a test opens a real listener. The same rule applies to `Run`.
 
 Equivalent to:
 
@@ -368,7 +375,8 @@ app.Run(iris.ServerOptions{
 Behavior:
 - Automatic certificate acquisition and renewal (14 days before expiration)
 - Certificates cached in the `./letsencrypt` directory
-- If `CertFile` and `KeyFile` are also set, they act as a local fallback when Let's Encrypt fails (useful for local testing)
+- The domain is validated with the ACME tls-alpn-01 challenge, which the TLS listener itself answers: it offers `acme-tls/1` after `h2` and `http/1.1`. Let's Encrypt connects to port 443 for it, so port 443 of every host must reach this server. No HTTP-01 handler is served, and port 80 plays no part
+- If `CertFile` and `KeyFile` are also set, the server presents the issued certificate and falls back to the pair when Let's Encrypt fails (useful for local testing). No log line says which of the two is being served
 
 ## Ngrok Tunnel
 
@@ -511,6 +519,10 @@ app := iris.New(iris.ConfiguratorFunc(func(app *iris.Application) {
 
 ## Graceful Shutdown
 
+Unless `ServerOptions.DisableInterruptHandler` is set, the server handles SIGINT and SIGTERM itself. A signal runs the interrupt list in the order its entries were registered and then ends the process: `os.Exit(0)`, or status 1 after a `Received an error during shutdown` line when an entry returned an error. The server's own entry on that list stops accepting connections and drains the requests in flight for up to `ShutdownOnInterruptTimeout`; the other entries are the functions given to `iris.RegisterOnInterrupt`, and one registered before `Listen` runs before the server's entry, while the server still serves. `Listen` and `Run` return at the moment of that exit, when every entry has returned, so statements placed after `Listen` race the exit and are no place for cleanup. The server's entry shuts down the server and nothing else: the closers (`Deferrables`, `AddCloser`, the `Close` methods `Services` found) run only when something calls `app.Shutdown(ctx)`, and with nothing registered a signal drains the server and exits without them.
+
+To handle the signal yourself, turn the built-in handler off. Left on, its `os.Exit(0)` ends the process as soon as the server has drained and cuts the closers `app.Shutdown` has not run yet:
+
 ```go
 import (
     "context"
@@ -524,7 +536,7 @@ app := iris.New()
 // ... register routes ...
 
 go func() {
-    app.Listen(":8080")
+    app.Run(iris.ServerOptions{Addr: ":8080", DisableInterruptHandler: true})
 }()
 
 // Wait for interrupt signal
@@ -550,9 +562,20 @@ iris.RegisterOnInterrupt(func() {
 app.Listen(":8080")
 ```
 
+Six things to know about the second form:
+
+- The function is registered before the server's own interrupt entry, so it runs first: its context is the deadline of the drain and is passed to every closer that takes one. `ShutdownOnInterruptTimeout` decides nothing then.
+- `iris.RegisterOnInterrupt(app.Shutdown)` is the short form, and it is bounded. The signal handler gives a function that takes a context one whose deadline is the `Timeout.ShutdownOnInterruptTimeout` of the running server: 15 seconds from `iris.Timeout()` or a nil `Timeout`, no deadline for a zero or negative value. With more than one server in the process the one that asked for the most wins: the largest value of all of them, and no deadline once one of them asked for none. A value is never taken back, so a server that has stopped still counts. A server started with `DisableInterruptHandler` hands its option to nobody: the functions get no deadline from it. A request still in flight at the deadline is cut, a stream that watches only its client included.
+- That deadline is one for the whole interrupt list and it is counted from the signal. When the drain uses all of it, the closers after the server get a context that has expired already: the `Stop` of a `Worker` is called with no time left and its `Run did not return` error comes back from `app.Shutdown`. The hand-written form above has the same shape, one context for the drain and the closers. Size the deadline for both.
+- `Listen` and `Run` return once `app.Shutdown` has run its whole list, so `Listen` is the last statement of `main` and no closer is cut. Put no `select {}` after it: after a shutdown that is not a signal (`app.Shutdown` called from your own code) `main` would hang there. After a signal the process exits when the functions on the interrupt list are done, so statements after `Listen` may not run.
+- A closer or an interrupt function must not wait for `Listen` or `Run` to return (on a channel that `main` closes after `Listen`, for example). They wait for it, so it blocks for good: the Go runtime stops the program with `all goroutines are asleep - deadlock!` when nothing else is running, and it hangs otherwise.
+- An interrupt function that returns an error ends the process with status 1, after a `Received an error during shutdown` line. `iris.RegisterOnInterrupt(app.Shutdown)` returns the joined error of the closers, so a closer that fails on a signal shows in the exit status. The `func()` form above drops the error of `app.Shutdown` and exits with 0.
+
+From inside a handler, stop the server with `go app.Shutdown(context.Background())` or pass a context with a deadline. Called in place with a context that has no deadline, the handler's own `ctx` included, `Shutdown` waits for its own request, and `Run` waits with it. `go app.Shutdown(ctx)` with the handler's `ctx` is not a way out: it closes the other connections at once.
+
 ### Closers and shutdown errors
 
-`app.Shutdown(ctx)` runs all registered closers (the HTTP server's shutdown is prepended automatically on `Run`). Errors from individual closers are aggregated with `errors.Join`, so callers can match each underlying error via `errors.Is` / `errors.As`:
+`app.Shutdown(ctx)` runs all registered closers (the HTTP server's shutdown is prepended automatically on `Run`), and `Run` and `Listen` return once it has run the last of them. Errors from individual closers are aggregated with `errors.Join`, so callers can match each underlying error via `errors.Is` / `errors.As`:
 
 ```go
 if err := app.Shutdown(ctx); err != nil {
@@ -668,7 +691,9 @@ Builder methods on `*TimeoutOptions`:
 | `WithWriteTimeout(d)` | `WriteTimeout` |
 | `WithIdleTimeout(d)` | `IdleTimeout` |
 | `WithHandlerTimeout(d, htmlBody ...string)` | Wraps the router in `http.TimeoutHandler` with optional custom timeout message |
-| `WithShutdownOnInterruptTimeout(d)` | Max wait for graceful shutdown on CTRL+C |
+| `WithShutdownOnInterruptTimeout(d)` | Max wait for graceful shutdown on CTRL+C, and the deadline of the context `iris.RegisterOnInterrupt` functions receive. Zero or negative sets no limit |
+
+The 15 seconds come from `iris.Timeout()` and from a nil `ServerOptions.Timeout`. A `&iris.TimeoutOptions{...}` literal, or a configuration file whose `Timeout` section leaves the field out, carries zero: no deadline on interrupt, so the server waits for the last request however long it takes. Set the field when the drain must be bounded. The same value bounds `iris.RegisterOnInterrupt(app.Shutdown)`, as the Graceful Shutdown section above describes.
 
 ## Source Files
 

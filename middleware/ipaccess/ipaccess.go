@@ -1,6 +1,10 @@
 // Package ipaccess allows or blocks requests by the client's IP address, given
 // as literals, CIDR blocks or ranges.
 //
+// The address is the one Context.RemoteAddr returns: the address of the
+// connection or, when Options.Context.RemoteAddrHeaders is set, the one a
+// proxy wrote in such a header. See the SECURITY WARNING on New.
+//
 // Its entry point is New(allowed, blocked []string) (Handler, error), which
 // reports a malformed pattern; Must(allowed, blocked) is the panicking
 // companion.
@@ -99,22 +103,43 @@ func (p *ipPattern) match(ip string) bool {
 // An empty "allowedPatterns" means "allow everything that is not blocked"; a
 // non-empty one means "allow only these".
 //
-// SECURITY WARNING: the client IP comes from Context.Addr, which returns the
-// FIRST entry of the first configured Options.RemoteAddrHeaders header - a value
-// the client writes.
+// The client IP comes from Context.RemoteAddr. With no
+// Options.Context.RemoteAddrHeaders it is the address of the connection. With
+// one, the header is read from the right, where a proxy appends the address it
+// got the request from: the first public address is the client IP, and when no
+// header gives one it is the address of the connection.
 //
-// If your application sets RemoteAddrHeaders (the usual "behind a proxy" setup),
-// you MUST terminate every request at a proxy that OVERWRITES that header.
-// Otherwise any caller can send
+// SECURITY WARNING: Iris has no trusted-proxy list yet, so with
+// RemoteAddrHeaders set the client IP is only as good as the proxy in front of
+// the application:
 //
-//	X-Forwarded-For: 10.0.0.1
+//   - A client that reaches the server directly, with no proxy in front,
+//     writes the whole header and with it the client IP. Such a server MUST be
+//     reachable through the proxy only.
+//   - A header that the proxy passes on as the client sent it is the
+//     client's. Name only headers the proxy writes: a header is read when the
+//     ones named before it give no public address.
+//   - A client inside your network is appended as a private address, which is
+//     skipped as one of your own proxies: the entry on its left is read, and
+//     the client wrote that one. A proxy that OVERWRITES the header closes
+//     this.
+//   - A private address in the header is never the client IP, so a pattern
+//     such as "10.0.0.0/8" does not match a client that an internal proxy
+//     reports as 10.0.0.5: the address of the connection, the proxy, is
+//     matched. RemoteAddrHeadersForce takes the first address of a header that
+//     has no public one, which the client can write, and an empty
+//     RemoteAddrPrivateSubnets takes the right-most one, which the nearest
+//     proxy appended. A loopback address is skipped whatever that list holds,
+//     so only RemoteAddrHeadersForce takes it.
+//   - A proxy with a public address in front of your own one, a CDN for
+//     example, is appended as a public address: it is the client IP, and the
+//     client it got the request from is not read. Add its range to
+//     RemoteAddrPrivateSubnets to have it skipped. That list is checked for
+//     IPv4 addresses only.
 //
-// and walk straight through an admin allowlist. Iris has no trusted-proxy list
-// yet, so this middleware cannot verify it for you.
-//
-// Addr is used rather than RemoteAddr on purpose: RemoteAddr skips private
-// subnets while walking the header chain, which would make it impossible to
-// allowlist internal addresses - the main thing this middleware is for.
+// The client IP used to come from Context.Addr, which returns the FIRST entry
+// of the header, so sending the header was enough to pass an allowlist or to
+// escape a blocklist.
 func New(allowedPatterns []string, blockedPatterns []string) (context.Handler, error) {
 	allowedIPPatterns := make([]*ipPattern, len(allowedPatterns))
 	for i, pattern := range allowedPatterns {
@@ -135,9 +160,16 @@ func New(allowedPatterns []string, blockedPatterns []string) (context.Handler, e
 	}
 
 	handler := func(ctx *context.Context) {
-		// See the SECURITY WARNING on New: this value is only as trustworthy as
-		// the proxy in front of the application.
-		clientIP := ctx.Addr()
+		// See the SECURITY WARNING on New: with RemoteAddrHeaders set this
+		// value is only as trustworthy as the proxy in front of the
+		// application.
+		clientIP := ctx.RemoteAddr()
+		// An address taken from a header comes as it is spelled there, such
+		// as "::ffff:198.51.100.9". The regular expressions are written for
+		// the one spelling net.IP.String gives, see newIPPattern.
+		if ip := net.ParseIP(clientIP); ip != nil {
+			clientIP = ip.String()
+		}
 
 		for _, pattern := range blockedIPPatterns {
 			if pattern.match(clientIP) {

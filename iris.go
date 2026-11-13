@@ -6,12 +6,14 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/kataras/iris/v14/context"
 	"github.com/kataras/iris/v14/core/router"
 	"github.com/kataras/iris/v14/core/server"
 	"github.com/kataras/iris/v14/core/server/closer"
+	"github.com/kataras/iris/v14/internal/signalhandler"
 	"github.com/kataras/iris/v14/middleware/requestid"
 
 	"github.com/kataras/golog"
@@ -48,6 +50,14 @@ type Application struct {
 	// all fields are optional and can be set through the `Options` functional options.
 	options *Options
 	closers closer.Closers
+
+	// shutdowns counts the Shutdown calls that are running and shutdownsDone is
+	// closed when the last of them returns. Run waits on it: the server's own
+	// shutdown is only the first closer of the list, so it returns while the
+	// closers after it are still running. Both are guarded by shutdownsMu.
+	shutdownsMu   sync.Mutex
+	shutdowns     int
+	shutdownsDone chan struct{}
 
 	contextPool *context.Pool
 
@@ -300,6 +310,23 @@ func (app *Application) ContextPool() *context.Pool {
 // This is particularly useful when you want to control how long the shutdown process should wait
 // before forcefully closing.
 //
+// `Run` and `Listen` return once this method has run the whole list, not when
+// the server's own closer, the first of it, has returned. So a main that ends
+// with `Listen` lets every closer finish. The http.Server that
+// ServerOptions.OnServerCreated hands out is not this list: a `Shutdown` or
+// `Close` called on it runs no closer and releases them the moment it is
+// called, not when the requests in flight have been drained.
+//
+// A handler that stops the application calls Shutdown on another goroutine, with
+// a context of its own: go app.Shutdown(context.Background()), or one that
+// carries a deadline. Called in place, the server's closer waits for the request
+// that called it. With a context that has no deadline, the handler's own Context
+// included, it does not return and `Run` waits with it. With a deadline it
+// returns at the deadline, after closing every connection that is left, the
+// caller's own included. The handler's Context is no better on another
+// goroutine: it is canceled when the handler returns, which closes the other
+// connections at once.
+//
 // Errors from individual closers are accumulated with errors.Join, so each one can be
 // matched through errors.Is or errors.As. It returns nil when every closer succeeds.
 // Calling it before `Run` simply closes whatever else was registered through `AddCloser`.
@@ -310,7 +337,41 @@ func (app *Application) ContextPool() *context.Pool {
 //	[...]
 //	app.Shutdown(context.Background())
 func (app *Application) Shutdown(ctx stdContext.Context) error {
+	defer app.beginShutdown()() // Run returns after this call does.
+
 	return app.closers.CloseWithContext(ctx)
+}
+
+// beginShutdown counts a Shutdown call that is about to run and returns the
+// function that marks its end.
+func (app *Application) beginShutdown() (end func()) {
+	app.shutdownsMu.Lock()
+	if app.shutdowns == 0 {
+		app.shutdownsDone = make(chan struct{})
+	}
+	app.shutdowns++
+	app.shutdownsMu.Unlock()
+
+	return func() {
+		app.shutdownsMu.Lock()
+		if app.shutdowns--; app.shutdowns == 0 {
+			close(app.shutdownsDone)
+		}
+		app.shutdownsMu.Unlock()
+	}
+}
+
+// waitShutdown blocks until no Shutdown call of this application is running. It
+// returns at once when there is none.
+func (app *Application) waitShutdown() {
+	app.shutdownsMu.Lock()
+	done := app.shutdownsDone
+	running := app.shutdowns > 0
+	app.shutdownsMu.Unlock()
+
+	if running {
+		<-done
+	}
 }
 
 // RegisterOnBuild registers callback functions to be executed before and after the application is built.
@@ -441,6 +502,13 @@ func (app *Application) Build() error {
 }
 
 // AddCloser adds a function, or a structure which completes the io.Closer, which will be executed when the server is closed.
+//
+// [Application.Shutdown] runs it, after the server's own shutdown, and `Run`
+// and `Listen` return once it has. So it must not wait for one of them to
+// return: each would be waiting for the other. On an interrupt signal it runs
+// only when Shutdown itself is wired to the signal with
+// iris.RegisterOnInterrupt(app.Shutdown): the server's built-in handler drains
+// the connections and knows nothing of this list.
 func (app *Application) AddCloser(fn any) {
 	app.closers.AddCloser(fn)
 }
@@ -455,8 +523,17 @@ func (app *Application) AddCloser(fn any) {
 // The method sets various server options, including network type, keep-alive duration, socket sharding,
 // and log writer before calling the Run method to start the server.
 //
-// Listen blocks until the server stops. A graceful shutdown (an interrupt
-// signal, or [Application.Shutdown]) returns nil. A failed start (a build
+// Listen blocks until the server stops. After [Application.Shutdown] it
+// returns nil, and only once that call has run its whole list of closers: the
+// requests in flight are drained, or the deadline of the context is reached,
+// and the closers that follow the server have returned by then. On an
+// interrupt signal the callbacks of [RegisterOnInterrupt] and the server's own
+// handler run in the order they were registered, so a callback registered
+// before Listen runs first, while the server still serves. The handler drains
+// the requests in flight for up to 15 seconds, and the process then exits, with
+// status 0 unless a callback returned an error. Listen returns at that same
+// moment, so the statements after it may not run: cleanup that has to happen on
+// a signal goes to [RegisterOnInterrupt]. A failed start (a build
 // error, or a listener that could not be opened) is logged and the process
 // exits with status 1, so a program with nothing else to do calls Listen as a
 // statement. Set [Options.DisableFatalRun] to have the error returned instead,
@@ -498,10 +575,21 @@ func (app *Application) Listen(addrHostPort string) error {
 //
 // 8. Starts the HTTP(S) server and blocks until it stops.
 //
-// Run blocks until the server stops. A graceful shutdown returns nil. A failed
+// Run blocks until the server stops. After a graceful shutdown it returns nil,
+// once [Application.Shutdown] has run its whole list and not when it begins: it
+// waits for the requests in flight and for the closers that follow the server.
+// A `Shutdown` or `Close` called on the http.Server of
+// ServerOptions.OnServerCreated is not that list, and releases Run the moment
+// it is called, see [Application.Shutdown]. On an interrupt signal the
+// server drains for up to its Timeout.ShutdownOnInterruptTimeout, the callbacks
+// of [RegisterOnInterrupt] receive a context with that deadline, and the
+// process then exits, at the moment Run returns, so the statements after Run
+// may not run. A failed
 // start, or a server that stops with an error, is logged and the process exits
 // with status 1; with [Options.DisableFatalRun] the error is logged at error
-// level and returned to the caller instead. See [Application.Listen].
+// level and returned to the caller instead. Either way it is reported at once:
+// Run does not wait then for a Shutdown that is running its closers, nor for
+// the callbacks of a signal. See [Application.Listen].
 //
 // Usage:
 //
@@ -552,8 +640,23 @@ func (app *Application) Run(options ServerOptions) error {
 	app.closers.PrependCloser(srv.Shutdown)
 	// start the http(s) server.
 	if err := srv.ListenAndServe(app.Handler); err != nil {
+		// A server that did not start, or that stopped with an error. Reported
+		// first, before the waits below: the one for a signal ends with the
+		// process, which exits with status 0, and would lose the error. The
+		// price is that a Shutdown, or the callbacks of a signal, that are
+		// running at this moment are not waited for: the fatal default exits
+		// the process under them, as it did before Run waited for anything.
 		return app.fail(err)
 	}
+
+	// The server's shutdown is the first closer of Shutdown, and ListenAndServe
+	// returns with it: wait for the rest of the list before handing a main back
+	// the right to end the process. Then for the callbacks of an interrupt
+	// signal, which exits the process once they are done, so this is where Run
+	// stops on a signal. In that order: a signal that arrives while the closers
+	// are still running is waited for as well.
+	app.waitShutdown()
+	signalhandler.Wait()
 
 	return nil
 }

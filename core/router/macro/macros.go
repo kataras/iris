@@ -547,6 +547,10 @@ var (
 
 	// Defaults contains the defaults macro and parameters types for the router.
 	//
+	// Each application copies them when it is created, so what is registered
+	// here reaches the applications created afterwards and none of the existing
+	// ones. Use the Macros method of an application to change its own.
+	//
 	// Read https://github.com/kataras/iris/tree/main/_examples/02-routing/custom-macro for more details.
 	Defaults = &Macros{
 		String,

@@ -29,7 +29,8 @@ type RouterBuilder struct {
 	// the per-router RouterBuilder with DI.
 	diContainer *dep.Container
 
-	// the api builder global macros registry
+	// the macros of the application: a copy of macro.Defaults that the root
+	// router makes and every child router shares.
 	macros *macro.Macros
 	// the per-router (and its children) values map
 	// that may help on building the API
@@ -96,7 +97,7 @@ func New(app context.Application) *RouterBuilder {
 	return &RouterBuilder{
 		app:            app,
 		parent:         nil,
-		macros:         macro.Defaults,
+		macros:         copyMacros(macro.Defaults),
 		relativePath:   "/",
 		routerHandlers: context.NewHandlerList(),
 		handlers:       context.NewHandlerList(),
@@ -109,6 +110,29 @@ func New(app context.Application) *RouterBuilder {
 		routes:         new(RouteRegistry),
 		diContainer:    dep.NewContainer(),
 	}
+}
+
+// copyMacros returns a new collection that holds a copy of each macro of "src".
+//
+// A root router starts from what macro.Defaults holds when it is created and
+// owns the result: a parameter type, a macro function or an error handler
+// registered through its Macros method stays in its application. Applications
+// used to share the macro.Defaults pointer, so the error handler that
+// iris.Default() installs became the one of every route registered after it,
+// in any application.
+//
+// A Macro is copied by value. Its functions are safe to share that way:
+// Macro.RegisterFunc replaces the slice and never writes to it in place.
+func copyMacros(src *macro.Macros) *macro.Macros {
+	macros := make(macro.Macros, len(*src))
+	for i, m := range *src {
+		if m != nil {
+			cp := *m
+			macros[i] = &cp
+		}
+	}
+
+	return &macros
 }
 
 func (router *RouterBuilder) clone(fullpath string, middleware *context.HandlerList) *RouterBuilder {
@@ -498,7 +522,7 @@ func (router *RouterBuilder) EnableStatusCodeResponse() {
 //
 // Register a named path parameter function:
 //
-//	app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+//	app.Macros().Get("int").RegisterFunc("min", func(argument int) func(paramValue string) bool {
 //	 [...]
 //	 return true/false -> true means valid.
 //	})
@@ -508,7 +532,7 @@ func (router *RouterBuilder) EnableStatusCodeResponse() {
 //
 // {param:string equal(iris)} , "iris" will be the argument here:
 //
-//	app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
+//	app.Macros().Get("string").RegisterFunc("equal", func(argument string) func(paramValue string) bool {
 //		return func(paramValue string) bool { return argument == paramValue }
 //	})
 //
@@ -784,6 +808,8 @@ func (router *RouterBuilder) WildcardSubdomain(middleware ...context.Handler) Ro
 
 // Macros returns the macro collection that is responsible
 // to register custom macros with their own parameter types and their macro functions for all routes.
+// It belongs to this application: it starts as a copy of macro.Defaults and
+// what is registered on it does not reach another application.
 //
 // Learn more at:  https://github.com/kataras/iris/tree/main/_examples/02-routing/custom-macro
 func (router *RouterBuilder) Macros() *macro.Macros {

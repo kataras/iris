@@ -5,6 +5,7 @@ package websocket
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/kataras/iris/v14/context"
 
@@ -128,9 +129,53 @@ func Upgrade(ctx *context.Context, s *neffos.Server, idGen IDGenerator) *neffos.
 	return conn
 }
 
+// socketWrapper carries the Iris Context of the upgrade request next to the
+// socket of the upgrader.
+//
+// The embedded interface promotes the methods of neffos.Socket and nothing
+// else, while neffos finds its optional socket extensions with a type
+// assertion on the wrapper. The methods below hand each extension to the
+// wrapped socket, so the close frame, the heartbeat and the read limit work
+// as they do for a server that is not mounted through Iris.
 type socketWrapper struct {
 	neffos.Socket
 	ctx *context.Context
+}
+
+var (
+	_ neffos.SocketCloser      = (*socketWrapper)(nil)
+	_ neffos.SocketPinger      = (*socketWrapper)(nil)
+	_ neffos.SocketReadLimiter = (*socketWrapper)(nil)
+)
+
+// Close implements neffos.SocketCloser. A wrapped socket that cannot send a
+// close frame gets its network connection closed, which is what neffos does
+// with such a socket.
+func (s *socketWrapper) Close(code int, reason string, timeout time.Duration) error {
+	if closer, ok := s.Socket.(neffos.SocketCloser); ok {
+		return closer.Close(code, reason, timeout)
+	}
+
+	return s.NetConn().Close()
+}
+
+// Ping implements neffos.SocketPinger. A wrapped socket that cannot ping
+// reports no error, so the heartbeat never closes its connection: a
+// PingInterval does nothing for such a socket.
+func (s *socketWrapper) Ping(timeout time.Duration) error {
+	if pinger, ok := s.Socket.(neffos.SocketPinger); ok {
+		return pinger.Ping(timeout)
+	}
+
+	return nil
+}
+
+// SetReadLimit implements neffos.SocketReadLimiter. It does nothing for a
+// wrapped socket that cannot limit its reads.
+func (s *socketWrapper) SetReadLimit(n int64) {
+	if limiter, ok := s.Socket.(neffos.SocketReadLimiter); ok {
+		limiter.SetReadLimit(n)
+	}
 }
 
 // GetContext returns the Iris Context from a websocket connection. It is a

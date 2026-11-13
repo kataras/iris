@@ -358,14 +358,20 @@ func (m *Macro) registerFunc(funcName string, fullFn ParamFuncBuilder) {
 		return
 	}
 
-	for i, fn := range m.funcs {
+	// A copy of a Macro starts with the functions of the original, and the
+	// router gives each application a copy of the Defaults. Write to a slice
+	// of our own, so a function registered here does not reach the others.
+	funcs := slices.Clone(m.funcs)
+
+	for i, fn := range funcs {
 		if fn.Name == funcName {
-			m.funcs[i].Func = fullFn // replace the old one.
+			funcs[i].Func = fullFn // replace the old one.
+			m.funcs = funcs
 			return
 		}
 	}
 
-	m.funcs = append(m.funcs, ParamFunc{
+	m.funcs = append(funcs, ParamFunc{
 		Name: funcName,
 		Func: fullFn,
 	})

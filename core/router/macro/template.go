@@ -132,8 +132,16 @@ func (p *TemplateParam) Eval(paramValue string) (any, bool) {
 }
 
 // IsMacro reports whether this TemplateParam's underline macro matches the given one.
+//
+// Each application has its own copy of the Defaults, so the two are compared
+// by parameter type name: IsMacro(macro.Path) is true for a {p:path} of any
+// application.
 func (p *TemplateParam) IsMacro(macro *Macro) bool {
-	return p.macro == macro
+	if p.macro == nil || macro == nil {
+		return p.macro == macro
+	}
+
+	return p.macro.indent == macro.indent
 }
 
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)

@@ -21,6 +21,32 @@ var (
 	BuildTime = buildinfo.BuildTime
 
 	// RegisterOnInterrupt takes a function and appends it to the list of functions to be called on an interrupt signal (CTRL+C).
+	//
+	// The function may take a context, and that context carries the
+	// Timeout.ShutdownOnInterruptTimeout of the running server as its deadline,
+	// 15 seconds by default: iris.RegisterOnInterrupt(app.Shutdown) drains
+	// within the same budget as the server's own shutdown. A zero or negative
+	// value of that option sets no deadline, as the option documents, and
+	// neither does a server started with DisableInterruptHandler: it hands its
+	// option to nobody.
+	//
+	// With more than one server in the process the deadline is the largest
+	// value among them, and there is none once one of them asked for none, so
+	// app.Shutdown may drain a server for longer than that server asked. A
+	// server that has stopped still counts: a process that once ran a server
+	// with a zero value gives no deadline for the rest of its life.
+	//
+	// The deadline is one for all the functions and it is counted from the
+	// signal. They run in the order they were registered, so a function that
+	// comes after a drain which used the whole budget receives a context that
+	// has expired already. The built-in handler of a server is not one of
+	// them: it counts its own option from the moment its turn comes.
+	//
+	// The process exits once every registered function has returned, with
+	// status 1 when one of them returned an error. `Run` and `Listen` do not
+	// return before that, so a function that waits for one of them to return
+	// blocks for good. The exception is a `Run` that fails to start meanwhile:
+	// it reports its error at once, which by default ends the process.
 	RegisterOnInterrupt = signalhandler.Register
 )
 

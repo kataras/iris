@@ -20,11 +20,17 @@ func init() {
 // of concurrent requests exhausts memory. Use one of:
 //
 //   - compress.Safe, or compress.Limited(n), which cap the decompressed stream;
-//   - ContextOptions.BodyMaxMemory, which caps every request body application-wide;
-//   - the bodylimit middleware, registered AFTER this one.
+//   - ContextOptions.BodyMaxMemory, which caps ctx.Body, ctx.ReadJSON,
+//     ctx.ReadJSONStream and ctx.ReadMultipartRelated application-wide. It
+//     does not cap a form or an upload;
+//   - the bodylimit middleware, registered AFTER this one, which stops every
+//     reader of the decompressed body at its limit. ctx.ReadForm reports no
+//     error for a form cut there and binds nothing of it.
 //
-// This handler is kept unbounded for backwards compatibility and logs a warning
-// once at first use when nothing else bounds the body.
+// This handler is kept unbounded for backwards compatibility. It logs a warning
+// once, on the first compressed request body, unless
+// ContextOptions.BodyMaxMemory is set. It cannot see a bodylimit middleware
+// registered after it, so that setup gets the warning too.
 //
 // Usage:
 //

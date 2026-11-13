@@ -130,8 +130,8 @@ app.Get("/get", func(ctx iris.Context) {
 	ctx.JSON(session.Data)
 })
 
-// Sessions are automically saved on the end of each request because we registered the sessions Handler,
-// but you can manually commit them as well.
+// The sessions Handler saves the session after a request that changed it, as this one does,
+// so the route has no Commit of its own. You can still commit by hand.
 app.Get("/set", func(ctx iris.Context) {
 	session := sessions.Get[UserSession](ctx)
 	session.Set(UserSession{ // or session.Data = UserSession{...}
@@ -141,7 +141,13 @@ app.Get("/set", func(ctx iris.Context) {
 })
 ```
 
-> TIP: You can also use the `sessions.ReadOnlyHandler` middleware to avoid writing to the session on each request.
+`sessions.Handler` commits after the request only when the request changed the session: its data, its flash messages, its id or its `Options`. A new session is committed too, and so is one whose record is gone from the store. Nothing is committed when the response status is 400 or above. A request that only reads, like `/get` above, sends no `Set-Cookie` and writes nothing to the store, so nothing moves the expiry: the cookie and the Redis record end `Options.MaxAge` after the last change, not after the last request, and so does the PostgreSQL record under `ShiftExpiration`. Call `session.Commit(ctx)` in a handler that only reads to keep the session alive from there. This holds for `NewCookieDatabase`, `NewRedisDatabase` and `NewPostgresDatabase`. The session of a `Database` you wrote yourself is committed after every request.
+
+A response without the session cookie is one that a shared cache may store. When a reverse proxy caches in front of the application, send `Cache-Control: private` on every page that depends on the session. The `httpcache` middleware caches a request with cookies only when its key names every one of them. Register its handler before `sessions.Handler`: registered after it, `httpcache` stores the page made for a new session before the session cookie is written, and serves that page to the next visitor who has no cookie.
+
+With `httpcache` keyed on the session cookie (`Cookies: []string{"my_session"}`), pages are stored per session, and a stored page outlives its session: after a sign-out, a request that still sends the old cookie is answered from the store, with no look at the session, until the entry expires. Invalidate the entries on sign-out, or send `Cache-Control: private` on those pages.
+
+> TIP: `sessions.ReadOnlyHandler` never commits by itself, not even a session the route changed. Use it on routes that only read a session which is created and updated somewhere else.
 
 ## Defining Sessions
 
@@ -154,6 +160,8 @@ To define a session, you need to create a session database and configure session
 The `Options` struct defines the configuration settings for a session. These settings determine how the session cookies are managed and stored.
 
 `sessions.NewOptions` returns an `Options` **value**, and the database constructors take one by value: assign to its fields before you pass it, and a later change to your local copy does not reach the database. The `DataCodecs` slice is the one shared part, by design, because it holds the keys.
+
+The cookie in a visitor's browser keeps the attributes it was written with. `sessions.Handler` writes it again only after a request that changed the session, so a deployment that changes `Secure`, `Path` or `MaxAge` reaches a visitor at their next change of the session, not at their next request.
 
 ```go
 type Options struct {
@@ -194,7 +202,7 @@ app.Get("/get-flash", func(ctx iris.Context) {
 		return
 	}
 
-	message, exists := session.GetFlash("notice")
+	message, exists := session.GetFlash[string]("notice")
 	if !exists {
 		ctx.WriteString("No flash message")
 		return
@@ -225,6 +233,8 @@ defer conn.Close(context.Background())
 sessionDB := sessions.NewPostgresDatabase[UserSession](sessions.DefaultTableName, conn, sessionOptions)
 // Optionally, enable the shift expiration feature.
 // It will update the session's expiration to NOW+Options.MaxAge on each commit.
+// sessions.Handler commits after a request that changed the session, so a request
+// that only reads does not move the expiration: call session.Commit there.
 sessionDB.ShiftExpiration(true)
 // Start the cleanup scheduler, optionally.
 errCh := sessionDB.StartCleanupScheduler(context.Background(), 4*time.Hour) // cleanup expired sessions every 4 hours.

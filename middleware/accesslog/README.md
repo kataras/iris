@@ -90,6 +90,8 @@ The default log format is:
 Time|Latency|Code|Method|Path|IP|Path Params Query Fields|Bytes Received|Bytes Sent|Request|Response|
 ```
 
+The default format, the CSV formatter and the Template formatter write one line per request. In the values a client controls (the method, the path, the IP, the query, the path parameters, the fields and the request and response bodies) a line break or a tab becomes a space and any other control character is dropped, so a request to a path with `%0A` in it cannot start a second line in the log. An error text or a panic trace is one line there as well, which means `KeepMultiLineError` has no effect in these three formats. It still applies to the JSON formatter, which the example above uses, to a custom `Formatter` and to the `Broker` listeners. Those three read the values as the request sent them.
+
 You can customize the log format using different formatters:
 
 #### JSON Formatter
@@ -107,11 +109,15 @@ ac.SetFormatter(&accesslog.JSON{
 ac.SetFormatter(&accesslog.CSV{})
 ```
 
+Every value except the timestamp is sanitized as described above, so a record is always one line. The cost is that a logged body no longer reads back byte for byte: its tabs and line breaks are spaces.
+
 #### Custom Template Formatter
 
 ```go
 ac.SetFormatter(&accesslog.Template{Text: "{{.Code}}"})
 ```
+
+The template is executed with a sanitized copy of the log. A value of `.Fields` or `.PathParams` that is not a string keeps its type as long as the text it prints as is clean. When that text holds a control character the sanitized text takes the value's place, and a template that reads into the value, `{{.Value.Name}}` for one, then fails for that request: the error goes to the application's log and no line is written. `.Ctx` is the request's Context itself and is not sanitized, so `{{.Ctx.Path}}` prints the path as it arrived, line breaks included.
 
 ### Custom Fields
 

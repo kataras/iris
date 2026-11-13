@@ -82,6 +82,31 @@ app.Any("/ws", websocket.New(websocketServer, websocket.Options{}))
 app.Listen(":8080")
 ```
 
+## Close Codes, Heartbeat and Message Size
+
+A server mounted with `websocket.New` or `websocket.Upgrade` gets the optional socket features of neffos, as it does when neffos serves it without Iris:
+
+- `Conn.Close`, `Conn.Terminate` and `Server.Close` send a close frame. The client reads 1000 after `Close`, the code and reason you gave after `Terminate` (`nsConn.Conn.Terminate(neffos.ClosePolicyViolation, "banned")` arrives as 1008 `banned`), and 1001 when the server closes.
+- `WithTimeout.MaxMessageSize` caps the size of one incoming message. A bigger one closes the connection with 1009.
+- `WithTimeout.PingInterval` runs a heartbeat: the server pings on that interval and closes a peer that sends no pong within it.
+
+```go
+websocketServer := neffos.New(gorilla.DefaultUpgrader, neffos.WithTimeout{
+    WriteTimeout:   5 * time.Second,
+    PingInterval:   30 * time.Second,
+    MaxMessageSize: 64 << 10, // 64 KB for one message, envelope included.
+    Namespaces:     serverEvents,
+})
+```
+
+They cost something in three places:
+
+- The size cap counts the neffos envelope as well as the body. With a cap of 64, event `chat` in namespace `default` takes a body of 45 bytes and refuses one of 46.
+- The pong is read on the goroutine that runs the event callback, so a callback that runs longer than `PingInterval` can have its connection closed by the heartbeat. A 400ms callback under a 50ms interval was closed.
+- `Conn.Close` waits for its close frame when the peer has stopped reading: up to `WriteTimeout`, or one second when that is not set.
+
+`mvc.Websocket` builds its own server with no `WithTimeout`, so only the close frame applies there.
+
 ## Example
 
 Here is a complete example of how to use WebSocket and MVC middlewares:

@@ -28,7 +28,7 @@ Defaults that are permissive on purpose, each with an opt-in:
 | `compress.Handler` decompresses request bodies with no ceiling | `compress.Safe`, or `compress.Limited(n)` |
 | `cors.New()` reflects any origin **with** credentials | `cors.Strict()` |
 | `cache.New` applies `public` to credentialed requests too | `cache.Strict(opts)`, or `cache.PrivateOptions` |
-| `httpcache` keys omit `Authorization` and cookies | Set `Options.Headers` / `Options.Cookies` |
+| `httpcache` keys omit `Authorization` and cookies | Set `Options.Headers` / `Options.Cookies`. A request that carries `Authorization`, `Proxy-Authorization` or cookies is cached only when the key includes every one of them, each cookie it sends by name. Otherwise it is not cached at all. A credential in a custom header (`X-Token`) is invisible to that check unless `Options.Headers` names it. On the response side, one that sets a cookie or is marked `Cache-Control: private`, `no-store` or `no-cache` is never stored. With sessions, register the cache handler before `sessions.Handler`, or send `Cache-Control: private` on a page that depends on the session |
 | `accesslog` records request bodies | `AccessLog.Redact`, or `RequestBody = false` |
 | `methodoverride` accepts `_method` from query and form | `methodoverride.Options{HeadersOnly: true}` |
 | The static file server serves dotfiles | `AssetValidator: fileserver.BlockHidden` |
@@ -154,7 +154,9 @@ handler := ipaccess.Must(
 app.Router("/admin", handler, adminAPI)
 ```
 
-Blocked patterns win over allowed. A request matching neither gets 403. It matches the **connection** address, not `RemoteAddr`, so it is not fooled by a forged `X-Forwarded-For`, and it does not work behind a proxy unless the proxy itself is allowlisted.
+Blocked patterns win over allowed. A request matching neither gets 403. It matches `ctx.RemoteAddr()`. While `ContextOptions.RemoteAddrHeaders` is empty that is the **connection** address, so it is not fooled by a forged `X-Forwarded-For`, and it does not work behind a proxy unless the proxy itself is allowlisted. With `RemoteAddrHeaders` set the header is read from the right, where the proxy appends, and the first public address is matched: a proxy that appends (nginx's `$proxy_add_x_forwarded_for`) is enough against a forged entry, which sits on the left.
+
+Iris has no trusted-proxy list, so check four things before relying on it behind a proxy. A private address in the header is skipped: a client that an internal proxy reports as `10.0.0.5` does not match `10.0.0.0/8`, the proxy's own connection is matched instead, unless `RemoteAddrHeadersForce` is on (first address of the header, which the client can write) or `RemoteAddrPrivateSubnets` is empty (the right-most one). For the same reason a client inside your network can forge the entry on its left, which a proxy that overwrites the header closes. A proxy with a public address in front of your own, a CDN, is the matched address until its range is added to `RemoteAddrPrivateSubnets`. Name only headers your proxy writes, because a header is read when the ones before it give no public address. And a server that a client can reach with no proxy in front lets that client write the whole header. See the `ipaccess` section of [middleware-reference.md](./middleware-reference.md).
 
 ## Input Validation
 
@@ -224,6 +226,10 @@ db := sessions.NewCookieDatabase[UserSession](opts)
 app.Use(sessions.Handler(db, "app_session"))
 ```
 
+`MaxAge` counts from the last change to the session, not from the last request. `sessions.Handler` commits (stores the session and re-sends the cookie) only when a request changed it, so a visitor who signs in and then only reads is signed out `MaxAge` after signing in. Call `session.Commit(ctx)` in a handler that only reads when that visit should move the expiry. A deployment that changes `Secure`, `Path` or `MaxAge` in the session options reaches a visitor at their next change of the session, not at their next request. That is the rule for the three databases of the package (`NewCookieDatabase`, `NewRedisDatabase`, `NewPostgresDatabase`). The session of a custom `Database` is committed after every request, as before.
+
+A response to a request that only reads the session carries no `Set-Cookie`, and that header kept such a page out of shared caches. A reverse proxy that skips responses with `Set-Cookie` can serve one visitor's page to another: send `Cache-Control: private` on a page that depends on the session when a reverse proxy caches in front of the application. `httpcache` caches a request with cookies only when its key names every one of them, so it is safe as long as its handler is registered before `sessions.Handler`. Registered after it, it stores the page made for a new session before the session cookie is written, and the next anonymous visitor gets that page. With the session cookie in the key, pages are stored per session, and after a sign-out a request that still sends the old cookie gets the stored page until it expires: invalidate on sign-out, or mark the page private. See [caching.md](./caching.md).
+
 Rotate the session ID whenever privilege changes, most importantly right after sign-in. This is the session-fixation defense:
 
 ```go
@@ -242,6 +248,8 @@ func signin(ctx iris.Context) {
     ctx.OK(user, nil)
 }
 ```
+
+Set the session data before `RegenerateID`, as above. It stores the session, and `sessions.Handler` commits nothing after a handler has, so data set after the call is never stored on Redis or Postgres.
 
 `RegenerateID` is a no-op for cookie databases: their data lives in the signed and encrypted cookie, so there is no server-side ID to rotate. Use `session.Delete(ctx)` on sign-out.
 
@@ -386,6 +394,8 @@ AssetValidator: func(ctx iris.Context, name string) bool {
     return fileserver.BlockHidden(ctx, name)
 },
 ```
+
+That is for an ACME client of your own that uses HTTP-01. `ServerOptions.Letsencrypt` needs no `.well-known` route: it answers the tls-alpn-01 challenge on the TLS listener.
 
 **Symbolic links.** A string directory is served through `http.Dir`, which checks the request path as text but follows a symbolic link inside the directory that points outside it. To confine the server to the directory, pass the `fs.FS` of an `os.Root`:
 

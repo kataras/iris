@@ -41,7 +41,8 @@ func main() {
 	})
 
 	// Listen blocks until the server stops. Ctrl+C drains the in-flight
-	// requests and returns normally; a failed start is logged and exits the
-	// process with status 1, so there is no error to check here.
+	// requests and the process then exits with status 0; a failed start is
+	// logged and exits the process with status 1, so there is no error to
+	// check here.
 	app.Listen(":8080")
 }

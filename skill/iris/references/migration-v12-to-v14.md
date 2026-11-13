@@ -245,7 +245,8 @@ v12 stored an arbitrary function plus persistence arguments and invoked it throu
 ```go
 // was: ctx.SetLogoutFunc(fn any, persistenceArgs ...any); err := ctx.Logout(args...)
 ctx.SetLogoutFunc(func(ctx iris.Context) error {
-    return sessionManager.Destroy(ctx)
+    // the session that sessions.Handler loaded for this request.
+    return sessions.Get[UserSession](ctx).Delete(ctx)
 })
 err := ctx.Logout()
 ```

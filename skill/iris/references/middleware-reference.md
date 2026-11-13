@@ -83,7 +83,7 @@ ac.OnlyFailures = true      // an errors-only log
 ac.PanicLog = accesslog.LogHandler
 ```
 
-`accesslog.New()` already defaults `BytesReceivedBody`, `BytesSentBody` and `KeepMultiLineError` to true and `PanicLog` to `LogHandler`, so only `KeepMultiLineError = false` and `Async = true` are real changes above.
+`accesslog.New()` already defaults `BytesReceivedBody`, `BytesSentBody` and `KeepMultiLineError` to true and `PanicLog` to `LogHandler`, so only `KeepMultiLineError = false` and `Async = true` are real changes above. `KeepMultiLineError` matters for the JSON formatter, a custom `Formatter` and the `Broker` listeners. The default text format, `CSV` and `Template` write one line per record whatever it is set to: they sanitize every value a client controls (a line break or a tab becomes a space, other control characters are dropped), a multi-line error or panic trace included. A template that reads through `.Ctx` prints what it reads as it is.
 
 `ResponseBody` is left empty for a response that carries a `Content-Encoding` other than `identity`, and `Redact` is not called for that line: registered outside compression (the builder's order, so a panic is still logged), the recorder would hold compressed bytes. The body is not decompressed for the log; status, byte counts and the other fields are logged as usual.
 
@@ -206,6 +206,10 @@ app.Use(bodylimit.New(512 * iris.KB)) // 512 KB limit
 // Under errors.Handler both answer TOO_LARGE, "request body too large".
 ```
 
+A body past the limit that its `Content-Length` does not give away (a chunked one, or a compressed one behind `compress.Handler` registered before this middleware) is stopped at the limit whichever way the handler reads it. `Reader.Read` returns the bytes up to the limit and never one past it, then `context.ErrRequestEntityTooLarge` with no data on every further read. `ctx.Body`, `ctx.ReadJSON`, `ctx.BindJSON`, `ctx.ReadBody` for JSON, `ctx.FormFile` and `ctx.UploadFormFiles` return that error, and `ctx.ReadJSONStream` fails without handing its callback a value from past the limit. A body of exactly the limit is accepted.
+
+Two cases get no 413. `ctx.ReadForm` and `ctx.Form()` report no error for a chunked form past the limit: nothing of it is bound and the handler goes on. A chunked upload whose limit falls inside the header lines of a part answers 400 with the multipart parser's `malformed MIME header` error. Outside `errors.Handler` the status of a streamed body is the one the handler gives the read error: `errors.HandleRequestError` and `ctx.BindJSON` answer 413 `TOO_LARGE`, a bare `ctx.StopWithPlainError(400, err)` answers 400.
+
 ## cache
 
 HTTP caching headers and conditional request handling.
@@ -253,7 +257,7 @@ app.Use(compress.Safe)                 // 32MB, compress.DefaultMaxDecompressedS
 app.Use(compress.Limited(8 * iris.MB)) // or your own
 ```
 
-Reading past the cap yields `compress.ErrDecompressedBodyTooLarge`. `ContextOptions.BodyMaxMemory` and a `bodylimit` registered *after* this middleware bound the same stream, because the body being read by then is the decompressed one. `compress.Handler` logs a warning at first use when nothing bounds it.
+Reading past the cap yields `compress.ErrDecompressedBodyTooLarge`. `ContextOptions.BodyMaxMemory` and a `bodylimit` registered *after* this middleware bound the same stream, because the body being read by then is the decompressed one. With `bodylimit` that holds for `ctx.ReadJSON` and `ctx.BindJSON` as for `ctx.Body`; a form that decompresses past the limit is not bound and `ctx.ReadForm` reports no error (see [bodylimit](#bodylimit)). `compress.Handler` logs a warning at first use when nothing bounds it.
 
 Compression trades CPU for bytes. In front of already-compressed payloads (images, video) it is a loss; register it on the groups that serve text rather than at the root.
 
@@ -414,7 +418,15 @@ app.Router("/admin", handler, adminAPI)
 
 Blocked patterns are checked first and win. A request matching neither list gets 403.
 
-It matches `ctx.Addr()`. When `ContextOptions.RemoteAddrHeaders` is unset - the default - that is the connection address and a forged `X-Forwarded-For` cannot defeat it. **If you do configure `RemoteAddrHeaders`, this middleware reads them**, so the proxy in front must overwrite those headers on every request; otherwise a client sets its own address and walks through the allowlist. Behind a reverse proxy with no forwarding configured, every request appears to come from the proxy: allowlist the proxy, or filter there.
+It matches `ctx.RemoteAddr()`. When `ContextOptions.RemoteAddrHeaders` is unset - the default - that is the connection address and a forged `X-Forwarded-For` cannot defeat it. Behind a reverse proxy with no forwarding configured, every request appears to come from the proxy: allowlist the proxy, or filter there. **If you do configure `RemoteAddrHeaders`, this middleware reads them**, from the right, where a proxy appends the address it got the request from: the first public address is matched, and the address of the connection when no header gives one. A proxy that appends (nginx's `$proxy_add_x_forwarded_for`) is therefore enough against a forged entry, which sits on the left and is not read: `X-Forwarded-For: 203.0.113.7, 198.51.100.9` is matched as `198.51.100.9` and gets 403 on an allowlist of `203.0.113.0/24`.
+
+Iris has no trusted-proxy list, so with `RemoteAddrHeaders` set the matched address is only as good as the proxy in front:
+
+- A private address in the header is never matched. A client that an internal proxy reports as `10.0.0.5` does not match `10.0.0.0/8`: the connection, which is the proxy, is matched instead. Put the proxy's address in the patterns, or change what is read: `RemoteAddrHeadersForce` takes the first address of a header that has no public one, which the client can write, and an empty `RemoteAddrPrivateSubnets` takes the right-most one, which the nearest proxy appended. A loopback address is skipped whatever that list holds, so only `RemoteAddrHeadersForce` takes it.
+- A proxy with a public address in front of your own, a CDN for example, is the address that is matched, and the client it got the request from is not read. Add its range to `RemoteAddrPrivateSubnets` to have it skipped (that list is checked for IPv4 addresses only).
+- Name only headers the proxy writes. A header is read when the ones named before it give no public address: with `["X-Forwarded-For", "X-Real-Ip"]` and `X-Forwarded-For: 10.0.0.66`, an `X-Real-Ip: 203.0.113.7` that the proxy passed on from the client passes an allowlist of `203.0.113.0/24`.
+- A client inside your network is appended as a private address and skipped, so the entry on its left is read, and that client wrote it. A proxy that overwrites the header closes this.
+- A client that reaches the server directly, with no proxy in front, writes the whole header. Such a server must be reachable through the proxy only.
 
 Regexp patterns are anchored at the start, so `10\.0\.0\.\d{1,3}` cannot be satisfied by `110.0.0.99`. The end is left open on purpose, so a prefix pattern like `^198\.51\.100\.` still covers the whole /24; add `$` yourself for an exact match.
 
@@ -762,22 +774,33 @@ sessionOptions.MaxAge = 1 * time.Hour                    // default is 24 hours
 // Cookie-based backend: data lives inside the encrypted cookie.
 sessionDB := sessions.NewCookieDatabase[UserSession](sessionOptions)
 
-// Middleware: loads the session per request and auto-commits at the end.
+// Middleware: loads the session per request and commits it at the end,
+// when the request changed it.
 app.Use(sessions.Handler(sessionDB, "my_session"))
-// Read-only variant (no auto-commit):
+// Read-only variant (never commits):
 // app.Use(sessions.ReadOnlyHandler(sessionDB, "my_session"))
 
 app.Get("/set", func(ctx iris.Context) {
     session := sessions.Get[UserSession](ctx)
     session.Set(UserSession{ID: "1", Username: "kataras"}) // or session.Data = UserSession{...}
-    // Auto-committed by the Handler middleware.
+    // Changed, so the Handler middleware commits it.
 })
 
 app.Get("/get", func(ctx iris.Context) {
     session := sessions.Get[UserSession](ctx)
     ctx.JSON(session.Data)
+    // Only read: an existing session is not committed, so no Set-Cookie
+    // and no write to the store.
 })
 ```
+
+`sessions.Handler` commits after the request when three things hold: the status is below 400, no handler called `Commit` already (`Delete` and a `RegenerateID` that rotated the id call it), and the request changed the session. Changed means its data (a slice or a map of it changed in place counts), its flash messages (a `GetFlash` that removed one counts), its id or its `Options`. A new session counts as changed, and so does one whose stored record was gone, which the database re-creates under a new id. A request that only reads sends no cookie and writes nothing to the store, so it cannot store its old copy over what another request wrote or deleted while it ran, a sign-out included. Two requests that both change the session at the same time still lose one of the two writes.
+
+The third condition applies to the three databases of the package (`NewCookieDatabase`, `NewRedisDatabase`, `NewPostgresDatabase`), which decode the data of a session for each request. The session of any other `Database` is committed after every request, as before: its data may be shared with other requests, so the Handler does not read it.
+
+That costs the sliding expiry. A session ends `Options.MaxAge` after its last change, not after its last request: a visitor who signs in and then only reads is signed out 24 hours (the default) after signing in. Nothing moves the expiry of a session a request did not change: not the cookie, not the TTL of the Redis record, not the Postgres expiration under `ShiftExpiration`. To keep a session alive on a route that only reads it, call `session.Commit(ctx)` in that handler, before it writes the response. Called by hand it stores the session and re-sends the cookie, changed or not. A deployment that changes `Secure`, `Path` or `MaxAge` in the session options waits in the same way: it reaches a visitor at their next change of the session, not at their next request.
+
+It also costs the `Set-Cookie` that kept a page out of shared caches. A response without the session cookie is one a shared cache may store, and a reverse proxy that skips responses with `Set-Cookie` can serve one visitor's page to another. Send `Cache-Control: private` on a page that depends on the session when a reverse proxy caches in front of the application. `httpcache` does not cache a request with cookies unless its key names every one of them, so it is safe as long as its handler is registered before `sessions.Handler`. Registered after it, it stores the page made for a new session before the session cookie is written. See [caching.md](./caching.md).
 
 Without the middleware, query the database directly. `sessions.Single` fixes the cookie name so `Get` takes only the context:
 
@@ -809,7 +832,7 @@ message, ok := session.GetFlash("notice")
 // Commit after SetFlash when not using the Handler middleware.
 ```
 
-Other session methods: `session.Delete(ctx)` expires it, `session.RegenerateID(ctx)` rotates the server-side ID after sign-in (no-op for cookie databases), `session.IsNew`.
+Other session methods: `session.Delete(ctx)` expires it, `session.RegenerateID(ctx)` rotates the server-side ID after sign-in (no-op for cookie databases), `session.IsNew`. Set the session data before `RegenerateID`: it stores the session and the Handler commits nothing after it, so data set later is never stored on Redis or Postgres.
 
 A cookie that does not decode (signed with other keys, older than `Options.MaxAge`, written by a v12 application under the same name and keys) is treated like no cookie by the three built-in databases: `Get` returns a new session with `IsNew` true and the next commit replaces the cookie. Only a failure of the store itself makes `sessions.Handler` answer 500.
 
@@ -818,7 +841,7 @@ Database backends:
 ```go
 // PostgreSQL (github.com/jackc/pgx/v5)
 pgDB := sessions.NewPostgresDatabase[UserSession](sessions.DefaultTableName, conn, sessionOptions)
-pgDB.ShiftExpiration(true) // optional: slide expiration to NOW+MaxAge on each commit
+pgDB.ShiftExpiration(true) // optional: a commit moves the expiration to NOW+MaxAge; a request that only reads does not commit
 errCh := pgDB.StartCleanupScheduler(context.Background(), 4*time.Hour)
 
 // Redis (github.com/redis/go-redis/v9)
@@ -917,6 +940,8 @@ serverEvents := neffos.Namespaces{
 wsServer := neffos.New(gorilla.DefaultUpgrader, serverEvents)
 app.Any("/ws", websocket.New(wsServer, websocket.Options{}))
 ```
+
+The optional socket features of neffos work behind `websocket.New`, `websocket.Upgrade` and `mvc.Websocket`: `Conn.Close`, `Conn.Terminate(code, reason)` and `Server.Close` send their close frame (1000, the given code, 1001), and with `neffos.WithTimeout` as the server's `ConnHandler` a message over `MaxMessageSize` closes the connection with 1009 and `PingInterval` runs the heartbeat. The cap counts the neffos envelope as well as the body, an event callback that runs longer than `PingInterval` can lose its connection to the heartbeat, and `mvc.Websocket` builds its own server with no `WithTimeout`, so only the close frame applies there.
 
 ## Community Middleware (iris-contrib/middleware)
 

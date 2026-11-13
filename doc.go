@@ -75,8 +75,10 @@ reads a file, and [Options.Bind] reads the SERVER_CONFIG environment variable.
 
 [Application.Listen] serves HTTP on an address. [Application.Run] takes
 [ServerOptions] when you need TLS, a custom tls.Config or a prepared listener.
-[Application.Shutdown] drains connections, and [RegisterOnInterrupt] wires it to
-Ctrl-C.
+[Application.Shutdown] drains the connections and then runs the closers of
+[Application.AddCloser]. Listen and Run return once it has. Ctrl-C alone drains
+the server and exits: pass Shutdown to [RegisterOnInterrupt] and the signal runs
+the closers too.
 
 # Routing
 

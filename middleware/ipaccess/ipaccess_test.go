@@ -10,8 +10,13 @@ import (
 
 func newApp(t *testing.T) *iris.Application {
 	app := iris.New(iris.Defaults(func(opts *iris.Options) {
-		// Enable the X-Forwarded-For header for Context.Addr(), which the middleware uses to get the client's IP address.
+		// Enable the X-Forwarded-For header for Context.RemoteAddr(), which the middleware uses to get the client's IP address.
 		opts.Context.RemoteAddrHeaders = []string{"X-Forwarded-For"}
+		// The tests of this file send a private or a loopback address in that
+		// header. RemoteAddr skips such an address as one of our own proxies
+		// and gives the address of the connection, unless this is set.
+		// See TestPrivateAddressInTheHeader.
+		opts.Context.RemoteAddrHeadersForce = true
 	}))
 
 	allowedPatterns := []string{
@@ -63,6 +68,7 @@ func TestNew(t *testing.T) {
 func TestGlobPatternIsAnchored(t *testing.T) {
 	app := iris.New(iris.Defaults(func(opts *iris.Options) {
 		opts.Context.RemoteAddrHeaders = []string{"X-Forwarded-For"}
+		opts.Context.RemoteAddrHeadersForce = true // a private address is sent, see newApp.
 	}))
 
 	mw, err := ipaccess.New([]string{`10\.0\.0\.\d{1,3}`}, nil)
@@ -87,6 +93,7 @@ func TestGlobPatternIsAnchored(t *testing.T) {
 func TestEmptyAllowlistIsBlocklistOnly(t *testing.T) {
 	app := iris.New(iris.Defaults(func(opts *iris.Options) {
 		opts.Context.RemoteAddrHeaders = []string{"X-Forwarded-For"}
+		opts.Context.RemoteAddrHeadersForce = true // a private address is sent, see newApp.
 	}))
 
 	mw, err := ipaccess.New(nil, []string{"10.0.0.1"})
@@ -107,6 +114,7 @@ func TestEmptyAllowlistIsBlocklistOnly(t *testing.T) {
 func TestExactIPv6FormsAreEquivalent(t *testing.T) {
 	app := iris.New(iris.Defaults(func(opts *iris.Options) {
 		opts.Context.RemoteAddrHeaders = []string{"X-Forwarded-For"}
+		opts.Context.RemoteAddrHeadersForce = true // a loopback address is sent, see newApp.
 	}))
 
 	mw, err := ipaccess.New([]string{"::1"}, nil)
@@ -156,6 +164,7 @@ func TestPrefixBlocklistPatternStillMatches(t *testing.T) {
 func TestMust(t *testing.T) {
 	app := iris.New(iris.Defaults(func(opts *iris.Options) {
 		opts.Context.RemoteAddrHeaders = []string{"X-Forwarded-For"}
+		opts.Context.RemoteAddrHeadersForce = true // a loopback address is sent, see newApp.
 	}))
 	app.Use(ipaccess.Must([]string{"127.0.0.1"}, nil))
 	app.Get("/", func(ctx iris.Context) { ctx.WriteString("ok") })

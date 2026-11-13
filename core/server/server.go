@@ -20,6 +20,7 @@ import (
 
 	"github.com/kataras/iris/v14/internal/signalhandler"
 
+	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -70,8 +71,11 @@ type ServerOptions struct {
 	// The file must contain PEM encoded data.
 	KeyFile string `json:"key_file,omitempty" yaml:"KeyFile,omitempty" toml:"KeyFile,omitempty"`
 	// Letsencrypt enables automatic HTTPS certificates from Let's Encrypt.
+	// A host is validated with the tls-alpn-01 challenge, which this TLS listener answers itself:
+	// Let's Encrypt connects to port 443 of the host, so that port must reach this server.
+	// The HTTP-01 challenge is not served, so no handler on port 80 is involved.
 	// If this is enabled but custom CertFile and KeyFile are provided then they are used as a fallback if Let's Encrypt fails,
-	// useful for local testing.
+	// useful for local testing. Nothing is logged when the fallback pair is served.
 	Letsencrypt bool `json:"letsencrypt,omitzero" yaml:"Letsencrypt,omitempty" toml:"Letsencrypt,omitempty"`
 	// Ngrok provides a tunnel to the local server. If this is set then TLSConfig, Letsencrypt, CertFile and KeyFile options SHOULD be nil.
 	// It needs the blank import _ "github.com/kataras/iris/v14/core/server/ngrok" somewhere in the program: without it the server fails to start.
@@ -277,6 +281,14 @@ type Server struct {
 	// It is created in startHTTPServer and closed once, through shutdownOnce.
 	shutdownCh   chan struct{}
 	shutdownOnce sync.Once
+
+	// shutdowns counts the Shutdown and Close calls that are running and
+	// shutdownsDone is closed when the last of them returns. ListenAndServe waits
+	// on it, because http.Server.Serve returns when a shutdown begins, not when
+	// it ends. Both are guarded by shutdownsMu.
+	shutdownsMu   sync.Mutex
+	shutdowns     int
+	shutdownsDone chan struct{}
 }
 
 // signalShutdown closes the shutdown channel, exactly once. It only signals: the
@@ -287,6 +299,38 @@ func (s *Server) signalShutdown() {
 			close(s.shutdownCh)
 		}
 	})
+}
+
+// beginShutdown counts a Shutdown or Close call that is about to run and returns
+// the function that marks its end.
+func (s *Server) beginShutdown() (end func()) {
+	s.shutdownsMu.Lock()
+	if s.shutdowns == 0 {
+		s.shutdownsDone = make(chan struct{})
+	}
+	s.shutdowns++
+	s.shutdownsMu.Unlock()
+
+	return func() {
+		s.shutdownsMu.Lock()
+		if s.shutdowns--; s.shutdowns == 0 {
+			close(s.shutdownsDone)
+		}
+		s.shutdownsMu.Unlock()
+	}
+}
+
+// waitShutdown blocks until no Shutdown or Close call is running. It returns at
+// once when there is none, which is the case of an http.Server that was shut
+// down directly (OnServerCreated hands it out).
+func (s *Server) waitShutdown() {
+	s.shutdownsMu.Lock()
+	done := s.shutdownsDone
+	s.shutdownsMu.Unlock()
+
+	if done != nil {
+		<-done
+	}
 }
 
 // NewServer returns a new server instance.
@@ -329,10 +373,21 @@ func (s *Server) OnListenerCreated(fn func(ln net.Listener, url *url.URL) error)
 }
 
 // ListenAndServe listens on the TCP network address and then calls Serve to handle requests on incoming connections.
+//
+// It blocks until the server stops. After a Shutdown or a Close it returns nil,
+// and only once that call has returned: a graceful shutdown has drained the
+// requests in flight, or reached the deadline of its context, by then.
+//
+// This is the server's own shutdown. iris.Application.Run waits for more: the
+// closers that iris.Application.Shutdown runs after it.
 func (s *Server) ListenAndServe(handler http.Handler) error {
 	err := s.listenAndServe(handler)
 	s.setServerError(err) // set the error here, so any Wait call will return.
 	if err == http.ErrServerClosed {
+		// Serve returns the moment a shutdown begins. A caller that exits when this
+		// method returns, a main that ends with it, would cut the requests the
+		// shutdown is still draining.
+		s.waitShutdown()
 		return nil // ignore this error here, it's expected.
 	}
 	return err
@@ -364,6 +419,22 @@ func (s *Server) listenAndServe(handler http.Handler) error {
 }
 
 // Shutdown gracefully shuts down the server without interrupting any active connections.
+// It waits for the requests in flight until ctx is done, then closes the
+// connections that are left. ListenAndServe returns once Shutdown has returned.
+//
+// A handler that stops its own server calls Shutdown on another goroutine, with
+// a context of its own: go s.Shutdown(context.Background()), or one that
+// carries a deadline. Called in place, Shutdown waits for the request that
+// called it:
+//
+//   - with a context that has no deadline it does not return, and
+//     ListenAndServe waits with it. The request's own context is one of
+//     those: it ends only when the client goes away.
+//   - with a deadline it returns at the deadline, after closing every
+//     connection that is left, the caller's own included.
+//
+// The request's own context is no better on another goroutine: it is canceled
+// when the handler returns, which closes the other connections at once.
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.free(ctx, true)
 }
@@ -449,17 +520,37 @@ func (s *Server) startHTTPServer(handler http.Handler, listener net.Listener) er
 	return httpServer.Serve(listener) // start the server, blocking call. No need to Close the listener, it's handled inside the standard library.
 }
 
+// registerInterruptHandler wires the server's own shutdown to SIGINT and
+// SIGTERM, and hands the signal handler the ShutdownOnInterruptTimeout option:
+// it bounds the context that every callback of the signal receives, this
+// server's own and the ones registered with iris.RegisterOnInterrupt alike.
 func (s *Server) registerInterruptHandler() {
-	signalhandler.Register(func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), s.options.Timeout.ShutdownOnInterruptTimeout)
-		defer cancel()
+	signalhandler.RegisterWithTimeout(s.shutdownOnInterrupt, s.options.Timeout.ShutdownOnInterruptTimeout)
+}
 
-		return s.Shutdown(ctx)
-	})
+// shutdownOnInterrupt is what the interrupt signal runs: a graceful shutdown that
+// may take up to the ShutdownOnInterruptTimeout option. A zero or negative value
+// sets no deadline, as the option documents. Given to context.WithTimeout it is a
+// context that has expired already, which closes every connection at once.
+//
+// It builds its own context, so this is the budget of the server's own drain
+// whatever the signal handler gives it. The same option bounds the context of
+// every other callback of the signal, see registerInterruptHandler.
+func (s *Server) shutdownOnInterrupt() error {
+	ctx := context.Background()
+	if timeout := s.options.Timeout.ShutdownOnInterruptTimeout; timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
+	return s.Shutdown(ctx)
 }
 
 // free cleans up the server's resources and unblocks the main routine (which was blocked by ListenAndServe).
 func (s *Server) free(ctx context.Context, graceful bool) (joinedErr error) {
+	defer s.beginShutdown()() // ListenAndServe returns after this call does.
+
 	// Tell handlers first, and tell them whether the shutdown is graceful or not:
 	// a stream that is watching this signal gets the chance to write its terminal
 	// frame while the connection is still open, before Shutdown starts waiting
@@ -682,7 +773,10 @@ func (s *Server) newTLSConfig() *tls.Config {
 			letsEncryptGetCertificate := letsEncryptConfig.GetCertificate
 			letsEncryptConfig.GetCertificate = func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 				certificate, err := letsEncryptGetCertificate(hello)
-				if err != nil { // it will still print/notify the error via the http server's logger but the request can be handled locally.
+				if err != nil {
+					// The manager's error ends here: the handshake goes on with the
+					// local certificate and the http server's logger gets nothing,
+					// so no log line tells which of the two certificates was served.
 					certificate = localCertificate
 				}
 				return certificate, nil
@@ -727,13 +821,17 @@ func (s *Server) newLetsencryptTLSConfig() *tls.Config {
 		HostPolicy:  s.allowHost,         // we need this to be based on the server's host patterns.
 	}
 
-	// Maybe in a later step.
+	// The HTTP-01 challenge is not served: its handler would need a listener
+	// on port 80, which this server does not open. Maybe in a later step.
 	// m.HTTPHandler()
 
 	tlsConfig := &tls.Config{ // tlsConfig := m.TLSConfig()
 		GetCertificate: m.GetCertificate,
 		MinVersion:     tls.VersionTLS13,
-		NextProtos:     []string{"h2", "http/1.1"},
+		// The ACME protocol goes last, as in m.TLSConfig(): the HTTP-01 handler above
+		// is not served, so tls-alpn-01 is the one challenge this listener can answer,
+		// and without its protocol here the CA's handshake fails at negotiation.
+		NextProtos: []string{"h2", "http/1.1", acme.ALPNProto},
 	}
 
 	return tlsConfig

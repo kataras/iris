@@ -538,7 +538,7 @@ After the chain returns, `errors.Handler` renders a status of 400 or above that 
 
 - no stored error: the status text is the message (`"message":"Forbidden"`);
 - a private stored error, of any type: answered first, before any mapping; the status the handler set, with the status text below 500 and the generic `"server error"` (logged) at 500 and above;
-- a non-private stored error a mapping or resolver recognises: that mapping. A JSON decode error stored next to a status below 500 (`ctx.StopWithPlainError(400, err)` with the error of `ctx.ReadJSON`) answers 400 `INVALID_ARGUMENT`, `"unable to parse request body"`; `bodylimit`'s error answers 413 `TOO_LARGE`, `"request body too large"`, for both the declared-length and the streamed case;
+- a non-private stored error a mapping or resolver recognises: that mapping. A JSON decode error stored next to a status below 500 (`ctx.StopWithPlainError(400, err)` with the error of `ctx.ReadJSON`) answers 400 `INVALID_ARGUMENT`, `"unable to parse request body"`; `bodylimit`'s error answers 413 `TOO_LARGE`, `"request body too large"`, for both the declared-length and the streamed case, the error of `ctx.ReadJSON` on a chunked body past the limit included;
 - a non-private stored `*errors.Error` at 500 and above: sent as it is, because that type exists to be sent to clients (logged; the collector is not called for it);
 - any other stored error at 500 and above: logged, and the client reads `"server error"`; the status the handler set stays (a 503 is a 503);
 - any other stored error below 500: its text is the message.

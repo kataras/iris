@@ -38,8 +38,18 @@ type Options struct {
 	// If true, do not include query parameters in cache key generation.
 	NoQuery bool `json:"no_query" yaml:"NoQuery"`
 	// Headers to include in cache key generation. E.g. Authorization.
+	//
+	// A request that carries Authorization or Proxy-Authorization is cached
+	// only when that header is named here, in any letter case. Otherwise its
+	// handler runs for every request and nothing is stored.
 	Headers []string `json:"headers" yaml:"Headers"`
 	// Cookies to include in cache key generation. E.g. session_id.
+	//
+	// A request that carries cookies is cached only when every cookie it sends
+	// is named here, in the same letter case: the session cookie, and an
+	// analytics or a theme cookie next to it. Otherwise its handler runs for
+	// every request and nothing is stored. Naming Cookie in Headers keys on
+	// the whole Cookie header instead, whatever cookies it holds.
 	Cookies []string `json:"cookies" yaml:"Cookies"`
 }
 
@@ -196,7 +206,7 @@ func (c *Cache) appendKeySuffix(key string, r *http.Request) string {
 		var cookiesData []byte
 		for _, cname := range c.Options.Cookies {
 			c, err := r.Cookie(cname)
-			if err == nil && c.Value != "" {
+			if err == nil { // also with an empty value: it is not a request without the cookie.
 				cookiesData = append(cookiesData, []byte(cname)...)
 				cookiesData = append(cookiesData, []byte(":")...)
 				cookiesData = append(cookiesData, []byte(c.Value)...)
@@ -221,12 +231,19 @@ type Response struct {
 }
 
 // WriteTo writes the cached response to the provided http.ResponseWriter.
+// It sets "Cache-Control: public, max-age=<seconds left>", unless the response,
+// or the writer when the response has no Cache-Control, carries private,
+// no-store or no-cache.
 func (r *Response) WriteTo(w http.ResponseWriter) error {
 	// Write the headers, including content-type at any case.
 	maps.Copy(w.Header(), r.Headers)
 
 	// Set Cache-Control: max-age header if TTL is positive.
-	if !r.ExpiresAt.IsZero() {
+	//
+	// Not over a private, no-store or no-cache. A response stored with one (by
+	// an earlier version, or by a caller of Set) keeps it, where "public" would
+	// let every cache between the server and the client store the response.
+	if !r.ExpiresAt.IsZero() && !forbidsSharedStorage(w.Header().Values("Cache-Control")) {
 		maxAge := max(int(time.Until(r.ExpiresAt).Seconds()), 0)
 		// Set Cache-Control header to public with max-age.
 		// This allows the response to be cached by any cache.

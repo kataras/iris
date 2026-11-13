@@ -8,6 +8,7 @@ import (
 )
 
 // CSV is a Formatter type for csv encoded logs.
+// Its values are sanitized as in the default format, so a record is one line.
 type CSV struct {
 	writerPool *sync.Pool
 	ac         *AccessLog
@@ -145,8 +146,14 @@ func (f *CSV) Format(log *Log) (bool, error) {
 	//
 	// The timestamp is skipped on purpose: DateScript deliberately makes it a
 	// formula, and it is not attacker-controlled.
+	//
+	// The same values are sanitized, see sanitizeLogValue: the csv writer keeps
+	// a line break inside a quoted field, which is a second line to whatever
+	// reads the log line by line. The escape runs before it, because a leading
+	// tab or CR becomes a space, and after it, because a control character
+	// dropped from the front of "\x00=1+1" leaves the formula first.
 	for i := 1; i < len(values); i++ {
-		values[i] = escapeCSVFormula(values[i])
+		values[i] = escapeCSVFormula(sanitizeLogValue(escapeCSVFormula(values[i])))
 	}
 
 	w := f.writerPool.Get().(*csv.Writer)

@@ -35,8 +35,8 @@ func main() {
 	// a cookie name each time you want to retrieve the session:
 	//
 	// sessionDB := sessions.Single(
-	// 	"my_session",
 	// 	sessions.NewCookieDatabase[UserSession](sessionOptions),
+	// 	"my_session",
 	// )
 	// app.Get("/set", func(ctx iris.Context) {
 	// 	session, err := sessionDB.Get(ctx)
@@ -65,6 +65,8 @@ func main() {
 	sessionDB := sessions.NewPostgresDatabase[UserSession](sessions.DefaultTableName, conn, sessionOptions)
 	// Optionally, enable the shift expiration feature.
 	// It will update the session's expiration to NOW+Options.MaxAge on each commit.
+	// sessions.Handler commits after a request that changed the session, so a request
+	// that only reads does not move the expiration: call session.Commit there.
 	sessionDB.ShiftExpiration(true)
 
 	// Start the cleanup scheduler, optionally.

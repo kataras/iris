@@ -70,13 +70,38 @@ type Reader struct {
 }
 
 // Read reads from the underlying reader and stops reading when the limit is reached.
+//
+// It returns the bytes up to the limit and not one past it. For a body that
+// goes on, every Read from there returns context.ErrRequestEntityTooLarge
+// and no data.
 func (r *Reader) Read(b []byte) (n int, err error) {
+	if r.read > r.limit {
+		return 0, context.ErrRequestEntityTooLarge
+	}
+
+	// Ask for one byte past the limit at most, like http.MaxBytesReader: it
+	// is what tells a body of exactly the limit from a longer one.
+	if remaining := r.limit - r.read; int64(len(b))-1 > remaining {
+		b = b[:remaining+1]
+	}
+
 	n, err = r.reader.Read(b)
 	r.read += int64(n)
-	if r.read > r.limit {
-		return n, context.ErrRequestEntityTooLarge
+	if r.read <= r.limit {
+		return n, err
 	}
-	return
+
+	// That byte was read and is not returned, and the error waits for a Read
+	// that has nothing else to return. It used to travel with the data, the
+	// bytes past the limit included, and a decoder that keeps the data of
+	// such a Read and drops its error (encoding/json/v2 does) decoded a body
+	// of any size when its declared length did not give it away: a chunked
+	// one, or a compressed one behind the compress middleware.
+	if n--; n > 0 {
+		return n, nil
+	}
+
+	return 0, context.ErrRequestEntityTooLarge
 }
 
 // Close closes the underlying reader.

@@ -167,7 +167,10 @@ Removed, with another way to do the job:
 
 ctx.SetLogoutFunc now takes a handler rather than a function plus loose
 persistence arguments, and ctx.Logout() takes none:
-  ctx.SetLogoutFunc(func(ctx iris.Context) error { return mgr.Destroy(ctx) })
+  ctx.SetLogoutFunc(func(ctx iris.Context) error {
+      // the session that sessions.Handler loaded for this request.
+      return sessions.Get[UserSession](ctx).Delete(ctx)
+  })
   err := ctx.Logout()
 
 ctx.ContentLength() now returns Request.ContentLength, which is -1 when the
@@ -809,7 +812,8 @@ through `CallFunc`. v14 stores a typed handler, so both signatures change:
 // was: ctx.SetLogoutFunc(fn any, persistenceArgs ...any)
 //      err := ctx.Logout(args...)
 ctx.SetLogoutFunc(func(ctx iris.Context) error {
-    return sessionManager.Destroy(ctx)
+    // the session that sessions.Handler loaded for this request.
+    return sessions.Get[UserSession](ctx).Delete(ctx)
 })
 err := ctx.Logout()
 ```
@@ -999,6 +1003,21 @@ query, and the `required` option of the `form` tag applies to a non-empty
 query. `ctx.ReadBody` follows wherever it reads the query. A field with a
 `url` tag keeps it, so add one where the query name must differ from the form
 name.
+
+### Path parameter macros belong to one application
+
+v12's `app.Macros()` returned the one `macro.Defaults` collection in every
+application of the process, so a parameter type, a macro function or an
+error handler registered through one application was known to all of them.
+In v14 each application copies `macro.Defaults` when `iris.New` creates it,
+and what is registered through its `app.Macros()` stays in it. A program
+with one application that registers through `app.Macros()` needs no change.
+With more than one, register on each application before its routes, or on
+`macro.Defaults` (or a package macro such as `macro.Int`) before the first
+`iris.New`: a registration made there later does not reach an application
+that already exists. A missed function is quiet. The route skips a function
+its application does not know and accepts what the function would refuse.
+A missed parameter type panics when the route is registered.
 
 ## Recommended opt-in hardening
 

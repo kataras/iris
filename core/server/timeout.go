@@ -27,9 +27,12 @@ import (
 type TimeoutOptions struct {
 	// ShutdownOnInterruptTimeout is the maximum duration for the server to wait for
 	// the server to shutdown on OS interrupt signal (e.g. CTRL+C).
-	// A zero or negative value means there will be no timeout.
+	// A zero or negative value means there will be no timeout: the server waits
+	// for every request in flight, however long that takes.
 	//
-	// Defaults to 15 seconds.
+	// The `Timeout` function sets it to 15 seconds, and a server whose Timeout
+	// option is nil gets the same. A TimeoutOptions literal, or a configuration
+	// file whose Timeout section leaves the field out, carries zero.
 	ShutdownOnInterruptTimeout time.Duration `ini:"shutdown_on_interrupt_timeout" json:"shutdown_on_interrupt_timeout,omitzero" yaml:"ShutdownOnInterruptTimeout" toml:"ShutdownOnInterruptTimeout"`
 
 	// ServerTimeout is the underline net/http server's read/write timeout.
@@ -110,7 +113,7 @@ func (c *TimeoutOptions) Get() *TimeoutOptions {
 // the server to shutdown on OS interrupt signal (e.g. CTRL+C).
 // A zero or negative value means there will be no timeout.
 //
-// Defaults to 15 seconds.
+// The options the `Timeout` function returns start at 15 seconds.
 func (c *TimeoutOptions) WithShutdownOnInterruptTimeout(timeout time.Duration) *TimeoutOptions {
 	c.ShutdownOnInterruptTimeout = timeout
 	return c

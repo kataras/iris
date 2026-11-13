@@ -46,8 +46,16 @@ func (c *Cache) Pair(r router.Router) (context.Handler, context.Handler) {
 // If no cached response is found, it records the response using a response recorder.
 // After the handler chain is executed, if the response status code is 200,
 // it stores the response body in the cache using a key derived from the request.
+// A response that sets a cookie, or whose Cache-Control carries private, no-store
+// or no-cache, is not stored: its handler runs for every request.
 // The cache key is generated based on the request's URL path, method, query parameters,
 // headers, cookies and body.
+//
+// A request that carries Authorization, Proxy-Authorization or cookies is looked
+// up and stored only when the cache key includes every one of them: the header
+// is named in Options.Headers and each cookie it sends is named in
+// Options.Cookies. Otherwise its handler runs for every request and nothing is
+// stored, which is what happens to such a request under the default Options.
 //
 // The cache is designed to store only successful responses (HTTP 200) for GET and POST requests.
 func (c *Cache) Handler() context.Handler {
@@ -80,7 +88,10 @@ func (c *Cache) handler(ctx *context.Context) {
 	// "GET /api/me" and user B's identical request collapse onto the SAME key -
 	// so B (or an anonymous caller) is served A's private response. That is a
 	// cross-user data leak, and the default configuration has it.
-	if c.requestIsCredentialed(ctx) && !c.keyIncludesCredentials() {
+	//
+	// Naming something is not enough: with Cookies: ["theme"] a session cookie
+	// is still outside the key. Every credential of the request has to be in.
+	if !c.keyIncludesCredentials(ctx.Request()) {
 		c.warnCredentialedOnce(ctx)
 		ctx.Next()
 		return
@@ -134,9 +145,36 @@ func (c *Cache) handler(ctx *context.Context) {
 	if rr.Code == 200 {
 		headers := ctx.ResponseWriter().Header()
 
+		// A handler registered before this one set its headers on a writer
+		// under the recorder. The recorded ones replace those by name when the
+		// recorder is released, so the ones below count when none was recorded:
+		// those of the writer the recorder wraps, then those of the writer at
+		// the bottom. The two are not the same when a second recorder (the
+		// access log's) lies under a compression writer.
+		sent := func(key string) []string {
+			values, recorded := headers[key]
+			if !recorded {
+				values, recorded = rr.ResponseWriter.Header()[key]
+			}
+			if !recorded {
+				if bottom := rr.ResponseWriter.Unwrap(); bottom != nil {
+					values = bottom.Header()[key]
+				}
+			}
+
+			return values
+		}
+
 		// A response that issues a cookie is per-client by definition: caching it
 		// would hand that session to every later cache hit.
-		if len(headers[setCookieHeaderKey]) > 0 || len(headers[setCookie2HeaderKey]) > 0 {
+		if len(sent(setCookieHeaderKey)) > 0 || len(sent(setCookie2HeaderKey)) > 0 {
+			return
+		}
+
+		// Nor is a response stored that says private, no-store or no-cache. The
+		// handler runs for every request then, so each response goes out with
+		// the Cache-Control it was given and not with the "public" of a replay.
+		if forbidsSharedStorage(sent(context.CacheControlHeaderKey)) {
 			return
 		}
 
@@ -194,28 +232,118 @@ func cacheableHeaders(headers http.Header) http.Header {
 	return out
 }
 
-// requestIsCredentialed reports whether the request carries anything that makes
-// its response client-specific.
-func (c *Cache) requestIsCredentialed(ctx *context.Context) bool {
-	r := ctx.Request()
-	return r.Header.Get(authorizationHeaderKey) != "" ||
-		r.Header.Get(proxyAuthorizationHeaderKey) != "" ||
-		r.Header.Get(cookieHeaderKey) != ""
+// forbidsSharedStorage reports whether one of the Cache-Control field lines
+// carries private, no-store or no-cache (RFC 9111, section 5.2.2).
+//
+// The first marks a response for one client and the second a response for no
+// cache at all. The third allows storing but no reuse before the origin has
+// validated the response, and a replay does not run the handler. The forms
+// with field names, private="Set-Cookie" and no-cache="Set-Cookie", count as
+// the bare directive, which is how the RFC says caches commonly treat them.
+//
+// A directive is a name with an optional token or quoted argument. Names are
+// compared without case and a comma inside a quoted argument does not end the
+// directive. A line with a quote that is never closed cannot be read, so it
+// counts as well.
+func forbidsSharedStorage(cacheControl []string) bool {
+	for _, line := range cacheControl {
+		start, quoted := 0, false
+
+		for i := 0; i <= len(line); i++ {
+			if i < len(line) && (quoted || line[i] != ',') {
+				switch {
+				case line[i] == '"':
+					quoted = !quoted
+				case line[i] == '\\' && quoted:
+					i++ // a quoted pair: the next byte does not close the argument.
+				}
+
+				continue
+			}
+
+			// line[start:i] is one directive.
+			name, _, _ := strings.Cut(line[start:i], "=")
+			switch strings.ToLower(strings.TrimSpace(name)) {
+			case "private", "no-store", "no-cache":
+				return true
+			}
+
+			start = i + 1
+		}
+
+		if quoted {
+			return true
+		}
+	}
+
+	return false
 }
 
-// keyIncludesCredentials reports whether the configured cache key distinguishes
-// one authenticated client from another.
-func (c *Cache) keyIncludesCredentials() bool {
-	return len(c.Options.Headers) > 0 || len(c.Options.Cookies) > 0
+// keyIncludesCredentials reports whether the cache key holds every credential
+// the request carries: its Authorization header, its Proxy-Authorization
+// header and each of its cookies. It is true for a request that carries none.
+//
+// A header is in the key when Options.Headers names it. Header names compare
+// without regard to case, as http.Header.Get reads them for the key.
+//
+// A cookie counts by its name, compared as it is written: it is in the key
+// when Options.Cookies names it. A name that is sent twice counts once, and
+// the key holds the first value, the one http.Request.Cookie returns. A Cookie
+// line that http.ParseCookie rejects, one that is not a list of name=value
+// pairs, is in no key: http.Request.Cookie skips some of the parts of such a
+// line. Nor are the cookies of a request that sends more of them than
+// net/http reads: http.Request.Cookie returns none of them. The exception is
+// the first Cookie line when Options.Headers names Cookie: the key holds that
+// line as it was sent.
+func (c *Cache) keyIncludesCredentials(r *http.Request) bool {
+	inKey := func(header string) bool {
+		return slices.ContainsFunc(c.Options.Headers, func(name string) bool {
+			return http.CanonicalHeaderKey(name) == header
+		})
+	}
+
+	for _, header := range []string{authorizationHeaderKey, proxyAuthorizationHeaderKey} {
+		if r.Header.Get(header) != "" && !inKey(header) {
+			return false
+		}
+	}
+
+	lines := r.Header[cookieHeaderKey]
+	if len(lines) > 0 && inKey(cookieHeaderKey) {
+		lines = lines[1:]
+	}
+
+	named := false // the request sends a cookie that Options.Cookies names.
+
+	for _, line := range lines {
+		cookies, err := http.ParseCookie(line)
+		if err != nil && strings.TrimSpace(line) != "" { // an empty line carries no cookie.
+			return false
+		}
+
+		for _, cookie := range cookies {
+			if !slices.Contains(c.Options.Cookies, cookie.Name) {
+				return false
+			}
+
+			named = true
+		}
+	}
+
+	// net/http reads no cookie at all from a request that sends more of them
+	// than its limit (GODEBUG httpcookiemaxnum), counted over all the Cookie
+	// lines: the key would hold none of the named ones.
+	return !named || len(r.Cookies()) > 0
 }
 
 // warnCredentialedOnce logs, once, that credentialed requests are being skipped.
 func (c *Cache) warnCredentialedOnce(ctx *context.Context) {
 	c.warnOnce.Do(func() {
 		ctx.Application().Logger().Warn(
-			"httpcache: requests carrying Authorization or Cookie are NOT cached, because the cache key " +
-				"does not distinguish clients. Set Options.Headers (e.g. []string{\"Authorization\"}) or " +
-				"Options.Cookies to cache them safely.")
+			"httpcache: a request carrying Authorization, Proxy-Authorization or a cookie that the cache key " +
+				"does not include is NOT cached, because the key would not distinguish clients. Name the header " +
+				"in Options.Headers (e.g. []string{\"Authorization\"}) and every cookie the request sends in " +
+				"Options.Cookies to cache it safely.")
 	})
 }
 

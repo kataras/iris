@@ -62,9 +62,11 @@ func main() {
 
 ### Explanation
 
-- **Limit**: The `bodylimit.New` function takes a single parameter, which is the maximum size of the request body in bytes. In the example above, the limit is set to 10 bytes.
-- **Handler**: The handler reads the request body and writes it back to the response. If the request body exceeds the limit, the middleware will stop the request and return a `413 Request Entity Too Large` status.
-- The body limit middleware uses a `sync.Pool` to manage `Reader` instances, which are used to read the request body and enforce the size limit. This approach ensures efficient memory usage and reduces the overhead of creating new `Reader` instances for each request.
+- **Limit**: The `bodylimit.New` function takes a single parameter, which is the maximum size of the request body in bytes. In the example above, the limit is set to 2 MB. A body of exactly the limit is accepted.
+- **Handler**: The handler reads the request body and writes it back to the response. A request that declares a `Content-Length` above the limit never reaches it: the middleware answers `413 Request Entity Too Large` before the handler runs.
+- A body past the limit that its `Content-Length` does not give away (a chunked one, or one that the `compress` middleware, registered before this one, decompresses) stops at the limit: the handler gets the bytes up to it and not one more. The next read fails with `context.ErrRequestEntityTooLarge`, and it is the handler that answers: `errors.HandleRequestError`, as above, and `ctx.BindJSON` both turn that error into the same 413.
+- Forms are the exception. For a chunked form past the limit `ctx.ReadForm` and `ctx.Form()` report no error: nothing of the form is bound and the handler goes on. A chunked upload read with `ctx.FormFile` or `ctx.UploadFormFiles` does get the 413, unless the limit falls inside the header lines of a part, where the multipart parser answers 400 with a malformed header error.
+- The middleware allocates one small `Reader` per request and does not pool it. `net/http` drains and closes the request body after the handler has returned, so a pooled `Reader` could already belong to another request by then.
 
 ## Testing Handlers with BodyLimit Middleware
 

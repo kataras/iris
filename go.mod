@@ -14,7 +14,7 @@ require (
 	github.com/iris-contrib/schema v0.0.7-0.20250208085038-f68827b0bbfa
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/kataras/blocks v0.1.0
-	github.com/kataras/golog v0.2.0
+	github.com/kataras/golog v0.2.1
 	github.com/kataras/httpclient v0.2.0
 	github.com/kataras/jwt v0.3.0
 	github.com/kataras/neffos v0.0.25

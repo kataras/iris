@@ -83,8 +83,8 @@ github.com/jpillora/backoff v1.1.0 h1:9LWA6DCcU2qxTLK7iOxvuIQvuIe/twLJHryAcA3JFA
 github.com/jpillora/backoff v1.1.0/go.mod h1:InzEM6zwRZT3SOZRzyrihzVj4k8KKFicc+XgkyHOgNM=
 github.com/kataras/blocks v0.1.0 h1:wwgkEPFq3tHtnuP3mhTMmzmL0YW6xuY4l1lXUPKw5sg=
 github.com/kataras/blocks v0.1.0/go.mod h1:MfwpYK8P/dWxCE0vxC8tA3PtUM5GJjvm/mUFrZ/TWZo=
-github.com/kataras/golog v0.2.0 h1:8Y/VWjUijivCwlY09DGrLIKAfsEoXRqbrhvqyeCz1uw=
-github.com/kataras/golog v0.2.0/go.mod h1:ChIl77VUBE6SwvowRiPn7XHcW2iMmD4hDrArAnP6jDU=
+github.com/kataras/golog v0.2.1 h1:sgEYoeykvHEhgjDtkJwE9O9yHcybApcudxffz8aOCoE=
+github.com/kataras/golog v0.2.1/go.mod h1:QodzSfWqfxVeTjaZFNNvv4V80vyozo0PAKGLpVt0+zQ=
 github.com/kataras/httpclient v0.2.0 h1:P+Mv1c6vgeW+fYrDEFCef3tKkoSUWXVhI/tO9kNMjlE=
 github.com/kataras/httpclient v0.2.0/go.mod h1:g9SLhGl91E30R/H8d4lHhrp7Y7VL+GOTi+4dEyGuF3E=
 github.com/kataras/jwt v0.3.0 h1:tGEavBQKIM9FnfuL9Vf05h5Q3SOZufasPWEZd62qnAA=

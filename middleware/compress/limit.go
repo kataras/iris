@@ -30,11 +30,16 @@ const DefaultMaxDecompressedSize int64 = 32 << 20
 //
 //	app.Use(compress.Limited(8 << 20)) // 8MB decompressed
 //
-// The two other ways to bound it, both of which cap the DECOMPRESSED stream
-// correctly because they wrap the body after this middleware replaced it:
+// There are two other ways to bound it. Both wrap the body after this
+// middleware replaced it, so what they count is the DECOMPRESSED stream:
 //
-//   - iris.WithContextOptions(func(o *iris.ContextOptions) { o.BodyMaxMemory = ... })
-//   - the bodylimit middleware, registered AFTER this one
+//   - ContextOptions.BodyMaxMemory, set through
+//     iris.Options{Context: iris.ContextOptions{BodyMaxMemory: n}}. It covers
+//     ctx.Body, ctx.ReadJSON, ctx.ReadJSONStream and ctx.ReadMultipartRelated,
+//     and not a form or an upload.
+//   - the bodylimit middleware, registered AFTER this one. It stops every
+//     reader at its limit. ctx.ReadForm reports no error for a form cut
+//     there and binds nothing of it.
 func Limited(maxDecompressedSize int64) context.Handler {
 	if maxDecompressedSize <= 0 {
 		maxDecompressedSize = DefaultMaxDecompressedSize
@@ -88,7 +93,9 @@ func (r *limitedReadCloser) Read(p []byte) (int, error) {
 // warnUnboundedOnce keeps the startup warning to one line per process.
 var warnUnboundedOnce sync.Once
 
-// warnUnbounded logs once when compression is used with no decompression ceiling.
+// warnUnbounded logs once when Handler decompresses a request body and
+// ContextOptions.BodyMaxMemory is not set. It does not look for a bodylimit
+// middleware registered after this one, so it logs in that setup as well.
 // It writes to the log only; no request is treated differently because of it.
 func warnUnbounded(ctx *context.Context) {
 	if ctx.OptionsReadOnly().BodyMaxMemory > 0 {

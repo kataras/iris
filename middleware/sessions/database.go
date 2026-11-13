@@ -151,8 +151,10 @@ func (db *cookieDatabase[T]) Load(ctx *context.Context, cookieName, cookieValue 
 		// A new value: a failed decode may have filled part of the data.
 		session = NewSession[T](db.Options)
 		session.IsNew = true
+		return session, nil
 	}
 
+	session.decoded = true
 	return session, nil
 }
 

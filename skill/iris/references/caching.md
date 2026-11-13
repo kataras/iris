@@ -116,23 +116,30 @@ store, err := httpcache.New(httpcache.Options{
     CommandTimeout: 200 * time.Millisecond,
     StartupCleanup: false,
     Headers:        []string{"Authorization"}, // part of the cache key
-    Cookies:        []string{"session_id"},    // part of the cache key
+    Cookies:        []string{"session_id"},    // part of the cache key: name every cookie a request sends
     NoQuery:        false,
     NoBody:         false,
     Disable:        os.Getenv("ENV") == "development",
 })
 ```
 
-`store.Handler()` (and the caching half of `Pair`) caches `GET`, `QUERY` and `POST` requests and stores only 200 responses. QUERY and POST are there for list endpoints that carry their filter in a JSON body, which is why the body hash is part of the key unless `NoBody` is set.
+`store.Handler()` (and the caching half of `Pair`) caches `GET`, `QUERY` and `POST` requests and stores only 200 responses, and of those not one that sets a cookie or whose `Cache-Control` carries `private`, `no-store` or `no-cache`. QUERY and POST are there for list endpoints that carry their filter in a JSON body, which is why the body hash is part of the key unless `NoBody` is set. A hit is sent with `Cache-Control: public, max-age=<seconds left>`.
 
 `httpcache.Must` takes the same `Options` and panics instead of reporting the error, for the common case of wiring the cache at start-up.
 
 **Cache-key safety is the one thing you cannot get wrong.** If a response varies by user, the identity must be in the key via `Headers` or `Cookies`. Otherwise the first user's response is served to everyone. When you cannot enumerate what makes a response unique, do not response-cache that route.
 
-Two guards back that rule up, and neither is a substitute for configuring the key:
+Three guards back that rule up, and none is a substitute for configuring the key:
 
-- A request carrying `Authorization`, `Proxy-Authorization` or `Cookie` is **not cached at all** when neither `Headers` nor `Cookies` is configured. The middleware logs once to say so. Set the key fields to cache authenticated routes.
-- A response that sets a cookie is never stored, and `Set-Cookie`, `Authorization` and the hop-by-hop headers are stripped from what is stored. Replaying a `Set-Cookie` to a later cache hit would hand that session to another client.
+- A request carrying `Authorization`, `Proxy-Authorization` or cookies is looked up and stored only when the key includes every one of them: the header is named in `Headers` (in any letter case) and each cookie the request sends is named in `Cookies` (in the same letter case), or `Headers` names `Cookie` and the key holds the whole header. Any other request with credentials is **not cached at all**: its handler runs every time, nothing is stored, and the middleware logs once to say so. Under the default options that is every request with credentials. Naming something is not enough: with `Headers: []string{"Accept-Language"}` or `Cookies: []string{"theme"}` a request that carries a session cookie is not cached. That has a cost. Under `Cookies: []string{"sid"}` a request that sends `sid` and one more cookie (analytics, a theme) is not cached, and under `Headers: []string{"Authorization"}` neither is one that sends any cookie, until those cookies are named in `Cookies` too. Under `Cookies` a request is not cached either when its `Cookie` line is not a list of `name=value` pairs that `net/http` reads in full: a trailing semicolon, a bare name, a double quote or a non-ASCII byte inside a value. The check sees those three credentials only. One in a custom header (`X-Token`) is invisible to it unless `Headers` names it.
+- A response that sets a cookie is never stored, and `Set-Cookie`, `Authorization` and the hop-by-hop headers are stripped from what is stored. Replaying a `Set-Cookie` to a later cache hit would hand that session to another client. The cookie counts as well when a handler registered before the cache handler has already set it, so a middleware that sets a cookie on every response switches the store off for the routes behind it. A cookie written after the response was stored does not count: that is the `sessions.Handler` order below.
+- A response whose `Cache-Control` carries `private`, `no-store` or `no-cache` is never stored. Its handler runs on every request and the response keeps the header it was given. The directive counts whether the route handler set it or a handler registered before the cache handler did (security headers ahead of the access log and compression included), and `Response.WriteTo` leaves such a directive on a stored response in place where it would write `public, max-age=N`.
+
+The third guard has costs. A middleware ahead of the cache handler that sends one of the three directives on every response switches the store off for every route under it, with no log line; a route opts back in by setting its own `Cache-Control` (`public, max-age=60`), which replaces the inherited one. A response cannot be both stored and `private`, not even with `Headers: []string{"Authorization"}` in the key. A route cached per credential has to leave the directive off, and its hits then go out as `public, max-age=N`: keep shared caches away from such a route, or do not response-cache it. A stream opened with `sse.Open` sends `no-cache`, so it is not stored and streams on every request. Other directives do not keep a response out: `max-age=0`, `s-maxage=0` and `must-revalidate` are still stored and replayed as `public, max-age=N`.
+
+With `sessions.Handler`, register the cache handler first. `sessions.Handler` commits only a session the request changed, so a response to a request that only reads the session carries no `Set-Cookie` and the second guard does not see it. The first guard covers that request: it carries the session cookie, and it is cached only under a key that names every cookie it sends. What is left is a new session, whose cookie is written when `sessions.Handler` commits, after the handlers behind it have returned. With the cache handler registered before `sessions.Handler` the response reaches it with its `Set-Cookie` and is not stored. Registered after it, the response is stored before the cookie is written, so the page made for one new session is served to the next anonymous visitor. When the order cannot change, send `Cache-Control: private` on such a page.
+
+A key that names the session cookie stores a page per session. After a sign-out, a request that still sends the old cookie gets the stored page until the entry expires, because a hit runs no handler behind the cache handler: invalidate on sign-out, or send `Cache-Control: private` on the page. A reverse proxy that caches is a different case. It skips responses with `Set-Cookie` at most, so behind one every page that depends on the session sends `Cache-Control: private`.
 
 A store error fails open: the request proceeds to the handler rather than answering an empty body.
 

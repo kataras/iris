@@ -61,15 +61,17 @@ func main() {
 		Build() // Init runs here.
 
 	// The interrupt handler stops the server and exits; app.Shutdown is what
-	// runs the closers collected above, so hand it to the handler.
+	// runs the closers collected above, so hand it to the handler. The handler
+	// calls it with a context whose deadline is ShutdownOnInterruptTimeout, the
+	// 15 seconds Listen gets by default: the server waits that long for the
+	// requests in flight and closes what is left, then the closers run.
+	// ../../15-production/graceful-shutdown shows a function that calls
+	// app.Shutdown with a deadline of its own.
 	iris.RegisterOnInterrupt(app.Shutdown)
 
+	// Listen returns once app.Shutdown has run its whole list, so the closers
+	// are done when main ends here.
 	app.Listen(":8080")
-
-	// Listen returns the moment the server stops, while the interrupt handler
-	// is still working through the closers - and it exits the process when
-	// they are done. Block, so main does not race it to the exit.
-	select {}
 }
 
 type User struct {

@@ -1,9 +1,17 @@
 // Typed sessions with the v14 secure defaults.
 //
 // sessions.Handler[T] loads (or creates) one session per request and commits it
-// automatically afterwards, unless a handler already committed or the response
-// is a 4xx/5xx. Handlers read and write it through sessions.Get[T](ctx), so the
-// payload stays a plain Go struct instead of a bag of any values.
+// afterwards when the request changed it, unless a handler already committed or
+// the response is a 4xx/5xx. Handlers read and write it through
+// sessions.Get[T](ctx), so the payload stays a plain Go struct instead of a bag
+// of any values.
+//
+// A request that only reads the session, /profile here, sends no cookie and
+// writes nothing, so nothing moves the expiry: the session ends MaxAge (8 hours
+// below) after its last change, not after its last request. Call
+// session.Commit(ctx) in such a handler to keep the visitor signed in. A page
+// without the session cookie can also be stored by a shared cache, so send
+// Cache-Control: private on one that depends on the session.
 //
 // sessions.NewOptions sets Path "/", MaxAge 24h, SameSite=Lax and Secure=true;
 // session cookies are always HttpOnly. Secure means the browser will NOT send

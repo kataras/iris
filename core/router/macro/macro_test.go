@@ -638,3 +638,57 @@ func TestConvertBuilderFunc(t *testing.T) {
 	// should panic.
 	evalFunc([]string{"1"}).Call([]reflect.Value{reflect.ValueOf("kataras")})
 }
+
+// A Macro is copied by value: that is how the router gives each application its
+// own copy of the Defaults. The copy and the original start with the same slice
+// of functions, spare capacity included, and a function registered on one of
+// them afterwards must not reach the other.
+func TestMacroCopyKeepsItsOwnFuncs(t *testing.T) {
+	answer := func(v bool) func() func(string) bool {
+		return func() func(string) bool {
+			return func(string) bool { return v }
+		}
+	}
+	// call returns what the function "name" of "m" answers and whether "m" has it.
+	call := func(m *Macro, name string) (result, found bool) {
+		fn := m.getFunc(name)
+		if fn == nil {
+			return false, false
+		}
+		return fn(nil).Call([]reflect.Value{reflect.ValueOf("")})[0].Bool(), true
+	}
+
+	original := NewMacro("test", "", "", false, false, nil).
+		RegisterFunc("a", answer(true)).
+		RegisterFunc("b", answer(true)).
+		RegisterFunc("c", answer(true)) // three appends leave room for a fourth.
+
+	cp := *original
+	cp.RegisterFunc("onlycopy", answer(true))
+	original.RegisterFunc("onlyoriginal", answer(true))
+	cp.RegisterFunc("a", answer(false)) // replaces the one both started with.
+
+	tests := []struct {
+		macro  *Macro
+		name   string
+		result bool
+		found  bool
+	}{
+		{&cp, "onlycopy", true, true},
+		{&cp, "onlyoriginal", false, false},
+		{&cp, "a", false, true},
+		{&cp, "b", true, true},
+		{original, "onlyoriginal", true, true},
+		{original, "onlycopy", false, false},
+		{original, "a", true, true},
+		{original, "c", true, true},
+	}
+
+	for i, tt := range tests {
+		result, found := call(tt.macro, tt.name)
+		if result != tt.result || found != tt.found {
+			t.Errorf("[%d] func %q: expected result=%v found=%v but got result=%v found=%v",
+				i, tt.name, tt.result, tt.found, result, found)
+		}
+	}
+}

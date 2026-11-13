@@ -107,8 +107,8 @@ Builder step order: **Prefix/NoPrefix → AllowOrigin/Cors → Compression → L
 Services implementing `iris.Initializer` (`Init(ctx context.Context) error`)
 are initialized once inside `Build()`, after dependency injection. Services
 implementing `iris.Worker` (`Run(ctx) error` / `Stop(ctx) error`) are started
-after the initializers and stopped before the closers, and `Shutdown` waits
-for `Run` to return.
+after the initializers and stopped by `Shutdown`, in registration order with
+the other closers. `Shutdown` waits for `Run` to return.
 
 See [architecture-and-patterns.md](./references/architecture-and-patterns.md) for full details.
 
@@ -399,10 +399,10 @@ See [testing-guide.md](./references/testing-guide.md) for full reference.
 - **YAML config**: `iris.New(iris.YAML("config.yml"))`
 - **Environment**: `opts.Bind("config.yml")` checks `SERVER_CONFIG` env var first
 - **Whole-service config**: `iris.LoadConfiguration[T](envKey, filename)` with `iris.BaseConfiguration` embedded inline; the variable may hold the document *or* a path to it, `BindEnv()` runs after decoding, and `c.Addr()` feeds `app.Listen`. There is no `app.Serve`
-- **Server**: `app.Listen(":8080")` or `app.Run(iris.ServerOptions{...})`, called as statements: both block, return nil after a graceful shutdown, and on a failed start log at fatal level and exit with status 1. `iris.Options{DisableFatalRun: true}` logs at error level and returns the error instead (several servers in one process, or a test with a real listener)
+- **Server**: `app.Listen(":8080")` or `app.Run(iris.ServerOptions{...})`, called as statements: both block, return nil after a graceful shutdown once `app.Shutdown` has run its whole list of closers (the server's drain is the first of them, so a `main` that ends with `Listen` cuts neither a request nor a closer), and on a failed start log at fatal level and exit with status 1. `iris.Options{DisableFatalRun: true}` logs at error level and returns the error instead (several servers in one process, or a test with a real listener)
 - **TLS**: Certificate files, custom `tls.Config`, or automatic Let's Encrypt
 - **Tunneling**: Ngrok (`NgrokOptions`, opt-in: needs `import _ "github.com/kataras/iris/v14/core/server/ngrok"` or the server refuses to start) or SSH reverse tunnel
-- **Graceful shutdown**: `app.Shutdown(ctx)`
+- **Graceful shutdown**: `app.Shutdown(ctx)` drains the server, then runs the closers (`AddCloser`, `Deferrables`, a service's `Close`). A signal alone drains the server and exits without them; `iris.RegisterOnInterrupt(app.Shutdown)` runs the whole list on SIGINT/SIGTERM, within `Timeout.ShutdownOnInterruptTimeout` (15s by default, zero or negative for no deadline). That is one deadline for the drain and the closers together, counted from the signal, and an interrupt function that returns an error ends the process with status 1. A closer or an interrupt function that waits for `Run` or `Listen` to return blocks for good. A program with its own `signal.Notify` sets `ServerOptions.DisableInterruptHandler: true`
 - **Build info**: `iris.PrintBuildInfo(w)`, `iris.Version`, `iris.BuildRevision`
 
 See [configuration-and-deployment.md](./references/configuration-and-deployment.md) for full reference.
@@ -453,7 +453,7 @@ See [database-and-persistence.md](./references/database-and-persistence.md) for 
 
 ## Caching
 
-Three layers: `middleware/cache` writes headers (its validators are clock-derived, **not** content-derived), `middleware/cache/httpcache` stores responses in Redis/DragonflyDB with `Pair`-based invalidation, and `core/pkg/cache` is an in-process map. Identity must be in the cache key (`Headers`, `Cookies`) or do not response-cache the route.
+Three layers: `middleware/cache` writes headers (its validators are clock-derived, **not** content-derived), `middleware/cache/httpcache` stores responses in Redis/DragonflyDB with `Pair`-based invalidation, and `core/pkg/cache` is an in-process map. Identity must be in the cache key (`Headers`, `Cookies`) or do not response-cache the route. `httpcache` never stores a response whose `Cache-Control` carries `private`, `no-store` or `no-cache`, also when a middleware ahead of it set the header. A request that carries `Authorization`, `Proxy-Authorization` or cookies is cached only when the key includes every one of them (the header in `Headers`, each cookie it sends in `Cookies`); a credential in a custom header is invisible to that check until `Headers` names it. With sessions, register the cache handler before `sessions.Handler`: after it, the page made for a new session is stored before the session cookie is written. Behind a reverse proxy that caches, send `Cache-Control: private` on every page that depends on a session, because a request that only reads the session gets no `Set-Cookie`.
 
 See [caching.md](./references/caching.md) for full reference.
 

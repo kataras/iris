@@ -34,6 +34,8 @@ type (
 	SQLDatabase[T any] interface {
 		Database[T]
 		// ShiftExpiration sets whether the session expiration should be shifted to the current time plus the MaxAge on Commit.
+		// Handler commits a session after a request that changed it, so the expiration moves with a change
+		// (or with a Commit called by hand), not with every request.
 		ShiftExpiration(b bool)
 		// StartCleanupScheduler starts a scheduler that periodically cleans up expired sessions from the database.
 		StartCleanupScheduler(ctx stdContext.Context, interval time.Duration) <-chan error
@@ -238,6 +240,7 @@ func (db *postgresDatabase[T]) load(ctx *context.Context, cookieName string, coo
 	result, err := db.retrieveSessionData(ctx, session.ID, cookieName) // assign the error.
 	if err == nil {
 		err = db.Options.Decode(cookieName, string(result), &session.SessionData) // assign the error.
+		session.decoded = err == nil
 	} else if err == pgx.ErrNoRows { // Cookie exists in the browser but not in the database for some reason.
 		// we don't care about this error, it's just a new session and Commit will create it if it's missing,
 		// however for security reasons we assign a new session id here.

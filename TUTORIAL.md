@@ -1161,10 +1161,22 @@ to `.gitignore` either way.
 ## Shutdown Without Tears
 
 On Ctrl+C (SIGINT/SIGTERM) the server stops accepting connections and
-drains in-flight requests gracefully. Closers (your `Deferrables`, plus
-every registered service with a `Close` method) run when the application
-shuts down through `app.Shutdown(ctx)`. For extra work at interrupt time,
-register it explicitly:
+drains in-flight requests gracefully, for up to 15 seconds, and the process
+exits. The signal alone does not run your closers (the `Deferrables`, plus
+every registered service with a `Close` method). Those run when the
+application shuts down through `app.Shutdown(ctx)`, so hand it to the
+signal before `app.Listen`:
+
+```go
+iris.RegisterOnInterrupt(app.Shutdown)
+```
+
+Ctrl+C then drains the server and runs the closers after it. A closer
+that takes a context gets one deadline for the whole list, drain included:
+15 seconds from the signal. `app.Listen` returns once the last closer has,
+so `main` can end there. A closer must not wait for `Listen` to return:
+each would be waiting for the other. Any other work at interrupt time is
+registered the same way:
 
 ```go
 iris.RegisterOnInterrupt(func() {

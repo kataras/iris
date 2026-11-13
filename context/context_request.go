@@ -273,10 +273,25 @@ func (ctx *Context) Addr() string {
 // SECURITY WARNING: This method trusts headers configured in RemoteAddrHeaders.
 // Only enable RemoteAddrHeaders when running behind a trusted proxy.
 //
+// A header is read from right to left, see `netutil.GetIPAddress`: the first
+// public address is the result (without its port, if it has one), private
+// addresses are skipped and an entry that is not an address ends the reading
+// with no result, so it is never skipped for an entry on its left. With no
+// result from a header the next one is read, and with no result from any of
+// them this is the address of the connection.
+//
+// RemoteAddrHeadersForce adds one step before the address of the connection:
+// a header whose entries are all addresses, none of them public, gives its
+// first address from the left, which the client can write. It does not apply
+// to a header whose reading ended at an entry that is not an address: such a
+// header gives nothing, exactly as with the option off.
+//
 // Configuration:
 //   - RemoteAddrHeaders: Headers to check for client IP (default: empty)
 //   - RemoteAddrPrivateSubnets: Private IP ranges to skip
-//   - RemoteAddrHeadersForce: Force using headers even for private IPs
+//   - RemoteAddrHeadersForce: Use the first address of a header that has only
+//     private addresses. A header with an entry that is not an address is
+//     left out
 //
 // Best Practices:
 //  1. Never trust client IPs for security decisions without additional validation
@@ -297,9 +312,16 @@ func (ctx *Context) RemoteAddr() string {
 
 		if reqOpts.RemoteAddrHeadersForce {
 			for _, headerName := range remoteHeaders {
+				header := ctx.Header(headerName)
+				if hasNonAddress(header) {
+					// the reading of this header ended above at an entry that
+					// is not an address: it gives nothing, as with Force off.
+					continue
+				}
+
 				// return the first valid IP,
 				//  even if it's a part of a private network.
-				ipAddresses := strings.SplitSeq(ctx.Header(headerName), ",")
+				ipAddresses := strings.SplitSeq(header, ",")
 				for addr := range ipAddresses {
 					if ip := getIP(addr); ip != "" {
 						return ip
@@ -338,6 +360,20 @@ func getIP(addr string) string {
 	}
 
 	return ""
+}
+
+// hasNonAddress reports whether a header value, split on the comma, has an
+// entry that is neither empty nor an address (with or without a port), which
+// is where `netutil.GetIPAddress` ends its walk. A header that gave no result
+// has such an entry only when the walk ended at it.
+func hasNonAddress(headerValue string) bool {
+	for entry := range strings.SplitSeq(headerValue, ",") {
+		if entry = strings.TrimSpace(entry); entry != "" && getIP(entry) == "" {
+			return true
+		}
+	}
+
+	return false
 }
 
 // TrimHeaderValue returns the "v[0:first space or semicolon]".
@@ -1591,8 +1627,15 @@ var ErrReadRequestBody = errors.New("failed to read request body")
 var ErrRequestEntityTooLarge = errors.New("request entity too large")
 
 // limitedBodyReader wraps a request body and fails with ErrRequestEntityTooLarge
-// once more than "limit" bytes have been read in total. It mirrors the bodylimit
-// middleware's reader so the limit flows through the same error handling.
+// once more than "limit" bytes have been read in total. It reports the same
+// error as the bodylimit middleware's reader, so the limit flows through the
+// same error handling.
+//
+// The two readers differ by one byte. This one returns the byte past the limit
+// together with the error, where the middleware's drops that byte and returns
+// the error alone. A decoder that keeps the data of a failing read therefore
+// accepts one byte more here: ReadJSON takes a value of limit+1 bytes, while
+// Body fails on it.
 type limitedBodyReader struct {
 	io.ReadCloser
 	read  int64

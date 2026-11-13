@@ -120,7 +120,13 @@ func registerReports(app *iris.Application) (*httpcache.Cache, error) {
 		TTL:     5 * time.Minute,
 		// The identity of the caller must be part of the key whenever the
 		// response is user-specific, otherwise the first user's response is
-		// replayed to everyone.
+		// replayed to everyone. httpcache checks that for Authorization and
+		// cookies: a request that carries one the key does not hold runs its
+		// handler every time and nothing is stored. So with Authorization
+		// named here, a request that also sends a cookie is not cached until
+		// Cookies names that cookie. A response that its handler marks
+		// Cache-Control: private (or no-store, no-cache) is never stored,
+		// whatever the key holds: that handler runs on every request.
 		Headers: []string{"Authorization"},
 	})
 	if err != nil {

@@ -4,8 +4,11 @@
 // accesslog.FileUnbuffered(path) open a file instead). SetFormatter picks the
 // output shape - &accesslog.JSON{}, &accesslog.CSV{} or
 // &accesslog.Template{Text: "..."}; without one the default pipe-delimited
-// text format is used. AddFields attaches values extracted from every request,
-// and accesslog.GetFields(ctx) lets a single handler add its own.
+// text format is used. The CSV, Template and default formats write one line
+// per request: a line break in a value the client controls (the path, the
+// query, a body) is logged as a space. AddFields attaches values extracted
+// from every request, and accesslog.GetFields(ctx) lets a single handler add
+// its own.
 //
 // Register the middleware with UseRouter so 404s and 405s are recorded too,
 // and Close it on shutdown to flush buffered output.

@@ -72,7 +72,14 @@ Identity:
     Addr:     "127.0.0.1:6379"
     Password: "admin!123"
     TTL: 10m
-    Headers: # optional, if you want to use headers for cache keys.
+    # The request headers that are part of a cache key. The cache knows
+    # Authorization as a credential and skips a request that carries one the
+    # key does not hold. It does not know X-Token (the client) or
+    # X-Authorization (the user): they keep the entries of one caller apart
+    # from another's only because they are named here, so keep them.
+    # A client that also sends a cookie, the Auth.Cookie below for example,
+    # is not cached until Cookies names every cookie it sends.
+    Headers:
       - "X-Token"
       - "Authorization"
       - "X-Authorization"

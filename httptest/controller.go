@@ -47,9 +47,12 @@ import (
 func NewController(t IrisTesty, prefix string, controller any, mw ...context.Handler) *httpexpect.Expect {
 	app := iris.New()
 
-	// Before the child Router is created: it copies the context options and
-	// the macros of its parent, so a handler installed later would not reach a
-	// prefixed group. See iris.NewBuilder for the same ordering.
+	// Before the child Router is created: it copies the context options of
+	// its parent, so a context error handler installed later would not reach a
+	// prefixed group. It shares the macros with its parent, and a route takes
+	// the error handler of its parameter types when it is registered, so the
+	// macro handler goes before the routes too. See iris.NewBuilder for the
+	// same ordering.
 	app.Macros().SetErrorHandler(errors.DefaultPathParameterTypeErrorHandler)
 	app.EditOptions(func(opts *iris.Options) {
 		opts.Context.ErrorHandler = errors.DefaultContextErrorHandler
