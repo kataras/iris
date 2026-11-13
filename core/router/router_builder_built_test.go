@@ -213,3 +213,54 @@ func TestDynamicHandlerRebuildScope(t *testing.T) {
 		t.Fatalf("a router wrapper or a UseRouter handler registered after the first build ran %d times", n)
 	}
 }
+
+// A router built by hand through BuildRouter is left alone by Build, and so by
+// Listen, Run and httptest.New, when EnableDynamicHandler is off: Build returns
+// nil and what was built keeps serving. A route registered in between is not
+// served, and its registration logged the warning.
+func TestBuildAfterBuildRouter(t *testing.T) {
+	app := iris.New()
+	app.Get("/before", func(ctx iris.Context) { ctx.WriteString("before") })
+
+	if err := app.BuildRouter(); err != nil {
+		t.Fatal(err)
+	}
+
+	var buf bytes.Buffer
+	app.Logger().SetLevel("warn")
+	app.Logger().SetOutput(&buf)
+	app.Get("/between", func(ctx iris.Context) {})
+
+	if err := app.Build(); err != nil {
+		t.Fatalf("Build after a BuildRouter by hand: %v", err)
+	}
+
+	e := httptest.New(t, app)
+	e.GET("/before").Expect().Status(httptest.StatusOK).Body().IsEqual("before")
+	e.GET("/between").Expect().Status(httptest.StatusNotFound)
+
+	if got := buf.String(); !strings.Contains(got, "/between") {
+		t.Fatalf("expected the warning for the route registered between BuildRouter and Build, got: %q", got)
+	}
+}
+
+// With EnableDynamicHandler, Build after a BuildRouter by hand compiles the
+// routes again, so a route registered in between is served.
+func TestBuildAfterBuildRouterDynamicHandler(t *testing.T) {
+	app := iris.New(iris.Options{Router: iris.RouterOptions{EnableDynamicHandler: true}})
+	app.Get("/before", func(ctx iris.Context) { ctx.WriteString("before") })
+
+	if err := app.BuildRouter(); err != nil {
+		t.Fatal(err)
+	}
+
+	app.Get("/between", func(ctx iris.Context) { ctx.WriteString("between") })
+
+	if err := app.Build(); err != nil {
+		t.Fatalf("Build after a BuildRouter by hand: %v", err)
+	}
+
+	e := httptest.New(t, app)
+	e.GET("/before").Expect().Status(httptest.StatusOK).Body().IsEqual("before")
+	e.GET("/between").Expect().Status(httptest.StatusOK).Body().IsEqual("between")
+}

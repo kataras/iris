@@ -373,6 +373,8 @@ func (app *Application) registerOnBuilt(fn func() error) {
 //  4. If the application is not in a downgraded state, the router is built through
 //     BuildRouter with the application's Router options, logger and context pool.
 //     Lowercase routing is enforced there when Options.Router.ForceLowercaseRouting is set.
+//     A router that BuildRouter already built by hand is left as it is, unless
+//     Options.Router.EnableDynamicHandler is set: then its routes are compiled again.
 //
 //  5. If an OnBuilt callback is set, it is executed. If the callback returns an error,
 //     the build process is halted and the error is returned.
@@ -417,7 +419,11 @@ func (app *Application) Build() error {
 		app.logger.SetLevel(app.options.LogLevel)
 	}
 
-	if !app.Downgraded() {
+	// A router that was built by hand through BuildRouter is built once,
+	// unless Options.Router.EnableDynamicHandler lets it be compiled again.
+	routerBuilt := app.Handler != nil && app.ServeMux != nil && !app.options.Router.EnableDynamicHandler
+
+	if !app.Downgraded() && !routerBuilt {
 		// Create the request handler, the default routing handler.
 		err := app.BuildRouter()
 		if err != nil {

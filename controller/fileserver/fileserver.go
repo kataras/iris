@@ -100,6 +100,8 @@ type Options struct {
 	// the router removes the trailing slash of a directory URL,
 	// so a browser resolves them against the parent path.
 	//
+	// The redirect of the directory is a 302 (Found), so no browser keeps it
+	// after the option is turned off again.
 	// A directory that has no index file is not redirected.
 	// It has no effect when `SPA` is true, where the index is served on paths
 	// of any depth and a client-side router expects the directory URL,
@@ -373,7 +375,10 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 					// parent of such a URL. Send it to the URL of the index file.
 					if redirectToIndex {
 						if base, ok := slashlessBase(r); ok {
-							localRedirect(ctx, "./"+base+indexURLPath)
+							// Found, not Moved Permanently: a browser keeps a 301, and
+							// one kept from here would loop against the redirect of
+							// the index file once the option is turned off again.
+							localRedirectWithStatus(ctx, "./"+base+indexURLPath, http.StatusFound)
 							return
 						}
 					}
@@ -661,12 +666,17 @@ func slashlessBase(r *http.Request) (string, bool) {
 // localRedirect gives a Moved Permanently response.
 // It does not convert relative paths to absolute paths like Redirect does.
 func localRedirect(ctx *context.Context, newPath string) {
+	localRedirectWithStatus(ctx, newPath, http.StatusMovedPermanently)
+}
+
+// localRedirectWithStatus is localRedirect with the given redirect status code.
+func localRedirectWithStatus(ctx *context.Context, newPath string, code int) {
 	if q := ctx.Request().URL.RawQuery; q != "" {
 		newPath += "?" + q
 	}
 
 	ctx.SetHeader("Location", newPath)
-	ctx.StatusCode(http.StatusMovedPermanently)
+	ctx.StatusCode(code)
 }
 
 // DirectoryExists returns true if a directory(or file) exists, otherwise false

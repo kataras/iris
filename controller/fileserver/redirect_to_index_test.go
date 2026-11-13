@@ -308,12 +308,12 @@ func TestFileServerRedirectToIndex(t *testing.T) {
 				{http.MethodGet, "/static/index.html", 200, "", indexBody("")},
 				// A directory with no trailing slash is sent to its index file,
 				// the mount path included. The query stays.
-				{http.MethodGet, "/static/doc", 301, "./doc/index.html", ""},
-				{http.MethodHead, "/static/doc", 301, "./doc/index.html", ""},
-				{http.MethodGet, "/static/doc?x=1", 301, "./doc/index.html?x=1", ""},
-				{http.MethodGet, "/static/doc/guide", 301, "./guide/index.html", ""},
-				{http.MethodGet, "/static/my%20docs", 301, "./my%20docs/index.html", ""},
-				{http.MethodGet, "/static", 301, "./static/index.html", ""},
+				{http.MethodGet, "/static/doc", 302, "./doc/index.html", ""},
+				{http.MethodHead, "/static/doc", 302, "./doc/index.html", ""},
+				{http.MethodGet, "/static/doc?x=1", 302, "./doc/index.html?x=1", ""},
+				{http.MethodGet, "/static/doc/guide", 302, "./guide/index.html", ""},
+				{http.MethodGet, "/static/my%20docs", 302, "./my%20docs/index.html", ""},
+				{http.MethodGet, "/static", 302, "./static/index.html", ""},
 				// Everything else is what it was.
 				{http.MethodGet, "/static/doc/page2.html", 200, "", "page2 of [/doc]"},
 				{http.MethodGet, "/static/assets", 404, "", ""},
@@ -341,7 +341,7 @@ func TestFileServerRedirectToIndexCustomIndexName(t *testing.T) {
 
 			expectIndexPages(t, h, mode, "/static", "home.html", "", "/doc", "/doc/guide")
 			expectResponses(t, h, []response{
-				{http.MethodGet, "/static/doc", 301, "./doc/home.html", ""},
+				{http.MethodGet, "/static/doc", 302, "./doc/home.html", ""},
 				{http.MethodGet, "/static/doc/home.html", 200, "", indexBody("/doc")},
 				{http.MethodGet, "/static/doc/index.html", 404, "", ""},
 			})
@@ -372,7 +372,7 @@ func TestFileServerRedirectToIndexEscapedIndexName(t *testing.T) {
 				})
 
 				expectResponses(t, h, []response{
-					{http.MethodGet, "/static/doc", 301, "./doc/" + escaped, ""},
+					{http.MethodGet, "/static/doc", 302, "./doc/" + escaped, ""},
 					{http.MethodGet, "/static/doc/" + escaped, 200, "", indexBody("/doc")},
 				})
 				expectIndexPages(t, h, mode, "/static", escaped, "", "/doc", "/doc/guide")
@@ -439,7 +439,7 @@ func TestFileServerRedirectToIndexMountedOnRoot(t *testing.T) {
 			expectResponses(t, h, []response{
 				{http.MethodGet, "/", 200, "", indexBody("")},
 				{http.MethodGet, "/index.html", 200, "", indexBody("")},
-				{http.MethodGet, "/doc", 301, "./doc/index.html", ""},
+				{http.MethodGet, "/doc", 302, "./doc/index.html", ""},
 			})
 		})
 	}
@@ -461,8 +461,8 @@ func TestFileServerRedirectToIndexUnderParty(t *testing.T) {
 
 			expectIndexPages(t, h, mode, "/v1/docs/site", "index.html", "", "/doc", "/doc/guide")
 			expectResponses(t, h, []response{
-				{http.MethodGet, "/v1/docs/site", 301, "./site/index.html", ""},
-				{http.MethodGet, "/v1/docs/site/doc", 301, "./doc/index.html", ""},
+				{http.MethodGet, "/v1/docs/site", 302, "./site/index.html", ""},
+				{http.MethodGet, "/v1/docs/site/doc", 302, "./doc/index.html", ""},
 			})
 		})
 	}
@@ -561,8 +561,8 @@ func TestFileServerRedirectToIndexPushTargets(t *testing.T) {
 		}
 
 		// With it: the redirect pushes nothing, the page of the index URL pushes the same.
-		if code, pushed := pushedBy(on, "/static"+dir); code != 301 || len(pushed) != 0 {
-			t.Errorf("with RedirectToIndex, GET /static%s: %d pushed %v, want 301 and no push", dir, code, pushed)
+		if code, pushed := pushedBy(on, "/static"+dir); code != 302 || len(pushed) != 0 {
+			t.Errorf("with RedirectToIndex, GET /static%s: %d pushed %v, want 302 and no push", dir, code, pushed)
 		}
 		if code, pushed := pushedBy(on, "/static"+dir+"/index.html"); code != 200 || !slices.Equal(pushed, targets) {
 			t.Errorf("with RedirectToIndex, GET /static%s/index.html: %d pushed %v, want 200 %v", dir, code, pushed, targets)
@@ -612,8 +612,8 @@ func TestFileServerRedirectToIndexCompressed(t *testing.T) {
 			t.Run(name+"/"+mode.name, func(t *testing.T) {
 				h := newDocsApp(t, mode, register)
 
-				if rec := do(h, http.MethodGet, "/static/doc", acceptGzip); rec.Code != 301 || rec.Header().Get("Location") != "./doc/index.html" {
-					t.Fatalf("GET /static/doc: got %d Location=%q, want 301 ./doc/index.html", rec.Code, rec.Header().Get("Location"))
+				if rec := do(h, http.MethodGet, "/static/doc", acceptGzip); rec.Code != 302 || rec.Header().Get("Location") != "./doc/index.html" {
+					t.Fatalf("GET /static/doc: got %d Location=%q, want 302 ./doc/index.html", rec.Code, rec.Header().Get("Location"))
 				}
 
 				for _, start := range []string{"/static/doc", "/static/doc/index.html", "/static", "/static/index.html"} {
