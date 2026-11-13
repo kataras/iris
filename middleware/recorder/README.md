@@ -144,4 +144,7 @@ A custom response writer that captures the response.
 - `func (rr *ResponseRecorder) GetBody() []byte`
 - `func (rr *ResponseRecorder) Result() *http.Response`
 - `func (rr *ResponseRecorder) Flush()`
+- `func (rr *ResponseRecorder) FlushError() error`
 - `func (rr *ResponseRecorder) Push(target string, opts *http.PushOptions) error`
+
+`Flush` and `FlushError` hand the recorded status code and headers to the writer underneath before they flush it, so a handler that flushes behind a recorder (a reverse proxy relaying a chunked upstream, for example) sends its own status line and headers. The body stays recorded until the handler chain returns, unless the handler set `Transfer-Encoding: chunked` or a streaming content type such as `text/event-stream`; then it is forwarded with the flush.

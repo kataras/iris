@@ -183,7 +183,11 @@ func (repo *RouteRegistry) addRoute(route *Route, rule RouteRegisterRule) (*Rout
 		// 14 August 2019 allow register same path pattern with different macro functions,
 		// see #1058
 		if route.DeepEqual(r) {
-			if rule == RouteSkip {
+			if r.allowedOnly && !route.allowedOnly {
+				// a route the caller registered replaces the one
+				// that AllowMethods filled in, whatever the rule is.
+				repo.RemoveByIndex(i)
+			} else if rule == RouteSkip {
 				return r, nil
 			} else if rule == RouteError {
 				return nil, &AddRouteError{Old: r, New: route}

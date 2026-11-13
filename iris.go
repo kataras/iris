@@ -114,6 +114,10 @@ func New(configurators ...Configurator) *Application {
 // child Router (Router, Subdomain) copies the context options when it is
 // created and keeps that copy, so call EditOptions before registering any
 // child Router if the change is an Options.Context one.
+//
+// The router options (Options.Router), EnableDynamicHandler included, are
+// read at the first build. Changing them afterwards has no effect, also
+// when BuildRouter runs again.
 func (app *Application) EditOptions(fn func(*Options)) {
 	if app.built {
 		app.logger.Warn("EditOptions: application is already built, changes to the options may not be applied")
@@ -143,6 +147,10 @@ func NewContextWrapper[T any, contextPtr context.ContextSetterPtr[T]]() *context
 }
 
 // BuildRouter builds the router, it's being called automatically by the `Run` & `Listen` methods.
+//
+// A second call returns an error, unless the application was built with
+// Options.Router.EnableDynamicHandler: then it compiles the routes again,
+// which is how routes are added or removed while the server runs.
 func (app *Application) BuildRouter() error { // overrides the underline RouterBuilder's BuildRouter method to pass the app's Router options.
 	return app.RouterBuilder.BuildRouter(app.options.Router, app.logger, app.contextPool)
 }
@@ -377,6 +385,8 @@ func (app *Application) registerOnBuilt(fn func() error) {
 // registered after the first call are not served. This matters when the
 // Application came from [NewBuilder], whose own Build already ran this one:
 // register those routes through the builder's API step instead.
+// To add or remove routes after the build, set
+// Options.Router.EnableDynamicHandler before it and call BuildRouter again.
 //
 // Usage:
 //

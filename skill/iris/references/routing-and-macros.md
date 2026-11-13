@@ -98,13 +98,29 @@ r := app.Routes().GetByName("GET/users/{id:uuid}")
 r.Method = iris.MethodNone // offline
 r.Method = "GET"           // online
 
-// Remove a route by name, before Application.Listen.
+// Remove a route by name, before the router is built.
 // Reports whether it was found and removed.
 ok := app.RemoveRoute("GET/users/{id:uuid}")
 // Equivalent: app.Routes().RemoveByName("GET/users/{id:uuid}")
 ```
 
-Changing routes after the server has started requires the `EnableDynamicHandler` router option (`Options.Router.EnableDynamicHandler = true`). It wraps the mux with an RWMutex so routes can change at serve-time, at a small performance cost. Defaults to false.
+The router is built once, by the first `Build`, `Listen` or `Run`. By default nothing changes after that: a route registered later is not served and logs a warning that ends with `(see Options.Router.EnableDynamicHandler)`, a removed route or one whose `Method` was swapped keeps answering as before, and a second `app.BuildRouter()` returns an error that names the option. To change routes while the server runs, set `Options.Router.EnableDynamicHandler` before the first build and call `app.BuildRouter()` after each change:
+
+```go
+app := iris.New(iris.Options{
+    Router: iris.RouterOptions{EnableDynamicHandler: true},
+})
+
+// later, while the server runs:
+app.Get("/late", func(ctx iris.Context) { ctx.WriteString("late") })
+err := app.BuildRouter() // the new route answers from here on
+
+// and to take it away again:
+app.RemoveRoute("GET/late")
+err = app.BuildRouter() // 404 from here on
+```
+
+A rebuild compiles the registered routes and the 404 and 405 handlers into a new mux and swaps it in under a lock. Requests already running finish on the previous mux, so a handler may rebuild the router during its own request. Router wrappers (`AddRouterWrapper`), `UseRouter` handlers and the router options, this one included, are fixed at the first build; changing them later has no effect. Registering or removing routes and calling `BuildRouter` are not synchronized: do them from one goroutine at a time, or guard them with a mutex of your own. With the option on the late-registration warning is not logged, and every request takes a read lock. Defaults to false.
 
 ## Path Parameter Macros
 

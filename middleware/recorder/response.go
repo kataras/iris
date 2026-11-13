@@ -304,7 +304,7 @@ func (rr *ResponseRecorder) Write(b []byte) (int, error) {
 }
 
 // WriteHeader records the status code. It is not forwarded to the
-// underlying ResponseWriter until the recorder is released.
+// underlying ResponseWriter until the recorder is flushed or released.
 func (rr *ResponseRecorder) WriteHeader(statusCode int) {
 	if rr.disabled {
 		rr.ResponseWriter.WriteHeader(statusCode)
@@ -383,6 +383,16 @@ func (rr *ResponseRecorder) FlushError() error {
 		return context.FlushResponseWriter(rr.ResponseWriter)
 	}
 
+	// The flush at the end makes the writer underneath send its status line and
+	// its headers. Hand it the recorded ones first, as release does: once its
+	// own are on the wire, what release copies over arrives too late and the
+	// client is left with a 200 and none of the handler's headers.
+	if rr.ResponseWriter.Written() == context.NoWritten {
+		// note: we don't reset the current underline's headers.
+		maps.Copy(rr.ResponseWriter.Header(), rr.Headers)
+		rr.ResponseWriter.WriteHeader(rr.Code)
+	}
+
 	// This fixes response recorder when chunked + Flush is used.
 	//
 	// Note(@kataras): the body is only Reset when it was actually forwarded.
@@ -393,14 +403,6 @@ func (rr *ResponseRecorder) FlushError() error {
 	// far. And httpcache, accesslog and servertiming all install a recorder
 	// globally, so the handler had no way to know one was in the way.
 	if rr.Headers.Get("Transfer-Encoding") == "chunked" {
-		if rr.Written() == context.NoWritten {
-			if len(rr.Headers) > 0 {
-				h := rr.ResponseWriter.Header()
-				// note: we don't reset the current underline's headers.
-				maps.Copy(h, rr.Headers)
-			}
-		}
-
 		if body := rr.Body.Bytes(); len(body) > 0 {
 			rr.ResponseWriter.Write(body)
 		}

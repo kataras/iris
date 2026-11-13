@@ -74,17 +74,17 @@ func (db *redisDatabase[T]) Load(ctx *context.Context, cookieName string, cookie
 
 func (db *redisDatabase[T]) load(ctx *context.Context, cookieName string, cookieValue string) (*Session[T], error) {
 	session := NewSession[T](db.Options)
-	if cookieValue == "" {
+	// bind session id.
+	//
+	// A cookie that does not decode (signed with other keys, older than MaxAge,
+	// not a session id) is treated like no cookie: the visitor cannot fix it,
+	// so this is a new session and the next Commit replaces the cookie.
+	if cookieValue == "" || db.Options.Decode(cookieName, cookieValue, &session.ID) != nil {
 		session.ID = uid.NewV7String() // time-ordered ids for storage-key locality.
 		session.IsNew = true
 		return session, nil
 	}
 
-	// bind session id.
-	err := db.Options.Decode(cookieName, cookieValue, &session.ID) // assign the error.
-	if err != nil {
-		return nil, err // we can't decode the session id, which is important, in that case let's return nil and error.
-	}
 	// bind data and any flash messages.
 	result, err := db.client.Get(ctx, db.makeKey(cookieName, session.ID)).Result() // assign the error.
 	if err == nil {

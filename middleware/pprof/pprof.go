@@ -96,7 +96,23 @@ func (p *ProfilingRouter) Routing(r router.Router) {
 //	app.Handle("GET", "/debug/pprof /debug/pprof/{action:path}", pprof.Handler)
 func Handler(ctx *context.Context) {
 	if action := ctx.Params().GetString("action"); action != "" {
-		pprof.Handler(action).ServeHTTP(ctx.ResponseWriter(), ctx.Request())
+		w, r := ctx.ResponseWriter(), ctx.Request()
+
+		// These four are not runtime/pprof profiles, so pprof.Handler
+		// answers 404 "Unknown profile" for them.
+		switch action {
+		case "cmdline":
+			pprof.Cmdline(w, r)
+		case "profile":
+			pprof.Profile(w, r)
+		case "symbol":
+			pprof.Symbol(w, r)
+		case "trace":
+			pprof.Trace(w, r)
+		default:
+			pprof.Handler(action).ServeHTTP(w, r)
+		}
+
 		return
 	}
 

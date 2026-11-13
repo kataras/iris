@@ -36,3 +36,43 @@ func TestIndexListsGoroutineLeakProfile(t *testing.T) {
 		t.Fatalf("expected a non-empty goroutineleak description, got:\n%s", body)
 	}
 }
+
+// cmdline, profile, symbol and trace are not runtime/pprof profiles.
+// net/http/pprof serves them with its Cmdline, Profile, Symbol and Trace
+// functions, and its Handler(name) answers 404 "Unknown profile" for them.
+// The index page links to them, so the middleware must serve them too.
+// See https://github.com/kataras/iris/issues/1758.
+func TestServesCmdlineProfileSymbolTrace(t *testing.T) {
+	app := iris.New()
+	app.Router("/debug/pprof", pprof.New())
+
+	e := httptest.New(t, app)
+
+	tests := []struct {
+		action      string
+		seconds     string // the shortest duration the endpoint accepts, if it takes one.
+		contentType string
+		disposition string
+	}{
+		{action: "cmdline", contentType: "text/plain"},
+		{action: "symbol", contentType: "text/plain"},
+		{action: "profile", seconds: "1", contentType: "application/octet-stream", disposition: `attachment; filename="profile"`},
+		{action: "trace", seconds: "0.1", contentType: "application/octet-stream", disposition: `attachment; filename="trace"`},
+	}
+
+	for _, tt := range tests {
+		req := e.GET("/debug/pprof/" + tt.action)
+		if tt.seconds != "" {
+			req.WithQuery("seconds", tt.seconds)
+		}
+
+		res := req.Expect().Status(httptest.StatusOK).HasContentType(tt.contentType)
+		res.Header("Content-Disposition").IsEqual(tt.disposition)
+		res.Body().NotEmpty()
+	}
+
+	// The runtime/pprof profiles and the unknown names keep their answers.
+	e.GET("/debug/pprof/heap").Expect().Status(httptest.StatusOK)
+	e.GET("/debug/pprof/nope").Expect().Status(httptest.StatusNotFound).
+		Body().Contains("Unknown profile")
+}

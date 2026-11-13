@@ -541,7 +541,8 @@ func defaultRequestDecoder[RequestOrParam any](readerTypes ...requestTypeReader)
 				askedForParamDecoder := !slices.Contains(readerTypes, requestTypeJSON) // param does not read json.
 				enableBodyReader := hasForm || hasXML || hasYAML || hasProtobuf || hasMsgPack || slices.Contains(readerTypes, requestTypeJSON)
 				if askedForParamDecoder && !enableBodyReader {
-					return nil
+					// The decoders above do not run the request validator, the ctx.Read methods do.
+					return ctx.OptionsReadOnly().Validate(payload)
 				}
 
 				// I don't think is useful to check this, just let it.
@@ -549,6 +550,10 @@ func defaultRequestDecoder[RequestOrParam any](readerTypes ...requestTypeReader)
 				if hasForm && ctx.IsMediaType(context.ContentFormHeaderValue, context.ContentFormMultipartHeaderValue) {
 					if formDecoder != nil {
 						if err := formDecoder.DecodeKeyValues(ctx.Form().ToMap(), payload); err != nil {
+							return fmt.Errorf("read form: %w", err)
+						}
+
+						if err := ctx.OptionsReadOnly().Validate(payload); err != nil {
 							return fmt.Errorf("read form: %w", err)
 						}
 					} else {
@@ -601,6 +606,9 @@ func defaultRequestDecoder[RequestOrParam any](readerTypes ...requestTypeReader)
 							if err := ctx.ReadBody(payload); err != nil {
 								return fmt.Errorf("read body: %w", err)
 							}
+						} else {
+							// Bound from path parameters, the query or headers only.
+							return ctx.OptionsReadOnly().Validate(payload)
 						}
 					}
 				}

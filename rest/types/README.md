@@ -356,7 +356,7 @@ type Response struct {
 }
 
 func handleResponse(ctx iris.Context) {
-    resp := Response{Date: types.SimpleDate{Year: 2024, Month: 1, Day: 1}}
+    resp := Response{Date: types.SimpleDateFromTime(time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC))}
     ctx.JSON(resp)
 }
 ```
@@ -388,6 +388,31 @@ func handleRequest(ctx iris.Context) {
 ```
 GET /api/date?date=2024-10-30
 ```
+
+As a struct field it needs no parsing of your own. `SimpleDate` implements `encoding.TextUnmarshaler`, so `ctx.ReadQuery`, `ctx.ReadParams`, `ctx.ReadURL`, `ctx.ReadForm` and `ctx.ReadHeader` fill a `SimpleDate` field from a `YYYY-MM-DD` value, and an absent key leaves it zero:
+
+```go
+type ReportQuery struct {
+    From  types.SimpleDate `url:"from"`
+    To    types.SimpleDate `url:"to"`
+    Limit int              `url:"limit"`
+}
+
+func listReports(ctx iris.Context) {
+    var q ReportQuery
+    if err := ctx.ReadQuery(&q); err != nil {
+        errors.InvalidArgument.Err(ctx, err)
+        return
+    }
+    ctx.JSON(q)
+}
+```
+
+```
+GET /api/reports?from=2024-09-01&to=2024-09-30&limit=3
+```
+
+A `time.Time` field in the same readers expects RFC 3339 (`2024-09-01T00:00:00Z`). The matching `MarshalText` is what the YAML, XML and MsgPack encoders write for a `SimpleDate`, the same `2024-09-01` text. JSON keeps going through `MarshalJSON` and `UnmarshalJSON`.
 
 ## Season
 
@@ -668,8 +693,9 @@ ctx.JSON(types.Merge(user, iris.Map{"role": "admin"}))
 - `SimpleDates` is a `[]SimpleDate` with `Contains(date)` and `DateStrings()`. `GetSimpleDateRange(date, typ, startWeekday, endWeekday)` returns the dates of the week or the month around `date`: `typ` is a `DateRangeType` (`DayRange`, `WeekRange`, `MonthRange`, `YearRange`), but only `WeekRange` and `MonthRange` are implemented; the other two panic. The two weekdays are used by `WeekRange` only.
 
 ```go
-week := types.GetSimpleDateRange(types.SimpleDate{Year: 2024, Month: 1, Day: 10}, types.WeekRange, time.Monday, time.Sunday)
-week.Contains(types.SimpleDate{Year: 2024, Month: 1, Day: 14}) // true
+day := types.SimpleDateFromTime(time.Date(2024, time.January, 10, 0, 0, 0, 0, time.UTC))
+week := types.GetSimpleDateRange(day, types.WeekRange, time.Monday, time.Sunday)
+week.Contains(day.AddDate(0, 0, 4)) // true: 2024-01-14 is the Sunday of that week
 ```
 
 - `RegisterFixedLocation(name, secondsFromUTC)` teaches the time parsers a zone abbreviation, for input such as `2023-02-04T09:48:14+03:00` that should print as `EEST`. Call it once at program start: `types.RegisterFixedLocation("EEST", 3*60*60)`.

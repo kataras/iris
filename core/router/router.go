@@ -450,6 +450,9 @@ type Router interface {
 	// The default naming for newly created routes is: method + subdomain + path.
 	// Reports whether a route with that name was found and removed successfully.
 	//
+	// After the router is built the removed route keeps answering until
+	// `BuildRouter` runs again, which needs RouterOptions.EnableDynamicHandler.
+	//
 	// Note that this method applies to all children Routers
 	// even if each of the Router have access to this method,
 	// as the route name is unique per Iris Application.

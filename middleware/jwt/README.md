@@ -141,6 +141,29 @@ accessVerifier := jwt.NewVerifier(jwt.HS256, accessSecret).
     // .WithDefaultBlocklist()
 ```
 
+That verifier checks tokens this application signed. A token issued by an identity provider such as Auth0 is usually signed with RS256 and names its key in a `kid` field of the header. The default header check accepts `alg` and `typ` and nothing else, so such a token is rejected with `jwt.ErrTokenAlg`. To accept it, set the optional `HeaderValidator` field of the verifier. The `ValidateHeader` method of a [kataras/jwt](https://github.com/kataras/jwt) key set fits there: the key set loads the public keys from the JWKS URL of the issuer and picks the key and the algorithm by the `kid` of each token.
+
+```go
+import (
+    "github.com/kataras/iris/v14/middleware/jwt"
+
+    kjwt "github.com/kataras/jwt"
+)
+
+// ...
+
+keySet, err := kjwt.NewRemoteKeySet("https://example.auth0.com/.well-known/jwks.json")
+if err != nil {
+    panic(err)
+}
+defer keySet.Close()
+
+verifier := jwt.NewVerifier(nil, nil)
+verifier.HeaderValidator = keySet.ValidateHeader
+```
+
+A function of your own with the same signature works too, as long as it compares the `alg` of the header with the algorithm it expects. Left nil, the header check stays exact.
+
 ## Creating some mock users and a login handler
 
 To keep the example short, the users live in a map. A real application would read them from a database.

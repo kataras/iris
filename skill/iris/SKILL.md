@@ -263,7 +263,7 @@ ctx.ReadJSON(&v)           // JSON body
 ctx.ReadXML(&v)            // XML body
 ctx.ReadYAML(&v)           // YAML body
 ctx.ReadForm(&v)           // Form data
-ctx.ReadQuery(&v)          // Query parameters
+ctx.ReadQuery(&v)          // Query parameters: `url` tag, else the `form` tag
 ctx.ReadBody(&v)           // Auto-detect content type
 ctx.ReadProtobuf(&v)       // Protobuf binary
 ctx.ReadMsgPack(&v)        // MsgPack binary

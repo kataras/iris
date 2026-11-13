@@ -2267,7 +2267,12 @@ func fail(ctx *context.Context, codeName ErrorCodeName, msg, detail, typeURI, in
 	// buffered bytes, so a buffered partial body suppresses the render as
 	// well; a caller that wants the error instead clears the recorded body
 	// first (ResponseRecorder.SetBody(nil)).
-	if ctx.ResponseWriter().Written() > 0 {
+	//
+	// A hijacked connection (a websocket upgrade) has no response left to
+	// write, and Hijack leaves Written at StatusCodeWritten, so it is asked
+	// about on its own. This is where a handler that panics after the hijack
+	// ends up, through the recovery handler.
+	if w := ctx.ResponseWriter(); w.Written() > 0 || w.IsHijacked() {
 		getReadOnlyOptions(ctx).logError(ctx, &Error{ErrorCode: errorCode, Message: msg, Detail: detail})
 		ctx.StopExecution()
 		return

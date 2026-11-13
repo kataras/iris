@@ -91,7 +91,24 @@ type Options struct {
 	// then it redirects to **/*(/).
 	// That index handler is registered automatically
 	// by the framework unless but it can be overridden.
+	// See `RedirectToIndex` to turn that redirect around.
 	IndexName string
+	// RedirectToIndex serves the index file at its own URL (**/*/$IndexName)
+	// and redirects a directory requested without a trailing slash to that URL,
+	// instead of redirecting the index file to its directory.
+	// Enable it for index pages with relative links (css/app.css, page2.html):
+	// the router removes the trailing slash of a directory URL,
+	// so a browser resolves them against the parent path.
+	//
+	// A directory that has no index file is not redirected.
+	// It has no effect when `SPA` is true, where the index is served on paths
+	// of any depth and a client-side router expects the directory URL,
+	// or when `IndexName` is empty.
+	// On a site that was live without it, a browser that cached the redirect
+	// of an index file to its directory loops until that entry is gone.
+	//
+	// Defaults to false.
+	RedirectToIndex bool
 	// PushTargets filenames (map's value) to
 	// be served without additional client's requests (HTTP/2 Push)
 	// when a specific request path (map's key WITHOUT prefix)
@@ -289,6 +306,11 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 
 	open := fsOpener(fs, options.Cache) // We only need its opener, the "fs" is NOT used below.
 
+	// A client-side router owns the URLs of a single page application.
+	redirectToIndex := options.RedirectToIndex && !options.SPA
+	// The index name as it is written in a URL: "/my index.html" is "/my%20index.html" there.
+	indexURLPath := (&url.URL{Path: options.IndexName}).EscapedPath()
+
 	h := func(ctx *context.Context) {
 		r := ctx.Request()
 		name := router.WithPrefix(r.URL.Path, "/")
@@ -297,6 +319,7 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 		var (
 			indexFound bool
 			noRedirect bool
+			atIndexURL bool // the index file is served at its own URL, see Options.RedirectToIndex.
 		)
 
 		f, err := open(name, r)
@@ -345,6 +368,16 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 				defer fIndex.Close()
 				infoIndex, err := fIndex.Stat()
 				if err == nil {
+					// The router removes the trailing slash of a directory URL and
+					// a browser resolves the relative links of a page against the
+					// parent of such a URL. Send it to the URL of the index file.
+					if redirectToIndex {
+						if base, ok := slashlessBase(r); ok {
+							localRedirect(ctx, "./"+base+indexURLPath)
+							return
+						}
+					}
+
 					indexFound = true
 					f = fIndex
 					info = infoIndex
@@ -379,8 +412,13 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 		// index requested, send a moved permanently status
 		// and navigate back to the route without the index suffix.
 		if !noRedirect && options.IndexName != "" && strings.HasSuffix(name, options.IndexName) {
-			localRedirect(ctx, "./")
-			return
+			if !redirectToIndex {
+				localRedirect(ctx, "./")
+				return
+			}
+			// Serve it at its own URL, the relative links of the page resolve from there.
+			indexFound = true
+			atIndexURL = true
 		}
 
 		if options.AssetValidator != nil {
@@ -425,7 +463,14 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 		}
 
 		if indexFound && !options.Attachments.Enable {
-			if indexAssets, ok := options.PushTargets[name]; ok {
+			// The push targets are keyed by the directory of the index page.
+			pushName, pushURI := name, r.RequestURI
+			if atIndexURL {
+				pushName = cmp.Or(strings.TrimSuffix(pushName, options.IndexName), "/")
+				pushURI = cmp.Or(strings.TrimSuffix(pushURI, indexURLPath), "/")
+			}
+
+			if indexAssets, ok := options.PushTargets[pushName]; ok {
 				if pusher, ok := context.UnwrapResponseWriter(ctx.ResponseWriter()).(http.Pusher); ok {
 					var pushOpts *http.PushOptions
 					if encoding != "" {
@@ -435,7 +480,7 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 					for _, indexAsset := range indexAssets {
 						if indexAsset[0] != '/' {
 							// it's relative path.
-							indexAsset = path.Join(r.RequestURI, indexAsset)
+							indexAsset = path.Join(pushURI, indexAsset)
 						}
 
 						if err = pusher.Push(indexAsset, pushOpts); err != nil {
@@ -445,15 +490,15 @@ func Handler(fileSystemOrDirectory any, options Options) context.Handler {
 				}
 			}
 
-			if regex, ok := options.PushTargetsRegexp[r.URL.Path]; ok {
+			if regex, ok := options.PushTargetsRegexp[pushName]; ok {
 				if pusher, ok := context.UnwrapResponseWriter(ctx.ResponseWriter()).(http.Pusher); ok {
 					var pushOpts *http.PushOptions
 					if encoding != "" {
 						pushOpts = &http.PushOptions{Header: r.Header}
 					}
 
-					prefixURL := strings.TrimSuffix(r.RequestURI, name)
-					names, err := context.ListFileNames(fs, name)
+					prefixURL := strings.TrimSuffix(pushURI, pushName)
+					names, err := context.ListFileNames(fs, pushName)
 					if err == nil {
 						for _, indexAsset := range names {
 							// it's an index file, do not pushed that.
@@ -599,6 +644,18 @@ func detectOrWriteContentType(ctx *context.Context, name string, content io.Read
 	}
 
 	return ctype, nil
+}
+
+// slashlessBase reports whether the client asked for a path that has no
+// trailing slash, and returns the last segment of that path as it was sent.
+// The router may have removed the slash from URL.Path, RequestURI still has it.
+// It reports false for a request with no RequestURI of the origin form.
+func slashlessBase(r *http.Request) (string, bool) {
+	p, _, _ := strings.Cut(r.RequestURI, "?")
+	if p == "" || p[0] != '/' || p[len(p)-1] == '/' {
+		return "", false
+	}
+	return p[strings.LastIndexByte(p, '/')+1:], true
 }
 
 // localRedirect gives a Moved Permanently response.

@@ -70,7 +70,8 @@ A string directory goes through `http.Dir`, which follows a symbolic link inside
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `IndexName` | `string` | Index file name, defaults to `/index.html`. Requests ending in it redirect to the directory path |
+| `IndexName` | `string` | Index file name. `DefaultOptions` sets `/index.html`; an `Options` literal that leaves it empty serves no directory index. Requests ending in it redirect to the directory path, unless `RedirectToIndex` is on |
+| `RedirectToIndex` | `bool` | Serve the index file at its own URL and redirect the directory to it (`/static/doc` to `/static/doc/index.html`). For index pages with relative links (`css/app.css`, `page2.html`): the router removes the trailing slash of a directory URL, so a browser resolves them against the parent path. Root-relative links never need it. No effect when `SPA` is true or `IndexName` is empty. Defaults to false |
 | `PushTargets` | `map[string][]string` | Files to HTTP/2-push per request path |
 | `PushTargetsRegexp` | `map[string]*regexp.Regexp` | Like `PushTargets` but regexp-matched against all files under a directory. `MatchCommonAssets` is a ready regexp for js/css/ico/png/ttf/svg/webp/gif |
 | `Cache` | `DirCacheOptions` | In-memory cache and pre-compression: `Enable`, `CompressMinSize`, `CompressIgnore` (regexp, see `MatchImagesAssets`), `Encodings` (gzip, deflate, br, snappy, s2, zstd), `Verbose` (0-2) |
@@ -301,7 +302,7 @@ r.Post("/orders/{order_id:int64}/refund",
 r.Get("/summary", handler.IndexHandler(summary))
 ```
 
-The default decoder already reads the **last** path parameter for single-value request types (`string`, `int`, `int64`, `uint64`, `uuid.UUID`), so `WithPathParameter` is only needed to name a different one. Also exported: `HandlerBy` and `HandlerByColumns` for the update-with-columns shape.
+The default decoder already reads the **last** path parameter for single-value request types (`string`, `int`, `int64`, `uint64`, `uuid.UUID`), so `WithPathParameter` is only needed to name a different one. Also exported: `HandlerBy` and `HandlerByColumns` for the update-with-columns shape. When `ContextOptions.RequestValidator` is set, the default decoder runs it on the decoded request or param struct whatever the source: a body, a form, the URL query, path parameters or headers.
 
 ### gRPC controllers
 

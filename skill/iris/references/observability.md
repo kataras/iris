@@ -42,6 +42,8 @@ builder.LogRequestsWith(newAccessLog())
 
 **It no longer de-streams a streaming response.** `accesslog` installs a `middleware/recorder` whenever it reads the response body, and the recorder used to forward its buffer only when the handler had set `Transfer-Encoding: chunked`, which no Server-Sent Events handler does. So `LogRequests(true)` silently turned every event stream into one lump on return. The recorder now steps aside for a streaming media type and honours `Disable()`, and `sse.Open` removes it explicitly on the first `Send`. An access log line for such a response carries no body size, which is the correct trade.
 
+A handler that flushes behind that recorder without streaming, such as an `httputil.ReverseProxy` mounted with `iris.FromStd` whose upstream sends no `Content-Length`, keeps its status code and headers: the recorder hands them to the writer underneath before the flush, and the body stays recorded for the log line.
+
 **Watch the defaults.** `accesslog.New()` already sets `BytesReceivedBody`, `BytesSentBody` and `KeepMultiLineError` to true, and `PanicLog` to `accesslog.LogHandler`. Setting those to their existing values is a no-op; `KeepMultiLineError = false` is the actual change (it collapses a multi-line error into one line, which is what you want for line-oriented log shipping).
 
 Constructors: `accesslog.File(path)` (buffered), `accesslog.FileUnbuffered(path)`, `accesslog.New(w io.Writer)`.

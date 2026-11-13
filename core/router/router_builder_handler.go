@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"slices"
 	"strings"
@@ -12,9 +13,27 @@ import (
 
 // BuildRouter builds the router, it's being called by the main Iris Application Builder.
 // It's being called once after all routes have been registered and  before the server starts.
+//
+// A second call returns an error, unless the router was built with
+// RouterOptions.EnableDynamicHandler: then it compiles the routes again.
 func (router *RouterBuilder) BuildRouter(options RouterOptions, logger *golog.Logger, contextPool *context.Pool) error {
 	if router.Downgraded() {
 		return nil // already built, e.g. by `Downgrade` method call.
+	}
+
+	if root := router.GetRoot(); root.Handler != nil && root.ServeMux != nil {
+		if !root.dynamic {
+			// Built already, with a mux that has no lock: compiling the routes
+			// into it again is not safe while requests are being served.
+			return errors.New("the router is already built: set Options.Router.EnableDynamicHandler before the first build to register routes while the server runs")
+		}
+
+		// Built already: the mux in use rebuilds its routes and its 404 and 405 handlers.
+		// The main handler, its wrappers and the pre-routing chain are built once:
+		// requests read them with no lock, so they must not be written again while serving.
+		noRoute := newEmptyRoute(root, NoRouteName, root.noRouteHandlers.Upsert(defaultHTTPErrorHandler))
+		noMethod := newEmptyRoute(root, NoMethodName, root.noMethodHandlers.Upsert(defaultHTTPErrorHandler))
+		return root.ServeMux.Build(noRoute, noMethod, root.routes)
 	}
 
 	if options.ForceLowercaseRouting {
@@ -88,6 +107,7 @@ func (router *RouterBuilder) BuildRouter(options RouterOptions, logger *golog.Lo
 	// router.ContextPool = contextPool
 	router.ServeMux = mux
 	router.Handler = handler
+	router.dynamic = options.EnableDynamicHandler
 
 	return nil
 }

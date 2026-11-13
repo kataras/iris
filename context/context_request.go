@@ -566,8 +566,15 @@ func (ctx *Context) ReadURL(ptr any) error {
 	return ctx.OptionsReadOnly().Validate(ptr)
 }
 
+func init() {
+	// ReadQuery: a field that has no "url" tag is bound by its "form" tag.
+	schema.Query.AddAliasTag(encoding.DefaultFormTag)
+}
+
 // ReadQuery binds URL Query to "ptr". The struct field tag is "url".
-// If tag is missing it tries to bind using the field's name.
+// A field that has no "url" tag is bound by its "form" tag,
+// so one "form" tag serves both a GET query and a POST form.
+// If both tags are missing it tries to bind using the field's name.
 // To ignore a specific field from binding use tag value "-".
 func (ctx *Context) ReadQuery(ptr any) error {
 	values := ctx.getQuery()
@@ -662,18 +669,8 @@ func (ctx *Context) AbsoluteURI(s string) string {
 	}
 
 	if s[0] == '/' {
-		scheme := ctx.request.URL.Scheme
-		if scheme == "" {
-			if ctx.request.TLS != nil {
-				scheme = "https:"
-			} else {
-				scheme = "http:"
-			}
-		}
-
-		host := ctx.Host()
-
-		return scheme + "//" + userInfo + host + path.Clean(s)
+		// Scheme ends with "://", whether it comes from the request URL or from the connection.
+		return ctx.Scheme() + userInfo + ctx.Host() + path.Clean(s)
 	}
 
 	if u, err := url.Parse(s); err == nil {

@@ -78,6 +78,9 @@ type Route struct {
 	// keeps the second route of the same path pattern registered.
 	// It's used ONLY for logging.
 	overlappedLink *Route
+	// allowedOnly reports that the route was created for a method of the
+	// Router's AllowMethods and not for a method the caller registered.
+	allowedOnly bool
 
 	// Sitemap properties: https://www.sitemaps.org/protocol.html
 	NoSitemap  bool      // when this route should be hidden from sitemap.

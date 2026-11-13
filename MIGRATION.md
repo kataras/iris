@@ -85,6 +85,10 @@ PHASE 3: removed APIs.
   iris.Addr, iris.TLS, iris.AutoTLS, iris.Runner          -> app.Run(iris.ServerOptions{...})
   SetContextErrorHandler                                  -> Options.Context.ErrorHandler
   HandleDir, Favicon                                      -> the fileserver controller
+  app.RefreshRouter()                                     -> app.BuildRouter(), with
+      Options.Router.EnableDynamicHandler set (v12: iris.WithDynamicHandler)
+  app.AddRouteUnsafe(route)                               -> app.Get or app.Handle; on a
+      running server follow it with app.BuildRouter(), with the same option set
   WWW, SubdomainRedirect                                  -> the rewrite middleware
   Application.Validator, Validate                         -> Options.Context.RequestValidator
   mvc.GRPC                                                -> controller/mvc.GRPC
@@ -140,6 +144,13 @@ Renamed:
   ctx.RequestContentLength()   -> ctx.ContentLength()
   ctx.ResetResponseWriter(w)   -> ctx.SetResponseWriter(w)
   ctx.ResetRequest(r)          -> ctx.SetRequest(r)
+  ctx.Record()                 -> the recorder.Response middleware, registered before
+                                  the handlers that write
+  ctx.Recorder()               -> recorder.GetResponseRecorder(ctx), which returns nil
+                                  when the response is not recorded
+  ctx.IsRecording()            -> recorder.IsRecordingResponse(ctx)
+  ctx.RecordRequestBody(true)  -> _ = recorder.RecordRequestBody(ctx)
+  ctx.IsRecordingBody()        -> recorder.IsRequestBodyRecorded(ctx)
   ctx.SetMaxRequestBodySize(n) -> bodylimit.New(n), or Options.Context.BodyMaxMemory
   ctx.GetReferrer()            -> the middleware/referrer middleware
   ctx.Problem(v, opts)         -> errors.<ErrorCodeName>.Problem(ctx, ...)
@@ -238,6 +249,7 @@ Sub-packages were reorganized in v14. Adjust the moved import paths (the plain
 | `.../v12/x/reflex` | `.../v14/core/pkg/reflex` |
 | `.../v12/x/sqlx` | removed; use [github.com/kataras/pg](https://github.com/kataras/pg) |
 | `.../v12/core/errgroup` | no longer importable (moved to `internal/errgroup`); use the standard `errors.Join` |
+| `.../v12/core/host` proxy helpers (`host.ProxyHandler`, `host.ProxyHandlerRemote`, `host.NewProxy`, `host.NewProxyRemote`) | removed; build a `httputil.ReverseProxy` from the standard library and mount it on a route: `app.Any("/{p:path}", iris.FromStd(proxy))` |
 
 The `context` package keeps its path (`.../v14/context`).
 
@@ -441,6 +453,11 @@ app.Use(iris.WithErrorHandler(myErrorHandler))
 app.Router("/assets", fileserver.New("./public", fileserver.DefaultOptions))
 ```
 
+The index page of a directory still loads its relative links
+(`css/app.css`, `page2.html`) from the parent path, as it did in v12; set
+`fileserver.Options.RedirectToIndex` to serve it at
+`/assets/doc/index.html`, where they resolve inside the directory.
+
 ### WWW and SubdomainRedirect are replaced by the rewrite middleware
 
 `Application.WWW` and `Application.SubdomainRedirect` are removed. The
@@ -521,10 +538,25 @@ moved behind `Router.Routes()`, which returns a `*router.RouteRegistry`:
 | `route.Path()` | `route.GetPath()` |
 | `route.MainHandlerName()` | `route.GetMainHandlerName()` |
 | `route.Property(key)` | `route.GetProperty(key)` |
+| `iris.WithDynamicHandler`, `Configuration.EnableDynamicHandler` | `iris.Options{Router: iris.RouterOptions{EnableDynamicHandler: true}}` |
+| `app.RefreshRouter()` | `app.BuildRouter()`, with that option set before the first build |
+| `app.AddRouteUnsafe(route)` | register the route as usual (`app.Get`, `app.Handle`); on a running server follow it with `app.BuildRouter()` |
+| `route.ChangeMethod(m)`, `route.SetStatusOffline()`, `route.RestoreStatus()` | set the exported `route.Method` (`iris.MethodNone` takes the route offline); on a running server follow it with `app.BuildRouter()` |
 
 Router methods that may register more than one route now return the registry
 instead of a `[]*Route`. Call its `First()` for the old single-route behavior.
 `HandleMany` is deprecated in favor of `Handle`, which accepts multiple paths.
+
+The router is built once. To change routes while the server runs, set
+`Options.Router.EnableDynamicHandler` before the first build, register or
+remove routes, then call `app.BuildRouter()` again. It compiles the routes
+and the 404 and 405 handlers into a new mux and swaps it in. Router
+wrappers, `UseRouter` handlers and the router options stay as the first
+build left them, and every request takes a read lock while the option is
+on. Registering routes and calling `BuildRouter` are not synchronized, so
+do both from one goroutine at a time. With the option off a second
+`BuildRouter` returns an error that names the option, and a route
+registered after the build is reported with a warning and never served.
 
 ### NewBuilder and the rest packages are the recommended stack
 
@@ -566,7 +598,7 @@ iris.NewBuilder().
 
 v12 has one shape for reading a request body: `ctx.ReadJSON(&input)` followed
 by your own error response and your own validation call. v14 keeps that method
-and adds the typed `Bind` family on the Context — Go 1.27 generic methods that
+and adds the typed `Bind` family on the Context, Go 1.27 generic methods that
 decode, validate (the input type's `Validate() error`, when implemented) and
 write the 400 themselves:
 
@@ -742,6 +774,10 @@ helpers.
 | `ctx.ResetResponseWriter(w)` | `ctx.SetResponseWriter(w)` |
 | `ctx.ResetRequest(r)` | `ctx.SetRequest(r)` |
 | `ctx.RecordRequestBody(true)` | `_ = recorder.RecordRequestBody(ctx)` |
+| `ctx.IsRecordingBody()` | `recorder.IsRequestBodyRecorded(ctx)` |
+| `ctx.Record()` | the `recorder.Response` middleware, registered before the handlers that write |
+| `ctx.Recorder()` | `recorder.GetResponseRecorder(ctx)`, which returns nil when the response is not recorded instead of starting to record |
+| `ctx.IsRecording()` | `recorder.IsRecordingResponse(ctx)`, or a nil check on `recorder.GetResponseRecorder(ctx)` |
 | `ctx.SetMaxRequestBodySize(n)` | `bodylimit.New(n)` middleware, or `ContextOptions.BodyMaxMemory` |
 | `ctx.GetReferrer()` | the `middleware/referrer` middleware |
 | `ctx.Problem(v, opts)` | `errors.$ErrorCodeName.Problem(ctx, ...)` |
@@ -869,7 +905,7 @@ body), with these visible changes:
   v1 output per call:
   `iris.JSON{MarshalOptions: []json.Options{json.FormatNilSliceAsNull(true), json.FormatNilMapAsNull(true)}}`.
 - On your own response structs, `omitempty` on a number, boolean or
-  `time.Duration` field no longer omits `0`/`false` — that is v2's documented
+  `time.Duration` field no longer omits `0`/`false`: that is v2's documented
   semantics change. Replace those with `omitzero` (Iris's structs already did).
 - Request bodies containing duplicate object member names or invalid UTF-8
   are rejected with 400. Member-name matching stays case-insensitive by
@@ -903,6 +939,12 @@ request context. Custom v12 stores (`Acquire`, `OnUpdateExpiration`, `Set`,
 `Get`, `Decode`, ...) must be rewritten against the three-method
 `Database[T]`: `Get`, `Load` and `Commit`. The built-in stores are
 `NewCookieDatabase`, `NewRedisDatabase` and `NewPostgresDatabase`.
+
+Session cookies that a v12 application already handed out do not carry
+over, even under the same cookie name and keys. The built-in stores treat a
+cookie they cannot decode like no cookie: the visitor gets a new session and
+`sessions.Handler` replaces the cookie, so expect everyone to sign in once
+after the upgrade.
 
 ### JWT tokens are read from the Authorization header only
 
@@ -946,6 +988,17 @@ default. Override per call:
 ```go
 ctx.AddCookie(name, value, iris.CookieSameSite(http.SameSiteStrictMode))
 ```
+
+### ReadQuery binds a form-tagged field by its form name
+
+v12's `ctx.ReadQuery` looked at the `url` tag only, so a field with a `form`
+tag and no `url` tag was filled from the query by its Go field name. v14 falls
+back to the `form` tag: `Name string` tagged `form:"hosp_name"` is filled by
+`?hosp_name=x` and no longer by `?name=x`, `form:"-"` keeps a field out of the
+query, and the `required` option of the `form` tag applies to a non-empty
+query. `ctx.ReadBody` follows wherever it reads the query. A field with a
+`url` tag keeps it, so add one where the query name must differ from the form
+name.
 
 ## Recommended opt-in hardening
 

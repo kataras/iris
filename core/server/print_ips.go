@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -60,6 +61,13 @@ func printIPs(dest io.Writer, serverNetworkAddr, serverURL string) {
 				}
 			}
 		}
+	}
+
+	// "0.0.0.0" is the wildcard address, a browser cannot open it.
+	// Print localhost in its place, as it is printed for ":8080". See #2175.
+	if u, err := url.Parse(serverURL); err == nil && u.Hostname() == "0.0.0.0" {
+		u.Host = "localhost" + strings.TrimPrefix(u.Host, "0.0.0.0")
+		serverURL = u.String()
 	}
 
 	if _, host, _, err := SplitURL(serverURL); err == nil {

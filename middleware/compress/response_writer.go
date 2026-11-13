@@ -125,11 +125,13 @@ func ReleaseResponseWriter(w *ResponseWriter) {
 		w.Disable()
 	}
 
-	if !w.disabled {
+	if !w.disabled && !w.IsHijacked() {
 		w.Writer.Close() // flushes and closes.
 	}
 	// A disabled writer must not be closed: Close writes the format's footer, and
-	// the response it would land in is no longer compressed.
+	// the response it would land in is no longer compressed. Neither must the
+	// writer of a hijacked connection (a websocket upgrade): there is no response
+	// left to close, and net/http logs every byte written to it.
 
 	w.Writer = nil
 	w.ResponseWriter = nil

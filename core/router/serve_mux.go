@@ -53,16 +53,41 @@ func BuildServeMux(
 }
 
 type dynamicServeMux struct { // a wrapper for the serveMux, to enable dynamic route registration and request handler.
+	rw sync.RWMutex // guards the serveMux pointer, which Build replaces.
 	*serveMux
 }
 
 var _ ServeMux = (*dynamicServeMux)(nil)
 
-func (h *dynamicServeMux) HandleRequest(ctx *context.Context) {
-	// Read-lock guards against concurrent route rebuilds while serving.
+// current returns the mux in use. The lock is released before the request runs,
+// so a handler can rebuild the router during its own request.
+func (h *dynamicServeMux) current() *serveMux {
 	h.rw.RLock()
 	defer h.rw.RUnlock()
-	h.serveMux.HandleRequest(ctx)
+	return h.serveMux
+}
+
+func (h *dynamicServeMux) HandleRequest(ctx *context.Context) {
+	h.current().HandleRequest(ctx)
+}
+
+func (h *dynamicServeMux) FindClosestPaths(subdomain, searchPath string, n int) []string {
+	return h.current().FindClosestPaths(subdomain, searchPath, n)
+}
+
+// Build compiles the routes into a new mux and puts it in use.
+// The requests that are already running finish on the previous one.
+func (h *dynamicServeMux) Build(noRoute, noMethod *Route, routes *RouteRegistry) error {
+	h.rw.Lock()
+	defer h.rw.Unlock()
+
+	next := *h.serveMux // keeps the configuration.
+	next.tries = nil    // buildRoutes appends to it, the tries in use must not change.
+	if err := next.Build(noRoute, noMethod, routes); err != nil {
+		return err
+	}
+	h.serveMux = &next
+	return nil
 }
 
 type serveMux struct {
@@ -86,7 +111,6 @@ type serveMux struct {
 
 	noRoute, noMethod *Route // handles 404 and 405. All handlers, including middlewares for handling errors, get status code by ctx.GetStatusCode().
 	// httpBeginErrorHandlers context.Handlers // handlers that ran before the httpErrorHandler, forwarded by ctx.Next.
-	rw sync.RWMutex
 }
 
 var _ ServeMux = (*serveMux)(nil)
@@ -130,7 +154,7 @@ func newDefaultServeMux(options *RouterOptions, logger *golog.Logger) ServeMux {
 	}
 
 	if dynamicHandlerEnabled {
-		return &dynamicServeMux{mux}
+		return &dynamicServeMux{serveMux: mux}
 	}
 
 	return mux

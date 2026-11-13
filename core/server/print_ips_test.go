@@ -25,6 +25,44 @@ func TestPrintIPsWildcardIP(t *testing.T) {
 	}
 }
 
+// TestPrintIPsWildcardServerURL tests that the printIPs function prints localhost
+// when serverURL carries the wildcard IP, a browser cannot open "http://0.0.0.0:8080".
+// These are the values a Server gives for an "0.0.0.0:PORT" address, see #2175.
+func TestPrintIPsWildcardServerURL(t *testing.T) {
+	tests := []struct {
+		serverNetworkAddr string
+		serverURL         string
+		expected          string
+	}{
+		{"0.0.0.0:8080", "http://0.0.0.0:8080", "http://localhost:8080"},
+		{"0.0.0.0:80", "http://0.0.0.0", "http://localhost"},
+		{"0.0.0.0:8443", "https://0.0.0.0:8443", "https://localhost:8443"},
+		{"0.0.0.0:443", "https://0.0.0.0", "https://localhost"},
+		// Not the wildcard IP, it is printed as it is.
+		{"127.0.0.1:8080", "http://127.0.0.1:8080", "http://127.0.0.1:8080"},
+	}
+
+	for _, test := range tests {
+		var mw mockWriter
+		printIPs(&mw, test.serverNetworkAddr, test.serverURL)
+		output := mw.String()
+
+		// With "> Network:" lines the server URL goes to the "> Local:" line,
+		// without them (no private IPv4 on this machine) it is the only one.
+		expectedLine := "Now listening on: " + test.expected + "\n"
+		if strings.Contains(output, "> Network:") {
+			expectedLine = "> Local:    " + test.expected + "\n"
+		}
+
+		if !strings.Contains(output, expectedLine) {
+			t.Errorf("printIPs(%q, %q): expected %q but got %s", test.serverNetworkAddr, test.serverURL, expectedLine, output)
+		}
+		if test.expected != test.serverURL && strings.Contains(output, test.serverURL) {
+			t.Errorf("printIPs(%q, %q): expected without the wildcard URL but got %s", test.serverNetworkAddr, test.serverURL, output)
+		}
+	}
+}
+
 // TestPrintIPsLocalhost tests the printIPs function when serverURL is localhost.
 func TestPrintIPsLocalhost(t *testing.T) {
 	var mw mockWriter

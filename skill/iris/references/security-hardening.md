@@ -245,6 +245,8 @@ func signin(ctx iris.Context) {
 
 `RegenerateID` is a no-op for cookie databases: their data lives in the signed and encrypted cookie, so there is no server-side ID to rotate. Use `session.Delete(ctx)` on sign-out.
 
+Changing `hashKey` or `blockKey` signs every visitor out and nothing more: a cookie signed with the old keys, like one older than `MaxAge`, is treated as no cookie and replaced. It is not a 500.
+
 For cookies you set yourself:
 
 ```go
@@ -270,6 +272,8 @@ app.Use(verifier.Verify(func() any { return new(UserClaims) }))
 ```
 
 The verifier reads the `Authorization` header only. `WithQueryToken()` adds `?token=`; take it only for clients that cannot set a header (browser downloads), and understand that the token then lands in access logs, proxy logs, browser history and `Referer` headers.
+
+For tokens issued by an identity provider (a `kid` in the header, RS256), set `Verifier.HeaderValidator` to the `ValidateHeader` method of a `github.com/kataras/jwt` key set, see [middleware-reference.md](./middleware-reference.md#jwt). A validator of your own must always compare the header's `alg` with the algorithm it expects.
 
 ### Basic authentication
 

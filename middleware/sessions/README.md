@@ -274,6 +274,8 @@ if err := session.Commit(ctx); err != nil {
 }
 ```
 
+A cookie that does not decode is not one of those errors. It may be signed with other keys, be older than `Options.MaxAge`, or come from a v12 application that used the same name and keys. The visitor cannot fix it, so the databases of `NewCookieDatabase`, `NewRedisDatabase` and `NewPostgresDatabase` treat it like no cookie: `Get` returns a new session with `IsNew` set, and the next `Commit` replaces the cookie. Changing the keys therefore signs every visitor out and nothing more. A failure of the store itself is still an error, and `sessions.Handler` answers 500 for it.
+
 ## Best Practices
 
 - **Use Proper Session Options**: Configure session options to match your application's security and performance requirements.

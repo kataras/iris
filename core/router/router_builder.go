@@ -77,6 +77,9 @@ type RouterBuilder struct {
 	// Set on `BuildRouter` method call.
 	http.Handler // the main handler.
 	ServeMux
+	// dynamic reports whether the router was built with RouterOptions.EnableDynamicHandler,
+	// which is what lets `BuildRouter` run again. It is read from the root.
+	dynamic bool
 }
 
 var (
@@ -568,20 +571,24 @@ func (router *RouterBuilder) handle(methods []string, pattern string, handlers .
 	return registeredRoutes
 }
 
-// warnRegisteredTooLate reports the routes that will never be served.
+// warnRegisteredTooLate reports the routes that were registered after the router
+// was built without RouterOptions.EnableDynamicHandler: they will never be served.
 //
-// The serve mux is compiled once, from a snapshot of the registry: BuildRouter
-// runs a single time and Build, Listen and Run all return early afterwards, so
-// a route added later stays in the registry and is never matched. Reporting is
-// all this can do — rebuilding the mux under a running server is not safe.
+// That router is compiled once, from a snapshot of the registry: Build, Listen
+// and Run return early afterwards and a second BuildRouter returns an error, so
+// a route added later stays in the registry and is never matched.
+//
+// With the option on nothing is reported. There a route is meant to be
+// registered while the server runs, and the next BuildRouter serves it.
 func (router *RouterBuilder) warnRegisteredTooLate(routes *RouteRegistry) {
-	if router.app == nil || router.GetRoot().ServeMux == nil {
+	root := router.GetRoot()
+	if router.app == nil || root.ServeMux == nil || root.dynamic {
 		return
 	}
 
 	logger := router.app.Logger()
 	for _, r := range routes.List() {
-		logger.Warnf("route %s %s was registered after the router was built [%s:%d]: it will not be served",
+		logger.Warnf("route %s %s was registered after the router was built [%s:%d]: it will not be served (see Options.Router.EnableDynamicHandler)",
 			r.Method, r.Path, r.RegisterFileName, r.RegisterLineNumber)
 	}
 }
@@ -597,6 +604,9 @@ func (router *RouterBuilder) CreateRoutes(methods []string, relativePath string,
 // RemoveRoute deletes a registered route by its name before `Application.Listen`.
 // The default naming for newly created routes is: method + subdomain + path.
 // Reports whether a route with that name was found and removed successfully.
+//
+// After the router is built the removed route keeps answering until
+// `BuildRouter` runs again, which needs RouterOptions.EnableDynamicHandler.
 //
 // Note that this method applies to all Parties (sub routers)
 // even if each of the Parties have access to this method,
@@ -632,6 +642,7 @@ func (router *RouterBuilder) createRoutes(methods []string, pattern string, hand
 
 	// before join the middleware + handlers + done handlers and apply the execution rules.
 
+	callerMethods := methods
 	methods = RemoveDuplicates(append(router.allowMethods, methods...))
 
 	routes := router.routes.New(len(methods)) // a new clean route repository.
@@ -643,6 +654,14 @@ func (router *RouterBuilder) createRoutes(methods []string, pattern string, hand
 			subdomain, path := SplitSubdomainAndPath(fullpath)
 			panic(fmt.Errorf("[%s:%d] %v -> %s:%s:%s", callerFileName, callerFileLine, err, m, subdomain, path))
 			// continue
+		}
+		// A route made for AllowMethods fills a missing method only:
+		// it never replaces a route that the caller registered.
+		route.allowedOnly = !slices.Contains(callerMethods, m)
+		if route.allowedOnly && slices.ContainsFunc(router.routes.List(), func(r *Route) bool {
+			return !r.allowedOnly && r.DeepEqual(route)
+		}) {
+			continue
 		}
 		route.SetCaller(callerFileName, callerFileLine)
 		route.NoLog = router.routesNoLog

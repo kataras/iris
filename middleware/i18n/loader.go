@@ -201,7 +201,13 @@ func load(assetNames []string, asset func(string) ([]byte, error), options Loade
 			}
 		}
 
-		if n := len(cat.Locales); n == 0 {
+		// The catalog has a locale for every language, with or without files,
+		// so count the languages that have files.
+		if n := len(languageFiles); n == 0 {
+			if len(assetNames) == 0 {
+				return nil, fmt.Errorf("locales not found: no files to load")
+			}
+
 			return nil, fmt.Errorf("locales not found in %s", strings.Join(assetNames, ", "))
 		} else if options.Strict && n < len(m.Languages) {
 			return nil, fmt.Errorf("locales expected to be %d but %d parsed", len(m.Languages), n)

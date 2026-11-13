@@ -15,6 +15,7 @@ The Iris file server offers a variety of features to handle static file serving 
 7. **Favicon Serving**: Serve a favicon file with caching.
 8. **Strip Prefix**: Serve files by stripping a specified prefix from the URL.
 9. **WebDAV Support**: Serve files with WebDAV support for remote file management.
+10. **Index Pages with Relative Links**: Serve a directory's index file at its own URL, so the relative links of the page load from that directory.
 
 ## Installation
 
@@ -330,6 +331,33 @@ func main() {
 	app.Listen(":8080")
 }
 ```
+
+### Index Pages with Relative Links
+
+The router removes the trailing slash of a directory URL, so the index page of `./assets/doc` is served at `/static/doc`. From that URL a browser resolves a relative link against the parent path: it asks for `css/app.css` at `/static/css/app.css` and for `page2.html` at `/static/page2.html`. Root-relative links such as `/static/doc/css/app.css` work from any URL and need nothing.
+
+Set `RedirectToIndex` to serve the index file at its own URL instead. `/static/doc` then redirects to `/static/doc/index.html`, and the relative links of the page resolve inside `/static/doc/`. Here is an example:
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/controller/fileserver"
+)
+
+func main() {
+	app := iris.New()
+	app.Router("/static", fileserver.New("./assets", fileserver.Options{
+		IndexName:       "index.html",
+		RedirectToIndex: true,
+	}))
+
+	app.Listen(":8080")
+}
+```
+
+The option is off by default, and it does nothing when `SPA` is true or `IndexName` is empty. A directory that has no index file is not redirected. On a site that was live without it, a browser that cached the old redirect of `/static/doc/index.html` to its directory can loop until that cache entry is gone.
 
 ### Customizable MIME Types
 

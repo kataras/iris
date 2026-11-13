@@ -195,7 +195,7 @@ It is separate from `PostMaxMemory`, which only bounds multipart form parsing. F
 
 ### RequestValidator
 
-Runs after the body has been decoded into a struct, on `ReadJSON`, `ReadMsgPack`, `ReadForm`, `ReadQuery`, `ReadParams`, `ReadHeader`, `ReadURL`, `ReadValues` and `UnmarshalBody`. Any validator with a `Struct(any) error` method fits, so a third-party library plugs straight in:
+Runs after the body has been decoded into a struct, on `ReadJSON`, `ReadMsgPack`, `ReadForm`, `ReadQuery`, `ReadParams`, `ReadHeader`, `ReadURL`, `ReadValues` and `UnmarshalBody`. The typed handlers of `controller/mvc/handler` run it too, on a request or param struct bound from a body, a form, the URL query, path parameters or headers. Any validator with a `Struct(any) error` method fits, so a third-party library plugs straight in:
 
 ```go
 app := iris.New(iris.Options{

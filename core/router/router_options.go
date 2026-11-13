@@ -55,11 +55,24 @@ type RouterOptions struct {
 	// and the mismatch can lead to security issues.
 	AllowQuerySemicolons bool `ini:"allow_query_semicolons" json:"allow_query_semicolons,omitzero" yaml:"AllowQuerySemicolons,omitempty" toml:"AllowQuerySemicolons,omitempty"`
 
-	// EnableDynamicHandler enables the dynamic request handler.
-	// It gives the router the feature to add routes while in serve-time,
-	// when `BuildRouter` is called again.
-	// If this setting is set to true, the request handler will use a mutex for data(trie routing) protection,
-	// hence the performance cost.
+	// EnableDynamicHandler lets the routes change while the server runs:
+	// register or remove routes after the first build, then call `BuildRouter` again.
+	//
+	// A rebuild compiles the registered routes and the not-found (404) and
+	// method-not-allowed (405) handlers into a new mux and puts it in use.
+	// The requests that are already running finish on the previous one,
+	// so a handler may rebuild the router during its own request.
+	// The router wrappers, the `UseRouter` handlers and the router options,
+	// this one included, are read at the first build only: changing them
+	// after it has no effect.
+	//
+	// Registering or removing routes and calling `BuildRouter` are not
+	// synchronized: do them from one goroutine at a time.
+	//
+	// While it is on, every request takes a read lock. While it is off there
+	// is no lock and the router is built once: a route registered after the
+	// build is not served (a warning reports it) and a second `BuildRouter`
+	// returns an error.
 	//
 	// Defaults to false.
 	EnableDynamicHandler bool `ini:"enable_dynamic_handler" json:"enable_dynamic_handler,omitzero" yaml:"EnableDynamicHandler" toml:"EnableDynamicHandler"`

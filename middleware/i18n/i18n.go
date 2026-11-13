@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -249,6 +250,15 @@ func parsePath(m *Matcher, path string) int {
 	if t, ok := parseLanguage(path); ok {
 		if _, index, conf := m.MatchOrAdd(t); conf > language.Low {
 			return index
+		}
+
+		// Not a registered language. A file name such as "app", "api" or "tag"
+		// is a valid language code by itself, so give the directory of the
+		// file a try: locales/en-US/app.ini belongs to en-US.
+		if t, err := language.Parse(filepath.Base(filepath.Dir(path))); err == nil {
+			if _, index, conf := m.Match(t); conf > language.Low {
+				return index
+			}
 		}
 	}
 

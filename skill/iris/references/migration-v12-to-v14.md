@@ -43,6 +43,7 @@ Sub-packages were reorganized. The prefix rewrite above does not fix these reloc
 | `.../v12/x/timex` | `.../v14/core/pkg/timex` |
 | `.../v12/x/reflex` | `.../v14/core/pkg/reflex` |
 | `.../v12/x/sqlx` | removed; use `github.com/kataras/pg` |
+| `.../v12/core/host` proxy helpers (`host.ProxyHandler`, `host.ProxyHandlerRemote`, `host.NewProxy`, `host.NewProxyRemote`) | removed; build a standard `httputil.ReverseProxy` and mount it on a route: `app.Any("/{p:path}", iris.FromStd(proxy))` |
 
 The `context` package keeps its path (`.../v14/context`). MVC was redesigned around generics (`mvc.UseController[C]`, `mvc.Websocket`); see [builtin-controllers.md](./builtin-controllers.md).
 
@@ -72,7 +73,15 @@ Ordered find-and-replace list. Applying these in order clears most of a v12 code
 | `ctx.Header("` (to **set**) | `ctx.SetHeader("` |
 | `ctx.GetHeader("` (to **read a request** header) | `ctx.Header("` |
 | `ctx.RecordRequestBody(true)` | `_ = recorder.RecordRequestBody(ctx)` |
+| `ctx.IsRecordingBody()` | `recorder.IsRequestBodyRecorded(ctx)` |
+| `ctx.Record()` | the `recorder.Response` middleware, registered before the handlers that write |
+| `ctx.Recorder()` | `recorder.GetResponseRecorder(ctx)` (nil when the response is not recorded; it does not start recording) |
+| `ctx.IsRecording()` | `recorder.IsRecordingResponse(ctx)`, or a nil check on `recorder.GetResponseRecorder(ctx)` |
 | `cache.Cache304` | `middleware/cache.New(cache.DefaultOptions)` |
+| `iris.WithDynamicHandler`, `Configuration.EnableDynamicHandler` | `iris.Options{Router: iris.RouterOptions{EnableDynamicHandler: true}}` |
+| `app.RefreshRouter()` | `app.BuildRouter()`, with that option set before the first build (without it a second call returns an error) |
+| `app.AddRouteUnsafe(route)` | register the route as usual (`app.Get`, `app.Handle`); on a running server follow it with `app.BuildRouter()` |
+| `route.ChangeMethod(m)`, `route.SetStatusOffline()`, `route.RestoreStatus()` | set the exported `route.Method` (`iris.MethodNone` takes the route offline); on a running server follow it with `app.BuildRouter()` |
 
 The `*Default` query variants are gone because `ctx.Query()` accessors return documented zeros. Replace the default with an explicit check:
 
@@ -294,6 +303,8 @@ opts.SameSite = http.SameSiteNoneMode // browsers require Secure for None
 ```
 
 A `Secure` cookie still works behind a TLS-terminating proxy: the browser connection is HTTPS even when the app sees HTTP.
+
+Session cookies a v12 application already handed out do not carry over, even under the same cookie name and keys. The built-in stores treat a cookie they cannot decode like no cookie: a new session, and `sessions.Handler` replaces the cookie. Expect everyone to sign in once after the upgrade.
 
 ### JWT tokens are read from the Authorization header only
 

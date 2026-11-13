@@ -371,7 +371,7 @@ A request with no body decodes to the filter's zero value rather than a nil poin
 
 ## Scalar Types (rest/types)
 
-`github.com/kataras/iris/v14/rest/types` holds JSON-ready field types for request and response payloads. They marshal to the wire formats below. Several also work as SQL column types: `SimpleDate` and `ISO8601` implement both `sql.Scanner` and `driver.Valuer`, `TimeNotationDuration` implements `driver.Valuer`, `DayTime` and `KitchenTime` implement `Scan`, `Duration` implements `Value`.
+`github.com/kataras/iris/v14/rest/types` holds JSON-ready field types for request and response payloads. They marshal to the wire formats below. Several also work as SQL column types: `SimpleDate` and `ISO8601` implement both `sql.Scanner` and `driver.Valuer`, `TimeNotationDuration` implements `driver.Valuer`, `DayTime` and `KitchenTime` implement `Scan`, `Duration` implements `Value`. `SimpleDate` is the one type here that also implements `encoding.TextUnmarshaler` and `encoding.TextMarshaler`: `ctx.ReadQuery`, `ReadParams`, `ReadURL`, `ReadForm` and `ReadHeader` fill a `SimpleDate` field from `YYYY-MM-DD` (only that form, not `2006-1-2`), and YAML, XML and MsgPack carry the same text.
 
 ```go
 import "github.com/kataras/iris/v14/rest/types"

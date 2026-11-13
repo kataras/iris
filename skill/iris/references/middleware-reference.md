@@ -470,6 +470,23 @@ A rejected token answers 401 with the reason stored as a private error, so under
 
 Algorithms: `HS256`, `HS384`, `HS512`, `RS256`, `ES256`, and more.
 
+The header check is exact (`alg`, `typ` and nothing else), so a token with a `kid` in its header (RS256 tokens from Auth0 and other identity providers) is rejected with `jwt.ErrTokenAlg`. Set the optional `Verifier.HeaderValidator` field to accept it. The `ValidateHeader` method of a `github.com/kataras/jwt` key set selects the key and the algorithm by `kid`:
+
+```go
+import kjwt "github.com/kataras/jwt"
+
+keySet, err := kjwt.NewRemoteKeySet(jwksURL) // fetches the JWKS now, refreshes it in the background
+if err != nil {
+    panic(err)
+}
+defer keySet.Close()
+
+verifier := jwt.NewVerifier(nil, nil)
+verifier.HeaderValidator = keySet.ValidateHeader
+```
+
+A function of your own with the `HeaderValidator` signature of `github.com/kataras/jwt` works too; it must compare the header's `alg` with the algorithm it expects. Nil keeps the exact check.
+
 Prefer a short-lived access token with a refresh companion over one long-lived token, so revocation has a bounded window:
 
 ```go
@@ -621,6 +638,8 @@ if recorder.IsRequestBodyRecorded(ctx) { /* ... */ }
 ```
 
 `Context.RecordRequestBody` no longer exists; `recorder.RecordRequestBody(ctx)` replaces it.
+
+`recorder.Response` records the response the same way; read it after `ctx.Next()` through `recorder.GetResponseRecorder(ctx)`. A handler that flushes behind it (a reverse proxy mounted with `iris.FromStd`, a chunked upstream) still sends its own status code and headers: `Flush` and `FlushError` hand the recorded ones to the writer underneath first, and the body stays recorded until the handler chain returns.
 
 ## recovery
 
@@ -791,6 +810,8 @@ message, ok := session.GetFlash("notice")
 ```
 
 Other session methods: `session.Delete(ctx)` expires it, `session.RegenerateID(ctx)` rotates the server-side ID after sign-in (no-op for cookie databases), `session.IsNew`.
+
+A cookie that does not decode (signed with other keys, older than `Options.MaxAge`, written by a v12 application under the same name and keys) is treated like no cookie by the three built-in databases: `Get` returns a new session with `IsNew` true and the next commit replaces the cookie. Only a failure of the store itself makes `sessions.Handler` answer 500.
 
 Database backends:
 

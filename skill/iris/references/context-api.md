@@ -115,6 +115,10 @@ if err := ctx.ReadQuery(&q); err != nil {
 }
 ```
 
+`ReadQuery` binds a field that has no `url` tag by its `form` tag, so a struct tagged `form` only serves a GET query and a POST form. `ctx.ReadBody` reads the query on a GET (and on another method when the request has a query and no content type it knows), so the same holds there, and in a typed handler (`handler.Handler`) whose request type has no `url`, `param` or `header` field. When the request type does have one of those, the typed handler does not bind its `form` fields from the query. For a field with a `form` tag and no `url` tag: the Go field name is not a query key, `form:"-"` keeps it out of the query, and `form:"name,required"` is enforced on a non-empty query. A field with a `url` tag keeps it, `url:"-"` stays excluded, and a field with neither tag binds by its field name.
+
+A `types.SimpleDate` field (`rest/types`) binds from `YYYY-MM-DD` in `ReadQuery`, `ReadParams`, `ReadURL`, `ReadForm` and `ReadHeader`, because the type implements `encoding.TextUnmarshaler`. A `time.Time` field takes RFC 3339 there.
+
 Or individually through `ctx.Query()`, which returns `encoding.StringSliceEntries` (a read-only, sorted view of the URL query):
 
 ```go

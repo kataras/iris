@@ -58,25 +58,29 @@ func main() {
 }
 ```
 
-**./locales/en-US.ini**
+**./locales/en-US/welcome.ini**
+
+```ini
+hi = hello, %s
+```
+
+**./locales/el-GR/welcome.ini**
 
 ```ini
 hi = γεια, %s
 ```
 
-**./locales/el-GR.ini**
-
-```ini
-hi = γεια, %s
-```
-
-**./locales/zh-CN.ini**
+**./locales/zh-CN/welcome.ini**
 
 ```ini
 hi = 你好，%s
 ```
 
 The supported file formats are `.ini`, `.json`, `.toml` and `.yaml/.yml`. Each of them can be used to store translations in the specified format and optionally can be splitted into multiple files or/and sections in the same file.
+
+The language of a file comes from its path: a directory named after the language, as above, or a file named after it (`./locales/en-US.ini`, loaded with the pattern `./locales/*`). Inside a language directory the file name is free, also when it is a language code by itself such as `app.ini` or `api.ini`, as long as the languages are passed to `Load`.
+
+When languages are given and no file is loaded for any of them, `Load`, `LoadFS` and `LoadAssets` return a `locales not found` error, so check what they return. The usual cause is a pattern that is one directory level off. To also fail when only some of the languages have no file, set `locales.Loader.Strict = true` before loading.
 
 
 ```sh
@@ -134,7 +138,7 @@ import "embed"
 //go:embed locales/*
 var localesFS embed.FS
 
-locales.LoadFS(localesFS, "locales/*", "en-US", "el-GR", "zh-CN")
+locales.LoadFS(localesFS, "locales/*/*", "en-US", "el-GR", "zh-CN")
 ```
 
 ### Template Integration

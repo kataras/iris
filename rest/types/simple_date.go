@@ -88,6 +88,35 @@ func (t SimpleDate) MarshalJSON() ([]byte, error) {
 	return emptyQuoteBytes, nil
 }
 
+// UnmarshalText parses a "2006-01-02" text into "t", with the same
+// `SimpleDateLayout` the json decoding uses. An empty text leaves "t" as it is.
+//
+// It completes the encoding.TextUnmarshaler interface, which is how the
+// Context's ReadQuery, ReadParams, ReadURL, ReadForm and ReadHeader
+// fill a SimpleDate struct field.
+func (t *SimpleDate) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		return nil
+	}
+
+	tt, err := time.Parse(SimpleDateLayout, string(text))
+	if err != nil {
+		return err
+	}
+
+	*t = SimpleDate(tt)
+	return nil
+}
+
+// MarshalText returns the "2006-01-02" text of "t", empty for the zero date.
+//
+// It completes the encoding.TextMarshaler interface. An encoder that reads
+// through UnmarshalText, such as msgpack, has to write through this one:
+// without it the date is written as an empty map that it cannot read back.
+func (t SimpleDate) MarshalText() ([]byte, error) {
+	return []byte(t.String()), nil
+}
+
 // ListExamples returns a list of example values.
 // It completes the Exampler interface.
 func (t SimpleDate) ListExamples() any {

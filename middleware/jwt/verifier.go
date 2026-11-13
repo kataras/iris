@@ -42,10 +42,29 @@ func GetVerifiedToken(ctx *context.Context) *VerifiedToken {
 // Verifier holds common options to verify an incoming token.
 // Its Verify method can be used as a middleware to allow authorized clients to access an API.
 //
-// It does not support JWE, JWK.
+// It does not support JWE. A key set (JWK) is supported through its HeaderValidator field.
 type Verifier struct {
 	Alg Alg
 	Key any
+
+	// HeaderValidator is optional. When it is nil the header check is the byte
+	// exact one of github.com/kataras/jwt: the header may hold the "alg" of the
+	// Verifier and "typ": "JWT" and nothing else, so a token with one more header
+	// field, such as the "kid" that Auth0 and most identity providers add, is
+	// rejected with ErrTokenAlg.
+	//
+	// Set it to check the header yourself. The function receives the name of Alg
+	// (empty when Alg is nil) and the decoded header, and it must always compare
+	// the "alg" of the header with the algorithm it expects. It may also return
+	// the algorithm, the key and a payload decrypter for that token: a returned
+	// key replaces Key, a returned algorithm is used only when Alg is nil and a
+	// returned decrypter runs before Decrypt. The ValidateHeader method of a
+	// github.com/kataras/jwt Keys or KeySet is such a function and selects them
+	// by "kid":
+	//
+	//	verifier := NewVerifier(nil, nil)
+	//	verifier.HeaderValidator = keySet.ValidateHeader
+	HeaderValidator jwt.HeaderValidator
 
 	Decrypt func([]byte) ([]byte, error)
 
@@ -181,8 +200,10 @@ type (
 
 // VerifyToken simply verifies the given "token" and validates its standard claims (such as expiration).
 // Returns a structure which holds the token's information. See the Verify method instead.
+//
+// The token's header is checked by the HeaderValidator field when that is set.
 func (v *Verifier) VerifyToken(token []byte, validators ...TokenValidator) (*VerifiedToken, error) {
-	return jwt.VerifyEncrypted(v.Alg, v.Key, v.Decrypt, token, validators...)
+	return jwt.VerifyEncryptedWithHeaderValidator(v.Alg, v.Key, v.Decrypt, token, v.HeaderValidator, validators...)
 }
 
 // Verify is the most important piece of code inside the Verifier.

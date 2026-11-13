@@ -55,6 +55,8 @@ type Database[T any] interface {
 	// Load should return a cached or a new session based on the cookie name and value.
 	// If the cookie value is empty, it means that this is a new session and the database should create a new record for it.
 	// Otherwise, it should return the session based on the cookie value.
+	// A cookie value that does not decode should be a new session too, not an error:
+	// Handler answers 500 on any error returned here, and the visitor cannot fix the cookie.
 	Load(ctx *context.Context, cookieName, cookieValue string) (*Session[T], error)
 
 	// Commit should persist the session to the database.
@@ -135,6 +137,9 @@ func (db *cookieDatabase[T]) Get(ctx *context.Context, cookieName string) (*Sess
 
 // Load retrieves a cached or a new session based on the cookie name and value.
 // If the cookie value is empty, it creates a new session. Otherwise, it decodes the session data from the cookie value.
+// A value that does not decode (signed with other keys, older than MaxAge,
+// written for another data type) is a new session too, not an error:
+// the visitor cannot fix that cookie, so the next Commit replaces it.
 func (db *cookieDatabase[T]) Load(ctx *context.Context, cookieName, cookieValue string) (*Session[T], error) {
 	session := NewSession[T](db.Options)
 	if cookieValue == "" {
@@ -142,8 +147,13 @@ func (db *cookieDatabase[T]) Load(ctx *context.Context, cookieName, cookieValue 
 		return session, nil
 	}
 
-	err := db.Options.Decode(cookieName, cookieValue, &session.SessionData)
-	return session, err // return an empty session even on error, e.g. cookie value not valid anymore.
+	if err := db.Options.Decode(cookieName, cookieValue, &session.SessionData); err != nil {
+		// A new value: a failed decode may have filled part of the data.
+		session = NewSession[T](db.Options)
+		session.IsNew = true
+	}
+
+	return session, nil
 }
 
 // Commit saves the session data to the database.
