@@ -19,7 +19,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris/v14@latest` and `go mod tidy`.
 
-# Next
+# Fri, 13 November 2026 | v14.0.1
 
 Fixes and additions since v14.0.0, most of them from reports in the issue tracker. An entry that came from an issue links it.
 

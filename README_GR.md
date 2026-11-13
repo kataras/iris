@@ -1,6 +1,6 @@
 # <a href="https://iris-go.com"><img src="https://iris-go.com/images/logo-new-lq-45.png"></a> Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-japan.svg" /></a> </a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a> <a href="README_VN.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-vietnam.svg" /></a>
 
-[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![release](https://img.shields.io/badge/release%20-v14.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) [![view examples](https://img.shields.io/badge/examples%20-59-a83adf.svg?style=for-the-badge&logo=go)](_examples/README.md) [![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.0) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![release](https://img.shields.io/badge/release%20-v14.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) [![view examples](https://img.shields.io/badge/examples%20-59-a83adf.svg?style=for-the-badge&logo=go)](_examples/README.md) [![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.1) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
 
 Το Iris είναι ένα γρήγορο web framework για τη Go, με όλα τα απαραίτητα ενσωματωμένα. Δίνει στο επόμενο API ή website σας εκφραστικό routing με typed παραμέτρους διαδρομής, ένα κεντρικό σημείο για τη διαχείριση σφαλμάτων, dependency injection που κρατά τον κώδικα εύκολο στο testing, και προεπιλογές παραγωγής που είναι ασφαλείς από την πρώτη στιγμή.
 
@@ -110,7 +110,7 @@ func (api *ProductsAPI) create(ctx iris.Context) {
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v14@latest # or @v14.0.0
+$ go get github.com/kataras/iris/v14@latest # or @v14.0.1
 ```
 
 <details><summary>Εγκατάσταση σε υπάρχον project</summary>
@@ -133,7 +133,7 @@ $ go run .
 
 Το Iris περιέχει εκτενή και αναλυτική **[τεκμηρίωση](https://www.iris-go.com/docs)** που κάνει εύκολο το ξεκίνημα με το framework.
 
-Για πιο λεπτομερή τεχνική τεκμηρίωση μπορείτε να επισκεφθείτε τα [godocs](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.0) μας. Για μια πλήρη, πρακτική εισαγωγή στην προτεινόμενη στοίβα της v14 διαβάστε τον [Οδηγό Πρώτων Βημάτων](TUTORIAL.md), και αν αναβαθμίζετε από τη v12 ακολουθήστε τον [Οδηγό Μετάβασης](MIGRATION.md).
+Για πιο λεπτομερή τεχνική τεκμηρίωση μπορείτε να επισκεφθείτε τα [godocs](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.1) μας. Για μια πλήρη, πρακτική εισαγωγή στην προτεινόμενη στοίβα της v14 διαβάστε τον [Οδηγό Πρώτων Βημάτων](TUTORIAL.md), και αν αναβαθμίζετε από τη v12 ακολουθήστε τον [Οδηγό Μετάβασης](MIGRATION.md).
 
 Προτιμάτε να μαθαίνετε από κώδικα; Τα [**59 παραδείγματα**](_examples/README.md) ξεκινούν από την πρώτη διαδρομή και φτάνουν στο dependency injection, στον έλεγχο ταυτότητας, στο testing και στα σημεία επέκτασης του framework. Καθένα από αυτά μεταγλωττίστηκε και δοκιμάστηκε πάνω από HTTP πριν γίνει commit.
 

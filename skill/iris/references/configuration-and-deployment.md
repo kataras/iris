@@ -642,14 +642,14 @@ There is no built-in CLI and no live reload inside the framework. Run the applic
 // Print version and build info
 iris.PrintBuildInfo(os.Stdout)
 // Output:
-// Iris Version: 14.0.0
+// Iris Version: 14.0.1
 // Build Time:     2024-01-15T10:30:00Z
 // Build Revision: abc123def
 
 // Access build info
 revision := iris.BuildRevision
 buildTime := iris.BuildTime
-version := iris.Version // "14.0.0"
+version := iris.Version // "14.0.1"
 ```
 
 ## Logger Configuration

@@ -1,6 +1,6 @@
 # <a href="https://iris-go.com"><img src="https://iris-go.com/images/logo-new-lq-45.png"></a> Iris Web Framework <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg" /> <a href="README_JA.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-japan.svg" /></a> </a> <a href="README_FR.md"><img width="20px" src="https://iris-go.com/images/flag-france.svg" /></a> <a href="README_ZH_HANT.md"><img width="20px" src="https://iris-go.com/images/flag-taiwan.svg" /></a> <a href="README_ZH_HANS.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg" /></a> <a href="README_ES.md"><img width="20px" src="https://iris-go.com/images/flag-spain.png" /></a> <a href="README_FA.md"><img width="20px" src="https://iris-go.com/images/flag-iran.svg" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg" /></a> <a href="README_KO.md"><img width="20px" src="https://iris-go.com/images/flag-south-korea.svg?v=12" /></a> <a href="README_PT_BR.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-brazil.svg" /></a> <a href="README_VN.md"><img width="20px" height="20px" src="https://iris-go.com/images/flag-vietnam.svg" /></a>
 
-[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![release](https://img.shields.io/badge/release%20-v14.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) [![view examples](https://img.shields.io/badge/examples%20-59-a83adf.svg?style=for-the-badge&logo=go)](_examples/README.md) [![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.0) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
+[![build status](https://img.shields.io/github/actions/workflow/status/kataras/iris/ci.yml?branch=main&style=for-the-badge)](https://github.com/kataras/iris/actions/workflows/ci.yml) [![release](https://img.shields.io/badge/release%20-v14.0-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases) [![view examples](https://img.shields.io/badge/examples%20-59-a83adf.svg?style=for-the-badge&logo=go)](_examples/README.md) [![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.1) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=cc2b5e&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![donate](https://img.shields.io/badge/support-Iris-blue.svg?style=for-the-badge&logo=paypal)](https://iris-go.com/donate)
 
 Iris는 Go를 위한 빠르고 필요한 것이 모두 갖춰진(batteries-included) 웹 프레임워크입니다. 여러분의 다음 API나 웹사이트에 타입 지정 경로 파라미터를 갖춘 표현력 있는 라우팅, 한곳에서 처리하는 에러 핸들링, 코드를 테스트 가능하게 유지해 주는 의존성 주입, 그리고 기본부터 안전한 프로덕션 기본값을 제공합니다.
 
@@ -123,7 +123,7 @@ Iris v14가 제공하는 것:
 $ mkdir myapp
 $ cd myapp
 $ go mod init myapp
-$ go get github.com/kataras/iris/v14@latest # or @v14.0.0
+$ go get github.com/kataras/iris/v14@latest # or @v14.0.1
 ```
 
 <details><summary>기존 프로젝트에 설치</summary>
@@ -146,7 +146,7 @@ $ go run .
 
 Iris는 방대하고 꼼꼼한 **[문서](https://www.iris-go.com/docs)**를 갖추고 있어 프레임워크를 쉽게 시작할 수 있습니다.
 
-더 자세한 기술 문서는 [godocs](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.0)를 참고하세요. 권장 v14 스택에 대한 완전한 실습형 입문으로는 [시작하기 튜토리얼](TUTORIAL.md)을 읽고, v12에서 업그레이드한다면 [마이그레이션 가이드](MIGRATION.md)를 따라가세요.
+더 자세한 기술 문서는 [godocs](https://pkg.go.dev/github.com/kataras/iris/v14@v14.0.1)를 참고하세요. 권장 v14 스택에 대한 완전한 실습형 입문으로는 [시작하기 튜토리얼](TUTORIAL.md)을 읽고, v12에서 업그레이드한다면 [마이그레이션 가이드](MIGRATION.md)를 따라가세요.
 
 코드로 배우는 편이 좋다면, [**58개의 예제**](_examples/README.md)가 첫 라우트부터 의존성 주입, 인증, 테스트, 프레임워크의 확장 지점까지 이어집니다. 모두 커밋되기 전에 컴파일하고 HTTP로 직접 동작을 확인했습니다.
 
